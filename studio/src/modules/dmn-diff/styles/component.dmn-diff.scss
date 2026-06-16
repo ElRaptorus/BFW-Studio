@@ -1,0 +1,29 @@
+.bifrost.bifrost-theme--light {
+  --color-dmn-diff-view-icon-primary: var(--color__purple--on-light);
+}
+
+.bifrost.bifrost-theme--dark {
+  --color-dmn-diff-view-icon-primary: var(--color__purple--on-dark);
+}
+
+.dmn-diff__tab-icon {
+  color: var(--color-dmn-diff-view-icon-primary);
+}
+
+.bifrost.bifrost-theme--dark {
+  --color-dmn-diff__history-preview--hero-icon: #209;
+  --backcolor-dmn-diff__history-previewmode--active: #666;
+}
+
+.bifrost.bifrost-theme--light {
+  --color-dmn-diff__history-preview--hero-icon: #52a;
+  --backcolor-dmn-diff__history-previewmode--active: #aaa;
+}
+
+.editor-toolbar__button.dmn-diff__history-previewmode--active {
+  background: var(--backcolor-dmn-diff__history-previewmode--active);
+}
+
+.dmn-diff__history-preview--hero-icon {
+  color: var(--color-dmn-diff__history-preview--hero-icon);
+}

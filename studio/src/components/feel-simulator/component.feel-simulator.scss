@@ -1,0 +1,237 @@
+.feel-simulator {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+
+  &__expression-area {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  &__editor-row {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+
+    &--single {
+      flex: 0 0 auto;
+    }
+  }
+
+  &__editor-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  &__editor-label {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--theme-fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__editor-wrapper {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  &__feel-editor {
+    height: 100%;
+  }
+
+  &__bottom-area {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    min-height: 120px;
+    border-top: 1px solid var(--theme-border);
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  &__values-editor {
+    display: flex;
+    flex-direction: column;
+    flex: 2;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  &__values-editor-wrapper {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  &__json-editor {
+    height: 100%;
+  }
+
+  &__result {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  &__section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  &__section-title {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--theme-fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__values-error {
+    font-size: 0.75em;
+    color: var(--theme-icon-red);
+  }
+
+  // Execute button
+  &__execute-button {
+    background: none;
+    border: 1px solid var(--theme-fg-tertiary);
+    border-radius: 3px;
+    color: var(--theme-fg);
+    cursor: pointer;
+    font-size: 0.85em;
+    padding: 0.15rem 0.5rem;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: var(--theme-fg-secondary);
+    }
+  }
+
+  // Result box
+  &__result-box {
+    background: var(--theme-surface-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 3px;
+    font-family: var(--theme-font-monospace);
+    font-size: 0.85em;
+    border-left: 3px solid transparent;
+    height: 100%;
+    overflow: auto;
+
+    &--loading {
+      border-left-color: var(--theme-fg-tertiary);
+      color: var(--theme-fg-secondary);
+    }
+
+    &--idle {
+      border-left-color: var(--theme-fg-tertiary);
+      color: var(--theme-fg-secondary);
+      font-style: italic;
+    }
+
+    &--success {
+      border-left-color: var(--theme-icon-green);
+    }
+
+    &--error {
+      border-left-color: var(--theme-icon-red);
+    }
+
+    &--timeout {
+      border-left-color: var(--theme-icon-orange, #e8a317);
+    }
+  }
+
+  &__result-pulse {
+    animation: feel-eval-pulse 1.5s ease-in-out infinite;
+  }
+
+  &__result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.25rem;
+  }
+
+  &__result-status {
+    font-weight: 600;
+
+    &--success {
+      color: var(--theme-icon-green);
+    }
+
+    &--error {
+      color: var(--theme-icon-red);
+    }
+
+    &--timeout {
+      color: var(--theme-icon-orange, #e8a317);
+    }
+  }
+
+  &__result-meta {
+    font-size: 0.8em;
+    color: var(--theme-fg-secondary);
+  }
+
+  &__result-value {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    &--error {
+      color: var(--theme-icon-red);
+    }
+  }
+
+  &__result-type {
+    font-size: 0.8em;
+    color: var(--theme-fg-secondary);
+    margin-top: 0.25rem;
+  }
+
+  &__result-warnings {
+    margin-top: 0.5rem;
+    font-size: 0.85em;
+    color: var(--theme-icon-orange, #e8a317);
+  }
+
+  &__result-warnings-list {
+    margin: 0.25rem 0 0;
+    padding-left: 1.25rem;
+  }
+
+  &__result-timeout-message {
+    margin: 0;
+  }
+}
+
+@keyframes feel-eval-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

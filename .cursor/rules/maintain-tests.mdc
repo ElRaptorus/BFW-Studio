@@ -1,0 +1,58 @@
+---
+description: Ensure integration tests remain valid and are extended for new features
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Test Maintenance Rule
+
+## When Making Code Changes
+
+After implementing changes that affect **UI behavior, solution management, file explorer, commands, menus, or editor documents**, you MUST:
+
+### 1. Verify Existing Tests Are Not Broken
+
+- Check if any existing test in `studio/test/integration/` relies on behavior you changed.
+- Pay special attention to:
+  - `studio/test/integration/insiders/solution.test.ts` — Single-root solution smoke tests
+  - `studio/test/integration/stable/solutions.test.ts` — Multi-root solution comprehensive tests
+  - `studio/test/integration/stable/bpmn-elements.test.ts` — BPMN element interaction tests
+- If a change modifies CSS classes used in selectors (e.g., `treeview__entry--*`), verify tests still select the correct elements.
+- If a change alters the Bifrost API (e.g., `bifrost.solution.*`), verify `StudioAgent.ts` helper methods still work correctly.
+
+### 2. Add New Tests When Features Are Added
+
+When adding new user-facing functionality:
+
+- Add a **smoke test** in `studio/test/integration/insiders/` if the feature is core (solution, file explorer, commands).
+- Add a **thorough test** in `studio/test/integration/stable/` covering edge cases.
+- Follow the existing test structure: use `StudioAgent` methods, end with `assertNoErrorsPresentAndIdle()`.
+
+### 3. Add `data-test--` Attributes to New UI Elements
+
+When creating new React components or adding interactive elements:
+
+- Add `data-test--` attributes to elements that tests will need to locate.
+- Use semantic naming: `data-test--feature-purpose` (e.g., `data-test--solution-root-entry`).
+- For tree items, `data-test--tree-entry-type` and `data-test--tree-entry-uri` are already available via `HeadlessTreeItem`.
+
+### 4. Extend StudioAgent When Needed
+
+If a new test pattern requires interacting with the Studio in a way `StudioAgent` doesn't support:
+
+- **For actions** (triggering functionality): Register a **test command** in `initializeTestCommands()` (`studio/src/modules/std/initializers/initializeCommands.ts`), then add a StudioAgent method that invokes it via `openViaCommandSearch`. Use `bifrost.dialog.prompt()` in the command to accept parameters.
+- **For queries** (reading state): Add a StudioAgent helper method that uses `this.testDriver.client!.execute()` internally and returns a typed result.
+- **Never use `executeInRenderer` in test files.** All interactions must go through StudioAgent methods. Actions should flow through registered test commands (just like a real user uses the command search), not direct JS execution in the renderer.
+
+### 5. Verify TypeScript Compilation
+
+After modifying test files:
+
+```bash
+cd studio && npx tsc --noEmit -p tsconfig.components.json
+```
+
+## Reference
+
+- Architecture documentation: `docs/testing.md`
+- Integration testing skill: `.cursor/skills/integration-testing/SKILL.md`

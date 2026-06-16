@@ -1,0 +1,198 @@
+{
+  "entries": [
+    {
+      "type": "section",
+      "label": "Integration Tests",
+      "expanded": true,
+      "styles": {
+        "labelColor": "red",
+        "badgeColor": "red"
+      },
+      "badges": [
+        {
+          "type": "number",
+          "number": 7
+        }
+      ],
+      "entries": [
+        {
+          "type": "search_result",
+          "label": "Prozess A",
+          "labelIcon": "ph-duotone ph-flask colorize--test-icon",
+          "expanded": true,
+          "styles": {
+            "labelColor": "red",
+            "badgeColor": "red"
+          },
+          "badges": [
+            {
+              "type": "number",
+              "number": 7
+            }
+          ],
+          "entries": [
+            {
+              "type": "search_result",
+              "label": "Eingangsdaten validieren",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "setComponent"
+              },
+              "badges": [
+                {
+                  "type": "number",
+                  "number": 2
+                }
+              ],
+              "styles": {
+                "labelColor": "red",
+                "badgeColor": "red"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Etikett drucken",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "can be constructed"
+              },
+              "badges": [
+                {
+                  "type": "number",
+                  "number": 5
+                }
+              ],
+              "styles": {
+                "labelColor": "red",
+                "badgeColor": "red"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Konfektionierung abwarten",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "throws if no component is set"
+              },
+              "styles": {
+                "labelColor": "green",
+                "badgeColor": "green"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Paketierung",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "can only call setComponent once"
+              },
+              "styles": {
+                "labelColor": "green",
+                "badgeColor": "green"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Sendungsverfolgung",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "can only call setComponent once"
+              },
+              "styles": {
+                "labelColor": "green",
+                "badgeColor": "green"
+              }
+            }
+          ]
+        },
+        {
+          "type": "search_result",
+          "label": "Prozess B",
+          "labelIcon": "ph-duotone ph-flask colorize--test-icon",
+          "expanded": false,
+          "entries": [],
+          "styles": {
+            "labelColor": "green",
+            "badgeColor": "green"
+          }
+        },
+        {
+          "type": "search_result",
+          "label": "Prozess C",
+          "labelIcon": "ph-duotone ph-flask colorize--test-icon",
+          "expanded": false,
+          "entries": [],
+          "styles": {
+            "labelColor": "green",
+            "badgeColor": "green"
+          }
+        }
+      ]
+    },
+
+    {
+      "type": "section",
+      "label": "Unit Tests",
+      "expanded": false,
+      "entries": [
+        {
+          "type": "search_result",
+          "label": "Lagerprozess",
+          "expanded": true,
+          "entries": [
+            {
+              "type": "search_result",
+              "label": "Eingangsdaten validieren",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "setComponent"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Etikett drucken",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "can be constructed"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Konfektionierung abwarten",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "throws if no component is set"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Paketierung",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "can only call setComponent once"
+              }
+            },
+            {
+              "type": "search_result",
+              "label": "Auf Sendungsverfolgung warten",
+              "labelIcon": "ph-duotone ph-test-tube colorize--test-icon",
+              "menuId": "mock/machine-sanctum/treeview",
+              "metadata": {
+                "itemLabel": "can only call setComponent once"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+---
+description: Build and verify the codebase after changes
+alwaysApply: true
+---
+
+# Always review your changes
+
+Always review your changes prior to submitting them to the user.
+
+This is especially important for very large or complex refactorings, say more than 10 files at once.
+
+# Verify the codebase after changes
+
+## Studio (`studio/`)
+
+After making changes to `studio/`, run the following commands **in this order**:
+
+1. `npm run build` — Compile the SDK and Rspack bundles. Catches TypeScript errors.
+2. `npm run lint:fix` — Run ESLint with auto-fix. Catches rule violations and applies mechanical fixes.
+3. `npm run format` — Run Prettier. Ensures consistent formatting.
+
+## SDK (`studio-sdk/`)
+
+After making changes to `studio-sdk/`, run:
+
+1. `npm run build` — Compile TypeScript. Catches type errors.
+2. `npm run lint:fix` — Run ESLint with auto-fix.
+3. `npm run format` — Run Prettier.
+
+Then also rebuild `studio/` since it depends on the SDK:
+
+4. `cd ../studio && npm run build` — Verify the SDK changes don't break the studio build.
+
+## Cross-package changes
+
+When both packages are modified (e.g., SDK type changes + studio callsite updates), build the SDK first, then the studio.
+
+If `lint:fix` reports errors that cannot be auto-fixed, resolve them manually before continuing.
+
+It is very important that you use these scripts as they are defined in `package.json`. Do not use custom build or lint commands unless asked to do so.
+
+## Git commits
+
+**Never** create git commits automatically. The user always creates commits manually after reviewing changes. Do not offer to commit, do not stage and commit after completing work, and do not ask whether to commit. Just leave the changes in the working tree.

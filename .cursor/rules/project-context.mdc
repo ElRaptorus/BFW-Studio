@@ -1,0 +1,34 @@
+---
+description: Project context and documentation entry point for Bifrost Forge World
+alwaysApply: true
+---
+
+# Bifrost Forge World Project Context
+
+Bifrost Forge World is a ReactJS / Electron application for modelling, deploying, and debugging BPMN 2.0 process models. It is designed around extensibility: core functionality is delivered through internal modules — the same mechanism available to third-party developers.
+
+## Folder Structure
+
+| Folder | Purpose |
+|--------|---------|
+| `studio-sdk/` | Public SDK: types, contracts, and reusable React components for plugins |
+| `studio/src/bifrost/` | Core framework: entrypoints, mediators, contracts, services |
+| `studio/src/modules/` | Built-in modules (std, bpmn-editor, engine-*, etc.) |
+| `studio/src/components/` | Shared internal React components |
+
+## Core Architecture
+
+- **Commands** — All interactions flow through `bifrost.commands.executeCommand()`. Modules MUST NOT call each other directly.
+- **Modules** — Register document types, menus, icons, panes, and commands via the Bifrost API. Foundation modules (`engine-core`, `bpmn-core`) communicate with consumers via events on shared mediators, never by accessing consumer code directly.
+- **Editor Documents** — Each document type binds a URI pattern to a model, renderer, and inspector.
+- **Module Discovery** — Extensions register diagram-js modules via `bpmn.modeler.registerModule` for BPMN modeler customization.
+
+## Documentation (read on demand, not upfront)
+
+When working on a specific subsystem, consult the relevant docs as needed — do not read all of them before every change:
+
+- `docs/architecture/index.md` — Detailed architecture topics (workspace, commands, modules, engine, dialogs, editors, build, icons, theming, notifications, tree, settings, BPMN modules, layout, imports, git, code quality, common pitfalls)
+- `docs/systeme.md` — Core subsystems overview
+- `docs/philosophie.md` — Design philosophy
+- `docs/testing.md` — Testing infrastructure and StudioAgent API
+- `docs/decisions.md` — Technical decision log with rationale

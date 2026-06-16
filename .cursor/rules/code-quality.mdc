@@ -1,0 +1,60 @@
+---
+description: ESLint and Prettier code quality standards
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Code Quality: ESLint and Prettier
+
+All code in `studio/` and `studio-sdk/` must pass the project's ESLint rules and Prettier formatting. Both packages share rules defined in `eslint.config.base.mjs` at the repository root.
+
+## Writing code
+
+When writing or modifying code, adhere to these active rules:
+
+- **`curly: ['error', 'all']`** — Always use braces for `if`, `else`, `for`, `while`, etc. No single-line braceless bodies.
+- **`no-nested-ternary`** — Do not nest ternary expressions.
+- **`prefer-const`** / **`no-var`** — Use `const` by default; use `let` only when reassignment is needed; never use `var`.
+- **`id-length: min 2`** — Variable names must be at least 2 characters (exceptions: `_`, `i`, `j`, `k`, `x`, `y`, `e`).
+- **`@typescript-eslint/array-type: 'array'`** — Use `T[]` syntax, not `Array<T>`.
+- **`@typescript-eslint/no-unsafe-function-type`** — Do not use `Function` as a type. Use specific signatures like `() => void` or `(...args: any[]) => any`.
+- **`@typescript-eslint/consistent-type-imports`** — Do not use inline `import('...').Type` in type annotations. Always place imports at the top of the file. Use `import type { T }` for type-only imports.
+
+### React and React Compiler rules
+
+The project uses `eslint-plugin-react-hooks` with **React Compiler** rules enabled. These are stricter than the standard hooks rules:
+
+- **`react-hooks/exhaustive-deps`** — All reactive values must be in dependency arrays. Destructure props before `useCallback`/`useMemo` to reference individual values.
+- **`react-hooks/set-state-in-effect`** — Do not call `setState` synchronously inside an effect. Use lazy `useState` initializers or adjust-state-during-render instead.
+- **`react-hooks/refs`** — Do not read or write `ref.current` during render. Move ref assignments to `useEffect`. Use `forwardRef` instead of custom ref props.
+- **`react-hooks/rules-of-hooks`** — Hooks must be called unconditionally and in the same order every render. Never call hooks inside `if`/`else` blocks.
+- **`react-hooks/static-components`** — Components used in JSX must be stable references (module-level or memoized).
+- **`react-hooks/immutability`** — Do not mutate props, state, or values derived from them. Clone before modifying.
+- **`react-hooks/purity`** — Render functions must be pure. No `Date.now()`, `Math.random()`, or side effects during render.
+
+### Key patterns
+
+- **Latest-ref pattern:** Assign `ref.current` in a `useEffect` (not during render): `useEffect(() => { ref.current = value; });`
+- **Ref forwarding:** Use `React.forwardRef` instead of custom `htmlRef` props.
+- **Unconditional hooks:** When a feature is optional, call hooks unconditionally and disable via config (e.g., `canDrag: false`).
+
+### Suppressing rules
+
+When a lint rule must be suppressed, always:
+
+1. Use `// eslint-disable-next-line <rule-name>` (never blanket `eslint-disable`).
+2. Add a `--` comment explaining **why** the suppression is necessary.
+3. Place the comment on the line immediately before the flagged statement.
+
+## Formatting
+
+Prettier is configured in `/.prettierrc.json` (repository root). Key settings:
+
+- Single quotes, 120 character print width, trailing commas everywhere, `arrowParens: 'always'`.
+- Import sorting via `@trivago/prettier-plugin-sort-imports`.
+
+Do not override Prettier settings in individual files.
+
+## ESLint config structure
+
+Both packages use ESLint flat config with `defineConfig()` from `eslint/config`. Shared rules are in `eslint.config.base.mjs` (repo root). Important ordering: `eslint-config-prettier` is applied **before** the custom rules block so that `curly` and other intentional rules are re-enabled after Prettier's blanket disable.

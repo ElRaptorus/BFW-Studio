@@ -1,0 +1,14 @@
+{
+  "version": "1.1.0",
+  "name": "test-project",
+  "settings": {
+    "autoSave": true,
+    "theme": "dark",
+    "language": "en"
+  },
+  "features": {
+    "linting": true,
+    "simulation": false,
+    "mergeResolver": true
+  }
+}

@@ -1,0 +1,138 @@
+name: Studio CI
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #     - develop
+  #     - release/*
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - develop
+  #     - release/*
+
+defaults:
+  run:
+    working-directory: studio
+
+jobs:
+  build:
+    name: Install & Build Linux Electron App
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          check-latest: true
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Format
+        run: npm run format
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build Linux Prod App
+        run: npm run build-prod:electron:linux
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v7
+        with:
+          name: studio_appimage_linux
+          path: studio/dist/electron/
+          retention-days: 3
+
+      - name: Upload Build Logs
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: build_logs
+          path: studio/tmp
+          retention-days: 7
+
+  integration-tests:
+    name: 'Integration: ${{ matrix.suite }}'
+    needs: build
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - studio-core
+          - bpmn-editor
+          - plugin-host
+          - git-cruiser
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          check-latest: true
+
+      - name: Configure Git Identity
+        run: |
+          git config --global user.email "ci@evilstudio.dev"
+          git config --global user.name "CI Runner"
+          git config --global init.defaultBranch main
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # - name: Ensure chromedriver binary exists
+      #   run: |
+      #     if [ ! -f node_modules/electron-chromedriver/bin/chromedriver ]; then
+      #       echo "Chromedriver binary missing, running download script..."
+      #       node node_modules/electron-chromedriver/download-chromedriver.js
+      #       echo "Waiting for async download to complete..."
+      #       sleep 10
+      #     fi
+      #     if [ ! -f node_modules/electron-chromedriver/bin/chromedriver ]; then
+      #       echo "Still missing — downloading manually from Electron releases..."
+      #       ELECTRON_VERSION=$(node -p "require('./node_modules/electron-chromedriver/package.json').version")
+      #       curl -fSL "https://github.com/electron/electron/releases/download/v${ELECTRON_VERSION}/chromedriver-v${ELECTRON_VERSION}-linux-x64.zip" -o /tmp/chromedriver.zip
+      #       unzip -o /tmp/chromedriver.zip -d node_modules/electron-chromedriver/bin/
+      #       chmod +x node_modules/electron-chromedriver/bin/chromedriver
+      #     fi
+      #     ls -la node_modules/electron-chromedriver/bin/chromedriver
+
+      - name: Download AppImage
+        uses: actions/download-artifact@v8
+        with:
+          name: studio_appimage_linux
+          path: studio/dist/electron
+
+      - name: Make AppImage executable
+        run: chmod +x dist/electron/*.AppImage
+
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Disable AppArmor unprivileged userns restriction
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: 'Run Integration Tests: ${{ matrix.suite }}'
+        run: xvfb-run --auto-servernum -s "-screen 0 1920x1080x24" npm run test-prod:electron test:integration:${{ matrix.suite }}
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test_results_${{ matrix.suite }}
+          path: |
+            studio/tmp
+            ~/.evil/studio-tests-backup-*
+          retention-days: 7

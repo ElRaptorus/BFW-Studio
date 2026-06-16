@@ -1,0 +1,208 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://evilstudio.dev/schemas/bifrostStudio.json",
+  "title": "Evil Studio Plugin Manifest",
+  "description": "Schema for the 'bifrostStudio' section in a plugin's package.json",
+  "type": "object",
+  "required": ["apiVersion"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "description": "Required. The Studio Plugin API version this plugin targets (semver, e.g. '1.0.0')."
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable plugin name shown in the Plugins pane."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of the plugin."
+    },
+    "icon": {
+      "type": "string",
+      "description": "Path to the plugin's icon (relative to plugin root)."
+    },
+    "activationEvents": {
+      "type": "array",
+      "description": "Events that trigger lazy loading of the plugin.",
+      "items": {
+        "type": "string",
+        "pattern": "^(onCommand:.+|onDocumentType:.+|onUri:.+|onSetting:.+|onStartup|\\*)$"
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "description": "Capabilities this plugin requires. Undeclared capabilities are denied at runtime.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "filesystem",
+          "commands.std",
+          "commands.bpmn",
+          "commands.dmn",
+          "renderer-modules",
+          "native",
+          "system-info"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "contributes": {
+      "type": "object",
+      "description": "Declarative contributions registered before plugin code runs.",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Command identifier (will be namespaced as plugin.<name>.<id>)."
+              },
+              "title": {
+                "type": "string",
+                "description": "Human-readable command title shown in the command palette."
+              },
+              "icon": { "type": "string", "description": "Icon ID or Phosphor class for the command." },
+              "category": { "type": "string", "description": "Category prefix for grouping in the command palette." }
+            },
+            "additionalProperties": false
+          }
+        },
+        "menus": {
+          "type": "object",
+          "description": "Map of menu IDs to arrays of menu item contributions.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["command"],
+              "properties": {
+                "command": { "type": "string", "description": "The command to execute." },
+                "group": { "type": "string", "description": "Menu group to place the item in." },
+                "when": { "type": "string", "description": "Condition for showing the menu item." }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "type"],
+            "properties": {
+              "key": { "type": "string", "description": "Setting key (by convention: pluginName.settingName)." },
+              "type": { "type": "string", "enum": ["boolean", "string", "number", "string[]", "object"] },
+              "default": { "description": "Default value for the setting." },
+              "description": { "type": "string" },
+              "category": { "type": "string", "description": "Category for the Settings editor." },
+              "enum": { "type": "array", "description": "Allowed values (for string/number types)." }
+            },
+            "additionalProperties": false
+          }
+        },
+        "keybindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["command", "key"],
+            "properties": {
+              "command": { "type": "string", "description": "The command to trigger." },
+              "key": { "type": "string", "description": "Default keystroke (e.g. 'ctrl+shift+m')." },
+              "mac": { "type": "string", "description": "macOS-specific override." },
+              "linux": { "type": "string", "description": "Linux-specific override." },
+              "windows": { "type": "string", "description": "Windows-specific override." },
+              "when": {
+                "type": "string",
+                "description": "Context condition: '*', 'editorFocused', or 'editorFocused:<docType>'."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "icons": {
+          "type": "object",
+          "description": "Map of icon IDs to file paths or Phosphor class strings.",
+          "additionalProperties": { "type": "string" }
+        },
+        "panes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "area"],
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "area": { "type": "string", "enum": ["left", "right", "bottom"] },
+              "groupId": { "type": "string" },
+              "icon": { "type": "string" },
+              "visibleWhen": {
+                "type": "object",
+                "properties": {
+                  "documentType": { "type": "string" },
+                  "setting": { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "paneToggles": {
+          "type": "array",
+          "description": "Menu bar toggle buttons for pane visibility.",
+          "items": {
+            "type": "object",
+            "required": ["id", "icon", "tooltip", "paneAreaId", "paneId"],
+            "properties": {
+              "id": { "type": "string", "description": "Unique identifier for the toggle." },
+              "icon": { "type": "string", "description": "Icon identifier." },
+              "tooltip": { "type": "string", "description": "Tooltip text." },
+              "paneAreaId": { "type": "string", "enum": ["left", "right", "bottom"] },
+              "paneId": { "type": "string", "description": "Pane ID to select when clicked." },
+              "insertAfter": { "type": "string", "description": "Insert after menu bar item with this ID." },
+              "insertBefore": { "type": "string", "description": "Insert before menu bar item with this ID." }
+            },
+            "additionalProperties": false
+          }
+        },
+        "serviceTaskTypes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["implementation", "label"],
+            "properties": {
+              "implementation": { "type": "string", "description": "Implementation type string stored in BPMN XML." },
+              "label": { "type": "string", "description": "Human-readable label for the dropdown." }
+            },
+            "additionalProperties": false
+          }
+        },
+        "themes": {
+          "type": "array",
+          "description": "Custom CSS themes with token overrides.",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "type", "tokens"],
+            "properties": {
+              "id": { "type": "string", "description": "Theme identifier (namespaced as plugin.<name>.<id>)." },
+              "label": { "type": "string", "description": "Human-readable theme name." },
+              "type": { "type": "string", "enum": ["dark", "light"], "description": "Theme category." },
+              "tokens": {
+                "type": "object",
+                "description": "CSS custom property overrides (leading -- auto-prepended if missing).",
+                "additionalProperties": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

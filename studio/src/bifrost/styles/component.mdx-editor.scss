@@ -1,0 +1,147 @@
+.bifrost.bifrost-theme--light {
+  --theme-mdx-text: #495057;
+  --theme-mdx-bg: hsl(0, 0%, 100%);
+  --theme-mdx-dialog-bg: hsl(0, 0%, 100%);
+  --theme-mdx-listbox-hover-bg: #deebff;
+  --theme-mdx-listbox-selected-bg: #2684ff;
+  --theme-mdx-listbox-selected-fg: hsl(0, 0%, 100%);
+}
+
+.bifrost.bifrost-theme--dark {
+  --theme-mdx-text: #dadada;
+  --theme-mdx-bg: #555;
+  --theme-mdx-dialog-bg: #272727;
+  --theme-mdx-listbox-hover-bg: #888;
+  --theme-mdx-listbox-selected-bg: #656565;
+  --theme-mdx-listbox-selected-fg: #cdcdcd;
+}
+
+.bifrost {
+  .documentation-mdx-editor {
+    display: grid;
+    grid-template-rows: max-content 1fr;
+    height: 100%;
+    --baseText: var(--theme-mdx-text);
+    --basePageBg: var(--theme-mdx-bg);
+
+    .mdxeditor-root-contenteditable {
+      height: 100%;
+
+      > div {
+        height: 100%;
+      }
+    }
+
+    .documentation-mdx-editor__content {
+      height: 100%;
+
+      .cm-gutter.cm-lineNumbers {
+        font-size: 1.6em;
+      }
+
+      [role='checkbox'] {
+        filter: grayscale(1);
+
+        &[aria-checked='true']:before {
+          border: unset;
+        }
+      }
+
+      hr {
+        background-color: var(--baseBg);
+      }
+    }
+
+    > :not([role='toolbar']) {
+      overflow: auto;
+    }
+
+    [role='toolbar'] {
+      border-radius: 0;
+    }
+
+    .block-type-select {
+      --radius-medium: 0.25rem;
+      --radius-none: 0.25rem;
+      --baseBorderHover: var(--theme-fg);
+
+      [role='combobox'][data-state='open'] {
+        box-shadow: 0 0 0 0.2rem var(--theme-input-focus-shadow);
+      }
+    }
+  }
+}
+
+// MDXEditor popups render outside .bifrost as direct children of <body>
+body > .documentation-mdx-editor {
+  z-index: 999;
+  --basePageBg: var(--theme-mdx-bg, hsl(0, 0%, 100%)) !important;
+  --baseTextContrast: var(--theme-mdx-text, #495057) !important;
+  --baseText: var(--theme-mdx-text, #495057) !important;
+  --listboxOptionHoverBg: var(--theme-mdx-listbox-hover-bg, #deebff) !important;
+  --listboxOptionSelectedBg: var(--theme-mdx-listbox-selected-bg, #2684ff) !important;
+  --listboxOptionSelectedText: var(--theme-mdx-listbox-selected-fg, hsl(0, 0%, 100%)) !important;
+  --dialogPageBg: var(--theme-mdx-dialog-bg, hsl(0, 0%, 100%)) !important;
+
+  [role='listbox'] {
+    [role='option']:hover {
+      --baseBg: var(--listboxOptionHoverBg);
+    }
+    [role='option'][data-state='checked'] {
+      --baseBg: var(--listboxOptionSelectedBg);
+      --baseTextContrast: var(--listboxOptionSelectedText);
+    }
+  }
+
+  [role='dialog'] {
+    --basePageBg: var(--dialogPageBg);
+
+    input[name='title']:focus,
+    input[name='url']:focus {
+      box-shadow: 0 0 0 0.2rem var(--theme-input-focus-shadow, rgba(0, 123, 255, 0.25));
+    }
+
+    [type='submit'] {
+      --baseBase: var(--theme-fg-on-accent, #fff);
+      --accentSolidHover: var(--theme-accent, #1677d1);
+      --accentBorder: var(--theme-accent, #1677d1);
+
+      &:focus {
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem var(--theme-input-focus-shadow, rgba(0, 123, 255, 0.25));
+      }
+    }
+
+    [type='reset'] {
+      --baseBase: var(--theme-fg-on-accent, #fff);
+      --baseBorder: var(--theme-btn-secondary-bg, #6c757d);
+      --baseSolidHover: var(--theme-btn-secondary-bg, #6c757d);
+
+      &:focus {
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem var(--theme-input-focus-shadow);
+      }
+    }
+  }
+}
+
+body > .documentation-mdx-editor.dark-theme {
+  --basePageBg: var(--theme-mdx-bg, #444) !important;
+  --baseTextContrast: var(--theme-mdx-text, #cdcdcd) !important;
+  --baseText: var(--theme-mdx-text, #cdcdcd) !important;
+  --listboxOptionHoverBg: var(--theme-mdx-listbox-hover-bg, #888) !important;
+  --listboxOptionSelectedBg: var(--theme-mdx-listbox-selected-bg, #656565) !important;
+  --listboxOptionSelectedText: var(--theme-mdx-listbox-selected-fg, #cdcdcd) !important;
+  --dialogPageBg: var(--theme-mdx-dialog-bg, #272727) !important;
+
+  [type='submit'] {
+    --baseBase: var(--theme-fg-on-accent, #dadada);
+    --accentSolidHover: var(--theme-accent, #33609a);
+    --accentBorder: var(--theme-accent, #33609a);
+  }
+
+  [type='reset'] {
+    --baseBorder: var(--theme-btn-secondary-bg, #555);
+    --baseSolidHover: var(--theme-btn-secondary-bg, #555);
+  }
+}

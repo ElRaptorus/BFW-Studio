@@ -1,0 +1,78 @@
+import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
+import { OverlayPosition } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
+
+import React, { useEffect, useState } from 'react';
+
+import type { Studio } from '@evil/bifrost_fw_sdk';
+import { Icon } from '@evil/bifrost_fw_sdk';
+
+import type { StudioEventSubscription } from '../../../../../studio-sdk/types/contracts';
+import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
+import type { FlowNode } from '../libs/index';
+
+export type RetryAtFlowNodeLinkProps = {
+  flowNode: FlowNode;
+  studio: Studio;
+  onClick: (event: React.MouseEvent) => void;
+};
+
+export function createRetryAtFlowNodeLink(
+  flowNode: FlowNode,
+  model: EngineBpmnDebuggerEditorDocumentModel,
+  studio: Studio,
+): Overlay {
+  const cmd = studio.commands.getClickHandler();
+  return {
+    type: 'positioned',
+    elementId: flowNode.id,
+    position: OverlayPosition.below,
+    overlayElement: RetryAtFlowNodeLinkRenderer,
+    overlayProps: {
+      flowNode: flowNode,
+      studio: studio,
+      onClick: cmd('engine.retryAtFlowNodeInstance', [
+        model.engineId,
+        model.processInstance?.id,
+        flowNode.name || flowNode.id,
+        flowNode.flowNodeInstances,
+      ]),
+    },
+  };
+}
+
+export function RetryAtFlowNodeLinkRenderer(props: RetryAtFlowNodeLinkProps): React.JSX.Element | null {
+  const [show, setShow] = useState(true);
+
+  useEffect(() => {
+    const eventSubscription: StudioEventSubscription = props.studio.events.on('unspecifiedGlobalUpdate', () => {
+      const retryPending = props.studio.commands.isRegistered('engine.isRetryPending')
+        ? props.studio.commands.executeCommand<boolean>('engine.isRetryPending')
+        : false;
+      setShow(!retryPending);
+    });
+
+    return () => {
+      eventSubscription.dispose();
+    };
+  }, [props.studio]);
+
+  if (!show) {
+    return null;
+  }
+
+  return (
+    <div
+      className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
+      onClick={(event) => props.onClick(event)}
+      title="Retry at FlowNodeInstance"
+      data-bs-toggle="tooltip"
+    >
+      <div className="action-icon">
+        <Icon id="ph ph-arrow-clockwise" />
+      </div>
+      <div className="action-icon-hovered">
+        <Icon id="ph-fill ph-arrow-clockwise" />
+      </div>
+    </div>
+  );
+}

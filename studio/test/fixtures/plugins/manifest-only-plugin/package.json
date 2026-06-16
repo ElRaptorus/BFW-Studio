@@ -1,0 +1,41 @@
+{
+  "name": "manifest-only-plugin",
+  "displayName": "Manifest Only Plugin",
+  "description": "Tests manifest contributions with lazy activation via onCommand.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Manifest Only Plugin",
+    "permissions": [],
+    "activationEvents": [
+      "onCommand:manifestOnly.doThing"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "manifestOnly.doThing",
+          "title": "Do The Thing",
+          "category": "Manifest Only"
+        }
+      ],
+      "settings": [
+        {
+          "key": "manifestOnly.enabled",
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the manifest-only plugin feature is enabled."
+        }
+      ],
+      "keybindings": [
+        {
+          "command": "manifestOnly.doThing",
+          "key": "ctrl+shift+f12",
+          "mac": "cmd+shift+f12",
+          "when": "*"
+        }
+      ]
+    }
+  }
+}

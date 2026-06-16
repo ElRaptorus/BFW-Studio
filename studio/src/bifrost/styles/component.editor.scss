@@ -1,0 +1,109 @@
+.bifrost {
+  .editor {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    height: 100%;
+    outline: none;
+  }
+
+  .editor__canvas {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: auto;
+    background: var(--theme-editor-canvas-bg);
+  }
+
+  .editor__content {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    margin: 1rem;
+
+    background: var(--theme-editor-bg);
+    border: 1px solid var(--theme-editor-content-border);
+    border-radius: 0.2rem;
+    overflow: auto;
+  }
+
+  .editor__content--transparent {
+    background: transparent !important;
+    border: none;
+  }
+
+  .editor__content--no-margin {
+    margin: 0;
+  }
+
+  .editor__content--loading-error {
+    padding: 1rem;
+    background-color: var(--theme-editor-loading-error-bg);
+  }
+
+  .editor-loading__backdrop {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+
+    background: var(--theme-surface-primary);
+  }
+  .editor-loading__content {
+    flex: 1;
+    text-align: center;
+    opacity: 0.5;
+  }
+
+  .editor__hint {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+  }
+
+  .editor__hint-button {
+    margin-left: 10px;
+  }
+
+  .editor__hint--loading-error {
+    color: var(--theme-editor-loading-warning-fg);
+    background-color: var(--theme-editor-loading-warning-bg);
+    z-index: 150;
+  }
+
+  .editor-view__title {
+    padding: 6px;
+  }
+
+  .editor__tabs {
+    border-bottom: 2px solid var(--theme-editor-loading-border);
+    height: 32px;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .editor--focused .editor__tabs {
+    border-color: var(--theme-accent);
+  }
+
+  .monaco-diff-editor-wrapper {
+    height: 100%;
+    position: relative;
+  }
+
+  .monaco-diff-editor {
+    position: unset !important;
+  }
+}

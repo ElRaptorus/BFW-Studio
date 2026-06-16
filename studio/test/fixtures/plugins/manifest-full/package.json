@@ -1,0 +1,90 @@
+{
+  "name": "manifest-full",
+  "displayName": "Manifest Full",
+  "description": "Exercises the complete set of manifest contributions. All contribution types are declared.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Manifest Full",
+    "description": "Exercises the complete set of manifest contributions.",
+    "permissions": [
+      "commands.bpmn"
+    ],
+    "activationEvents": [
+      "onCommand:manifestFull.greet"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "manifestFull.greet",
+          "title": "Greet",
+          "icon": "ph-hand-waving",
+          "category": "Manifest Full"
+        },
+        {
+          "id": "manifestFull.farewell",
+          "title": "Farewell",
+          "category": "Manifest Full"
+        }
+      ],
+      "menus": {
+        "std/application/main": [
+          {
+            "command": "manifestFull.greet",
+            "group": "tools"
+          }
+        ]
+      },
+      "settings": [
+        {
+          "key": "manifestFull.greeting",
+          "type": "string",
+          "default": "Hello from Manifest Full!",
+          "description": "Greeting message."
+        },
+        {
+          "key": "manifestFull.enabled",
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Manifest Full plugin."
+        }
+      ],
+      "keybindings": [
+        {
+          "command": "manifestFull.greet",
+          "key": "ctrl+shift+f11",
+          "mac": "cmd+shift+f11",
+          "when": "*"
+        },
+        {
+          "command": "manifestFull.farewell",
+          "key": "ctrl+alt+f11",
+          "when": "editorFocused"
+        }
+      ],
+      "icons": {
+        "manifestFull/logo": "ph-star"
+      },
+      "panes": [
+        {
+          "id": "manifestFull.sidebar",
+          "title": "Manifest Full",
+          "area": "right",
+          "groupId": "property",
+          "icon": "ph-star",
+          "visibleWhen": {
+            "documentType": "bpmn"
+          }
+        }
+      ],
+      "serviceTaskTypes": [
+        {
+          "implementation": "manifestFull.emailSender",
+          "label": "Email Sender (Test)"
+        }
+      ]
+    }
+  }
+}

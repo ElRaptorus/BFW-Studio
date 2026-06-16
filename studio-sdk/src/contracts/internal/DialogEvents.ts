@@ -1,0 +1,5 @@
+export const EVENT_OPEN_DIALOG = 'EVENT_OPEN_DIALOG';
+export const EVENT_VALIDATED_DIALOG = 'EVENT_VALIDATED_DIALOG';
+export const EVENT_CLOSE_DIALOG = 'EVENT_CLOSE_DIALOG';
+
+export const DIALOG_RESPONSE_CANCEL = 'dialog_cancelled_by_user';

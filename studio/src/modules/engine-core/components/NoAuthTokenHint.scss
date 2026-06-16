@@ -1,0 +1,25 @@
+.engine-no-auth-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--theme-fg-muted);
+  font-size: 13px;
+  text-align: center;
+
+  &__action {
+    padding: 4px 12px;
+    border: 1px solid var(--theme-border);
+    border-radius: 3px;
+    background: var(--theme-btn-secondary-bg);
+    color: var(--theme-btn-secondary-fg);
+    cursor: pointer;
+    font-size: 12px;
+
+    &:hover {
+      background: var(--theme-btn-secondary-hover-bg);
+    }
+  }
+}

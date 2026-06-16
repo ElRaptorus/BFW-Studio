@@ -1,0 +1,21 @@
+.bifrost {
+  .tabs,
+  .tabs__inner {
+    overflow: hidden;
+    display: flex;
+    align-content: stretch;
+    flex: 1;
+  }
+
+  .tabs__inner {
+    overflow-x: auto;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .tabs--over {
+    background: var(--theme-tabs-overflow-bg);
+  }
+}

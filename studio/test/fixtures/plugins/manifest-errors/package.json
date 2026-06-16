@@ -1,0 +1,28 @@
+{
+  "name": "manifest-errors",
+  "displayName": "Manifest Errors",
+  "description": "Tests manifest validation error handling. Has structural errors that must prevent loading.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "contributes": {
+      "commands": [
+        {
+          "title": "Missing ID command"
+        },
+        {
+          "id": "manifestErrors.valid",
+          "title": "This one is valid but won't matter"
+        }
+      ],
+      "keybindings": [
+        {
+          "command": "manifestErrors.badWhen",
+          "key": "ctrl+shift+f10",
+          "when": "invalidCondition"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,46 @@
+.dmn-trace-pane-section {
+  padding: 4px 0;
+
+  &__title {
+    font-weight: 600;
+    font-size: 12px;
+    margin: 8px 0 4px;
+    color: var(--theme-fg-secondary, var(--theme-fg));
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 4px 0;
+
+    th,
+    td {
+      border: 1px solid var(--theme-border);
+      padding: 3px 6px;
+      text-align: left;
+    }
+
+    th {
+      background: var(--theme-surface-inset);
+      font-weight: 600;
+    }
+  }
+
+  &__monospace {
+    font-family: var(--font-monospace, monospace);
+    font-size: 11px;
+    word-break: break-all;
+  }
+
+  &__empty {
+    padding: 8px;
+    color: var(--theme-fg-muted);
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  &__row--coerced {
+    background: var(--theme-validation-warning-bg, rgba(255, 193, 7, 0.08));
+  }
+}

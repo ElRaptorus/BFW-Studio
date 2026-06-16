@@ -1,0 +1,14 @@
+import type { StudioPluginApi } from '@evil/bifrost_fw_sdk';
+
+export async function activate(api: StudioPluginApi): Promise<void> {
+  await api.commands.register('hello', () => {
+    api.notifications.open({
+      type: 'info',
+      content: 'Hello from {{displayName}}!',
+    });
+  });
+}
+
+export async function deactivate(): Promise<void> {
+  // Cleanup resources here
+}

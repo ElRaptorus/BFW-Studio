@@ -1,0 +1,187 @@
+.bifrost.bifrost-theme--light {
+  --color-editor-tab-fragment-color: #000;
+  --color-editor-tab-fragment-backcolor: #9e9e9e;
+  --color-editor-tab-parent-of-fragment-color: #222;
+  --color-editor-tab-parent-of-fragment-backcolor: #bbb;
+}
+
+.bifrost.bifrost-theme--dark {
+  --color-editor-tab-fragment-color: #fff;
+  --color-editor-tab-fragment-backcolor: #777;
+  --color-editor-tab-parent-of-fragment-color: #fff;
+  --color-editor-tab-parent-of-fragment-backcolor: #555;
+}
+
+.bifrost {
+  .tabs--overflow {
+    overflow-x: scroll;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .editor-tab {
+    display: flex;
+    align-items: center;
+    position: relative;
+    float: left;
+    height: 32px;
+  }
+
+  .editor-tab__inner {
+    max-width: 20rem;
+    margin-right: 2px;
+    padding: 2px 8px;
+    padding-right: 2rem;
+    font-size: 0.875rem;
+    background-color: var(--theme-editor-tab-bg);
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    border-radius: 9px 9px 0 0;
+  }
+
+  .editor-tab__inner:hover {
+    background-color: var(--theme-editor-tab-hover-bg);
+  }
+
+  .editor-tab__icon {
+    display: inline-block;
+    width: 1.25rem;
+    text-align: center;
+  }
+
+  .editor-tab__label {
+    margin-left: 8px;
+  }
+
+  .editor-tab--temporary {
+    font-style: italic;
+  }
+
+  .editor-tab-close-icon {
+    width: 2rem;
+    padding: 4px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .editor-tab-close-icon:hover {
+    color: var(--theme-pane-tab-hover-fg);
+  }
+
+  .editor-tab-close-icon__icon-edited {
+    font-size: 0.75rem;
+    opacity: 0.5;
+    color: var(--theme-pane-tab-hover-fg);
+  }
+
+  .editor-tab-close-icon__icon-close,
+  .editor-tab-close-icon__icon-edited {
+    line-height: 1;
+  }
+
+  .editor-tab-close-icon:hover .editor-tab-close-icon__icon-edited {
+    display: none;
+  }
+
+  .editor-tab-close-icon:hover .editor-tab-close-icon__icon-close {
+    display: inherit;
+  }
+
+  .editor-tab--is-parent-of-focused .editor-tab__inner {
+    background: var(--color-editor-tab-parent-of-fragment-backcolor);
+    color: var(--color-editor-tab-parent-of-fragment-color);
+  }
+
+  .editor-tab__close {
+    position: absolute;
+    z-index: 10;
+    right: 2px;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    color: var(--theme-fg-muted);
+    background: transparent;
+  }
+
+  .editor-tab .editor-tab__close {
+    visibility: hidden;
+  }
+
+  .editor-tab--edited .editor-tab-close-icon__icon-close {
+    display: none;
+  }
+
+  .editor-tab--focused-has-same-parent .editor-tab__inner,
+  .editor-tab--parent-is-focused .editor-tab__inner {
+    background: var(--color-editor-tab-fragment-backcolor);
+    color: var(--color-editor-tab-fragment-color);
+  }
+
+  .editor-tab:hover .editor-tab__close,
+  .editor-tab--edited .editor-tab__close,
+  .editor-tab--active .editor-tab__close,
+  .editor-tab--focused .editor-tab__close {
+    visibility: visible;
+  }
+
+  .editor-tab--active .editor-tab__inner:hover,
+  .editor-tab--active .editor-tab__inner {
+    background: var(--theme-editor-tab-active-bg);
+    color: var(--theme-editor-tab-active-fg);
+  }
+
+  .editor-tab--focused .editor-tab__inner:hover,
+  .editor-tab--focused .editor-tab__inner {
+    border-right: 2px solid var(--theme-editor-tab-active-border);
+    border-left: 2px solid var(--theme-editor-tab-active-border);
+    border-top: 2px solid var(--theme-editor-tab-active-border);
+    border-radius: 9px 9px 0 0;
+    box-sizing: border-box;
+    padding-top: 0.5px;
+  }
+
+  .editor-tab--active .editor-tab__close {
+    color: var(--theme-editor-tab-active-fg);
+  }
+
+  .editor-tab--over .editor-tab__inner {
+    background: var(--theme-tabs-overflow-bg);
+  }
+
+  .editor-tab--dragging .editor-tab__inner {
+    opacity: 0.25;
+  }
+
+  .editor-tab--options {
+    display: flex;
+    font-size: 16px;
+  }
+
+  .editor-tab-icon {
+    display: flex;
+    flex-direction: column;
+    width: 26px;
+    font-size: 18px;
+    text-align: center;
+    opacity: 0.5;
+  }
+
+  .editor-tab-icon:hover {
+    opacity: 1;
+  }
+
+  .editor-tab-icon--disabled {
+    display: none;
+  }
+
+  .editor-tab--focused .treeview__icon--ph-file {
+    --icon-primary-color: var(--theme-editor-tab-active-fg);
+  }
+}

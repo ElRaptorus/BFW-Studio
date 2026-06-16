@@ -1,0 +1,219 @@
+.bifrost.bifrost-theme--light {
+  --color-theme-demo-red: var(--color__red--on-light);
+  --color-theme-demo-orange: var(--color__orange--on-light);
+  --color-theme-demo-yellow: var(--color__yellow--on-light);
+  --color-theme-demo-olive: var(--color__olive--on-light);
+  --color-theme-demo-green: var(--color__green--on-light);
+  --color-theme-demo-teal: var(--color__teal--on-light);
+  --color-theme-demo-blue: var(--color__blue--on-light);
+  --color-theme-demo-violet: var(--color__violet--on-light);
+  --color-theme-demo-purple: var(--color__purple--on-light);
+  --color-theme-demo-pink: var(--color__pink--on-light);
+  --color-theme-demo-brown: var(--color__brown--on-light);
+  --color-theme-demo-grey: var(--color__grey--on-light);
+
+  --color-machine-sanctum-icon-primary: #6681a2;
+  --color-machine-sanctum-icon-secondary: #2a812a;
+}
+
+.bifrost.bifrost-theme--dark {
+  --color-theme-demo-red: var(--color__red--on-dark);
+  --color-theme-demo-orange: var(--color__orange--on-dark);
+  --color-theme-demo-yellow: var(--color__yellow--on-dark);
+  --color-theme-demo-olive: var(--color__olive--on-dark);
+  --color-theme-demo-green: var(--color__green--on-dark);
+  --color-theme-demo-teal: var(--color__teal--on-dark);
+  --color-theme-demo-blue: var(--color__blue--on-dark);
+  --color-theme-demo-violet: var(--color__violet--on-dark);
+  --color-theme-demo-purple: var(--color__purple--on-dark);
+  --color-theme-demo-pink: var(--color__pink--on-dark);
+  --color-theme-demo-brown: var(--color__brown--on-dark);
+  --color-theme-demo-grey: var(--color__grey--on-dark);
+
+  --color-machine-sanctum-icon-primary: #99c1f1;
+  --color-machine-sanctum-icon-secondary: #55ff55;
+}
+
+.machine-sanctum__document--tab-icon {
+  --icon-primary-color: var(--color-machine-sanctum-icon-primary);
+  --icon-secondary-color: var(--color-machine-sanctum-icon-secondary);
+  --icon-secondary-opacity: 1;
+}
+
+.machine-sanctum-page,
+.machine-sanctum-subpage,
+.machine-sanctum-theme-demo {
+  flex: 1;
+  padding: 1rem;
+  font-size: 1.1rem;
+
+  user-select: text;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p  {
+    margin-bottom: 1rem;
+  }
+}
+
+.machine-sanctum-theme-demo {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor .machine-sanctum-theme-demo {
+  user-select: text;
+
+  .demo-label {
+    color: var(--color-theme-demo-grey);
+    display: flex;
+    align-self: center;
+    align-items: center;
+    margin: 2rem;
+
+    text-align: center;
+
+    &::before {
+      display: inline;
+      content: 'Tiny Editor';
+    }
+  }
+
+  .demo-code {
+    padding: 1rem;
+    background: #fff;
+    color: #333;
+
+    &::before {
+      display: inline;
+      content: '.editor';
+    }
+  }
+}
+
+.editor--sm .machine-sanctum-theme-demo {
+  .demo-label {
+    color: var(--color-theme-demo-yellow);
+    font-size: 1rem;
+
+    &::before {
+      display: inline;
+      content: 'Small Editor';
+    }
+  }
+}
+
+.editor--md .machine-sanctum-theme-demo {
+  .demo-label {
+    color: var(--color-theme-demo-green);
+    font-size: 1.5rem;
+
+    &::before {
+      display: inline;
+      content: 'Medium Editor';
+    }
+  }
+}
+
+.editor--lg .machine-sanctum-theme-demo {
+  .demo-label {
+    color: var(--color-theme-demo-red);
+    font-size: 2rem;
+
+    &::before {
+      display: inline;
+      content: 'Large Editor';
+    }
+  }
+}
+
+.editor--xl .machine-sanctum-theme-demo {
+  .demo-label {
+    color: var(--color-theme-demo-purple);
+    font-size: 3rem;
+
+    &::before {
+      display: inline;
+      content: 'Xtra-Large Editor';
+    }
+  }
+}
+
+.editor--xxl .machine-sanctum-theme-demo {
+  .demo-label {
+    color: var(--color-theme-demo-violet);
+    font-size: 5rem;
+
+    &::before {
+      display: inline;
+      content: 'Xtra-Xtra-Large Editor';
+    }
+  }
+}
+
+.machine-sanctum-subpage__hero-icon {
+  position: absolute;
+  right: 1rem;
+  bottom: 0;
+  font-size: 10rem;
+  opacity: 0.5;
+}
+
+.machine-sanctum-example__component-wrapper {
+  padding: 2rem;
+  font-size: 1rem;
+  background: #607d8b;
+  border-top-left-radius: 0.2rem;
+  border-top-right-radius: 0.2rem;
+
+  user-select: none;
+
+  .treeview {
+    min-height: 13rem;
+  }
+
+  .notification {
+    margin: 0 auto;
+  }
+}
+
+.machine-sanctum-example__interaction-options {
+  padding: 2rem;
+  text-align: center;
+  background: #546e7a;
+  border-top: 2px solid #37474f;
+  border-bottom-left-radius: 0.2rem;
+  border-bottom-right-radius: 0.2rem;
+}
+
+.machine-sanctum-example__code {
+  max-height: 20rem;
+  max-width: 45rem;
+  padding: 0.5rem;
+  background: #f5f5f5;
+}
+
+.machine-sanctum-example__reset-data {
+  float: right;
+}
+
+.machine-sanctum-example__monaco {
+  height: 90%;
+  width: 100%;
+}
+
+.colorize--test-icon {
+  --icon-primary-color: #795548;
+  --icon-secondary-color: #03a9f4;
+  --icon-secondary-opacity: 1;
+}
+
+.machine-sanctum-editor-title-icon {
+  --icon-primary-color: #795548;
+  --icon-secondary-color: #03a9f4;
+  --icon-secondary-opacity: 1;
+}

@@ -1,0 +1,46 @@
+.engine-state-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+  white-space: nowrap;
+
+  &--running {
+    background-color: var(--theme-engine-ws-badge-running-bg);
+    color: var(--theme-engine-ws-badge-running-fg);
+  }
+
+  &--finished {
+    background-color: var(--theme-engine-ws-badge-finished-bg);
+    color: var(--theme-engine-ws-badge-finished-fg);
+  }
+
+  &--fatal {
+    background-color: var(--theme-engine-ws-badge-fatal-bg);
+    color: var(--theme-engine-ws-badge-fatal-fg);
+  }
+
+  &--aborted {
+    background-color: var(--theme-engine-ws-badge-aborted-bg);
+    color: var(--theme-engine-ws-badge-aborted-fg);
+  }
+
+  &--compensated {
+    background-color: var(--theme-engine-ws-badge-compensated-bg);
+    color: var(--theme-engine-ws-badge-compensated-fg);
+  }
+
+  &--escalated {
+    background-color: var(--theme-engine-ws-badge-escalated-bg);
+    color: var(--theme-engine-ws-badge-escalated-fg);
+  }
+
+  &--errored {
+    background-color: var(--theme-engine-ws-badge-errored-bg);
+    color: var(--theme-engine-ws-badge-errored-fg);
+  }
+}

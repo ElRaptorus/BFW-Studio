@@ -1,0 +1,368 @@
+// ─── DMN Editor themed overrides for dmn-js / diagram-js ──────
+//
+// dmn-js defines its own HSL color palette on .dmn-js-parent and component
+// containers (.dmn-decision-table-container, .dmn-literal-expression-container,
+// .dmn-boxed-expression-container, .dmn-drd-container). All dmn-js component
+// CSS vars reference this palette. By overriding the palette vars scoped to
+// .bifrost, every DMN view automatically inherits the active Studio theme.
+//
+// DRD elements (shapes, connections) share diagram-js infrastructure with BPMN.
+// The existing .djs-* overrides in bpmn.scss apply here too; we only add
+// DRD-specific container and definitions-overlay overrides.
+
+// ─── Shared dmn-js color palette (scoped to Studio root) ─────
+.bifrost .dmn-js-parent {
+  --color-grey-225-10-15: var(--theme-dmn-fg);
+  --color-grey-225-10-35: var(--theme-dmn-fg-muted);
+  --color-grey-225-10-55: var(--theme-dmn-fg-faint);
+  --color-grey-225-10-75: var(--theme-dmn-border);
+  --color-grey-225-10-80: var(--theme-dmn-border);
+  --color-grey-225-10-85: var(--theme-dmn-border-subtle);
+  --color-grey-225-10-90: var(--theme-dmn-surface-alt);
+  --color-grey-225-10-95: var(--theme-dmn-surface);
+  --color-grey-225-10-97: var(--theme-dmn-surface);
+  --color-white: var(--theme-dmn-bg);
+  --color-black: var(--theme-dmn-black);
+  --color-black-opacity-10: var(--theme-dmn-shadow-light);
+  --color-black-opacity-20: var(--theme-dmn-shadow-medium);
+
+  --color-blue-205-100-35: var(--theme-dmn-accent-deep);
+  --color-blue-205-100-45: var(--theme-dmn-accent);
+  --color-blue-205-100-45-opacity-30: var(--theme-dmn-accent-30);
+  --color-blue-205-100-50: var(--theme-dmn-accent-hover);
+  --color-blue-205-100-80: var(--theme-dmn-accent-glow);
+  --color-blue-205-100-95: var(--theme-dmn-accent-subtle);
+
+  --color-green-150-86-44: var(--theme-dmn-green);
+
+  --color-red-360-100-35: var(--theme-dmn-red-deep);
+  --color-red-360-100-45: var(--theme-dmn-red);
+  --color-red-360-100-92: var(--theme-dmn-red-glow);
+  --color-red-360-100-97: var(--theme-dmn-red-subtle);
+}
+
+// ─── DRD diagram-js palette override ────────────────────────
+// diagram-js.css declares color palette variables on .djs-parent
+// with hardcoded HSL defaults. Because .djs-parent is a descendant
+// of .dmn-js-parent, its explicit declarations shadow inherited values.
+// We re-declare the full palette at higher specificity so every
+// diagram-js internal reference resolves to themed values.
+.bifrost .dmn-drd-container .djs-parent {
+  --color-grey-225-10-15: var(--theme-dmn-fg);
+  --color-grey-225-10-35: var(--theme-dmn-fg-muted);
+  --color-grey-225-10-55: var(--theme-dmn-fg-faint);
+  --color-grey-225-10-75: var(--theme-dmn-border);
+  --color-grey-225-10-80: var(--theme-dmn-border);
+  --color-grey-225-10-85: var(--theme-dmn-border-subtle);
+  --color-grey-225-10-90: var(--theme-dmn-surface-alt);
+  --color-grey-225-10-95: var(--theme-dmn-surface);
+  --color-grey-225-10-97: var(--theme-dmn-surface);
+  --color-white: var(--theme-dmn-bg);
+  --color-black: var(--theme-dmn-black);
+  --color-black-opacity-10: var(--theme-dmn-shadow-light);
+  --color-black-opacity-30: var(--theme-dmn-shadow-medium);
+
+  --color-blue-205-100-45: var(--theme-dmn-accent);
+  --color-blue-205-100-45-opacity-30: var(--theme-dmn-accent-30);
+  --color-blue-205-100-50: var(--theme-dmn-accent-hover);
+  --color-blue-205-100-50-opacity-15: var(--theme-dmn-accent-30);
+  --color-blue-205-100-70: var(--theme-dmn-accent-glow);
+  --color-blue-205-100-95: var(--theme-dmn-accent-subtle);
+
+  --color-green-150-86-44: var(--theme-dmn-green);
+
+  --color-red-360-100-40: var(--theme-dmn-red-deep);
+  --color-red-360-100-45: var(--theme-dmn-red);
+  --color-red-360-100-92: var(--theme-dmn-red-glow);
+  --color-red-360-100-97: var(--theme-dmn-red-subtle);
+
+  --canvas-fill-color: var(--theme-diagram-bg);
+
+  --bendpoint-fill-color: var(--theme-diagram-bendpoint-fill);
+  --bendpoint-stroke-color: var(--theme-diagram-bendpoint-stroke);
+
+  --context-pad-entry-background-color: var(--theme-diagram-context-pad-bg);
+  --context-pad-entry-hover-background-color: var(--theme-diagram-context-pad-hover-bg);
+
+  --element-dragger-color: var(--theme-dmn-accent-hover);
+  --element-hover-outline-fill-color: var(--theme-diagram-hover-outline);
+  --element-selected-outline-stroke-color: var(--theme-diagram-selected-outline);
+  --element-selected-outline-secondary-stroke-color: var(--theme-dmn-accent-glow);
+
+  --lasso-fill-color: var(--theme-dmn-accent-30);
+  --lasso-stroke-color: var(--theme-diagram-selected-outline);
+
+  --palette-entry-color: var(--theme-dmn-fg);
+  --palette-entry-hover-color: var(--theme-focus);
+  --palette-entry-selected-color: var(--theme-dmn-accent-hover);
+  --palette-separator-color: var(--theme-dmn-border);
+  --palette-toggle-hover-background-color: var(--theme-dmn-fg-faint);
+  --palette-background-color: var(--theme-diagram-palette-bg);
+  --palette-border-color: var(--theme-diagram-palette-border);
+
+  --popup-header-entry-selected-color: var(--theme-dmn-accent-hover);
+  --popup-header-group-divider-color: var(--theme-dmn-border);
+  --popup-background-color: var(--theme-diagram-popup-bg);
+  --popup-border-color: transparent;
+  --popup-shadow-color: var(--theme-dmn-shadow-medium);
+  --popup-disabled-color: var(--theme-dmn-fg-muted);
+  --popup-description-color: var(--theme-dmn-fg-faint);
+  --popup-no-results-color: var(--theme-dmn-fg-faint);
+  --popup-entry-title-color: var(--theme-dmn-fg-faint);
+  --popup-entry-hover-color: var(--theme-dmn-surface);
+  --popup-search-border-color: var(--theme-dmn-border);
+  --popup-search-focus-border-color: var(--theme-focus);
+  --popup-search-focus-background-color: var(--theme-dmn-accent-subtle);
+
+  --resizer-fill-color: var(--theme-diagram-bendpoint-fill);
+  --resizer-stroke-color: var(--theme-diagram-bendpoint-stroke);
+
+  --search-container-background-color: var(--theme-diagram-popup-bg);
+  --search-shadow-color: var(--theme-dmn-shadow-medium);
+  --search-input-border-color: var(--theme-dmn-border);
+  --search-input-focus-border-color: var(--theme-focus);
+  --search-input-focus-background-color: var(--theme-dmn-accent-subtle);
+  --search-result-hover-background-color: var(--theme-dmn-surface);
+  --search-result-secondary-color: var(--theme-dmn-fg-faint);
+  --search-preselected-background-color: var(--theme-dmn-accent-30);
+
+  --shape-attach-allowed-stroke-color: var(--theme-dmn-accent-hover);
+  --shape-connect-allowed-fill-color: var(--theme-dmn-surface);
+  --shape-drop-allowed-fill-color: var(--theme-dmn-surface);
+  --shape-drop-not-allowed-fill-color: var(--theme-dmn-red-subtle);
+  --shape-resize-preview-stroke-color: var(--theme-dmn-accent-hover);
+
+  --snap-line-stroke-color: var(--theme-dmn-accent-30);
+
+  --space-tool-crosshair-stroke-color: var(--theme-dmn-fg);
+
+  --tooltip-error-background-color: var(--theme-dmn-red-subtle);
+  --tooltip-error-border-color: var(--theme-dmn-red);
+  --tooltip-error-color: var(--theme-dmn-red);
+}
+
+// ─── DRD container canvas background ──────────────────────────
+.bifrost .dmn-drd-container .djs-container {
+  background-color: var(--theme-diagram-bg) !important;
+}
+
+// ─── DRD definitions overlay ──────────────────────────────────
+.bifrost .dmn-drd-container {
+  --dmn-definitions-background-color: var(--theme-dmn-surface);
+  --dmn-definitions-border-color: var(--theme-dmn-border);
+  --dmn-definitions-focus-border-color: var(--theme-dmn-accent);
+  --dmn-definitions-error-color: var(--theme-dmn-red);
+  --dmn-definitions-error-border-color: var(--theme-dmn-red);
+  --dmn-definitions-error-background-color: var(--theme-dmn-red-subtle);
+  --drill-down-overlay-background-color: var(--theme-dmn-accent);
+  --drill-down-overlay-color: var(--theme-dmn-bg);
+}
+
+// ─── Decision table view ──────────────────────────────────────
+.bifrost .dmn-decision-table-container {
+  --decision-table-background-color: var(--theme-dmn-bg);
+  --decision-table-color: var(--theme-dmn-fg);
+  --decision-table-properties-color: var(--theme-dmn-fg);
+  --table-cell-color: var(--theme-dmn-fg);
+  --table-cell-border-color: var(--theme-dmn-border);
+  --table-cell-selected-outline-color: var(--theme-dmn-accent);
+  --table-head-border-color: var(--theme-dmn-fg-muted);
+  --table-head-clause-color: var(--theme-dmn-fg-muted);
+  --table-head-separator-color: var(--theme-dmn-border);
+  --table-head-variable-color: var(--theme-dmn-fg-muted);
+  --table-row-alternative-background-color: var(--theme-dmn-surface);
+  --table-foot-add-rule-border-color: var(--theme-dmn-border);
+  --table-foot-add-rule-color: var(--theme-dmn-fg-faint);
+  --table-foot-add-rule-hover-border-color: var(--theme-dmn-fg);
+  --table-foot-add-rule-hover-color: var(--theme-dmn-fg);
+  --hit-policy-explanation-color: var(--theme-dmn-fg-muted);
+  --view-drd-button-background-color: var(--theme-dmn-surface);
+  --view-drd-button-border-color: var(--theme-dmn-border);
+  --view-drd-button-color: var(--theme-dmn-fg);
+  --view-drd-button-hover-background-color: var(--theme-dmn-surface-alt);
+  --simple-mode-button-color: var(--theme-dmn-fg);
+  --simple-mode-button-background-color: var(--theme-dmn-surface);
+  --simple-mode-button-border-color: var(--theme-dmn-border);
+  --simple-mode-button-box-shadow-color: var(--theme-dmn-shadow-light);
+  --simple-mode-button-disabled-color: var(--theme-dmn-fg-faint);
+  --action-icon-color: var(--theme-dmn-accent);
+  --action-icon-background-color: transparent;
+  --action-icon-hover-background-color: var(--theme-dmn-accent);
+  --action-icon-hover-color: var(--theme-dmn-bg);
+  --add-column-icon-color: var(--theme-dmn-bg);
+  --add-column-icon-background-color: var(--theme-dmn-fg-muted);
+  --dmn-expression-language-background-color: var(--theme-dmn-accent-30);
+  --dmn-expression-language-color: var(--theme-dmn-fg);
+  --dmn-expression-language-hover-background-color: var(--theme-dmn-accent);
+  --drag-and-drop-drag-color: var(--theme-dmn-fg-faint);
+  --drag-and-drop-drop-marker-color: var(--theme-dmn-fg-muted);
+  --powered-by-overlay-background-color: var(--theme-dmn-shadow-medium);
+  --powered-by-overlay-content-background-color: var(--theme-dmn-bg);
+  --powered-by-overlay-content-color: var(--theme-dmn-fg);
+  --powered-by-overlay-content-border-color: var(--theme-dmn-border);
+}
+
+// ─── Decision table controls (context menus, edit buttons) ────
+.bifrost .dmn-decision-table-container {
+  --context-menu-background-color: var(--theme-dmn-bg);
+  --context-menu-border-color: var(--theme-dmn-border);
+  --context-menu-color: var(--theme-dmn-fg);
+  --context-menu-box-shadow-color: var(--theme-dmn-shadow-light);
+  --context-menu-group-entry-border-color: var(--theme-dmn-border);
+  --context-menu-group-entry-disabled-color: var(--theme-dmn-fg-faint);
+  --context-menu-group-entry-hover-background-color: var(--theme-dmn-surface);
+  --edit-button-color: var(--theme-dmn-fg);
+  --edit-button-background-color: var(--theme-dmn-surface);
+  --edit-button-border-color: var(--theme-dmn-border);
+  --edit-button-box-shadow-color: var(--theme-dmn-shadow-light);
+  --edit-button-disabled-color: var(--theme-dmn-fg-faint);
+  --create-inputs-border-color: var(--theme-dmn-border);
+  --create-inputs-color: var(--theme-dmn-fg-muted);
+  --create-inputs-hover-color: var(--theme-dmn-fg);
+  --cell-description-editor-border-color: var(--theme-dmn-fg);
+  --drag-and-drop-handle-color: var(--theme-dmn-fg-faint);
+  --drag-and-drop-handle-hover-color: var(--theme-dmn-fg);
+  --form-control-label-color: var(--theme-dmn-fg);
+  --hint-color: var(--theme-dmn-fg);
+  --allowed-values-placeholder-color: var(--theme-dmn-fg-muted);
+}
+
+// ─── Literal expression view ──────────────────────────────────
+.bifrost .dmn-literal-expression-container {
+  --decision-properties-background-color: var(--theme-dmn-surface);
+  --decision-properties-border-color: var(--theme-dmn-border);
+  --decision-properties-color: var(--theme-dmn-fg);
+  --literal-expression-color: var(--theme-dmn-fg);
+  --literal-expression-properties-border-color: var(--theme-dmn-border);
+  --literal-expression-properties-color: var(--theme-dmn-fg);
+  --textarea-border-color: var(--theme-dmn-border);
+  --textarea-color: var(--theme-dmn-fg);
+  --view-drd-button-background-color: var(--theme-dmn-surface);
+  --view-drd-button-border-color: var(--theme-dmn-border);
+  --view-drd-button-color: var(--theme-dmn-fg);
+  --view-drd-button-hover-background-color: var(--theme-dmn-surface-alt);
+  --powered-by-overlay-background-color: var(--theme-dmn-shadow-medium);
+  --powered-by-overlay-content-background-color: var(--theme-dmn-bg);
+  --powered-by-overlay-content-border-color: var(--theme-dmn-border);
+  --powered-by-overlay-content-color: var(--theme-dmn-fg);
+}
+
+// ─── Boxed expression view ────────────────────────────────────
+.bifrost .dmn-boxed-expression-container {
+  --element-properties-background-color: var(--theme-dmn-surface);
+  --element-properties-border-color: var(--theme-dmn-border);
+  --element-properties-color: var(--theme-dmn-fg);
+  --boxed-expression-color: var(--theme-dmn-fg);
+  --boxed-expression-properties-border-color: var(--theme-dmn-border);
+  --boxed-expression-properties-color: var(--theme-dmn-fg);
+  --textarea-border-color: var(--theme-dmn-border);
+  --textarea-color: var(--theme-dmn-fg);
+  --view-drd-button-background-color: var(--theme-dmn-surface);
+  --view-drd-button-border-color: var(--theme-dmn-border);
+  --view-drd-button-color: var(--theme-dmn-fg);
+  --view-drd-button-hover-background-color: var(--theme-dmn-surface-alt);
+  --powered-by-overlay-background-color: var(--theme-dmn-shadow-medium);
+  --powered-by-overlay-content-background-color: var(--theme-dmn-bg);
+  --powered-by-overlay-content-border-color: var(--theme-dmn-border);
+  --powered-by-overlay-content-color: var(--theme-dmn-fg);
+
+  --context-menu-background-color: var(--theme-dmn-bg);
+  --context-menu-border-color: var(--theme-dmn-border);
+  --context-menu-color: var(--theme-dmn-fg);
+  --context-menu-box-shadow-color: var(--theme-dmn-shadow-light);
+  --context-menu-group-entry-border-color: var(--theme-dmn-border);
+  --context-menu-group-entry-disabled-color: var(--theme-dmn-fg-faint);
+  --context-menu-group-entry-hover-background-color: var(--theme-dmn-surface);
+  --edit-button-color: var(--theme-dmn-fg);
+  --edit-button-background-color: var(--theme-dmn-surface);
+  --edit-button-border-color: var(--theme-dmn-border);
+  --edit-button-box-shadow-color: var(--theme-dmn-shadow-light);
+  --edit-button-disabled-color: var(--theme-dmn-fg-faint);
+}
+
+// ─── Shared dmn-js form controls (scoped to .dmn-js-parent) ──
+.bifrost .dmn-js-parent {
+  --input-border-color: var(--theme-dmn-border);
+  --input-color: var(--theme-dmn-fg);
+  --input-focus-border-color: var(--theme-dmn-accent);
+  --input-focus-box-shadow-color: var(--theme-dmn-accent-glow);
+  --input-focus-box-shadow-inset-color: var(--theme-dmn-border);
+  --separator-color: var(--theme-dmn-border);
+  --select-options-background-color: var(--theme-dmn-bg);
+  --select-options-border-color: var(--theme-dmn-border);
+  --select-options-box-shadow-color: var(--theme-dmn-shadow-light);
+  --select-options-color: var(--theme-dmn-fg);
+  --select-option-selected-color: var(--theme-dmn-accent-deep);
+  --select-option-hover-background-color: var(--theme-dmn-surface);
+}
+
+// ─── Inline FEEL editor syntax highlighting ─────────────────
+// dmn-js instantiates @bpmn-io/feel-editor (CodeMirror 6) for
+// decision table cells, literal expression views, and boxed
+// expression views. The library's built-in highlightTheme uses
+// EditorView.baseTheme() with hardcoded light-mode hex colors,
+// which are unreadable on dark backgrounds. These rules override
+// the syntax classes at higher specificity, binding them to the
+// same --theme-feel-* custom properties used by the Studio SDK's
+// FeelEditor component, so all FEEL editors look consistent.
+.bifrost .dmn-js-parent .cm-editor {
+  background-color: var(--theme-feel-bg);
+  color: var(--theme-feel-fg);
+
+  .cm-content {
+    caret-color: var(--theme-feel-cursor);
+  }
+
+  .cm-cursor {
+    border-left-color: var(--theme-feel-cursor);
+  }
+
+  .variableName {
+    color: var(--theme-feel-variable);
+  }
+  .number {
+    color: var(--theme-feel-number);
+  }
+  .string {
+    color: var(--theme-feel-string);
+  }
+  .bool {
+    color: var(--theme-feel-bool);
+  }
+  .function {
+    color: var(--theme-feel-function);
+  }
+  .control {
+    color: var(--theme-feel-keyword);
+  }
+}
+
+// ─── Caret and editable area visibility ─────────────────────
+// contentEditable divs and native inputs inherit caret-color from
+// the element's `color`. We set explicit caret-color + background on
+// editable areas to guarantee cursor visibility in all themes.
+.bifrost .dmn-js-parent {
+  .textarea,
+  .content-editable,
+  .dms-input,
+  .dms-select,
+  .tjs-cell,
+  [contenteditable='true'] {
+    caret-color: var(--theme-dmn-fg);
+  }
+
+  .textarea {
+    background: var(--theme-dmn-bg);
+  }
+
+  .decision-properties,
+  .element-properties {
+    background-color: var(--theme-dmn-surface);
+  }
+
+  .literal-expression-properties,
+  .element-variable {
+    background: var(--theme-dmn-bg);
+    color: var(--theme-dmn-fg);
+  }
+}

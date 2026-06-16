@@ -1,0 +1,144 @@
+.bifrost {
+  .react-contextmenu {
+    background-color: var(--theme-context-menu-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--theme-context-menu-border);
+    border-top: 1px solid var(--theme-context-menu-border);
+    border-radius: 0.2rem;
+    box-shadow: 0 5px 10px var(--theme-shadow);
+
+    color: var(--theme-context-menu-fg);
+    margin: 2px 0 0;
+    min-width: 160px;
+    outline: none;
+    opacity: 0;
+    padding: 5px 0;
+    pointer-events: none;
+    text-align: left;
+    text-transform: none;
+    font-size: 0.875rem;
+    transition: opacity 250ms ease !important;
+  }
+
+  .react-contextmenu.react-contextmenu--visible {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 9999;
+  }
+
+  .react-contextmenu-item {
+    display: flex;
+    width: 100%;
+    background: 0 0;
+    border: 0;
+    color: var(--theme-context-menu-fg);
+    cursor: pointer;
+    font-weight: 400;
+    line-height: 1.5;
+    padding: 3px 2rem;
+    text-align: inherit;
+    white-space: nowrap;
+  }
+
+  .react-contextmenu-item:hover,
+  .react-contextmenu-item.react-contextmenu-item--active,
+  .react-contextmenu-item.react-contextmenu-item--selected {
+    color: var(--theme-context-menu-hover-fg);
+    background-color: var(--theme-context-menu-hover-bg);
+    border-color: var(--theme-context-menu-hover-bg);
+    text-decoration: none;
+
+    .react-contextmenu-item__keystroke {
+      color: var(--theme-context-menu-hover-fg);
+    }
+  }
+
+  .react-contextmenu-item.react-contextmenu-item--disabled,
+  .react-contextmenu-item.react-contextmenu-item--disabled:hover,
+  .react-contextmenu-item.react-contextmenu-item--disabled.react-contextmenu-item--selected,
+  .react-contextmenu-item.react-contextmenu-item--disabled.react-contextmenu-item--selected:hover {
+    background-color: transparent;
+    border-color: var(--theme-context-menu-separator);
+    color: var(--theme-context-menu-disabled-fg);
+    cursor: default;
+
+    .react-contextmenu-item__keystroke {
+      color: var(--theme-context-menu-disabled-fg);
+    }
+  }
+
+  .react-contextmenu-item--divider {
+    border-bottom: 2px solid var(--theme-context-menu-separator);
+    cursor: inherit;
+    margin-bottom: 3px;
+    padding: 2px 0;
+  }
+
+  .react-contextmenu-item--divider:hover {
+    background-color: transparent;
+    border-color: var(--theme-context-menu-separator);
+  }
+
+  .react-contextmenu-item.react-contextmenu-submenu {
+    padding: 0;
+  }
+
+  .react-contextmenu-item.react-contextmenu-submenu > .react-contextmenu-item {
+    &:after {
+      content: '▶';
+      display: inline-block;
+      position: absolute;
+      right: 1rem;
+      font-size: 0.75rem;
+      color: var(--theme-context-menu-icon-fg);
+      line-height: 1.5rem;
+    }
+    &.react-contextmenu-item--active,
+    &.react-contextmenu-item--selected {
+      &:after {
+        color: var(--theme-context-menu-hover-fg);
+      }
+    }
+  }
+
+  .react-contextmenu-wrapper {
+    display: inline-block;
+  }
+
+  .treeview .react-contextmenu-wrapper {
+    display: block;
+  }
+
+  .react-contextmenu-item__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    margin-left: -1.5rem;
+    margin-right: 0.5rem;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  .react-contextmenu-item__keystroke {
+    display: inline-block;
+    padding-left: 1rem;
+    margin-right: -1.5rem;
+    flex: 1;
+    text-align: right;
+    background: transparent;
+  }
+}
+
+// attached to body
+.react-contextmenu__backdrop {
+  position: fixed;
+  z-index: 9998;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}

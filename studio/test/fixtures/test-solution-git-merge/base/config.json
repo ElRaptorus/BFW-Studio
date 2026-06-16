@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "name": "test-project",
+  "settings": {
+    "autoSave": true,
+    "theme": "default",
+    "language": "en"
+  },
+  "features": {
+    "linting": true,
+    "simulation": false
+  }
+}

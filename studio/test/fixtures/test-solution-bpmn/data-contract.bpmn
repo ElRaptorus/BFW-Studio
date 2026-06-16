@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="data-contract_Definition" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+  <bpmn:extensionElements>
+    <evil:properties>
+      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="85.71428571428571" complianceStatus="valid" computedAtIso="2026-06-14T20:52:16.615Z" schemaVersion="1" maxPoints="7" penaltyPoints="1" rawErrorFindings="0" rawWarningFindings="2" />
+      <evil:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="75" complianceStatus="failed" computedAtIso="2026-06-14T20:51:49.794Z" schemaVersion="1" maxPoints="8" penaltyPoints="2" rawErrorFindings="1" rawWarningFindings="3" />
+    </evil:properties>
+  </bpmn:extensionElements>
+  <bpmn:collaboration id="Collaboration_19cmd8o">
+    <bpmn:participant id="Participant_0px403d" name="Untitled Process" processRef="Process_0jy059b" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_0jy059b" name="Untitled Process" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_0tu4lme">
+      <bpmn:lane id="Lane_1xzf0d3" name="Lane">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>SendTask_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0280hpy</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Start">
+      <bpmn:outgoing>Flow_0f6s3xa</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0f6s3xa" sourceRef="StartEvent_1" targetRef="SendTask_1" />
+    <bpmn:sendTask id="SendTask_1" messageRef="Message_ibbQWz6J">
+      <bpmn:incoming>Flow_0f6s3xa</bpmn:incoming>
+      <bpmn:outgoing>Flow_14bpelq</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="Event_0280hpy">
+      <bpmn:incoming>Flow_14bpelq</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_14bpelq" sourceRef="SendTask_1" targetRef="Event_0280hpy" />
+  </bpmn:process>
+  <bpmn:message id="Message_ibbQWz6J" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_19cmd8o">
+      <bpmndi:BPMNShape id="BPMNShape_16r9nrd" bpmnElement="Participant_0px403d" isHorizontal="true">
+        <dc:Bounds x="130" y="240" width="885" height="346" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1ggiw1p" bpmnElement="Lane_1xzf0d3" isHorizontal="true">
+        <dc:Bounds x="160" y="240" width="855" height="346" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_08xr9td" bpmnElement="StartEvent_1">
+        <dc:Bounds x="217" y="388" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="223" y="431" width="24" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_059d5nk_di" bpmnElement="SendTask_1">
+        <dc:Bounds x="500" y="366" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0280hpy_di" bpmnElement="Event_0280hpy">
+        <dc:Bounds x="852" y="388" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0f6s3xa_di" bpmnElement="Flow_0f6s3xa">
+        <di:waypoint x="253" y="406" />
+        <di:waypoint x="500" y="406" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14bpelq_di" bpmnElement="Flow_14bpelq">
+        <di:waypoint x="600" y="406" />
+        <di:waypoint x="852" y="406" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

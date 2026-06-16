@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 24.3.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Ebene_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="112" height="110"
+	 viewBox="0 0 112 110" style="enable-background:new 0 0 112 110;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;stroke:#626262;stroke-width:2;}
+	.st1{fill:none;}
+	.st2{fill:none;stroke:#626262;}
+</style>
+<g>
+	<g transform="matrix(1 0 0 1 30 -80)">
+		<g>
+			<path class="st0" d="M28,166h-42c-5.5,0-10-4.5-10-10V96c0-5.5,4.5-10,10-10h80c5.5,0,10,4.5,10,10v60c0,5.5-4.5,10-10,10h-2"/>
+		</g>
+		<polyline class="st1" points="28,166 -24,166 -24,86 76,86 76,166 64,166 		"/>
+		<rect x="-30" y="80" class="st1" width="112" height="92"/>
+	</g>
+</g>
+<g>
+	<g transform="matrix(1 0 0 1 82 -18)">
+		<g>
+			<circle class="st2" cx="-6" cy="104" r="18"/>
+			<circle class="st2" cx="-6" cy="104" r="15"/>
+			<path class="st2" d="M-13.5,94.5H1v18h-14.5V94.5z M-11.5,97.5H-1 M-11.5,100.5H-1 M-11.5,103.5H-1 M-11.5,106.5H-1 M-11.5,109.5
+				H-1 M-11.5,112.5H-1"/>
+		</g>
+		<rect x="-24" y="86" class="st1" width="36" height="36"/>
+		<rect x="-30" y="80" class="st1" width="48" height="48"/>
+	</g>
+</g>
+</svg>

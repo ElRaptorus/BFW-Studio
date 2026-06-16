@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definition_1024d886-bd06-47ae-8d28-d4c26c25af79" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
+  <bpmn:collaboration id="Collaboration_1cidyxu" name="">
+    <bpmn:participant id="Participant_0px403d" name="conditional-event" processRef="conditional-event" />
+  </bpmn:collaboration>
+  <bpmn:process id="conditional-event" name="conditional-event" isExecutable="true">
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_1xzf0d3" name="Lane">
+        <bpmn:flowNodeRef>EndEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>UntypedTask_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>ConditionalBoundaryEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>ConditionalIntermediateCatchEvent_1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:endEvent id="EndEvent_1" name="End Event">
+      <bpmn:incoming>Flow_0cepvrn</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:startEvent id="StartEvent_1" name="Start Event">
+      <bpmn:outgoing>Flow_0ci8a3z</bpmn:outgoing>
+      <bpmn:conditionalEventDefinition id="ConditionalEventDefinition_0il2nv4">
+        <bpmn:condition xsi:type="bpmn:tFormalExpression">Condition</bpmn:condition>
+      </bpmn:conditionalEventDefinition>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0cepvrn" sourceRef="UntypedTask_1" targetRef="EndEvent_1" />
+    <bpmn:sequenceFlow id="Flow_0ci8a3z" sourceRef="StartEvent_1" targetRef="ConditionalIntermediateCatchEvent_1" />
+    <bpmn:sequenceFlow id="Flow_0s97ebm" sourceRef="ConditionalIntermediateCatchEvent_1" targetRef="UntypedTask_1" />
+    <bpmn:task id="UntypedTask_1">
+      <bpmn:incoming>Flow_0s97ebm</bpmn:incoming>
+      <bpmn:outgoing>Flow_0cepvrn</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:boundaryEvent id="ConditionalBoundaryEvent_1" name="ConditionalBoundaryEvent_1" attachedToRef="UntypedTask_1">
+      <bpmn:conditionalEventDefinition id="ConditionalEventDefinition_16tmjaf">
+        <bpmn:condition xsi:type="bpmn:tFormalExpression">condotion boundarysadasd</bpmn:condition>
+      </bpmn:conditionalEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:intermediateCatchEvent id="ConditionalIntermediateCatchEvent_1" name="ConditionalIntermediateCatchEvent_1">
+      <bpmn:incoming>Flow_0ci8a3z</bpmn:incoming>
+      <bpmn:outgoing>Flow_0s97ebm</bpmn:outgoing>
+      <bpmn:conditionalEventDefinition id="ConditionalEventDefinition_1yuordo">
+        <bpmn:condition xsi:type="bpmn:tFormalExpression">condition intermediate catch</bpmn:condition>
+      </bpmn:conditionalEventDefinition>
+    </bpmn:intermediateCatchEvent>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1cidyxu">
+      <bpmndi:BPMNShape id="Participant_0px403d_di" bpmnElement="Participant_0px403d" isHorizontal="true">
+        <dc:Bounds x="5" y="4" width="581" height="516" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1xzf0d3_di" bpmnElement="Lane_1xzf0d3" isHorizontal="true">
+        <dc:Bounds x="35" y="4" width="551" height="516" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0eie6q6_di" bpmnElement="EndEvent_1">
+        <dc:Bounds x="503" y="69" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="496" y="105" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1mrtylk_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="83" y="69" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="74" y="105" width="55" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1r7v9cj_di" bpmnElement="UntypedTask_1">
+        <dc:Bounds x="330" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1rsk7a5_di" bpmnElement="ConditionalIntermediateCatchEvent_1">
+        <dc:Bounds x="182" y="222" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="157" y="265" width="87" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1ruo5wq_di" bpmnElement="ConditionalBoundaryEvent_1">
+        <dc:Bounds x="332" y="442" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="310" y="485" width="81" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0cepvrn_di" bpmnElement="Flow_0cepvrn">
+        <di:waypoint x="430" y="420" />
+        <di:waypoint x="467" y="420" />
+        <di:waypoint x="467" y="87" />
+        <di:waypoint x="503" y="87" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ci8a3z_di" bpmnElement="Flow_0ci8a3z">
+        <di:waypoint x="119" y="87" />
+        <di:waypoint x="146" y="87" />
+        <di:waypoint x="146" y="240" />
+        <di:waypoint x="182" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0s97ebm_di" bpmnElement="Flow_0s97ebm">
+        <di:waypoint x="218" y="240" />
+        <di:waypoint x="279" y="240" />
+        <di:waypoint x="279" y="420" />
+        <di:waypoint x="330" y="420" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

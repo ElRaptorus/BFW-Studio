@@ -1,0 +1,109 @@
+.bifrost.bifrost-theme--dark {
+  --color-editor-inspector-treeview-border: #999;
+}
+
+.bifrost.bifrost-theme--light {
+  --color-editor-inspector-treeview-border: #222;
+}
+
+.bifrost {
+  .editor-inspector-selection-inspector__item {
+    position: absolute;
+    top: 0;
+    bottom: 2rem;
+    padding: 0.5rem;
+
+    &.editor-inspector-selection-inspector__item--left {
+      left: 7px;
+      right: 67%;
+    }
+
+    &.editor-inspector-selection-inspector__item--center {
+      left: 33%;
+      right: 33%;
+    }
+
+    &.editor-inspector-selection-inspector__item--right {
+      left: 67%;
+      right: 0%;
+    }
+  }
+
+  .editor-inspector-slideshow__container {
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    bottom: 0%;
+    right: 0%;
+    display: flex;
+    flex-direction: row;
+    overflow-x: scroll;
+  }
+
+  .editor-inspector-slideshow__item {
+    margin-bottom: 1.5rem;
+    padding: 0.5rem;
+    min-width: 350px;
+  }
+
+  .editor-inspector__showroom-monaco-editor {
+    height: 100%;
+  }
+
+  .editor-inspector-slideshow__item__information-header {
+    display: flex;
+    margin-bottom: 5px;
+  }
+
+  .editor-inspector-slideshow__item__information-header--text {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    flex: 1;
+    align-self: center;
+  }
+
+  .editor-inspector-slideshow__item__information-header--controls {
+    display: flex;
+    color: #a5a5a5;
+  }
+
+  .editor-inspector-splitter--container {
+    overflow: auto;
+
+    .splitter-layout {
+      position: initial;
+      overflow: auto;
+
+      .layout-pane {
+        overflow: auto;
+      }
+    }
+
+    .editor-inspector-splitter {
+      .layout-splitter {
+        background-color: var(--color-border-bottom-panel);
+
+        &:hover {
+          background-color: #ccc;
+        }
+      }
+
+      &.layout-changing .layout-splitter {
+        background-color: #2196f3;
+      }
+    }
+  }
+
+  .editor-inspector-splitter > .layout-pane.layout-pane-primary {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .editor-inspector-pane__content--flow-node-props {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: auto;
+  }
+}

@@ -1,0 +1,64 @@
+---
+description: Rules for choosing between dialogs and notifications
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Dialogs vs Notifications
+
+## When to use `bifrost.dialog.open`
+
+Use dialogs **only** when the user must make a decision or provide input before the workflow can continue:
+
+- Confirmation before a destructive/irreversible action (delete, revert, overwrite)
+- Recovery choices after a failure (e.g. "Pull & Retry" vs "Set Upstream" vs "Close")
+- Form input required from the user (commit message, branch name, project settings)
+- Wizard flows with multiple steps
+
+## When to use `bifrost.notifications.open`
+
+Use notifications for:
+
+1. **Errors and warnings** — always show these so the user knows something went wrong.
+2. **Success messages for actions with no immediate visual feedback** — e.g. `git push`, `git pull`, `git sync` (remote operations whose effect is not visible in the current UI).
+3. **Optional or trivial user input** — when the action is not required for the main feature to function (e.g. suggesting a `.gitignore` file). Use the notification's `actions` array and response callback to collect the user's choice without blocking the UI.
+
+```typescript
+bifrost.notifications.open({
+  type: 'error',
+  content: `Push failed: ${error?.message ?? String(error)}`,
+  source: 'My Module',
+});
+```
+
+## When NOT to show success notifications
+
+Do **not** show success notifications when the action produces an **immediate, visible effect** in the UI. Examples:
+
+- `git commit` — file explorer badges update, Git Pane clears staged files
+- `git stash` / `git stash apply` — file explorer decorations and Git Pane contents update instantly
+- `switch branch` / `create branch` — status bar updates, file explorer decorations change
+- Stage / unstage — files move between sections in the Git Pane
+- Revert — file decorations disappear, editor content changes
+
+A success notification in these cases is visual noise. It interrupts the user's flow without conveying new information and trains users to dismiss notifications reflexively — reducing the effectiveness of the ones that matter (errors, warnings).
+
+**Rule of thumb**: If the user can see the result of their action by looking at the UI they are already interacting with, skip the success notification.
+
+**Key tests**:
+- If the dialog has only a single "Close" or "OK" button with no side effects, it should be a notification.
+- If the user input is for something optional (the feature works fine without it), it should be a notification with action buttons, not a modal dialog.
+
+## Startup Timing Constraint
+
+Dialogs **cannot** be displayed before the Studio UI is fully mounted. Any `bifrost.dialog.open` call that runs during module `onLoad` (before the renderer is ready) will silently queue a dialog that never appears — blocking the dialog queue and freezing all future dialog interactions.
+
+**Rule**: If a module needs to show a dialog during startup, wrap the call in the `ready` event:
+
+```typescript
+bifrost.events.on('ready', () => {
+  // safe to open dialogs here
+});
+```
+
+This applies to any code path reachable from `onLoad` or `onActivate`.

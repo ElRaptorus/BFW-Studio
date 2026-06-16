@@ -1,0 +1,127 @@
+/*
+ * Bifrost Forge World — Webview Theme Tokens
+ *
+ * These CSS custom properties are automatically injected into plugin iframes
+ * by the Studio's theming bridge at runtime. You do NOT need to import this
+ * file — it is a **documentation-only reference** so plugin developers can
+ * see which tokens are available and what they look like.
+ *
+ * How it works
+ * ────────────
+ * 1. The Studio extracts all `--theme-*` custom properties from the active
+ *    theme and sends them to every plugin iframe via `postMessage`.
+ * 2. The bridge script (`studio-bridge.js`, included via `<script src="/studio-bridge.js"></script>`) injects
+ *    them as `:root { --theme-*: value; }` inside the iframe's `<head>`.
+ * 3. The bridge also sets `data-theme="light"` or `data-theme="dark"` on the
+ *    iframe's `<html>` element. You can use `[data-theme="light"]` selectors
+ *    for theme-specific overrides.
+ *
+ * Usage in your plugin CSS
+ * ────────────────────────
+ *   body {
+ *     background: var(--theme-editor-bg);
+ *     color: var(--theme-fg);
+ *   }
+ *
+ * Every `var(--theme-*)` usage should include a sensible fallback value for
+ * the brief moment before the bridge applies the tokens:
+ *
+ *   body {
+ *     color: var(--theme-fg, #cdcdcd);
+ *   }
+ *
+ * Detecting theme type from JavaScript
+ * ─────────────────────────────────────
+ *   const api = window.acquireStudioApi();
+ *   const themeType = api.getThemeType();           // 'light' | 'dark'
+ *   // or read the attribute directly:
+ *   document.documentElement.getAttribute('data-theme');
+ *
+ * Observing live theme changes
+ * ────────────────────────────
+ *   const observer = new MutationObserver(() => {
+ *     const theme = document.documentElement.getAttribute('data-theme');
+ *     // re-render if needed
+ *   });
+ *   observer.observe(document.documentElement, {
+ *     attributes: true,
+ *     attributeFilter: ['data-theme'],
+ *   });
+ */
+
+/* ── Core palette ──────────────────────────────────────────────────
+ * These are the most commonly used tokens. They cover foreground,
+ * background, borders, and accent colors.
+ */
+:root {
+  --theme-fg: #cdcdcd;
+  --theme-fg-muted: #999999;
+  --theme-fg-placeholder: #808080;
+  --theme-fg-on-accent: #e2e2e2;
+
+  --theme-editor-bg: #2f2f2f;
+  --theme-sidebar-bg: #252526;
+
+  --theme-border: #5d5d5d;
+  --theme-border-subtle: #2a2a2a;
+
+  --theme-accent: #33609a;
+  --theme-focus: #5d90c3;
+  --theme-link: #5388c1;
+
+  --theme-success: #4caf50;
+  --theme-warning: #fb8c00;
+  --theme-error: #f44336;
+  --theme-info: #2196f3;
+}
+
+/* ── Surfaces ──────────────────────────────────────────────────────
+ * Layered surface tokens for cards, panels, inputs, and overlays.
+ */
+:root {
+  --theme-surface-primary: #323232;
+  --theme-surface-elevated: #444444;
+  --theme-surface-inset: #1d1d1d;
+}
+
+/* ── Inputs ────────────────────────────────────────────────────────
+ * For <input>, <textarea>, and other form controls.
+ */
+:root {
+  --theme-input-bg: #3c3c3c;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────
+ * Use these for custom buttons inside the iframe.
+ */
+:root {
+  --theme-button-bg: rgba(255, 255, 255, 0.06);
+  --theme-button-hover-bg: rgba(255, 255, 255, 0.1);
+  --theme-button-active-bg: rgba(255, 255, 255, 0.14);
+}
+
+/* ── Lists & items ─────────────────────────────────────────────────
+ * Hover and selection states for list-like UI.
+ */
+:root {
+  --theme-list-hover-bg: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Scrollbars ────────────────────────────────────────────────────
+ * WebKit scrollbar theming tokens. Apply them like:
+ *
+ *   ::-webkit-scrollbar-track { background: var(--theme-scrollbar-track); }
+ *   ::-webkit-scrollbar-thumb { background: var(--theme-scrollbar-thumb); }
+ */
+:root {
+  --theme-scrollbar-track: transparent;
+  --theme-scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --theme-scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Text styling ──────────────────────────────────────────────────
+ * Additional text-related tokens.
+ */
+:root {
+  --theme-text-primary: #cdcdcd;
+}

@@ -1,0 +1,106 @@
+.engine-dashboard {
+  padding: 16px;
+  overflow: auto;
+  height: 100%;
+}
+
+.engine-dashboard__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: var(--theme-validation-error-bg);
+  border: 1px solid var(--theme-validation-error-border);
+  border-radius: 4px;
+  color: var(--theme-validation-error-fg);
+}
+
+.engine-dashboard__loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--theme-fg-muted);
+}
+
+.engine-dashboard__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.engine-dashboard-card {
+  border: 1px solid var(--theme-card-border);
+  border-radius: 6px;
+  background: var(--theme-card-bg);
+  overflow: hidden;
+}
+
+.engine-dashboard-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid var(--theme-card-border);
+  background: var(--theme-surface-secondary);
+  color: var(--theme-fg);
+}
+
+.engine-dashboard-card__body {
+  padding: 10px 14px;
+}
+
+.engine-dashboard-card__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.engine-dashboard-card__row-label {
+  color: var(--theme-fg-muted);
+}
+
+.engine-dashboard-card__row-value {
+  font-weight: 500;
+  color: var(--theme-fg);
+}
+
+.engine-dashboard__muted {
+  font-size: 12px;
+  color: var(--theme-fg-muted);
+  font-style: italic;
+}
+
+.engine-dashboard-hero {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-card-border);
+}
+
+.engine-dashboard-hero--healthy {
+  background: var(--theme-engine-ws-health-ok-bg);
+}
+
+.engine-dashboard-hero--degraded {
+  background: var(--theme-engine-ws-health-warn-bg);
+}
+
+.engine-dashboard-hero--critical {
+  background: var(--theme-engine-ws-health-critical-bg);
+}
+
+.engine-dashboard-hero--unknown {
+  background: var(--theme-surface-inset);
+}
+
+.engine-dashboard-hero__description {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-fg);
+}

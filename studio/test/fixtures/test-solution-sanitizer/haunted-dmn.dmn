@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions
+  xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+  xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+  xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+  xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+  id="Definitions_haunted"
+  name="Haunted DMN"
+  namespace="https://evilengine.dev/schema/dmn/haunted">
+
+  <!-- Unreferenced import: never used by any requirement href -->
+  <import id="Import_unused" name="UnusedImport" namespace="https://example.com/unused-model" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+
+  <!-- Unreferenced ItemDefinition: no typeRef anywhere references this -->
+  <itemDefinition id="ItemDef_orphan" name="tOrphanType">
+    <typeRef>string</typeRef>
+  </itemDefinition>
+
+  <!-- ItemDefinition that IS referenced (control: should NOT be flagged) -->
+  <itemDefinition id="ItemDef_used" name="tUsedType">
+    <typeRef>number</typeRef>
+  </itemDefinition>
+
+  <!-- Visible Decision (control: should NOT be flagged) -->
+  <decision id="Decision_visible" name="Visible Decision">
+    <variable id="Var_visible" name="visibleResult" typeRef="tUsedType" />
+    <informationRequirement id="IR_visible">
+      <requiredInput href="#InputData_visible" />
+    </informationRequirement>
+    <literalExpression id="LE_visible">
+      <text>inputValue * 2</text>
+    </literalExpression>
+  </decision>
+
+  <!-- Shapeless Decision: exists in model but has NO DMNShape in DI -->
+  <decision id="Decision_ghost" name="Ghost Decision">
+    <variable id="Var_ghost" name="ghostResult" />
+    <literalExpression id="LE_ghost">
+      <text>"boo"</text>
+    </literalExpression>
+  </decision>
+
+  <!-- Shapeless InputData: exists in model but has NO DMNShape in DI -->
+  <inputData id="InputData_ghost" name="Ghost Input">
+    <variable id="Var_ghost_input" name="ghostInput" typeRef="string" />
+  </inputData>
+
+  <!-- Visible InputData (control: should NOT be flagged) -->
+  <inputData id="InputData_visible" name="Visible Input">
+    <variable id="Var_visible_input" name="inputValue" typeRef="number" />
+  </inputData>
+
+  <!-- Decision with a dangling requirement: points to a non-existent element -->
+  <decision id="Decision_dangling" name="Dangling Refs Decision">
+    <variable id="Var_dangling" name="danglingResult" />
+    <informationRequirement id="IR_dangling">
+      <requiredDecision href="#Decision_does_not_exist" />
+    </informationRequirement>
+    <literalExpression id="LE_dangling">
+      <text>"dangling"</text>
+    </literalExpression>
+  </decision>
+
+  <!-- Element with empty extensionElements -->
+  <decision id="Decision_empty_ext" name="Empty Extensions Decision">
+    <extensionElements />
+    <variable id="Var_empty_ext" name="emptyExtResult" />
+    <literalExpression id="LE_empty_ext">
+      <text>"clean me"</text>
+    </literalExpression>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_1">
+      <!-- Shape for visible Decision -->
+      <dmndi:DMNShape id="Shape_Decision_visible" dmnElementRef="Decision_visible">
+        <dc:Bounds x="300" y="100" width="180" height="80" />
+      </dmndi:DMNShape>
+
+      <!-- Shape for visible InputData -->
+      <dmndi:DMNShape id="Shape_InputData_visible" dmnElementRef="InputData_visible">
+        <dc:Bounds x="310" y="260" width="160" height="60" />
+      </dmndi:DMNShape>
+
+      <!-- Shape for dangling refs decision -->
+      <dmndi:DMNShape id="Shape_Decision_dangling" dmnElementRef="Decision_dangling">
+        <dc:Bounds x="550" y="100" width="180" height="80" />
+      </dmndi:DMNShape>
+
+      <!-- Shape for empty extensions decision -->
+      <dmndi:DMNShape id="Shape_Decision_empty_ext" dmnElementRef="Decision_empty_ext">
+        <dc:Bounds x="550" y="260" width="180" height="80" />
+      </dmndi:DMNShape>
+
+      <!-- Edge for visible requirement -->
+      <dmndi:DMNEdge id="Edge_IR_visible" dmnElementRef="IR_visible">
+        <di:waypoint x="390" y="260" />
+        <di:waypoint x="390" y="180" />
+      </dmndi:DMNEdge>
+
+      <!-- NOTE: Decision_ghost and InputData_ghost intentionally have NO shapes -->
+
+      <!-- Zombie Shape: dmnElementRef points to a non-existent element -->
+      <dmndi:DMNShape id="Shape_zombie" dmnElementRef="Element_that_was_deleted">
+        <dc:Bounds x="100" y="100" width="180" height="80" />
+      </dmndi:DMNShape>
+
+      <!-- Zombie Edge: dmnElementRef points to a non-existent element -->
+      <dmndi:DMNEdge id="Edge_zombie" dmnElementRef="Requirement_that_was_deleted">
+        <di:waypoint x="190" y="180" />
+        <di:waypoint x="300" y="140" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

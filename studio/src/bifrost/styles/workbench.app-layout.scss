@@ -1,0 +1,73 @@
+.bifrost {
+  .app-layout {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 100%;
+    height: 100%;
+  }
+
+  .app-layout__panes-left--files {
+    margin-right: 2px;
+  }
+
+  .app-layout__panes-left > .pane,
+  .app-layout__panes-left > .pane > .pane__inner {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-layout__main {
+    flex: 1 100%;
+  }
+
+  .app-layout__column {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    > *:last-child {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
+  .app-layout__center-content {
+    position: relative;
+  }
+
+  .app-layout__splitter-layout--with-status-bar {
+    padding-bottom: 20px;
+  }
+
+  .app-layout__panes-left,
+  .app-layout__panes-right {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .app-layout__full-height-pane {
+    height: 100%;
+  }
+
+  .app-layout__open-editors-pane {
+    max-height: 25%;
+  }
+
+  .app-layout__solution-pane {
+    overflow: hidden;
+    max-height: 100%;
+  }
+
+  .app-layout__connections-pane {
+    overflow: hidden;
+    flex: 1 1 25% !important;
+  }
+
+  .app-layout__connections-pane--collapsed {
+    max-height: 31px;
+  }
+}

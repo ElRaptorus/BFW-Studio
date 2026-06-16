@@ -1,0 +1,12 @@
+{
+  "name": "lifecycle-plugin",
+  "version": "2.0.0",
+  "displayName": "Lifecycle Plugin",
+  "description": "Tracks activation and deactivation events.",
+  "author": "Bifrost Forge World Tests (https://example.com)",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "permissions": []
+  }
+}

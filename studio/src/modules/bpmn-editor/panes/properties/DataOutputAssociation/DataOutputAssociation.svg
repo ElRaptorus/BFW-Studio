@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- created with bpmn-js / http://bpmn.io -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink" width="267" height="92" viewBox="-421 -51 267 92" version="1.1">
+    <defs>
+        <marker id="association-end-none-#626262-5j2pxwi07j1i7nt5tkc9qv1lc" viewBox="0 0 20 20" refX="12" refY="10" markerWidth="10" markerHeight="10" orient="auto">
+            <path d="M 1 5 L 11 10 L 1 15" style="fill: none; stroke-width: 1.5px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: #626262;"/>
+        </marker>
+    </defs>
+    <g class="djs-group">
+        <g class="djs-element djs-shape" data-element-id="DataStoreReference_18l1py0" style="display: block;" transform="matrix(1 0 0 1 -415 -35)">
+            <g class="djs-visual">
+                <path d="m  0,6.65 l  0,36.885245901639344 c  1.639344262295082,8.196721311475411 47.540983606557376,8.196721311475411  49.18032786885246,0 l  0,-36.885245901639344 c -1.639344262295082,-8.196721311475411 -47.540983606557376,-8.196721311475411 -49.18032786885246,0c  1.639344262295082,8.196721311475411 47.540983606557376,8.196721311475411  49.18032786885246,0 m  -49.18032786885246,5.737704918032787c  1.639344262295082,8.196721311475411 47.540983606557376,8.196721311475411 49.18032786885246,0m  -49.18032786885246,5.737704918032787c  1.639344262295082,8.196721311475411 47.540983606557376,8.196721311475411  49.18032786885246,0" style="fill: none; stroke-width: 2px; stroke: #626262; fill-opacity: 0.95;"/>
+            </g>
+            <rect class="djs-hit djs-hit-all" x="0" y="0" width="50" height="50" style="fill: none; stroke-opacity: 0; stroke: none; stroke-width: 15px;"/>
+            <rect x="-6" y="-6" width="62" height="62" class="djs-outline" style="fill: none;"/>
+        </g>
+    </g>
+    <g class="djs-group">
+        <g class="djs-element djs-shape" data-element-id="Activity_1h453h6" style="display: block;" transform="matrix(1 0 0 1 -260 -45)">
+            <g class="djs-visual">
+                <rect x="0" y="0" width="100" height="80" rx="10" ry="10" style="stroke: #626262; stroke-width: 2px; fill: none; fill-opacity: 0.95;"/>
+                <text lineHeight="1.2" class="djs-label" style="font-family: Arial, sans-serif; font-size: 12px; font-weight: normal; fill: #626262;">
+                    <tspan x="50" y="43.599999999999994"/>
+                </text>
+            </g>
+            <rect class="djs-hit djs-hit-all" x="0" y="0" width="100" height="80" style="fill: none; stroke-opacity: 0; stroke: none; stroke-width: 15px;"/>
+            <rect x="-6" y="-6" width="112" height="92" class="djs-outline" style="fill: none;"/>
+        </g>
+    </g>
+    <g class="djs-group">
+        <g class="djs-element djs-connection" data-element-id="DataOutputAssociation_07u2sfw" style="display: block;">
+            <g class="djs-visual">
+                <polyline points="-260,-5 -365,-5 " style="fill: none; stroke: #626262; stroke-width: 2px; stroke-dasharray: 0.5, 5; stroke-linecap: round; stroke-linejoin: round; marker-end: url('#association-end-none-#626262-5j2pxwi07j1i7nt5tkc9qv1lc');"/>
+            </g>
+            <polyline points="-260,-5 -365,-5 " class="djs-hit djs-hit-stroke" style="fill: none; stroke-opacity: 0; stroke: none; stroke-width: 15px;"/>
+            <rect x="-371" y="-11" width="117" height="12" class="djs-outline" style="fill: none;"/>
+        </g>
+    </g>
+</svg>

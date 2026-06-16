@@ -1,0 +1,439 @@
+// Bifrost Day — frosty ice-blue light theme. Backgrounds carry a subtle icy glow,
+// text has a dark navy tint, borders and accents are crisp arctic blue.
+// Every token defined here MUST also be defined in theme.dark.scss.
+
+.bifrost.bifrost-theme--light {
+  // ─── Base ───────────────────────────────────────────
+  --theme-bg: #d0dce8;
+  --theme-fg: #0e1826;
+  --theme-fg-secondary: #283850;
+  --theme-fg-muted: #5c78a0;
+  --theme-fg-placeholder: #7490b0;
+  --theme-fg-on-accent: #fff;
+  --theme-border: #b4c8dc;
+  --theme-border-subtle: #dae4f0;
+  --theme-focus: #4088c4;
+  --theme-accent: #4088c4;
+  --theme-link: #3678b8;
+  --theme-shadow: rgba(15, 40, 80, 0.18);
+
+  // ─── Semantic Icon Colors ──────────────────────────
+  --theme-icon-red: #c93030;
+  --theme-icon-orange: #d46818;
+  --theme-icon-yellow: #c09008;
+  --theme-icon-olive: #8aa010;
+  --theme-icon-green: #1a9a35;
+  --theme-icon-teal: #0095a5;
+  --theme-icon-blue: #2a76b8;
+  --theme-icon-violet: #5a2eb0;
+  --theme-icon-purple: #8c28aa;
+  --theme-icon-pink: #be2c7e;
+  --theme-icon-brown: #886050;
+  --theme-icon-grey: #607890;
+  --theme-icon-gold: #a07608;
+
+  // ─── Surfaces ──────────────────────────────────────
+  --theme-surface-primary: #e4edf6;
+  --theme-surface-secondary: #dce6f2;
+  --theme-surface-elevated: #ecf2f9;
+  --theme-surface-canvas: #e4edf6;
+  --theme-surface-inset: #d2dced;
+  --theme-surface-backdrop: #cadae8;
+
+  // ─── Scrollbar ─────────────────────────────────────
+  --theme-scrollbar-thumb: rgba(40, 70, 110, 0.25);
+  --theme-scrollbar-track: transparent;
+
+  // ─── Splitter ──────────────────────────────────────
+  --theme-splitter: #b4c8dc;
+  --theme-splitter-hover: #9cb4cc;
+  --theme-splitter-active: #4088c4;
+
+  // ─── Menu Bar ──────────────────────────────────────
+  --theme-menu-bar-bg: #e4edf6;
+  --theme-menu-bar-fg: #0e1826;
+  --theme-menu-bar-hover-bg: rgba(30, 60, 100, 0.07);
+  --theme-menu-bar-active-bg: rgba(30, 60, 100, 0.12);
+
+  // ─── Status Bar ────────────────────────────────────
+  --theme-status-bar-bg: #4088c4;
+  --theme-status-bar-fg: #fff;
+  --theme-status-bar-border: #b4c8dc;
+  --theme-status-bar-solution-badge-bg: rgba(255, 255, 255, 0.18);
+  --theme-status-bar-solution-badge-hover-bg: rgba(255, 255, 255, 0.28);
+
+  // ─── Editor Tabs ───────────────────────────────────
+  --theme-editor-tab-bg: #dce6f2;
+  --theme-editor-tab-hover-bg: #d4dee8;
+  --theme-editor-tab-active-bg: #7aa0c4;
+  --theme-editor-tab-active-fg: #fff;
+  --theme-editor-tab-active-border: #4088c4;
+
+  // ─── Editor Toolbar ────────────────────────────────
+  --theme-editor-toolbar-bg: #d4dee8;
+  --theme-editor-toolbar-focused-bg: #cdd8e4;
+  --theme-editor-toolbar-fg: #283850;
+  --theme-editor-toolbar-hover-bg: rgba(30, 60, 100, 0.08);
+  --theme-editor-toolbar-border: #b4c8dc;
+  --theme-editor-toolbar-icon: #4088c4;
+  --theme-editor-toolbar-icon-duotone-primary: #685040;
+  --theme-editor-toolbar-icon-duotone-secondary: #4088c4;
+
+  // ─── Editor Content ────────────────────────────────
+  --theme-editor-bg: #e4edf6;
+  --theme-editor-canvas-bg: #d4dee8;
+  --theme-editor-content-border: #b4c8dc;
+  --theme-editor-loading-error-bg: #f8e4e4;
+  --theme-editor-loading-hint-bg: #f8ecd8;
+
+  // ─── Editor Title ──────────────────────────────────
+  --theme-editor-title-icon-bg: #c0d0e0;
+  --theme-editor-title-icon-warning-bg: var(--theme-icon-orange);
+  --theme-editor-title-icon-warning-fg: #fff;
+
+  // ─── Pane ──────────────────────────────────────────
+  --theme-pane-bg: #e4edf6;
+  --theme-pane-header-bg: #dce6f2;
+  --theme-pane-header-collapsed-bg: #d2dced;
+  --theme-pane-tab-bg: #e4edf6;
+  --theme-pane-tab-active-bg: #d2dced;
+  --theme-pane-tab-fg: #4c6a88;
+  --theme-pane-tab-hover-fg: #0e1826;
+  --theme-pane-tab-active-fg: #0e1826;
+  --theme-pane-group-tab-hover-bg: #d4dee8;
+  --theme-pane-group-tab-selected-bg: #94b0cc;
+  --theme-pane-divider: #b4c8dc;
+  --theme-pane-item-bg: #dce6f2;
+  --theme-pane-item-hover-bg: #d4dee8;
+
+  // ─── Tree View ─────────────────────────────────────
+  --theme-tree-bg: #e4edf6;
+  --theme-tree-fg: #0e1826;
+  --theme-tree-hover-bg: #d4dee8;
+  --theme-tree-selected-bg: #acc8e4;
+  --theme-tree-selected-fg: #0a1420;
+  --theme-tree-section-bg: #d2dced;
+  --theme-tree-section-fg: #0e1826;
+  --theme-tree-highlight-bg: rgba(64, 136, 196, 0.3);
+  --theme-tree-highlight-fg: #0a1420;
+  --theme-tree-icon-folder: #8a9e78;
+
+  // ─── Buttons ───────────────────────────────────────
+  --theme-btn-fg: #283850;
+  --theme-btn-hover-fg: #0e1826;
+  --theme-btn-primary-bg: #4088c4;
+  --theme-btn-primary-fg: #fff;
+  --theme-btn-secondary-bg: #6a8098;
+  --theme-btn-secondary-fg: #fff;
+  --theme-btn-secondary-hover-bg: #5a7088;
+  --theme-btn-danger-bg: #c93030;
+  --theme-btn-danger-fg: #fff;
+  --theme-btn-danger-border: #c93030;
+  --theme-btn-info-bg: #28889a;
+  --theme-btn-info-fg: #fff;
+
+  // ─── Dialog Buttons ────────────────────────────────
+  --theme-dialog-btn-primary-bg: #4088c4;
+  --theme-dialog-btn-primary-fg: #fff;
+  --theme-dialog-btn-dangerous-bg: #c93030;
+  --theme-dialog-btn-dangerous-fg: #fff;
+  --theme-dialog-btn-secondary-bg: #6a8098;
+  --theme-dialog-btn-secondary-fg: #fff;
+  --theme-dialog-btn-secondary-border: #6a8098;
+
+  // ─── Form Controls ─────────────────────────────────
+  --theme-input-bg: #ecf2f9;
+  --theme-input-fg: #0e1826;
+  --theme-input-border: #acc0d4;
+  --theme-input-placeholder: #7490b0;
+  --theme-input-disabled-bg: #d4dee8;
+  --theme-input-disabled-fg: #7490b0;
+  --theme-input-focus-shadow: rgba(64, 136, 196, 0.25);
+  --theme-select-bg: #ecf2f9;
+  --theme-select-fg: #0e1826;
+  --theme-select-border: #acc0d4;
+
+  // ─── Table ─────────────────────────────────────────
+  --theme-table-bg: #e4edf6;
+  --theme-table-fg: #0e1826;
+  --theme-table-border: #b4c8dc;
+  --theme-table-header-bg: #e4edf6;
+  --theme-table-hover-bg: #d4dee8;
+  --theme-table-active-bg: #bcd4f0;
+  --theme-table-child-bg: #dce6f2;
+  --theme-table-row-highlight-bg: rgba(30, 60, 100, 0.08);
+  --theme-table-row-highlight-fg: #060e18;
+  --theme-table-options-fg: #283850;
+  --theme-table-options-hover-fg: #0a1420;
+
+  // ─── Quick Jump ────────────────────────────────────
+  --theme-quick-jump-bg: #ecf2f9;
+  --theme-quick-jump-shadow: rgba(15, 40, 80, 0.2);
+  --theme-quick-jump-input-bg: #ecf2f9;
+  --theme-quick-jump-input-border: #acc0d4;
+  --theme-quick-jump-input-fg: #0e1826;
+  --theme-quick-jump-entry-fg: #0e1826;
+  --theme-quick-jump-hover-bg: #c4d8f0;
+  --theme-quick-jump-hover-fg: #0e1826;
+  --theme-quick-jump-focused-bg: #4088c4;
+  --theme-quick-jump-focused-fg: #ffffff;
+  --theme-quick-jump-badge-fg: #4088c4;
+
+  // ─── Modal / Dialog ────────────────────────────────
+  --theme-modal-bg: #e4edf6;
+  --theme-modal-fg: #0e1826;
+  --theme-modal-border: #b4c8dc;
+  --theme-modal-close-fg: #4c6a88;
+
+  // ─── Dropdown / Context Menu ───────────────────────
+  --theme-dropdown-bg: #ecf2f9;
+  --theme-dropdown-fg: #0e1826;
+  --theme-dropdown-hover-bg: #d4dee8;
+  --theme-dropdown-item-fg: #0e1826;
+  --theme-dropdown-item-hover-fg: #0a1420;
+  --theme-dropdown-disabled-fg: #7490b0;
+  --theme-dropdown-divider: #b4c8dc;
+
+  // ─── Notification ──────────────────────────────────
+  --theme-notification-bg: #ecf2f9;
+  --theme-notification-container-bg: #dce6f2;
+  --theme-notification-header-bg: #d4dee8;
+  --theme-notification-header-fg: #4c6a88;
+  --theme-notification-close-fg: #4c6a88;
+  --theme-notification-option-icon-fg: #0e1826;
+
+  // ─── Card ──────────────────────────────────────────
+  --theme-card-bg: #e4edf6;
+  --theme-card-border: #b4c8dc;
+  --theme-card-footer-bg: #dce6f2;
+
+  // ─── Start Page ──────────────────────────────────
+  --theme-startpage-hero-border: #8ab0d8;
+  --theme-startpage-hero-hover-bg: #dce6f2;
+  --theme-startpage-hero-hover-border: #5a90c0;
+  --theme-startpage-hero-icon-bg: #d2dced;
+  --theme-startpage-flavor-fg: #5a90c0;
+  --theme-startpage-separator: #b4c8dc;
+
+  // ─── Keystroke ─────────────────────────────────────
+  --theme-keystroke-bg: #d4dee8;
+  --theme-keystroke-fg: #7490b0;
+
+  // ─── Misc ──────────────────────────────────────────
+  --theme-highlight-bg: var(--theme-icon-yellow);
+  --theme-pre-bg: #dce6f2;
+  --theme-pre-fg: #0e1826;
+  --theme-list-group-bg: #e4edf6;
+  --theme-list-group-fg: #0e1826;
+  --theme-recent-file-bg: #dce6f2;
+  --theme-layer-bg: #d2dced;
+  --theme-search-result-bg: #d2dced;
+  --theme-squared-icon-bg: #d2dced;
+
+  // ─── Validation ────────────────────────────────────
+  --theme-validation-error-bg: #f8e4e4;
+  --theme-validation-error-border: #c93030;
+  --theme-validation-error-shadow: rgba(201, 48, 48, 0.25);
+  --theme-validation-success-fg: #1a9a35;
+  --theme-validation-error-fg: #c93030;
+  --theme-search-result-highlight-bg: #e8d4a0;
+  --theme-search-result-highlight-border: #c89820;
+
+  // ─── React Select ──────────────────────────────────
+  --theme-react-select-control-bg: #ecf2f9;
+  --theme-react-select-control-border: #acc0d4;
+  --theme-react-select-menu-bg: #ecf2f9;
+  --theme-react-select-menu-border: #acc0d4;
+  --theme-react-select-option-focused-bg: #c4d8f0;
+  --theme-react-select-option-selected-bg: #4088c4;
+  --theme-react-select-value-fg: #0e1826;
+
+  // ─── One-Line Monaco / Calendar ────────────────────
+  --theme-one-line-editor-border: #acc0d4;
+  --theme-calendar-picker-border: #acc0d4;
+  --theme-calendar-picker-bg: #ecf2f9;
+  --theme-calendar-picker-fg: #0e1826;
+  --theme-calendar-color-scheme: light;
+
+  // ─── Runtime Expressions Hint ──────────────────────
+  --theme-runtime-hint-fg: #4c6a88;
+  --theme-runtime-hint-border: #9cb4cc;
+  --theme-runtime-hint-hover-fg: #060e18;
+  --theme-runtime-hint-hover-border: #0e1826;
+
+  // ─── Open In New Tab Button ────────────────────────
+  --theme-open-tab-fg: #9cb4cc;
+  --theme-open-tab-hover-fg: #0e1826;
+
+  // ─── Stacked Icon ──────────────────────────────────
+  --theme-stacked-icon-shadow: #e4edf6;
+
+  // ─── Canvas / Content Editable ────────────────────
+  --theme-canvas-editing-bg: #acc0d4;
+
+  // ─── Context Menu ─────────────────────────────────
+  --theme-context-menu-bg: #e8eff7;
+  --theme-context-menu-border: rgba(130, 155, 185, 0.9);
+  --theme-context-menu-fg: #0e1826;
+  --theme-context-menu-hover-bg: #4088c4;
+  --theme-context-menu-hover-fg: #fff;
+  --theme-context-menu-separator: #b4c8dc;
+  --theme-context-menu-disabled-fg: #7a90aa;
+  --theme-context-menu-icon-fg: #7490b0;
+
+  // ─── Editor Tab Controls ──────────────────────────
+  --theme-editor-tab-controls-fg: #3a5268;
+  --theme-editor-tab-controls-hover-bg: #dce6f2;
+
+  // ─── Inline Search ───────────────────────────────
+  --theme-inline-search-bg: #86a8c8;
+  --theme-inline-search-input-bg: #ecf2f9;
+  --theme-inline-search-input-focus-shadow: rgba(255, 136, 0, 0.27);
+  --theme-inline-search-btn-hover-bg: rgba(255, 255, 255, 0.15);
+  --theme-inline-search-btn-active-bg: rgba(255, 255, 255, 0.3);
+
+  // ─── Pane Toolbar ────────────────────────────────
+  --theme-pane-toolbar-fg: #3a5268;
+  --theme-pane-toolbar-label-fg: #4c6a88;
+  --theme-pane-toolbar-hover-fg: #060e18;
+  --theme-pane-toolbar-focus-bg: #ecf2f9;
+  --theme-pane-toolbar-focus-fg: #0e1826;
+  --theme-pane-toolbar-focus-shadow: rgba(64, 136, 196, 0.25);
+
+  // ─── Error Boundary ──────────────────────────────
+  --theme-error-boundary-bg: #c93030;
+  --theme-error-boundary-fg: #fff;
+
+  // ─── Todo / Dev Indicator ─────────────────────────
+  --theme-todo-gradient-start: #685838;
+  --theme-todo-gradient-end: #d8b820;
+  --theme-todo-overlay-bg: rgba(0, 0, 0, 0.75);
+  --theme-todo-overlay-fg: #fff;
+
+  // ─── Editor Loading States ────────────────────────
+  --theme-editor-loading-warning-bg: #f8ecd8;
+  --theme-editor-loading-warning-fg: #d46818;
+  --theme-editor-loading-border: #86a8c8;
+
+  // ─── Tabs Overflow ───────────────────────────────
+  --theme-tabs-overflow-bg: #acc0d4;
+
+  // ─── Quick Jump (extra tokens) ────────────────────
+  --theme-quick-jump-border: #86a8c8;
+  --theme-quick-jump-focus-shadow: rgba(64, 136, 196, 0.25);
+
+  // ─── Status Bar (extra tokens) ────────────────────
+  --theme-status-bar-hover-bg: #509ad0;
+  --theme-status-bar-icon-duotone-primary: #685010;
+  --theme-status-bar-icon-duotone-secondary: #b09008;
+
+  // ─── BPMN / Diagram ───────────────────────────────
+  --color-bpmn-defaultFillColor: #e8eff7;
+  --color-bpmn-defaultStrokeColor: #283850;
+  --color-bpmn-editor-icon-primary: #685040;
+  --theme-diagram-bg: #e8eff7;
+  --theme-diagram-fg: #283850;
+  --theme-diagram-palette-bg: #dce6f2;
+  --theme-diagram-palette-border: #b4c8dc;
+  --theme-diagram-popup-bg: #ecf2f9;
+  --theme-diagram-popup-shadow: rgba(15, 40, 80, 0.18);
+  --theme-diagram-popup-selected-bg: rgba(15, 40, 80, 0.15);
+  --theme-diagram-input-bg: #ecf2f9;
+  --theme-diagram-input-fg: #0e1826;
+  --theme-diagram-context-pad-bg: #ecf2f9;
+  --theme-diagram-context-pad-hover-bg: #c4d8f0;
+  --theme-diagram-selected-outline: #4088c4;
+  --theme-diagram-hover-outline: #d08030;
+  --theme-diagram-direct-editing-bg: #ecf2f9;
+  --theme-diagram-direct-editing-border: #acc0d4;
+  --theme-diagram-minimap-bg: #dce6f2;
+  --theme-diagram-minimap-overlay-bg: rgba(210, 224, 240, 0.5);
+  --theme-diagram-bendpoint-fill: rgba(64, 136, 196, 0.8);
+  --theme-diagram-bendpoint-stroke: #162040;
+  --theme-diagram-bendpoint-hover-fill: #4088c4;
+  --theme-diagram-segment-dragger-fill: rgba(64, 136, 196, 0.2);
+  --theme-diagram-segment-dragger-stroke: rgba(64, 136, 196, 0.3);
+  --theme-diagram-connect-ok-fill: #2a9a40;
+
+  // ─── Color Picker Panel ────────────────────────────
+  --theme-color-picker-bg: #ecf2f9;
+  --theme-color-picker-border: #b4c8dc;
+  --theme-color-picker-option-border: rgba(180, 200, 220, 0.3);
+  --theme-color-picker-option-hover-shadow: rgba(15, 40, 80, 0.3);
+  --theme-color-picker-shadow: rgba(15, 40, 80, 0.2);
+
+  // ─── DMN / Decision Editor ─────────────────────────
+  --color-dmn-defaultFillColor: #e8eff7;
+  --color-dmn-defaultStrokeColor: #283850;
+  --color-dmn-editor-icon-primary: #685040;
+  --theme-dmn-bg: #ffffff;
+  --theme-dmn-fg: #1a2838;
+  --theme-dmn-fg-muted: #506880;
+  --theme-dmn-fg-faint: #7890a8;
+  --theme-dmn-border: #b4c8dc;
+  --theme-dmn-border-subtle: #c8d8e8;
+  --theme-dmn-surface: #ecf2f9;
+  --theme-dmn-surface-alt: #dce6f2;
+  --theme-dmn-black: #000;
+  --theme-dmn-shadow-light: rgba(15, 40, 80, 0.1);
+  --theme-dmn-shadow-medium: rgba(15, 40, 80, 0.2);
+  --theme-dmn-accent-deep: #2870a8;
+  --theme-dmn-accent: #4088c4;
+  --theme-dmn-accent-30: rgba(64, 136, 196, 0.3);
+  --theme-dmn-accent-hover: #4898d0;
+  --theme-dmn-accent-glow: rgba(64, 136, 196, 0.4);
+  --theme-dmn-accent-subtle: #e0eef8;
+  --theme-dmn-green: hsl(150 86% 44%);
+  --theme-dmn-red-deep: hsl(360 100% 35%);
+  --theme-dmn-red: hsl(360 100% 45%);
+  --theme-dmn-red-glow: hsl(360 100% 92%);
+  --theme-dmn-red-subtle: hsl(360 100% 97%);
+
+  // ─── Scrollbar (structural) ────────────────────────
+  ::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--theme-scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb,
+  ::-webkit-scrollbar-thumb:window-inactive {
+    background: var(--theme-scrollbar-thumb);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: var(--theme-scrollbar-track);
+  }
+
+  // ─── Engine Workspace ───────────────────────────────
+  --theme-engine-ws-health-ok-bg: #dff5e3;
+  --theme-engine-ws-health-ok-fg: #1e7a2e;
+  --theme-engine-ws-health-warn-bg: #fff3cd;
+  --theme-engine-ws-health-warn-fg: #7c5a00;
+  --theme-engine-ws-health-unknown-bg: var(--theme-surface-inset);
+  --theme-engine-ws-health-unknown-fg: var(--theme-fg-muted);
+  --theme-engine-ws-health-critical-bg: #fde0e0;
+  --theme-engine-ws-health-critical-fg: #9e1a1a;
+  --theme-engine-ws-status-enabled-bg: #dff5e3;
+  --theme-engine-ws-status-enabled-fg: #1e7a2e;
+  --theme-engine-ws-status-disabled-bg: var(--theme-surface-inset);
+  --theme-engine-ws-status-disabled-fg: var(--theme-fg-muted);
+  --theme-engine-ws-sidebar-add-hover-bg: var(--theme-pane-item-hover-bg);
+  --theme-engine-ws-badge-running-bg: #1a73e8;
+  --theme-engine-ws-badge-running-fg: #fff;
+  --theme-engine-ws-badge-finished-bg: #34a853;
+  --theme-engine-ws-badge-finished-fg: #fff;
+  --theme-engine-ws-badge-fatal-bg: #ea4335;
+  --theme-engine-ws-badge-fatal-fg: #fff;
+  --theme-engine-ws-badge-aborted-bg: #9e9e9e;
+  --theme-engine-ws-badge-aborted-fg: #fff;
+  --theme-engine-ws-badge-compensated-bg: #fb8c00;
+  --theme-engine-ws-badge-compensated-fg: #fff;
+  --theme-engine-ws-badge-escalated-bg: #f4511e;
+  --theme-engine-ws-badge-escalated-fg: #fff;
+  --theme-engine-ws-badge-errored-bg: #ea4335;
+  --theme-engine-ws-badge-errored-fg: #fff;
+}

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:evil="https://evilengine.dev/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
+  <bpmn2:collaboration id="Collaboration_1wed7s5">
+    <bpmn2:participant id="Participant_0recsyu" processRef="Process_1" />
+  </bpmn2:collaboration>
+  <bpmn2:process id="Process_1" isExecutable="false">
+    <bpmn2:task id="Task_09ze2ya">
+      <bpmn2:outgoing>SequenceFlow_0hkxmwo</bpmn2:outgoing>
+    </bpmn2:task>
+    <bpmn2:sequenceFlow id="SequenceFlow_0hkxmwo" sourceRef="Task_09ze2ya" targetRef="Task_0iw12ez" />
+    <bpmn2:boundaryEvent id="ErrorBoundaryEvent_1" name="ErrorBoundaryEvent_1" attachedToRef="Task_09ze2ya">
+      <bpmn2:errorEventDefinition id="ErrorEventDefinition_0ihne04" errorRef="Error_cc6sE6i8">
+        <bpmn2:extensionElements>
+          <evil:ErrorCode>error code</evil:ErrorCode>
+          <evil:ErrorMessage>error message</evil:ErrorMessage>
+        </bpmn2:extensionElements>
+      </bpmn2:errorEventDefinition>
+    </bpmn2:boundaryEvent>
+    <bpmn2:subProcess id="Activity_0mch21d" triggeredByEvent="true">
+      <bpmn2:startEvent id="ErrorStartEvent_1" name="ErrorStartEvent_1">
+        <bpmn2:errorEventDefinition id="ErrorEventDefinition_0ktbmcb" errorRef="Error_qUqhxeeh">
+          <bpmn2:extensionElements>
+            <evil:ErrorCode>error code</evil:ErrorCode>
+            <evil:ErrorMessage>error message</evil:ErrorMessage>
+          </bpmn2:extensionElements>
+        </bpmn2:errorEventDefinition>
+      </bpmn2:startEvent>
+      <bpmn2:startEvent id="ErrorStartEvent_2" name="ErrorStartEvent_2">
+        <bpmn2:errorEventDefinition id="ErrorEventDefinition_11ngd6x" />
+      </bpmn2:startEvent>
+    </bpmn2:subProcess>
+    <bpmn2:task id="Task_0iw12ez">
+      <bpmn2:incoming>SequenceFlow_0hkxmwo</bpmn2:incoming>
+    </bpmn2:task>
+    <bpmn2:boundaryEvent id="ErrorBoundaryEvent_2" name="ErrorBoundaryEvent_2" attachedToRef="Task_0iw12ez">
+      <bpmn2:errorEventDefinition id="ErrorEventDefinition_0mw0ac5" />
+    </bpmn2:boundaryEvent>
+    <bpmn2:endEvent id="ErrorEndEvent_2" name="ErrorEndEvent_2">
+      <bpmn2:errorEventDefinition id="ErrorEventDefinition_1fyy320" errorRef="Error_gdRpU0A5" />
+    </bpmn2:endEvent>
+    <bpmn2:endEvent id="ErrorEndEvent_1" name="ErrorEndEvent_1">
+      <bpmn2:errorEventDefinition id="ErrorEventDefinition_1lvgw3j" errorRef="Error_fdXlqX99">
+        <bpmn2:extensionElements>
+          <evil:ErrorCode>error code</evil:ErrorCode>
+          <evil:ErrorMessage>error message</evil:ErrorMessage>
+        </bpmn2:extensionElements>
+      </bpmn2:errorEventDefinition>
+    </bpmn2:endEvent>
+  </bpmn2:process>
+  <bpmn2:error id="Error_fdXlqX99" />
+  <bpmn2:error id="Error_cc6sE6i8" />
+  <bpmn2:error id="Error_qUqhxeeh" />
+  <bpmn2:error id="Error_gdRpU0A5" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1wed7s5">
+      <bpmndi:BPMNShape id="Participant_0recsyu_di" bpmnElement="Participant_0recsyu" isHorizontal="true">
+        <dc:Bounds x="110" y="133" width="620" height="687" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_09ze2ya_di" bpmnElement="Task_09ze2ya">
+        <dc:Bounds x="210" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_0iw12ez_di" bpmnElement="Task_0iw12ez">
+        <dc:Bounds x="370" y="370" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1y8l445_di" bpmnElement="ErrorEndEvent_2">
+        <dc:Bounds x="642" y="372" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="618" y="415" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0tuv0wk_di" bpmnElement="ErrorEndEvent_1">
+        <dc:Bounds x="592" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="568" y="245" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1bul3h0_di" bpmnElement="Activity_0mch21d" isExpanded="true">
+        <dc:Bounds x="180" y="580" width="480" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1aenjlf_di" bpmnElement="ErrorStartEvent_1">
+        <dc:Bounds x="220" y="652" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="194" y="695" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0jho7cp_di" bpmnElement="ErrorStartEvent_2">
+        <dc:Bounds x="582" y="652" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="556" y="695" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_1u10adt_di" bpmnElement="ErrorBoundaryEvent_1">
+        <dc:Bounds x="232" y="242" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="208" y="285" width="85" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_04kr61k_di" bpmnElement="ErrorBoundaryEvent_2">
+        <dc:Bounds x="392" y="432" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="368" y="475" width="85" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0hkxmwo_di" bpmnElement="SequenceFlow_0hkxmwo">
+        <di:waypoint x="310" y="220" />
+        <di:waypoint x="420" y="220" />
+        <di:waypoint x="420" y="370" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>

@@ -1,0 +1,214 @@
+.bifrost.bifrost-theme--dark {
+  --color-element-script-indicator: #333;
+  --backcolor-element-script-indicator: #eee;
+
+  --color-element-multiple-outgoing-sequence-flow-indicator: #fff;
+  --backcolor-element-multiple-outgoing-sequence-flow-indicator: 255, 1, 1;
+
+  --color-process-not-executable-marker: var(--color__orange--on-dark);
+
+  --color-process-singleton-marker-primary: var(--color__blue--on-dark);
+  --color-process-singleton-marker-secondary: #fff;
+}
+
+.bifrost.bifrost-theme--light {
+  --color-element-script-indicator: #fff;
+  --backcolor-element-script-indicator: #405b69;
+
+  --color-element-multiple-outgoing-sequence-flow-indicator: #fff;
+  --backcolor-element-multiple-outgoing-sequence-flow-indicator: 255, 1, 1;
+
+  --color-process-not-executable-marker: var(--color__orange--on-light);
+
+  --color-process-singleton-marker-primary: #ddd;
+  --color-process-singleton-marker-secondary: var(--color__blue--on-light);
+}
+
+.bifrost {
+  .bpmn-element-overlay-backdrop {
+    border-radius: 10px;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    flex-direction: column;
+    pointer-events: none;
+  }
+
+  .bpmn-element-overlay-backdrop--subprocess {
+    opacity: 0.25;
+  }
+
+  .bpmn-element-overlay-backdrop--gateway {
+    position: absolute;
+    border-radius: 0;
+    transform: rotate(45deg) translate(10px, 0px);
+  }
+
+  .bpmn-element-overlay {
+    pointer-events: all;
+
+    display: flex;
+    justify-content: center;
+    z-index: 99999;
+    margin-top: 7px;
+
+    .bpmn-element-overlay__below {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.14rem;
+      justify-content: center;
+
+      border-radius: 0.125rem;
+    }
+
+    .bpmn-element-overlay__below-item {
+      display: flex;
+      flex-flow: column;
+      align-items: center;
+      padding: 0.25rem 0;
+      min-width: 32px;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+    }
+
+    .bpmn-element-overlay__below-item--action {
+      background-color: #607d8b;
+      color: #fff;
+      cursor: pointer;
+
+      &:hover .action-icon-hovered,
+      .action-icon {
+        display: unset;
+      }
+
+      &:hover .action-icon,
+      .action-icon-hovered {
+        display: none;
+      }
+    }
+
+    .bpmn-element-overlay__below-item--execution-count:hover {
+      div {
+        font-weight: 700 !important;
+      }
+    }
+  }
+
+  .bpmn-element-overlay__full-cover {
+    position: absolute;
+    border-radius: 10px;
+  }
+
+  .bpmn-element-overlay__full-cover.bpmn-element-overlay-backdrop--rounded {
+    border-radius: 50%;
+  }
+
+  .bpmn-element-overlay__top {
+    display: flex;
+    width: 100%;
+    height: 33%;
+    align-self: flex-start;
+    align-items: flex-start;
+    flex-shrink: 0;
+  }
+
+  .bpmn-element-overlay__middle {
+    display: flex;
+    width: 100%;
+    height: 33%;
+    align-self: center;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .bpmn-element-overlay__bottom {
+    display: flex;
+    width: 100%;
+    height: 33%;
+    align-self: flex-end;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  .bpmn-element-overlay__left {
+    display: flex;
+    width: 50%;
+    flex-shrink: 0;
+    justify-content: flex-start;
+  }
+
+  .bpmn-element-overlay__right {
+    display: flex;
+    width: 50%;
+    flex-shrink: 0;
+    justify-content: flex-end;
+  }
+
+  .bpmn-element-overlay__indicator {
+    pointer-events: none;
+    width: 50%;
+  }
+
+  .bpmn-element-overlay__process-not-executable {
+    pointer-events: all;
+    z-index: 200;
+    color: var(--color-process-not-executable-marker);
+    margin-top: 1px;
+    margin-right: 1px;
+  }
+
+  .bpmn-element-overlay__process-is-singleton {
+    --icon-primary-color: var(--color-process-singleton-marker-primary);
+    --icon-secondary-color: var(--color-process-singleton-marker-secondary);
+    --icon-secondary-opacity: 1;
+    pointer-events: all;
+    z-index: 200;
+  }
+
+  .flow-node-overlay__script-indicator {
+    pointer-events: all;
+    z-index: 200;
+    color: var(--color-element-script-indicator);
+    background-color: var(--backcolor-element-script-indicator);
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+  }
+
+  .flow-node-overlay__docu-indicator {
+    pointer-events: all;
+    cursor: pointer;
+    z-index: 200;
+    color: var(--color-element-script-indicator);
+    background-color: var(--backcolor-element-script-indicator);
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+  }
+
+  .flow-node-overlay__multiple-outgoing-sequence-flows-indicator {
+    pointer-events: all;
+    z-index: 200;
+    color: var(--color-element-multiple-outgoing-sequence-flow-indicator);
+    background-color: rgb(var(--backcolor-element-multiple-outgoing-sequence-flow-indicator));
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+  }
+
+  .djs-overlay-boundaryevent {
+    z-index: 1;
+  }
+}

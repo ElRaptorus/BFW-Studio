@@ -1,0 +1,15 @@
+{
+  "name": "incompatible-plugin",
+  "displayName": "Incompatible Plugin",
+  "description": "Tests API version rejection. Requires a future API version that does not exist yet.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "99.0.0",
+    "displayName": "Incompatible Plugin",
+    "activationEvents": [
+      "onStartup"
+    ]
+  }
+}

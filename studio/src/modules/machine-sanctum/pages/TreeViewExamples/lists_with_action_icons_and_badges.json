@@ -1,0 +1,64 @@
+{
+  "entries": [
+    {
+      "type": "file",
+      "actionIcon": "ph-duotone ph-spinner-gap ph-pulse",
+      "label": "http://staging.test",
+      "labelIcon": "ph-duotone ph-cloud",
+      "metadata": {
+        "uri": "http://staging.test"
+      },
+      "styles": {
+        "labelColor": "orange",
+        "badgeColor": "orange"
+      },
+      "badges": [
+        {
+          "type": "character",
+          "character": "ERR"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "actionIcon": "machine-sanctum/tree/stack-example",
+      "label": "http://localhost:8080",
+      "labelIcon": "ph-light ph-hard-drive",
+      "metadata": {
+        "uri": "http://localhost:8080"
+      },
+      "styles": {
+        "labelColor": "green",
+        "badgeColor": "green"
+      },
+      "badges": [
+        {
+          "type": "number",
+          "number": 1
+        },
+        {
+          "type": "character",
+          "character": "D"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "label": "http://localhost:80",
+      "labelIcon": "ph-light ph-hard-drive",
+      "metadata": {
+        "uri": "http://localhost:80"
+      },
+      "styles": {
+        "labelColor": "blue",
+        "badgeColor": "#f4229c"
+      },
+      "badges": [
+        {
+          "type": "number",
+          "number": 5
+        }
+      ]
+    }
+  ]
+}

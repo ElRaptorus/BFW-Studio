@@ -1,0 +1,717 @@
+// ─── Theme variables ─────────────────────────────────
+.bifrost.bifrost-theme--light {
+  --token-sim-token-fill: #52b415;
+  --token-sim-token-stroke: #3a8a0e;
+  --token-sim-flow-token-fill: #52b415;
+  --token-sim-active-shadow: rgba(82, 180, 21, 0.5);
+  --token-sim-completed-shadow: rgba(82, 180, 21, 0.2);
+  --token-sim-toolbar-bg: rgba(255, 255, 255, 0.97);
+  --token-sim-toolbar-border: #bbb;
+  --token-sim-toolbar-fg: #333;
+  --token-sim-toolbar-btn-hover-bg: #e0e0e0;
+  --token-sim-toolbar-btn-active-bg: #52b415;
+  --token-sim-toolbar-btn-active-fg: #fff;
+  --token-sim-overlay-bg: rgba(255, 255, 255, 0.95);
+  --token-sim-overlay-border: #ccc;
+  --token-sim-overlay-fg: #333;
+  --token-sim-play-btn-color: #52b415;
+  --token-sim-flow-chosen-color: #2979ff;
+  --token-sim-toggle-bg: rgba(255, 255, 255, 0.9);
+  --token-sim-toggle-fg: #555;
+  --token-sim-toggle-hover-bg: rgba(240, 240, 240, 0.95);
+  --token-sim-boundary-interrupting: #ef6c00;
+  --token-sim-boundary-non-interrupting: #f9a825;
+  --token-sim-error-shadow: rgba(211, 47, 47, 0.6);
+  --token-sim-visited-shadow: rgba(82, 180, 21, 0.12);
+  --token-sim-flow-visited-color: rgba(82, 180, 21, 0.45);
+  --token-sim-counter-bg: #7c4dff;
+  --token-sim-counter-fg: #fff;
+  --token-sim-mi-badge-bg: #64b5f6;
+  --token-sim-mi-badge-fg: #1a1a1a;
+  --token-sim-message-flow-color: #ffa000;
+  --token-sim-message-flow-token-fill: #ffa000;
+  --token-sim-message-pulse-shadow: rgba(255, 160, 0, 0.5);
+  --token-sim-signal-ripple-color: rgba(124, 77, 255, 0.6);
+}
+
+.bifrost.bifrost-theme--dark {
+  --token-sim-token-fill: #7ed321;
+  --token-sim-token-stroke: #5ea018;
+  --token-sim-flow-token-fill: #7ed321;
+  --token-sim-active-shadow: rgba(126, 211, 33, 0.6);
+  --token-sim-completed-shadow: rgba(126, 211, 33, 0.2);
+  --token-sim-toolbar-bg: rgba(40, 40, 40, 0.97);
+  --token-sim-toolbar-border: #666;
+  --token-sim-toolbar-fg: #cdcdcd;
+  --token-sim-toolbar-btn-hover-bg: #555;
+  --token-sim-toolbar-btn-active-bg: #7ed321;
+  --token-sim-toolbar-btn-active-fg: #222;
+  --token-sim-overlay-bg: rgba(50, 50, 50, 0.95);
+  --token-sim-overlay-border: #555;
+  --token-sim-overlay-fg: #cdcdcd;
+  --token-sim-play-btn-color: #7ed321;
+  --token-sim-flow-chosen-color: #64b5f6;
+  --token-sim-toggle-bg: rgba(50, 50, 50, 0.9);
+  --token-sim-toggle-fg: #aaa;
+  --token-sim-toggle-hover-bg: rgba(70, 70, 70, 0.95);
+  --token-sim-boundary-interrupting: #ff8a65;
+  --token-sim-boundary-non-interrupting: #fdd835;
+  --token-sim-error-shadow: rgba(239, 83, 80, 0.7);
+  --token-sim-visited-shadow: rgba(126, 211, 33, 0.12);
+  --token-sim-flow-visited-color: rgba(126, 211, 33, 0.5);
+  --token-sim-counter-bg: #b388ff;
+  --token-sim-counter-fg: #1a1a1a;
+  --token-sim-mi-badge-bg: #2979ff;
+  --token-sim-mi-badge-fg: #fff;
+  --token-sim-message-flow-color: #ffca28;
+  --token-sim-message-flow-token-fill: #ffca28;
+  --token-sim-message-pulse-shadow: rgba(255, 202, 40, 0.6);
+  --token-sim-signal-ripple-color: rgba(209, 176, 255, 0.9);
+}
+
+// ─── Token SVG elements ────────────────────────────
+.token-sim-token {
+  fill: var(--token-sim-token-fill);
+  stroke: var(--token-sim-token-stroke);
+  stroke-width: 1.5;
+  opacity: 0.9;
+}
+
+.token-sim-flow-token {
+  fill: var(--token-sim-flow-token-fill);
+  opacity: 0.85;
+}
+
+// ─── Element highlighting ────────────────────────────
+// Cascade order matters: active/error must come AFTER visited/completed
+// so their filter overrides when both classes are present (e.g. re-entering
+// a visited element during sequential multi-instance).
+.token-sim-highlight-visited {
+  filter: drop-shadow(0 0 3px var(--token-sim-visited-shadow));
+}
+
+.token-sim-highlight-completed {
+  filter: drop-shadow(0 0 4px var(--token-sim-completed-shadow));
+}
+
+.token-sim-highlight-active {
+  filter: drop-shadow(0 0 6px var(--token-sim-active-shadow)) drop-shadow(0 0 12px var(--token-sim-active-shadow));
+}
+
+.token-sim-highlight-error {
+  filter: drop-shadow(0 0 8px var(--token-sim-error-shadow)) drop-shadow(0 0 16px var(--token-sim-error-shadow));
+}
+
+.token-sim-highlight-flow-chosen {
+  path {
+    stroke: var(--token-sim-flow-chosen-color) !important;
+    stroke-width: 2.5px !important;
+  }
+
+  marker path {
+    fill: var(--token-sim-flow-chosen-color) !important;
+    stroke: var(--token-sim-flow-chosen-color) !important;
+  }
+
+  filter: drop-shadow(0 0 3px var(--token-sim-flow-chosen-color));
+}
+
+.token-sim-highlight-flow-visited {
+  path {
+    stroke: var(--token-sim-flow-visited-color) !important;
+    stroke-width: 2px !important;
+  }
+}
+
+// ─── Message flow highlighting ───────────────────────
+.token-sim-message-flow-token {
+  fill: var(--token-sim-message-flow-token-fill);
+  opacity: 0.9;
+}
+
+.token-sim-highlight-message-flow {
+  path {
+    stroke: var(--token-sim-message-flow-color) !important;
+    stroke-width: 2.5px !important;
+  }
+
+  marker path {
+    fill: var(--token-sim-message-flow-color) !important;
+    stroke: var(--token-sim-message-flow-color) !important;
+  }
+
+  filter: drop-shadow(0 0 4px var(--token-sim-message-flow-color));
+}
+
+.token-sim-highlight-message-pulse {
+  animation: token-sim-message-pulse 1.2s ease-out;
+}
+
+@keyframes token-sim-message-pulse {
+  0% {
+    filter: drop-shadow(0 0 6px var(--token-sim-message-pulse-shadow))
+      drop-shadow(0 0 12px var(--token-sim-message-pulse-shadow));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+// ─── Signal ripple animation ─────────────────────────
+.token-sim-signal-ripple {
+  fill: none;
+  stroke: var(--token-sim-signal-ripple-color);
+  stroke-width: 3;
+  animation: token-sim-ripple 0.8s ease-out forwards;
+}
+
+@keyframes token-sim-ripple {
+  0% {
+    r: 8;
+    opacity: 0.8;
+  }
+  100% {
+    r: 60;
+    opacity: 0;
+  }
+}
+
+// ─── Simulation mode: hide modeling tools ────────────
+.bjs-container.token-simulation {
+  .djs-palette {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .djs-context-pad {
+    display: none;
+  }
+}
+
+// ─── Toolbar ─────────────────────────────────────────
+.token-sim-toolbar-container {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: all;
+}
+
+.token-sim-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 6px 6px 0 0;
+  background: var(--token-sim-toolbar-bg);
+  border: 1px solid var(--token-sim-toolbar-border);
+  border-bottom: none;
+  color: var(--token-sim-toolbar-fg);
+  backdrop-filter: blur(8px);
+  user-select: none;
+
+  &--log-open {
+    box-shadow: none;
+  }
+}
+
+.token-sim-toolbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  transition: background-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--token-sim-toolbar-btn-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--active,
+  &--running {
+    background: var(--token-sim-toolbar-btn-active-bg);
+    color: var(--token-sim-toolbar-btn-active-fg);
+
+    &:hover {
+      background: var(--token-sim-toolbar-btn-active-bg);
+    }
+  }
+
+  &--running:disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+}
+
+.token-sim-toolbar__separator {
+  width: 1px;
+  height: 20px;
+  background: var(--token-sim-toolbar-border);
+  margin: 0 4px;
+}
+
+// ─── Palette entry ───
+.djs-palette .entry.token-sim-palette-entry::before {
+  font-family: 'Phosphor' !important;
+  content: '\e39c' !important;
+}
+
+.djs-palette .entry.token-sim-palette-entry--active {
+  color: var(--theme-focus, #1976d2) !important;
+}
+
+// ─── Play button overlay ─────────────────────────────
+.token-sim-play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--token-sim-play-btn-color);
+  cursor: pointer;
+  font-size: 22px;
+  padding: 0;
+  line-height: 1;
+  pointer-events: all;
+  opacity: 0.8;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-play-btn-color);
+    outline-offset: 1px;
+  }
+}
+
+// ─── Gateway config button overlay ───────────────────
+.token-sim-gateway-config-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--token-sim-flow-chosen-color);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  line-height: 1;
+  pointer-events: all;
+  opacity: 0.7;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: 1px;
+  }
+
+  &--configured {
+    opacity: 1;
+  }
+}
+
+// ─── Boundary event checkbox overlay ─────────────────
+.token-sim-boundary-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  background: var(--token-sim-toolbar-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  line-height: 1;
+  pointer-events: all;
+  opacity: 0.75;
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    background 0.15s;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: 1px;
+  }
+
+  &--interrupting {
+    color: var(--token-sim-boundary-interrupting);
+  }
+
+  &--non-interrupting {
+    color: var(--token-sim-boundary-non-interrupting);
+  }
+
+  &--enabled {
+    opacity: 1;
+  }
+}
+
+// ─── Multi-instance config badge overlay ─────────────
+.token-sim-multi-instance-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 4px;
+  border: none;
+  border-bottom-left-radius: 9px;
+  background: var(--token-sim-mi-badge-bg);
+  color: var(--token-sim-mi-badge-fg);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: all;
+  opacity: 0.85;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: 1px;
+  }
+}
+
+.token-sim-multi-instance-overlay {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--token-sim-overlay-bg);
+  border: 1px solid var(--token-sim-overlay-border);
+  color: var(--token-sim-overlay-fg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 100px;
+  pointer-events: all;
+  z-index: 10;
+
+  &__input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--token-sim-overlay-border);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    text-align: center;
+
+    &:focus {
+      outline: 2px solid var(--token-sim-flow-chosen-color);
+      outline-offset: -1px;
+    }
+  }
+}
+
+// ─── Gateway choice overlay ──────────────────────────
+.token-sim-gateway-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--token-sim-overlay-bg);
+  border: 1px solid var(--token-sim-overlay-border);
+  color: var(--token-sim-overlay-fg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  pointer-events: all;
+}
+
+.token-sim-gateway-choice__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.token-sim-gateway-choice__option {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--token-sim-overlay-border);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: var(--token-sim-toolbar-btn-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: -2px;
+  }
+
+  &--checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      margin: 0;
+      cursor: pointer;
+    }
+  }
+
+  &--selected {
+    background: var(--token-sim-toolbar-btn-hover-bg);
+    border-color: var(--token-sim-play-btn-color);
+  }
+}
+
+.token-sim-gateway-choice__confirm {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: var(--token-sim-play-btn-color);
+  color: var(--token-sim-toolbar-btn-active-fg);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  transition: filter 0.15s;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: 1px;
+  }
+}
+
+// ─── Toolbar wrapper (contains toolbar bar + speed row + log panel) ───
+.token-sim-toolbar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+// ─── Speed slider row ─────────────────────────────────
+.token-sim-toolbar__speed-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--token-sim-toolbar-bg);
+  border: 1px solid var(--token-sim-toolbar-border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  color: var(--token-sim-toolbar-fg);
+  font-size: 12px;
+  user-select: none;
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  box-sizing: border-box;
+
+  .token-sim-toolbar--log-open + & {
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
+
+.token-sim-speed-slider {
+  flex: 1;
+  height: 4px;
+  appearance: none;
+  background: var(--token-sim-toolbar-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--token-sim-toolbar-btn-active-bg);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  &::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--token-sim-toolbar-btn-active-bg);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: 2px;
+  }
+}
+
+.token-sim-speed-label {
+  width: 36px;
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--token-sim-toolbar-fg);
+  cursor: pointer;
+  text-align: right;
+  font-weight: 600;
+  font-size: 11px;
+  font-family: inherit;
+  line-height: 1;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--token-sim-toolbar-border);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--token-sim-flow-chosen-color);
+    outline-offset: 1px;
+  }
+}
+
+// ─── Hover tooltip ────────────────────────────────────
+.token-sim-tooltip {
+  position: absolute;
+  background: var(--token-sim-toolbar-bg);
+  border: 1px solid var(--token-sim-toolbar-border);
+  color: var(--token-sim-toolbar-fg);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+
+// ─── Token counter badges ─────────────────────────────
+.token-sim-counter-badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: 9px;
+  background: var(--token-sim-counter-bg);
+  color: var(--token-sim-counter-fg);
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+// ─── Simulation log panel ─────────────────────────────
+.token-sim-log-panel {
+  max-height: 200px;
+  width: 100%;
+  overflow-y: auto;
+  padding: 6px 10px;
+  background: var(--token-sim-toolbar-bg);
+  border: 1px solid var(--token-sim-toolbar-border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--token-sim-toolbar-fg);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+
+  &__empty {
+    opacity: 0.5;
+    text-align: center;
+    padding: 8px 0;
+  }
+}
+
+.token-sim-log-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &__time {
+    opacity: 0.6;
+    margin-right: 8px;
+  }
+
+  &__event {
+    font-weight: 500;
+  }
+
+  &__name {
+    opacity: 0.8;
+  }
+}

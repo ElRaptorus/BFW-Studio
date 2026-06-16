@@ -1,0 +1,325 @@
+.bifrost.bifrost-theme--dark {
+  --color-flow-node-state-active: 84, 200, 255;
+  --color-flow-node-state-waiting: 33, 133, 208;
+  --color-flow-node-state-finished: 24, 185, 24;
+  --color-flow-node-state-interrupted: 230, 110, 0;
+  --color-flow-node-state-fatal: 255, 1, 1;
+  --color-flow-node-state-aborted: 100, 100, 125;
+  --color-flow-node-state-unknown: 233, 179, 255;
+
+  --color-flow-node-badge-active: #111;
+  --color-flow-node-badge-waiting: #fff;
+  --color-flow-node-badge-finished: #9f9;
+  --color-flow-node-badge-interrupted: #fbbf44;
+  --color-flow-node-badge-fatal: #f99;
+  --color-flow-node-badge-aborted: #b0b0c0;
+  --color-flow-node-badge-unknown: #e9b3ff;
+
+  --color-flow-node-execution-count: #333;
+  --backcolor-flow-node-execution-count: #ccc;
+
+  --color-flow-node-active-instances: #333;
+  --backcolor-flow-node-active-instances: #ccc;
+
+  --color-flow-node-script-indicator: #333;
+  --backcolor-flow-node-script-indicator: #eee;
+
+  --color-flow-node-multiple-outgoing-sequence-flow-indicator: #fff;
+  --backcolor-flow-node-multiple-outgoing-sequence-flow-indicator: 255, 1, 1;
+
+  --color-engine__debugger-icon-primary: #31a3dd;
+  --color-engine__debugger-icon-secondary: #7dd3fc;
+  --color-engine__debugger-icon-tertiary: #808aff;
+  --color-engine__debugger-hero-icon: #808aff;
+
+  --backcolor-engine__debugger-auto-follow--enabled: #666;
+
+  --color-engine__debugger-context-pad-bg: #333;
+  --color-engine__debugger-context-pad-fg: #cdcdcd;
+  --color-engine__debugger-context-pad-hover-bg: #4a4a4a;
+  --color-engine__debugger-context-pad-hover-fg: #7dd3fc;
+
+  --color-connection-done: #11ca00;
+  --color-engine__debugger-hidden-hint-bg: #555;
+  --color-engine__debugger-hidden-hint-fg: #e8e8e8;
+  --color-engine__debugger-controls-fg: #999;
+  --color-engine__debugger-sublabel-fg: #888;
+}
+
+.bifrost.bifrost-theme--light {
+  --color-flow-node-state-active: 84, 200, 255;
+  --color-flow-node-state-waiting: 33, 133, 208;
+  --color-flow-node-state-finished: 24, 185, 24;
+  --color-flow-node-state-interrupted: 230, 110, 0;
+  --color-flow-node-state-fatal: 255, 1, 1;
+  --color-flow-node-state-aborted: 100, 100, 125;
+  --color-flow-node-state-unknown: 233, 179, 255;
+
+  --color-flow-node-badge-active: #111;
+  --color-flow-node-badge-waiting: #fff;
+  --color-flow-node-badge-finished: #9f9;
+  --color-flow-node-badge-interrupted: #fbbf44;
+  --color-flow-node-badge-fatal: #f99;
+  --color-flow-node-badge-aborted: #9797af;
+  --color-flow-node-badge-unknown: #444;
+
+  --color-flow-node-execution-count: #fff;
+  --backcolor-flow-node-execution-count: #777;
+
+  --color-flow-node-active-instances: #fff;
+  --backcolor-flow-node-active-instances: #777;
+
+  --color-flow-node-script-indicator: #fff;
+  --backcolor-flow-node-script-indicator: #405b69;
+
+  --color-flow-node-multiple-outgoing-sequence-flow-indicator: #fff;
+  --backcolor-flow-node-multiple-outgoing-sequence-flow-indicator: 255, 1, 1;
+
+  --color-engine__debugger-icon-primary: #0814c2;
+  --color-engine__debugger-icon-secondary: #4050e0;
+  --color-engine__debugger-icon-tertiary: #525ab1;
+  --color-engine__debugger-hero-icon: #2f40fa;
+
+  --backcolor-engine__debugger-auto-follow--enabled: #aaa;
+
+  --color-engine__debugger-context-pad-bg: #fff;
+  --color-engine__debugger-context-pad-fg: #333;
+  --color-engine__debugger-context-pad-hover-bg: #e3f2fd;
+  --color-engine__debugger-context-pad-hover-fg: #1976d2;
+
+  --color-connection-done: #11ca00;
+  --color-engine__debugger-hidden-hint-bg: #aaa;
+  --color-engine__debugger-hidden-hint-fg: #222;
+  --color-engine__debugger-controls-fg: #a5a5a5;
+  --color-engine__debugger-sublabel-fg: #aaa;
+}
+
+.bifrost {
+  .djs-container .djs-context-pad .entry {
+    --context-pad-entry-background-color: var(--color-engine__debugger-context-pad-bg) !important;
+    background-color: var(--color-engine__debugger-context-pad-bg);
+    color: var(--color-engine__debugger-context-pad-fg);
+    box-shadow: 0 0 2px 1px var(--color-engine__debugger-context-pad-bg);
+
+    &:hover {
+      background-color: var(--color-engine__debugger-context-pad-hover-bg);
+      color: var(--color-engine__debugger-context-pad-hover-fg);
+    }
+  }
+
+  .bpmn-element-overlay {
+    .bpmn-element-overlay__below-item--active-instances {
+      color: var(--color-flow-node-active-instances);
+      background-color: var(--backcolor-flow-node-active-instances);
+    }
+
+    .bpmn-element-overlay__below-item--flow-node-instance-state-active {
+      background-color: rgb(var(--color-flow-node-state-active));
+      color: var(--color-flow-node-badge-active);
+    }
+
+    .bpmn-element-overlay__below-item--flow-node-instance-state-waiting {
+      background-color: rgb(var(--color-flow-node-state-waiting));
+      color: var(--color-flow-node-badge-waiting);
+    }
+
+    .bpmn-element-overlay__below-item--flow-node-instance-state-finished {
+      background-color: rgb(var(--color-flow-node-state-finished));
+      color: var(--color-flow-node-badge-finished);
+    }
+
+    .bpmn-element-overlay__below-item--flow-node-instance-state-interrupted {
+      background-color: rgb(var(--color-flow-node-state-interrupted));
+      color: var(--color-flow-node-badge-interrupted);
+    }
+
+    .bpmn-element-overlay__below-item--flow-node-instance-state-fatal {
+      background-color: rgb(var(--color-flow-node-state-fatal));
+      color: var(--color-flow-node-badge-fatal);
+    }
+
+    .bpmn-element-overlay__below-item--flow-node-instance-state-aborted {
+      background-color: rgb(var(--color-flow-node-state-aborted));
+      color: var(--color-flow-node-badge-aborted);
+    }
+
+    .bpmn-element-overlay__below-item--flow-node-instance-state-unknown {
+      background-color: rgb(var(--color-flow-node-state-unknown));
+      color: var(--color-flow-node-badge-unknown);
+    }
+  }
+
+  .bpmn-element-overlay-backdrop-partial--active {
+    background-image: radial-gradient(rgba(0, 0, 0, 0) 50%, rgba(var(--color-flow-node-state-active), 0.5) 90%);
+  }
+
+  .bpmn-element-overlay-backdrop-partial--waiting {
+    background-image: radial-gradient(rgba(0, 0, 0, 0) 50%, rgba(var(--color-flow-node-state-waiting), 0.5) 90%);
+  }
+
+  .bpmn-element-overlay-backdrop-shadow--active {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-active), 0.4);
+  }
+
+  .bpmn-element-overlay-backdrop-shadow--waiting {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-waiting), 0.4);
+  }
+
+  .bpmn-element-overlay-backdrop-shadow--finished {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-finished), 0.4);
+  }
+
+  .bpmn-element-overlay-backdrop-shadow--interrupted {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-interrupted), 0.4);
+  }
+
+  .bpmn-element-overlay-backdrop-shadow--fatal {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-fatal), 0.4);
+  }
+
+  .bpmn-element-overlay-backdrop-shadow--aborted {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-aborted), 0.4);
+  }
+
+  .bpmn-element-overlay-backdrop-shadow--unknown {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-unknown), 0.4);
+  }
+
+  .bpmn-element-overlay-backdrop--active {
+    background-color: rgba(var(--color-flow-node-state-active), 0.5);
+  }
+
+  .bpmn-element-overlay-backdrop--waiting {
+    background-color: rgba(var(--color-flow-node-state-waiting), 0.5);
+  }
+
+  .bpmn-element-overlay-backdrop--finished {
+    background-color: rgba(var(--color-flow-node-state-finished), 0.5);
+  }
+
+  .bpmn-element-overlay-backdrop--interrupted {
+    background-color: rgba(var(--color-flow-node-state-interrupted), 0.5);
+  }
+
+  .bpmn-element-overlay-backdrop--fatal {
+    background-color: rgba(var(--color-flow-node-state-fatal), 0.5);
+  }
+
+  .bpmn-element-overlay-backdrop--aborted {
+    background-color: rgba(var(--color-flow-node-state-aborted), 0.5);
+  }
+
+  .bpmn-element-overlay-backdrop--unknown {
+    background-color: rgba(var(--color-flow-node-state-unknown), 0.5);
+  }
+}
+
+.editor-toolbar__button.engine__debugger_auto_follow--enabled {
+  background: var(--backcolor-engine__debugger-auto-follow--enabled);
+}
+
+.engine__debugger--tab-icon {
+  --icon-primary-color: var(--color-engine__debugger-icon-primary);
+  --icon-secondary-color: var(--color-engine__debugger-icon-secondary);
+  color: var(--color-engine__debugger-icon-tertiary);
+  --icon-secondary-opacity: 1;
+}
+
+.engine__debugger--hero-icon {
+  color: var(--color-engine__debugger-hero-icon) !important;
+}
+
+.connection-done .djs-visual > * {
+  stroke: #11ca00 !important;
+}
+
+.process-instance-viewer__right-title-button {
+  margin: 2px;
+}
+
+.engine-debugger__hidden-data-object-elements-hint {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-size: large;
+  width: 30px;
+  height: 30px;
+  z-index: 1;
+  background: var(--color-engine__debugger-hidden-hint-bg);
+  color: var(--color-engine__debugger-hidden-hint-fg);
+  border-radius: 0.2rem;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+.process-instance-props__information-header {
+  display: flex;
+  margin-bottom: 5px;
+}
+
+.process-instance-props__information-header--text {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  align-self: center;
+}
+
+.process-instance-props__information-header--controls {
+  display: flex;
+  color: var(--color-engine__debugger-controls-fg);
+}
+
+.process-instance-props__information-header--copy-button {
+  line-height: 1;
+  font-size: 0.775rem;
+}
+
+.flow-node-props__information-header {
+  display: flex;
+  margin-bottom: 5px;
+}
+
+.flow-node-props__information-header--text {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  align-self: center;
+}
+
+.flow-node-props__information-header--controls {
+  display: flex;
+  color: var(--color-engine__debugger-controls-fg);
+}
+
+.flow-node-props__information-header--copy-button {
+  line-height: 1;
+  font-size: 0.775rem;
+}
+
+.flow-node-instance-selector__item {
+  margin: 0px;
+  padding: 0px;
+  display: flex;
+}
+
+.flow-node-instance-selector__item--icon {
+  flex: 0;
+  min-width: 2.25rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.flow-node-instance-selector__item--label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+}
+
+.flow-node-instance-selector__item--sublabel {
+  font-size: 0.8rem;
+  color: var(--color-engine__debugger-sublabel-fg);
+}

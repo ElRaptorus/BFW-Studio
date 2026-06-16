@@ -1,0 +1,27 @@
+.bifrost.bifrost-theme--dark {
+  --color-about-icon-primary: #f18f34;
+}
+
+.bifrost.bifrost-theme--light {
+  --color-about-icon-primary: #905a27;
+}
+
+.about-page {
+  padding: 2rem;
+  padding-top: 4rem;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  user-select: text;
+}
+
+.about-page__textarea {
+  flex: 1;
+  margin-right: 15px;
+  margin-left: 15px;
+}
+
+.about-page__document--icon {
+  color: var(--color-about-icon-primary);
+}

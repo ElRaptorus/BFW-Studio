@@ -1,0 +1,169 @@
+.bifrost.bifrost-theme--light {
+  --theme-diff-splitter: #fff;
+  --theme-diff-splitter-border: #000;
+  --theme-diff-title-fg: #9e9e9e;
+  --theme-diff-title-bg: #f7f7f7;
+  --theme-diff-button-bg: #fff;
+  --theme-diff-button-fg: #aaa;
+  --theme-diff-button-active-fg: #88a7c5;
+  --theme-diff-removed-bg: #ffeef0;
+  --theme-diff-added-bg: #e6ffed;
+  --theme-diff-removed-highlight: #ffdce0;
+  --theme-diff-added-highlight: #cdffd8;
+  --theme-diff-line-number-fg: #aaa;
+  --theme-diff-svg-added: green;
+  --theme-diff-svg-removed: #db2828;
+  --theme-diff-overlay-moved-bg: rgba(29, 161, 242, 0.15);
+  --theme-diff-overlay-added-bg: rgba(46, 204, 64, 0.15);
+  --theme-diff-overlay-deleted-bg: rgba(219, 40, 40, 0.15);
+  --theme-diff-overlay-updated-bg: rgba(251, 189, 8, 0.15);
+}
+
+.bifrost.bifrost-theme--dark {
+  --theme-diff-splitter: #000;
+  --theme-diff-splitter-border: #666;
+  --theme-diff-title-fg: #a5a5a5;
+  --theme-diff-title-bg: #2a2a2a;
+  --theme-diff-button-bg: #444;
+  --theme-diff-button-fg: #888;
+  --theme-diff-button-active-fg: #5d90c3;
+  --theme-diff-removed-bg: #3b1d1d;
+  --theme-diff-added-bg: #1d3b1d;
+  --theme-diff-removed-highlight: #4e2525;
+  --theme-diff-added-highlight: #254e25;
+  --theme-diff-line-number-fg: #666;
+  --theme-diff-svg-added: #2ecc40;
+  --theme-diff-svg-removed: #ff695e;
+  --theme-diff-overlay-moved-bg: rgba(29, 161, 242, 0.2);
+  --theme-diff-overlay-added-bg: rgba(46, 204, 64, 0.2);
+  --theme-diff-overlay-deleted-bg: rgba(219, 40, 40, 0.2);
+  --theme-diff-overlay-updated-bg: rgba(251, 189, 8, 0.2);
+}
+
+.bifrost {
+  .splitter-layout--bpmn-diff,
+  .splitter-layout--bpmn-merge {
+    position: relative;
+    flex: 1;
+  }
+
+  .splitter-layout--bpmn-diff > .layout-splitter,
+  .splitter-layout--bpmn-merge > .layout-splitter {
+    width: 4px;
+    background-color: var(--theme-diff-splitter);
+    border-left: 1px solid var(--theme-diff-splitter-border);
+    border-right: 1px solid var(--theme-diff-splitter-border);
+  }
+
+  .splitter-layout--bpmn-diff > .layout-pane,
+  .splitter-layout--bpmn-merge > .layout-pane {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bpmn-diff__before,
+  .bpmn-diff__after {
+    flex: 1;
+  }
+
+  .bpmn-diff-overlay {
+    position: absolute;
+    display: block;
+    top: -1.5rem;
+    right: 0;
+    z-index: 100;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.25rem;
+    text-align: center;
+    font-size: 1.125rem;
+  }
+
+  // this is the second overlay added to the same bpmn element
+  // e.g. when an element was moved and its content changed
+  .djs-overlay + .djs-overlay .bpmn-diff-overlay {
+    right: 1.6rem;
+  }
+
+  .bpmn-diff-legend {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.25rem;
+    text-align: center;
+    font-size: 1.125rem;
+  }
+
+  .bpmn-diff-legend--moved,
+  .bpmn-diff-overlay--moved {
+    background: var(--color-blue);
+    color: var(--theme-fg-on-accent);
+  }
+
+  .bpmn-diff-legend--added,
+  .bpmn-diff-overlay--added {
+    background: var(--color-green);
+    color: var(--theme-fg-on-accent);
+  }
+
+  .bpmn-diff-legend--deleted,
+  .bpmn-diff-overlay--deleted {
+    background: var(--color-red);
+    color: var(--theme-fg-on-accent);
+  }
+
+  .bpmn-diff-legend--updated,
+  .bpmn-diff-overlay--updated {
+    background: var(--color-yellow);
+    color: var(--theme-fg-on-accent);
+  }
+
+  .highlight:not(.djs-connection) .djs-visual > :nth-child(1) {
+    fill: var(--theme-diff-svg-added) !important; /* color elements as green */
+  }
+
+  .splitter-layout--bpmn-diff .djs-overlay,
+  .splitter-layout--bpmn-merge .djs-overlay {
+    display: block;
+    pointer-events: none;
+  }
+
+  .highlight-overlay {
+    position: relative;
+    display: block;
+    z-index: 200;
+    border: 3px dotted transparent;
+    border-radius: 0.5rem;
+    pointer-events: none;
+  }
+  .highlight-overlay--moved {
+    border-color: var(--color-blue);
+    background: var(--theme-diff-overlay-moved-bg);
+  }
+  .highlight-overlay--added {
+    border-color: var(--color-green);
+    background: var(--theme-diff-overlay-added-bg);
+  }
+  .highlight-overlay--deleted {
+    border-color: var(--color-red);
+    background: var(--theme-diff-overlay-deleted-bg);
+  }
+  .highlight-overlay--updated {
+    border-color: var(--color-yellow);
+    background: var(--theme-diff-overlay-updated-bg);
+  }
+
+  .highlight-overlay--selected {
+    box-shadow: 0 0 0 2px var(--theme-diagram-selected-outline, #1976d2);
+  }
+
+  .diff-title {
+    position: absolute;
+    z-index: 50;
+    padding: 0.25rem 0.5rem;
+    margin: 2px;
+    background: var(--theme-diff-title-bg);
+    color: var(--theme-diff-title-fg);
+    border-radius: 0.2rem;
+  }
+}

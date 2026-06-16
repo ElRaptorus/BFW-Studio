@@ -1,0 +1,111 @@
+.bifrost {
+  // Shared: custom properties grouped by Added / Removed / Changed (diff overviews + merge pane)
+
+  .change-overview__custom-props {
+    margin: 0.25rem 0 0 0.75rem;
+  }
+
+  .change-overview__custom-props-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--theme-fg-secondary);
+    margin-bottom: 0.125rem;
+  }
+
+  .change-overview__custom-props-group {
+    margin-top: 0.25rem;
+    margin-left: 0.5rem;
+  }
+
+  .change-overview__custom-props-group-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--theme-fg-muted);
+    margin-bottom: 0.0625rem;
+  }
+
+  .change-overview__custom-props-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 0.5rem;
+  }
+
+  .change-overview__custom-props-item {
+    font-size: 0.875rem;
+    color: var(--theme-fg-muted);
+    padding: 0.0625rem 0;
+  }
+
+  .history-change-overview__custom-props {
+    margin: 0.25rem 0 0 0.75rem;
+  }
+
+  .history-change-overview__custom-props-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--theme-fg-secondary);
+    margin-bottom: 0.125rem;
+  }
+
+  .history-change-overview__custom-props-group {
+    margin-top: 0.25rem;
+    margin-left: 0.5rem;
+  }
+
+  .history-change-overview__custom-props-group-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--theme-fg-muted);
+    margin-bottom: 0.0625rem;
+  }
+
+  .history-change-overview__custom-props-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 0.5rem;
+  }
+
+  .history-change-overview__custom-props-item {
+    font-size: 0.875rem;
+    color: var(--theme-fg-muted);
+    padding: 0.0625rem 0;
+  }
+
+  .bpmn-merge-overview__custom-props {
+    margin: 0.125rem 0 0 0.25rem;
+  }
+
+  .bpmn-merge-overview__custom-props-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--theme-foreground-muted);
+    margin-bottom: 0.0625rem;
+  }
+
+  .bpmn-merge-overview__custom-props-group {
+    margin-top: 0.125rem;
+    margin-left: 0.35rem;
+  }
+
+  .bpmn-merge-overview__custom-props-group-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--theme-foreground-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.0625rem;
+  }
+
+  .bpmn-merge-overview__custom-props-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 0.35rem;
+  }
+
+  .bpmn-merge-overview__custom-props-item {
+    font-size: 10px;
+    color: var(--theme-foreground-muted);
+    line-height: 1.35;
+    padding: 0.03125rem 0;
+  }
+}

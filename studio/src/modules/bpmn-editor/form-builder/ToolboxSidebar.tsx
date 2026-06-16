@@ -1,0 +1,116 @@
+import React from 'react';
+
+import type { FormFieldType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import { FormActionPreset } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+
+import './ToolboxSidebar.scss';
+import { FIELD_TYPE_DESCRIPTORS, createDefaultAction, createDefaultField } from './constants';
+import type { FormBuilderState } from './useBpmnFormBuilderState';
+
+type ToolboxSidebarProps = {
+  state: FormBuilderState;
+};
+
+export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
+  const { state } = props;
+
+  const handleAddField = (type: FormFieldType): void => {
+    const newField = createDefaultField(type);
+    state.setFields([...state.fields, newField]);
+    state.selectField(newField.id);
+  };
+
+  const handleAddAction = (preset: FormActionPreset): void => {
+    const newAction = createDefaultAction(preset);
+    state.setActions([...state.actions, newAction]);
+    state.selectAction(newAction.id);
+  };
+
+  return (
+    <aside className="form-builder-toolbox">
+      <section className="form-builder-toolbox__section">
+        <h4 className="form-builder-toolbox__heading">Add Fields</h4>
+        <div className="form-builder-toolbox__grid">
+          {FIELD_TYPE_DESCRIPTORS.map((descriptor) => (
+            <button
+              key={descriptor.type}
+              type="button"
+              className="form-builder-toolbox__item"
+              data-test--form-builder-toolbox-item
+              title={descriptor.label}
+              onClick={() => handleAddField(descriptor.type)}
+            >
+              <i className={descriptor.icon} />
+              <span className="form-builder-toolbox__item-label">{descriptor.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="form-builder-toolbox__section">
+        <h4 className="form-builder-toolbox__heading">Add Actions</h4>
+        <div className="form-builder-toolbox__grid">
+          <button
+            type="button"
+            className="form-builder-toolbox__item"
+            data-test--form-builder-toolbox-item
+            title="Add Confirm action"
+            onClick={() => handleAddAction(FormActionPreset.Confirm)}
+          >
+            <i className="ph ph-check" />
+            <span className="form-builder-toolbox__item-label">Confirm</span>
+          </button>
+          <button
+            type="button"
+            className="form-builder-toolbox__item"
+            data-test--form-builder-toolbox-item
+            title="Add OK action"
+            onClick={() => handleAddAction(FormActionPreset.Ok)}
+          >
+            <i className="ph ph-check-circle" />
+            <span className="form-builder-toolbox__item-label">OK</span>
+          </button>
+          <button
+            type="button"
+            className="form-builder-toolbox__item"
+            data-test--form-builder-toolbox-item
+            title="Add Yes action"
+            onClick={() => handleAddAction(FormActionPreset.Yes)}
+          >
+            <i className="ph ph-thumbs-up" />
+            <span className="form-builder-toolbox__item-label">Yes</span>
+          </button>
+          <button
+            type="button"
+            className="form-builder-toolbox__item"
+            data-test--form-builder-toolbox-item
+            title="Add No action"
+            onClick={() => handleAddAction(FormActionPreset.No)}
+          >
+            <i className="ph ph-thumbs-down" />
+            <span className="form-builder-toolbox__item-label">No</span>
+          </button>
+          <button
+            type="button"
+            className="form-builder-toolbox__item"
+            data-test--form-builder-toolbox-item
+            title="Add Cancel action"
+            onClick={() => handleAddAction(FormActionPreset.Cancel)}
+          >
+            <i className="ph ph-x" />
+            <span className="form-builder-toolbox__item-label">Cancel</span>
+          </button>
+          <button
+            type="button"
+            className="form-builder-toolbox__item"
+            data-test--form-builder-toolbox-item
+            title="Add Custom action"
+            onClick={() => handleAddAction(FormActionPreset.Custom)}
+          >
+            <i className="ph ph-pencil-simple" />
+            <span className="form-builder-toolbox__item-label">Custom</span>
+          </button>
+        </div>
+      </section>
+    </aside>
+  );
+}

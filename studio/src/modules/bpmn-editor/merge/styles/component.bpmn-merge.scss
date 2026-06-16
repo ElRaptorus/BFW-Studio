@@ -1,0 +1,371 @@
+.bpmn-merge__viewer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.bpmn-merge__ours,
+.bpmn-merge__theirs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+.bpmn-merge__deleted-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--theme-foreground-muted);
+
+  .ph-duotone.ph-trash {
+    font-size: 3rem;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--theme-font-size);
+  }
+
+  a {
+    color: var(--theme-link-foreground);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.bpmn-merge__text-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+
+  .pane__textarea {
+    flex: 1;
+    height: 100%;
+  }
+}
+
+.bpmn-merge__text-diff {
+  height: 100%;
+  position: relative;
+
+  .pane__textarea {
+    height: 100%;
+  }
+}
+
+// Colored border overlays around elements
+.highlight-overlay--ours {
+  border-color: var(--theme-merge-ours-foreground, #48c78e);
+  background: var(--theme-merge-ours-background, rgba(72, 199, 142, 0.15));
+}
+
+.highlight-overlay--theirs {
+  border-color: var(--theme-merge-theirs-foreground, #3e8ed0);
+  background: var(--theme-merge-theirs-background, rgba(62, 142, 208, 0.15));
+}
+
+.highlight-overlay--conflict {
+  border-color: var(--theme-merge-conflict-foreground, #f14668);
+  background: var(--theme-merge-conflict-background, rgba(241, 70, 104, 0.15));
+}
+
+// Icon badge on the overlay corner
+.bpmn-diff-overlay--ours {
+  background: var(--theme-merge-ours-foreground, #48c78e);
+  color: var(--theme-fg-on-accent);
+}
+
+.bpmn-diff-overlay--theirs {
+  background: var(--theme-merge-theirs-foreground, #3e8ed0);
+  color: var(--theme-fg-on-accent);
+}
+
+.bpmn-diff-overlay--conflict {
+  background: var(--theme-merge-conflict-foreground, #f14668);
+  color: var(--theme-fg-on-accent);
+}
+
+// Result modeler panel
+.bpmn-merge__result {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+.bpmn-merge__result-container {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  position: relative;
+}
+
+// Resolution overlays on the result modeler
+.highlight-overlay--pending {
+  border-color: var(--theme-merge-conflict-foreground, #f14668);
+  background: var(--theme-merge-conflict-background, rgba(241, 70, 104, 0.15));
+}
+
+.highlight-overlay--reverted {
+  border-color: var(--theme-merge-auto-foreground, #b86bff);
+  background: rgba(184, 107, 255, 0.1);
+}
+
+.highlight-overlay--resolved-ours {
+  border-color: var(--theme-merge-ours-foreground, #48c78e);
+  background: var(--theme-merge-ours-background, rgba(72, 199, 142, 0.15));
+}
+
+.highlight-overlay--resolved-theirs {
+  border-color: var(--theme-merge-theirs-foreground, #3e8ed0);
+  background: var(--theme-merge-theirs-background, rgba(62, 142, 208, 0.15));
+}
+
+.highlight-overlay--resolved {
+  background: linear-gradient(
+    to bottom right,
+    var(--theme-merge-ours-background, rgba(72, 199, 142, 0.15)),
+    var(--theme-merge-theirs-background, rgba(62, 142, 208, 0.15))
+  );
+  border-image: linear-gradient(
+      to bottom right,
+      var(--theme-merge-ours-foreground, #48c78e),
+      var(--theme-merge-theirs-foreground, #3e8ed0)
+    )
+    1;
+}
+
+.highlight-overlay--auto-applied {
+  border-color: var(--theme-merge-auto-foreground, #b86bff);
+  background: rgba(184, 107, 255, 0.08);
+}
+
+.bpmn-diff-overlay--pending {
+  background: var(--theme-merge-conflict-foreground, #f14668);
+  color: var(--theme-fg-on-accent);
+}
+
+.bpmn-diff-overlay--reverted {
+  background: var(--theme-merge-auto-foreground, #b86bff);
+  color: var(--theme-fg-on-accent);
+}
+
+.bpmn-diff-overlay--resolved-ours {
+  background: var(--theme-merge-ours-foreground, #48c78e);
+  color: var(--theme-fg-on-accent);
+}
+
+.bpmn-diff-overlay--resolved-theirs {
+  background: var(--theme-merge-theirs-foreground, #3e8ed0);
+  color: var(--theme-fg-on-accent);
+}
+
+.bpmn-diff-overlay--resolved {
+  background: linear-gradient(
+    to bottom right,
+    var(--theme-merge-ours-foreground, #48c78e),
+    var(--theme-merge-theirs-foreground, #3e8ed0)
+  );
+  color: var(--theme-fg-on-accent);
+}
+
+.bpmn-diff-overlay--auto-applied {
+  background: var(--theme-merge-auto-foreground, #b86bff);
+  color: var(--theme-fg-on-accent);
+  opacity: 0.6;
+}
+
+// Per-attribute sub-entries within a conflict element
+.merge-overview__sub-entry {
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid var(--theme-border);
+  margin-left: 4px;
+  margin-top: 4px;
+}
+
+.merge-overview__sub-entry-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.merge-overview__sub-entry-label {
+  color: var(--theme-foreground);
+}
+
+.merge-overview__entry-status-row {
+  padding: 2px 0;
+}
+
+// Per-element action buttons in the pane
+.merge-overview__entry-actions {
+  display: flex;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.merge-overview__action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--theme-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 1.4;
+
+  &:hover {
+    background: var(--theme-list-hoverBackground);
+  }
+
+  &--ours {
+    border-color: var(--theme-merge-ours-foreground, #48c78e);
+    color: var(--theme-merge-ours-foreground, #48c78e);
+
+    &:hover {
+      background: var(--theme-merge-ours-background, rgba(72, 199, 142, 0.15));
+    }
+  }
+
+  &--theirs {
+    border-color: var(--theme-merge-theirs-foreground, #3e8ed0);
+    color: var(--theme-merge-theirs-foreground, #3e8ed0);
+
+    &:hover {
+      background: var(--theme-merge-theirs-background, rgba(62, 142, 208, 0.15));
+    }
+  }
+
+  &--revert {
+    border-color: var(--theme-merge-auto-foreground, #b86bff);
+    color: var(--theme-merge-auto-foreground, #b86bff);
+
+    &:hover {
+      background: rgba(184, 107, 255, 0.15);
+    }
+  }
+
+  &--reapply {
+    border-color: var(--theme-merge-auto-foreground, #b86bff);
+    color: var(--theme-merge-auto-foreground, #b86bff);
+
+    &:hover {
+      background: rgba(184, 107, 255, 0.15);
+    }
+  }
+
+  &--undo {
+    border-color: var(--theme-foreground-muted);
+    color: var(--theme-foreground-muted);
+
+    &:hover {
+      background: var(--theme-list-hoverBackground);
+    }
+  }
+}
+
+// Resolution badges
+.merge-overview__resolution-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 16px;
+
+  &--pending {
+    background: var(--theme-merge-conflict-background, rgba(241, 70, 104, 0.15));
+    color: var(--theme-merge-conflict-foreground, #f14668);
+  }
+
+  &--resolved-ours {
+    background: var(--theme-merge-ours-background, rgba(72, 199, 142, 0.15));
+    color: var(--theme-merge-ours-foreground, #48c78e);
+  }
+
+  &--resolved-theirs {
+    background: var(--theme-merge-theirs-background, rgba(62, 142, 208, 0.15));
+    color: var(--theme-merge-theirs-foreground, #3e8ed0);
+  }
+
+  &--resolved-mixed {
+    background: linear-gradient(
+      to right,
+      var(--theme-merge-ours-background, rgba(72, 199, 142, 0.15)),
+      var(--theme-merge-theirs-background, rgba(62, 142, 208, 0.15))
+    );
+    color: var(--theme-foreground);
+  }
+
+  &--auto {
+    background: rgba(184, 107, 255, 0.1);
+    color: var(--theme-merge-auto-foreground, #b86bff);
+    opacity: 0.7;
+  }
+
+  &--reverted {
+    background: rgba(184, 107, 255, 0.1);
+    color: var(--theme-merge-auto-foreground, #b86bff);
+  }
+}
+
+// Resolution progress bar
+.merge-overview__progress {
+  padding: 6px 12px 8px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.merge-overview__progress-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-foreground-muted);
+  margin-bottom: 4px;
+}
+
+.merge-overview__progress-bar {
+  height: 4px;
+  background: var(--theme-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.merge-overview__progress-bar-fill {
+  height: 100%;
+  background: var(--theme-merge-ours-foreground, #48c78e);
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+// Progress indicator in the title bar
+.merge-overview__progress-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+  font-size: var(--theme-font-size-small);
+  color: var(--theme-foreground-muted);
+  font-weight: 400;
+}
+
+// Vertical splitter for three-panel merge layout
+.splitter-layout--bpmn-merge-vertical {
+  // inherits splitter-layout defaults
+}

@@ -1,0 +1,85 @@
+.bifrost.bifrost-theme--light {
+  --color-empty-state-editor-background: #f0f0f0;
+  --color-empty-state-editor-color: #cac5c0;
+}
+
+.bifrost.bifrost-theme--dark {
+  --color-empty-state-editor-background: #0a1018;
+  --color-empty-state-editor-color: #506882;
+}
+
+.bifrost {
+  .editor-area-empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.6rem;
+    background: var(--color-empty-state-editor-background);
+    color: var(--color-empty-state-editor-color);
+  }
+
+  .editor-area-empty-state__shortcuts {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.55rem 1.2rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .editor-area-empty-state__shortcut-row {
+    display: contents;
+  }
+
+  .editor-area-empty-state__shortcuts dt {
+    text-align: right;
+  }
+
+  .editor-area-empty-state__shortcuts dd {
+    margin: 0;
+    text-align: left;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .editor-area-empty-state__shortcuts .keystroke {
+    font-size: 0.8rem;
+  }
+
+  .editor-area-empty-state__actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .editor-area-empty-state__action {
+    background: transparent;
+    border: 1px solid var(--color-empty-state-editor-color);
+    border-radius: 0.3rem;
+    color: var(--color-empty-state-editor-color);
+    font-size: 0.9rem;
+    padding: 0.35rem 1rem;
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      border-color 0.15s;
+
+    &:hover {
+      color: var(--theme-fg-muted);
+      border-color: var(--theme-fg-muted);
+    }
+  }
+
+  .editor-area-empty-state__tip {
+    max-width: 32rem;
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    text-align: center;
+
+    .keystroke {
+      font-size: 0.75rem;
+    }
+  }
+}

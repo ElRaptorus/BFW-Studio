@@ -1,0 +1,29 @@
+---
+description: Naming conventions for variables, parameters, and functions
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Naming Conventions
+
+Always use fully qualified, descriptive names for variables, parameters, and functions. Do not abbreviate.
+
+```typescript
+// BAD
+const sol = bifrost.solution.getSolution();
+const dir = bifrost.files.getContainingDirectory(uri);
+const cmd = bifrost.commands.getClickHandler();
+const ctx = event.context;
+const destPath = joinPaths(target, name);
+const doc = editors.getEditorDocument();
+
+// GOOD
+const currentSolution = bifrost.solution.getSolution();
+const containingDirectory = bifrost.files.getContainingDirectory(uri);
+const clickHandler = bifrost.commands.getClickHandler();
+const context = event.context;
+const destinationPath = joinPaths(target, name);
+const editorDocument = editors.getEditorDocument();
+```
+
+Exceptions: Single-character names are acceptable only in sort comparators (`a`, `b`) and loop indices (`i`, `j`).

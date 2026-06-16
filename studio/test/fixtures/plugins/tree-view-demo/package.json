@@ -1,0 +1,14 @@
+{
+  "name": "tree-view-demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Tree View Demo",
+    "description": "Demonstrates the Tree View API with push-based data.",
+    "permissions": [],
+    "activationEvents": [
+      "onStartup"
+    ]
+  }
+}

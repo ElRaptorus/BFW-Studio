@@ -1,0 +1,10 @@
+---
+description: Use "Bifrost Forge World" as the project name
+alwaysApply: true
+---
+
+# Project Naming
+
+The project is called **Bifrost Forge World** (or just "the Studio").
+
+Never use eny other name, when referring to the project in code comments, documentation, UI strings, or commit messages.

@@ -1,0 +1,29 @@
+{
+  "name": "{{pluginName}}",
+  "displayName": "{{displayName}}",
+  "description": "{{description}}",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:crypto",
+    "dev": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:crypto --watch"
+  },
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "activationEvents": ["onStartup"],
+    "contributes": {
+      "commands": [
+        {
+          "id": "hello",
+          "title": "{{displayName}}: Hello World"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@evil/bifrost_fw_sdk": "^1.0.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.0.0"
+  }
+}

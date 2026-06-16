@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="discount-rules" name="Discount Rules" namespace="https://example.com/dmn/discount" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+  <decision id="Decision_Discount" name="Calculate Discount">
+    <variable id="Var_Discount" name="discount" typeRef="number" />
+    <informationRequirement id="InformationRequirement_08o6ej9">
+      <requiredInput href="#InputData_Amount" />
+    </informationRequirement>
+    <literalExpression id="LE_Discount">
+      <text>if amount &gt; 100 then 0.1 else 0</text>
+    </literalExpression>
+  </decision>
+  <decision id="Decision_Eligibility" name="Check Eligibility">
+    <variable id="Var_Eligibility" name="eligible" typeRef="boolean" />
+    <informationRequirement id="InformationRequirement_0o734su">
+      <requiredInput href="#InputData_Age" />
+    </informationRequirement>
+    <literalExpression id="LE_Eligibility">
+      <text>age &gt;= 18</text>
+    </literalExpression>
+  </decision>
+  <inputData id="InputData_Amount" name="amount" />
+  <inputData id="InputData_Age" name="age" />
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_1">
+      <dmndi:DMNShape id="Shape_Discount" dmnElementRef="Decision_Discount">
+        <dc:Bounds height="80" width="180" x="160" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Eligibility" dmnElementRef="Decision_Eligibility">
+        <dc:Bounds height="80" width="180" x="400" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Amount" dmnElementRef="InputData_Amount">
+        <dc:Bounds height="45" width="180" x="160" y="230" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Age" dmnElementRef="InputData_Age">
+        <dc:Bounds height="45" width="180" x="400" y="230" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="DMNEdge_00h1mfr" dmnElementRef="InformationRequirement_08o6ej9">
+        <di:waypoint x="250" y="230" />
+        <di:waypoint x="250" y="180" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_1hyeohp" dmnElementRef="InformationRequirement_0o734su">
+        <di:waypoint x="490" y="230" />
+        <di:waypoint x="490" y="180" />
+        <di:waypoint x="490" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

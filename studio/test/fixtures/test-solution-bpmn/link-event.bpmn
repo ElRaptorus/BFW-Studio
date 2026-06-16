@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_4d7c0c15-7834-4256-9f0b-8e53b0d66cb9" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+  <bpmn:extensionElements>
+    <evil:properties>
+      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="68.75" complianceStatus="risky" computedAtIso="2026-06-14T20:52:59.535Z" schemaVersion="1" maxPoints="8" penaltyPoints="2.5" rawErrorFindings="2" rawWarningFindings="2" />
+      <evil:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="68.75" complianceStatus="failed" computedAtIso="2026-06-14T20:53:07.294Z" schemaVersion="1" maxPoints="8" penaltyPoints="2.5" rawErrorFindings="2" rawWarningFindings="2" />
+    </evil:properties>
+  </bpmn:extensionElements>
+  <bpmn:collaboration id="Collaboration_1cidyxu" name="">
+    <bpmn:participant id="Participant_0px403d" name="linkevent-test" processRef="linkevent-test" />
+  </bpmn:collaboration>
+  <bpmn:process id="linkevent-test" name="linkevent-test" isExecutable="true">
+    <bpmn:extensionElements>
+      <evil:version>1</evil:version>
+    </bpmn:extensionElements>
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_1xzf0d3" name="Lane">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>LinkIntermediateCatchEvent1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_0eie6q6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>LinkIntermediateThrowEvent1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Start Event">
+      <bpmn:outgoing>Flow_1r0d8uq</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1r0d8uq" sourceRef="StartEvent_1" targetRef="LinkIntermediateThrowEvent1" />
+    <bpmn:sequenceFlow id="Flow_1kg02b3" sourceRef="LinkIntermediateCatchEvent1" targetRef="EndEvent_0eie6q6" />
+    <bpmn:intermediateCatchEvent id="LinkIntermediateCatchEvent1" name="">
+      <bpmn:outgoing>Flow_1kg02b3</bpmn:outgoing>
+      <bpmn:linkEventDefinition id="LinkEventDefinition_1yplac9" name="LinkName1" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="EndEvent_0eie6q6" name="End Event">
+      <bpmn:incoming>Flow_1kg02b3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateThrowEvent id="LinkIntermediateThrowEvent1" name="">
+      <bpmn:incoming>Flow_1r0d8uq</bpmn:incoming>
+      <bpmn:linkEventDefinition id="LinkEventDefinition_13z4qf2" name="LinkName1" />
+    </bpmn:intermediateThrowEvent>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1cidyxu">
+      <bpmndi:BPMNShape id="Participant_0px403d_di" bpmnElement="Participant_0px403d" isHorizontal="true">
+        <dc:Bounds x="5" y="4" width="581" height="446" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1xzf0d3_di" bpmnElement="Lane_1xzf0d3" isHorizontal="true">
+        <dc:Bounds x="35" y="4" width="551" height="446" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1mox3jl_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="83" y="69" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="74" y="105" width="55" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1tfdprs_di" bpmnElement="LinkIntermediateCatchEvent1">
+        <dc:Bounds x="132" y="322" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0eie6q6_di" bpmnElement="EndEvent_0eie6q6">
+        <dc:Bounds x="432" y="322" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="425" y="358" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0p559uo_di" bpmnElement="LinkIntermediateThrowEvent1">
+        <dc:Bounds x="432" y="69" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1r0d8uq_di" bpmnElement="Flow_1r0d8uq">
+        <di:waypoint x="119" y="87" />
+        <di:waypoint x="432" y="87" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1kg02b3_di" bpmnElement="Flow_1kg02b3">
+        <di:waypoint x="168" y="340" />
+        <di:waypoint x="432" y="340" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

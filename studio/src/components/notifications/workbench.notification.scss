@@ -1,0 +1,130 @@
+.bifrost.bifrost-theme--dark {
+  --color-notification-icons: #fff;
+  --shadowcolor-notification-icons: #000;
+}
+
+.bifrost.bifrost-theme--light {
+  --color-notification-icons: #000;
+  --shadowcolor-notification-icons: #fff;
+}
+
+.notification-container {
+  position: absolute;
+  z-index: 1000;
+  right: 1rem;
+  bottom: 2rem;
+  max-height: 400px;
+  overflow-y: scroll;
+  background: var(--theme-notification-container-bg);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 1px 3px 0px rgba(170, 170, 170, 0.25);
+}
+
+.notification-container__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  min-width: 320px;
+
+  text-transform: uppercase;
+  color: var(--theme-notification-header-fg);
+  background: var(--theme-notification-header-bg);
+}
+
+.notification {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  background-color: var(--theme-notification-bg);
+  outline: 0;
+  margin-top: 1px;
+}
+
+.notification__inner {
+  padding: 0.5rem;
+}
+
+.notification__option {
+  float: right;
+  margin-left: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-notification-icons);
+  text-shadow: 0 1px 0 var(--shadowcolor-notification-icons);
+  opacity: 0.5;
+}
+
+.notification__option:hover {
+  opacity: 1;
+}
+
+.notification__body {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  align-content: flex-start;
+}
+
+.notification__type-icon {
+  min-width: 2.5rem;
+  padding-right: 0.5rem;
+  font-size: 1.5rem;
+  line-height: 1.5rem;
+}
+
+.notification__type-icon--info {
+  color: #1677d1;
+}
+
+.notification__type-icon--warning {
+  color: #ff9800;
+}
+
+.notification__type-icon--error {
+  color: #f44336;
+}
+
+.notification__content {
+  flex-grow: 2;
+  max-height: 3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification__content--expanded {
+  max-height: none;
+}
+
+.notification__info {
+  float: left;
+  margin-top: 0.5rem;
+
+  font-size: 0.75rem;
+}
+.notification__actions {
+  float: right;
+  margin-top: 0.5rem;
+
+  text-align: right;
+}
+
+.notification-btn {
+  color: var(--theme-dialog-btn-secondary-fg);
+  background-color: var(--theme-dialog-btn-secondary-bg);
+  border-color: var(--theme-dialog-btn-secondary-border);
+}
+
+.notification-btn--primary {
+  color: #fff;
+  background-color: #1677d1;
+  border-color: #1677d1;
+
+  &:hover {
+    color: #fff;
+  }
+}

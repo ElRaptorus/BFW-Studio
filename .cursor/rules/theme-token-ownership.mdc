@@ -1,0 +1,60 @@
+---
+description: Module-specific theme tokens must be defined in module SCSS, never in bifrost core
+globs:
+  - "studio/src/bifrost/styles/theme.light.scss"
+  - "studio/src/bifrost/styles/theme.dark.scss"
+  - "studio/src/bifrost/styles/bifrost.scss"
+  - "studio/src/modules/**/*.scss"
+---
+
+# Theme Token Ownership: Core vs Module
+
+## Rule
+
+Module-specific CSS custom properties (`--theme-*` and `--color-*`) must NEVER be defined in the core theme files or `bifrost.scss`. They must be defined in the module's own SCSS file.
+
+The bifrost core must have no knowledge of module-specific tokens. This mirrors the architectural restriction applied to components.
+
+## Core theme files (ONLY generic tokens)
+
+- `studio/src/bifrost/styles/theme.light.scss` — light tokens for shared UI surfaces
+- `studio/src/bifrost/styles/theme.dark.scss` — dark tokens for shared UI surfaces
+- `studio/src/bifrost/styles/bifrost.scss` — structural layout + overrides using core tokens
+
+These files must only contain tokens that apply to the Studio's shared UI (activity bar, editor tabs, pane, tree view, buttons, inputs, tables, modals, notifications, etc.).
+
+## Module SCSS files (module-specific tokens)
+
+Each module defines its own theme tokens in its SCSS file using the explicit class pattern:
+
+```scss
+.bifrost.bifrost-theme--light {
+  --theme-my-module-bg: #fff;
+}
+
+.bifrost.bifrost-theme--dark {
+  --theme-my-module-bg: #323232;
+}
+```
+
+Themed CSS overrides for third-party library elements (e.g., bpmn-js `.djs-palette`, `.bjs-container`) also belong in the module that imports and uses that library, not in `bifrost.scss`.
+
+## Current token ownership
+
+| Module | Token prefixes | SCSS file |
+|-----------|---------------|-----------|
+| `bpmn-editor` | `--theme-diagram-*`, `--theme-color-picker-*` | `bpmn-editor/styles/bpmn.scss` |
+| `bpmn-diff` | `--theme-diff-*` | `bpmn-diff/styles/component.bpmn-diff.scss` |
+| `engine-debugger` | `--color-engine__debugger-*`, `--color-flow-node-*` | `engine-debugger/EngineDebugger.scss` |
+| `engine-browser` | `--color-engine__browser-*` | `engine-browser/EngineBrowser.scss` |
+| `engine-bpmn-viewer` | `--color-engine__bpmn-viewer-*` | `engine-bpmn-viewer/RemoteBpmnViewer.scss` |
+
+## Alias variable scope
+
+Theme-dependent alias variables (`--color-*: var(--theme-*)`) must be defined inside `.bifrost { }`, never on `:root`. Only fixed color values (e.g., `--color-black: #000`) belong on `:root`.
+
+## When adding new tokens
+
+1. If the token is used across multiple shared components — add to `theme.light.scss` and `theme.dark.scss`
+2. If the token is used by a single module — add to that module.s SCSS file
+3. ALWAYS provide both light and dark values using `.bifrost.bifrost-theme--light` and `.bifrost.bifrost-theme--dark` selectors

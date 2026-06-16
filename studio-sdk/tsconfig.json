@@ -1,0 +1,16 @@
+{
+  "extends": "../studio/tsconfig.base",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["dom", "esnext"],
+    "declaration": true,
+    "outDir": "./out",
+    "esModuleInterop": true,
+    "sourceMap": false,
+    "noEmitOnError": true,
+    "useUnknownInCatchVariables": false,
+    "jsx": "react"
+  },
+  "include": ["index.ts", "packages.d.ts"],
+  "exclude": ["**/*.test.ts"]
+}

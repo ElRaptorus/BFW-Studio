@@ -1,0 +1,65 @@
+.engine-decision-catalog {
+  padding: 0;
+  height: 100%;
+  overflow: auto;
+}
+
+.engine-decision-catalog__error {
+  padding: 12px 16px;
+  background: var(--theme-validation-error-bg);
+  color: var(--theme-validation-error-fg);
+}
+
+.engine-decision-catalog__loading,
+.engine-decision-catalog__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--theme-fg-muted);
+}
+
+.engine-decision-catalog__monospace {
+  font-family: var(--theme-font-monospace, monospace);
+  font-size: 11px;
+}
+
+.engine-decision-catalog__status {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.engine-decision-catalog__status--enabled {
+  background: var(--theme-engine-ws-status-enabled-bg);
+  color: var(--theme-engine-ws-status-enabled-fg);
+}
+
+.engine-decision-catalog__status--disabled {
+  background: var(--theme-engine-ws-status-disabled-bg);
+  color: var(--theme-engine-ws-status-disabled-fg);
+}
+
+.engine-decision-catalog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.engine-decision-catalog__action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--theme-fg-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--theme-button-secondary-hover-bg);
+    color: var(--theme-fg);
+  }
+}

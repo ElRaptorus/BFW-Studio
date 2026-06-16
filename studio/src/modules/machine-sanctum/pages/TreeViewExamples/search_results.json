@@ -1,0 +1,183 @@
+{
+  "entries": [
+    {
+      "type": "file",
+      "label": "mock:pizza.bpmn",
+      "labelIcon": "std/tree/file",
+      "expanded": true,
+      "entries": [
+        {
+          "type": "search_result",
+          "subtype": "bpmn:IntermediateCatchEvent",
+          "label": "pizza received",
+          "labelHighlight": "pizza",
+          "sublabel": "IntermediateCatchEvent",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "_6-202",
+            "type": "bpmn:IntermediateCatchEvent",
+            "name": "pizza received",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:Task",
+          "label": "Order a pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "Task",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "Task_1",
+            "type": "bpmn:Task",
+            "name": "Order a pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:Task",
+          "label": "Pay the pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "Task",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "_6-304",
+            "type": "bpmn:Task",
+            "name": "Pay the pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:Task",
+          "label": "Eat the pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "Task",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "Task_3",
+            "type": "bpmn:Task",
+            "name": "Eat the pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:Task",
+          "label": "Bake the pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "Task",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "_6-463",
+            "type": "bpmn:Task",
+            "name": "Bake the pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:Task",
+          "label": "Select a pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "Task",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "_6-74",
+            "type": "bpmn:Task",
+            "name": "Select a pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:StartEvent",
+          "label": "Hungry for pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "StartEvent",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "_6-61",
+            "type": "bpmn:StartEvent",
+            "name": "Hungry for pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:Task",
+          "label": "Deliver the pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "Task",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "_6-514",
+            "type": "bpmn:Task",
+            "name": "Deliver the pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:Task",
+          "label": "Ask for the pizza",
+          "labelHighlight": "pizza",
+          "sublabel": "Task",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "Task_2",
+            "type": "bpmn:Task",
+            "name": "Ask for the pizza",
+            "uri": "mock:pizza.bpmn"
+          }
+        },
+        {
+          "type": "search_result",
+          "subtype": "bpmn:IntermediateCatchEvent",
+          "label": "„where is my pizza?“",
+          "labelHighlight": "pizza",
+          "sublabel": "IntermediateCatchEvent",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "_6-674",
+            "type": "bpmn:IntermediateCatchEvent",
+            "name": "„where is my pizza?“",
+            "uri": "mock:pizza.bpmn"
+          }
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "label": "mock:release.bpmn",
+      "expanded": true,
+      "entries": [
+        {
+          "type": "search_result",
+          "subtype": "bpmn:UserTask",
+          "label": "Pizza durchführen?",
+          "labelHighlight": "pizza",
+          "sublabel": "UserTask",
+          "sublabelHighlight": "pizza",
+          "metadata": {
+            "id": "release_durchfuehren",
+            "type": "bpmn:UserTask",
+            "name": "Pizza durchführen?",
+            "extensions": [
+              {
+                "id": "release_durchfuehren",
+                "type": "evil:FormFields"
+              },
+              {
+                "type": "evil:Property",
+                "name": "preferredControl"
+              }
+            ],
+            "uri": "mock:release.bpmn"
+          }
+        }
+      ]
+    }
+  ]
+}

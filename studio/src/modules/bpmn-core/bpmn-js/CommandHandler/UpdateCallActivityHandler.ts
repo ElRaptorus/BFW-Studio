@@ -1,0 +1,45 @@
+import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
+import type CommandStack from 'diagram-js/lib/command/CommandStack';
+
+import { CmdHelper } from './Helper/CommmandHelper';
+import { getEvilBodyValue, setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+
+const CALLED_ELEMENT_SELECTOR = 'calledElement';
+
+export function UpdateCallActivityHandler(this: any, commandStack: CommandStack, bpmnFactory: any): void {
+  this.commandStack = commandStack;
+  this.bpmnFactory = bpmnFactory;
+}
+
+UpdateCallActivityHandler.$inject = ['commandStack', 'bpmnFactory'];
+
+UpdateCallActivityHandler.prototype.preExecute = function (context: any) {
+  const { element, newProcessModelId, newStartEventId } = context;
+
+  const businessObject = getBusinessObject(element);
+  const calledElement = businessObject.get(CALLED_ELEMENT_SELECTOR);
+  const currentStartEventId = getEvilBodyValue(businessObject, 'evil:StartEventId');
+
+  const calledElementChanged = newProcessModelId !== undefined && newProcessModelId !== calledElement;
+  const startEventIdChanged = newStartEventId !== undefined && newStartEventId !== currentStartEventId;
+
+  if (!calledElementChanged && !startEventIdChanged) {
+    return;
+  }
+
+  if (calledElementChanged) {
+    const cmd = CmdHelper.updateBusinessObject(element, businessObject, {
+      calledElement: newProcessModelId || undefined,
+    });
+    this.commandStack.execute(cmd.cmd, cmd.context);
+  }
+
+  if (startEventIdChanged) {
+    const cmds = setEvilBodyExtension(element, this.bpmnFactory, 'evil:StartEventId', newStartEventId || null);
+    for (const cmd of cmds) {
+      this.commandStack.execute(cmd.cmd, cmd.context);
+    }
+  }
+};
+
+export default UpdateCallActivityHandler;

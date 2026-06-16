@@ -1,0 +1,341 @@
+{
+  "name": "EvilPlatform",
+  "prefix": "evil",
+  "uri": "https://evilengine.dev/schema/bpmn",
+  "associations": [],
+  "xml": {
+    "tagAlias": "lowerCase"
+  },
+  "types": [
+    {
+      "name": "Properties",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["*"]
+      },
+      "properties": [
+        {
+          "name": "linterRulesetScores",
+          "type": "LinterRulesetScore",
+          "isMany": true
+        },
+        {
+          "name": "values",
+          "type": "Property",
+          "isMany": true
+        }
+      ]
+    },
+    {
+      "name": "Property",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "name", "isAttr": true, "type": "String" },
+        { "name": "value", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "LinterRulesetScore",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "rulesetId", "isAttr": true, "type": "String" },
+        { "name": "scorePercent", "isAttr": true, "type": "String" },
+        { "name": "complianceStatus", "isAttr": true, "type": "String" },
+        { "name": "computedAtIso", "isAttr": true, "type": "String" },
+        { "name": "schemaVersion", "isAttr": true, "type": "String" },
+        { "name": "maxPoints", "isAttr": true, "type": "String" },
+        { "name": "penaltyPoints", "isAttr": true, "type": "String" },
+        { "name": "rawErrorFindings", "isAttr": true, "type": "String" },
+        { "name": "rawWarningFindings", "isAttr": true, "type": "String" }
+      ]
+    },
+
+    {
+      "name": "Version",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:Process"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "CorrelationKey",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:Process"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "DataMapping",
+      "superClass": ["Element"],
+      "isAbstract": true,
+      "properties": [
+        { "name": "source", "isAttr": true, "type": "String" },
+        { "name": "target", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "InputMapping",
+      "superClass": ["DataMapping"],
+      "meta": {
+        "allowedIn": [
+          "bpmn:UserTask",
+          "bpmn:ServiceTask",
+          "bpmn:ScriptTask",
+          "bpmn:BusinessRuleTask",
+          "bpmn:CallActivity",
+          "bpmn:IntermediateThrowEvent",
+          "bpmn:EndEvent",
+          "bpmn:SendTask"
+        ]
+      }
+    },
+    {
+      "name": "OutputMapping",
+      "superClass": ["DataMapping"],
+      "meta": {
+        "allowedIn": [
+          "bpmn:UserTask",
+          "bpmn:ServiceTask",
+          "bpmn:ScriptTask",
+          "bpmn:BusinessRuleTask",
+          "bpmn:CallActivity",
+          "bpmn:IntermediateCatchEvent",
+          "bpmn:StartEvent",
+          "bpmn:BoundaryEvent",
+          "bpmn:ReceiveTask"
+        ]
+      }
+    },
+    {
+      "name": "PayloadContract",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": [
+          "bpmn:UserTask",
+          "bpmn:ServiceTask",
+          "bpmn:ScriptTask",
+          "bpmn:BusinessRuleTask",
+          "bpmn:CallActivity",
+          "bpmn:SendTask",
+          "bpmn:IntermediateThrowEvent",
+          "bpmn:EndEvent"
+        ]
+      },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "ResultContract",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": [
+          "bpmn:UserTask",
+          "bpmn:ServiceTask",
+          "bpmn:ScriptTask",
+          "bpmn:BusinessRuleTask",
+          "bpmn:CallActivity",
+          "bpmn:ReceiveTask",
+          "bpmn:IntermediateCatchEvent",
+          "bpmn:BoundaryEvent",
+          "bpmn:StartEvent"
+        ]
+      },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "DataContract",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": [
+          "bpmn:Task",
+          "bpmn:UserTask",
+          "bpmn:ServiceTask",
+          "bpmn:ScriptTask",
+          "bpmn:BusinessRuleTask",
+          "bpmn:ManualTask",
+          "bpmn:SendTask",
+          "bpmn:ReceiveTask",
+          "bpmn:CallActivity",
+          "bpmn:SubProcess"
+        ]
+      },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "HttpUrl",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ServiceTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "HttpMethod",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ServiceTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "HttpBody",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ServiceTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "HttpAuthHeader",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ServiceTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "HttpResponseHeaders",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ServiceTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "Assignees",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:UserTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "FormFields",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:UserTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "FormActions",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:UserTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "DueDate",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:UserTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "Priority",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:UserTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "Integer" }]
+    },
+
+    {
+      "name": "RequireConfirmation",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ManualTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "Boolean" }]
+    },
+
+    {
+      "name": "StartEventId",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:CallActivity"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "ScriptRef",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ScriptTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "DecisionRef",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "DecisionElementId",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "ResultVariable",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "TraceUnmatchedRules",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "Boolean" }]
+    },
+
+    {
+      "name": "ErrorCode",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ErrorEventDefinition"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "ErrorMessage",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:ErrorEventDefinition"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "CorrelationRetrievalExpression",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MessageEventDefinition", "bpmn:ReceiveTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "Payload",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MessageEventDefinition"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "EventMapping",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MessageEventDefinition"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "ValueContract",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:DataObject"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "InputCollection",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "OutputCollection",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "LoopBreakCondition",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "LoopInterval",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "MaxIterations",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "Integer" }]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+---
+description: Dependency Updates
+globs: "**/package.json"
+alwaysApply: false
+---
+
+# Update dependencies
+
+When you update a dependency, run "npm i" to update the package lock file and see if the package can be installed without issue.
+
+Afterwards, run `npm run build`, then `npm run lint:fix` and `npm run format` from the affected package (`studio/` or `studio-sdk/`) to ensure the dependency update did not break anything. If the SDK was updated, also rebuild `studio/` since it depends on the SDK.
+
+Do not automatically perform Major Version Updates. Always ask before doing them and explain why they are necessary in the first place.

@@ -1,0 +1,28 @@
+---
+description: Place npm dependencies in devDependencies by default to avoid double-bundling in Electron
+globs: "**/package.json"
+alwaysApply: false
+---
+
+# Dependency Placement: devDependencies by Default
+
+All npm packages in `studio/package.json` go into **`devDependencies`** unless they require direct runtime access from the Electron main process outside of the Rspack bundle.
+
+## Why
+
+Rspack resolves `node_modules` at build time regardless of the `package.json` section. However, `electron-builder` copies everything listed under `dependencies` into the distributable's `node_modules`. Placing a build-time-only package in `dependencies` ships it twice: once inside the Rspack bundle and once as an unbundled copy in the app package.
+
+## Rule
+
+- **`devDependencies`** (default): Any package consumed only through `import`/`require` in source code that Rspack bundles (React, UI libraries, icon frameworks, loaders, plugins, type packages, test frameworks, etc.)
+- **`dependencies`**: Only packages that the packaged Electron app must resolve at runtime from its own `node_modules` — typically native addons that cannot be bundled or modules loaded dynamically via a path outside Rspack's graph. As of now, **no package** in the project requires this.
+
+## Example
+
+```bash
+# Correct — build-time dependency
+npm install some-library --save-dev
+
+# Wrong — would be double-bundled
+npm install some-library --save
+```

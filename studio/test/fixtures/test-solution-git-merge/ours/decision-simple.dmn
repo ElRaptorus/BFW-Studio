@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="Definitions_MergeTest" name="Merge Test" namespace="https://evilengine.dev/schema/dmn">
+  <inputData id="InputData_Age" name="Customer Age">
+    <variable id="Var_Age" name="Customer Age" typeRef="number" />
+  </inputData>
+  <decision id="Decision_Discount" name="Customer Discount">
+    <variable id="Var_Discount" name="Customer Discount" typeRef="number" />
+    <informationRequirement id="IR_1">
+      <requiredInput href="#InputData_Age" />
+    </informationRequirement>
+    <decisionTable id="DT_Discount" hitPolicy="UNIQUE">
+      <input id="Input_1">
+        <inputExpression id="IE_1" typeRef="number">
+          <text>Customer Age</text>
+        </inputExpression>
+      </input>
+      <output id="Output_1" typeRef="number" />
+      <rule id="Rule_1">
+        <inputEntry id="Entry_1_1"><text>&lt; 18</text></inputEntry>
+        <outputEntry id="Entry_1_2"><text>15</text></outputEntry>
+      </rule>
+      <rule id="Rule_2">
+        <inputEntry id="Entry_2_1"><text>&gt;= 18</text></inputEntry>
+        <outputEntry id="Entry_2_2"><text>5</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_1">
+      <dmndi:DMNShape id="Shape_InputData_Age" dmnElementRef="InputData_Age">
+        <dc:Bounds x="157" y="282" width="125" height="45" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Decision_Discount" dmnElementRef="Decision_Discount">
+        <dc:Bounds x="140" y="82" width="160" height="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="Edge_IR_1" dmnElementRef="IR_1">
+        <di:waypoint xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" x="219" y="282" />
+        <di:waypoint xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" x="220" y="162" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

@@ -1,0 +1,131 @@
+.bifrost.bifrost-theme--light {
+  --theme-engine-ws-health-ok-bg: #dff5e3;
+  --theme-engine-ws-health-ok-fg: #1e7a2e;
+  --theme-engine-ws-health-warn-bg: #fff3cd;
+  --theme-engine-ws-health-warn-fg: #7c5a00;
+  --theme-engine-ws-health-unknown-bg: var(--theme-surface-inset);
+  --theme-engine-ws-health-unknown-fg: var(--theme-fg-muted);
+  --theme-engine-ws-health-critical-bg: #fde0e0;
+  --theme-engine-ws-health-critical-fg: #9e1a1a;
+  --theme-engine-ws-status-enabled-bg: #dff5e3;
+  --theme-engine-ws-status-enabled-fg: #1e7a2e;
+  --theme-engine-ws-status-disabled-bg: var(--theme-surface-inset);
+  --theme-engine-ws-status-disabled-fg: var(--theme-fg-muted);
+  --theme-engine-ws-badge-running-bg: #1a73e8;
+  --theme-engine-ws-badge-running-fg: #fff;
+  --theme-engine-ws-badge-finished-bg: #34a853;
+  --theme-engine-ws-badge-finished-fg: #fff;
+  --theme-engine-ws-badge-fatal-bg: #ea4335;
+  --theme-engine-ws-badge-fatal-fg: #fff;
+  --theme-engine-ws-badge-aborted-bg: #9e9e9e;
+  --theme-engine-ws-badge-aborted-fg: #fff;
+  --theme-engine-ws-badge-compensated-bg: #fb8c00;
+  --theme-engine-ws-badge-compensated-fg: #fff;
+  --theme-engine-ws-badge-escalated-bg: #f4511e;
+  --theme-engine-ws-badge-escalated-fg: #fff;
+  --theme-engine-ws-badge-errored-bg: #ea4335;
+  --theme-engine-ws-badge-errored-fg: #fff;
+}
+
+.bifrost.bifrost-theme--dark {
+  --theme-engine-ws-health-ok-bg: #1b3d24;
+  --theme-engine-ws-health-ok-fg: #6fd67e;
+  --theme-engine-ws-health-warn-bg: #3d3013;
+  --theme-engine-ws-health-warn-fg: #f5c842;
+  --theme-engine-ws-health-unknown-bg: var(--theme-surface-inset);
+  --theme-engine-ws-health-unknown-fg: var(--theme-fg-muted);
+  --theme-engine-ws-health-critical-bg: #4a1616;
+  --theme-engine-ws-health-critical-fg: #f87171;
+  --theme-engine-ws-status-enabled-bg: #1b3d24;
+  --theme-engine-ws-status-enabled-fg: #6fd67e;
+  --theme-engine-ws-status-disabled-bg: var(--theme-surface-inset);
+  --theme-engine-ws-status-disabled-fg: var(--theme-fg-muted);
+  --theme-engine-ws-badge-running-bg: #4285f4;
+  --theme-engine-ws-badge-running-fg: #fff;
+  --theme-engine-ws-badge-finished-bg: #34a853;
+  --theme-engine-ws-badge-finished-fg: #fff;
+  --theme-engine-ws-badge-fatal-bg: #ea4335;
+  --theme-engine-ws-badge-fatal-fg: #fff;
+  --theme-engine-ws-badge-aborted-bg: #757575;
+  --theme-engine-ws-badge-aborted-fg: #e0e0e0;
+  --theme-engine-ws-badge-compensated-bg: #fb8c00;
+  --theme-engine-ws-badge-compensated-fg: #fff;
+  --theme-engine-ws-badge-escalated-bg: #f4511e;
+  --theme-engine-ws-badge-escalated-fg: #fff;
+  --theme-engine-ws-badge-errored-bg: #ea4335;
+  --theme-engine-ws-badge-errored-fg: #fff;
+}
+
+.engine-sidebar-pane {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.engine-pane-process-info {
+  padding: 8px 12px;
+}
+
+.engine-pane-error-divider {
+  margin: 6px 0;
+  border-top: 1px solid var(--theme-validation-error-bg);
+}
+
+.engine-pane-version-browser {
+  margin-top: 10px;
+  border-top: 1px solid var(--theme-border-subtle);
+  padding-top: 8px;
+}
+
+.engine-pane-version-browser__header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--theme-fg-muted);
+  margin-bottom: 6px;
+}
+
+.engine-pane-version-browser__loading {
+  font-size: 11px;
+  color: var(--theme-fg-muted);
+  font-style: italic;
+}
+
+.engine-pane-version-browser__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.engine-pane-version-browser__version {
+  font-weight: 500;
+  color: var(--theme-fg);
+  min-width: 50px;
+}
+
+.engine-pane-version-browser__date {
+  flex: 1;
+  color: var(--theme-fg-muted);
+  font-size: 11px;
+}
+
+.engine-pane-version-browser__status {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.engine-pane-version-browser__status--enabled {
+  background: var(--theme-engine-ws-status-enabled-bg);
+  color: var(--theme-engine-ws-status-enabled-fg);
+}
+
+.engine-pane-version-browser__status--disabled {
+  background: var(--theme-engine-ws-status-disabled-bg);
+  color: var(--theme-engine-ws-status-disabled-fg);
+}

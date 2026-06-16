@@ -1,0 +1,97 @@
+// ─── Git status colors (theme tokens) ──────────────
+.bifrost.bifrost-theme--dark {
+  --theme-git-modified: #e2c08d;
+  --theme-git-added: #73c991;
+  --theme-git-untracked: #73c991;
+  --theme-git-deleted: #c74e39;
+  --theme-git-renamed: #73c991;
+  --theme-git-conflicted: #e5534b;
+  --theme-git-ignored: #808080;
+}
+
+.bifrost.bifrost-theme--light {
+  --theme-git-modified: #9c6b20;
+  --theme-git-added: #2d7d46;
+  --theme-git-untracked: #2d7d46;
+  --theme-git-deleted: #a52b1a;
+  --theme-git-renamed: #2d7d46;
+  --theme-git-conflicted: #c4352a;
+  --theme-git-ignored: #6b6b6b;
+}
+
+.git-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.git-pane__repo-selector {
+  position: relative;
+  z-index: 11;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--theme-border);
+  font-size: 12px;
+}
+
+.git-pane__repo-label {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--theme-border);
+  font-size: 12px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.git-pane__commit-area {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.git-pane__commit-title-wrapper,
+.git-pane__commit-body-wrapper {
+  margin-bottom: 0;
+}
+
+.git-pane__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-size: 12px;
+  opacity: 0.7;
+  text-align: center;
+
+  p {
+    margin: 2px 0;
+  }
+}
+
+.git-pane__empty-hint {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 6px;
+}
+
+.git-pane__empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.git-pane__empty-action {
+  cursor: pointer;
+  color: var(--theme-accent);
+  text-decoration: none;
+  font-size: 12px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

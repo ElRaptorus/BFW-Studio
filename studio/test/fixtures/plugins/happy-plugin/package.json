@@ -1,0 +1,22 @@
+{
+  "name": "happy-plugin",
+  "version": "1.0.0",
+  "displayName": "Happy Plugin",
+  "description": "A fixture plugin that registers greeting commands.",
+  "author": {
+    "name": "Bifrost Forge World Tests",
+    "url": "https://example.com/author"
+  },
+  "homepage": "https://example.com/happy-plugin",
+  "keywords": [
+    "greeting",
+    "fixture",
+    "test"
+  ],
+  "main": "index.js",
+  "deprecated": "Use kitchen-sink plugin instead",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "permissions": []
+  }
+}

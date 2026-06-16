@@ -1,0 +1,23 @@
+.bifrost {
+  .todo {
+    padding: 0.25rem;
+    background-image: linear-gradient(
+      45deg,
+      var(--theme-todo-gradient-start) 25%,
+      var(--theme-todo-gradient-end) 25%,
+      var(--theme-todo-gradient-end) 50%,
+      var(--theme-todo-gradient-start) 50%,
+      var(--theme-todo-gradient-start) 75%,
+      var(--theme-todo-gradient-end) 75%,
+      var(--theme-todo-gradient-end) 100%
+    );
+    background-size: 56.57px 56.57px;
+  }
+
+  .todo__inner {
+    padding: 0.25rem;
+    background: var(--theme-todo-overlay-bg);
+    border-radius: 0.25;
+    color: var(--theme-todo-overlay-fg);
+  }
+}

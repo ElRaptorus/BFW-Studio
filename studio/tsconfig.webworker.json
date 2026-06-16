@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "webworker", "WebWorker.ImportScripts", "esnext", "ScriptHost"]
+  },
+  "include": ["src/packages.d.ts", "src/bifrost/webworker", "src/modules/*/webworker"],
+  "exclude": ["src/bifrost/webworker/**/*.test.ts"]
+}

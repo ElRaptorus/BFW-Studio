@@ -1,0 +1,129 @@
+.kv-builder {
+  border: 1px solid var(--theme-input-border, #ccc);
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  min-height: 2.5rem;
+}
+
+.kv-builder__header {
+  display: flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem 0.15rem 0;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  gap: 0.35rem;
+}
+
+.kv-builder__col-key {
+  flex: 2;
+  min-width: 0;
+}
+
+.kv-builder__col-sep {
+  flex: 0 0 1rem;
+  text-align: center;
+}
+
+.kv-builder__col-value {
+  flex: 3;
+  min-width: 0;
+}
+
+.kv-builder__col-action {
+  flex: 0 0 1.5rem;
+}
+
+.kv-builder__row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0;
+
+  & + & {
+    margin-top: 1px;
+  }
+}
+
+.kv-builder__input {
+  padding: 0.25rem 0.4rem !important;
+  font-size: 0.875rem !important;
+  height: auto !important;
+  min-height: 1.75rem;
+}
+
+.kv-builder__separator {
+  flex: 0 0 auto;
+  opacity: 0.5;
+  font-weight: bold;
+}
+
+.kv-builder__remove {
+  flex: 0 0 auto;
+  cursor: pointer;
+  opacity: 0.4;
+  font-size: 0.8rem;
+  padding: 0.15rem;
+
+  &:hover {
+    opacity: 1;
+    color: var(--color__red--on-light);
+  }
+}
+
+.kv-builder__empty {
+  padding: 0.5rem 0.4rem;
+  font-size: 0.85rem;
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.kv-builder__add-button {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  margin-top: 0.25rem;
+  border: 1px dashed var(--theme-input-border, #ccc);
+  border-radius: 0.2rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-align: left;
+  opacity: 0.7;
+  font-family: inherit;
+
+  &:hover {
+    opacity: 1;
+    border-style: solid;
+    background: var(--theme-list-hover-bg, rgba(0, 0, 0, 0.04));
+  }
+}
+
+.kv-builder__hint {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+// Raw JSON toggle
+.kv-builder-wrapper__toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
+
+  button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 0.75rem;
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+
+    &:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  }
+}

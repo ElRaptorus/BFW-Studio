@@ -1,0 +1,25 @@
+---
+description: All implementation plans MUST be written to persistent plan files, never only to chat output
+alwaysApply: true
+---
+
+# Plans Must Be Written to Files
+
+When operating in PLAN mode (`do pla`) or producing any implementation plan, checklist, or multi-step task breakdown:
+
+## Rules
+
+- DO write every plan to `~/.cursor/plans/<slug>_<8-char-hex>.plan.md`
+- DO open the plan file in the editor after writing it
+- DO use a descriptive slug (lowercase, underscores, no spaces) that summarizes the plan topic
+- DO generate a random 8-character hex suffix for uniqueness
+- DO include frontmatter: title, date, status (`PENDING APPROVAL` / `IN PROGRESS` / `COMPLETED`)
+- DO reference the plan file path in the chat response so the user can find it
+
+- DO **NOT** output a plan only in the chat window — chat is ephemeral and cannot be tracked
+- DO **NOT** skip the file even for small plans — if it has a checklist, it goes to a file
+- DO **NOT** duplicate the full plan content in chat after writing the file — summarize and reference instead
+
+## Rationale
+
+Plans in chat are lost when the window closes, cannot be checked off, and are invisible to future sessions. Plan files persist across sessions, are searchable, and allow progress tracking.

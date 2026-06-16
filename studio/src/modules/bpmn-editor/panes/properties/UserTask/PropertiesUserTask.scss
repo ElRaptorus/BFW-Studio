@@ -1,0 +1,109 @@
+.user-task-form-field {
+  margin: 0 -0.5rem;
+  margin-top: 0;
+  padding: 0.35rem;
+}
+
+.user-task-form-field__header {
+  display: flex;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.user-task-form-field__header--text {
+  flex: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.user-task-form-field__header--options {
+  display: flex;
+}
+
+.user-task-form-field__icon-button {
+  color: inherit !important;
+}
+
+.enum-values-remove-icon {
+  vertical-align: sub;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.entries-remove-icon {
+  vertical-align: sub;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.user-task-form-field__deprecation-warning__select__entry {
+  display: block;
+  opacity: 1;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color__orange--on-light);
+}
+
+/* RESIZE FIX */
+.user-task-form-field__monaco-editor {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.user-task-form-field .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.user-task-form-field__default-value-peer__wrapper {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.user-task-form-field__monaco-editor__wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-task-form-field__monaco-editor.user-task-form-field__monaco-editor--peer-control {
+  left: 0px;
+  right: 0px;
+}
+
+.default-value__color-picker {
+  width: 34px;
+  height: 34px;
+  border: none;
+  cursor: pointer;
+  background-color: transparent;
+  padding: 0;
+  transform: translateY(-3px);
+}
+
+.default-value__calendar-picker {
+  width: 26px;
+  height: 28px;
+  padding: 4px 6px;
+  margin-bottom: 5px;
+  border: 1px solid RGB(215, 215, 215);
+  background-color: white;
+}
+
+.default-value__calendar-input {
+  visibility: hidden;
+  width: 0px;
+}
+
+.multiline__margin-bottom {
+  margin-bottom: 13rem;
+}

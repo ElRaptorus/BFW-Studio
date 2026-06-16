@@ -1,0 +1,78 @@
+.bpmn-overlay {
+  white-space: nowrap;
+
+  & > span {
+    position: absolute;
+    padding: 0.25rem;
+    height: 2rem;
+    border-radius: 0.25rem;
+  }
+}
+
+.bpmn-overlay--top-left,
+.bpmn-overlay--bottom-left {
+  & > span {
+    left: 0;
+  }
+}
+
+.bpmn-overlay--top-left,
+.bpmn-overlay--top-right {
+  & > span {
+    top: -2rem;
+  }
+}
+
+.bpmn-overlay--top-right,
+.bpmn-overlay--bottom-right {
+  & > span {
+    right: 0;
+  }
+}
+
+.bpmn-overlay-cover {
+  position: relative;
+  display: block;
+  z-index: 200;
+  border: 3px dotted transparent;
+  border-radius: 0.5rem;
+  pointer-events: none;
+}
+
+.bpmn-overlay-cover--highlight-moved {
+  border-color: var(--color-blue);
+  background: rgba(29, 161, 242, 0.2);
+}
+
+.bg-yellow {
+  background: var(--color__yellow--on-light);
+}
+
+.bg-red {
+  background: var(--color__red--on-light);
+  color: #fff;
+}
+
+.bg-green {
+  background: var(--color__green--on-light);
+  color: #fff;
+}
+
+.bg-blue {
+  background: var(--color__blue--on-light);
+  color: #fff;
+}
+
+span.highlight-moved {
+  top: -1.6rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+
+  text-align: center;
+  font-size: 1.125rem;
+  border-radius: 0.25rem;
+
+  background: var(--color-blue);
+  color: #fff;
+}

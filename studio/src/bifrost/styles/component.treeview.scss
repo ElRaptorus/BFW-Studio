@@ -1,0 +1,380 @@
+.treeview {
+  position: relative;
+  background: #fff;
+  overflow-x: hidden;
+  overflow-y: scroll;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.treeview:focus {
+  outline: none;
+}
+
+.treeview__action-or-twistie,
+.treeview__icon {
+  position: relative;
+  display: inline-block;
+  width: 1.25rem;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-right: 0.25rem;
+  text-align: center;
+}
+
+.treeview__entry .treeview__action-icon {
+  display: inline-block;
+}
+.treeview__entry:hover .treeview__action-icon {
+  display: none;
+}
+
+.treeview__entry .treeview__action-icon-hover {
+  display: none;
+}
+.treeview__entry:hover .treeview__action-icon-hover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-fg-muted, #a5a5a5);
+  text-align: center;
+}
+
+.treeview__entry:hover .treeview__action-icon-hover:hover {
+  color: var(--theme-fg, #333);
+}
+
+.treeview__entry .treeview__action-icons-hover {
+  display: none;
+}
+.treeview__entry:hover .treeview__action-icons-hover {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  background: var(--theme-tree-hover-bg, #f7f7f7);
+}
+
+.treeview__action-icon-item {
+  cursor: pointer;
+  color: var(--theme-fg-muted, #a5a5a5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+
+  &:hover {
+    color: var(--theme-fg, #333);
+  }
+}
+
+.treeview__entry--over {
+  background: var(--color-list-highlight, rgba(0, 120, 212, 0.2));
+  outline: 1px solid var(--color-focus-border, rgba(0, 120, 212, 0.6));
+  outline-offset: -1px;
+}
+
+.treeview__entry--dragging {
+  position: relative;
+  opacity: 0.25;
+}
+
+.treeview__drag-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--color-badge-background, #007acc);
+  color: var(--color-badge-foreground, #fff);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.treeview__action-or-twistie {
+  margin-left: 0.125rem;
+}
+
+.treeview__entry--section,
+.treeview__entry {
+  padding: 0.25rem;
+  padding-left: 0;
+  white-space: nowrap;
+}
+
+.treeview__entry--section {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f7f7f7;
+  color: #666;
+}
+
+.treeview__entry--section.treeview__entry--focused {
+  --color-stacked-icon-lower-right-text-shadow: #1677d1;
+  background: #1677d1;
+}
+
+.treeview__entries {
+  overflow: scroll;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.treeview--editor-document-inspector {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.treeview__entry {
+  display: flex;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.treeview__entry:has(.treeview__action-icons-hover) {
+  position: relative;
+}
+
+.treeview__entry:hover {
+  background: #f7f7f7;
+}
+
+.treeview {
+  .treeview__entry--selected,
+  .treeview__entry--selected:hover {
+    background: rgba(128, 128, 128, 0.2);
+  }
+
+  &:focus {
+    .treeview__entry--selected,
+    .treeview__entry--selected:hover {
+      background: #1677d1;
+      color: #fff;
+
+      .treeview__badge,
+      .treeview__label,
+      .treeview__icon {
+        color: #fff;
+      }
+      .treeview__icon .ph-duotone {
+        --icon-primary-color: #fff;
+        --icon-secondary-color: #fff;
+        --icon-secondary-opacity: 0.4;
+      }
+    }
+  }
+}
+
+.treeview__label-container {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px;
+  margin: -2px;
+}
+
+.treeview__entry--depth-1 {
+  padding-left: 1rem;
+}
+
+.treeview__entry--depth-2 {
+  padding-left: 2rem;
+}
+
+.treeview__entry--depth-3 {
+  padding-left: 3rem;
+}
+
+.treeview__entry--depth-4 {
+  padding-left: 4rem;
+}
+
+.treeview__entry--depth-5 {
+  padding-left: 5rem;
+}
+
+.treeview__entry--depth-6 {
+  padding-left: 6rem;
+}
+
+.treeview__entry--depth-7 {
+  padding-left: 7rem;
+}
+
+.treeview__entry--depth-8 {
+  padding-left: 8rem;
+}
+
+.treeview__entry--depth-9 {
+  padding-left: 9rem;
+}
+
+.treeview__entry--depth-10 {
+  padding-left: 10rem;
+}
+
+.treeview__entry--depth-11 {
+  padding-left: 11rem;
+}
+
+.treeview__entry--depth-12 {
+  padding-left: 12rem;
+}
+
+.treeview__entry--depth-13 {
+  padding-left: 13rem;
+}
+
+.treeview__entry--depth-14 {
+  padding-left: 14rem;
+}
+
+.treeview__entry--depth-15 {
+  padding-left: 15rem;
+}
+
+.treeview__entry--depth-16 {
+  padding-left: 16rem;
+}
+
+.treeview__entry--depth-17 {
+  padding-left: 17rem;
+}
+
+.treeview__entry--depth-18 {
+  padding-left: 18rem;
+}
+
+.treeview__entry--depth-19 {
+  padding-left: 19rem;
+}
+
+.treeview__sublabel {
+  margin-left: 5px;
+  opacity: 0.5;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.treeview__highlight {
+  background: rgba(0, 123, 255, 0.25);
+}
+
+// Icons
+
+.treeview__icon--ph-caret-closed {
+  opacity: 0.75;
+}
+.treeview__icon--ph-caret-open {
+  transform: rotate(45deg);
+}
+
+.treeview__icon--ph-tree-closed,
+.treeview__icon--ph-tree-open {
+  color: goldenrod;
+}
+
+.treeview__icon--ph-folder {
+  color: goldenrod;
+}
+
+.treeview__icon--ph-file {
+  --icon-primary-color: #666;
+  --icon-secondary-color: #ccc;
+  --icon-secondary-opacity: 1;
+  transform: rotate(270deg);
+}
+
+.treeview__icon--ph-properties {
+  --icon-primary-color: #607d8b;
+  --icon-secondary-color: #9e9e9e;
+  --icon-secondary-opacity: 1;
+}
+
+.treeview__icon--ph-settings {
+  --icon-primary-color: #607d8b;
+  --icon-secondary-color: #9e9e9e;
+  --icon-secondary-opacity: 1;
+}
+
+.treeview__icon--ph-deploy-targets {
+  --icon-primary-color: #607d8b;
+  --icon-secondary-color: #9e9e9e;
+  --icon-secondary-opacity: 1;
+}
+
+.treeview__icon--ph-directory {
+  --icon-primary-color: #607d8b;
+  --icon-secondary-color: #9e9e9e;
+  --icon-secondary-opacity: 1;
+}
+
+.treeview__icon--ph-action-circle {
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.treeview__icon--ph-action-close {
+  font-size: 1.25rem;
+}
+
+.treeview__badges {
+  align-self: flex-end;
+  margin-left: auto;
+  font-size: 0.875rem;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+.treeview__badge-separator {
+  opacity: 0.7;
+}
+
+.treeview__entry--property {
+  display: flex;
+  padding: 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.treeview__property-label {
+  display: flex;
+  padding: 0.25rem 0;
+  flex-basis: 200px;
+}
+
+.treeview__property-value {
+  input {
+    padding: 0.25rem;
+    border-top: none;
+    border-bottom: none;
+    border-left: 1px solid #ddd;
+  }
+}
+
+.treeview__entry--temporary {
+  font-style: italic;
+}
+
+.pane__content--drop-target {
+  background: var(--color-list-highlight, rgba(0, 120, 212, 0.1));
+  outline: 2px dashed var(--color-focus-border, rgba(0, 120, 212, 0.5));
+  outline-offset: -2px;
+}

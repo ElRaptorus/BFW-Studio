@@ -1,0 +1,19 @@
+{
+  "name": "create-evil-plugin",
+  "version": "1.0.0",
+  "description": "Scaffold generator for Evil Studio plugins",
+  "type": "module",
+  "bin": {
+    "create-evil-plugin": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js"
+  },
+  "dependencies": {
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,36 @@
+.bottom-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-x: auto;
+}
+
+.bottom-pane__pane-tabs {
+  display: flex;
+  flex: 0 0 27px;
+  border-bottom: 1px solid var(--theme-surface-inset);
+  overflow: visible;
+  width: 100%;
+}
+
+.bottom-pane__pane-tabs--overflow {
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.bottom-pane__pane-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.bottom-pane__pane-content {
+  pre {
+    user-select: text;
+  }
+}

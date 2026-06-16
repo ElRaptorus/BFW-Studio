@@ -1,0 +1,25 @@
+import type { StudioPluginApi } from '@evil/bifrost_fw_sdk';
+
+export async function activate(api: StudioPluginApi): Promise<void> {
+  await api.commands.register('hello', () => {
+    api.notifications.open({
+      type: 'info',
+      content: 'Hello from {{displayName}}!',
+    });
+  });
+
+  await api.panes.registerWebviewPane({
+    id: 'sidebar',
+    title: '{{displayName}}',
+    area: 'right',
+    groupId: 'property',
+    icon: 'ph ph-puzzle-piece',
+    webviewOptions: {
+      entryPoint: 'webview/dist/index.html',
+    },
+  });
+}
+
+export async function deactivate(): Promise<void> {
+  // Cleanup resources here
+}

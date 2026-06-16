@@ -1,0 +1,119 @@
+.bifrost {
+  .pane-toolbar {
+    display: flex;
+    flex: auto;
+    height: 26px;
+    flex: 0 0 27px;
+    font-size: 0.85rem;
+  }
+
+  .pane-tabs {
+    display: flex;
+    flex: auto;
+    height: 26px;
+
+    font-size: 0.85rem;
+  }
+
+  .pane-tabs__options {
+    display: flex;
+    font-size: 0.85rem;
+  }
+
+  .pane-tab-divider {
+    display: inline-block;
+    width: 0.25rem;
+  }
+
+  .pane-tab {
+    float: left;
+    padding: 2px 0.8em;
+    height: 26px;
+    line-height: 15px;
+    white-space: nowrap;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    background: var(--theme-pane-tab-bg);
+    color: var(--theme-pane-tab-fg);
+
+    border-left: 2px solid transparent;
+    border-right: 2px solid transparent;
+  }
+
+  .pane-tab--over,
+  .pane--over,
+  .tabs--over {
+    background: var(--theme-surface-secondary);
+  }
+
+  .pane-tab:hover {
+    color: var(--theme-pane-tab-hover-fg);
+  }
+
+  .pane-tab--active {
+    color: var(--theme-pane-tab-active-fg);
+    background: var(--theme-pane-tab-active-bg);
+  }
+
+  .pane-tab-icon {
+    position: relative;
+    display: flex;
+    background-color: transparent;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    height: 26px;
+    border: none;
+    white-space: pre;
+    text-align: center;
+  }
+
+  .pane-tab-icon {
+    font-size: 1rem;
+    color: var(--theme-pane-tab-fg);
+
+    span,
+    svg {
+      width: 28px;
+    }
+  }
+
+  .pane-tab-icon:hover {
+    color: var(--theme-pane-tab-hover-fg);
+  }
+
+  .pane-tab-input__outer {
+    position: relative;
+    flex: auto;
+    display: flex;
+  }
+
+  .pane-tab-input {
+    width: 100%;
+    padding-left: 4px;
+    margin: 3px;
+
+    outline: none !important;
+    border: none;
+    background: var(--theme-input-bg);
+    color: var(--theme-fg);
+    text-overflow: ellipsis;
+
+    &:focus {
+      color: var(--theme-pane-tab-active-fg);
+    }
+  }
+
+  .pane-tab-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.1rem var(--theme-input-focus-shadow);
+  }
+
+  .pane-tab-input__options {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.25rem;
+  }
+}

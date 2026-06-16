@@ -1,0 +1,41 @@
+---
+description: Data placement rules for EditorDocument currentData, metadata, and model fields
+alwaysApply: true
+---
+
+# Editor Document Data Placement
+
+Both `currentData` and `metadata` on an `EditorDocument` are persisted to the user's localStorage. Misplacing data into either channel wastes storage, degrades performance, and can leak stale state across sessions.
+
+## Channel rules
+
+| Channel | Purpose | OK to store | NOT OK to store |
+|---------|---------|-------------|-----------------|
+| `data.original` / `data.current` | Dirty-state tracking, session restoration | File content (BPMN XML, JSON) | Parsed models, fetched lists, computed state |
+| `metadata` | View-related restoration state | Scroll position, zoom level, active tab index, revision counters | Selections, parsed models, data lists, fetched records |
+| Private model fields + public getters | Working/production data | Selections, parsed models, data lists, fetched records, computed state | — |
+
+## Pane data access pattern (Debugger pattern)
+
+Panes access model data by casting `props.editorDocumentModel` to the concrete model type and calling its public getters:
+
+```typescript
+const model = props.editorDocumentModel as MyDocumentModel | null;
+const items = model?.getItems() ?? [];
+```
+
+NEVER use `studio.getSharedRessource()` for per-document data. `registerSharedRessource` is a global singleton store — two tabs of the same type overwrite each other's state.
+
+## Selection re-render trigger
+
+When the model's selection changes, increment a private `selectionRevision` counter and write it to metadata. This triggers the Workbench's metadata-change event, causing panes to re-render and re-read from the model's getter. The actual selection object is never persisted.
+
+```typescript
+this.selectionRevision++;
+this.updateMetadata({ selectionRevision: this.selectionRevision });
+```
+
+## Reference
+
+- `docs/architecture/editor-documents.md` §Data Placement Rules
+- `docs/architecture/common-pitfalls.md` §`registerSharedRessource` for per-document state

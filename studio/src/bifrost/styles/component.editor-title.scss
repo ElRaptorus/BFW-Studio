@@ -1,0 +1,115 @@
+.bifrost {
+  .editor-title {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+
+    margin: 1rem 0 0;
+    padding: 0 0.25rem;
+    border: 1px solid transparent;
+    user-select: text;
+  }
+
+  .editor-title__left {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+
+  .editor-title__center {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .editor-title__right {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: stretch;
+    text-align: right;
+  }
+
+  .editor-title__icon {
+    flex: 0;
+    min-width: 2.75rem;
+    min-height: 3rem;
+    font-size: 1.75rem;
+    margin-left: 0.125rem;
+    margin-right: 0.75rem;
+    text-align: center;
+    align-self: baseline;
+
+    background: var(--theme-editor-title-icon-bg);
+    color: var(--theme-fg);
+    border-radius: 0.2rem;
+
+    span,
+    svg {
+      vertical-align: middle;
+    }
+  }
+
+  .editor-title__icon--warning {
+    color: var(--theme-editor-title-icon-warning-fg) !important;
+    background: var(--theme-editor-title-icon-warning-bg) !important;
+  }
+
+  .editor-title__text {
+    flex: 1;
+    font-size: 1.15rem;
+  }
+
+  .editor-title__dropdown {
+    padding: 0 0.3rem;
+    margin-left: -0.3rem;
+    font-size: 1.15rem;
+    color: inherit;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.1);
+      text-decoration: none;
+    }
+
+    &:focus,
+    &:active {
+      background: rgba(0, 0, 0, 0.1);
+      text-decoration: none;
+    }
+  }
+
+  .editor-title__dropdown-icon {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .editor-title__text--small {
+    font-size: 0.875rem;
+  }
+
+  .editor-title__button,
+  .editor-title__item {
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  .editor-title__button:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .editor-title__button:active {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  .editor-title__button--active {
+    font-weight: bold;
+  }
+}

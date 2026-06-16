@@ -1,0 +1,23 @@
+.help-page {
+  padding: 1rem;
+
+  user-select: text;
+}
+
+.bifrost.bifrost-theme--dark {
+  --color-help-icon-primary: var(--color-blue);
+  --color-help-icon-secondary: var(--color-white);
+}
+
+.bifrost.bifrost-theme--light {
+  --color-help-icon-primary: var(--color-white);
+  --color-help-icon-secondary: var(--color-blue);
+}
+
+.bifrost {
+  .help-icon {
+    --icon-primary-color: var(--color-help-icon-primary);
+    --icon-secondary-color: var(--color-help-icon-secondary);
+    --icon-secondary-opacity: 1;
+  }
+}

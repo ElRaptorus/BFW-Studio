@@ -1,0 +1,161 @@
+.pane-item {
+  margin: 0;
+  padding: 0.5rem;
+  display: flex;
+  margin-top: 2px;
+  border: 1px solid transparent;
+  background: #fff;
+  border-radius: 0.2rem;
+
+  &:last-of-type {
+    margin-bottom: 1rem;
+  }
+}
+
+.pane-item--no-background {
+  background: transparent;
+  border: none;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.pane-item__squared-rounded-icon {
+  flex: 0;
+  min-width: 3rem;
+  font-size: 1rem;
+  margin-right: 1rem;
+  text-align: center;
+}
+
+.pane-item__squared-rounded-icon--big {
+  min-width: 3.75rem;
+  font-size: 2rem;
+}
+
+.pane-item__squared-rounded-icon--placeholder {
+  border-left: 4px solid #eaeaea;
+}
+
+.pane-item__options {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  flex: 0;
+  margin-left: 1rem;
+  text-align: center;
+}
+
+.pane-item__options-icon {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &:only-child {
+    font-size: 1.25rem;
+  }
+}
+
+.pane-item__options-icon--no-hover {
+  opacity: 1;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.pane-item__options-icon--success {
+  color: var(--color__green--on-light);
+}
+
+.pane-item__options-icon--warning {
+  color: var(--color__orange--on-light);
+}
+
+.pane-item__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+}
+
+.pane-item__text--no-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pane-item__sublabel {
+  font-size: 0.875rem;
+  color: #999;
+}
+
+.squared-rounded-icon {
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background: #eaeaea;
+}
+
+.squared-rounded-icon--letter {
+  font-weight: bold;
+  min-height: 3rem;
+  align-content: center;
+}
+
+.pane-item--hoverable {
+  .pane-item__show-on-hover {
+    display: none;
+  }
+
+  &:hover {
+    background: #ddd;
+    .pane-item__show-on-hover {
+      display: block;
+    }
+    .pane-item__hide-on-hover {
+      display: none;
+    }
+  }
+}
+
+.squared-rounded-icon--bg-1 {
+  background: #a83790;
+  color: #fff;
+}
+
+.squared-rounded-icon--bg-red {
+  background: #a0353e;
+  color: #fff;
+}
+
+.squared-rounded-icon--bg-2 {
+  background: #42b2d5;
+  color: #fff;
+}
+
+.squared-rounded-icon--bg-blue {
+  background: #2185d0;
+  color: #fff;
+}
+
+.squared-rounded-icon--bg-purple {
+  background: #dc73ff;
+  color: #fff;
+}
+
+.squared-rounded-icon--bg-bloody-orange {
+  background: #ff5722;
+  color: #ffeb3b;
+}
+
+.squared-rounded-icon--bg-violet-light {
+  background: #cddc39;
+  color: #33691e;
+}
+
+.squared-rounded-icon--bg-3 {
+  background: #d28543;
+  color: #fff;
+}

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definition_8e109fe3-d225-4f0e-b737-cf57f665b39f" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
+  <bpmn:collaboration id="Collaboration_1cidyxu" name="">
+    <bpmn:participant id="Participant_0px403d" name="message-flow" processRef="message-flow" />
+  </bpmn:collaboration>
+  <bpmn:process id="message-flow" name="message-flow" isExecutable="true">
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_1xzf0d3" name="Lane">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>SequentialMultiInstanceTask</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0w23lkc</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>ParallelMultiInstanceTask</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>LoopTask</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Start">
+      <bpmn:outgoing>Flow_15hzzku</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_15hzzku" sourceRef="StartEvent_1" targetRef="ParallelMultiInstanceTask" />
+    <bpmn:task id="SequentialMultiInstanceTask">
+      <bpmn:incoming>Flow_19fwtwr</bpmn:incoming>
+      <bpmn:outgoing>Flow_0p0r3qa</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="true" />
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_19fwtwr" sourceRef="ParallelMultiInstanceTask" targetRef="SequentialMultiInstanceTask" />
+    <bpmn:sequenceFlow id="Flow_0p0r3qa" sourceRef="SequentialMultiInstanceTask" targetRef="LoopTask" />
+    <bpmn:endEvent id="Event_0w23lkc">
+      <bpmn:incoming>Flow_0t5k5xm</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0t5k5xm" sourceRef="LoopTask" targetRef="Event_0w23lkc" />
+    <bpmn:task id="ParallelMultiInstanceTask">
+      <bpmn:incoming>Flow_15hzzku</bpmn:incoming>
+      <bpmn:outgoing>Flow_19fwtwr</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics />
+    </bpmn:task>
+    <bpmn:task id="LoopTask">
+      <bpmn:incoming>Flow_0p0r3qa</bpmn:incoming>
+      <bpmn:outgoing>Flow_0t5k5xm</bpmn:outgoing>
+      <bpmn:standardLoopCharacteristics />
+    </bpmn:task>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1cidyxu">
+      <bpmndi:BPMNShape id="Participant_0px403d_di" bpmnElement="Participant_0px403d" isHorizontal="true">
+        <dc:Bounds x="5" y="-320" width="885" height="980" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1xzf0d3_di" bpmnElement="Lane_1xzf0d3" isHorizontal="true">
+        <dc:Bounds x="35" y="-320" width="855" height="980" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="92" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="98" y="195" width="24" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1uxy4ix_di" bpmnElement="SequentialMultiInstanceTask">
+        <dc:Bounds x="390" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0w23lkc_di" bpmnElement="Event_0w23lkc">
+        <dc:Bounds x="772" y="152" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0hlxam8_di" bpmnElement="ParallelMultiInstanceTask">
+        <dc:Bounds x="270" y="-190" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0q0u38w_di" bpmnElement="LoopTask">
+        <dc:Bounds x="440" y="440" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_15hzzku_di" bpmnElement="Flow_15hzzku">
+        <di:waypoint x="128" y="170" />
+        <di:waypoint x="199" y="170" />
+        <di:waypoint x="199" y="-150" />
+        <di:waypoint x="270" y="-150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19fwtwr_di" bpmnElement="Flow_19fwtwr">
+        <di:waypoint x="370" y="-150" />
+        <di:waypoint x="380" y="-150" />
+        <di:waypoint x="380" y="170" />
+        <di:waypoint x="390" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0p0r3qa_di" bpmnElement="Flow_0p0r3qa">
+        <di:waypoint x="440" y="210" />
+        <di:waypoint x="440" y="325" />
+        <di:waypoint x="490" y="325" />
+        <di:waypoint x="490" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0t5k5xm_di" bpmnElement="Flow_0t5k5xm">
+        <di:waypoint x="540" y="480" />
+        <di:waypoint x="656" y="480" />
+        <di:waypoint x="656" y="170" />
+        <di:waypoint x="772" y="170" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

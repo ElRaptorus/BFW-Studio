@@ -1,0 +1,17 @@
+.bifrost {
+  --dv-feel-keyword: #9334e6;
+  --dv-feel-number: #188038;
+  --dv-feel-string: #d93025;
+}
+
+.bifrost.bifrost-theme--dark,
+.bifrost.bifrost-theme--forge-world-night,
+.bifrost.bifrost-theme--dark-city,
+.bifrost.bifrost-theme--tomb-world,
+.bifrost.bifrost-theme--grey-stone,
+.bifrost.bifrost-theme--vscode-dark,
+.bifrost.bifrost-theme--zed-dark {
+  --dv-feel-keyword: #c58af9;
+  --dv-feel-number: #6fd67e;
+  --dv-feel-string: #f87171;
+}

@@ -1,0 +1,34 @@
+{
+  "name": "manifest-warnings",
+  "displayName": "Manifest Warnings",
+  "description": "Valid but imperfect manifest: has unknown fields and missing optional displayName in bifrostStudio.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "permissions": [],
+    "futureField": "this-is-unknown",
+    "alsoUnknown": 42,
+    "activationEvents": [
+      "onStartup"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "manifestWarnings.hello",
+          "title": "Hello with Warnings",
+          "category": "Warnings"
+        }
+      ],
+      "settings": [
+        {
+          "key": "manifestWarnings.verbose",
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose mode."
+        }
+      ]
+    }
+  }
+}

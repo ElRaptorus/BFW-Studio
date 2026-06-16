@@ -1,0 +1,33 @@
+{
+  "name": "lazy-plugin",
+  "displayName": "Lazy Plugin",
+  "description": "Tests lazy activation via onCommand. Not loaded at startup.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Lazy Plugin",
+    "permissions": [],
+    "activationEvents": [
+      "onCommand:lazyPlugin.activate"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "lazyPlugin.activate",
+          "title": "Activate Lazy Plugin",
+          "category": "Lazy Plugin"
+        }
+      ],
+      "settings": [
+        {
+          "key": "lazyPlugin.greeting",
+          "type": "string",
+          "default": "Hello from the lazy plugin!",
+          "description": "Greeting message for the lazy plugin."
+        }
+      ]
+    }
+  }
+}

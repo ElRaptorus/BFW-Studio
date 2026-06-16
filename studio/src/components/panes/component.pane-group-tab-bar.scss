@@ -1,0 +1,184 @@
+.pane-group-tab-bar {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  background: var(--theme-pane-bg);
+  border-bottom: 1px solid var(--theme-surface-inset);
+}
+
+// ─── Icon variant (right area) ────────────────────
+
+.pane-group-tab-bar--icon {
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid var(--theme-pane-tab-bg);
+  border-bottom-color: var(--theme-surface-inset);
+}
+
+.pane-group-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--theme-pane-tab-fg);
+  font-size: 20px;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--theme-pane-tab-hover-fg);
+    background: var(--theme-pane-group-tab-hover-bg);
+  }
+
+  &:focus-visible {
+    color: var(--theme-pane-tab-hover-fg);
+    background: var(--theme-pane-group-tab-hover-bg);
+    outline: 1px solid var(--theme-pane-tab-active-fg);
+    outline-offset: -1px;
+  }
+}
+
+.pane-group-tab-icon--active {
+  color: var(--theme-pane-tab-active-fg);
+  background: var(--theme-pane-group-tab-selected-bg);
+}
+
+.pane-group-tab-icon__abbr {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: monospace;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+// ─── Text variant (bottom area) ───────────────────
+
+.pane-group-tab-bar--text {
+  gap: 0;
+}
+
+.pane-group-tab-text {
+  padding: 2px 0.8em;
+  height: 26px;
+  line-height: 15px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: var(--theme-pane-tab-bg);
+  color: var(--theme-pane-tab-fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--theme-pane-tab-hover-fg);
+  }
+}
+
+.pane-group-tab-text--active {
+  color: var(--theme-pane-tab-active-fg);
+  border-bottom-color: var(--theme-pane-tab-active-fg);
+}
+
+// ─── Right-click context menu ─────────────────────
+
+.pane-group-context-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+}
+
+.pane-group-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 140px;
+  padding: 4px 0;
+  background: var(--theme-dropdown-bg, var(--theme-bg));
+  border: 1px solid var(--theme-surface-inset);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px var(--theme-shadow);
+}
+
+.pane-group-context-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  color: var(--theme-fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+
+  i {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: var(--theme-surface-secondary);
+  }
+}
+
+.pane-group-context-menu__item--active {
+  font-weight: 600;
+}
+
+// ─── PaneAreaRight layout ─────────────────────────
+
+.pane-area-right {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pane-area-right__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+
+  > .pane {
+    display: flex;
+    flex-direction: column;
+
+    > .pane__inner {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+  }
+}
+
+// ─── Bottom area group tab bar ────────────────────
+
+.bottom-pane__group-tabs {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--theme-surface-inset);
+}
+
+// ─── Severity utility classes for icon factories ──
+
+.lint-severity--error {
+  color: var(--lint-error-text) !important;
+}
+
+.lint-severity--warning {
+  color: var(--lint-warning-text) !important;
+}
+
+.lint-severity--info {
+  color: var(--lint-info-text) !important;
+}

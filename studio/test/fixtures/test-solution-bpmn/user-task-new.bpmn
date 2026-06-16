@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:evil="https://evilengine.dev/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="user-task-new_Definition" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+  <bpmn:extensionElements>
+    <evil:properties>
+      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="100" complianceStatus="valid" computedAtIso="2026-06-14T20:59:03.070Z" schemaVersion="1" maxPoints="7" penaltyPoints="0" rawErrorFindings="0" rawWarningFindings="0" />
+    </evil:properties>
+  </bpmn:extensionElements>
+  <bpmn:collaboration id="Collaboration_1cidyxu" name="">
+    <bpmn:participant id="Participant_0px403d" name="user-task-new" processRef="user-task-new_Process" />
+  </bpmn:collaboration>
+  <bpmn:process id="user-task-new_Process" name="user-task-new" isExecutable="true">
+    <bpmn:extensionElements>
+      <evil:version>1</evil:version>
+    </bpmn:extensionElements>
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_1xzf0d3" name="Lane">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_03alejm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>UserTask_2</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Start Event">
+      <bpmn:outgoing>Flow_05cfjf3</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_05cfjf3" sourceRef="StartEvent_1" targetRef="UserTask_2" />
+    <bpmn:sequenceFlow id="Flow_1siuq8b" sourceRef="UserTask_2" targetRef="EndEvent_03alejm" />
+    <bpmn:endEvent id="EndEvent_03alejm" name="End Event">
+      <bpmn:incoming>Flow_1siuq8b</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="UserTask_2" name="UserTask_2">
+      <bpmn:extensionElements>
+        <evil:formFields>[{"id":"MyColorField","label":"Color","type":"color","defaultValue":"#0e283b"},{"id":"MyHiddenField","type":"hidden","defaultValue":"5"},{"id":"MyCheckboxField","label":"Checkbox","type":"checkbox","defaultValue":"key2","customForm":"{\"entries\":[{\"key\":\"key1\",\"value\":\"Value 1\"},{\"key\":\"key2\",\"value\":\"Value 2\"},{\"key\":\"key3\",\"value\":\"Value 3\"}]}"},{"id":"MyDecimalField","label":"Decimal","type":"number","defaultValue":"12","customForm":"{\"step\":0.1}"},{"id":"MyRangeField","label":"Range","type":"range","defaultValue":"55","customForm":"{\"max\":100,\"step\":1,\"min\":1}"},{"id":"FormField_5itDpZIp","label":"Textarea","type":"textarea"}]</evil:formFields>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_05cfjf3</bpmn:incoming>
+      <bpmn:outgoing>Flow_1siuq8b</bpmn:outgoing>
+    </bpmn:userTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1cidyxu">
+      <bpmndi:BPMNShape id="Participant_0px403d_di" bpmnElement="Participant_0px403d" isHorizontal="true">
+        <dc:Bounds x="5" y="80" width="585" height="540" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1xzf0d3_di" bpmnElement="Lane_1xzf0d3" isHorizontal="true">
+        <dc:Bounds x="35" y="80" width="555" height="540" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="92" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="83" y="195" width="55" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_03alejm_di" bpmnElement="EndEvent_03alejm">
+        <dc:Bounds x="502" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="495" y="195" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0gafn3n_di" bpmnElement="UserTask_2">
+        <dc:Bounds x="240" y="390" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_05cfjf3_di" bpmnElement="Flow_05cfjf3">
+        <di:waypoint x="128" y="170" />
+        <di:waypoint x="184" y="170" />
+        <di:waypoint x="184" y="430" />
+        <di:waypoint x="240" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1siuq8b_di" bpmnElement="Flow_1siuq8b">
+        <di:waypoint x="340" y="430" />
+        <di:waypoint x="421" y="430" />
+        <di:waypoint x="421" y="170" />
+        <di:waypoint x="502" y="170" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

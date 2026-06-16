@@ -1,0 +1,41 @@
+---
+description: Keep the detailed architecture documentation up to date as understanding of the Studio grows
+alwaysApply: true
+---
+
+# Architecture Documentation Maintenance
+
+The folder `docs/architecture/` is the living, detailed architecture reference for the Studio. It contains one file per topic area, listed in `docs/architecture/index.md`. Each file documents internal implementation details: file paths, type definitions, method signatures, event flows, data models, and relationships between subsystems.
+
+## When to update
+
+Update the appropriate file in `docs/architecture/` whenever:
+
+- You modify code that changes the architecture (new types, renamed methods, changed event wiring, new commands, new files, moved responsibilities)
+- You gain significant new understanding of a Studio subsystem through research — even if you did not edit any code
+- You discover that existing documentation is incorrect or incomplete
+
+For a lookup table mapping "what changed" to "which file to update", see the `architecture-docs` skill.
+
+## What to write
+
+- Concrete, technical content: file paths, type signatures, method tables, event flow diagrams, data model descriptions
+- Keep it factual and reference-oriented — this is not a tutorial, it is a technical reference for agents
+- The document is written in English. Maintain that language.
+
+## Adding new topics
+
+When documenting a subsystem that does not fit any existing file, create a new file in `docs/architecture/` and add it to the topic list in `docs/architecture/index.md`.
+
+## Special-purpose files
+
+Two files in the architecture folder serve as living logs rather than static references:
+
+- **`common-pitfalls.md`** — Recurring mistakes, gotchas, and non-obvious constraints. When you encounter a bug caused by a subtle architectural constraint, or when you discover a pattern that is easy to get wrong, add an entry here. Each entry should describe the mistake, explain why it happens, and show the correct approach.
+- **`docs/decisions.md`** (top-level, not in `architecture/`) — Technical decision log. When a significant design choice is made (e.g., choosing one approach over another, deprecating a pattern, adopting a new library), add a dated entry explaining the decision and its rationale.
+
+## What NOT to do
+
+- Do not rewrite existing sections unless they are wrong
+- Do not remove content — only add, correct, or restructure
+- Do not duplicate information already in `docs/systeme.md` or `docs/philosophie.md` (those cover high-level concepts; `docs/architecture/` covers implementation detail)

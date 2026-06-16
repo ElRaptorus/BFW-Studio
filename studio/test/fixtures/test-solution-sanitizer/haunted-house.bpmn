@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:evil="https://evilengine.dev/schema/bpmn"
+                  id="Definitions_1"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+
+  <!-- ========================================== -->
+  <!-- GLOBAL DEFINITIONS — orphaned (unreferenced) -->
+  <!-- ========================================== -->
+  <bpmn:message id="Message_orphan" name="Orphaned Order" />
+  <bpmn:error id="Error_orphan" name="Orphaned Timeout" />
+  <bpmn:signal id="Signal_orphan" name="Orphaned Abort" />
+  <bpmn:escalation id="Escalation_orphan" name="Orphaned Esc" />
+
+  <!-- Global definitions that ARE referenced (should NOT be flagged) -->
+  <bpmn:message id="Message_used" name="Used Order" />
+  <bpmn:error id="Error_used" name="Used Timeout" />
+
+  <!-- ========================================== -->
+  <!-- COLLABORATION — with ghost participant + ghost message flow -->
+  <!-- ========================================== -->
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_clean" name="Clean Pool" processRef="Process_clean" />
+    <bpmn:participant id="Participant_ghost" name="Ghost Pool" processRef="Process_ghost" />
+    <bpmn:messageFlow id="MsgFlow_clean" sourceRef="Participant_clean" targetRef="Participant_ghost" messageRef="Message_used" />
+    <bpmn:messageFlow id="MsgFlow_ghost" sourceRef="Participant_clean" targetRef="Participant_ghost" />
+  </bpmn:collaboration>
+
+  <!-- ========================================== -->
+  <!-- CLEAN PROCESS — visible, proper DI -->
+  <!-- ========================================== -->
+  <bpmn:process id="Process_clean" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_clean" name="Start">
+      <bpmn:outgoing>Flow_clean_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Task_clean" name="Do Work">
+      <bpmn:incoming>Flow_clean_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_clean_2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndEvent_clean" name="End">
+      <bpmn:incoming>Flow_clean_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_clean_1" sourceRef="StartEvent_clean" targetRef="Task_clean" />
+    <bpmn:sequenceFlow id="Flow_clean_2" sourceRef="Task_clean" targetRef="EndEvent_clean" />
+
+    <!-- Referenced message event (uses Message_used — should NOT be flagged as dangling) -->
+    <bpmn:intermediateCatchEvent id="Event_usedMsg" name="Used Msg">
+      <bpmn:messageEventDefinition id="MsgEvtDef_used" messageRef="Message_used" />
+    </bpmn:intermediateCatchEvent>
+
+    <!-- Referenced error event (uses Error_used — should NOT be flagged as dangling) -->
+    <bpmn:endEvent id="Event_usedErr" name="Used Err">
+      <bpmn:errorEventDefinition id="ErrEvtDef_used" errorRef="Error_used" />
+    </bpmn:endEvent>
+
+    <!-- ========================================== -->
+    <!-- DANGLING REFERENCES — point to non-existent definitions -->
+    <!-- ========================================== -->
+    <bpmn:intermediateCatchEvent id="Event_danglingMsg" name="Dangling Msg">
+      <bpmn:messageEventDefinition id="MsgEvtDef_dangling" messageRef="Message_DELETED" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:endEvent id="Event_danglingErr" name="Dangling Err">
+      <bpmn:errorEventDefinition id="ErrEvtDef_dangling" errorRef="Error_DELETED" />
+    </bpmn:endEvent>
+
+    <bpmn:intermediateThrowEvent id="Event_danglingSig" name="Dangling Sig">
+      <bpmn:signalEventDefinition id="SigEvtDef_dangling" signalRef="Signal_DELETED" />
+    </bpmn:intermediateThrowEvent>
+
+    <bpmn:endEvent id="Event_danglingEsc" name="Dangling Esc">
+      <bpmn:escalationEventDefinition id="EscEvtDef_dangling" escalationRef="Escalation_DELETED" />
+    </bpmn:endEvent>
+
+    <!-- ========================================== -->
+    <!-- GHOST ELEMENTS — in process but no DI shapes/edges -->
+    <!-- ========================================== -->
+    <bpmn:task id="Task_ghost" name="Ghost Task">
+      <bpmn:incoming>Flow_ghost_in</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_ghost_in" sourceRef="Task_clean" targetRef="Task_ghost" />
+
+    <!-- ========================================== -->
+    <!-- GHOST ELEMENTS INSIDE SUBPROCESS -->
+    <!-- The subprocess itself is visible, but two of -->
+    <!-- its children have no DI — reproduces the bug -->
+    <!-- where fixer could not reach nested ghosts.   -->
+    <!-- ========================================== -->
+    <bpmn:subProcess id="SubProcess_haunt" name="Haunted Room">
+      <bpmn:startEvent id="Start_haunt">
+        <bpmn:outgoing>Flow_haunt_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:task id="Task_haunt_ok" name="Visible Task">
+        <bpmn:incoming>Flow_haunt_1</bpmn:incoming>
+        <bpmn:outgoing>Flow_haunt_2</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:endEvent id="End_haunt">
+        <bpmn:incoming>Flow_haunt_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_haunt_1" sourceRef="Start_haunt" targetRef="Task_haunt_ok" />
+      <bpmn:sequenceFlow id="Flow_haunt_2" sourceRef="Task_haunt_ok" targetRef="End_haunt" />
+      <!-- Ghost flow node nested in subprocess — no DI -->
+      <bpmn:boundaryEvent id="Event_sub_ghost_boundary" attachedToRef="Task_haunt_ok">
+        <bpmn:errorEventDefinition id="ErrDef_sub_ghost" />
+      </bpmn:boundaryEvent>
+      <!-- Ghost end event nested in subprocess — no DI -->
+      <bpmn:endEvent id="Event_sub_ghost_end" name="Ghost End" />
+    </bpmn:subProcess>
+
+    <!-- ========================================== -->
+    <!-- EMPTY CONTAINERS -->
+    <!-- ========================================== -->
+    <bpmn:task id="Task_emptyExt" name="Empty Extensions">
+      <bpmn:extensionElements />
+    </bpmn:task>
+
+    <!-- ========================================== -->
+    <!-- PROCESS-LEVEL ARTIFACTS — must NOT be       -->
+    <!-- flagged as zombies (they live in artifacts,  -->
+    <!-- not flowElements).                           -->
+    <!-- ========================================== -->
+    <bpmn:textAnnotation id="TextAnnotation_process">
+      <bpmn:text>Process-level note</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_process" associationDirection="None" sourceRef="Task_clean" targetRef="TextAnnotation_process" />
+  </bpmn:process>
+
+  <!-- Ghost process (for ghost participant) -->
+  <bpmn:process id="Process_ghost" />
+
+  <!-- ========================================== -->
+  <!-- empty evil:Properties on Definitions -->
+  <!-- ========================================== -->
+  <bpmn:extensionElements>
+    <evil:properties />
+  </bpmn:extensionElements>
+
+  <!-- ========================================== -->
+  <!-- DIAGRAM INTERCHANGE — only for clean/visible elements -->
+  <!-- ========================================== -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Participant_clean_di" bpmnElement="Participant_clean" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="600" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_clean_di" bpmnElement="StartEvent_clean">
+        <dc:Bounds x="212" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_clean_di" bpmnElement="Task_clean">
+        <dc:Bounds x="300" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_clean_di" bpmnElement="EndEvent_clean">
+        <dc:Bounds x="452" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_clean_1_di" bpmnElement="Flow_clean_1">
+        <di:waypoint x="248" y="210" />
+        <di:waypoint x="300" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_clean_2_di" bpmnElement="Flow_clean_2">
+        <di:waypoint x="400" y="210" />
+        <di:waypoint x="452" y="210" />
+      </bpmndi:BPMNEdge>
+      <!-- DI for events used in clean references -->
+      <bpmndi:BPMNShape id="Event_usedMsg_di" bpmnElement="Event_usedMsg">
+        <dc:Bounds x="520" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_usedErr_di" bpmnElement="Event_usedErr">
+        <dc:Bounds x="570" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- DI for dangling-ref events (they are visible on canvas, just have broken refs) -->
+      <bpmndi:BPMNShape id="Event_danglingMsg_di" bpmnElement="Event_danglingMsg">
+        <dc:Bounds x="212" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_danglingErr_di" bpmnElement="Event_danglingErr">
+        <dc:Bounds x="262" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_danglingSig_di" bpmnElement="Event_danglingSig">
+        <dc:Bounds x="312" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_danglingEsc_di" bpmnElement="Event_danglingEsc">
+        <dc:Bounds x="362" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- DI for empty extension elements task (visible, just has empty ext) -->
+      <bpmndi:BPMNShape id="Task_emptyExt_di" bpmnElement="Task_emptyExt">
+        <dc:Bounds x="620" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <!-- Clean message flow edge -->
+      <bpmndi:BPMNEdge id="MsgFlow_clean_di" bpmnElement="MsgFlow_clean">
+        <di:waypoint x="460" y="330" />
+        <di:waypoint x="460" y="400" />
+      </bpmndi:BPMNEdge>
+      <!-- DI for visible subprocess elements -->
+      <bpmndi:BPMNShape id="SubProcess_haunt_di" bpmnElement="SubProcess_haunt" isExpanded="true">
+        <dc:Bounds x="200" y="350" width="350" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_haunt_di" bpmnElement="Start_haunt">
+        <dc:Bounds x="220" y="432" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_haunt_ok_di" bpmnElement="Task_haunt_ok">
+        <dc:Bounds x="300" y="410" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_haunt_di" bpmnElement="End_haunt">
+        <dc:Bounds x="450" y="432" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_haunt_1_di" bpmnElement="Flow_haunt_1">
+        <di:waypoint x="256" y="450" />
+        <di:waypoint x="300" y="450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_haunt_2_di" bpmnElement="Flow_haunt_2">
+        <di:waypoint x="400" y="450" />
+        <di:waypoint x="450" y="450" />
+      </bpmndi:BPMNEdge>
+      <!-- DI for process-level artifacts (annotation + association) -->
+      <bpmndi:BPMNShape id="TextAnnotation_process_di" bpmnElement="TextAnnotation_process">
+        <dc:Bounds x="300" y="90" width="150" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_process_di" bpmnElement="Association_process">
+        <di:waypoint x="350" y="170" />
+        <di:waypoint x="375" y="130" />
+      </bpmndi:BPMNEdge>
+      <!-- NOTE: No DI for Task_ghost, Flow_ghost_in, Participant_ghost, MsgFlow_ghost,
+           Event_sub_ghost_boundary, Event_sub_ghost_end -->
+
+      <!-- ========================================== -->
+      <!-- ZOMBIE DI — shapes/edges referencing non-existent semantic elements -->
+      <!-- ========================================== -->
+      <bpmndi:BPMNShape id="Zombie_task_di" bpmnElement="Task_DELETED">
+        <dc:Bounds x="700" y="350" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Zombie_flow_di" bpmnElement="Flow_DELETED">
+        <di:waypoint x="400" y="210" />
+        <di:waypoint x="700" y="390" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

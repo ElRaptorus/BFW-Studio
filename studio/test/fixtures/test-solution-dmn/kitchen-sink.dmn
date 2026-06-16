@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="KitchenSink_Definitions" name="Kitchen Sink DMN" namespace="https://evilengine.dev/test/kitchen-sink" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+  <itemDefinition id="ItemDef_tSummary" name="tSummary" isCollection="false">
+    <itemComponent id="ItemComp_total" name="total">
+      <typeRef>number</typeRef>
+    </itemComponent>
+    <itemComponent id="ItemComp_label" name="label">
+      <typeRef>string</typeRef>
+    </itemComponent>
+  </itemDefinition>
+  <inputData id="InputData_CustomerAge" name="Customer Age">
+    <variable id="Variable_CustomerAge" name="CustomerAge" typeRef="number" />
+  </inputData>
+  <inputData id="InputData_OrderTotal" name="Order Total">
+    <variable id="Variable_OrderTotal" name="OrderTotal" typeRef="number" />
+  </inputData>
+  <decision id="Decision_Discount" name="Discount">
+    <variable id="Variable_Discount" name="Discount" typeRef="number" />
+    <informationRequirement id="IR_AgeToDiscount">
+      <requiredInput href="#InputData_CustomerAge" />
+    </informationRequirement>
+    <informationRequirement id="IR_OrderToDiscount">
+      <requiredInput href="#InputData_OrderTotal" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_Discount">
+      <input id="Input_Age">
+        <inputExpression id="InputExpr_Age" typeRef="number">
+          <text>CustomerAge</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Total">
+        <inputExpression id="InputExpr_Total" typeRef="number">
+          <text>OrderTotal</text>
+        </inputExpression>
+      </input>
+      <output id="Output_Discount" name="Discount" typeRef="number" />
+      <rule id="Rule_1">
+        <inputEntry id="IE_1_1">
+          <text>&lt; 18</text>
+        </inputEntry>
+        <inputEntry id="IE_1_2">
+          <text>&gt; 100</text>
+        </inputEntry>
+        <outputEntry id="OE_1">
+          <text>0.15</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_2">
+        <inputEntry id="IE_2_1">
+          <text>&gt;= 18</text>
+        </inputEntry>
+        <inputEntry id="IE_2_2">
+          <text>&gt; 100</text>
+        </inputEntry>
+        <outputEntry id="OE_2">
+          <text>0.05</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_3">
+        <inputEntry id="IE_3_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="IE_3_2">
+          <text>&lt;= 100</text>
+        </inputEntry>
+        <outputEntry id="OE_3">
+          <text>0</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <decision id="Decision_FinalPrice" name="Final Price">
+    <variable id="Variable_FinalPrice" name="FinalPrice" typeRef="number" />
+    <informationRequirement id="IR_DiscountToFinal">
+      <requiredDecision href="#Decision_Discount" />
+    </informationRequirement>
+    <informationRequirement id="IR_OrderToFinal">
+      <requiredInput href="#InputData_OrderTotal" />
+    </informationRequirement>
+    <knowledgeRequirement id="KR_PricingToFinal">
+      <requiredKnowledge href="#BKM_PricingFormula" />
+    </knowledgeRequirement>
+    <literalExpression id="LiteralExpr_FinalPrice">
+      <text>OrderTotal * (1 - Discount)</text>
+    </literalExpression>
+  </decision>
+  <businessKnowledgeModel id="BKM_PricingFormula" name="Pricing Formula">
+    <variable id="Variable_PricingFormula" name="PricingFormula" typeRef="number" />
+    <encapsulatedLogic id="FnDef_Pricing" kind="FEEL">
+      <formalParameter id="Param_BasePrice" name="basePrice" typeRef="number" />
+      <formalParameter id="Param_DiscountRate" name="discountRate" typeRef="number" />
+      <literalExpression id="LiteralExpr_Pricing">
+        <text>basePrice * (1 - discountRate)</text>
+      </literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <businessKnowledgeModel id="BKM_OrderSummary" name="Order Summary">
+    <variable id="Variable_Summary" name="OrderSummary" typeRef="tSummary" />
+    <encapsulatedLogic id="FnDef_Summary" kind="FEEL">
+      <formalParameter id="Param_FinalPrice" name="finalPrice" typeRef="number" />
+      <context id="Context_Summary">
+        <contextEntry id="CE_Total">
+          <variable id="CE_Total_Var" name="total" />
+          <literalExpression id="CE_Total_Expr">
+            <text>finalPrice</text>
+          </literalExpression>
+        </contextEntry>
+        <contextEntry id="CE_Label">
+          <variable id="CE_Label_Var" name="label" />
+          <literalExpression id="CE_Label_Expr">
+            <text>"Order Total"</text>
+          </literalExpression>
+        </contextEntry>
+      </context>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <knowledgeSource id="KS_Regulations" name="Pricing Regulations">
+    <authorityRequirement id="AR_RegToDiscount">
+      <requiredDecision href="#Decision_Discount" />
+    </authorityRequirement>
+  </knowledgeSource>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_KitchenSink">
+      <dmndi:DMNShape id="Shape_InputData_CustomerAge" dmnElementRef="InputData_CustomerAge">
+        <dc:Bounds height="45" width="125" x="80" y="380" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_InputData_OrderTotal" dmnElementRef="InputData_OrderTotal">
+        <dc:Bounds height="45" width="125" x="280" y="380" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Decision_Discount" dmnElementRef="Decision_Discount">
+        <dc:Bounds height="50" width="150" x="130" y="220" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Decision_FinalPrice" dmnElementRef="Decision_FinalPrice">
+        <dc:Bounds height="50" width="150" x="280" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_BKM_PricingFormula" dmnElementRef="BKM_PricingFormula">
+        <dc:Bounds height="46" width="135" x="500" y="200" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_BKM_OrderSummary" dmnElementRef="BKM_OrderSummary">
+        <dc:Bounds height="46" width="135" x="500" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_KS_Regulations" dmnElementRef="KS_Regulations">
+        <dc:Bounds height="63" width="100" x="500" y="340" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="Edge_IR_AgeToDiscount" dmnElementRef="IR_AgeToDiscount">
+        <di:waypoint x="142" y="380" />
+        <di:waypoint x="180" y="270" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="Edge_IR_OrderToDiscount" dmnElementRef="IR_OrderToDiscount">
+        <di:waypoint x="342" y="380" />
+        <di:waypoint x="230" y="270" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="Edge_IR_DiscountToFinal" dmnElementRef="IR_DiscountToFinal">
+        <di:waypoint x="205" y="220" />
+        <di:waypoint x="330" y="130" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="Edge_IR_OrderToFinal" dmnElementRef="IR_OrderToFinal">
+        <di:waypoint x="342" y="380" />
+        <di:waypoint x="355" y="130" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="Edge_KR_PricingToFinal" dmnElementRef="KR_PricingToFinal">
+        <di:waypoint x="567" y="200" />
+        <di:waypoint x="430" y="105" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="Edge_AR_RegToDiscount" dmnElementRef="AR_RegToDiscount">
+        <di:waypoint x="500" y="371" />
+        <di:waypoint x="280" y="250" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

@@ -1,0 +1,153 @@
+.bifrost.bifrost-theme--dark {
+  --color-inspector-treeview-border: #999;
+}
+
+.bifrost.bifrost-theme--light {
+  --color-inspector-treeview-border: #222;
+}
+
+.bifrost {
+  .debugger-settings-inspector__setting-label--multine {
+    .form-check-input {
+      align-self: baseline;
+      margin-top: 2px;
+    }
+  }
+
+  .runtime-expression-lab__item {
+    position: absolute;
+    top: 2rem;
+    bottom: 2rem;
+    padding: 0.5rem;
+
+    &.runtime-expression-lab__item--left {
+      left: 7px;
+      right: 50%;
+    }
+
+    &.runtime-expression-lab__item--right {
+      left: 51%;
+      right: 0%;
+    }
+  }
+
+  .data-object-selection-inspector__item {
+    position: absolute;
+    top: 0%;
+    bottom: 2rem;
+    padding: 0.5rem;
+
+    &.data-object-selection-inspector__item--left {
+      left: 7px;
+      right: 50%;
+    }
+
+    &.data-object-selection-inspector__item--right {
+      left: 51%;
+      right: 0%;
+    }
+  }
+
+  .flow-node-instance-selection-inspector__item {
+    position: absolute;
+    top: 0%;
+    bottom: 2rem;
+    padding: 0.5rem;
+
+    &.flow-node-instance-selection-inspector__item--left {
+      left: 7px;
+      right: 67%;
+    }
+
+    &.flow-node-instance-selection-inspector__item--center {
+      left: 33%;
+      right: 33%;
+    }
+
+    &.flow-node-instance-selection-inspector__item--right {
+      left: 67%;
+      right: 0%;
+    }
+  }
+
+  .flow-node-instance-token-inspector__item {
+    position: absolute;
+    top: 0%;
+    bottom: 2rem;
+    padding: 0.5rem;
+
+    &.flow-node-instance-token-inspector__item--left {
+      left: 7px;
+      right: 50%;
+    }
+
+    &.flow-node-instance-token-inspector__item--right {
+      left: 50%;
+      right: 0%;
+    }
+  }
+
+  .debugger-inspector-slideshow__container {
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    bottom: 0%;
+    right: 0%;
+    display: flex;
+    flex-direction: row;
+    overflow-x: scroll;
+  }
+
+  .debugger-inspector-slideshow__item {
+    margin-bottom: 1.5rem;
+    padding: 0.5rem;
+    min-width: 350px;
+  }
+
+  .debugger-inspector__showroom-monaco-editor {
+    height: 100%;
+  }
+
+  .debugger-inspector-splitter--container {
+    overflow: auto;
+
+    .splitter-layout {
+      position: initial;
+      overflow: auto;
+
+      .layout-pane {
+        overflow: auto;
+      }
+    }
+
+    .debugger-inspector-splitter {
+      .layout-splitter {
+        background-color: var(--color-border-bottom-panel);
+
+        &:hover {
+          background-color: var(--theme-splitter-hover);
+        }
+      }
+
+      &.layout-changing .layout-splitter {
+        background-color: var(--theme-splitter-active);
+      }
+    }
+  }
+
+  .debugger-inspector-splitter > .layout-pane.layout-pane-primary {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .debugger-inspector-pane__content--flow-node-props {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .debugger-expression-runner-expression-hint {
+    line-height: 1.5rem;
+  }
+}

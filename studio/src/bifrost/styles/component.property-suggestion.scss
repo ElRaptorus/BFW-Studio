@@ -1,0 +1,10 @@
+.bifrost {
+  .property-suggestion__sublabel {
+    display: block;
+    opacity: 0.5;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

@@ -1,0 +1,204 @@
+.bpmn__editor--tab-icon {
+  color: var(--color-bpmn-editor-icon-primary);
+}
+
+.icon-export-as-png {
+  --icon-secondary-opacity: 1;
+  --icon-primary-color: #ffc107;
+  --icon-secondary-color: #795548;
+}
+
+.icon-dynamic-form,
+.icon-confirm-form,
+.icon-custom-form {
+  width: 1.25rem;
+  text-align: center;
+}
+
+.predefined-color {
+  margin: 2px;
+  border: 3px solid;
+  border-radius: 0.2rem;
+}
+
+.color-picker {
+  width: 90%;
+  border-radius: 0.2rem;
+  background: transparent;
+}
+
+.icon-custom-color {
+  display: inline-block;
+  --icon-secondary-opacity: 1;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.exclusive_gateway__default-flow--label {
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
+  background: var(--color__grey--on-light);
+  color: #fff;
+}
+
+.hidden-data-object-elements-hint {
+  position: absolute;
+  top: 15px;
+  left: 85px;
+  font-size: large;
+  width: 30px;
+  height: 30px;
+  z-index: 1;
+  background: var(--theme-diagram-palette-bg);
+  color: var(--theme-diagram-fg);
+  border-radius: 0.2rem;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+// ─── Themed overrides for bpmn-js / diagram-js elements ──────
+.bifrost {
+  .bjs-container {
+    background-color: var(--theme-diagram-bg);
+  }
+
+  .color-picker-panel {
+    background: var(--theme-color-picker-bg);
+    border: 1px solid var(--theme-color-picker-border);
+  }
+
+  .color-picker-panel .color-option {
+    border: 1px solid var(--theme-color-picker-option-border);
+  }
+
+  .color-picker-panel .color-option:hover {
+    box-shadow: 0 0 5px var(--theme-color-picker-option-hover-shadow);
+  }
+
+  .djs-container {
+    --context-pad-entry-background-color: var(--theme-diagram-context-pad-bg) !important;
+
+    .djs-context-pad .entry {
+      background-color: var(--context-pad-entry-background-color);
+      box-shadow: 0 0 2px 1px var(--context-pad-entry-background-color);
+    }
+
+    .djs-context-pad .entry:hover {
+      background: var(--theme-diagram-context-pad-hover-bg) !important;
+      color: var(--theme-focus) !important;
+    }
+  }
+
+  .djs-palette {
+    color: var(--theme-diagram-fg);
+    background-color: var(--theme-diagram-palette-bg) !important;
+    border-right-color: var(--theme-diagram-palette-border) !important;
+  }
+
+  .djs-palette .entry,
+  .djs-palette .djs-palette-toggle {
+    color: var(--theme-diagram-fg) !important;
+  }
+
+  .djs-palette .entry:hover,
+  .djs-palette .entry.highlighted-entry {
+    color: var(--theme-focus) !important;
+  }
+
+  .djs-palette .separator {
+    border-bottom: solid 1px var(--theme-diagram-fg) !important;
+  }
+
+  .djs-direct-editing-parent {
+    background-color: var(--theme-diagram-direct-editing-bg) !important;
+    border: 1px solid var(--theme-diagram-direct-editing-border) !important;
+  }
+
+  .djs-popup {
+    background-color: var(--theme-diagram-popup-bg) !important;
+  }
+
+  .djs-popup.bpmn-replace {
+    box-shadow: 0px 2px 6px var(--theme-diagram-popup-shadow) !important;
+  }
+
+  .djs-popup-header {
+    background-color: var(--theme-diagram-popup-bg) !important;
+  }
+
+  .djs-popup button.entry {
+    color: var(--theme-diagram-fg) !important;
+  }
+
+  .djs-popup-body {
+    background-color: var(--theme-diagram-popup-bg) !important;
+  }
+
+  .djs-popup .entry.selected {
+    background-color: var(--theme-diagram-popup-selected-bg) !important;
+  }
+
+  .djs-popup-search input,
+  .djs-popup-search input:focus {
+    background-color: var(--theme-diagram-input-bg) !important;
+    color: var(--theme-diagram-input-fg) !important;
+  }
+
+  .djs-popup-search input:focus {
+    border: solid 1px var(--theme-focus) !important;
+  }
+
+  .djs-popup-search-icon > path {
+    fill: var(--theme-pane-tab-hover-fg) !important;
+  }
+
+  .djs-minimap {
+    color: var(--theme-diagram-fg);
+    background-color: var(--theme-diagram-minimap-bg) !important;
+  }
+
+  .djs-minimap.open .overlay {
+    background: var(--theme-diagram-minimap-overlay-bg) !important;
+  }
+
+  // ─── Selection & hover outlines ─────────────────────
+  .editor__content svg .djs-element.selected .djs-outline {
+    stroke: var(--theme-diagram-selected-outline);
+    stroke-width: 2px;
+  }
+
+  .editor__content svg .djs-element.hover .djs-outline {
+    stroke: var(--theme-diagram-hover-outline);
+    stroke-width: 2px;
+    visibility: visible;
+  }
+
+  // ─── Bendpoints & segment draggers ──────────────────
+  .editor__content svg .djs-segment-dragger .djs-visual {
+    fill: var(--theme-diagram-segment-dragger-fill) !important;
+    stroke: var(--theme-diagram-segment-dragger-stroke) !important;
+    stroke-width: 1px;
+    stroke-opacity: 1;
+  }
+
+  .editor__content svg .djs-bendpoint .djs-visual {
+    fill: var(--theme-diagram-bendpoint-fill) !important;
+    stroke: var(--theme-diagram-bendpoint-stroke);
+  }
+
+  .editor__content svg .djs-segment-dragger:hover .djs-visual,
+  .editor__content svg .djs-segment-dragger.djs-dragging .djs-visual,
+  .editor__content svg .djs-bendpoint:hover .djs-visual,
+  .editor__content svg .djs-bendpoint.floating .djs-visual,
+  .editor__content svg .djs-bendpoint.djs-dragging .djs-visual {
+    fill: var(--theme-diagram-bendpoint-hover-fill) !important;
+    stroke-opacity: 0.5;
+    stroke: var(--theme-diagram-bendpoint-stroke);
+  }
+
+  // ─── Connect preview ────────────────────────────────
+  .editor__content svg .djs-shape.connect-ok .djs-visual > :nth-child(1) {
+    fill: var(--theme-diagram-connect-ok-fill) !important;
+  }
+}

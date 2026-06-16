@@ -1,0 +1,47 @@
+.engine-health-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+
+  .icon {
+    font-size: 12px;
+  }
+}
+
+.engine-health-badge--inline {
+  padding: 1px 5px;
+  font-size: 9px;
+  gap: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+
+  .icon {
+    font-size: 9px;
+  }
+}
+
+.engine-health-badge--healthy {
+  background: var(--theme-engine-ws-health-ok-bg);
+  color: var(--theme-engine-ws-health-ok-fg);
+}
+
+.engine-health-badge--degraded {
+  background: var(--theme-engine-ws-health-warn-bg);
+  color: var(--theme-engine-ws-health-warn-fg);
+}
+
+.engine-health-badge--critical {
+  background: var(--theme-engine-ws-health-critical-bg);
+  color: var(--theme-engine-ws-health-critical-fg);
+}
+
+.engine-health-badge--unknown {
+  background: var(--theme-engine-ws-health-unknown-bg);
+  color: var(--theme-engine-ws-health-unknown-fg);
+}

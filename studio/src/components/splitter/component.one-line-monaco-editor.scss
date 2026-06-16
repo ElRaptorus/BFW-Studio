@@ -1,0 +1,28 @@
+.one-line-monaco-editor {
+  flex: 1;
+  height: auto;
+  border: 1px solid #ced4da;
+  border-radius: 0.2rem;
+  min-height: 2rem;
+
+  &:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: #80bdff;
+  }
+
+  .decorationsOverviewRuler {
+    display: none;
+  }
+}
+
+.one-line-monaco-editor .view-line {
+  top: 4px !important;
+}
+
+.one-line-monaco-editor .cursor.monaco-mouse-cursor-text {
+  top: 4px !important;
+}
+
+.one-line-monaco-editor .view-overlays {
+  top: 4px !important;
+}

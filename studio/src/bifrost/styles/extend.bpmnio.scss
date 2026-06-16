@@ -1,0 +1,109 @@
+.editor__content {
+  // bpmn-js drill-down breadcrumbs & overlay button — mapped to Studio theme tokens
+  .djs-container {
+    --breadcrumbs-font-family: var(--theme-font-family, inherit);
+    --breadcrumbs-item-color: var(--theme-link);
+    --breadcrumbs-arrow-color: var(--theme-fg-secondary);
+    --drilldown-fill-color: var(--theme-fg-on-accent);
+    --drilldown-background-color: var(--theme-accent);
+  }
+
+  .bjs-drilldown {
+    width: 26px;
+    height: 26px;
+    margin-left: -26px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    transition:
+      background-color 0.15s ease,
+      box-shadow 0.15s ease;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    &:hover {
+      background-color: var(--theme-accent-hover, var(--drilldown-background-color));
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  .bjs-breadcrumbs {
+    display: none;
+  }
+
+  .djs-palette {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    border-width: 0 !important;
+    border-radius: 0 !important;
+    border-right: 2px solid var(--theme-diagram-palette-border) !important;
+    width: 36px !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .djs-palette .entry,
+  .djs-palette .djs-palette-toggle {
+    width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+    font-size: 24px !important;
+  }
+
+  .color-picker-panel {
+    position: absolute;
+    display: grid;
+    grid-template-columns: repeat(3, 20px);
+    gap: 4px;
+    padding: 6px;
+    background: var(--theme-color-picker-bg);
+    border: 1px solid var(--theme-color-picker-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 6px var(--theme-color-picker-shadow);
+    z-index: 9999;
+  }
+
+  .color-picker-panel .color-option {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1.2px solid;
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .djs-container.djs-palette-shown.djs-palette-open {
+    width: calc(100% - 36px) !important;
+    left: 36px;
+  }
+
+  .djs-container:focus {
+    outline: none !important;
+  }
+
+  .djs-container *:focus {
+    outline: none !important;
+  }
+
+  .djs-connection.selected .djs-outline {
+    stroke: var(--element-selected-outline-secondary-stroke-color);
+    display: inline !important;
+  }
+
+  svg .djs-element .djs-hit-stroke,
+  .djs-element .djs-hit-click-stroke,
+  .djs-element .djs-hit-all {
+    cursor: default;
+  }
+
+  .editor__canvas > .react-contextmenu-wrapper {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+}

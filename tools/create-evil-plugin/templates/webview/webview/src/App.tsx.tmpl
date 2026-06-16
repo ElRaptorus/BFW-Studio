@@ -1,0 +1,33 @@
+import React, { useEffect, useState } from 'react';
+
+declare global {
+  interface Window {
+    acquireStudioApi?(): {
+      postMessage(data: unknown): void;
+      onMessage(callback: (data: unknown) => void): void;
+      getState(): unknown;
+      setState(state: unknown): void;
+      getThemeType(): string;
+    };
+  }
+}
+
+export default function App(): React.JSX.Element {
+  const [themeType, setThemeType] = useState('dark');
+
+  useEffect(() => {
+    const api = window.acquireStudioApi?.();
+    if (api) {
+      setThemeType(api.getThemeType());
+      api.postMessage({ type: 'ready' });
+    }
+  }, []);
+
+  return (
+    <div style={{ padding: 16 }}>
+      <h2>{{displayName}}</h2>
+      <p>Theme: {themeType}</p>
+      <p>Edit <code>webview/src/App.tsx</code> to build your UI.</p>
+    </div>
+  );
+}

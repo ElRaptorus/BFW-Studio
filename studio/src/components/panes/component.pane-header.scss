@@ -1,0 +1,88 @@
+.pane-header {
+  display: flex;
+  min-height: 31px;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: #a5a5a5;
+}
+
+.pane-header--sub-header {
+  padding-left: 0;
+}
+
+.pane-header--collapsed {
+  background: #eaeaea;
+}
+
+.pane-header--hero {
+  // background: #eaeaea;
+  border-bottom: 1px solid #ddd;
+}
+
+.pane-header__title {
+  flex: 1;
+}
+
+.pane-header__options {
+  flex: 0;
+  display: flex;
+}
+
+.pane-header__icon {
+  flex: 0;
+  flex-basis: 24px;
+  width: 24px;
+  font-size: 1rem;
+  text-align: center;
+  text-transform: none;
+  color: inherit;
+
+  &:hover {
+    color: #333;
+    cursor: pointer;
+  }
+  &:last-child {
+    margin-right: -0.5rem;
+  }
+}
+
+.pane-header__divider {
+  flex: 0;
+  flex-basis: 6px;
+  width: 6px;
+  height: 1.25rem;
+  display: inline-block;
+}
+
+.pane-header__icon--inactive {
+  opacity: 0.25;
+  cursor: default;
+
+  &:hover {
+    color: inherit;
+  }
+}
+
+.pane-header__icon--sub-header {
+  font-size: 14px;
+  margin-left: 0.5rem;
+}
+
+.pane-header__twistie {
+  display: inline-block;
+  margin: -0.5rem 0;
+  width: 16px;
+  font-size: 12px;
+  margin-left: -0.75rem;
+  text-align: center;
+
+  &:hover {
+    color: #333;
+  }
+}
+
+.pane-header__twistie--sub-header {
+  margin-left: 0.25rem;
+}

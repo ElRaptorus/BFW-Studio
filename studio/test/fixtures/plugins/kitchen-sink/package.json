@@ -1,0 +1,53 @@
+{
+  "name": "kitchen-sink",
+  "displayName": "Kitchen Sink",
+  "description": "Exercises every Plugin API feature for manual and automated testing.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "homepage": "https://example.com/kitchen-sink",
+  "keywords": [
+    "kitchen-sink",
+    "test",
+    "api"
+  ],
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Kitchen Sink",
+    "description": "Exercises every Plugin API feature for manual and automated testing.",
+    "permissions": [
+      "filesystem",
+      "commands.std"
+    ],
+    "activationEvents": [
+      "onStartup"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "searchableCommand",
+          "title": "Search: Kitchen Sink",
+          "category": "Kitchen Sink"
+        }
+      ],
+      "settings": [
+        {
+          "key": "plugin.kitchen-sink.kitchenSinkValue",
+          "type": "string",
+          "default": "Hello from the Kitchen Sink.",
+          "description": "Test setting for the Kitchen Sink plugin."
+        },
+        {
+          "key": "plugin.kitchen-sink.kitchenSinkArray",
+          "type": "string[]",
+          "default": [
+            "one",
+            "two",
+            "three"
+          ],
+          "description": "Test array setting for the Kitchen Sink plugin."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,167 @@
+.editor-toolbar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: stretch;
+  min-height: 37px;
+  padding: 0.25rem;
+
+  color: #1e3e5f;
+  background: #f7f7f7;
+  border-bottom: 2px solid #ddd;
+  text-align: left;
+
+  a {
+    text-decoration: underline;
+    white-space: nowrap;
+
+    &:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  }
+}
+
+.editor--focused .editor-toolbar {
+  background: #fff;
+}
+
+.editor-toolbar__left {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.editor-toolbar__center {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.editor-toolbar__right {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.editor-toolbar__menu,
+.editor-toolbar__button,
+.editor-toolbar__item {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  color: inherit;
+  border: none;
+  background: transparent;
+}
+
+.editor-toolbar__menu,
+.editor-toolbar__button {
+  color: var(--color-focus-blue);
+}
+
+.editor-toolbar__item {
+  line-height: 2.15rem;
+  opacity: 0.7;
+
+  label {
+    margin-bottom: 0;
+  }
+
+  input[type='text'] {
+    display: inline-block;
+    max-width: 200px;
+    min-width: 100px;
+  }
+}
+
+.editor-toolbar__menu:hover,
+.editor-toolbar__button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.editor-toolbar__menu:focus,
+.editor-toolbar__menu:active,
+.editor-toolbar__button:active {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.editor-toolbar__button--disabled {
+  opacity: 0.5;
+
+  &:hover {
+    background: initial !important;
+    cursor: default;
+  }
+}
+
+.editor-toolbar__button--active {
+  font-weight: bold;
+}
+
+.editor-toolbar__dropdown-icon {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+
+  color: inherit !important;
+}
+
+.editor-toolbar__text-input-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.editor-toolbar__text-input-icon {
+  position: absolute;
+  left: 6px;
+  font-size: 12px;
+  color: var(--theme-fg-muted);
+  pointer-events: none;
+}
+
+.editor-toolbar__text-input {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--theme-input-border);
+  border-radius: 3px;
+  background: var(--theme-input-bg);
+  color: var(--theme-input-fg);
+  font-size: 12px;
+  outline: none;
+  min-width: 160px;
+
+  &::placeholder {
+    color: var(--theme-fg-muted);
+  }
+
+  &:focus {
+    border-color: var(--theme-focus-border);
+  }
+}
+
+.editor-toolbar__text-input--has-icon {
+  padding-left: 22px;
+}
+
+.editor-toolbar {
+  button:focus {
+    outline: transparent;
+  }
+
+  .ph-duotone {
+    --icon-primary-color: #ff6f00;
+    --icon-secondary-color: var(--color-focus-blue);
+    --icon-secondary-opacity: 1;
+  }
+}

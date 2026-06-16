@@ -1,0 +1,114 @@
+// Utility classes for Phosphor Icons.
+// Phosphor does not ship built-in display, spin, pulse, rotate, flip, or sizing utilities.
+// Font Awesome set display:inline-block and applied transforms to the element; we replicate that here.
+
+// --- Base display fix ---
+// Phosphor leaves icons as display:inline, which prevents transforms and misaligns vertically.
+
+.ph,
+.ph-fill,
+.ph-duotone,
+.ph-light,
+.ph-bold {
+  display: inline-block;
+  font-size: 1.2em;
+}
+
+// --- Duotone color bridge ---
+// Phosphor duotone uses inherited `color` for both layers and hard-codes opacity:0.2 on ::before.
+// The Studio uses --icon-primary-color (foreground / ::after) and --icon-secondary-color (background / ::before)
+// with --icon-secondary-opacity. These rules wire Phosphor to respect those variables.
+// When the variables are not set, `inherit` preserves default behavior.
+
+.ph-duotone::before {
+  color: var(--icon-secondary-color, inherit) !important;
+  opacity: var(--icon-secondary-opacity, 0.2) !important;
+}
+
+.ph-duotone::after {
+  color: var(--icon-primary-color, inherit) !important;
+}
+
+// --- Animations ---
+
+@keyframes ph-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ph-spin-steps {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.ph-spin {
+  animation: ph-spin 1s linear infinite;
+  transform-origin: center;
+}
+
+// Duotone icons render two pseudo-elements (::before + ::after with margin-left: -1em).
+// Rotating the outer element doesn't work because Chromium computes the element's box
+// wider than the visual glyph, shifting the rotation axis off-center.
+// Fix: disable element-level rotation and animate both pseudo-elements instead.
+// They share the same visual origin thanks to the -1em overlay.
+.ph-duotone.ph-spin {
+  animation: none;
+
+  &::before,
+  &::after {
+    display: inline-block;
+    animation: ph-spin 1s linear infinite;
+    transform-origin: center;
+  }
+}
+
+.ph-pulse {
+  animation: ph-spin-steps 1s steps(8) infinite;
+}
+
+// --- Rotations (applied to the element) ---
+
+.ph-rotate-90 {
+  transform: rotate(90deg);
+}
+.ph-rotate-180 {
+  transform: rotate(180deg);
+}
+.ph-rotate-270 {
+  transform: rotate(270deg);
+}
+
+// --- Flips (applied to the element) ---
+
+.ph-flip-h {
+  transform: scaleX(-1);
+}
+.ph-flip-v {
+  transform: scaleY(-1);
+}
+
+// --- Sizing ---
+
+.ph-lg {
+  font-size: 1.5em;
+  line-height: 0.75em;
+  vertical-align: -0.0667em;
+}
+
+.ph-2x {
+  font-size: 2em;
+}
+.ph-3x {
+  font-size: 3em;
+}
+.ph-5x {
+  font-size: 5em;
+}

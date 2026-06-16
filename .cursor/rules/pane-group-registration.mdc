@@ -1,0 +1,38 @@
+---
+description: Pane group registrations are shared infrastructure — never remove the registration call itself
+globs: "**/initializePanes.ts,**/*Pane*.ts,**/*Pane*.tsx"
+alwaysApply: false
+---
+
+# Pane Group Registration Safety
+
+Pane groups registered via `bifrost.panes.registerPaneGroup(area, groupId, [...])` are **shared infrastructure**. Multiple modules register their own panes into the same group.
+
+## Rule
+
+When removing a pane from a group, remove only the pane entry from the array — **never remove the `registerPaneGroup` call itself**, even if the array becomes empty.
+
+```typescript
+// ✅ CORRECT — remove the pane, keep the group
+bifrost.panes.registerPaneGroup('right', 'property', []);
+
+// ❌ WRONG — deleting the entire call breaks other modules
+// (removed registerPaneGroup call)
+```
+
+## Why
+
+Other modules (e.g., `engine-*`) call `registerPaneGroup` for the same group to add their own panes. These calls expect the group to already exist. Removing the initial registration produces runtime errors like:
+
+```
+PaneGroup with id 'property' not found in area 'right' (or any other area).
+```
+
+## Current groups registered by `std`
+
+| Area | Group ID | File |
+|------|----------|------|
+| `left` | `explorer` | `studio/src/modules/std/initializers/initializePanes.ts` |
+| `left` | `search` | `studio/src/modules/std/initializers/initializePanes.ts` |
+| `right` | `property` | `studio/src/modules/std/initializers/initializePanes.ts` |
+| `bottom` | `inspectors` | `studio/src/modules/std/initializers/initializePanes.ts` |

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_1fdc9f25-bce4-4612-928d-330378222b21" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
+  <bpmn:collaboration id="Collaboration_1cidyxu" name="">
+    <bpmn:participant id="Participant_0px403d" name="service-task" processRef="service-task" />
+  </bpmn:collaboration>
+  <bpmn:process id="service-task" name="service-task" isExecutable="true">
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_1xzf0d3" name="Lane">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>ServiceTask_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>ServiceTask_2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>ServiceTask_3</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Start Event">
+      <bpmn:outgoing>Flow_10jplq8</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_10jplq8" sourceRef="StartEvent_1" targetRef="ServiceTask_1" />
+    <bpmn:sequenceFlow id="Flow_1f21fy8" sourceRef="ServiceTask_1" targetRef="ServiceTask_2" />
+    <bpmn:sequenceFlow id="Flow_04zcqle" sourceRef="ServiceTask_2" targetRef="ServiceTask_3" />
+    <bpmn:serviceTask id="ServiceTask_1" name="ServiceTask_1" implementation="##external">
+      <bpmn:extensionElements>
+        <evil:Properties>
+          <evil:Property name="payload" value="Payload" />
+        </evil:Properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_10jplq8</bpmn:incoming>
+      <bpmn:outgoing>Flow_1f21fy8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="ServiceTask_2" name="ServiceTask_2" implementation="http">
+      <bpmn:extensionElements>
+        <evil:HttpMethod>post</evil:HttpMethod>
+        <evil:HttpUrl>test url</evil:HttpUrl>
+        <evil:HttpBody>my body</evil:HttpBody>
+        <evil:HttpAuthHeader>authorization</evil:HttpAuthHeader>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1f21fy8</bpmn:incoming>
+      <bpmn:outgoing>Flow_04zcqle</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="ServiceTask_3" name="ServiceTask_3">
+      <bpmn:incoming>Flow_04zcqle</bpmn:incoming>
+    </bpmn:serviceTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1cidyxu">
+      <bpmndi:BPMNShape id="Participant_0px403d_di" bpmnElement="Participant_0px403d" isHorizontal="true">
+        <dc:Bounds x="5" y="4" width="805" height="566" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1xzf0d3_di" bpmnElement="Lane_1xzf0d3" isHorizontal="true">
+        <dc:Bounds x="35" y="4" width="775" height="566" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1mox3jl_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="83" y="69" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="74" y="105" width="55" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0it1xu0_di" bpmnElement="ServiceTask_1">
+        <dc:Bounds x="320" y="47" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0y8974k_di" bpmnElement="ServiceTask_2">
+        <dc:Bounds x="320" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_089zfp8_di" bpmnElement="ServiceTask_3">
+        <dc:Bounds x="560" y="450" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_10jplq8_di" bpmnElement="Flow_10jplq8">
+        <di:waypoint x="119" y="87" />
+        <di:waypoint x="320" y="87" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1f21fy8_di" bpmnElement="Flow_1f21fy8">
+        <di:waypoint x="370" y="127" />
+        <di:waypoint x="370" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_04zcqle_di" bpmnElement="Flow_04zcqle">
+        <di:waypoint x="420" y="320" />
+        <di:waypoint x="540" y="320" />
+        <di:waypoint x="540" y="490" />
+        <di:waypoint x="560" y="490" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

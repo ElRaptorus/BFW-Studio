@@ -1,0 +1,413 @@
+# BPMN Editor Property Panes
+
+---
+
+## Overview
+
+The BPMN editor exposes element-specific property panes in the right pane area. Panes are grouped into three categories (`property`, `scripting`, `documentation`) and registered via `initializeBpmnPanes.ts`. Each pane implements the `PaneProvider` contract and uses `BpmnDocumentElementAccess` to read/write element data through the bpmn-js modeler's command stack.
+
+---
+
+## Architecture
+
+### Pane Group Structure
+
+The BPMN editor registers panes into three groups on the `right` pane area:
+
+| Group | Purpose | Examples |
+|-------|---------|----------|
+| `property` | Static/structural element properties | Element info, element ID, name, message/signal references, HTTP task config, loop/MI config, user task form fields, business rule task, call activity |
+| `scripting` | Runtime-evaluated content | Data pipeline mappings and contracts, data output association transformations, event payloads, example payloads, custom tokens, custom attributes |
+| `documentation` | Documentation viewing/editing | Element documentation (MarkdownEditor) |
+
+When a BPMN element is selected:
+- The `property` group is the default active group
+- If 2+ groups have displayable panes, an icon-based tab bar appears above the panes
+- Each pane's `shouldBeDisplayed(editorDocument, editorDocumentModel)` determines visibility
+
+### PaneProvider Contract
+
+Every property pane exports a `paneProvider: PaneProvider` object:
+
+```typescript
+export const paneProvider: PaneProvider = {
+  getPaneTitle: () => string,
+  shouldBeDisplayed: (editorDocument, editorDocumentModel) => boolean,
+  Pane: (props: PaneComponentProps) => JSX.Element,      // Full pane (header + body)
+  PaneContent: (props: PaneComponentProps) => JSX.Element, // Body only (reused in collapsed state)
+};
+```
+
+### PropertiesElementInfo — Consolidated Help Pane
+
+**Path:** `studio/src/modules/bpmn-editor/panes/properties/PropertiesElementInfo.tsx`
+
+Replaces ~30 individual help-only panes. Contains an `elementInfoMap: Record<string, ElementInfoEntry>` mapping `BpmnElementType` values to `{ title, description, helpId }`. The pane title is dynamic, matching the selected element type (e.g., "Exclusive Gateway", "User Task"). Special handling for parallel multi-instance elements returns a dedicated info entry.
+
+### Subprocess Plane Behavior
+
+When the user drills into a collapsed subprocess, top-level panes are hidden and a dedicated context pane appears. See **[bpmn-drilldown.md](bpmn-drilldown.md)** for the full integration.
+
+| Pane | Inside subprocess |
+|------|-------------------|
+| `PropertiesDefinition` | Hidden |
+| `PropertiesProcess` | Hidden |
+| `PropertiesProcesses` | Hidden |
+| `PropertiesSubprocessContext` | Shown (no selection) — subprocess name, ID, loop config, "Back to parent" |
+
+Panes that depend on element enumeration use `getVisibleElements()` (plane-scoped) instead of `getAllElements()` (cross-plane).
+
+### Property Read/Write Flow
+
+```
+┌─────────────┐     setElementProperty(id, prop, value)     ┌─────────────────────────┐
+│  Pane (TSX)  │ ─────────────────────────────────────────▶  │ BpmnDocumentElementAccess│
+└─────────────┘                                              └───────────┬─────────────┘
+                                                                         │
+                                                    setHandlers[prop](element, prop, value)
+                                                                         │
+                                                                         ▼
+                                                              ┌──────────────────┐
+                                                              │   CmdHelper.*    │
+                                                              │  (descriptor)    │
+                                                              └────────┬─────────┘
+                                                                       │
+                                                          commandStack.execute(cmd, context)
+                                                                       │
+                                                                       ▼
+                                                              ┌──────────────────┐
+                                                              │ Command Handler  │
+                                                              │  (diagram-js)   │
+                                                              └──────────────────┘
+```
+
+#### BpmnDocumentElementAccess
+
+**Path:** `studio/src/modules/bpmn-editor/BpmnDocumentElementAccess.ts`
+
+The bridge between typed `BpmnElement` model and the bpmn-js modeler. Key handler maps:
+
+| Handler map | Purpose |
+|-------------|---------|
+| `setHandlers` | Write: dispatches `setElementProperty(id, propertyName, value)` to the correct command |
+| `getHandlers` | Read: extracts typed values from `element.businessObject` |
+| `castElement()` | Converts a raw modeler element to a typed `BpmnElement` union |
+
+Notable set handlers:
+
+| Property name | Handler | Command |
+|---------------|---------|---------|
+| `serviceTaskImplementation` | Sets `implementation` attribute via `UpdateServiceTaskHandler` | `UpdateServiceTaskHandler` |
+| `loopConfig` | Creates/updates loop characteristics elements | `UpdateLoopCharacteristicsHandler` |
+| `userTaskResources` | Manages `bpmn:HumanPerformer` / `bpmn:PotentialOwner` | `UpdateUserTaskResourcesHandler` |
+| `correlationRetrievalExpression` | Sets `evil:CorrelationRetrievalExpression` on `MessageEventDefinition` or element | `UpdateCorrelationRetrievalExpressionHandler` |
+
+### Command Handlers
+
+#### UpdateLoopCharacteristicsHandler
+
+**Path:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateLoopCharacteristicsHandler.ts`
+
+Handles creation and modification of `bpmn:StandardLoopCharacteristics` and `bpmn:MultiInstanceLoopCharacteristics` elements. Commands:
+
+| Sub-command | What it updates |
+|-------------|----------------|
+| `updateStandardLoop` | `loopCondition` (FormalExpression body), `loopMaximum` |
+| `updateMultiInstance` | `loopCardinality`, `completionCondition` (FormalExpression), `inputDataItem` (DataInput), `outputDataItem` (DataOutput) |
+
+#### UpdateUserTaskResourcesHandler
+
+**Path:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateUserTaskResourcesHandler.ts`
+
+Manages the `resources` array on user task business objects. Creates or updates:
+- `bpmn:HumanPerformer` → contains `bpmn:ResourceAssignmentExpression` → body = assignee value
+- `bpmn:PotentialOwner` → contains `bpmn:ResourceAssignmentExpression` → body = candidate users value
+
+#### UpdateServiceTaskHandler
+
+**Path:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateServiceTaskHandler.ts`
+
+Switches service task implementation type via the `implementation` attribute:
+
+| Implementation value | Service task type |
+|---------------------|-------------------|
+| `"http"` | HTTP Service Task |
+| (empty/absent) | Generic (unconfigured) |
+| (custom string) | Plugin-registered custom service task type |
+
+#### UpdateCorrelationRetrievalExpressionHandler
+
+**Path:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateCorrelationRetrievalExpressionHandler.ts`
+
+Persists `evil:CorrelationRetrievalExpression` for catch-side message elements. The handler navigates from the BPMN element to its `MessageEventDefinition` child (for events) or targets the element directly (for `ReceiveTask`), then uses `setEvilBodyExtension` to create/update/clear the extension element.
+
+### Service Task Implementation Model
+
+The BPMN 2.0 `implementation` attribute on `<bpmn:serviceTask>` replaced the legacy `BpmnServiceTaskType` enum and Camunda-specific `camunda:type` / `camunda:module` attributes. Built-in HTTP tasks use `"http"`; other values are free-text plugin dispatch keys.
+
+```typescript
+export const BpmnServiceTaskImplementation = {
+  Http: 'http',
+  Unspecified: '##unspecified',
+} as const;
+```
+
+Detection utilities in `Utils.ts` check `element.businessObject.get('implementation')` directly.
+
+---
+
+## Pane Registration
+
+**Path:** `studio/src/modules/bpmn-editor/initializers/initializeBpmnPanes.ts`
+
+Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order within the array determines top-to-bottom display order. Key groupings:
+
+### property group
+
+- `PropertiesElementInfo` (consolidated help text)
+- `PropertiesBasic`, `PropertiesDefinition`, `PropertiesProcess`
+- Task-specific: `PropertiesServiceTask`, `PropertiesReceiveTask`, `PropertiesSendTask`, `PropertiesScriptTask`, `PropertiesCallActivity`, `PropertiesManualTask`, `PropertiesBusinessRuleTask`, `PropertiesHttpTask`
+- User task: `PropertiesUserTask`, `PropertiesUserTaskFormSummary`, `PropertiesUserTaskAssignees`
+- All event panes (message, signal, error, escalation, conditional, timer, link)
+- `PropertiesConditionalFlow`
+- Loop/MI: `PropertiesLoop`, `PropertiesInstanceCount`, `PropertiesCompletionCondition`, `PropertiesInputCollection`, `PropertiesOutputCollection`, `PropertiesMultiInstanceExtensions`
+- Data Object: `PropertiesDataObject`
+
+### scripting group
+
+- Data pipeline: `PropertiesInputMappings`, `PropertiesOutputMappings`, `PropertiesPayloadContract`, `PropertiesResultContract`
+- `PropertiesCorrelationRetrievalExpression` — FEEL editor for catch-side message events (`MessageIntermediateCatchEvent`, `MessageBoundaryEvent`, `ReceiveTask`)
+- `PropertiesDataOutputAssociationDataSource`, `PropertiesThrowEventPayload`
+- `DefaultCustomStartToken`, `PropertiesExamplePayload`, `PropertiesExampleResult`
+- `PropertiesCustomAttributes`
+
+#### Message Event Data Pipeline (D-MSG-1)
+
+Per architectural decision D-MSG-1, message events use generic input/output mappings instead of message-specific `evil:payload` and `evil:eventMapping`:
+
+| Element type | Input Mappings | Output Mappings | Payload Contract | Result Contract | Correlation Retrieval |
+|--------------|:-:|:-:|:-:|:-:|:-:|
+| MessageEndEvent | yes | — | yes | — | — |
+| MessageIntermediateThrowEvent | yes | — | yes | — | — |
+| SendTask | yes | — | yes | — | — |
+| MessageIntermediateCatchEvent | — | yes | — | yes | yes |
+| MessageBoundaryEvent | — | yes | — | yes | yes |
+| ReceiveTask | — | yes | — | yes | yes |
+| MessageStartEvent | — | yes | — | yes | — |
+
+Per D-MSG-3, contracts on message events are direction-aware: throw-side events (MessageEndEvent, MessageIntermediateThrowEvent, SendTask) show the **Payload Contract** pane, and catch-side events (MessageIntermediateCatchEvent, MessageBoundaryEvent, MessageStartEvent, ReceiveTask) show the **Result Contract** pane. This aligns with task contract semantics where `payloadContract` validates outgoing data and `resultContract` validates incoming data.
+
+Signal events do not support contracts (the engine has no signal contract capability). Payload Contract and Input Mapping visibility were split into separate type lists (`DATA_PIPELINE_PAYLOAD_CONTRACT_TYPES` and `DATA_PIPELINE_INPUT_MAPPING_TYPES` in `PropertiesPaneFunctions.ts`) so that signal throw-side events show Input Mappings (which the engine supports) without showing the Payload Contract pane (which would be dead data).
+
+### documentation group
+
+- `PropertiesElementDocumentation`
+
+---
+
+## Form Builder
+
+### Overview
+
+The Form Builder provides a visual drag-and-drop editor for configuring User Task form fields and action buttons. It replaces the previous inline form field editors (the old `PropertiesUserTaskFormFields` and `PropertiesUserTaskFormDisplay` panes).
+
+### Architecture
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `FormRenderer` | `studio/src/modules/bpmn-core/form-renderer/` | Shared renderer used by both design-time preview and runtime debugger |
+| `FormBuilder` | `studio/src/modules/bpmn-editor/form-builder/` | Design-time editor (fragment renderer) |
+| `PropertiesUserTaskFormSummary` | `studio/src/modules/bpmn-editor/panes/properties/UserTask/` | Summary pane with field count + "Edit Form" button |
+
+### Data Model
+
+Form data is stored as two separate extension elements on User Tasks:
+
+- `evil:FormFields` — JSON array of `FormFieldDefinition[]`
+- `evil:FormActions` — JSON array of `FormAction[]`
+
+Both are read/written via `BpmnDocumentElementAccess.getFormFieldDefinitions()` / `setFormFieldDefinitions()` / `getFormActions()` / `setFormActions()`.
+
+### Field Types (v1)
+
+| Type | SDK Enum | Description |
+|------|----------|-------------|
+| text | `FormFieldType.Text` | Single-line text input |
+| number | `FormFieldType.Number` | Numeric input |
+| date | `FormFieldType.Date` | Date picker |
+| checkbox | `FormFieldType.Checkbox` | Checkbox |
+| select | `FormFieldType.Select` | Dropdown select |
+| radio | `FormFieldType.Radio` | Radio button group |
+| textarea | `FormFieldType.Textarea` | Multi-line text |
+| file | `FormFieldType.File` | File upload |
+| boolean | `FormFieldType.Boolean` | Toggle switch |
+| header | `FormFieldType.Header` | Section heading (non-input) |
+
+### Form Actions
+
+Actions define the buttons at the bottom of the form. Each action has:
+- `id` — Unique identifier
+- `label` — Button text
+- `preset` — One of: `confirm`, `ok`, `yes`, `no`, `cancel`, `custom`
+- `submitsForm` — Whether clicking the action triggers form validation and submission
+- `isDefault` — Primary visual emphasis
+- `isDanger` — Destructive visual emphasis
+
+When no actions are configured, the `FormRenderer` shows a default "OK" button.
+
+### Fragment Pattern
+
+The Form Builder opens as a fragment editor tab (no own model). It parses a URI of the form `fragment+bpmn.form-builder:<parentUri>#!fragmentId=<elementId>` and accesses the parent BPMN document model to read/write form data.
+
+Command: `bpmn.formBuilder.open` — opens the form builder for the selected User Task element.
+
+### Debugger Integration
+
+The engine-debugger uses `DynamicUiComponentAdapter` (`studio/src/modules/engine-debugger/task-viewer/DynamicUiComponentAdapter.tsx`) to render User Task forms at runtime. It:
+
+1. Receives `UserTaskInstance` with `userTaskConfig.formFields` and `userTaskConfig.formActions` from the engine
+2. Maps engine field types to SDK `FormFieldType` enum values (e.g., engine `string` → `FormFieldType.Text`, engine `enum` → `FormFieldType.Select`)
+3. Maps engine actions to SDK `FormAction[]` (preserving `submitsForm`, `isDefault`, `isDanger` flags)
+4. Renders the shared `FormRenderer` component
+5. On submit: calls `userTasks.finishUserTask(id, data, identity)` with collected form data
+6. On cancel: calls `userTasks.finishUserTask(id, { _action, _cancelled: true }, identity)`
+
+### Data Flow
+
+**Write path** (Form Builder → BPMN model):
+```
+User edits field → setFields(newFields)
+  → model.elements.setFormFieldDefinitions(fragmentId, newFields)
+    → setEvilBodyExtension(element, 'evil:FormFields', JSON.stringify(fields))
+      → commandStack.execute('element.updateProperties', ...)
+```
+
+**Read path** (BPMN model → Form Builder UI):
+```
+Model loads → onceInteractive() → readFromModel()
+  → getFormFieldDefinitions(fragmentId)
+    → getEvilBodyValue(element, 'evil:FormFields')
+      → JSON.parse(body) → FormFieldDefinition[]
+
+Model changes (undo/redo/external) → EVENT_DATA_UPDATED
+  → readFromModel() → setFieldsInternal(currentFields)
+```
+
+**Debugger path** (Engine response → Form UI → Engine API):
+```
+Engine GET /user-tasks/:id → UserTaskInstance
+  → mapEngineFieldToDefinition(field) → FormFieldDefinition[]
+  → mapEngineActionsToFormActions(actions) → FormAction[]
+  → <FormRenderer fields actions onSubmit onCancel />
+  → User clicks action → collectFormData() → POST finishUserTask
+```
+
+---
+
+## Shared Editor Components for Property Panes
+
+### KeyValueJsonEditor
+
+**Path:** `studio/src/components/key-value-builder/`
+
+A dual-mode editor component for panes that store JSON object data. Provides a structured key-value builder UI for flat objects and a raw `MultiLineCodeEditor` fallback for complex/nested structures. The user can toggle between modes at any time.
+
+| Component | Purpose |
+|-----------|---------|
+| `KeyValueBuilder` | Standalone row-based key-value entry builder (add/remove/edit rows) |
+| `KeyValueJsonEditor` | Dual-mode wrapper: builder view for flat objects, raw JSON view for complex data |
+| `jsonToEntries()` | Converts a JSON object string to `{ key, value }[]` pairs |
+| `entriesToJson()` | Converts pairs back to a pretty-printed JSON string with smart-typed values |
+| `smartParseValue()` | Types string values: `"true"`/`"false"` → boolean, `"null"` → null, numeric strings → number |
+
+**Builder compatibility detection:** When the stored JSON contains nested objects or arrays, the component automatically starts in raw JSON mode because those structures cannot be represented as flat key-value pairs. Empty or flat-object values start in builder mode.
+
+**Used by:**
+
+| Pane | Property stored | Element types |
+|------|----------------|---------------|
+| Default Configured Start Payload | `studio.defaultCustomStartToken` | All StartEvent variants |
+| Example Payload | `studio.examplePayload` | MessageIntermediateCatchEvent, MessageBoundaryEvent, ReceiveTask, SendTask, MessageIntermediateThrowEvent, MessageEndEvent |
+| Example Result | `studio.exampleResult` | BusinessRuleTask, CallActivity, ServiceTask, HttpServiceTask |
+
+### Contract Panes (JSON Schema editors)
+
+The Payload Contract, Result Contract, and Data Object Value Contract panes use `MultiLineCodeEditor` with `language="json"` for syntax-highlighted JSON Schema editing. These replaced plain `PaneProperty type="textarea"` fields that had no highlighting or bracket matching.
+
+| Pane | Property | MultiLineCodeEditor htmlId |
+|------|----------|---------------------------|
+| Payload Contract | `dataPipeline.payloadContract` | `data-pipeline-payload-contract` |
+| Result Contract | `dataPipeline.resultContract` | `data-pipeline-result-contract` |
+| Data Object Value Contract | `element.valueContract` | `data-object-value-contract` |
+
+---
+
+## SDK Types
+
+### BpmnLoopConfig
+
+Discriminated union for loop characteristics:
+
+```typescript
+export type BpmnLoopConfig = BpmnStandardLoopConfig | BpmnMultiInstanceLoopConfig;
+
+export type BpmnStandardLoopConfig = {
+  readonly kind: 'standard';
+  readonly loopCondition?: string;
+  readonly loopMaximum?: string;
+};
+
+export type BpmnMultiInstanceLoopConfig = {
+  readonly kind: 'multiInstance';
+  readonly isSequential: boolean;
+  readonly loopCardinality?: string;
+  readonly completionCondition?: string;
+  readonly inputDataItem?: string;
+  readonly outputDataItem?: string;
+};
+```
+
+Available on `BpmnElementCommonProperties.loopConfig`.
+
+---
+
+## File Path Reference
+
+| Component | Path |
+|-----------|------|
+| initializeBpmnPanes | `studio/src/modules/bpmn-editor/initializers/initializeBpmnPanes.ts` |
+| BpmnDocumentElementAccess | `studio/src/modules/bpmn-editor/BpmnDocumentElementAccess.ts` |
+| PropertiesElementInfo | `studio/src/modules/bpmn-editor/panes/properties/PropertiesElementInfo.tsx` |
+| PropertiesElementDocumentation | `studio/src/modules/bpmn-editor/panes/properties/PropertiesElementDocumentation.tsx` |
+| PropertiesThrowEventPayload | `studio/src/modules/bpmn-editor/panes/properties/ThrowEventPayload/PropertiesThrowEventPayload.tsx` |
+| PropertiesInputMappings | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesInputMappings.tsx` |
+| PropertiesOutputMappings | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesOutputMappings.tsx` |
+| PropertiesPayloadContract | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesPayloadContract.tsx` |
+| PropertiesResultContract | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesResultContract.tsx` |
+| PropertiesUserTaskAssignees | `studio/src/modules/bpmn-editor/panes/properties/UserTask/PropertiesUserTaskAssignees.tsx` |
+| PropertiesLoop | `studio/src/modules/bpmn-editor/panes/properties/Loop/PropertiesLoop.tsx` |
+| PropertiesInstanceCount | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesInstanceCount.tsx` |
+| PropertiesCompletionCondition | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesCompletionCondition.tsx` |
+| PropertiesInputCollection | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesInputCollection.tsx` |
+| PropertiesOutputCollection | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesOutputCollection.tsx` |
+| CmdHelper | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/Helper/CommmandHelper.ts` |
+| UpdateLoopCharacteristicsHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateLoopCharacteristicsHandler.ts` |
+| UpdateUserTaskResourcesHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateUserTaskResourcesHandler.ts` |
+| UpdateServiceTaskHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateServiceTaskHandler.ts` |
+| BpmnServiceTaskImplementation | `studio-sdk/types/bpmn/BpmnElementTypes.ts` |
+| BpmnLoopConfig types | `studio-sdk/types/bpmn/BpmnElementTypes.ts` |
+| FormFieldDefinition / FormAction types | `studio-sdk/types/bpmn/BpmnElementTypes.ts` |
+| FormRenderer (shared) | `studio/src/modules/bpmn-core/form-renderer/FormRenderer.tsx` |
+| FormBuilderRenderer | `studio/src/modules/bpmn-editor/form-builder/FormBuilderRenderer.tsx` |
+| PropertiesUserTaskFormSummary | `studio/src/modules/bpmn-editor/panes/properties/UserTask/PropertiesUserTaskFormSummary.tsx` |
+| DynamicUiComponentAdapter | `studio/src/modules/engine-debugger/task-viewer/DynamicUiComponentAdapter.tsx` |
+| PropertiesCorrelationRetrievalExpression | `studio/src/modules/bpmn-editor/panes/properties/MessageCorrelation/PropertiesCorrelationRetrievalExpression.tsx` |
+| UpdateCorrelationRetrievalExpressionHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateCorrelationRetrievalExpressionHandler.ts` |
+| PropertiesPaneFunctions | `studio/src/modules/bpmn-editor/panes/PropertiesPaneFunctions.ts` |
+| BpmnElementCustomPropertiesFunctions | `studio/src/modules/bpmn-editor/panes/BpmnElementCustomPropertiesFunctions.ts` |
+| KeyValueBuilder | `studio/src/components/key-value-builder/KeyValueBuilder.tsx` |
+| KeyValueJsonEditor | `studio/src/components/key-value-builder/KeyValueJsonEditor.tsx` |
+| PropertiesDataObject | `studio/src/modules/bpmn-editor/panes/properties/DataObject/PropertiesDataObject.tsx` |
+| DefaultCustomStartToken | `studio/src/modules/bpmn-editor/panes/properties/DefaultCustomStartToken/PropertiesDefaultCustomStartToken.tsx` |
+| PropertiesExamplePayload | `studio/src/modules/bpmn-editor/panes/properties/ExamplePayload/PropertiesExamplePayload.tsx` |
+| PropertiesExampleResult | `studio/src/modules/bpmn-editor/panes/properties/ExampleResult/PropertiesExampleResult.tsx` |

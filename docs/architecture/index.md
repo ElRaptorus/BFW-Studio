@@ -1,0 +1,40 @@
+# Studio Architecture (Detail)
+
+This folder contains detailed architecture documentation for the Studio. It complements the existing high-level docs (`systeme.md`, `philosophie.md`) with concrete, technical knowledge about the implementation: file paths, type definitions, method signatures, event flows, and relationships between subsystems.
+
+Each file covers one topic area. This documentation grows as understanding of the codebase deepens. Agents are encouraged to capture architectural knowledge here by adding to existing files or creating new ones.
+
+## Topics
+
+- **[workspace.md](workspace.md)** — Solutions, projects, file handling, file explorer, search/symbol index, session restore, window management
+- **[commands.md](commands.md)** — Command system: CommandManager, CommandMediator, type definitions, execution flow, cross-module patterns, command listings
+- **[modules.md](modules.md)** — Internal module catalog, entry points, dependency graph, load order, loading mechanism
+- **[engine.md](engine.md)** — Engine connectivity: EngineManager, events, commands, authentication, document URI scheme
+- **[dialogs.md](dialogs.md)** — Dialog system: DialogManager queue, DialogService/DialogServiceElectron, custom dialog rendering pipeline, all 13 content types, validation, native file pickers, CSS
+- **[editor-documents.md](editor-documents.md)** — Editor Document system: type registration, EditorDocumentModel base class, renderer/inspector contracts, model-to-renderer communication, subscription best practices
+- **[build.md](build.md)** — Build system: Rspack configuration, build targets, loaders, workers, conditional compilation, production builds
+- **[icons.md](icons.md)** — Icon system: Phosphor Icons integration, IconMediator, CSS class format, duotone coloring, custom utility classes, SVG composites
+- **[theming.md](theming.md)** — Theming system: semantic CSS tokens, ThemeManager/ThemeMediator, theme registration and inheritance, module token ownership, developer rules
+- **[notifications.md](notifications.md)** — Notification system: NotificationManager, open/close/toggle/update API, notification types, rendering pipeline, dismissal behavior, status bar integration
+- **[tree.md](tree.md)** — Tree component system: Tree, TreeDataAdapter, HeadlessTreeItem, studioTreePlugin, TreeViewMediator, pathId identity, consumer integration
+- **[settings.md](settings.md)** — Settings system: SettingsManager/SettingsMediator, localStorage persistence, JSON format, key conventions, default registration, value types, User/Default Settings editors
+- **[bpmn-modeler-modules.md](bpmn-modeler-modules.md)** — BPMN modeler module discovery: BpmnModelerModuleRegistry, registration command, diagram-js module format, modeler adapter SDK access
+- **[bpmn-token-simulator.md](bpmn-token-simulator.md)** — BPMN token flow simulator: engine/visual/control layers, bridge pattern, theme integration, supported BPMN elements
+- **[bpmn-editor-properties.md](bpmn-editor-properties.md)** — BPMN editor property panes: three-group structure (property/scripting/documentation), PaneProvider contract, BpmnDocumentElementAccess read/write flow, command handlers, service task implementation model, SDK types
+- **[bpmn-drilldown.md](bpmn-drilldown.md)** — Subprocess drill-down: plane navigation, root.set event wiring, plane-scoped element access, breadcrumb theming, metadata persistence, PropertiesSubprocessContext pane, DrilldownBehavior module, drill-down/drill-up commands
+- **[bpmn-linter.md](bpmn-linter.md)** — BPMN linter module: bpmnlint integration, LintBridge/LintEngine, canvas markers, Error Summary Badge, Findings Pane toggle, rule profiles, three-tier findings
+- **[bpmn-sanitizer.md](bpmn-sanitizer.md)** — BPMN sanitizer: always-on structural integrity scanner, ghost element / dangling reference / empty container detection, SanitizerBridge diagram-js module, canvas badge, Inspector section, per-issue and bulk fixes
+- **[workbench-layout.md](workbench-layout.md)** — Workbench layout: three-column split-bar model, MenuBarSection, PaneContentToggle, PaneManager pane area selection, left menu bar interaction model
+- **[imports-and-modules.md](imports-and-modules.md)** — Module resolution: subpath import aliases (`#bifrost/*`, `#components/*`, `#modules/*`), ambient declarations, TypeScript 6.0 configuration, per-target tsconfig layout
+- **[bpmn-diff.md](bpmn-diff.md)** — BPMN diff module: side-by-side comparison, change summary builder, ChangeOverview and ContentDiff panes, cross-module integration with git-cruiser
+- **[git-cruiser.md](git-cruiser.md)** — Git integration module: GitService, IPC handlers, tree decorations, Git pane, BPMN diff/summary, protected diagrams, status bar, three-state model
+- **[code-quality.md](code-quality.md)** — Code quality: ESLint flat config, Prettier setup, React Compiler rules, common patterns, suppression conventions, verification scripts
+- **[status-bar.md](status-bar.md)** — Status bar infrastructure: priority-based ordering, progress indicators, solution badge, encoding/line-ending items, diagnostics service and problems count
+- **[table.md](table.md)** — Table component: SDK Table wrapper around TanStack Table v8, column definitions, pagination, column-header filters, theming tokens, settings integration
+- **[plugin-host.md](plugin-host.md)** — Plugin Host: `bifrost.plugins` (`PluginService`) facade, per-window process-isolated runtime for external plugins, sandbox architecture (Worker Thread + SES Compartment per plugin), seven-permission model with `PermissionGate` enforcement and `CommandDenylist`, `QuarantineManager` crash isolation, two-tier `AbstractEmitter` event model, PH message protocol, API surface (commands, diagnostics, dialogs, notifications, settings, events, webviews, editors, panes, statusBar, menuBar, menus, workspace), dirty state & save lifecycle for model-less editors, scoped file system access (workspace API), renderer bridge, cross-window plugin state synchronization, selective reload, refresh/cleanup semantics, crash recovery, security model, Plugins pane management UI, Plugin Viewer property pane (`PluginInfoPropertyPane`), Plugin Host Console pane, `evil-webview://` iframe infrastructure (custom protocol, `PluginIframeManager`, bridge script, origin isolation, end-to-end messaging), iframe-backed editor document types (`IframeDocumentRenderer`), iframe-backed panes (`IframePaneProvider`), SDK plugin-api types, scaffold generator
+- **[webviews.md](webviews.md)** — Webview system: iframe container model, `evil-webview://` custom protocol, file layout, message flow (host→guest / guest→host), state persistence, theming bridge, editor document integration, pane integration, security model, bridge script build
+- **[feel-editor.md](feel-editor.md)** — FEEL expression editor: CodeMirror 6 components (`FeelEditor`, `OneLineFeelEditor`), theming tokens, FEEL context command, variable structure, dependency chain
+- **[plugin-manifest.md](plugin-manifest.md)** — Plugin manifest system (Phase 4+): declarative contributions (commands, menus, settings, keybindings, icons, panes, service task types), permission declarations (`filesystem`, `commands.std`, `commands.bpmn`, `commands.dmn`, `renderer-modules`, `native`, `system-info`), sandbox constraints, activation events, lazy loading, API versioning, manifest validation, registration flow, cleanup lifecycle
+- **[dmn-editor.md](dmn-editor.md)** — DMN editor module system: three-module split (dmn-core/dmn-editor/dmn-diff), DmnModelerComponentAdapter, multi-view architecture, property panes, search indexing, validation, diff engine, merge resolver, SDK types, FEEL context, dmn-js integration
+- **[startpage.md](startpage.md)** — Start page (Welcome tab): layout, hero/action card grids, contribution API (`StartpageCardDescriptor`), theme tokens, flavor text, settings, test attributes
+- **[common-pitfalls.md](common-pitfalls.md)** — Recurring mistakes, gotchas, and non-obvious constraints: dialog timing, pane groups, theme tokens, React Compiler patterns, cross-module coupling

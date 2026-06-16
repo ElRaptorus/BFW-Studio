@@ -1,0 +1,14 @@
+.dynamicui-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.dynamicui-container__card {
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  overflow: hidden;
+}

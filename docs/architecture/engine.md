@@ -1,0 +1,564 @@
+# Engine Connectivity
+
+---
+
+## Overview
+
+The Studio communicates with one or more external Engines (ThomasTheDaemonEngine instances). The engine is not part of this application — it is accessed remotely via the published `@elraptorus/daemonengine_client` npm package.
+
+Engine connectivity is split into five modules:
+
+- **`engine-core`** — Shared foundation: `EngineConnectionManager`, `JwtIdentityManager`, `WebSocketBridge`, commands, settings, reusable components, and the `DaemonEngineClient` instance lifecycle. Frozen barrel (`index.ts`) — signature changes require all consumer modules to be coordinated.
+- **`engine-workspace`** — Operations hub: Dashboard, Process Explorer (with context menu, multi-select, quick actions), Instance Search, Task Inbox (auto-refresh, sidebar badge), Decision Catalog, Timer Schedules, Engine Sidebar Pane, document type registration, menus, and Run Menu commands.
+- **`engine-model-viewer`** — Read-only BPMN process model inspector: direct `BpmnViewerComponentAdapter` rendering, ~20 type-specific right panes for element metadata/extensions, version browser, `BpmnElementOverlayManager`-based overlays (per-start-event play buttons, Call Activity target links, Business Rule Task DMN drill-down links, not-executable badges via `OverlayFactory`), export suite.
+- **`engine-decision-viewer`** — DMN decision model inspector: `DmnViewerComponentAdapter` (read-only `dmn-js/lib/NavigatedViewer`) rendering with full multi-view support (DRD, Decision Table, Literal Expression, Boxed Expression), BKM/ItemDefinition/DecisionService detail panes, ad-hoc evaluation panel, version browser, import chain visualization, export suite. Theming via shared `dmn.scss` overrides ensures visual parity with the DMN Editor.
+- **`engine-debugger`** — Diagram-first process instance inspector: event-driven lazy-load architecture (subscribe → snapshot → on-demand FNI detail), FNI state overlay pipeline, 4 right-pane groups (~50 panes: property, dataflow, scripting, documentation), bottom document inspector (6 views including FEEL Expression Runner), canvas overlay actions (task completion, event triggers, retry, Business Rule Task DMN trace drill-down), BPMN context pad, View menu integration, 4 settings, keyboard shortcuts. **Notable right-panel panes:** Context Variables (process-level `startedWithContext` as JSON, shown when nothing is selected), Input Token / Output Token (FNI token data, shown when an executed flow node is selected — replaced the former bottom-inspector Token Inspector), FEEL Expression Runner (bottom inspector, replaced legacy JS `new Function()` runner with the shared `FeelSimulatorEditor` component pre-filled with runtime FNI context mapped to canonical FEEL bindings). Includes a **DMN Trace Fragment** (`engine-debug.dmn-trace`) — a non-singleton fragment document that renders the DMN evaluation trace for an executed Business Rule Task using `DmnViewerComponentAdapter`, with execution overlays, an Evaluation Order inspector, and decision-level trace detail panes.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│  engine-workspace   engine-model-viewer   engine-decision-viewer   engine-debugger  │
+│      (lists,          (BPMN model          (DMN dmn-js viewer,      (PI runtime,    │
+│       tables)          definitions)          multi-view)             FNI overlays)  │
+│          │                  │                      │                      │          │
+│          └──────────────────┴──────────────────────┴──────────────────────┘          │
+│                                          │                                           │
+│                              engine-core (frozen barrel)                              │
+│                    (commands, components, managers, settings)                         │
+│                                          │                                           │
+│                         @elraptorus/daemonengine_client (HTTP + WS)                  │
+│                                          │                                           │
+│                         @elraptorus/daemonengine_sdk (types, contracts)               │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  Engine (external, remote)                                                           │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Architectural Principle
+
+`engine-core` forms the shared foundation. It MUST NOT depend on or know about consumer modules (`engine-workspace`, `engine-model-viewer`, `engine-decision-viewer`, `engine-debugger`). The dependency arrow always points downward: consumers depend on core, never the reverse. Consumer modules also MUST NOT depend on each other — cross-view navigation uses command IDs and URI conventions, never direct imports.
+
+When core operations need to notify consumers, they emit events on `EngineConnectionManager`. Consumers subscribe and react.
+
+### Renderer+Model Pattern (mandatory for all engine views)
+
+All engine views MUST use the **Renderer+Model** pattern established by every other editor document in the Studio. Each engine view consists of:
+
+1. An **`EditorDocumentModel` subclass** — owns business logic, data fetching, refresh timers, selection state, and cross-pane communication. Lifecycle hooks (`onEditorDocumentModelDidRegister`, `onEditorDocumentDidFocus`, `onEditorDocumentDidBlur`, `onEditorDocumentWillClose`) manage timers and subscriptions.
+2. A **thin Renderer** — reads data from `editorDocument.data.current`, calls model methods for actions, handles only rendering concerns.
+
+The `useEditorModel<T>()` hook (in `engine-workspace/hooks/`) bridges functional components to model instances.
+
+Current models:
+- `DashboardDocumentModel` — auto-refresh timer, health/info/stats fetching, settings-reactive interval
+- `ProcessExplorerDocumentModel` — GraphQL `queryProcessModels` with server-side filtering (including `ilike` for names), sorting, and offset pagination (`limit`/`offset`). Two-step filter resolution for version fields (process versions queried separately, then filtered via `processId`). Nested `versions` include for latest version/deployedAt enrichment. Event-driven auto-refresh subscribes to `ProcessDefinitionDeployed`, `ProcessDefinitionUndeployed`, `ProcessDefinitionEnabled`, and `ProcessDefinitionDisabled` engine WebSocket events.
+- `InstanceSearchDocumentModel` — GraphQL `queryProcessInstances` with server-side filtering (`ilike` for ID/businessKey, enum multi-select for state, date-range for startedAt), sorting, and offset pagination. Two-step filter resolution for process name and version.
+- `TaskInboxDocumentModel` — GraphQL `queryFlowNodeInstances` filtered to user tasks in waiting state. Server-side `ilike` filters, date-range filters, sorting, and offset pagination.
+- `DecisionCatalogDocumentModel` — GraphQL `queryDecisionDefinitions` with server-side filtering, sorting, and offset pagination. Two-step filter resolution for version fields. Nested `versions` include.
+- `TimerSchedulesDocumentModel` — REST-backed (client-side filtering/sorting only; no GraphQL endpoint for timer schedules).
+
+All GraphQL-backed models use server-provided offset page metadata (`hasNextPage`, `hasPreviousPage`, `pageNumber`, `lastPage`, `count`). This enables full page navigation including direct page jumps, page size changes, and First/Last buttons.
+
+Wave 2+ views (Debugger, Process Instance Detail, etc.) MUST follow this same pattern.
+
+### Command Contract (FROZEN)
+
+All engine-core commands are registered at runtime but their IDs and argument shapes are exported as a typed contract:
+
+- **`ENGINE_COMMANDS`** — `as const` object mapping logical names to string command IDs. Use `ENGINE_COMMANDS.deploy` instead of `'engine.deploy'`.
+- **`EngineCommandArgs`** — maps each command ID to its typed argument tuple.
+- **File:** `studio/src/modules/engine-core/commands/CommandContract.ts`
+
+17 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `retryProcessInstance`, `terminateProcessInstance`, `deleteProcessInstance`, `triggerMessage`, `triggerSignal`.
+
+### SDK Imports
+
+SDK re-exports were removed from the engine-core barrel. All consumer modules import SDK types directly from `@elraptorus/daemonengine_sdk` and client types from `@elraptorus/daemonengine_client`. Engine-core only exports its own types, components, commands, settings, and utilities.
+
+> **Legacy architecture:** The sections below document the `EngineManager`-based architecture (`engine-browser`, `engine-debugger`, `engine-bpmn-viewer`) which is being replaced. They are retained for reference until the legacy modules are fully removed.
+
+---
+
+## EngineManager
+
+**Path:** `studio/src/bifrost/common/EngineManager.ts`
+**SDK type declaration:** `studio-sdk/types/common/EngineManager.ts`
+**Access:** `bifrost.engines` / `studio.engines`
+
+Extends `AbstractEmitter`. Manages engine client instances, connection lifecycle, identity/authentication, and settings.
+
+### Connection Lifecycle
+
+1. `createConnection(engineUrl)` — creates an `EngineClient`, caches engine info, emits `EVENT_ENGINE_ADDED`
+2. The `EngineClient` monitors connectivity via Socket.IO:
+   - First connection → `EVENT_ENGINE_CONNECTED`
+   - Reconnection after loss → `EVENT_ENGINE_RECONNECTED`
+   - Connection lost → `EVENT_ENGINE_CONNECTION_LOST`
+3. `disconnectEngine(engineUrl)` — disposes the client, emits `EVENT_ENGINE_DISCONNECTED_MANUALLY`
+4. `removeEngineFromHistory(engineUrl)` — disconnects and removes all settings, emits `EVENT_ENGINE_DELETED`
+
+### Key Methods
+
+| Method | Purpose |
+|--------|---------|
+| `createConnection(engineUrl)` | Establishes a new engine connection |
+| `getClient(engineUrl)` | Returns the `EngineClient` for an engine URL (creates if needed) |
+| `getConnectedEngines()` | Returns all currently connected engines as `EngineInformation[]` |
+| `getConnectionHistory()` | Returns all engines from URL history |
+| `disconnectEngine(engineUrl)` | Disconnects and removes from connected list |
+| `isCurrentlyOnline(engineUrl)` | Whether the engine is currently reachable |
+| `getIdentityForRequest(engineUrl)` | Returns the active user identity (or root identity) for API calls |
+| `getRootAccessIdentityForEngine(engineUrl)` | Returns the root access identity |
+| `getCurrentActiveUser(engineUrl)` | Returns the active `UserLogin` for an engine |
+| `setActiveUser(engineUrl, userLogin?)` | Sets or clears the active user |
+| `connectedEngineIsSupported(engineUrl)` | Whether the engine version meets minimum requirements |
+| `notifyProcessInstanceRetried(engineUrl, processInstanceIds, processModelWasUpdated)` | Emits `EVENT_PROCESS_INSTANCE_RETRIED` for consumers to react |
+
+### Events
+
+| Event | Args Type | Trigger |
+|-------|-----------|---------|
+| `EVENT_ENGINE_CONNECTED` | `EngineEventArgs` | First successful connection |
+| `EVENT_ENGINE_RECONNECTED` | `EngineEventArgs` | Reconnection after loss |
+| `EVENT_ENGINE_CONNECTION_LOST` | `EngineEventArgs` | Connection lost |
+| `EVENT_ENGINE_DISCONNECTED_MANUALLY` | `EngineEventArgs` | User disconnects |
+| `EVENT_ENGINE_ADDED` | `EngineEventArgs` | New connection created |
+| `EVENT_ENGINE_DELETED` | `EngineEventArgs` | Engine removed from history |
+| `EVENT_ENGINE_BROWSER_URLS_UPDATED` | — | Connected list or settings changed |
+| `EVENT_ENGINE_ACTIVE_USER_CHANGED` | `EngineUserChangedArgs` | Active user changed (login/logout/token change) |
+| `EVENT_ENGINE_INFO_UPDATED` | `EngineInfoUpdatedArgs` | Engine info cache updated |
+| `EVENT_PROCESS_INSTANCE_RETRIED` | `ProcessInstanceRetriedArgs` | Process instance retried via engine-core commands |
+
+### Event Args Types
+
+```typescript
+type EngineEventArgs = { url: string };
+
+type EngineUserChangedArgs = {
+  engineUrl: string;
+  userLogin?: UserLogin;
+};
+
+type EngineInfoUpdatedArgs = {
+  value: { [engineUrl: string]: EngineInformation };
+  engineUrl?: string;
+};
+
+type ProcessInstanceRetriedArgs = {
+  engineUrl: string;
+  processInstanceIds: string[];
+  processModelWasUpdated: boolean;
+};
+```
+
+### Settings
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `engineManager.internal.connected` | `[]` | Array of currently connected engine URLs |
+| `engineManager.internal.urlHistory` | `[]` | Array of all known engine URLs (connected + previously connected) |
+| `engineManager.internal.infoCache` | `{}` | Cached `EngineInformation` per URL |
+| `engineManager.internal.activeUserIds` | `{}` | Active user ID per engine URL |
+| `engineManager.internal.customRootAccessTokens` | `{}` | Custom root access tokens per engine URL |
+| `engineManager.internal.lastDeploymentTargetUrl` | `null` | Last engine used for deployment |
+
+---
+
+## Engine-Core Commands
+
+**Path:** `studio/src/modules/engine-core/index.ts`
+
+`engine-core` registers all shared engine commands. These are the operations that multiple consumer modules need.
+
+### Connection
+
+| Command | Purpose |
+|---------|---------|
+| `engine.connectToUrl` | Connects to an engine URL |
+| `engine.addConnection` | Adds a connection (UI-triggered) |
+| `engine.disconnect` | Disconnects from an engine |
+| `engine.removeUrlFromHistory` | Removes an engine URL from history |
+| `engine.disconnectAndRemove` | Disconnects and removes from history |
+
+### Process Operations
+
+| Command | Purpose |
+|---------|---------|
+| `engine.deploy` | Deploys a BPMN/DMN file to an engine |
+| `engine.deployBatch` | Deploys multiple BPMN/DMN files in one batch |
+| `engine.startProcess` | Starts a process on an engine (thin wrapper around `client.processes.start`) |
+| `engine.configuredStartProcess` | Opens the Configured Start dialog (start event picker, payload JSON editor, business key) then starts |
+| `engine.startProcessAndOpenDebugger` | Smart start: if 1 start event, starts immediately; if 2+, opens dialog. Opens debugger on success |
+| `engine.configuredStartProcessAndOpenDebugger` | Always opens the Configured Start dialog, then opens debugger on success |
+| `engine.abortProcessInstance` | Aborts a running process instance |
+| `engine.retryProcessInstance` | Retries a failed/aborted process instance |
+| `engine.deleteProcessInstance` | Deletes a process instance |
+
+### Tasks and Events
+
+| Command | Purpose |
+|---------|---------|
+| `engine.debugger.triggerMessageEvent` | Opens message trigger dialog (payload pre-filled from `studio.examplePayload` if set on the catch element), then triggers via `engine.triggerMessage` scoped to the current process instance |
+| `engine.debugger.triggerSignalEvent` | Opens signal trigger confirmation (no payload — signals are broadcast-only), then triggers via `engine.triggerSignal` |
+| `engine.debugger.triggerTimerEvent` | Opens timer trigger confirmation, then triggers via `engine.triggerTimerEvent` |
+
+#### Event Trigger Dialog Architecture
+
+Each event type has its own dedicated confirmation dialog, split from the former shared `getMessageSignalEventDialogContent`:
+
+- **Message**: `askMessageTriggerConfirmation` → `getMessageEventDialogContent`. Shows a JSON payload field pre-filled with `studio.examplePayload` (read from the moddle via `BpmnCustomPropertyAccessor`). Always scoped to the current process instance.
+- **Signal**: `askSignalTriggerConfirmation`. Simple confirmation with a caution note. No payload field — the engine's signal API is broadcast-only with no payload.
+- **Timer**: `askTimerTriggerConfirmation`. Simple confirmation stating the timer will be skipped.
+
+**File:** `studio/src/modules/engine-debugger/libs/BpmnCustomPropertyAccessor.ts` — reads `evil:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.
+
+### Authentication
+
+| Command | Purpose |
+|---------|---------|
+| `engine.signIn` | Signs in with credentials |
+| `engine.signOut` | Signs out |
+| `engine.getCurrentUserLogin` | Gets the current user login |
+| `engine.setRootAccessToken` | Sets a custom root access token |
+| `engine.showOAuthConfigurationModal` | Shows OAuth configuration dialog |
+| `engine.getEffectiveAuthorityConfig` | Gets the effective OAuth authority configuration |
+
+### Engine-Workspace Commands (Run Menu & Menubar)
+
+**Path:** `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts`
+
+These commands are registered by `engine-workspace` and orchestrate deploy+start workflows, menubar interactions, and multi-engine state.
+
+| Command | Purpose |
+|---------|---------|
+| `engine.deployCurrentProcess` | Deploys the currently focused BPMN/DMN file (F3) |
+| `engine.deployAndOpenCurrentProcess` | Deploys and opens the Process Explorer (Shift+F3) |
+| `engine.deploySolution` | Deploys all BPMN/DMN files in the current solution |
+| `engine.quickDeployAndDebug` | Deploys the focused BPMN file, then starts in debugger (F5) |
+| `engine.quickDeployAndConfiguredDebug` | Deploys the focused BPMN file, then opens Configured Start dialog (Shift+F5) |
+| `engine.menubar.startCurrentProcessInDebugger` | Starts the currently focused process without deploying |
+| `engine.menubar.configuredStartCurrentProcessInDebugger` | Configured Start for the currently focused process without deploying |
+| `engine.menubar.playButton` | Shift-aware play button router (registered with `{ expectsContext: true }`). Click = start, Shift+Click = configured start. Context-aware: detects whether focused doc is a local BPMN file or an engine model viewer |
+| `engine.menubar.deployButton` | Shift-aware deploy button router. Click = deploy, Shift+Click = deploy & open |
+| `engine.menubar.setActiveEngine` | Engine dropdown onChange handler, calls `connectionManager.setActiveEngine()` |
+
+### Menubar Structure
+
+The engine menubar (center area) contains:
+
+1. **Open Engine Dashboard** button — gauge icon, visible only when active engine is connected
+2. **Play** button — Shift+Click enabled. Tooltip dynamically adapts to focused document type (local BPMN vs. model viewer)
+3. **Deploy** button — Shift+Click enabled (Shift = deploy & open). Only visible when a deployable document is focused
+4. **Engine Selector** dropdown (`MenuBarItem_Select`) — lists all connected/recent engines with `[OFFLINE]` prefix for disconnected ones. Falls back to a "(No engine)" text label when no engines exist
+
+The menubar subscribes to `engine:list-changed`, `engine:state-changed`, `engine:disconnected`, `engine:connected`, and `engine:reconnected` events to trigger automatic rebuilds when engine state changes.
+
+### Configured Start Dialog
+
+**Path:** `studio/src/modules/engine-core/commands/registerConfiguredStartCommands.ts`
+
+The Configured Start dialog opens when:
+- The user explicitly requests it (Shift+Click, Shift+F5, or a "Configured Start" menu item)
+- The `engine.startProcessAndOpenDebugger` command detects that the process has multiple start events (auto-fallback)
+
+The dialog fetches the BPMN XML from the engine via `client.processes.get(processModelId, { includeXml: true })`, parses it with `DOMParser` to extract start events, and presents:
+
+1. **Start Event** select (or text input if XML unavailable) — defaults to the first plain (None) start event
+2. **Payload** key-value builder — a `key_value_builder` dialog content type for flat key-value pairs. Values are smart-parsed: `true`/`false` → boolean, valid numbers → number, `null` → null, everything else → string. No nested objects or arrays in v1.
+3. **Context Variables** key-value builder — same builder UX, stored as a separate `context` field in the start request. Context variables are immutable process-level values accessible as `context.*` in FEEL expressions, independent from the token payload.
+4. **Business Key** text input (optional)
+
+Validation checks both builders for duplicate keys and incomplete rows (key without value or vice versa). Both builders are optional — zero rows is valid. The dialog calls `engine.startProcess` with the assembled `StartRequest` including `payload`, `context`, and `businessKey`.
+
+---
+
+## Document URI Scheme
+
+Engine-related documents encode the engine URL and resource identifiers in the URI query string.
+
+**Format:** `{scheme}:{type}?engineUrl={encodedUrl}&param=value`
+
+### Examples
+
+| Module | URI Pattern |
+|-----------|-------------|
+| engine-browser | `engineBrowser:ProcessInstanceList?engineUrl={encodedUrl}` |
+| engine-browser | `engineBrowser:ProcessModelList?engineUrl={encodedUrl}` |
+| engine-debugger | `engineBrowser:BpmnDebugger?engineUrl={encodedUrl}&processInstanceId={id}` |
+
+### Parsing
+
+**Path:** `studio/src/modules/engine-core/UrlParser.ts`
+
+- `getParametersFromDocumentUrl(uri)` → `{ [key: string]: string }` — parses all query params
+- `extractEngineUrlFromDocumentUrl(uri)` → `string` — extracts just the engine URL
+
+---
+
+## EngineInformation
+
+**Path:** `studio-sdk/types/common/EngineManager.ts`
+
+```typescript
+type EngineInformation = {
+  url: string;
+  name: string;
+  loadedExtensions?: EngineExtensionInfo[];
+  id?: string;
+  version?: string;
+  authorityAddress?: string;
+  loggedInAs?: string;
+  portalUrl?: string;
+};
+```
+
+---
+
+## Engine Editor Documents
+
+Engine modules register editor document types for engine-related views. For the general Editor Document system (type registration, model base class, renderer/inspector contracts, model-to-renderer communication patterns, subscription best practices), see [editor-documents.md](editor-documents.md).
+
+### Engine-Specific Document Types
+
+| Module | Document Type | URI Pattern | Has Inspector |
+|-----------|---------------|-------------|---------------|
+| engine-browser | `editor-document-engine-process-instance-list` | `engineBrowser:ProcessInstanceList?…` | no |
+| engine-browser | `editor-document-engine-process-model-list` | `engineBrowser:ProcessModelList?…` | no |
+| engine-browser | `editor-document-engine-landing-page` | `engineBrowser:EditorDocumentLandingPage?…` | no |
+| engine-browser | `editor-document-engine-cyclic-timers-list` | `engineBrowser:CyclicTimersList?…` | no |
+| engine-bpmn-viewer | `EngineBpmnViewerEditorDocument` | `engineBrowser:BpmnViewer?…` | yes |
+| engine-debugger | `ProcessInstanceViewer` | `engineBrowser:BpmnDebugger?…` | yes |
+| engine-debugger | `engine-debug.dmn-trace` | `fragment+engine-debug.dmn-trace://{engineId}/{piId}/{fniId}#!…` | yes |
+
+All engine document types use `canOpen: (uri) => checkEngineConnectivity(bifrost, uri)` to verify the target engine is online before opening.
+
+### Engine-Specific URI Parameters
+
+All engine document URIs share `engineUrl` as a common parameter. Additional parameters vary by document type:
+
+| Document Type | URI Parameters |
+|---------------|---------------|
+| Process Instance List | `engineUrl` |
+| Process Model List | `engineUrl` |
+| Landing Page | `engineUrl` |
+| Cyclic Timers List | `engineUrl` |
+| BpmnViewer | `engineUrl`, `processModelId` |
+| BpmnDebugger | `engineUrl`, `processInstanceId` |
+| DMN Trace Fragment | `engineId`, `processInstanceId`, `flowNodeInstanceId` (in hash fragment) |
+
+### Engine Event Subscriptions in Models
+
+Engine document models subscribe to `EngineManager` events to react to connectivity changes and engine operations. Subscriptions are stored and disposed in `onEditorDocumentWillClose`. Each model self-selects events by comparing `args.engineUrl` (or `args.url`) against its own engine URL.
+
+Key events handled by engine document models:
+- `EVENT_ENGINE_CONNECTED` / `EVENT_ENGINE_RECONNECTED` — refresh data, notify renderer via `onEngineReconnect` callback
+- `EVENT_ENGINE_CONNECTION_LOST` — show offline state
+- `EVENT_ENGINE_ACTIVE_USER_CHANGED` — re-authenticate, refresh subscriptions
+- `EVENT_PROCESS_INSTANCE_RETRIED` — refresh if process model was updated (debugger model only)
+
+---
+
+## DMN Trace Fragment
+
+The DMN Trace Fragment (`engine-debug.dmn-trace`) is a non-singleton fragment document that renders the DMN evaluation trace produced by an executed Business Rule Task. Each fragment is bound to a specific Flow Node Instance and operates independently of the Debugger's current selection.
+
+### Architecture
+
+- **Document Type:** `engine-debug.dmn-trace`
+- **URI:** `fragment+engine-debug.dmn-trace://{engineId}/{processInstanceId}/{flowNodeInstanceId}#!engineId=…&processInstanceId=…&flowNodeInstanceId=…`
+- **Model:** `DmnTraceFragmentModel` (`engine-debugger/dmn-trace/DmnTraceFragmentModel.ts`) — full `EditorDocumentModel` subclass that fetches the FNI detail (including `typeProperties` with DMN trace data in snake_case), retrieves the DMN XML via `client.decisions.get(decisionRef, { includeXml: true })`, parses it with `parseDmn()`, and manages DRG selection state via private model fields with public getters.
+- **Renderer:** `DmnTraceFragmentRenderer` (`engine-debugger/dmn-trace/DmnTraceFragmentRenderer.tsx`) — renders the DRG canvas using `DmnViewerComponentAdapter` (shared with `engine-decision-viewer`), applies execution overlays, and provides toolbar actions for zoom, "View Definition" (opens `engine-decision-viewer`), and inspector toggle.
+- **Inspector:** `DmnTraceInspector` (`engine-debugger/dmn-trace/DmnTraceInspector.tsx`) — "Evaluation Order" table showing decisions in sequential evaluation order with hit policies, matched rules, results, and durations.
+
+### Data Flow
+
+1. Debugger overlay on executed BRT → `engine.debugger.openDmnTrace` command
+2. `DmnTraceFragmentModel` parses URI → fetches FNI via GraphQL (`getFlowNodeInstance` with `typeProperties`) → extracts `decision_ref` from `typeProperties`
+3. Model fetches DMN XML via `client.decisions.get(decisionRef, { includeXml: true })` → parses with `parseDmn()`
+4. Renderer creates `DmnViewerComponentAdapter`, initializes with DMN XML, applies trace overlays
+5. Selection events propagate to right-side property panes via model getters (panes cast `props.editorDocumentModel` to `DmnTraceFragmentModel`)
+
+### Execution Overlays
+
+- **Evaluated decisions:** Green badge with duration (ms) and matched rule count, positioned at bottom-right of each DRG decision shape
+- **Unevaluated decisions:** Dimmed semi-transparent overlay covering the entire shape
+
+### Property Panes (right-side)
+
+| Pane | Shows When | Content |
+|------|-----------|---------|
+| Trace Overview | No DRG element selected | Decision ref, hit policy, duration, FNI metadata |
+| Decision Trace Detail | Decision element selected | Hit policy, duration, inputs, matched/unmatched rules, result |
+| Coercion Trace | No DRG element selected (if coercions exist) | Input coercion details: original value, coerced value, target type |
+| BKM Trace | Decision with BKM invocations selected | Hierarchical BKM invocation tree with parameters, results, nested calls |
+
+### Type Properties (snake_case)
+
+DMN trace data in `FlowNodeInstance.typeProperties` uses snake_case keys (not camelCase like REST `evaluate()` responses). Key interfaces are defined in `DmnTraceTypes.ts`:
+
+- `DmnFlowNodeTypeProperties` — top-level: `mode`, `decision_ref`, `hit_policy`, `matched_rules`, `result`, `duration_us`, `trace`
+- `SnakeCaseEvaluationTrace` — `decisions`, `input_coercions`
+- `SnakeCaseDecisionTrace` — `decision_model_id`, `decision_name`, `hit_policy`, `matched_rules`, `unmatched_rules`, `result`, `duration_microseconds`, `bkm_traces`, `import_traces`
+
+### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `engine.debugger.openDmnTrace` | Opens the DMN trace fragment for a given engineId/processInstanceId/flowNodeInstanceId |
+| `std.editor.zoomToViewport.engine-debug.dmn-trace` | Zoom DRG canvas to viewport |
+| `std.editor.zoomToActualSize.engine-debug.dmn-trace` | Zoom DRG canvas to 1:1 |
+| `engine.debugger.dmnTrace.viewDefinition` | Open the referenced DMN definition in `engine-decision-viewer` |
+
+---
+
+## Engine SDK (`engine-core/sdk/`)
+
+All engine-related types, constants, and model utilities live in `studio/src/modules/engine-core/sdk/`. This replaces the former engine sdk package.
+
+### Structure
+
+| Directory | Purpose |
+|-----------|---------|
+| `sdk/constants/` | Runtime enums: `BpmnType`, `EventType`, `FlowNodeInstanceState`, `ProcessInstanceState`, `TimerType`, `LoopMarker`, `ServiceTaskType`, `GatewayDirection`, `UserTaskFormFieldType`, sortable columns |
+| `sdk/types/` | TypeScript type definitions: `common.ts` (Identity, Subscription, etc.), `model.ts` (BPMN model tree), `data-models.ts` (process/flow-node instance types), `engine-client.ts` (notification callback types) |
+| `sdk/parser/` | `BpmnModelParser` (XML → model tree via `xml2js`), `ModelClasses` (Process/Definitions with methods) |
+| `sdk/facade/` | `ProcessModelFacade` (graph traversal: `getPreviousFlowNodesFor`, `findJoinGatewayAfterSplitGateway`) |
+| `sdk/view-model/` | `FlowNodeViewModelFactory`, `FlowNodeViewModel`, `StartEventViewModel`, `EndEventViewModel` |
+| `sdk/index.ts` | Main barrel: flat exports + backward-compatible `DataModels`, `Model`, `Messages` namespaces |
+
+### Import path
+
+All modules import SDK types via:
+
+```typescript
+import { Model, DataModels, BpmnType } from '#modules/engine-core/sdk';
+```
+
+### Namespace design
+
+The SDK barrel re-exports types both flat (`export type * from './types'`) and under nested namespaces (`Model.Events.TimerStartEvent`, `DataModels.FlowNodeInstances.FlowNodeInstanceState`). The namespaces merge types and runtime enum values for backward compatibility with the former SDK's pattern.
+
+---
+
+## Engine Client (`engine-core/client/`)
+
+The engine client implementation lives in `studio/src/modules/engine-core/client/`. This replaces the former engine client.
+
+### Structure
+
+| File | Purpose |
+|------|---------|
+| `HttpClient.ts` | Thin wrapper around native `fetch`: JSON serialization, error mapping, auth headers, `buildUrl` for query encoding |
+| `SocketManager.ts` | Manages `socket.io-client` connections: authentication, subscription lifecycle |
+| `RestSettings.ts` | URL templates for all REST endpoints |
+| `SocketSettings.ts` | Socket.IO namespace and event names |
+| `EngineClient.ts` | Main client: aggregates sub-clients with lazy initialization |
+| `sub-clients/` | 12 concrete sub-client classes (no interfaces — single-client architecture) |
+
+### Sub-clients
+
+| Class | Key methods |
+|-------|-------------|
+| `ApplicationInfoClient` | `getApplicationInfo`, `onConnected/Disconnected/Reconnected` |
+| `ProcessInstanceClient` | `query` (GET), `getChildProcessInstanceIds`, `terminateProcessInstance` (PUT), `retryProcessInstance` (PUT), `deleteProcessInstances` (DELETE), `delete` (DELETE) |
+| `FlowNodeInstanceClient` | `query` (GET) |
+| `DataObjectInstanceClient` | `query` (GET) |
+| `ProcessDefinitionClient` | `getAll`, `getById`, `persistProcessDefinitions`, `startProcessInstance`, `deleteById` |
+| `ProcessModelClient` | `startProcessInstance`, `enableProcessModel` (POST), `disableProcessModel` (POST) |
+| `CronjobClient` | `query` (GET), `enableCronjob` (POST), `disableCronjob` (POST) |
+| `UserTaskClient` | `reserveUserTaskInstance` (PUT), `cancelUserTaskInstanceReservation` (DELETE), `finishUserTask` (PUT) |
+| `ManualTaskClient` | `finishManualTask` (PUT) |
+| `UntypedTaskClient` | `finishTask` (PUT) |
+| `EventClient` | `triggerMessageEvent` (POST + URL query params), `triggerSignalEvent` (POST + URL query params), `triggerTimerEvent` (POST) |
+| `NotificationClient` | ~40 subscription methods for all engine events |
+
+### Identity management
+
+Identity (authentication) is managed centrally per `EngineClient` instance via `setIdentity()`. Sub-clients receive a `getIdentity` callback from the parent client. Individual API calls that callers pass an `identity` parameter to accept it for backward compatibility but use the centrally managed identity.
+
+### Import path
+
+```typescript
+import { EngineClient } from '#modules/engine-core/client';
+```
+
+---
+
+## Multi-Engine Isolation
+
+The Studio supports multiple simultaneous engine connections. Each engine view (Process Explorer, Decision Catalog, Dashboard, Task Inbox, Instance Search, Timer Schedules, Model Viewer, Decision Viewer) is scoped to a single engine via the `engineId` embedded in its document URI. Isolation is enforced at three layers:
+
+### Engine-scoped event filtering
+
+**`EventDrivenRefresh`** accepts an optional `engineId` in its constructor options. When set, the `eventHandler` compares `payload.engineId` against the configured value and ignores events from other engines. All six workspace models pass `engineId: this.engineId` when constructing their `EventDrivenRefresh` instance.
+
+**Model Viewer and Decision Viewer** subscribe directly to WebSocket events via `engine:event`. Their handlers include an `if (payload?.engineId !== this.engineId) { return; }` guard.
+
+**`engine:auth-token-changed`** handlers in all models compare the event's `engineId` against `this.engineId` before triggering a refresh, preventing cross-engine re-authentication cascades.
+
+### Document-scoped data via model getters
+
+All selection state and working data (parsed models, fetched lists, computed state) live on private model fields exposed through public getters. Panes access data by casting `props.editorDocumentModel` to the concrete model type — the same pattern the Debugger has always used. See the Data Placement Rules section in `docs/architecture/editor-documents.md` for details.
+
+### Future work: replace `engineId` with engine URL
+
+The current `engineId` is a synthetic Studio-generated identifier (`engine-{timestamp}-{random}`). Since the engine URL is already the true unique identifier (duplicate connections are prevented by `findByUrl()`), a future cleanup should remove `engineId` entirely and re-key all internal structures, document URIs, and event filtering by normalized URL. This is tracked as a separate refactoring.
+
+---
+
+## Deployment Version Workflow
+
+The engine requires every deployed BPMN process to carry an `evil:version` extension element. The Studio implements a multi-layered assistance workflow to ensure this requirement is met without disrupting the user's flow.
+
+### Default Version in Templates
+
+The empty BPMN document template (`bpmn-editor/BpmnEmptyDocument.bpmn`) includes `<evil:version>1.0.0</evil:version>` on the default process. The `bpmn.diagram.resetRelevantIds` command (which processes the template for each new file) uses `BpmnModdle` with the evil moddle extension registered, ensuring the version element survives the `fromXML`/`toXML` roundtrip.
+
+### Auto-Version on Pool Creation
+
+`AutoVersionOnPoolBehavior` (`bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts`) is a diagram-js behavior that hooks into `commandStack.shape.create.postExecuted`. When a Participant (pool) is created, it checks whether the referenced process already has an `evil:Version` extension. If not, it injects version `1.0.0` via the command stack, making the operation undo-able.
+
+### Version Utility Module
+
+`engine-workspace/helpers/versionUtils.ts` provides shared version logic used by all deploy entry points:
+
+| Function | Purpose |
+|----------|---------|
+| `suggestNextVersion(current)` | Bumps the patch segment of SemVer, increments plain integers, increments trailing numbers, or appends `-1` for non-deterministic strings |
+| `discoverLatestVersion(client, processId)` | Queries the engine via `client.processes.get(processId)` for the latest deployed version; returns `null` on 404 or network error |
+| `ensureProcessVersions(xml, bifrost, client)` | Parses XML, finds processes missing `evil:Version`, runs discovery, shows "Missing Versions" dialog with pre-filled suggestions, injects versions on confirm |
+| `resolveVersionConflicts(xml, conflicts, bifrost, client)` | Post-409 handler: runs discovery to find the true latest version, shows "Version Conflict" dialog with accurate suggestions, injects new versions on confirm |
+
+### Pre-Deploy Version Check
+
+Before every deployment (all 5 Run Menu commands + file explorer deploy), `ensureProcessVersions` is called on BPMN files. If any process lacks a version, the "Missing Versions" dialog appears with suggestions based on engine discovery. The user must always confirm — there is no auto-skip. If confirmed, versions are written back to the XML and saved to disk.
+
+### Version Conflict Resolution
+
+When an explicit deploy command (`deployCurrentProcess`, `deployAndOpenCurrentProcess`) receives a 409 `version_exists` error, `resolveVersionConflicts` shows the "Version Conflict" dialog. It queries the engine for the latest deployed version (which may be higher than the conflicting version) and suggests `suggestNextVersion(max(local, deployed))`. On confirm, the updated XML is saved and deployment is retried automatically, up to 3 times.
+
+Quick-deploy commands (`quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) do **not** show the conflict dialog — they silently continue on 409 since the existing version is sufficient for debugging.
+
+### Bump Version Command
+
+`bpmn.process.bumpVersion` (registered in `bpmn-editor/initializers/initializeBpmnCommands.ts`) is available in the command palette and the Run menu. It applies `suggestNextVersion` to all processes in the focused diagram that already have a version, operates through the modeler command stack (undo-able), and shows a notification with the version transitions.
+
+---
+
+## File Path Reference
+
+| Component | Path |
+|-----------|------|
+| EngineManager | `studio/src/bifrost/common/EngineManager.ts` |
+| EngineManager SDK types | `studio-sdk/types/common/EngineManager.ts` |
+| engine-core entry | `studio/src/modules/engine-core/index.ts` |
+| engine-core SDK barrel | `studio/src/modules/engine-core/sdk/index.ts` |
+| engine-core client barrel | `studio/src/modules/engine-core/client/index.ts` |
+| UrlParser | `studio/src/modules/engine-core/UrlParser.ts` |
+| Formatters | `studio/src/modules/engine-core/Formatters.ts` |
+| engine-browser entry | `studio/src/modules/engine-browser/index.tsx` |
+| engine-debugger entry | `studio/src/modules/engine-debugger/index.tsx` |
+| engine-bpmn-viewer entry | `studio/src/modules/engine-bpmn-viewer/index.tsx` |
+| engine-browser menubar | `studio/src/modules/engine-browser/menubar/index.tsx` |
+| Version utilities | `studio/src/modules/engine-workspace/helpers/versionUtils.ts` |
+| AutoVersionOnPoolBehavior | `studio/src/modules/bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts` |
+| BPMN empty template | `studio/src/modules/bpmn-editor/BpmnEmptyDocument.bpmn` |

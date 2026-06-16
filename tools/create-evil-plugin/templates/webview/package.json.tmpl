@@ -1,0 +1,40 @@
+{
+  "name": "{{pluginName}}",
+  "displayName": "{{displayName}}",
+  "description": "{{description}}",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:crypto && cd webview && node build.mjs",
+    "build:plugin": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:crypto",
+    "build:webview": "cd webview && node build.mjs",
+    "dev": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:crypto --watch"
+  },
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "activationEvents": ["onStartup"],
+    "contributes": {
+      "commands": [
+        {
+          "id": "hello",
+          "title": "{{displayName}}: Hello World"
+        }
+      ],
+      "panes": [
+        {
+          "id": "sidebar",
+          "title": "{{displayName}}",
+          "area": "right",
+          "groupId": "property",
+          "icon": "ph ph-puzzle-piece"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@evil/bifrost_fw_sdk": "^1.0.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.0.0"
+  }
+}

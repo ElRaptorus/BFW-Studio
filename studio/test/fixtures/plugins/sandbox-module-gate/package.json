@@ -1,0 +1,14 @@
+{
+  "name": "sandbox-module-gate",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "permissions": [
+      "system-info"
+    ],
+    "activationEvents": [
+      "onStartup"
+    ]
+  }
+}

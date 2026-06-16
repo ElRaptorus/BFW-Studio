@@ -1,0 +1,130 @@
+// FEEL Editor — theme tokens for the CodeMirror 6-based FEEL editor.
+// Mirrors the Studio's CSS custom property pattern used by all themed components.
+
+.bifrost.bifrost-theme--light {
+  // ─── Editor chrome ──────────────────────────────────
+  --theme-feel-bg: var(--theme-input-bg);
+  --theme-feel-fg: var(--theme-fg);
+  --theme-feel-cursor: var(--theme-fg);
+  --theme-feel-selection-bg: #d7d4f0;
+  --theme-feel-active-line-bg: #f5f5f5;
+  --theme-feel-border: var(--theme-input-border);
+  --theme-feel-focus-border: var(--theme-focus);
+  --theme-feel-gutter-bg: var(--theme-surface-secondary);
+
+  // ─── Syntax highlighting ────────────────────────────
+  --theme-feel-variable: #1a1aa6;
+  --theme-feel-number: #116644;
+  --theme-feel-string: #aa1111;
+  --theme-feel-bool: #221199;
+  --theme-feel-function: #aa3731;
+  --theme-feel-keyword: #770088;
+
+  // ─── Autocomplete / tooltips ────────────────────────
+  --theme-feel-tooltip-bg: var(--theme-surface-elevated);
+  --theme-feel-tooltip-fg: var(--theme-fg);
+  --theme-feel-tooltip-border: var(--theme-border);
+  --theme-feel-tooltip-selected-bg: var(--theme-focus);
+  --theme-feel-tooltip-selected-fg: #ffffff;
+}
+
+.bifrost.bifrost-theme--dark {
+  // ─── Editor chrome ──────────────────────────────────
+  --theme-feel-bg: var(--theme-input-bg);
+  --theme-feel-fg: var(--theme-fg);
+  --theme-feel-cursor: var(--theme-fg);
+  --theme-feel-selection-bg: var(--theme-accent);
+  --theme-feel-active-line-bg: var(--theme-surface-secondary);
+  --theme-feel-border: var(--theme-input-border);
+  --theme-feel-focus-border: var(--theme-focus);
+  --theme-feel-gutter-bg: var(--theme-surface-secondary);
+
+  // ─── Syntax highlighting ────────────────────────────
+  --theme-feel-variable: #9cdcfe;
+  --theme-feel-number: #b5cea8;
+  --theme-feel-string: #ce9178;
+  --theme-feel-bool: #569cd6;
+  --theme-feel-function: #dcdcaa;
+  --theme-feel-keyword: #c586c0;
+
+  // ─── Autocomplete / tooltips ────────────────────────
+  --theme-feel-tooltip-bg: var(--theme-surface-elevated);
+  --theme-feel-tooltip-fg: var(--theme-fg);
+  --theme-feel-tooltip-border: var(--theme-border);
+  --theme-feel-tooltip-selected-bg: var(--theme-focus);
+  --theme-feel-tooltip-selected-fg: #ffffff;
+}
+
+.feel-editor {
+  border: 1px solid var(--theme-feel-border);
+  border-radius: 0.2rem;
+
+  &:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: var(--theme-feel-focus-border);
+  }
+
+  .cm-editor {
+    background-color: var(--theme-feel-bg);
+    color: var(--theme-feel-fg);
+
+    .cm-content {
+      caret-color: var(--theme-feel-cursor);
+    }
+  }
+}
+
+.feel-editor--small {
+  min-height: 6rem;
+}
+
+.feel-editor--medium {
+  min-height: 12rem;
+}
+
+.feel-editor--tall {
+  min-height: 24rem;
+}
+
+.feel-editor--fragment {
+  flex: 1;
+}
+
+.one-line-feel-editor {
+  flex: 1;
+  height: auto;
+  border: 1px solid var(--theme-feel-border);
+  border-radius: 0.2rem;
+  min-height: 2rem;
+
+  &:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: var(--theme-feel-focus-border);
+  }
+
+  .cm-editor {
+    background-color: var(--theme-feel-bg);
+    color: var(--theme-feel-fg);
+
+    .cm-scroller {
+      align-items: center;
+    }
+
+    .cm-content {
+      caret-color: var(--theme-feel-cursor);
+      padding: 0.25rem 0;
+    }
+  }
+}
+
+.one-line-feel-editor__placeholder {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: transparent;
+  color: var(--theme-fg-placeholder);
+  padding: 0 6px;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 12.25px;
+  pointer-events: none;
+}

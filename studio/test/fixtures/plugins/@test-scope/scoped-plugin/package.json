@@ -1,0 +1,12 @@
+{
+  "name": "@test-scope/scoped-plugin",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "permissions": [],
+    "activationEvents": [
+      "onStartup"
+    ]
+  }
+}

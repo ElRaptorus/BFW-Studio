@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_CollapsedSubprocess"
+                  targetNamespace="http://bpmn.io/schema/bpmn"
+                  exporter="Evil Studio"
+                  exporterVersion="test-fixture">
+  <bpmn:process id="Process_Main" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Start">
+      <bpmn:outgoing>Flow_ToSubprocess</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:subProcess id="SubProcess_Collapsed" name="Collapsed Subprocess">
+      <bpmn:incoming>Flow_ToSubprocess</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEnd</bpmn:outgoing>
+      <bpmn:startEvent id="SubStart_1" name="Sub Start">
+        <bpmn:outgoing>Flow_SubInternal</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:task id="Task_Inside" name="Inner Task">
+        <bpmn:incoming>Flow_SubInternal</bpmn:incoming>
+        <bpmn:outgoing>Flow_SubToEnd</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:endEvent id="SubEnd_1" name="Sub End">
+        <bpmn:incoming>Flow_SubToEnd</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_SubInternal" sourceRef="SubStart_1" targetRef="Task_Inside" />
+      <bpmn:sequenceFlow id="Flow_SubToEnd" sourceRef="Task_Inside" targetRef="SubEnd_1" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="EndEvent_1" name="End">
+      <bpmn:incoming>Flow_ToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_ToSubprocess" sourceRef="StartEvent_1" targetRef="SubProcess_Collapsed" />
+    <bpmn:sequenceFlow id="Flow_ToEnd" sourceRef="SubProcess_Collapsed" targetRef="EndEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Main">
+    <bpmndi:BPMNPlane id="BPMNPlane_Main" bpmnElement="Process_Main">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="159" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="185" y="202" width="24" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_Collapsed_di" bpmnElement="SubProcess_Collapsed" isExpanded="false">
+        <dc:Bounds x="290" y="137" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+        <dc:Bounds x="462" y="159" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="470" y="202" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToSubprocess_di" bpmnElement="Flow_ToSubprocess">
+        <di:waypoint x="215" y="177" />
+        <di:waypoint x="290" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEnd_di" bpmnElement="Flow_ToEnd">
+        <di:waypoint x="390" y="177" />
+        <di:waypoint x="462" y="177" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_SubProcess">
+    <bpmndi:BPMNPlane id="BPMNPlane_SubProcess" bpmnElement="SubProcess_Collapsed">
+      <bpmndi:BPMNShape id="SubStart_1_di" bpmnElement="SubStart_1">
+        <dc:Bounds x="179" y="159" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="175" y="202" width="44" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Inside_di" bpmnElement="Task_Inside">
+        <dc:Bounds x="280" y="137" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubEnd_1_di" bpmnElement="SubEnd_1">
+        <dc:Bounds x="442" y="159" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="440" y="202" width="40" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_SubInternal_di" bpmnElement="Flow_SubInternal">
+        <di:waypoint x="215" y="177" />
+        <di:waypoint x="280" y="177" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SubToEnd_di" bpmnElement="Flow_SubToEnd">
+        <di:waypoint x="380" y="177" />
+        <di:waypoint x="442" y="177" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

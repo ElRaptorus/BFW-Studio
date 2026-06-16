@@ -1,0 +1,23 @@
+import { build } from 'esbuild';
+import { copyFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+await build({
+  entryPoints: [resolve(here, 'src/main.tsx')],
+  outfile: resolve(here, 'dist/main.js'),
+  bundle: true,
+  format: 'iife',
+  target: 'es2020',
+  jsx: 'automatic',
+  minify: false,
+  sourcemap: false,
+  loader: { '.tsx': 'tsx', '.ts': 'ts', '.css': 'css' },
+});
+
+copyFileSync(resolve(here, 'src/index.html'), resolve(here, 'dist/index.html'));
+copyFileSync(resolve(here, 'src/styles.css'), resolve(here, 'dist/styles.css'));
+
+console.log('[{{pluginName}}] Webview built successfully.');

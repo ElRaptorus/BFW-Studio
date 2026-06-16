@@ -1,0 +1,110 @@
+import React from 'react';
+
+import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { LoopCharacteristics } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+
+import type BpmnDocumentModel from '../../BpmnDocumentModel';
+
+export const paneProvider: PaneProvider = {
+  getPaneTitle: getPaneTitle,
+  shouldBeDisplayed: shouldBeDisplayed,
+  Pane: PaneFull,
+  PaneContent: PaneContent,
+};
+
+function getPaneTitle(): string {
+  return 'Subprocess';
+}
+
+function PaneFull(props: PaneComponentProps): React.JSX.Element {
+  const bifrost = props.studio;
+
+  return (
+    <Pane>
+      <PaneHeader studio={bifrost} title={getPaneTitle()} paneId={props.paneId} collapsed={props.collapsed} />
+      {props.collapsed !== true && <PaneContent {...props} />}
+    </Pane>
+  );
+}
+
+function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: any): boolean {
+  if (editorDocument == null || editorDocument.modelKey !== 'BpmnDocumentModel' || editorDocumentModel == null) {
+    return false;
+  }
+
+  const bpmnDocumentModel: BpmnDocumentModel = editorDocumentModel;
+
+  if (!bpmnDocumentModel.elements.isInsideSubprocessPlane()) {
+    return false;
+  }
+
+  const selection = bpmnDocumentModel.selection.getElements();
+  return selection.length === 0;
+}
+
+function getLoopCharacteristicsLabel(loopCharacteristics: LoopCharacteristics | undefined): string {
+  if (loopCharacteristics == null) {
+    return 'None';
+  }
+  return loopCharacteristics;
+}
+
+function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
+  const bpmnDocumentModel: BpmnDocumentModel | null = props.editorDocumentModel;
+
+  if (bpmnDocumentModel == null) {
+    return null;
+  }
+
+  const rootElement = bpmnDocumentModel.elements.getCurrentRootElement();
+  const subprocessId = rootElement?.businessObject?.id;
+  if (subprocessId == null) {
+    return null;
+  }
+
+  const subprocessElement = bpmnDocumentModel.elements.getById(subprocessId);
+  if (subprocessElement == null) {
+    return null;
+  }
+
+  const navigateToParent = (): void => {
+    const canvas = bpmnDocumentModel.modelerAdapter.getCanvas();
+    const elementRegistry = bpmnDocumentModel.modelerAdapter.getElementRegistry();
+    const subprocessShape = elementRegistry.get(subprocessId);
+    if (subprocessShape?.parent != null) {
+      canvas.setRootElement(subprocessShape.parent);
+    }
+  };
+
+  return (
+    <PaneBody>
+      <PaneProperty
+        key={`subprocess-id-${subprocessElement.id}`}
+        type="text"
+        label="Subprocess ID"
+        value={subprocessElement.id}
+        disabled={true}
+      />
+      <PaneProperty
+        key={`subprocess-name-${subprocessElement.name}`}
+        type="text"
+        label="Name"
+        value={subprocessElement.name ?? ''}
+        disabled={true}
+      />
+      <PaneProperty
+        key={`subprocess-loop-${subprocessElement.loopCharacteristics}`}
+        type="text"
+        label="Loop"
+        value={getLoopCharacteristicsLabel(subprocessElement.loopCharacteristics)}
+        disabled={true}
+      />
+      <div className="form-group">
+        <button type="button" className="btn btn-sm btn-secondary" onClick={navigateToParent}>
+          Back to parent
+        </button>
+      </div>
+    </PaneBody>
+  );
+}

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definition_bc23c83d-7920-4f30-a74d-02d609311a8a" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
+  <bpmn:collaboration id="Collaboration_1cidyxu" name="">
+    <bpmn:participant id="Participant_0px403d" name="condition-test" processRef="condition-test" />
+  </bpmn:collaboration>
+  <bpmn:process id="condition-test" name="condition-test" isExecutable="true">
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_1xzf0d3" name="Lane">
+        <bpmn:flowNodeRef>Gateway_1hgnf7q</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_157a4p6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_09g2p38</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>StartEvent_1mox3jl</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:sequenceFlow id="Flow_0sh3kan" sourceRef="StartEvent_1mox3jl" targetRef="Gateway_1hgnf7q">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Condtionddd</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="ConditionalFlow1" sourceRef="Gateway_1hgnf7q" targetRef="Activity_09g2p38">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">CONDITION</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="ConditionalFlow2" sourceRef="Gateway_1hgnf7q" targetRef="Activity_157a4p6">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression"></bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="Gateway_1hgnf7q" name="">
+      <bpmn:incoming>Flow_0sh3kan</bpmn:incoming>
+      <bpmn:outgoing>ConditionalFlow1</bpmn:outgoing>
+      <bpmn:outgoing>ConditionalFlow2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Activity_157a4p6">
+      <bpmn:incoming>ConditionalFlow2</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="Activity_09g2p38">
+      <bpmn:incoming>ConditionalFlow1</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:startEvent id="StartEvent_1mox3jl" name="Start Event">
+      <bpmn:outgoing>Flow_0sh3kan</bpmn:outgoing>
+    </bpmn:startEvent>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1cidyxu">
+      <bpmndi:BPMNShape id="Participant_0px403d_di" bpmnElement="Participant_0px403d" isHorizontal="true">
+        <dc:Bounds x="5" y="4" width="445" height="456" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1xzf0d3_di" bpmnElement="Lane_1xzf0d3" isHorizontal="true">
+        <dc:Bounds x="35" y="4" width="415" height="456" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1hgnf7q_di" bpmnElement="Gateway_1hgnf7q" isMarkerVisible="true">
+        <dc:Bounds x="175" y="165" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_157a4p6_di" bpmnElement="Activity_157a4p6">
+        <dc:Bounds x="150" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_09g2p38_di" bpmnElement="Activity_09g2p38">
+        <dc:Bounds x="330" y="150" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1mox3jl_di" bpmnElement="StartEvent_1mox3jl">
+        <dc:Bounds x="72" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="62" y="148" width="55" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0sh3kan_di" bpmnElement="Flow_0sh3kan">
+        <di:waypoint x="108" y="190" />
+        <di:waypoint x="175" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1h6ryz1_di" bpmnElement="ConditionalFlow1">
+        <di:waypoint x="225" y="190" />
+        <di:waypoint x="330" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0412htv_di" bpmnElement="ConditionalFlow2">
+        <di:waypoint x="200" y="215" />
+        <di:waypoint x="200" y="340" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

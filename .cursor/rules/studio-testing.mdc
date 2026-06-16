@@ -1,0 +1,29 @@
+# Studio Testing Policy
+
+The Studio is an Electron application. Running `vitest run` (or `npx vitest run`) without scope floods the screen with parallel Electron windows and is **never acceptable**.
+
+## Rules
+
+- **NEVER** run bare `vitest run` or `npx vitest run` in the `studio/` directory. This launches all test suites — including integration tests that spawn Electron — in parallel.
+- **Unit tests only**: Use `npm run test:unit` (scoped to `test/unit/`). This is safe to run at any time.
+- **Integration tests**: Use the registered npm scripts below. **Only run these when the user explicitly asks for it.** They spawn Electron windows and take over the screen.
+
+## Available Test Scripts (defined in `studio/package.json`)
+
+| Script | What it runs |
+|--------|-------------|
+| `npm run test:unit` | Unit tests only (`test/unit/`) — safe, fast, no Electron |
+| `npm run test:integration` | Default integration suite (bloodforge) |
+| `npm run test:integration:electron:bloodforge` | Bloodforge integration tests |
+| `npm run test:integration:electron:stable` | Stable integration tests |
+| `npm run test:integration:electron:smoke` | Smoke test only (single file) |
+
+## After Code Changes
+
+When verifying code changes in `studio/`:
+
+1. `npm run build` — Compile bundles
+2. `npm run lint:fix` — ESLint with auto-fix
+3. `npm run format` — Prettier
+4. `npm run test:unit` — Unit tests (always safe to run)
+5. Integration tests — **only when the user explicitly requests them**

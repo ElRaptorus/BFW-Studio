@@ -1,0 +1,387 @@
+.studio-table-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.studio-table-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.studio-table {
+  display: grid;
+  width: 100%;
+  background-color: var(--theme-table-bg);
+  color: var(--theme-table-fg);
+  font-size: 0.875rem;
+}
+
+.studio-table__head {
+  display: contents;
+}
+
+.studio-table__body {
+  display: contents;
+}
+
+.studio-table__row {
+  display: flex;
+  border-bottom: 1px solid var(--theme-table-border);
+}
+
+.studio-table__header-row {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background-color: var(--theme-table-header-bg);
+}
+
+.studio-table__cell {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0.35rem 0.5rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: inherit;
+  user-select: text;
+  cursor: default;
+}
+
+.studio-table__header-cell {
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  user-select: none;
+  font-weight: 600;
+  background-color: var(--theme-table-header-bg);
+  overflow: visible;
+}
+
+.studio-table__header-cell--sortable {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--theme-table-hover-bg);
+  }
+}
+
+.studio-table__header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.studio-table__sort-indicator {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.studio-table__cell--pinned-left,
+.studio-table__cell--pinned-right {
+  background: var(--theme-table-bg);
+}
+
+.studio-table__header-row .studio-table__cell--pinned-left,
+.studio-table__header-row .studio-table__cell--pinned-right {
+  background: var(--theme-table-header-bg);
+}
+
+.studio-table__row--active > .studio-table__cell {
+  background-color: var(--theme-table-active-bg);
+}
+
+.studio-table__row--highlighted > .studio-table__cell {
+  background-color: var(--theme-table-hover-bg);
+}
+
+.studio-table__row--child > .studio-table__cell {
+  background-color: var(--theme-table-child-bg);
+}
+
+.studio-table__row--child.studio-table__row--active > .studio-table__cell {
+  background-color: var(--theme-table-active-bg);
+}
+
+.studio-table__cell--child-pinned {
+  background-color: var(--theme-table-child-bg);
+}
+
+.studio-table__row:not(.studio-table__header-row):hover > .studio-table__cell {
+  background-color: var(--theme-table-hover-bg);
+}
+
+// ─── Resize handle ───────────────────────────────────
+.studio-table__resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 1;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 100%;
+    background-color: var(--theme-table-border);
+  }
+
+  &:hover::after {
+    width: 3px;
+    background-color: var(--theme-splitter-hover);
+  }
+
+  &--active::after,
+  &:active::after {
+    width: 3px;
+    background-color: var(--theme-splitter-active);
+  }
+}
+
+// ─── Column filter inputs ────────────────────────────
+.studio-table__filter-input {
+  margin-top: 0.25rem;
+  width: 100%;
+  font-weight: normal;
+  background-color: var(--theme-input-bg);
+  color: var(--theme-input-fg);
+  border-color: var(--theme-input-border);
+
+  &::placeholder {
+    color: var(--theme-input-placeholder);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 0.15rem var(--theme-input-focus-shadow);
+  }
+}
+
+.studio-table__filter-select {
+  margin-top: 0.25rem;
+  font-weight: normal;
+  background-color: var(--theme-select-bg);
+  color: var(--theme-select-fg);
+  border-color: var(--theme-input-border);
+}
+
+// ─── Multi-select dropdown ──────────────────────────
+.studio-table__filter-multiselect-dropdown {
+  position: relative;
+  margin-top: 0.25rem;
+  font-weight: normal;
+}
+
+.studio-table__filter-multiselect-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  background-color: var(--theme-select-bg);
+  color: var(--theme-select-fg);
+  border: 1px solid var(--theme-input-border);
+  border-radius: 0.2rem;
+  cursor: pointer;
+  text-align: left;
+  gap: 0.25rem;
+
+  &:hover {
+    border-color: var(--theme-splitter-hover);
+  }
+}
+
+.studio-table__filter-multiselect-summary {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.studio-table__filter-multiselect-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 180px;
+  overflow-y: auto;
+  background-color: var(--theme-select-bg);
+  border: 1px solid var(--theme-input-border);
+  border-top: none;
+  border-radius: 0 0 0.2rem 0.2rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.studio-table__filter-multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.4rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+
+  &:hover {
+    background-color: var(--theme-table-hover-bg);
+  }
+
+  input[type='checkbox'] {
+    flex-shrink: 0;
+  }
+}
+
+// ─── Range filter popover ────────────────────────────
+.studio-table__filter-range-popover {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.studio-table__filter-range-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 0.2rem;
+  color: var(--theme-table-fg);
+  cursor: pointer;
+  opacity: 0.5;
+  position: relative;
+
+  &:hover {
+    opacity: 1;
+    border-color: var(--theme-input-border);
+  }
+
+  &--active {
+    opacity: 1;
+    color: var(--theme-accent);
+  }
+}
+
+.studio-table__filter-range-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--theme-accent);
+}
+
+.studio-table__filter-range-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  min-width: 220px;
+  padding: 0.5rem;
+  background-color: var(--theme-select-bg);
+  border: 1px solid var(--theme-input-border);
+  border-radius: 0.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.studio-table__filter-range-field {
+  margin-bottom: 0.4rem;
+}
+
+.studio-table__filter-range-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: normal;
+  margin-bottom: 0.15rem;
+  color: var(--theme-select-fg);
+}
+
+.studio-table__filter-range-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+// ─── Filter sublabel (shown below header text) ──────
+.studio-table__filter-sublabel {
+  font-size: 0.6875rem;
+  font-weight: normal;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  margin-top: 0.1rem;
+}
+
+// ─── Pagination bar ──────────────────────────────────
+.studio-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.5rem;
+  border-top: 1px solid var(--theme-table-border);
+  background-color: var(--theme-table-header-bg);
+  font-size: 0.8125rem;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.studio-table-pagination__page-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  label {
+    white-space: nowrap;
+  }
+
+  select {
+    width: auto;
+    min-width: 60px;
+    background-color: var(--theme-select-bg);
+    color: var(--theme-select-fg);
+    border-color: var(--theme-input-border);
+  }
+}
+
+.studio-table-pagination__info {
+  white-space: nowrap;
+}
+
+.studio-table-pagination__controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.studio-table-pagination__btn {
+  padding: 0.15rem 0.35rem;
+  line-height: 1;
+  color: var(--theme-table-options-fg);
+
+  &:hover:not(:disabled) {
+    color: var(--theme-table-options-hover-fg);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+  }
+}

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+  xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+  xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+  xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+  id="ValidationErrors_Definitions"
+  name="Validation Errors DMN"
+  namespace="https://evilengine.dev/test/validation-errors">
+
+  <inputData id="InputData_Score" name="Score">
+    <variable id="Variable_Score" name="Score" typeRef="number" />
+  </inputData>
+
+  <!-- Decision with NO expression → triggers "Decision must have an expression" error -->
+  <decision id="Decision_NoExpr" name="Missing Expression">
+    <variable id="Variable_NoExpr" name="NoExpr" typeRef="string" />
+    <informationRequirement id="IR_ScoreToNoExpr">
+      <requiredInput href="#InputData_Score" />
+    </informationRequirement>
+  </decision>
+
+  <!-- Decision with a valid decision table (for contrast) -->
+  <decision id="Decision_Valid" name="Valid Decision">
+    <variable id="Variable_Valid" name="Valid" typeRef="number" />
+    <informationRequirement id="IR_ScoreToValid">
+      <requiredInput href="#InputData_Score" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_Valid" hitPolicy="UNIQUE">
+      <input id="Input_Score">
+        <inputExpression id="InputExpr_Score" typeRef="number">
+          <text>Score</text>
+        </inputExpression>
+      </input>
+      <output id="Output_Valid" name="Valid" typeRef="number" />
+      <rule id="Rule_Valid_1">
+        <inputEntry id="IE_Valid_1"><text>&gt; 50</text></inputEntry>
+        <outputEntry id="OE_Valid_1"><text>1</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_ValidationErrors">
+      <dmndi:DMNShape id="Shape_InputData_Score" dmnElementRef="InputData_Score">
+        <dc:Bounds x="162" y="380" width="125" height="45" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Decision_NoExpr" dmnElementRef="Decision_NoExpr">
+        <dc:Bounds x="80" y="200" width="150" height="50" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Decision_Valid" dmnElementRef="Decision_Valid">
+        <dc:Bounds x="300" y="200" width="150" height="50" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="Edge_IR_ScoreToNoExpr" dmnElementRef="IR_ScoreToNoExpr">
+        <di:waypoint x="224" y="380" />
+        <di:waypoint x="155" y="250" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="Edge_IR_ScoreToValid" dmnElementRef="IR_ScoreToValid">
+        <di:waypoint x="224" y="380" />
+        <di:waypoint x="375" y="250" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

@@ -1,0 +1,69 @@
+{
+  "name": "@evil/bifrost_fw_sdk",
+  "version": "1.0.0",
+  "description": "Made 100% out of organic, renewable and sustainable malevolence, hatred and putrified corpses.",
+  "main": "./out/index.js",
+  "typings": "./out/index.d.ts",
+  "private": true,
+  "sideEffects": false,
+  "files": [
+    "out/**/*.{ts,js}"
+  ],
+  "author": "ElRaptorus",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.16.0",
+    "npm": ">=11.17.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:ElRaptorus/EvilStudio.git",
+    "directory": "studio-sdk"
+  },
+  "scripts": {
+    "clean": "node ./clean.js",
+    "build": "npm run clean && tsc",
+    "format": "prettier --write --config ../.prettierrc.json ./src ./types",
+    "lint": "eslint src/ types/",
+    "lint:fix": "eslint --fix src/ types/",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "jaro-winkler": "^0.2.8"
+  },
+  "devDependencies": {
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.43.1",
+    "@eslint/js": "^9.39.4",
+    "@tanstack/react-table": "^8.21.3",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "peerDependencies": {
+    "@bpmn-io/feel-editor": "^2.5.2",
+    "@headless-tree/core": "^1.7.0",
+    "@headless-tree/react": "^1.7.0",
+    "@mdxeditor/editor": "^4.0.3",
+    "@monaco-editor/react": "^4.7.0",
+    "@tanstack/react-table": "^8.21.3",
+    "monaco-editor": "^0.55.1",
+    "react": "^19.2.7",
+    "react-dnd": "^16.0.1",
+    "react-dom": "^19.2.7",
+    "react-select": "^5.10.2"
+  },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "^3.4.10"
+    }
+  }
+}
