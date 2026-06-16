@@ -64,6 +64,7 @@
   "overrides": {
     "monaco-editor": {
       "dompurify": "^3.4.10"
-    }
+    },
+    "js-yaml": ">=4.2.0"
   }
 }

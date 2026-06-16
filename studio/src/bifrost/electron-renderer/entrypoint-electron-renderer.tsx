@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client';
 
 import React from 'react';
 
-import type { AbstractSubscription } from '@evil/bifrost_fw_sdk';
 import { assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import { EVENT_SETTINGS_CHANGED } from '../../../../studio-sdk/src/contracts/internal/SettingsEvents';
