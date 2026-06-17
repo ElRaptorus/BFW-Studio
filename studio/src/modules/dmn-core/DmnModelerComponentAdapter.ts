@@ -568,7 +568,16 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
     };
 
     const onSelectionChanged = (event: any) => {
-      this.emit(EVENT_DMN_ADAPTER_SELECTION_CHANGED, [event.newSelection ?? event.selection ?? []]);
+      const raw = event.newSelection ?? event.selection;
+      let normalized: any[];
+      if (raw == null) {
+        normalized = [];
+      } else if (Array.isArray(raw)) {
+        normalized = raw;
+      } else {
+        normalized = [raw];
+      }
+      this.emit(EVENT_DMN_ADAPTER_SELECTION_CHANGED, [normalized]);
     };
 
     const onCanvasViewboxChanged = () => {
