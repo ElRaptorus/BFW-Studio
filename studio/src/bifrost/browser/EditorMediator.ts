@@ -5,7 +5,7 @@ import type {
   EditorDocument,
   EditorDocumentModel,
 } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter, assertNotNull, isUrlForOpenInNewTab } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter, assertNotNull, isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
 
 import {
   EVENT_EDITOR_AREA_DOCUMENT_CLOSED,
@@ -359,6 +359,30 @@ export class EditorMediator extends AbstractEmitter {
     const focusedEditorDocument = this.editorAreaManager.focusEditorDocumentByUri(uri);
 
     if (focusedEditorDocument == null) {
+      if (isUrlForOpenInNewTab(uri)) {
+        try {
+          parseOpenInNewTabUrl(uri);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          try {
+            this.bifrost.notifications.open({
+              type: 'error',
+              content: `Cannot open fragment document: the URI is malformed. This is a bug in the module that created it.\n\n${message}`,
+              source: 'EditorMediator.doFocusOrOpenEditorDocument',
+            });
+          } catch {
+            console.error(`[EditorMediator] Malformed fragment URI (notification system unavailable): ${message}`);
+          }
+
+          const currentFocused = this.getFocusedEditorDocument();
+          if (currentFocused) {
+            return currentFocused;
+          }
+
+          throw new Error(`Malformed fragment URI: ${message}`);
+        }
+      }
+
       const hasDocumentTypeDefinition = this.editorDocumentTypeManager.hasTypeForUri(uri);
 
       let editorDocumentTypeDefinition: EditorDocumentTypeDefinition;

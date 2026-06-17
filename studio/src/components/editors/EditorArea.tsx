@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { useDrop } from 'react-dnd';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 
 import type { EditorAreaLayout_Column, EditorAreaLayout_Editor, EditorAreaLayout_Row } from '@evil/bifrost_fw_sdk';
 import { NATIVE_FILE_TYPE, isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
@@ -28,7 +28,18 @@ type EditorAreaProps = EditorAreaRequiredProps & EditorAreaDocumentUriAnnotation
 export default function EditorArea(props: EditorAreaRequiredProps): React.JSX.Element {
   const bifrost = useBifrost();
   const onEditorSizeChanged = useCallback(() => bifrost.editors.onEditorSizeChanged(), [bifrost.editors]);
-  const focusedEditorDocumentParentUri = getParentUriIfFragmentUri(props.focusedEditorDocumentUri);
+  const { parentUri: focusedEditorDocumentParentUri, parseError } = getParentUriIfFragmentUri(
+    props.focusedEditorDocumentUri,
+  );
+  useEffect(() => {
+    if (parseError) {
+      bifrost.notifications.open({
+        type: 'error',
+        content: `A fragment document has a malformed URI. This is a bug in the module that created it.\n\n${parseError}`,
+        source: 'EditorArea.getParentUriIfFragmentUri',
+      });
+    }
+  }, [parseError, bifrost.notifications]);
   const editorAreaProps: EditorAreaProps = { ...props, focusedEditorDocumentParentUri };
   const editorArea = render(editorAreaProps.layout, editorAreaProps, bifrost, onEditorSizeChanged) || (
     <EditorAreaEmptyState />
@@ -63,12 +74,16 @@ export default function EditorArea(props: EditorAreaRequiredProps): React.JSX.El
   );
 }
 
-function getParentUriIfFragmentUri(uri: string | null): string | null {
+function getParentUriIfFragmentUri(uri: string | null): { parentUri: string | null; parseError: string | null } {
   if (uri == null || !isUrlForOpenInNewTab(uri)) {
-    return null;
+    return { parentUri: null, parseError: null };
   }
 
-  return parseOpenInNewTabUrl(uri).parentUri;
+  try {
+    return { parentUri: parseOpenInNewTabUrl(uri).parentUri, parseError: null };
+  } catch (error) {
+    return { parentUri: null, parseError: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 function renderEditor(

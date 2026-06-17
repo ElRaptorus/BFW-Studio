@@ -812,8 +812,18 @@ export class EditorAreaManager extends AbstractEmitter implements ISerializable 
 
   private getFragmentEditorDocumentsByParentUri(uri: string): EditorDocument[] {
     return this.getFragmentEditorDocuments().filter((editorDocument: EditorDocument): boolean => {
-      const fragment = parseOpenInNewTabUrl(editorDocument.uri);
-      return fragment.parentUri === uri;
+      try {
+        const fragment = parseOpenInNewTabUrl(editorDocument.uri);
+        return fragment.parentUri === uri;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.bifrost.notifications.open({
+          type: 'error',
+          content: `A fragment document has a malformed URI. This is a bug in the module that created it.\n\n${message}`,
+          source: 'EditorAreaManager.getFragmentEditorDocumentsByParentUri',
+        });
+        return false;
+      }
     });
   }
 
