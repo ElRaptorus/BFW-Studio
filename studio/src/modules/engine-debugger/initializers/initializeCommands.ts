@@ -596,7 +596,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.debugger.openDmnTrace',
     (engineId: string, processInstanceId: string, flowNodeInstanceId: string) => {
-      const fragmentUri = `fragment+engine-debug.dmn-trace://${engineId}/${processInstanceId}/${flowNodeInstanceId}#!engineId=${encodeURIComponent(engineId)}&processInstanceId=${encodeURIComponent(processInstanceId)}&flowNodeInstanceId=${encodeURIComponent(flowNodeInstanceId)}`;
+      const parentUri = `engine-debug://${engineId}/${processInstanceId}`;
+      const fragmentUri = getUrlForOpenInNewTab(DMN_TRACE_DOCUMENT_TYPE, parentUri, flowNodeInstanceId, {
+        engineId,
+        processInstanceId,
+        flowNodeInstanceId,
+      });
       bifrost.editors.focusOrOpenEditorDocument(fragmentUri, `DMN Trace: ${flowNodeInstanceId.substring(0, 8)}`);
     },
     { enabledWhen: (_engineId: string): boolean => true },

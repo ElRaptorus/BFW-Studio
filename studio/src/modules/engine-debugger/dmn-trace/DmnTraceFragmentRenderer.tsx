@@ -32,6 +32,8 @@ import {
   Icon,
 } from '@evil/bifrost_fw_sdk';
 
+import { EVENT_DATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
+
 import '../../dmn-editor/styles/dmn.scss';
 import './DmnTraceFragment.scss';
 import type { DmnTraceFragmentModel } from './DmnTraceFragmentModel';
@@ -47,19 +49,12 @@ const DMN_TYPE_MAP: Record<string, DrgElementType> = {
 
 export default function DmnTraceFragmentRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
-  const model = useModel(studio, editorDocument);
+  const { model, data } = useModelAndData(studio, editorDocument);
   const viewerContainerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<DmnViewerComponentAdapter | null>(null);
   const [isCanvasLoading, setIsCanvasLoading] = useState(true);
   const [activeViewLabel, setActiveViewLabel] = useState<string | null>(null);
   const [hasDrd, setHasDrd] = useState(true);
-
-  const data = (editorDocument.data?.current as DmnTraceFragmentData | null) ?? {
-    flowNodeInstance: null,
-    dmnXml: null,
-    loading: true,
-    error: null,
-  };
 
   const traceProperties = model?.getTraceProperties() ?? null;
 
@@ -376,8 +371,17 @@ function applyTraceOverlays(adapter: DmnViewerComponentAdapter, traceProperties:
   });
 }
 
-function useModel(studio: Studio, editorDocument: any): DmnTraceFragmentModel | null {
+function useModelAndData(
+  studio: Studio,
+  editorDocument: any,
+): { model: DmnTraceFragmentModel | null; data: DmnTraceFragmentData } {
   const [model, setModel] = useState<DmnTraceFragmentModel | null>(null);
+  const [data, setData] = useState<DmnTraceFragmentData>({
+    flowNodeInstance: null,
+    dmnXml: null,
+    loading: true,
+    error: null,
+  });
 
   const modelPromise = useMemo(() => {
     return studio.editors.getEditorDocumentModel<DmnTraceFragmentModel>(editorDocument);
@@ -388,6 +392,7 @@ function useModel(studio: Studio, editorDocument: any): DmnTraceFragmentModel | 
     void modelPromise.then((resolvedModel) => {
       if (!disposed) {
         setModel(resolvedModel);
+        setData(resolvedModel.getTraceData());
       }
     });
     return () => {
@@ -395,5 +400,15 @@ function useModel(studio: Studio, editorDocument: any): DmnTraceFragmentModel | 
     };
   }, [modelPromise]);
 
-  return model;
+  useEffect(() => {
+    if (!model) {
+      return;
+    }
+    const subscription = model.on(EVENT_DATA_UPDATED, () => {
+      setData(model.getTraceData());
+    });
+    return () => subscription.dispose();
+  }, [model]);
+
+  return { model, data };
 }

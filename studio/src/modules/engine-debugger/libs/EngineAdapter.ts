@@ -150,20 +150,29 @@ export class EngineAdapter {
 
     try {
       this.subscribeThenSnapshot?.dispose();
-      this.subscribeThenSnapshot = new SubscribeThenSnapshot(
+      const snapshot = new SubscribeThenSnapshot(
         this.connectionManager,
         this.engineId,
         this.processInstanceId,
       );
+      this.subscribeThenSnapshot = snapshot;
 
-      await this.subscribeThenSnapshot.subscribe((update: SnapshotUpdate) => {
+      await snapshot.subscribe((update: SnapshotUpdate) => {
         this.handleSnapshotUpdate(update);
       });
 
+      if (this.subscribeThenSnapshot !== snapshot) {
+        return;
+      }
+
       await this.loadProcessWithXml(client);
 
+      if (this.subscribeThenSnapshot !== snapshot) {
+        return;
+      }
+
       const initialSnapshot = this.buildSnapshotFromCurrentData();
-      this.subscribeThenSnapshot.setInitialSnapshot(initialSnapshot);
+      snapshot.setInitialSnapshot(initialSnapshot);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load process instance';
       this.updateErrorHandler?.({ message, statusCode: (error as { status?: number }).status });

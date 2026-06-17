@@ -13,7 +13,7 @@ const ENGINE_ID_URI_PATTERNS: RegExp[] = [
   /^engine-model:\/\/([^/]+)\//,
   /^engine-decision:\/\/([^/]+)\//,
   /^engine-debug:\/\/([^/]+)\//,
-  /^fragment\+engine-debug\.dmn-trace:\/\/([^/]+)\//,
+  /^fragment\+engine-debug\.dmn-trace:engine-debug%3A\/\/([^/]+)\//,
 ];
 
 export function extractEngineIdFromUri(uri: string): string | null {

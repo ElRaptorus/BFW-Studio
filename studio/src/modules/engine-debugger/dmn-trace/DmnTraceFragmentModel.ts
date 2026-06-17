@@ -4,7 +4,7 @@ import { parseDmn } from '@elraptorus/daemonengine_sdk';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
+import { EditorDocumentModel, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
 
 import type { DmnViewerComponentAdapter } from '../../dmn-core/DmnViewerComponentAdapter';
 import type { DmnDefinitions, DrgSelection } from '../../engine-decision-viewer/types/dmnModelTypes';
@@ -102,6 +102,10 @@ export class DmnTraceFragmentModel extends EditorDocumentModel {
 
   zoomToActualSize(): void {
     this.viewerAdapter?.zoomToActualSize();
+  }
+
+  protected override updateCurrentData(data: unknown): void {
+    super.updateOriginalAndCurrentData(data, data);
   }
 
   getTraceData(): DmnTraceFragmentData {
@@ -238,17 +242,11 @@ function parseDmnTraceFragmentUri(uri: string): {
   processInstanceId: string;
   flowNodeInstanceId: string;
 } {
-  const hashIndex = uri.indexOf('#!');
-  if (hashIndex === -1) {
-    throw new Error(`Invalid DMN trace fragment URI: missing fragment data — ${uri}`);
-  }
+  const parsed = parseOpenInNewTabUrl(uri);
 
-  const hashPart = uri.substring(hashIndex + 2);
-  const params = new URLSearchParams(hashPart);
-
-  const engineId = params.get('engineId');
-  const processInstanceId = params.get('processInstanceId');
-  const flowNodeInstanceId = params.get('flowNodeInstanceId');
+  const engineId = parsed.data.engineId;
+  const processInstanceId = parsed.data.processInstanceId;
+  const flowNodeInstanceId = parsed.data.flowNodeInstanceId ?? parsed.fragmentId;
 
   if (!engineId || !processInstanceId || !flowNodeInstanceId) {
     throw new Error(`Invalid DMN trace fragment URI: missing required parameters — ${uri}`);
