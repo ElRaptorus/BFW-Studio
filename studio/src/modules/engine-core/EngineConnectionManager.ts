@@ -14,8 +14,8 @@ import type {
   EngineManagerEventType,
 } from './types';
 
-const RECONNECT_BASE_DELAY = 2_000;
-const RECONNECT_MAX_DELAY = 60_000;
+const RECONNECT_BASE_DELAY = 1_000;
+const RECONNECT_MAX_DELAY = 20_000;
 
 interface ManagedEngine {
   engineId: string;
@@ -371,6 +371,7 @@ export class EngineConnectionManager extends AbstractEmitter {
     }
     if (managed.state === 'connected') {
       managed.state = 'reconnecting';
+      managed.reconnectAttempts = 0;
       this.emitEvent('engine:connection-lost', managed);
       this.scheduleReconnect(managed);
     }
