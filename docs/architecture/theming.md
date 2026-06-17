@@ -27,8 +27,8 @@ This mirrors other Bifrost subsystems (e.g., `SettingsManager` in `common/`, `Me
 
 ### How It Works
 
-1. Two built-in themes (`light` / "Bifrost Day" and `dark` / "Bifrost Night") are registered by the `std` module during load. Two additional themes (`white-fall` / "White Fall" and `dark-grey` / "Dark Grey") are registered by the `themes` module, which loads immediately after `std`.
-2. Each theme defines all `--theme-*` CSS custom properties under its explicit class selector (e.g., `.bifrost.bifrost-theme--light`, `.bifrost.bifrost-theme--dark`, `.bifrost.bifrost-theme--white-fall`, `.bifrost.bifrost-theme--dark-grey`).
+1. Two built-in themes (`light` / "Bifrost Day" and `dark` / "Bifrost Night") are registered by the `std` module during load. Ten additional themes are registered by the `themes` module, which loads immediately after `std` (see [Registered Themes](#registered-themes) for the full list).
+2. Each theme defines all `--theme-*` CSS custom properties under its explicit class selector (e.g., `.bifrost.bifrost-theme--light`, `.bifrost.bifrost-theme--dark`, `.bifrost.bifrost-theme--forge-world-day`).
 3. `bifrost.scss` and component SCSS files reference these tokens using `var(--theme-*)`.
 4. The active theme class is applied to the root `<div class="bifrost bifrost-theme--{id}">` element in `App.tsx`.
 5. When a theme is switched, the `ThemeMediator` updates the CSS class on the root element and persists the choice to the `workbench.general.theme` setting.
@@ -130,8 +130,8 @@ Themed CSS overrides for third-party library elements (e.g., bpmn-js `.djs-palet
 | `bpmn-diff` | `--color-bpmn-diff-*`, `--backcolor-bpmn-diff__*` | `modules/bpmn-diff/styles/component.bpmn-diff.scss` |
 | `bpmn-token-simulator` | `--token-sim-*` | `modules/bpmn-token-simulator/token-simulation.scss` |
 | `engine-debugger` | `--color-engine__debugger-*`, `--color-flow-node-*`, `--backcolor-flow-node-*` | `modules/engine-debugger/EngineDebugger.scss` |
-| `engine-browser` | `--color-engine__browser-*`, `--color-engine__menubar--*` | `modules/engine-browser/EngineBrowser.scss` |
-| `engine-bpmn-viewer` | `--color-engine__bpmn-viewer-*` | `modules/engine-bpmn-viewer/RemoteBpmnViewer.scss` |
+| `engine-workspace` | `--color-engine__workspace-*`, `--color-engine__menubar--*` | `modules/engine-workspace/engine-workspace.scss` |
+| `engine-model-viewer` | `--color-engine__model-viewer-*` | `modules/engine-model-viewer/engine-model-viewer.scss` |
 | `bpmn-linter` | `--lint-*` | `modules/bpmn-linter/styles/bpmn-linter.scss` |
 | `git-cruiser` | `--theme-git-*` | `modules/git-cruiser/styles/git-cruiser.scss` |
 | `machine-sanctum` | `--color-theme-demo-*`, `--color-machine-sanctum-*` | `modules/machine-sanctum/styles/machine-sanctum.scss` |
@@ -229,12 +229,14 @@ Users can switch themes through:
 |----|-------|------|--------|
 | `light` | Bifrost Day | `light` | `std` module — cold/snowy palette with icy blue accents and high-contrast black text |
 | `dark` | Bifrost Night | `dark` | `std` module — very dark blue-black palette with blue-tinted text and deep blue accents |
-| `snow-fall` | Snow Fall | `light` | `themes` module — preserves the original "Light" palette |
-| `grey-stone` | Grey Stone | `dark` | `themes` module — preserves the original "Dark" palette |
-| `vscode-light` | VS Code Light | `light` | `themes` module — VS Code "Default Light Modern" palette with corporate blue (#005FB8) accent |
-| `vscode-dark` | VS Code Dark | `dark` | `themes` module — VS Code "Default Dark Modern" palette with pure dark grays and blue (#0078D4) accent |
 | `forge-world-day` | Forge World Day | `light` | `themes` module — warm cream tones with amber-gold (#C08530) accent, forge-glow aesthetic |
 | `forge-world-night` | Forge World Night | `dark` | `themes` module — warm neutral darks with amber-gold (#C08530) accent, smoldering forge aesthetic |
+| `dark-city` | The Dark City | `dark` | `themes` module — near-black velvet with ecstatic violet (#9930CC) accent, Drukhari-inspired |
+| `tomb-world` | Tomb World | `dark` | `themes` module — obsidian black with cold gauss-flayer green (#00E878) accent, Necron-inspired |
+| `snow-fall` | Fenris | `light` | `themes` module — preserves the original "Light" palette |
+| `grey-stone` | Medusa | `dark` | `themes` module — preserves the original "Dark" palette |
+| `vscode-light` | VS Code Light | `light` | `themes` module — VS Code "Default Light Modern" palette with corporate blue (#005FB8) accent |
+| `vscode-dark` | VS Code Dark | `dark` | `themes` module — VS Code "Default Dark Modern" palette with pure dark grays and blue (#0078D4) accent |
 | `zed-light` | Zed Light | `light` | `themes` module — Zed's "One Light" palette with clean near-white and indigo-blue (#5C78E2) accent |
 | `zed-dark` | Zed Dark | `dark` | `themes` module — Zed's "One Dark" palette with warm-tinted dark grays and soft blue (#74ADE8) accent |
 

@@ -10,33 +10,34 @@ The Studio uses **Rspack** (a Rust-based, webpack 5-compatible bundler) for all 
 - **Type checking**: `ts-checker-rspack-plugin` — async (non-blocking) in development, synchronous in production
 - **CSS extraction**: `rspack.CssExtractRspackPlugin`
 - **Asset copying**: `rspack.CopyRspackPlugin`
-- **Production minification**: Built-in SWC minifier for JS, `LightningCssMinimizerRspackPlugin` for CSS
+- **Production minification**: `SwcJsMinimizerRspackPlugin` for JS (with `keep_classnames` for runtime reflection)
 
 ## Configuration Files
 
 | File | Purpose |
 |------|---------|
-| `rspack.config.electron.js` | Main Electron build: composes CSS, main, systeminformation, and renderer configs |
-| `rspack.config.electron-main.js` | Electron main process + systeminformation worker |
+| `rspack.config.electron.js` | Main Electron build: composes all sub-configs into a multi-compiler array |
+| `rspack.config.electron-main.js` | Electron main process, systeminformation worker, and webview bridge script |
 | `rspack.config.css.js` | CSS bundle (SCSS → extracted CSS via glob) |
-| `rspack.config.embed.js` | Browser embed build (non-functional) |
-| `rspack.config.webapp.js` | Browser webapp build (non-functional) |
 
 ### Build-time Helpers
 
 | File | Purpose |
 |------|---------|
-| `rspack.build-info-generator.js` | Generates `src/generatedBuildAndProductInfo.js` with version, commit hash, build date, release channel |
+| `build/rspack/generate-build-info.js` | Generates `src/generatedBuildAndProductInfo.js` with version, commit hash, build date, release channel |
 
 ## Build Targets
 
-The Electron build (`rspack.config.electron.js`) produces 4 bundles via multi-compiler:
+The Electron build (`rspack.config.electron.js`) produces 7 bundles via multi-compiler:
 
 | Config | Entry | Output | Target |
 |--------|-------|--------|--------|
 | CSS | `./src/**/*.scss` (glob) | `out/bifrost-styles.css` | `web` |
 | Electron Main | `entrypoint-electron-main.ts` | `out/bundle-electron-main.js` | `electron-main` |
 | Systeminformation | `Systeminformation.ts` | `out/Systeminformation.js` | `node` |
+| Bridge Script | `bridge-script.ts` | `out/studio-bridge.js` | `web` |
+| Plugin Host | `plugin-host-main.ts` | `out/plugin-host.js` | `node` |
+| Sandbox Worker | `sandbox-worker.ts` | `out/sandbox-worker.js` | `node` |
 | Electron Renderer | `entrypoint-electron-renderer.tsx` | `out/bundle-electron-renderer.js` + `out/imported-styles.css` | `electron-renderer` |
 
 The CSS config uses a glob to compile all SCSS files into `bifrost-styles.css`, ensuring standalone styles (not imported by any TSX) are included automatically. The renderer config additionally extracts CSS from JS `import '*.css'` statements into `imported-styles.css`. Both are loaded by `electron-renderer.html`.
@@ -53,7 +54,7 @@ Bootstrap 5 CSS is loaded via `import 'bootstrap/dist/css/bootstrap.min.css'` in
 |--------|---------|
 | `npm run build` | Build SDK + Electron app |
 | `npm run build:electron` | Clean + Rspack Electron build |
-| `npm run watch:electron` | Rspack watch mode (no large heap flag needed — Rust core manages its own memory) |
+| `npm run build:electron:watch` | Rspack watch mode (no large heap flag needed — Rust core manages its own memory) |
 | `npm start` | Launch `electron out/bundle-electron-main.js` |
 
 ## Loaders
@@ -91,8 +92,7 @@ Two type checker instances exist: one for `tsconfig.electron-main.json` (main pr
 ## Production Builds
 
 Production builds set `NODE_ENV=production`, which enables:
-- JS minification via Rspack's built-in SWC minifier
-- CSS minification via `LightningCssMinimizerRspackPlugin`
+- JS minification via `SwcJsMinimizerRspackPlugin`
 - Full source maps
 - Blocking type checking
 - Packaging via `electron-builder` (config in `build/electron-builder.js`)

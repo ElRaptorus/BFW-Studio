@@ -199,8 +199,8 @@ Command names follow the strict schema `{group}.{module-segment}.{domain}.{actio
 std.editor.focusOrOpenDocument
 std.solution.openDirectory
 bpmn.editor.getAllStartEventsForProcessId
-engine.browser.processInstanceList.filter
-engine.deployToEngine
+engine.workspace.openProcessExplorer
+engine.deploy
 git.commit
 dev.machineSanctum.open
 ```
@@ -212,7 +212,7 @@ The **first dotted segment** is the **permission group** and determines which `c
 | `std` | Core workbench, editor, solution, shell, window, settings, startpage, help, about |
 | `bpmn` | BPMN editor, diff, linter, token simulator, FEEL |
 | `dmn` | DMN editor, diff |
-| `engine` | Engine core, browser, debugger, menubar, viewer |
+| `engine` | Engine core, workspace, model-viewer, decision-viewer, debugger, menubar |
 | `git` | Git operations, merge |
 | `plugins` | Plugin management |
 | `dev` | Internal dev/lab tools |
@@ -227,7 +227,7 @@ Remaining segments are module-internal structure, using camelCase within each se
 
 Module A registers a command that Module B calls to get data or trigger an action.
 
-Example: `engine-browser` registers `engine.browser.processInstanceList.filter`, which `engine-debugger` calls to apply filters.
+Example: `engine-workspace` registers `engine.workspace.openProcessExplorer`, which `engine-model-viewer` calls to navigate to the process list.
 
 ### Render injection
 
@@ -243,11 +243,11 @@ When the providing module may or may not be loaded, the caller checks `isRegiste
 
 ### Event-driven notification (foundation → consumer)
 
-When a foundation module (`engine-core`, `bpmn-core`) performs an operation that consumers need to react to, it MUST NOT call consumer commands or manipulate consumer documents. Instead, the foundation emits an event on a shared mediator (e.g. `EngineManager`), and consumers subscribe and react independently.
+When a foundation module (`engine-core`, `bpmn-core`) performs an operation that consumers need to react to, it MUST NOT call consumer commands or manipulate consumer documents. Instead, the foundation emits an event on `EngineConnectionManager`, and consumers subscribe and react independently.
 
 This preserves the dependency direction: consumers depend on core, never the reverse.
 
-Example: `engine-core` calls `bifrost.engines.notifyProcessInstanceRetried(...)` after retrying a process instance. `engine-debugger`'s document model subscribes to `EVENT_PROCESS_INSTANCE_RETRIED` and refreshes itself when relevant. For details on how document models subscribe to events and communicate with renderers, see [editor-documents.md](editor-documents.md).
+Example: `engine-core` emits `engine:event` on `EngineConnectionManager` after an engine WebSocket event arrives. `engine-debugger`'s document model subscribes to this event, filters by `engineId`, and refreshes itself when relevant. For details on how document models subscribe to events and communicate with renderers, see [editor-documents.md](editor-documents.md).
 
 ## Solution Commands
 

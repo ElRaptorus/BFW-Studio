@@ -6,7 +6,7 @@
 
 The Studio's Table component is a shared, headless-UI wrapper around [TanStack Table v8](https://tanstack.com/table/v8) that lives in the SDK (`studio-sdk/src/components/Table/`). It provides sorting, pagination, column resizing, column pinning, row selection, sub-row expansion, column-header filters, and row interaction handlers — all driven by `--theme-table-*` CSS custom properties for theming.
 
-The component is used in the engine-browser module for the three main data lists (Process Models, Cyclic Timers, Process Instances), in the landing page short lists, and in the inspector panes (Performance, Notifications).
+The component is used in the engine-workspace module for the main data lists (Process Explorer, Decision Catalog, Instance Search, Task Inbox, Timer Schedules), in the dashboard short lists, and in the inspector panes (Performance, Notifications).
 
 ---
 
@@ -70,7 +70,7 @@ Renders one of three filter variants based on `ColumnDef.meta.filterVariant`:
 
 **Path:** `studio-sdk/src/components/Table/useTableSettings.ts`
 
-A hook for persisting table state (column visibility, column widths, page size) to the Studio's `SettingsMediator`. Designed for simpler table instances that don't have a dedicated EditorDocumentModel. The model-backed engine-browser lists manage their own state through the model layer and commands.
+A hook for persisting table state (column visibility, column widths, page size) to the Studio's `SettingsMediator`. Designed for simpler table instances that don't have a dedicated EditorDocumentModel. The model-backed engine-workspace lists manage their own state through the model layer and commands.
 
 ### types.ts
 
@@ -161,9 +161,12 @@ Page size for each list is persisted as an integer setting with enum values:
 
 | Setting Key | Default |
 |-------------|---------|
-| `engineBrowser.processInstanceList.pageSize` | `10` |
-| `engineBrowser.processModelList.pageSize` | `10` |
-| `engineBrowser.cyclicTimersList.pageSize` | `10` |
+| `engine.processExplorer.pageSize` | `10` |
+| `engine.dashboard.pageSize` | `10` |
+| `engine.instanceSearch.pageSize` | `10` |
+| `engine.taskInbox.pageSize` | `10` |
+| `engine.decisionCatalog.pageSize` | `10` |
+| `engine.timerSchedules.pageSize` | `10` |
 
 Each setting uses `type: 'integer'` with `enum: [10, 25, 50, 100]`, rendered as a dropdown in the Settings GUI.
 
@@ -200,11 +203,6 @@ All colors use `--theme-table-*` CSS custom properties defined in the core theme
 | types | `studio-sdk/src/components/Table/types.ts` |
 | Table.scss | `studio-sdk/src/components/Table/Table.scss` |
 | barrel export | `studio-sdk/src/components/Table/index.ts` |
-| TableSortDirection | `studio/src/modules/engine-browser/components/TableSortDirection.ts` |
-| RemoteProcessModelsList | `studio/src/modules/engine-browser/editor/ProcessModelList/components/RemoteProcessModelsList.tsx` |
-| RemoteCyclicTimersList | `studio/src/modules/engine-browser/editor/CyclicTimersList/components/RemoteCyclicTimersList.tsx` |
-| RemoteProcessInstanceList | `studio/src/modules/engine-browser/editor/ProcessInstanceList/components/RemoteProcessInstanceList.tsx` |
-| EngineProcessModelShortList | `studio/src/modules/engine-browser/editor/LandingPage/components/EngineProcessModelShortList.tsx` |
-| EngineProcessInstanceShortList | `studio/src/modules/engine-browser/editor/LandingPage/components/EngineProcessInstanceShortList.tsx` |
+| Consumer renderers | `studio/src/modules/engine-workspace/renderers/` (ProcessExplorer, Dashboard, InstanceSearch, TaskInbox, DecisionCatalog, TimerSchedules) |
 | PerformanceInspector | `studio/src/components/panes/inspectors/PerformanceInspector.tsx` |
 | NotificationInspector | `studio/src/components/panes/inspectors/NotificationInspector.tsx` |

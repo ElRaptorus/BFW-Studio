@@ -75,7 +75,7 @@ The left menu bar is populated by factories and modifiers registered in `initial
 
 1. **Explorer** (type `pane_content_toggle`, paneId `activities/explorer`)
 2. **Search** (type `pane_content_toggle`, paneId `activities/search`)
-3. **Engine Browser** (type `pane_content_toggle`, paneId `activities/engine-browser`) — injected by `engine-browser` module via modifier, conditional on setting
+3. **Engines** (type `pane_content_toggle`, paneId `pane/left/engines`) — injected by `engine-workspace` module via modifier
 4. **Divider** + **Overflow menu** (`std/menubar/left-overflow`) — a chevron dropdown listing all toggle items with icons and keyboard shortcuts
 
 Startpage and Settings are accessible through the **View** application menu, not the toolbar.
@@ -208,4 +208,4 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `studio/src/bifrost/common/PaneMediator.ts` | Public API for PaneManager, persistence, pane provider registration |
 | `studio-sdk/src/contracts/PaneTypes.ts` | `PaneGroupObject` type with `label`, `icon` fields |
 | `studio/src/modules/std/initializers/initializeMenuBarItems.ts` | Left/center/right menu bar item registration |
-| `studio/src/modules/engine-browser/menubar/index.tsx` | Engine menubar items (registered on 'center') |
+| `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts` | Engine menubar items (registered on 'center') |

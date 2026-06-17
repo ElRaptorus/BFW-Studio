@@ -68,7 +68,7 @@ export type SettingDescriptor =
 All subtypes share: `label`, `description`, `hidden?`, `category?`, `deprecated?`, `markdownDescription?`.
 
 - **`hidden`**: Validated but not shown in the Settings GUI.
-- **`category`**: Human-readable group name for the GUI. If omitted, inferred from the first key segment (e.g., `engineBrowser` → "Engine Browser").
+- **`category`**: Human-readable group name for the GUI. If omitted, inferred from the first key segment (e.g., `engine` → "Engine").
 - **`deprecated`**: Deprecation message string. In the JSON editor, the key is shown with strikethrough and the message appears on hover. In the GUI, the label is struck through and the message is shown as a warning.
 - **`markdownDescription`**: Markdown-formatted description for richer hover tooltips in the JSON editor. Falls back to `description` when not set.
 
@@ -260,7 +260,7 @@ Examples:
 - `workbench.editor.temporaryTabs`
 - `bpmn.editor.showGrid`
 - `std.fileExplorer.exclude`
-- `engineBrowser.processInstanceList.autoRefresh`
+- `engine.processExplorer.autoRefresh`
 - `shell.commands.openTerminalInDirectory`
 
 ### Platform-specific suffixes
@@ -288,7 +288,7 @@ Both editors can be open simultaneously. Each has a toolbar button to open the o
 ### Access
 
 - **Command search**: `View: Settings`, `View: Settings (JSON)`, `View: Default Settings`, `View: Key Bindings`
-- **Programmatic**: `bifrost.commands.executeCommand('settings.openUserSettingsAtCategory', ['Category Name'])` opens the GUI and scrolls to the specified category. Used by modules like `engine-debugger` and `engine-bpmn-viewer` for their "Open Settings" commands.
+- **Programmatic**: `bifrost.commands.executeCommand('std.settings.openUserSettingsAtCategory', ['Category Name'])` opens the GUI and scrolls to the specified category. Used by modules like `engine-debugger` and `engine-decision-viewer` for their "Open Settings" commands.
 - **Keyboard shortcut**: `Ctrl+,` / `Cmd+,` for Settings (GUI)
 - **Application menu**: Settings, Settings (JSON), and Default Settings in the main menu
 

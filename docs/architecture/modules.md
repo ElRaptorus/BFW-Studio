@@ -23,8 +23,8 @@ Modules are loaded sequentially via `bifrost.modules.requirePackagedModule(name)
 The load order is explicit and defined in `studio/src/createAndInitializeBifrost.ts`:
 
 ```
- 1. std                  (includes settings, help, aboutpage, startpage)
- 2. themes               (registers white-fall and dark-grey themes)
+ 1. std                    (includes settings, help, aboutpage, startpage)
+ 2. themes                 (registers 10 extra themes)
  3. bpmn-core
  4. bpmn-editor
  5. bpmn-token-simulator
@@ -35,14 +35,15 @@ The load order is explicit and defined in `studio/src/createAndInitializeBifrost
 10. dmn-diff
 11. git-cruiser
 12. machine-sanctum
-13. engine-core          (currently commented out)
-14. engine-browser       (currently commented out; includes engine menubar)
-15. engine-debugger      (currently commented out)
-16. engine-bpmn-viewer   (currently commented out)
-17. plugins
+13. engine-core            (registers EngineConnectionManager shared resource)
+14. engine-workspace       (sidebar, catalogs, menubar/run controls)
+15. engine-model-viewer    (read-only deployed BPMN viewer)
+16. engine-decision-viewer (read-only deployed DMN viewer)
+17. engine-debugger        (live PI debugger)
+18. plugins
 ```
 
-This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then plugin management (`plugins`) last. Engine modules are currently commented out in `createAndInitializeBifrost.ts` and not loaded at startup.
+This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then engine modules (`engine-core` first as foundation, then workspace/viewers/debugger), then plugin management (`plugins`) last.
 
 ## Module Catalog
 
@@ -62,11 +63,11 @@ The cornerstone module. Provides commands, menus, panes, keybindings, editor man
 
 - **Entry:** `studio/src/modules/std/index.ts`
 - **Dependencies:** None
-- **Depended on by:** Nearly all other modules (via `std.*` commands, `help.open`, `settings.openUserSettingsAtCategory`)
+- **Depended on by:** Nearly all other modules (via `std.*` commands, `std.help.open`, `std.settings.openUserSettingsAtCategory`)
 
 #### themes
 
-Registers additional color themes (`white-fall` and `dark-grey`) that preserve the original light and dark palettes from before the Bifrost Day/Night redesign. Each theme is defined as a fully self-contained SCSS file with all core and module-specific tokens merged in.
+Registers ten additional color themes beyond the two core themes (`light`/`dark`) provided by `std`. Includes Forge World Day/Night, The Dark City, Tomb World, Fenris, Medusa, VS Code Light/Dark, and Zed Light/Dark. Each theme is defined as a fully self-contained SCSS file with all core and module-specific tokens merged in.
 
 - **Entry:** `studio/src/modules/themes/index.ts`
 - **Dependencies:** None
@@ -81,16 +82,16 @@ Shared BPMN infrastructure. Contains the bpmn-js modeler/viewer adapter, overlay
 - **Entry:** `studio/src/modules/bpmn-core/index.tsx`
 - **Commands registered:** `bpmn.modeler.registerModule` (allows modules to inject diagram-js modules into every BpmnModeler instance)
 - **Dependencies:** None
-- **Depended on by:** `bpmn-editor`, `engine-bpmn-viewer`, `engine-debugger` (via direct imports); any module that calls `bpmn.modeler.registerModule` (via command)
+- **Depended on by:** `bpmn-editor`, `engine-model-viewer`, `engine-debugger` (via direct imports); `engine-workspace` (moddle descriptor only); any module that calls `bpmn.modeler.registerModule` (via command)
 
 #### bpmn-editor
 
 The primary BPMN 2.0 process model editor. Provides the interactive modeler, property panels, fragment renderers, and all editing functionality. Property panes are structured into three groups (`property`, `scripting`, `documentation`) on the right pane area. Uses BPMN 2.0 spec-compliant data model — service tasks use the `implementation` attribute, loops use `StandardLoopCharacteristics` / `MultiInstanceLoopCharacteristics`, user task assignees use `HumanPerformer` / `PotentialOwner` resource roles. See `bpmn-editor-properties.md` for full pane architecture.
 
 - **Entry:** `studio/src/modules/bpmn-editor/index.tsx`
-- **Dependencies (commands):** `std` (incl. `help.open`), `bpmn-diff`
+- **Dependencies (commands):** `std` (incl. `std.help.open`), `bpmn-diff`
 - **Dependencies (imports):** `bpmn-core`
-- **Depended on by:** `engine-browser/menubar` (via imports)
+- **Depended on by:** `engine-workspace/initializeRunMenu` (via imports)
 
 #### bpmn-diff
 
@@ -105,7 +106,7 @@ Diff view for comparing two BPMN process models side by side.
 
 Shared DMN infrastructure: `DmnModelerComponentAdapter` wrapping `dmn-js`, DMN diff engine (XML structural comparison), moddle extensions, custom command handlers, shared types.
 
-- **Entry:** `studio/src/modules/dmn-core/index.tsx`
+- **Entry:** `studio/src/modules/dmn-core/index.ts`
 - **Commands registered:** `dmn.modeler.registerModule`
 - **Dependencies:** None
 - **Depended on by:** `dmn-editor`, `dmn-diff` (via direct imports)
@@ -140,42 +141,63 @@ Full Git integration for Evil Studio. Detects repos, visualizes file status, pro
 
 ### Engine
 
-All engine modules interact with an external Engine via client. The engine is not part of this application.
+All engine modules interact with an external ThomasTheDaemonEngine instance via `@elraptorus/daemonengine_client`. The engine is not part of this application. Connectivity is managed through `EngineConnectionManager`, a shared resource registered by `engine-core` and consumed by all other engine modules via `bifrost.getSharedRessource('engineConnectionManager')`.
 
 #### engine-core
 
-Shared engine infrastructure. Provides connectivity management, URL parsing, formatters, and core engine commands (connect, disconnect, process operations).
+Foundation layer for all engine UI. Provides multi-engine connection management (`EngineConnectionManager`), JWT auth (`JwtIdentityManager`), WebSocket event bridge, shared formatters/components, a frozen command contract (`ENGINE_COMMANDS`), and settings keys used across all engine modules.
 
 - **Entry:** `studio/src/modules/engine-core/index.ts`
 - **Dependencies (commands):** `std`
-- **Depended on by:** `engine-browser` (incl. its menubar sub-feature), `engine-debugger`, `engine-bpmn-viewer`
+- **Dependencies (npm):** `@elraptorus/daemonengine_client`, `@elraptorus/daemonengine_sdk`
+- **Shared resources registered:** `engineConnectionManager`, `engineWebSocketBridge`
+- **Depended on by:** `engine-workspace`, `engine-model-viewer`, `engine-decision-viewer`, `engine-debugger`
+- **Commands registered:** `engine.connect`, `engine.connectWithDialog`, `engine.disconnect`, `engine.removeFromHistory`, `engine.setAuthToken`, `engine.deploy`, `engine.deployBatch`, `engine.startProcess`, `engine.abortProcessInstance`, `engine.retryProcessInstance`, `engine.deleteProcessInstance`, `engine.configuredStartProcess`, `engine.startProcessAndOpenDebugger`, `engine.configuredStartProcessAndOpenDebugger`, `engine.triggerMessage`, `engine.triggerSignal`
 
-#### engine-browser
+#### engine-workspace
 
-Left menu bar pane and views for interacting with a connected process engine. Contains the process instance list, process model list, connection management UI, and the engine menubar (a sub-feature loaded via `loadMenubar()` from `studio/src/modules/engine-browser/menubar/index.tsx`).
+Operational hub for connected engines. Provides the left-sidebar engine navigation pane, six workspace document types (dashboard, process explorer, instance search, task inbox, decision catalog, timer schedules), deploy-from-explorer context menus, and the engine menubar (deploy/start/play controls in `initializeRunMenu.ts`). Replaces the former `engine-browser` module.
 
-- **Entry:** `studio/src/modules/engine-browser/index.tsx`
-- **Dependencies (commands):** `std`, `startpage`, `engine-core`
-- **Dependencies (imports):** `engine-core`, `bpmn-editor` (menubar sub-feature)
-- **Depended on by:** `engine-debugger`, `engine-bpmn-viewer` (via commands and imports)
+- **Entry:** `studio/src/modules/engine-workspace/index.ts`
+- **Dependencies (commands):** `std`, `engine-core`
+- **Dependencies (imports):** `engine-core`, `bpmn-core` (moddle descriptor)
+- **Document types registered:** `engine-dashboard`, `engine-process-explorer`, `engine-instance-search`, `engine-task-inbox`, `engine-decision-catalog`, `engine-timer-schedules`
+- **Panes registered:** `EngineSidebarPane` (left), `ProcessModelInfoPane`, `ProcessInstanceSummaryPane`, `TaskDetailPane`, `DecisionSummaryPane`, `ScheduleDetailPane` (right/property)
+- **Shared resources registered:** `engine-workspace.taskInbox.pendingCounts` (via `TaskCountPoller`)
+- **Depended on by:** `engine-debugger` (via commands)
+
+#### engine-model-viewer
+
+Read-only viewer for deployed BPMN process definitions fetched from the engine. Shows version history, element property panes, start-from-start-event overlays, and export. Replaces the former `engine-bpmn-viewer` module.
+
+- **Entry:** `studio/src/modules/engine-model-viewer/index.ts`
+- **Dependencies (commands):** `std`, `engine-core`
+- **Dependencies (imports):** `engine-core`, `bpmn-core` (viewer adapter, overlay manager, SVG export)
+- **Document types registered:** `engine-model-viewer` (URI: `engine-model://{engineId}/{processModelId}`)
+- **Panes registered:** 22 property panes, 5 scripting panes, 1 documentation pane (right area)
+- **Depended on by:** (none currently)
+
+#### engine-decision-viewer
+
+Read-only DRD viewer for deployed DMN decision definitions, with ad-hoc evaluation panel, version switching, and element-level property panes.
+
+- **Entry:** `studio/src/modules/engine-decision-viewer/index.ts`
+- **Dependencies (commands):** `std`, `engine-core`
+- **Dependencies (imports):** `engine-core`, `dmn-core` (viewer adapter)
+- **Document types registered:** `engine-decision-viewer` (URI: `engine-decision://{engineId}/{decisionModelId}`)
+- **Panes registered:** `DefinitionInfoPane`, `DecisionDetailPane`, `DecisionTableDetailPane`, `LiteralExpressionPane`, `BkmDetailPane`, `ItemDefinitionDetailPane`, `DecisionServiceDetailPane` (right/property)
+- **Depended on by:** `engine-debugger` (types import for DMN trace UI)
 
 #### engine-debugger
 
-Debugger for running process instances. Provides the debugger editor, property panels, overlays, and flow node inspection.
+Live process instance debugger. Provides BPMN diagram with runtime overlays, PI/FNI property panels, bottom inspector (expression runner, event log), user task form viewer, and DMN trace drill-down for Business Rule Task executions.
 
 - **Entry:** `studio/src/modules/engine-debugger/index.tsx`
-- **Dependencies (commands):** `std`, `engine-core`, `engine-browser`
-- **Dependencies (events):** `engine-core` (subscribes to `EVENT_PROCESS_INSTANCE_RETRIED` on `EngineManager`, in the `EngineBpmnDebuggerEditorDocumentModel`)
-- **Dependencies (imports):** `bpmn-core`, `engine-core`, `engine-browser`
+- **Dependencies (commands):** `std`, `engine-core`, `engine-workspace`
+- **Dependencies (imports):** `engine-core`, `bpmn-core` (viewer adapter, overlays, SVG export), `dmn-core` (DMN trace renderer), `engine-decision-viewer` (types only)
+- **Document types registered:** `engine-debugger`, `engine-debug.user-task-view`, `engine-debugger.json-property`, `engine-debugger.process-json-property`, `engine-debugger.docs`, `engine-debugger.inspector-item`, `engine-debug.dmn-trace`
+- **Panes registered:** ~60+ property/dataflow/scripting panes (right area)
 - **Depended on by:** (none currently)
-
-#### engine-bpmn-viewer
-
-Read-only BPMN viewer for diagrams deployed on a connected engine. Uses a BPMN viewer (not modeler) to display remote process models.
-
-- **Entry:** `studio/src/modules/engine-bpmn-viewer/index.tsx`
-- **Dependencies (commands):** `std`, `engine-core`, `engine-browser`
-- **Dependencies (imports):** `bpmn-core`, `engine-core`, `engine-browser`
 
 #### bpmn-token-simulator
 
@@ -206,7 +228,7 @@ Management UI for the Plugin Host. Provides the Plugins pane (left sidebar), plu
 - **Entry:** `studio/src/modules/plugins/index.ts`
 - **Commands registered:** `plugins.focusPluginsPane`, `plugins.refreshPluginList`, `plugins.openPluginFolder`
 - **Editor document types:** `plugin-readme` (URI pattern: `about:plugin-readme/`)
-- **Dependencies (commands):** `std` (via `settings.openUserSettingsAtCategory`)
+- **Dependencies (commands):** `std` (via `std.settings.openUserSettingsAtCategory`)
 - **Dependencies (imports):** None (communicates via `bifrost.plugins` subsystem)
 - **Architecture doc:** [plugin-host.md](plugin-host.md)
 
@@ -232,30 +254,34 @@ themes ────────────────────────�
                                                         │
 bpmn-core ──────────────────────────────────────────────┤ (no module deps)
 bpmn-editor ← bpmn-core (import)                        │
-            ← std (incl. help.open), bpmn-diff (cmd)   │
+            ← std (incl. std.help.open), bpmn-diff (cmd)│
 bpmn-linter ← bpmn-core (import),                       |
             - std, bpmn-editor (cmd)                    │
 bpmn-token-simulator ← bpmn-core (import)               |
                      - std, bpmn-editor (cmd)           │
 bpmn-diff ← bpmn-editor (cmd)                           │
                                                         │
-git-cruiser ← std (cmd)                                 │
+dmn-core ───────────────────────────────────────────────┤ (no module deps)
+dmn-editor ← dmn-core (import)                          │
+dmn-diff ← dmn-core/diff (import)                       │
                                                         │
-machine-sanctum ← std (cmd)                            │
+git-cruiser ← std (cmd), bpmn-diff, dmn-diff (cmd)      │
                                                         │
-engine-core ← std (cmd)              (commented out)    │
-engine-browser ← engine-core, bpmn-editor (import)      │
-               ← std, engine-core (cmd)                 │
-  └─ menubar (sub-feature)                              │
-engine-debugger ← bpmn-core, engine-core,               │
-                  engine-browser (import)               │
-                ← std, engine-core, engine-browser (cmd)│
-engine-bpmn-viewer ← bpmn-core, engine-core,            │
-                     engine-browser (import)            │
-                   ← std, engine-core, engine-browser   │
-                     (cmd)                              │
+machine-sanctum ← std (cmd)                             │
                                                         │
-plugins ← std (cmd: openUserSettingsAtCategory)         │
+engine-core ← std (Bifrost APIs)                        │
+  registers: engineConnectionManager,                   │
+             engineWebSocketBridge                      │
+engine-workspace ← engine-core (import + cmd)            │
+                 ← bpmn-core (moddle descriptor)        │
+  registers: engine-workspace.taskInbox.pendingCounts   │
+engine-model-viewer ← engine-core, bpmn-core (import)    │
+engine-decision-viewer ← engine-core, dmn-core (import)  │
+engine-debugger ← engine-core, bpmn-core, dmn-core      │
+                ← engine-decision-viewer/types (import) │
+                ← engine-workspace (cmd)                │
+                                                        │
+plugins ← std (cmd: std.settings.openUserSettingsAtCategory)│
 ```
 
 ## Known Architectural Notes

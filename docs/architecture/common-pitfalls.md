@@ -932,13 +932,13 @@ Before the command naming normalization, many commands used camelCase compound p
 | `dmnDiff.*` | `dmn.diff.*` |
 | `gitCruiser.*` (commands) | `git.*` |
 | `merge.*` | `git.merge.*` |
-| `engineBrowser.*` (commands) | `engine.browser.*` |
+| `engineBrowser.*` (commands) | `engine.workspace.*` |
 | `engineDebugger.*` (commands) | `engine.debugger.*` |
 | `engineMenubar.*` | `engine.menubar.*` |
-| `engineRemoteBpmnViewer.*` (commands) | `engine.viewer.*` |
+| `engineRemoteBpmnViewer.*` (commands) | `engine.modelViewer.*` |
 | `TaskView.*` | `engine.debugger.taskView.*` |
 
-**Important**: Settings keys (e.g., `bpmnLinter.enabled`, `engineBrowser.processInstanceList.autoRefresh`, `gitCruiser.general.enabled`) were NOT renamed. Only command IDs were changed. Settings keys use a separate namespace and are stored in localStorage.
+**Important**: Settings keys were also renamed during this migration (e.g., `engineBrowser.processInstanceList.autoRefresh` → `engine.processExplorer.autoRefresh`). Both command IDs and settings keys now use the `engine.*` prefix.
 
 If you encounter a command that uses an old prefix, it is a bug. The first dotted segment of every command ID must be one of: `std`, `bpmn`, `dmn`, `engine`, `git`, `plugins`, `dev`.
 
@@ -1310,7 +1310,19 @@ The `selectionRevision` counter in metadata acts as a lightweight re-render trig
 - **Never** place contracts inside `<bpmn:messageEventDefinition><bpmn:extensionElements>` — the Engine's SaxHandler ignores them there since D-MSG-3
 - **Signal events** have no contract support — do not add contract elements to signal events
 
-### P-Studio-3 — Do not discard fields from WS event payloads
+### P-Studio-3 — All `fragment+` URIs must include `fragmentId`
+
+**Symptom:** Opening a fragment document (or closing any document while a non-conforming fragment tab is open) crashes the entire Editor Area irrecoverably with `"Could not parse fragment/data from uri (fragmentId missing)"`.
+
+**Root cause:** `EditorAreaManager.closeEditorDocument()` iterates ALL open tabs with `fragment+` URIs and calls `parseOpenInNewTabUrl()` on each. That function requires a `fragmentId` key in the hash fragment. If any tab uses `fragment+` in its URI scheme but hand-builds the URI without `fragmentId`, the parse throws and the entire editor area crashes — including the ability to close tabs.
+
+**Correct approach:** Always use `getUrlForOpenInNewTab(type, parentUri, fragmentId, additionalData)` from the SDK to build fragment URIs. Never hand-build strings with the `fragment+` prefix. The `fragmentId` and `parentUri` are mandatory for the fragment lifecycle management (close parent → close children, rename propagation).
+
+**Defense layers:**
+1. **Gate at open time** — `EditorMediator.doFocusOrOpenEditorDocument()` validates all `fragment+` URIs via `parseOpenInNewTabUrl()` before creating a new editor document. If parsing fails, the document is rejected and a **user-visible error notification** is pushed. The malformed document never enters the editor area.
+2. **Catch in existing-document iteration** — `EditorAreaManager.getFragmentEditorDocumentsByParentUri()` and `EditorArea.getParentUriIfFragmentUri()` catch parse errors on already-open documents (e.g. from deserialized state) and push an error notification instead of crashing. Malformed documents are excluded from fragment matching but remain openable for manual inspection/closure.
+
+### P-Studio-4 — Do not discard fields from WS event payloads
 
 **Symptom:** `typeProperties` (including `child_process_instance_id` for Call Activities) and `errorInfo` from `FlowNodeInstanceFinished` events are not reflected in the debugger.
 

@@ -109,7 +109,7 @@ Follow the pattern `module-name/context/element`:
 
 ```
 bpmn-editor/editor-tab/bpmn
-engineBrowser/document-type/process-model-list
+engine-workspace/processes
 std/tree/folder-open
 ```
 

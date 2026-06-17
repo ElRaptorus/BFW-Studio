@@ -10,7 +10,7 @@ Defined in `studio/package.json` under the `"imports"` field:
 |-------|-------------|---------|
 | `#bifrost/*` | `./src/bifrost/*` | Core framework (Bifrost, mediators, managers, contracts) |
 | `#components/*` | `./src/components/*` | Shared internal React components |
-| `#modules/*` | `./src/modules/*` | Cross-module imports (e.g., `engine-browser` importing from `engine-core`) |
+| `#modules/*` | `./src/modules/*` | Cross-module imports (e.g., `engine-workspace` importing from `engine-core`) |
 
 TypeScript resolves these via a matching `paths` entry in `tsconfig.base.json`; Rspack resolves them via the `imports` field in `package.json` at bundle time.
 
@@ -31,7 +31,7 @@ import { AbortablePromise } from '#bifrost/common/AbortablePromise';
 // Cross-boundary: module → shared component
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
 
-// Cross-module: engine-browser → engine-core
+// Cross-module: engine-workspace → engine-core
 import { getHumanizedDateTime } from '#modules/engine-core/Formatters';
 
 // Intra-module (stays relative)

@@ -74,110 +74,56 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 
 SDK re-exports were removed from the engine-core barrel. All consumer modules import SDK types directly from `@elraptorus/daemonengine_sdk` and client types from `@elraptorus/daemonengine_client`. Engine-core only exports its own types, components, commands, settings, and utilities.
 
-> **Legacy architecture:** The sections below document the `EngineManager`-based architecture (`engine-browser`, `engine-debugger`, `engine-bpmn-viewer`) which is being replaced. They are retained for reference until the legacy modules are fully removed.
+## EngineConnectionManager
 
----
+**Path:** `studio/src/modules/engine-core/EngineConnectionManager.ts`
+**Access:** `bifrost.getSharedRessource('engineConnectionManager')`
 
-## EngineManager
-
-**Path:** `studio/src/bifrost/common/EngineManager.ts`
-**SDK type declaration:** `studio-sdk/types/common/EngineManager.ts`
-**Access:** `bifrost.engines` / `studio.engines`
-
-Extends `AbstractEmitter`. Manages engine client instances, connection lifecycle, identity/authentication, and settings.
-
-### Connection Lifecycle
-
-1. `createConnection(engineUrl)` — creates an `EngineClient`, caches engine info, emits `EVENT_ENGINE_ADDED`
-2. The `EngineClient` monitors connectivity via Socket.IO:
-   - First connection → `EVENT_ENGINE_CONNECTED`
-   - Reconnection after loss → `EVENT_ENGINE_RECONNECTED`
-   - Connection lost → `EVENT_ENGINE_CONNECTION_LOST`
-3. `disconnectEngine(engineUrl)` — disposes the client, emits `EVENT_ENGINE_DISCONNECTED_MANUALLY`
-4. `removeEngineFromHistory(engineUrl)` — disconnects and removes all settings, emits `EVENT_ENGINE_DELETED`
-
-### Key Methods
-
-| Method | Purpose |
-|--------|---------|
-| `createConnection(engineUrl)` | Establishes a new engine connection |
-| `getClient(engineUrl)` | Returns the `EngineClient` for an engine URL (creates if needed) |
-| `getConnectedEngines()` | Returns all currently connected engines as `EngineInformation[]` |
-| `getConnectionHistory()` | Returns all engines from URL history |
-| `disconnectEngine(engineUrl)` | Disconnects and removes from connected list |
-| `isCurrentlyOnline(engineUrl)` | Whether the engine is currently reachable |
-| `getIdentityForRequest(engineUrl)` | Returns the active user identity (or root identity) for API calls |
-| `getRootAccessIdentityForEngine(engineUrl)` | Returns the root access identity |
-| `getCurrentActiveUser(engineUrl)` | Returns the active `UserLogin` for an engine |
-| `setActiveUser(engineUrl, userLogin?)` | Sets or clears the active user |
-| `connectedEngineIsSupported(engineUrl)` | Whether the engine version meets minimum requirements |
-| `notifyProcessInstanceRetried(engineUrl, processInstanceIds, processModelWasUpdated)` | Emits `EVENT_PROCESS_INSTANCE_RETRIED` for consumers to react |
+Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/disconnect/reconnect, active engine selection, `DaemonEngineClient` per engine, JWT identity (`JwtIdentityManager`), health overrides, and persisted connection list.
 
 ### Events
 
-| Event | Args Type | Trigger |
-|-------|-----------|---------|
-| `EVENT_ENGINE_CONNECTED` | `EngineEventArgs` | First successful connection |
-| `EVENT_ENGINE_RECONNECTED` | `EngineEventArgs` | Reconnection after loss |
-| `EVENT_ENGINE_CONNECTION_LOST` | `EngineEventArgs` | Connection lost |
-| `EVENT_ENGINE_DISCONNECTED_MANUALLY` | `EngineEventArgs` | User disconnects |
-| `EVENT_ENGINE_ADDED` | `EngineEventArgs` | New connection created |
-| `EVENT_ENGINE_DELETED` | `EngineEventArgs` | Engine removed from history |
-| `EVENT_ENGINE_BROWSER_URLS_UPDATED` | — | Connected list or settings changed |
-| `EVENT_ENGINE_ACTIVE_USER_CHANGED` | `EngineUserChangedArgs` | Active user changed (login/logout/token change) |
-| `EVENT_ENGINE_INFO_UPDATED` | `EngineInfoUpdatedArgs` | Engine info cache updated |
-| `EVENT_PROCESS_INSTANCE_RETRIED` | `ProcessInstanceRetriedArgs` | Process instance retried via engine-core commands |
-
-### Event Args Types
-
-```typescript
-type EngineEventArgs = { url: string };
-
-type EngineUserChangedArgs = {
-  engineUrl: string;
-  userLogin?: UserLogin;
-};
-
-type EngineInfoUpdatedArgs = {
-  value: { [engineUrl: string]: EngineInformation };
-  engineUrl?: string;
-};
-
-type ProcessInstanceRetriedArgs = {
-  engineUrl: string;
-  processInstanceIds: string[];
-  processModelWasUpdated: boolean;
-};
-```
+| Event | Trigger |
+|-------|---------|
+| `engine:state-changed` | Engine state transition (connecting/connected/disconnected/error) |
+| `engine:list-changed` | Engine added/removed from connection list |
+| `engine:connected` | First successful connection |
+| `engine:disconnected` | Engine disconnected |
+| `engine:reconnected` | Reconnection after loss |
+| `engine:event` | WebSocket event forwarded from engine |
+| `engine:auth-token-changed` | JWT token set/changed for an engine |
 
 ### Settings
 
 | Setting | Default | Purpose |
 |---------|---------|---------|
-| `engineManager.internal.connected` | `[]` | Array of currently connected engine URLs |
-| `engineManager.internal.urlHistory` | `[]` | Array of all known engine URLs (connected + previously connected) |
-| `engineManager.internal.infoCache` | `{}` | Cached `EngineInformation` per URL |
-| `engineManager.internal.activeUserIds` | `{}` | Active user ID per engine URL |
-| `engineManager.internal.customRootAccessTokens` | `{}` | Custom root access tokens per engine URL |
-| `engineManager.internal.lastDeploymentTargetUrl` | `null` | Last engine used for deployment |
+| `engine.internal.connections` | `[]` | Array of persisted engine connections |
+| `engine.internal.activeEngineId` | `null` | Currently selected engine ID |
+| `engine.internal.infoCache` | `{}` | Cached engine metadata per ID |
+| `engine.internal.lastDeploymentTargetId` | `null` | Last engine used for deployment |
 
 ---
 
 ## Engine-Core Commands
 
-**Path:** `studio/src/modules/engine-core/index.ts`
+**Path:** `studio/src/modules/engine-core/commands/`
 
-`engine-core` registers all shared engine commands. These are the operations that multiple consumer modules need.
+`engine-core` registers all shared engine commands via the frozen `ENGINE_COMMANDS` contract (`CommandContract.ts`).
 
 ### Connection
 
 | Command | Purpose |
 |---------|---------|
-| `engine.connectToUrl` | Connects to an engine URL |
-| `engine.addConnection` | Adds a connection (UI-triggered) |
+| `engine.connect` | Connects to an engine URL |
+| `engine.connectWithDialog` | Opens connection dialog, then connects |
 | `engine.disconnect` | Disconnects from an engine |
-| `engine.removeUrlFromHistory` | Removes an engine URL from history |
-| `engine.disconnectAndRemove` | Disconnects and removes from history |
+| `engine.removeFromHistory` | Removes an engine from history |
+
+### Authentication
+
+| Command | Purpose |
+|---------|---------|
+| `engine.setAuthToken` | Sets a JWT auth token for an engine |
 
 ### Process Operations
 
@@ -185,7 +131,7 @@ type ProcessInstanceRetriedArgs = {
 |---------|---------|
 | `engine.deploy` | Deploys a BPMN/DMN file to an engine |
 | `engine.deployBatch` | Deploys multiple BPMN/DMN files in one batch |
-| `engine.startProcess` | Starts a process on an engine (thin wrapper around `client.processes.start`) |
+| `engine.startProcess` | Starts a process on an engine |
 | `engine.configuredStartProcess` | Opens the Configured Start dialog (start event picker, payload JSON editor, business key) then starts |
 | `engine.startProcessAndOpenDebugger` | Smart start: if 1 start event, starts immediately; if 2+, opens dialog. Opens debugger on success |
 | `engine.configuredStartProcessAndOpenDebugger` | Always opens the Configured Start dialog, then opens debugger on success |
@@ -193,7 +139,16 @@ type ProcessInstanceRetriedArgs = {
 | `engine.retryProcessInstance` | Retries a failed/aborted process instance |
 | `engine.deleteProcessInstance` | Deletes a process instance |
 
-### Tasks and Events
+### Events
+
+| Command | Purpose |
+|---------|---------|
+| `engine.triggerMessage` | Triggers a message event on the engine |
+| `engine.triggerSignal` | Triggers a signal event on the engine |
+
+### Debugger Event Trigger Commands
+
+These commands are registered by `engine-debugger`, not `engine-core`, but interact with the core trigger commands:
 
 | Command | Purpose |
 |---------|---------|
@@ -210,17 +165,6 @@ Each event type has its own dedicated confirmation dialog, split from the former
 - **Timer**: `askTimerTriggerConfirmation`. Simple confirmation stating the timer will be skipped.
 
 **File:** `studio/src/modules/engine-debugger/libs/BpmnCustomPropertyAccessor.ts` — reads `evil:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.
-
-### Authentication
-
-| Command | Purpose |
-|---------|---------|
-| `engine.signIn` | Signs in with credentials |
-| `engine.signOut` | Signs out |
-| `engine.getCurrentUserLogin` | Gets the current user login |
-| `engine.setRootAccessToken` | Sets a custom root access token |
-| `engine.showOAuthConfigurationModal` | Shows OAuth configuration dialog |
-| `engine.getEffectiveAuthorityConfig` | Gets the effective OAuth authority configuration |
 
 ### Engine-Workspace Commands (Run Menu & Menubar)
 
@@ -273,43 +217,35 @@ Validation checks both builders for duplicate keys and incomplete rows (key with
 
 ## Document URI Scheme
 
-Engine-related documents encode the engine URL and resource identifiers in the URI query string.
+Engine-related documents encode the engine ID and resource identifiers in the URI path.
 
-**Format:** `{scheme}:{type}?engineUrl={encodedUrl}&param=value`
+### URI Patterns
 
-### Examples
-
-| Module | URI Pattern |
-|-----------|-------------|
-| engine-browser | `engineBrowser:ProcessInstanceList?engineUrl={encodedUrl}` |
-| engine-browser | `engineBrowser:ProcessModelList?engineUrl={encodedUrl}` |
-| engine-debugger | `engineBrowser:BpmnDebugger?engineUrl={encodedUrl}&processInstanceId={id}` |
+| Module | Document Type | URI Pattern |
+|--------|---------------|-------------|
+| engine-workspace | `engine-dashboard` | `engine://dashboard/{engineId}` |
+| engine-workspace | `engine-process-explorer` | `engine://processes/{engineId}` |
+| engine-workspace | `engine-instance-search` | `engine://instances/{engineId}` |
+| engine-workspace | `engine-task-inbox` | `engine-task-inbox://{engineId}` |
+| engine-workspace | `engine-decision-catalog` | `engine://decisions/{engineId}` |
+| engine-workspace | `engine-timer-schedules` | `engine://timers/{engineId}` |
+| engine-model-viewer | `engine-model-viewer` | `engine-model://{engineId}/{processModelId}` |
+| engine-decision-viewer | `engine-decision-viewer` | `engine-decision://{engineId}/{decisionModelId}` |
+| engine-debugger | `engine-debugger` | `engine-debug://{engineId}/{processInstanceId}` |
+| engine-debugger | `engine-debug.user-task-view` | `fragment+engine-debug.user-task-view:…` |
+| engine-debugger | `engine-debugger.json-property` | `fragment+engine-debug.json-property:…` |
+| engine-debugger | `engine-debugger.process-json-property` | `fragment+engine-debug.process-json-property:…` |
+| engine-debugger | `engine-debugger.docs` | `fragment+engine-debug.docs:…` |
+| engine-debugger | `engine-debugger.inspector-item` | `fragment+engine-debug.inspector-item:…` |
+| engine-debugger | `engine-debug.dmn-trace` | `fragment+engine-debug.dmn-trace:…` |
 
 ### Parsing
 
-**Path:** `studio/src/modules/engine-core/UrlParser.ts`
+**Path:** `studio/src/modules/engine-core/helpers/checkEngineConnectivity.ts`
 
-- `getParametersFromDocumentUrl(uri)` → `{ [key: string]: string }` — parses all query params
-- `extractEngineUrlFromDocumentUrl(uri)` → `string` — extracts just the engine URL
+- `extractEngineIdFromUri(uri)` → `string` — extracts the engine ID from any engine document URI
 
----
-
-## EngineInformation
-
-**Path:** `studio-sdk/types/common/EngineManager.ts`
-
-```typescript
-type EngineInformation = {
-  url: string;
-  name: string;
-  loadedExtensions?: EngineExtensionInfo[];
-  id?: string;
-  version?: string;
-  authorityAddress?: string;
-  loggedInAs?: string;
-  portalUrl?: string;
-};
-```
+All engine document types use `canOpen: (uri) => checkEngineConnectivity(bifrost, uri)` to verify the target engine is online before opening.
 
 ---
 
@@ -317,43 +253,15 @@ type EngineInformation = {
 
 Engine modules register editor document types for engine-related views. For the general Editor Document system (type registration, model base class, renderer/inspector contracts, model-to-renderer communication patterns, subscription best practices), see [editor-documents.md](editor-documents.md).
 
-### Engine-Specific Document Types
-
-| Module | Document Type | URI Pattern | Has Inspector |
-|-----------|---------------|-------------|---------------|
-| engine-browser | `editor-document-engine-process-instance-list` | `engineBrowser:ProcessInstanceList?…` | no |
-| engine-browser | `editor-document-engine-process-model-list` | `engineBrowser:ProcessModelList?…` | no |
-| engine-browser | `editor-document-engine-landing-page` | `engineBrowser:EditorDocumentLandingPage?…` | no |
-| engine-browser | `editor-document-engine-cyclic-timers-list` | `engineBrowser:CyclicTimersList?…` | no |
-| engine-bpmn-viewer | `EngineBpmnViewerEditorDocument` | `engineBrowser:BpmnViewer?…` | yes |
-| engine-debugger | `ProcessInstanceViewer` | `engineBrowser:BpmnDebugger?…` | yes |
-| engine-debugger | `engine-debug.dmn-trace` | `fragment+engine-debug.dmn-trace://{engineId}/{piId}/{fniId}#!…` | yes |
-
-All engine document types use `canOpen: (uri) => checkEngineConnectivity(bifrost, uri)` to verify the target engine is online before opening.
-
-### Engine-Specific URI Parameters
-
-All engine document URIs share `engineUrl` as a common parameter. Additional parameters vary by document type:
-
-| Document Type | URI Parameters |
-|---------------|---------------|
-| Process Instance List | `engineUrl` |
-| Process Model List | `engineUrl` |
-| Landing Page | `engineUrl` |
-| Cyclic Timers List | `engineUrl` |
-| BpmnViewer | `engineUrl`, `processModelId` |
-| BpmnDebugger | `engineUrl`, `processInstanceId` |
-| DMN Trace Fragment | `engineId`, `processInstanceId`, `flowNodeInstanceId` (in hash fragment) |
-
 ### Engine Event Subscriptions in Models
 
-Engine document models subscribe to `EngineManager` events to react to connectivity changes and engine operations. Subscriptions are stored and disposed in `onEditorDocumentWillClose`. Each model self-selects events by comparing `args.engineUrl` (or `args.url`) against its own engine URL.
+Engine document models subscribe to `EngineConnectionManager` events to react to connectivity changes and engine operations. Subscriptions are stored and disposed in `onEditorDocumentWillClose`. Each model self-selects events by comparing the event's `engineId` against its own engine ID.
 
 Key events handled by engine document models:
-- `EVENT_ENGINE_CONNECTED` / `EVENT_ENGINE_RECONNECTED` — refresh data, notify renderer via `onEngineReconnect` callback
-- `EVENT_ENGINE_CONNECTION_LOST` — show offline state
-- `EVENT_ENGINE_ACTIVE_USER_CHANGED` — re-authenticate, refresh subscriptions
-- `EVENT_PROCESS_INSTANCE_RETRIED` — refresh if process model was updated (debugger model only)
+- `engine:connected` / `engine:reconnected` — refresh data
+- `engine:disconnected` — show offline state
+- `engine:auth-token-changed` — re-authenticate, refresh
+- `engine:event` — WebSocket events (process deployed/undeployed, state changes) filtered by `engineId`
 
 ---
 
@@ -364,7 +272,7 @@ The DMN Trace Fragment (`engine-debug.dmn-trace`) is a non-singleton fragment do
 ### Architecture
 
 - **Document Type:** `engine-debug.dmn-trace`
-- **URI:** `fragment+engine-debug.dmn-trace://{engineId}/{processInstanceId}/{flowNodeInstanceId}#!engineId=…&processInstanceId=…&flowNodeInstanceId=…`
+- **URI:** Built with `getUrlForOpenInNewTab('engine-debug.dmn-trace', parentDebuggerUri, flowNodeInstanceId, { engineId, processInstanceId, flowNodeInstanceId })`. Conforms to the standard fragment URI contract (`fragmentId` = FNI ID, parent = debugger session URI `engine-debug://{engineId}/{processInstanceId}`).
 - **Model:** `DmnTraceFragmentModel` (`engine-debugger/dmn-trace/DmnTraceFragmentModel.ts`) — full `EditorDocumentModel` subclass that fetches the FNI detail (including `typeProperties` with DMN trace data in snake_case), retrieves the DMN XML via `client.decisions.get(decisionRef, { includeXml: true })`, parses it with `parseDmn()`, and manages DRG selection state via private model fields with public getters.
 - **Renderer:** `DmnTraceFragmentRenderer` (`engine-debugger/dmn-trace/DmnTraceFragmentRenderer.tsx`) — renders the DRG canvas using `DmnViewerComponentAdapter` (shared with `engine-decision-viewer`), applies execution overlays, and provides toolbar actions for zoom, "View Definition" (opens `engine-decision-viewer`), and inspector toggle.
 - **Inspector:** `DmnTraceInspector` (`engine-debugger/dmn-trace/DmnTraceInspector.tsx`) — "Evaluation Order" table showing decisions in sequential evaluation order with hit policies, matched rules, results, and durations.
@@ -410,76 +318,16 @@ DMN trace data in `FlowNodeInstance.typeProperties` uses snake_case keys (not ca
 
 ---
 
-## Engine SDK (`engine-core/sdk/`)
+## SDK and Client Packages
 
-All engine-related types, constants, and model utilities live in `studio/src/modules/engine-core/sdk/`. This replaces the former engine sdk package.
-
-### Structure
-
-| Directory | Purpose |
-|-----------|---------|
-| `sdk/constants/` | Runtime enums: `BpmnType`, `EventType`, `FlowNodeInstanceState`, `ProcessInstanceState`, `TimerType`, `LoopMarker`, `ServiceTaskType`, `GatewayDirection`, `UserTaskFormFieldType`, sortable columns |
-| `sdk/types/` | TypeScript type definitions: `common.ts` (Identity, Subscription, etc.), `model.ts` (BPMN model tree), `data-models.ts` (process/flow-node instance types), `engine-client.ts` (notification callback types) |
-| `sdk/parser/` | `BpmnModelParser` (XML → model tree via `xml2js`), `ModelClasses` (Process/Definitions with methods) |
-| `sdk/facade/` | `ProcessModelFacade` (graph traversal: `getPreviousFlowNodesFor`, `findJoinGatewayAfterSplitGateway`) |
-| `sdk/view-model/` | `FlowNodeViewModelFactory`, `FlowNodeViewModel`, `StartEventViewModel`, `EndEventViewModel` |
-| `sdk/index.ts` | Main barrel: flat exports + backward-compatible `DataModels`, `Model`, `Messages` namespaces |
-
-### Import path
-
-All modules import SDK types via:
+Engine modules import types and client directly from the published npm packages:
 
 ```typescript
-import { Model, DataModels, BpmnType } from '#modules/engine-core/sdk';
+import type { ProcessInstance } from '@elraptorus/daemonengine_sdk';
+import { DaemonEngineClient } from '@elraptorus/daemonengine_client';
 ```
 
-### Namespace design
-
-The SDK barrel re-exports types both flat (`export type * from './types'`) and under nested namespaces (`Model.Events.TimerStartEvent`, `DataModels.FlowNodeInstances.FlowNodeInstanceState`). The namespaces merge types and runtime enum values for backward compatibility with the former SDK's pattern.
-
----
-
-## Engine Client (`engine-core/client/`)
-
-The engine client implementation lives in `studio/src/modules/engine-core/client/`. This replaces the former engine client.
-
-### Structure
-
-| File | Purpose |
-|------|---------|
-| `HttpClient.ts` | Thin wrapper around native `fetch`: JSON serialization, error mapping, auth headers, `buildUrl` for query encoding |
-| `SocketManager.ts` | Manages `socket.io-client` connections: authentication, subscription lifecycle |
-| `RestSettings.ts` | URL templates for all REST endpoints |
-| `SocketSettings.ts` | Socket.IO namespace and event names |
-| `EngineClient.ts` | Main client: aggregates sub-clients with lazy initialization |
-| `sub-clients/` | 12 concrete sub-client classes (no interfaces — single-client architecture) |
-
-### Sub-clients
-
-| Class | Key methods |
-|-------|-------------|
-| `ApplicationInfoClient` | `getApplicationInfo`, `onConnected/Disconnected/Reconnected` |
-| `ProcessInstanceClient` | `query` (GET), `getChildProcessInstanceIds`, `terminateProcessInstance` (PUT), `retryProcessInstance` (PUT), `deleteProcessInstances` (DELETE), `delete` (DELETE) |
-| `FlowNodeInstanceClient` | `query` (GET) |
-| `DataObjectInstanceClient` | `query` (GET) |
-| `ProcessDefinitionClient` | `getAll`, `getById`, `persistProcessDefinitions`, `startProcessInstance`, `deleteById` |
-| `ProcessModelClient` | `startProcessInstance`, `enableProcessModel` (POST), `disableProcessModel` (POST) |
-| `CronjobClient` | `query` (GET), `enableCronjob` (POST), `disableCronjob` (POST) |
-| `UserTaskClient` | `reserveUserTaskInstance` (PUT), `cancelUserTaskInstanceReservation` (DELETE), `finishUserTask` (PUT) |
-| `ManualTaskClient` | `finishManualTask` (PUT) |
-| `UntypedTaskClient` | `finishTask` (PUT) |
-| `EventClient` | `triggerMessageEvent` (POST + URL query params), `triggerSignalEvent` (POST + URL query params), `triggerTimerEvent` (POST) |
-| `NotificationClient` | ~40 subscription methods for all engine events |
-
-### Identity management
-
-Identity (authentication) is managed centrally per `EngineClient` instance via `setIdentity()`. Sub-clients receive a `getIdentity` callback from the parent client. Individual API calls that callers pass an `identity` parameter to accept it for backward compatibility but use the centrally managed identity.
-
-### Import path
-
-```typescript
-import { EngineClient } from '#modules/engine-core/client';
-```
+The `EngineConnectionManager` creates and manages `DaemonEngineClient` instances per connected engine. Engine-core exports its own types, components, commands, settings, and utilities via its barrel (`index.ts`), but does not re-export SDK or client types.
 
 ---
 
@@ -548,17 +396,17 @@ Quick-deploy commands (`quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) d
 
 | Component | Path |
 |-----------|------|
-| EngineManager | `studio/src/bifrost/common/EngineManager.ts` |
-| EngineManager SDK types | `studio-sdk/types/common/EngineManager.ts` |
+| EngineConnectionManager | `studio/src/modules/engine-core/EngineConnectionManager.ts` |
+| JwtIdentityManager | `studio/src/modules/engine-core/JwtIdentityManager.ts` |
+| WebSocketBridge | `studio/src/modules/engine-core/WebSocketBridge.ts` |
+| Command Contract | `studio/src/modules/engine-core/commands/CommandContract.ts` |
 | engine-core entry | `studio/src/modules/engine-core/index.ts` |
-| engine-core SDK barrel | `studio/src/modules/engine-core/sdk/index.ts` |
-| engine-core client barrel | `studio/src/modules/engine-core/client/index.ts` |
-| UrlParser | `studio/src/modules/engine-core/UrlParser.ts` |
-| Formatters | `studio/src/modules/engine-core/Formatters.ts` |
-| engine-browser entry | `studio/src/modules/engine-browser/index.tsx` |
+| engine-workspace entry | `studio/src/modules/engine-workspace/index.ts` |
+| engine-workspace menubar | `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts` |
+| engine-model-viewer entry | `studio/src/modules/engine-model-viewer/index.ts` |
+| engine-decision-viewer entry | `studio/src/modules/engine-decision-viewer/index.ts` |
 | engine-debugger entry | `studio/src/modules/engine-debugger/index.tsx` |
-| engine-bpmn-viewer entry | `studio/src/modules/engine-bpmn-viewer/index.tsx` |
-| engine-browser menubar | `studio/src/modules/engine-browser/menubar/index.tsx` |
+| Engine ID extraction | `studio/src/modules/engine-core/helpers/checkEngineConnectivity.ts` |
 | Version utilities | `studio/src/modules/engine-workspace/helpers/versionUtils.ts` |
 | AutoVersionOnPoolBehavior | `studio/src/modules/bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts` |
 | BPMN empty template | `studio/src/modules/bpmn-editor/BpmnEmptyDocument.bpmn` |

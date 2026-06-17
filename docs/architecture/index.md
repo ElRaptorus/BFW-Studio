@@ -9,7 +9,7 @@ Each file covers one topic area. This documentation grows as understanding of th
 - **[workspace.md](workspace.md)** — Solutions, projects, file handling, file explorer, search/symbol index, session restore, window management
 - **[commands.md](commands.md)** — Command system: CommandManager, CommandMediator, type definitions, execution flow, cross-module patterns, command listings
 - **[modules.md](modules.md)** — Internal module catalog, entry points, dependency graph, load order, loading mechanism
-- **[engine.md](engine.md)** — Engine connectivity: EngineManager, events, commands, authentication, document URI scheme
+- **[engine.md](engine.md)** — Engine connectivity: EngineConnectionManager, five engine modules (core, workspace, model-viewer, decision-viewer, debugger), commands, authentication, document URI scheme
 - **[dialogs.md](dialogs.md)** — Dialog system: DialogManager queue, DialogService/DialogServiceElectron, custom dialog rendering pipeline, all 13 content types, validation, native file pickers, CSS
 - **[editor-documents.md](editor-documents.md)** — Editor Document system: type registration, EditorDocumentModel base class, renderer/inspector contracts, model-to-renderer communication, subscription best practices
 - **[build.md](build.md)** — Build system: Rspack configuration, build targets, loaders, workers, conditional compilation, production builds

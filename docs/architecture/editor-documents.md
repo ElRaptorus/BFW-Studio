@@ -93,10 +93,11 @@ Document types that manage state (undo/redo, event subscriptions, data manipulat
 | **bpmn-editor** | `bpmn.script`, `bpmn.text`, `bpmn.data-output-association.transformation`, ... | `/^fragment\+bpmn\.…/` | no | no |
 | **bpmn-diff** | `bpmn.diff` | `/^fragment\+bpmn.diff\:/` | yes | no |
 | **machine-sanctum** | `machine-sanctum` | `/^about:machine-sanctum/` | yes | no |
-| **engine-browser** | `editor-document-engine-*` | `/engineBrowser:…/` | yes | no |
-| **engine-bpmn-viewer** | `EngineBpmnViewerEditorDocument` | `/engineBrowser:BpmnViewer/` | yes | yes |
-| **engine-debugger** | `ProcessInstanceViewer` | `/^engineBrowser:BpmnDebugger/` | yes | yes |
-| **engine-debugger** | fragment types | `/^fragment\+…/` | no | no |
+| **engine-workspace** | `engine-dashboard`, `engine-process-explorer`, etc. | `/^engine:\/\//`, `/^engine-task-inbox:\/\//` | yes | no |
+| **engine-model-viewer** | `engine-model-viewer` | `/^engine-model:\/\//` | yes | yes |
+| **engine-decision-viewer** | `engine-decision-viewer` | `/^engine-decision:\/\//` | yes | yes |
+| **engine-debugger** | `engine-debugger` | `/^engine-debug:\/\//` | yes | yes |
+| **engine-debugger** | fragment types | `/^fragment\+engine-debug\./` | varies | varies |
 
 ---
 
@@ -109,8 +110,12 @@ Documents are identified by URIs. The scheme determines which document type hand
 | file path | `/path/to/file.[ext]` | bpmn-editor, mdx-editor, default-editor (matched by file extension) |
 | `about:` | `about:settings`, `about:start` | std/settings, std/startpage, std/aboutpage, machine-sanctum |
 | `help://` | `help://home` | std/help |
-| `engineBrowser:` | `engineBrowser:BpmnDebugger?engineUrl=…` | engine-browser, engine-debugger, engine-bpmn-viewer |
-| `fragment+` | `fragment+bpmn.script:…` | bpmn-editor, engine-debugger, engine-bpmn-viewer, std |
+| `engine://` | `engine://dashboard/{engineId}` | engine-workspace |
+| `engine-model://` | `engine-model://{engineId}/{processModelId}` | engine-model-viewer |
+| `engine-decision://` | `engine-decision://{engineId}/{decisionModelId}` | engine-decision-viewer |
+| `engine-debug://` | `engine-debug://{engineId}/{processInstanceId}` | engine-debugger |
+| `engine-task-inbox://` | `engine-task-inbox://{engineId}` | engine-workspace |
+| `fragment+` | `fragment+bpmn.script:…` | bpmn-editor, engine-debugger, std |
 | `buffer:` | `buffer:Untitled-1` | internal (unsaved buffers created via `createNewEditorDocumentAsBuffer`) |
 
 Fragment URIs (`fragment+…`) represent sub-views of a parent document, typically opened as additional tabs (e.g. a script editor for a BPMN service task).
@@ -455,7 +460,7 @@ Models can emit module-defined events using the inherited `emit` method. Rendere
 Examples:
 - `EVENT_SETTINGS_RECEIVED_UPDATE` — `UserSettingsDocumentModel` notifies its renderer of external settings changes
 - `EVENT_DEBUGGER_SELECTED_FLOW_NODE_INSTANCE_CHANGED` — `EngineBpmnDebuggerEditorDocumentModel` notifies when the selected flow node changes
-- `EVENT_FILTERS_UPDATED` — engine-browser list models notify their renderers after filter changes
+- `EVENT_FILTERS_UPDATED` — engine-workspace list models notify their renderers after filter changes
 
 ```typescript
 // Model
@@ -542,8 +547,8 @@ class MyDocumentModel extends EditorDocumentModel {
     super(uri);
 
     this.subscriptions.push(
-      this.bifrost.engines.on(EVENT_ENGINE_RECONNECTED, async (args) => {
-        if (args.url === this.engineUrl) {
+      connectionManager.on('engine:reconnected', async (args) => {
+        if (args.engineId === this.engineId) {
           await this.refresh();
         }
       }),
