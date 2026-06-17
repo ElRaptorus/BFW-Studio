@@ -150,11 +150,7 @@ export class EngineAdapter {
 
     try {
       this.subscribeThenSnapshot?.dispose();
-      const snapshot = new SubscribeThenSnapshot(
-        this.connectionManager,
-        this.engineId,
-        this.processInstanceId,
-      );
+      const snapshot = new SubscribeThenSnapshot(this.connectionManager, this.engineId, this.processInstanceId);
       this.subscribeThenSnapshot = snapshot;
 
       await snapshot.subscribe((update: SnapshotUpdate) => {

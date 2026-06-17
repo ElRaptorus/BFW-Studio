@@ -33,7 +33,6 @@ import {
 } from '@evil/bifrost_fw_sdk';
 
 import { EVENT_DATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
-
 import '../../dmn-editor/styles/dmn.scss';
 import './DmnTraceFragment.scss';
 import type { DmnTraceFragmentModel } from './DmnTraceFragmentModel';
