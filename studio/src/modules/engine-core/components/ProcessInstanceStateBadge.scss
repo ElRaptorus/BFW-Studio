@@ -39,8 +39,8 @@
     color: var(--theme-engine-ws-badge-escalated-fg);
   }
 
-  &--errored {
-    background-color: var(--theme-engine-ws-badge-errored-bg);
-    color: var(--theme-engine-ws-badge-errored-fg);
+  &--error {
+    background-color: var(--theme-engine-ws-badge-error-bg);
+    color: var(--theme-engine-ws-badge-error-fg);
   }
 }

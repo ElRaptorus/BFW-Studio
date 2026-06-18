@@ -21,6 +21,7 @@ export function createRetryAtFlowNodeLink(
   model: EngineBpmnDebuggerEditorDocumentModel,
   studio: Studio,
 ): Overlay {
+  const selectedFlowNodeInstance = model.getSelectedFlowNodeInstanceByFlowNode(flowNode);
   const cmd = studio.commands.getClickHandler();
   return {
     type: 'positioned',
@@ -30,11 +31,10 @@ export function createRetryAtFlowNodeLink(
     overlayProps: {
       flowNode: flowNode,
       studio: studio,
-      onClick: cmd('engine.retryAtFlowNodeInstance', [
+      onClick: cmd('engine.retryProcessInstance', [
         model.engineId,
         model.processInstance?.id,
-        flowNode.name || flowNode.id,
-        flowNode.flowNodeInstances,
+        { resetToFlowNodeInstanceId: selectedFlowNodeInstance.id },
       ]),
     },
   };

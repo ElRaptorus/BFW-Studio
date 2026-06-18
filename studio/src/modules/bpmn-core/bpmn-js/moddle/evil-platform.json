@@ -244,6 +244,12 @@
     },
 
     {
+      "name": "BusinessRuleTaskScript",
+      "extends": ["bpmn:BusinessRuleTask"],
+      "properties": [{ "name": "script", "type": "String" }]
+    },
+
+    {
       "name": "DecisionRef",
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },

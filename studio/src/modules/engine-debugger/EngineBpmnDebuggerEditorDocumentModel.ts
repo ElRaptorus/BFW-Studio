@@ -179,9 +179,10 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
       this.sanitizeSelectedSubProcessInstances();
 
+      const hasNewFlowNodeInstances = newFlowNodeInstances != null && newFlowNodeInstances.length > 0;
       const newFlowNodeInstancesIncludesSubProcess =
         newFlowNodeInstances?.some((fni) => fni.flowNodeType === FlowNodeType.SubProcess) ?? false;
-      if (newFlowNodeInstances && !newFlowNodeInstancesIncludesSubProcess) {
+      if (hasNewFlowNodeInstances && !newFlowNodeInstancesIncludesSubProcess) {
         newFlowNodeInstances.forEach((fni) => this.refreshFlowNodeOverlay(fni.flowNodeId));
         this.refreshSequenceFlowMarkers();
       } else {
@@ -1178,8 +1179,14 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
         break;
       case ProcessInstanceState.Aborted:
       case ProcessInstanceState.Fatal:
+      case ProcessInstanceState.Error:
         elementsToFocusViewOn = this.flowNodeInstances
-          .filter((flowNodeInstance) => flowNodeInstance.state === 'fatal' || flowNodeInstance.state === 'aborted')
+          .filter(
+            (flowNodeInstance) =>
+              flowNodeInstance.state === 'fatal' ||
+              flowNodeInstance.state === 'aborted' ||
+              flowNodeInstance.state === 'error',
+          )
           .map((flowNodeInstance) => flowNodeInstance.flowNodeId);
         break;
       default:

@@ -2,17 +2,19 @@
   --color-flow-node-state-active: 84, 200, 255;
   --color-flow-node-state-waiting: 33, 133, 208;
   --color-flow-node-state-finished: 24, 185, 24;
-  --color-flow-node-state-interrupted: 230, 110, 0;
+  --color-flow-node-state-interrupted: 100, 100, 125;
   --color-flow-node-state-fatal: 255, 1, 1;
-  --color-flow-node-state-aborted: 100, 100, 125;
+  --color-flow-node-state-aborted: 218, 170, 0;
+  --color-flow-node-state-error: 220, 80, 40;
   --color-flow-node-state-unknown: 233, 179, 255;
 
   --color-flow-node-badge-active: #111;
   --color-flow-node-badge-waiting: #fff;
   --color-flow-node-badge-finished: #9f9;
-  --color-flow-node-badge-interrupted: #fbbf44;
+  --color-flow-node-badge-interrupted: #e0e0e8;
   --color-flow-node-badge-fatal: #f99;
-  --color-flow-node-badge-aborted: #b0b0c0;
+  --color-flow-node-badge-aborted: #3d2e00;
+  --color-flow-node-badge-error: #fff;
   --color-flow-node-badge-unknown: #e9b3ff;
 
   --color-flow-node-execution-count: #333;
@@ -50,17 +52,19 @@
   --color-flow-node-state-active: 84, 200, 255;
   --color-flow-node-state-waiting: 33, 133, 208;
   --color-flow-node-state-finished: 24, 185, 24;
-  --color-flow-node-state-interrupted: 230, 110, 0;
+  --color-flow-node-state-interrupted: 100, 100, 125;
   --color-flow-node-state-fatal: 255, 1, 1;
-  --color-flow-node-state-aborted: 100, 100, 125;
+  --color-flow-node-state-aborted: 218, 170, 0;
+  --color-flow-node-state-error: 220, 80, 40;
   --color-flow-node-state-unknown: 233, 179, 255;
 
   --color-flow-node-badge-active: #111;
   --color-flow-node-badge-waiting: #fff;
   --color-flow-node-badge-finished: #9f9;
-  --color-flow-node-badge-interrupted: #fbbf44;
+  --color-flow-node-badge-interrupted: #e0e0e8;
   --color-flow-node-badge-fatal: #f99;
-  --color-flow-node-badge-aborted: #9797af;
+  --color-flow-node-badge-aborted: #3d2e00;
+  --color-flow-node-badge-error: #fff;
   --color-flow-node-badge-unknown: #444;
 
   --color-flow-node-execution-count: #fff;
@@ -143,6 +147,11 @@
       color: var(--color-flow-node-badge-aborted);
     }
 
+    .bpmn-element-overlay__below-item--flow-node-instance-state-error {
+      background-color: rgb(var(--color-flow-node-state-error));
+      color: var(--color-flow-node-badge-error);
+    }
+
     .bpmn-element-overlay__below-item--flow-node-instance-state-unknown {
       background-color: rgb(var(--color-flow-node-state-unknown));
       color: var(--color-flow-node-badge-unknown);
@@ -181,6 +190,10 @@
     box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-aborted), 0.4);
   }
 
+  .bpmn-element-overlay-backdrop-shadow--error {
+    box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-error), 0.4);
+  }
+
   .bpmn-element-overlay-backdrop-shadow--unknown {
     box-shadow: 0 0 5px 5px rgba(var(--color-flow-node-state-unknown), 0.4);
   }
@@ -207,6 +220,10 @@
 
   .bpmn-element-overlay-backdrop--aborted {
     background-color: rgba(var(--color-flow-node-state-aborted), 0.5);
+  }
+
+  .bpmn-element-overlay-backdrop--error {
+    background-color: rgba(var(--color-flow-node-state-error), 0.5);
   }
 
   .bpmn-element-overlay-backdrop--unknown {

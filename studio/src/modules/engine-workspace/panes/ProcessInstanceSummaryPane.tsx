@@ -73,12 +73,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       )}
       {instance.errorInfo != null && (
         <>
-          <PaneProperty
-            type="text"
-            label="Error Reason"
-            value={typeof instance.errorInfo.reason === 'string' ? instance.errorInfo.reason : '—'}
-            disabled
-          />
+          <PaneProperty type="text" label="Error Code" value={instance.errorInfo.error_code ?? '—'} disabled />
           <PaneProperty
             type="text"
             label="Error Message"

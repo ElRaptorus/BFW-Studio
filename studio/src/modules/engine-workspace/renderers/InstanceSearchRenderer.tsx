@@ -287,6 +287,7 @@ export default function InstanceSearchRenderer(props: EditorDocumentRendererProp
           { value: ProcessInstanceState.Finished, label: 'Finished' },
           { value: ProcessInstanceState.Fatal, label: 'Fatal' },
           { value: ProcessInstanceState.Aborted, label: 'Aborted' },
+          { value: ProcessInstanceState.Error, label: 'Error' },
         ],
       },
     },

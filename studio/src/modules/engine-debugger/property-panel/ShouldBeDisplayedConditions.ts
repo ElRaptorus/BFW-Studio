@@ -124,7 +124,8 @@ export function shouldDisplayProcessInstanceErrorPane(
 
   return (
     model.processInstance?.errorInfo != null ||
-    (model.processInstance?.state === ProcessInstanceState.Fatal &&
+    ((model.processInstance?.state === ProcessInstanceState.Fatal ||
+      model.processInstance?.state === ProcessInstanceState.Error) &&
       model.flowNodeInstances.some((instance) => instance.errorInfo != null))
   );
 }

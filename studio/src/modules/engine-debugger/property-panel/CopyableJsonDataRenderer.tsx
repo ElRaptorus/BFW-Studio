@@ -1,3 +1,5 @@
+import type { ErrorInfo } from '@elraptorus/daemonengine_sdk';
+
 import React from 'react';
 
 import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
@@ -22,7 +24,7 @@ export type FlowNodeErrorRendererProps = {
   flowNodeId: string;
   flowNodeName?: string;
   studio: Studio;
-  error: Error | Record<string, unknown> | null;
+  error: ErrorInfo | Error | Record<string, unknown> | null;
 };
 
 export function CopyableFlowNodeErrorRenderer(props: FlowNodeErrorRendererProps): React.JSX.Element {

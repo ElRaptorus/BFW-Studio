@@ -86,8 +86,9 @@ function FlowNodeInstanceSelector(props: FlowNodeInstancePaneProps): React.JSX.E
     waiting: '#2185D0',
     finished: '#18B918',
     fatal: '#FF0101',
-    aborted: '#E66E00',
+    aborted: '#DAA800',
     interrupted: '#64647D',
+    error: '#DC5028',
   };
 
   const flowNodeInstances = props.flowNode.flowNodeInstances;

@@ -411,7 +411,8 @@ const shouldDisplayRetryOverlay = (
 
   const processIsRetryable =
     model.processInstance?.state === ProcessInstanceState.Fatal ||
-    model.processInstance?.state === ProcessInstanceState.Aborted;
+    model.processInstance?.state === ProcessInstanceState.Aborted ||
+    model.processInstance?.state === ProcessInstanceState.Error;
 
   const isSupportedFlowNode = !(
     flowNode.shapeType === 'bpmn:ComplexGateway' ||

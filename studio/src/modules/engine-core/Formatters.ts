@@ -126,7 +126,7 @@ export function getProcessInstanceStateName(state: string): string {
     aborted: 'Aborted',
     compensated: 'Compensated',
     escalated: 'Escalated',
-    errored: 'Errored',
+    error: 'Error',
   };
 
   return labels[state] ?? state;
@@ -140,6 +140,7 @@ export function getFlowNodeInstanceStateName(state: string): string {
     fatal: 'Fatal',
     aborted: 'Aborted',
     interrupted: 'Interrupted',
+    error: 'Error',
   };
 
   return labels[state] ?? state;

@@ -2,6 +2,7 @@ import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
 import type {
   DataObjectValue,
   EngineInfoResponse,
+  ErrorInfo,
   EventDefinitionType,
   FinalToken,
   FlowNodeInstanceState,
@@ -59,7 +60,7 @@ export interface FniSnapshot {
   inputToken: Record<string, unknown> | null;
   outputToken: Record<string, unknown> | null;
   typeProperties: Record<string, unknown> | null;
-  errorInfo: Record<string, unknown> | null;
+  errorInfo: ErrorInfo | null;
 }
 
 export interface ProcessInstanceSnapshot {
@@ -74,7 +75,7 @@ export interface ProcessInstanceSnapshot {
   startedBy: Record<string, unknown> | null;
   startedWithContext: Record<string, unknown> | null;
   finalTokens: FinalToken[] | null;
-  errorInfo: Record<string, unknown> | null;
+  errorInfo: ErrorInfo | null;
   dataObjectValues: DataObjectValue[];
   flowNodeInstances: FniSnapshot[];
 }

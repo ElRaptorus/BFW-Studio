@@ -191,9 +191,8 @@ export class SubscribeThenSnapshot {
       if (event.typeProperties && Object.keys(event.typeProperties).length > 0) {
         fni.typeProperties = { ...(fni.typeProperties ?? {}), ...event.typeProperties };
       }
-      const errorInfo = (event as unknown as Record<string, unknown>).errorInfo as Record<string, unknown> | null;
-      if (errorInfo) {
-        fni.errorInfo = errorInfo;
+      if (event.errorInfo) {
+        fni.errorInfo = event.errorInfo;
       }
     }
   }
