@@ -150,14 +150,143 @@ The `currentRootId` is persisted alongside the `viewbox` in the document's metad
 1. Sets the canvas root to the persisted `currentRootId` (if it exists)
 2. Then restores the viewbox
 
-### Subsystem Compatibility
+### Subsystem / View Compatibility
+
+#### BPMN-Rendering Views
+
+| View | Subprocess Handling |
+|------|-------------------|
+| **BPMN Editor (Modeler)** | Full drill-down. `DrilldownBehavior`, `bpmn.editor.drillDown` / `drillUp` commands, breadcrumb bar, plane-scoped overlays. This is the reference implementation. |
+| **Engine Model Viewer** | Full drill-down via `BpmnViewerComponentAdapter`. See §Engine Model Viewer Drill-Down below. |
+| **Engine Debugger** | Full drill-down via `BpmnViewerComponentAdapter`. Breadcrumb bar (`DebuggerSubprocessBreadcrumbBar`), plane-scoped overlay refresh on `EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED`. Embedded subprocess FNIs are loaded recursively from child PIs and overlaid on the subprocess plane. See §Engine Debugger Subprocess Integration below. |
+| **History Preview** | No drill-down. Displays the full diagram on a single plane. Subprocess shells render as collapsed shapes. |
+
+#### Other Subsystems
 
 | Subsystem | Behavior with drill-down |
 |-----------|-------------------------|
 | **Linter** | Walks `$parent` from root to `bpmn:Definitions` — works on any plane. Canvas markers are naturally plane-scoped. |
 | **Sanitizer** | Same `$parent` walk — analyses the entire document regardless of active plane. |
 | **Token Simulator** | Operates on logical business objects, not canvas planes. Independent of drill-down. |
-| **Engine viewers/debugger** | Drill-down is not enabled. `hideSubprocessDrilldown()` remains in engine document models. |
+
+---
+
+## Engine Model Viewer Drill-Down
+
+The Engine Model Viewer provides read-only subprocess drill-down, mirroring the BPMN editor pattern on the shared `BpmnViewerComponentAdapter`.
+
+### Entry Points
+
+1. **bpmn-js built-in drilldown overlay** — The `BpmnViewer` includes `DrilldownModule` natively, which renders a clickable overlay button (`.bjs-drilldown`) on collapsed subprocesses. Clicking it calls `canvas.setRootElement()`.
+2. **Commands** — `engine.modelViewer.drillDown` (requires a selected collapsed subprocess) and `engine.modelViewer.drillUp` (returns to parent plane).
+
+### BpmnViewerComponentAdapter
+
+**Path:** `studio/src/modules/bpmn-core/BpmnViewerComponentAdapter.ts`
+
+The viewer adapter now listens to `root.set` in its event map and emits `EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED`, mirroring the modeler adapter's `EVENT_BPMN_MODELER_ADAPTER_ROOT_CHANGED`. This event is consumed by `ModelViewerDocumentModel` and `SubprocessBreadcrumbBar`.
+
+### ModelViewerDocumentModel
+
+**Path:** `studio/src/modules/engine-model-viewer/models/ModelViewerDocumentModel.ts`
+
+- Subscribes to `EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED` in `registerViewerAdapter()`
+- On root change: calls `refreshOverlays()` (plane-scoped) and persists `currentRootId` in metadata
+- `refreshOverlays()` uses `getVisibleElements()` which filters to elements on the current plane only (same algorithm as `BpmnDocumentElementAccess.getVisibleElements()`)
+- `isInsideSubprocessPlane()` checks if the current root's businessObject is `bpmn:SubProcess`
+- `getCurrentRootElement()` returns the raw canvas root element
+
+### Breadcrumb Bar
+
+The breadcrumb bar is rendered inline in `ModelViewerRenderer` via the `SubprocessBreadcrumbBar` component. It is only visible when inside a subprocess plane. The breadcrumb chain is derived at render time by walking `businessObject.$parent` from the current canvas root — identical to the BPMN editor pattern. The bar reuses the shared `bpmn-breadcrumb-bar` CSS classes from `studio/src/modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss`.
+
+### Subprocess Context Pane
+
+**Path:** `studio/src/modules/engine-model-viewer/panes/SubprocessContextPane.tsx`
+
+Shown in the inspector when inside a subprocess plane with no element selected. Displays:
+
+- Subprocess ID
+- Subprocess name
+- Loop characteristics
+- "Back to parent" button (executes `engine.modelViewer.drillUp`)
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `engine.modelViewer.drillDown` | Drills into the selected collapsed subprocess |
+| `engine.modelViewer.drillUp` | Returns to the parent plane |
+
+Registered in `studio/src/modules/engine-model-viewer/initializers/initializeCommands.ts`, both visible in command search.
+
+---
+
+## Engine Debugger Subprocess Integration
+
+The Engine Debugger combines bpmn-js drill-down with recursive child-PI FNI loading. Users can drill down into subprocess planes to see inner flow node execution state, and drill back up to the parent canvas. A `DebuggerSubprocessBreadcrumbBar` provides navigation between planes (identical to the Model Viewer's breadcrumb pattern). Overlays are refreshed on every `EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED` event to ensure execution state is current on the active plane.
+
+### Architecture
+
+The Engine creates a child Process Instance for each embedded subprocess activation (same pattern as Call Activity). The child PI's FNIs have `flowNodeId` values that match inner subprocess flow nodes in the parent BPMN diagram. The debugger leverages this by:
+
+1. Loading child-PI FNIs at startup (recursive, handles nested subprocesses)
+2. Receiving child-PI FNI events in real time via root-PI WebSocket fan-out (SP-13)
+3. Rendering execution overlays on inner subprocess flow nodes alongside parent flow nodes
+
+### Data Flow
+
+```
+Initial load:
+  EngineAdapter.loadProcessWithXml()
+    → Load root PI + FNIs via GraphQL
+    → loadEmbeddedSubprocessChildFnis() — recursive
+      → Find subprocess FNIs with childProcessInstanceId in typeProperties
+      → Batch-load child PI FNIs via queryFlowNodeInstances
+      → Batch-load child PI DOVs via queryDataObjectValues
+      → Recurse for nested subprocesses
+    → Emit to document model
+
+Real-time updates:
+  Root PI WebSocket channel (SP-13 fan-out)
+    → SubscribeThenSnapshot receives child FNI events
+    → handleFniStarted/handleFniFinished (ID-based, PI-agnostic)
+    → SubProcessChildStarted → handleSubProcessChild()
+      → Updates subprocess shell FNI typeProperties
+      → EngineAdapter.handleSnapshotUpdate('subprocess-child')
+        → loadNewSubprocessChildFnis() — loads the new child PI's FNIs
+```
+
+### Whitelist Mechanism
+
+The document model uses `whitelistedProcessInstanceIds` to control which FNIs are visible. This list always includes the root PI ID and the `childProcessInstanceId` values from `selectedSubProcessInstances`. When a subprocess is executed multiple times (loops), the user can select which iteration to inspect via the property panel dropdown. `sanitizeSelectedSubProcessInstances()` auto-selects the first iteration for each subprocess.
+
+### Overlay Behavior
+
+| Overlay | Parent flow nodes | Inner subprocess flow nodes |
+|---------|-------------------|-----------------------------|
+| Execution state cover | Yes | Yes (when child PI FNIs loaded and whitelisted) |
+| Execution count badge | Yes | Yes |
+| Retry link | Yes | No (`flowNodeIsNotInsideOfSubProcess` guard) |
+| "Open in new tab" link | Call Activity only | Not applicable |
+| Sequence flow markers | Yes | Yes (via `executedSequenceFlows`) |
+
+### Key Design Decisions
+
+- **Full drill-down enabled**: bpmn-js drilldown overlays are active. Users click the drilldown button on collapsed subprocesses to navigate into the subprocess plane, where execution overlays show child-PI FNI state. The `DebuggerSubprocessBreadcrumbBar` provides the "back to parent" navigation, styled identically to the Model Viewer breadcrumb bar.
+- **No "Open in new tab" for subprocesses**: Unlike Call Activity children (which have independent BPMN processes), subprocess children share the parent's BPMN. Opening a subprocess child PI in a separate tab would show the same BPMN with a synthetic model ID that doesn't resolve correctly.
+- **Retry blocked for inner nodes**: Retry is only meaningful at the subprocess shell level (which retries the entire child PI). Inner flow node retry would bypass the subprocess boundary.
+
+### Files
+
+| Component | Path |
+|-----------|------|
+| EngineAdapter (FNI loading) | `studio/src/modules/engine-debugger/libs/EngineAdapter.ts` |
+| SubscribeThenSnapshot (WS events) | `studio/src/modules/engine-core/SubscribeThenSnapshot.ts` |
+| Document model (whitelist + overlays + root change) | `studio/src/modules/engine-debugger/EngineBpmnDebuggerEditorDocumentModel.ts` |
+| Renderer (breadcrumb bar) | `studio/src/modules/engine-debugger/EngineBpmnDebuggerRenderer.tsx` |
+| Overlay factory (guards) | `studio/src/modules/engine-debugger/overlays/OverlayFactory.ts` |
+| BpmnProcessHelpers | `studio/src/modules/engine-debugger/libs/BpmnProcessHelpers.ts` |
 
 ---
 
@@ -166,12 +295,19 @@ The `currentRootId` is persisted alongside the `viewbox` in the document's metad
 | Component | Path |
 |-----------|------|
 | BpmnModelerComponentAdapter | `studio/src/modules/bpmn-core/BpmnModelerComponentAdapter.ts` |
+| BpmnViewerComponentAdapter | `studio/src/modules/bpmn-core/BpmnViewerComponentAdapter.ts` |
 | BpmnDocumentModel | `studio/src/modules/bpmn-editor/BpmnDocumentModel.ts` |
 | BpmnDocumentRenderer | `studio/src/modules/bpmn-editor/BpmnDocumentRenderer.tsx` |
 | BpmnDocumentElementAccess | `studio/src/modules/bpmn-editor/BpmnDocumentElementAccess.ts` |
 | DrilldownBehavior | `studio/src/modules/bpmn-core/bpmn-js/behaviors/DrilldownBehavior.ts` |
-| PropertiesSubprocessContext | `studio/src/modules/bpmn-editor/panes/properties/PropertiesSubprocessContext.tsx` |
-| initializeBpmnPanes | `studio/src/modules/bpmn-editor/initializers/initializeBpmnPanes.ts` |
+| PropertiesSubprocessContext (editor) | `studio/src/modules/bpmn-editor/panes/properties/PropertiesSubprocessContext.tsx` |
+| ModelViewerDocumentModel | `studio/src/modules/engine-model-viewer/models/ModelViewerDocumentModel.ts` |
+| ModelViewerRenderer | `studio/src/modules/engine-model-viewer/renderers/ModelViewerRenderer.tsx` |
+| SubprocessContextPane (model viewer) | `studio/src/modules/engine-model-viewer/panes/SubprocessContextPane.tsx` |
+| ModelViewerCommands | `studio/src/modules/engine-model-viewer/commands/ModelViewerCommands.ts` |
+| EngineBpmnDebuggerEditorDocumentModel | `studio/src/modules/engine-debugger/EngineBpmnDebuggerEditorDocumentModel.ts` |
+| EngineBpmnDebuggerRenderer | `studio/src/modules/engine-debugger/EngineBpmnDebuggerRenderer.tsx` |
 | initializeBpmnCommands | `studio/src/modules/bpmn-editor/initializers/initializeBpmnCommands.ts` |
+| initializeModelViewerCommands | `studio/src/modules/engine-model-viewer/initializers/initializeCommands.ts` |
 | Breadcrumb bar styles | `studio/src/modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss` |
 | bpmn-js style overrides | `studio/src/bifrost/styles/extend.bpmnio.scss` |

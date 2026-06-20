@@ -1,3 +1,6 @@
+import type { BpmnViewerComponentAdapter } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
+import { EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
+import '#modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss';
 import {
   ENGINE_COMMANDS,
   EngineContextBreadcrumb,
@@ -40,6 +43,96 @@ import { ENGINE_DEBUGGER_DOCUMENT_TYPE } from './Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from './EngineBpmnDebuggerEditorDocumentModel';
 import './EngineDebugger.scss';
 import { ProcessInstanceNonExistentHint } from './ProcessInstanceNonExistentHint';
+
+interface BreadcrumbEntry {
+  id: string;
+  label: string;
+  targetSubprocessId: string | null;
+}
+
+function buildBreadcrumbChain(adapter: BpmnViewerComponentAdapter): BreadcrumbEntry[] {
+  const canvas = adapter.getCanvas();
+  const currentRoot = canvas.getRootElement();
+  if (currentRoot == null) {
+    return [];
+  }
+
+  const chain: BreadcrumbEntry[] = [];
+  let businessObject = currentRoot.businessObject;
+
+  while (businessObject != null) {
+    const name = businessObject.name || businessObject.id;
+    const type: string = businessObject.$type;
+
+    if (type === 'bpmn:SubProcess') {
+      chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: businessObject.id });
+    } else if (type === 'bpmn:Process') {
+      chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: null });
+    }
+
+    businessObject = businessObject.$parent;
+  }
+
+  return chain;
+}
+
+function navigateToPlane(adapter: BpmnViewerComponentAdapter, targetSubprocessId: string | null): void {
+  const canvas = adapter.getCanvas();
+
+  if (targetSubprocessId != null) {
+    const targetRoot = canvas.findRoot(`${targetSubprocessId}_plane`);
+    if (targetRoot != null) {
+      canvas.setRootElement(targetRoot);
+    }
+    return;
+  }
+
+  const roots = canvas.getRootElements();
+  const mainRoot = roots.find(
+    (root: any) => root.businessObject != null && root.businessObject.$type !== 'bpmn:SubProcess',
+  );
+  if (mainRoot != null) {
+    canvas.setRootElement(mainRoot);
+  }
+}
+
+function DebuggerSubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAdapter }): React.JSX.Element | null {
+  const { adapter } = props;
+  const [, setRootRevision] = useState(0);
+
+  useEffect(() => {
+    const subscription = adapter.on(EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED, () => {
+      setRootRevision((revision) => revision + 1);
+    });
+    return () => subscription.dispose();
+  }, [adapter]);
+
+  const rootElement = adapter.getCanvas().getRootElement();
+  if (rootElement?.businessObject?.$type !== 'bpmn:SubProcess') {
+    return null;
+  }
+
+  const chain = buildBreadcrumbChain(adapter);
+
+  return (
+    <div className="bpmn-breadcrumb-bar">
+      {chain.map((entry, index) => {
+        const isLast = index === chain.length - 1;
+        return (
+          <React.Fragment key={entry.id}>
+            {index > 0 && <span className="bpmn-breadcrumb-bar__separator">›</span>}
+            <span
+              className={`bpmn-breadcrumb-bar__item${isLast ? ' bpmn-breadcrumb-bar__item--active' : ''}`}
+              onClick={isLast ? undefined : () => navigateToPlane(adapter, entry.targetSubprocessId)}
+            >
+              {entry.label}
+            </span>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRendererProps): React.JSX.Element | null {
   const { studio, editorDocument } = props;
@@ -350,6 +443,9 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
 
     return (
       <EditorContent ref={refBpmnViewer}>
+        {model.bpmnViewerComponentAdapter && (
+          <DebuggerSubprocessBreadcrumbBar adapter={model.bpmnViewerComponentAdapter} />
+        )}
         {showConnectingHint && <EditorLoadingErrorHint errorMessage={connectingHint} />}
         {showEngineIsOfflineHint && <EditorLoadingErrorHint errorMessage="Engine is not reachable." />}
         {isTimeoutError && (

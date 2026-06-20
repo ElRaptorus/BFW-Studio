@@ -319,28 +319,6 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   );
 
   bifrost.commands.register(
-    'engine.debugger.reserveUserTask',
-    async (_model: EngineBpmnDebuggerEditorDocumentModel, _userTaskInstance: FlowNodeInstance) => {
-      // User task reservation is not supported by ThomasTheDaemonEngine REST API.
-    },
-    {
-      enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>
-        isEngineOnline(connectionManager, model.engineId),
-    },
-  );
-
-  bifrost.commands.register(
-    'engine.debugger.cancelUserTaskReservation',
-    async (_model: EngineBpmnDebuggerEditorDocumentModel, _userTaskInstance: FlowNodeInstance) => {
-      // User task reservation is not supported by ThomasTheDaemonEngine REST API.
-    },
-    {
-      enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>
-        isEngineOnline(connectionManager, model.engineId),
-    },
-  );
-
-  bifrost.commands.register(
     'engine.debugger.triggerMessageEvent',
     async (model: EngineBpmnDebuggerEditorDocumentModel, messageName: string, flowNodeInstance: FlowNodeInstance) => {
       assertNotNull(model.processInstance, 'model.processInstance');

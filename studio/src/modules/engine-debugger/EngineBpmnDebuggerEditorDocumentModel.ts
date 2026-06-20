@@ -5,7 +5,7 @@ import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOv
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { getShortId } from '#modules/engine-core';
 import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
-import type { DataObjectValue, FlowNodeInstance, Identity } from '@elraptorus/daemonengine_sdk';
+import type { DataObjectValue, FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import type { BpmnDefinitions, FlowNode as BpmnFlowNode, BpmnProcess } from '@elraptorus/daemonengine_sdk';
 import ContextPadModule from 'bpmn-js/lib/features/context-pad';
 import type { CanvasViewbox } from 'diagram-js/lib/core/Canvas';
@@ -19,6 +19,7 @@ import { EVENT_DATA_UPDATED } from '@evil/bifrost_fw_sdk/src/contracts/internal/
 import {
   BpmnViewerComponentAdapter,
   EVENT_BPMN_VIEWER_ADAPTER_LOCATION_CHANGED,
+  EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED,
   EVENT_BPMN_VIEWER_ADAPTER_SELECTION_CHANGED,
 } from '../bpmn-core/BpmnViewerComponentAdapter';
 import { EVENT_DEBUGGER_SELECTED_FLOW_NODE_INSTANCE_CHANGED } from './Constants';
@@ -180,10 +181,15 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
       this.sanitizeSelectedSubProcessInstances();
 
       const hasNewFlowNodeInstances = newFlowNodeInstances != null && newFlowNodeInstances.length > 0;
-      const newFlowNodeInstancesIncludesSubProcess =
-        newFlowNodeInstances?.some((fni) => fni.flowNodeType === FlowNodeType.SubProcess) ?? false;
-      if (hasNewFlowNodeInstances && !newFlowNodeInstancesIncludesSubProcess) {
-        newFlowNodeInstances.forEach((fni) => this.refreshFlowNodeOverlay(fni.flowNodeId));
+      const newSubprocessShellFnis =
+        newFlowNodeInstances?.filter(
+          (fni) => fni.flowNodeType === FlowNodeType.SubProcess && fni.processInstanceId === this.processInstanceId,
+        ) ?? [];
+
+      if (newSubprocessShellFnis.length > 0) {
+        this.refreshFlowNodeOverlays();
+      } else if (hasNewFlowNodeInstances) {
+        newFlowNodeInstances!.forEach((fni) => this.refreshFlowNodeOverlay(fni.flowNodeId));
         this.refreshSequenceFlowMarkers();
       } else {
         this.refreshFlowNodeOverlays();
@@ -228,7 +234,6 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
         if (!this.isReadyForInteraction && this.processInstance != null) {
           await this.bpmnViewerComponentAdapter?.updateXml(this.processInstance.xml as string);
           this.applyDataObjectVisibilitySettings();
-          this.hideSubprocessDrilldown();
         }
       }),
       this.connectionManager.on('engine:connected', (event: { engineId: string }) => {
@@ -258,12 +263,15 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
     this.onceInteractive(() => {
       this.restoreMetadata(this.restoredMetadata);
       this.applyDataObjectVisibilitySettings();
-      this.hideSubprocessDrilldown();
       this.refreshFlowNodeOverlays();
 
       if (this.isAutoFollowEnabled) {
         this.focusViewOnCurrentProgress();
       }
+    });
+
+    this.bpmnViewerComponentAdapter.on(EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED, () => {
+      this.refreshFlowNodeOverlays();
     });
   }
 
@@ -285,14 +293,6 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
   get engineUrl(): string {
     return this.connectionManager.getConnection(this.engineId)?.url ?? this.engineId;
-  }
-
-  get currentEngineUser(): Identity {
-    return { id: '', roles: [], groups: [], claims: {} };
-  }
-
-  get currentUserIsRootAccessIdentity(): boolean {
-    return false;
   }
 
   get dataObjectValues(): DataObjectValue[] {
@@ -1135,31 +1135,6 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
           } else if (!hideElement && elementIsHidden) {
             setElementDisplayStyle(element, 'block');
           }
-        });
-    });
-  }
-
-  private hideSubprocessDrilldown(): void {
-    const overlayManager = this.bpmnViewerComponentAdapter?.getOverlays();
-    if (!overlayManager) {
-      return;
-    }
-
-    this.bpmnViewerComponentAdapter?.onceInteractive(() => {
-      this.bpmnViewerComponentAdapter
-        ?.getElementRegistry()
-        .filter((element) => element.type === 'bpmn:SubProcess' && element.di.$type !== 'bpmndi:BPMNPlane')
-        .forEach((element) => {
-          const rawOverlays = overlayManager.get({ element: element as any });
-          const overlaysList = Array.isArray(rawOverlays)
-            ? rawOverlays
-            : [rawOverlays].filter((entry): entry is NonNullable<typeof rawOverlays> => entry != null);
-
-          overlaysList.forEach((overlay) => {
-            if (overlay.type === 'drilldown') {
-              overlayManager.remove(overlay.id);
-            }
-          });
         });
     });
   }

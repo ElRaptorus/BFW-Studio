@@ -1,4 +1,5 @@
 import type { BpmnViewerComponentAdapter } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
+import { EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
 import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { EngineConnectionManager } from '#modules/engine-core';
@@ -39,6 +40,7 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
   private selectionRevision = 0;
   private viewerAdapter: BpmnViewerComponentAdapter | null = null;
   private overlayManager: BpmnElementOverlayManager | null = null;
+  private rootChangedSubscription: { dispose: () => void } | null = null;
   private engineEventSubscription: { dispose: () => void } | null = null;
   private authTokenSubscription: { dispose: () => void } | null = null;
   private connectionLifecycleSubscriptions: { dispose: () => void }[] = [];
@@ -102,6 +104,8 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
     this.unsubscribeFromEngineEvents();
     this.authTokenSubscription?.dispose();
     this.authTokenSubscription = null;
+    this.rootChangedSubscription?.dispose();
+    this.rootChangedSubscription = null;
     for (const subscription of this.connectionLifecycleSubscriptions) {
       subscription.dispose();
     }
@@ -299,11 +303,18 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
   }
 
   registerViewerAdapter(adapter: BpmnViewerComponentAdapter | null): void {
+    this.rootChangedSubscription?.dispose();
+    this.rootChangedSubscription = null;
     this.overlayManager?.dispose();
     this.overlayManager = null;
     this.viewerAdapter = adapter;
     if (adapter) {
       this.overlayManager = new BpmnElementOverlayManager(adapter);
+      this.rootChangedSubscription = adapter.on(EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED, () => {
+        this.refreshOverlays();
+        const currentRootId = adapter.getCanvas().getRootElement()?.id ?? null;
+        this.updateMetadata({ currentRootId });
+      });
     }
   }
 
@@ -321,12 +332,12 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
       return;
     }
 
-    const elementRegistry = this.viewerAdapter.getElementRegistry();
+    const canvas = this.viewerAdapter.getCanvas();
+    const rootElement = canvas.getRootElement();
+    const visibleElements = this.getVisibleElements(rootElement);
     const allOverlays: Overlay[] = [];
 
-    const allElements = elementRegistry.getAll() as any[];
-
-    for (const element of allElements) {
+    for (const element of visibleElements) {
       if (element.type === 'bpmn:Participant') {
         const processRef = element.businessObject?.processRef;
         const isExecutable = processRef?.isExecutable ?? false;
@@ -344,6 +355,39 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
     }
 
     this.overlayManager.updateAll(allOverlays);
+  }
+
+  private getVisibleElements(rootElement: any): any[] {
+    const elementRegistry = this.viewerAdapter?.getElementRegistry();
+    if (!elementRegistry) {
+      return [];
+    }
+    return (elementRegistry.getAll() as any[]).filter((element) => {
+      if (element === rootElement) {
+        return false;
+      }
+      let current = element;
+      while (current.parent != null) {
+        if (current.parent === rootElement) {
+          return true;
+        }
+        current = current.parent;
+      }
+      return false;
+    });
+  }
+
+  isInsideSubprocessPlane(): boolean {
+    const canvas = this.viewerAdapter?.getCanvas();
+    if (!canvas) {
+      return false;
+    }
+    const rootElement = canvas.getRootElement();
+    return rootElement?.businessObject?.$type === 'bpmn:SubProcess';
+  }
+
+  getCurrentRootElement(): any {
+    return this.viewerAdapter?.getCanvas().getRootElement() ?? null;
   }
 
   clearOverlays(): void {

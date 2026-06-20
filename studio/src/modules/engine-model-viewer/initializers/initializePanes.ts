@@ -26,6 +26,7 @@ import * as SequenceFlowPane from '../panes/SequenceFlowPane';
 import * as ServiceTaskPane from '../panes/ServiceTaskPane';
 import * as SignalEventPane from '../panes/SignalEventPane';
 import * as SubProcessPane from '../panes/SubProcessPane';
+import * as SubprocessContextPane from '../panes/SubprocessContextPane';
 import * as TimerEventPane from '../panes/TimerEventPane';
 import * as UserTaskPane from '../panes/UserTaskPane';
 
@@ -41,6 +42,11 @@ function registerPropertyPanes(bifrost: Bifrost): void {
       'engine-model-viewer/panes/ProcessDefinitionInfo',
       'engine-model-viewer/pane-providers/ProcessDefinitionInfo',
       ProcessDefinitionInfoPane,
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'engine-model-viewer/panes/SubprocessContext',
+      'engine-model-viewer/pane-providers/SubprocessContext',
+      SubprocessContextPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
       'engine-model-viewer/panes/ElementIdentity',

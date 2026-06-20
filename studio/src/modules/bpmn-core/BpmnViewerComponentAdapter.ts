@@ -29,6 +29,7 @@ export const EVENT_BPMN_VIEWER_ADAPTER_READY_FOR_INTERACTION = 'EVENT_BPMN_ADAPT
 export const EVENT_BPMN_VIEWER_ADAPTER_LOCATION_CHANGED = 'EVENT_BPMN_ADAPTER_LOCATION_CHANGED';
 export const EVENT_BPMN_VIEWER_ADAPTER_SELECTION_CHANGED = 'EVENT_BPMN_ADAPTER_SELECTION_CHANGED';
 export const EVENT_BPMN_VIEWER_ADAPTER_XML_CHANGED = 'EVENT_BPMN_ADAPTER_XML_CHANGED';
+export const EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED = 'EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED';
 
 const MODDLE_BPMN_PARTICIPANT_TYPE = 'bpmn:Participant';
 const MODDLE_BPMN_PROCESS_SELECTOR = 'processRef';
@@ -291,6 +292,7 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
       'elements.changed': () => this.onContentChange(),
       'canvas.viewbox.changed': (event) => this.onLocationChange(event),
       'selection.changed': (event) => this.onSelectionChange(event),
+      'root.set': (event) => this.onRootChanged(event),
     };
 
     this.addEventListeners();
@@ -363,6 +365,10 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
 
   private onSelectionChange(event: DjsEvent & Record<string, any>): void {
     this.emit(EVENT_BPMN_VIEWER_ADAPTER_SELECTION_CHANGED, [event.newSelection]);
+  }
+
+  private onRootChanged(event: DjsEvent & Record<string, any>): void {
+    this.emit(EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED, [event.element]);
   }
 
   private async setXml(currentXml: string): Promise<string> {

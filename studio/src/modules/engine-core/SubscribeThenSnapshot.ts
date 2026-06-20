@@ -6,6 +6,7 @@ import type {
   FlowNodeInstanceFinished,
   FlowNodeInstanceStarted,
   ProcessInstanceStateChanged,
+  SubProcessChildStarted,
 } from '@elraptorus/daemonengine_sdk';
 
 import type { EngineConnectionManager } from './EngineConnectionManager';
@@ -15,6 +16,7 @@ export type SnapshotEventType =
   | 'fni-started'
   | 'fni-finished'
   | 'call-activity-child'
+  | 'subprocess-child'
   | 'data-object-written'
   | 'pi-state-changed';
 
@@ -139,6 +141,13 @@ export class SubscribeThenSnapshot {
         affectedFniIds.push(event.callActivityFlowNodeInstanceId);
         break;
       }
+      case 'SubProcessChildStarted': {
+        const event = envelope.data as SubProcessChildStarted;
+        this.handleSubProcessChild(event);
+        eventType = 'subprocess-child';
+        affectedFniIds.push(event.subprocessFlowNodeInstanceId);
+        break;
+      }
       case 'DataObjectWritten':
         this.handleDataObjectWritten(envelope.data as DataObjectWritten);
         eventType = 'data-object-written';
@@ -212,7 +221,20 @@ export class SubscribeThenSnapshot {
     if (fni) {
       fni.typeProperties = {
         ...(fni.typeProperties ?? {}),
-        child_process_instance_id: event.childProcessInstanceId,
+        childProcessInstanceId: event.childProcessInstanceId,
+      };
+    }
+  }
+
+  private handleSubProcessChild(event: SubProcessChildStarted): void {
+    if (!this.snapshot) {
+      return;
+    }
+    const fni = this.snapshot.flowNodeInstances.find((overlay) => overlay.id === event.subprocessFlowNodeInstanceId);
+    if (fni) {
+      fni.typeProperties = {
+        ...(fni.typeProperties ?? {}),
+        childProcessInstanceId: event.childProcessInstanceId,
       };
     }
   }

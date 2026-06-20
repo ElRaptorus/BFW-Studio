@@ -41,8 +41,8 @@ function WrittenDataObjectValuesPane(props: WrittenDataObjectValuesPaneProps): R
 
   const selectedFlowNodeInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode);
 
-  const writtenDataObjectValues = props.model.dataObjectValues.filter((dataObjectInstance) =>
-    dataObjectInstance.id.split(';').includes(selectedFlowNodeInstance.id),
+  const writtenDataObjectValues = props.model.dataObjectValues.filter(
+    (dataObjectInstance) => dataObjectInstance.flowNodeInstanceId === selectedFlowNodeInstance.id,
   );
 
   return (

@@ -99,6 +99,75 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
 
+  const MODEL_VIEWER_DOCUMENT_TYPE = 'engine-model-viewer';
+
+  bifrost.commands.register(
+    MODEL_VIEWER_COMMANDS.drillDown,
+    async () => {
+      const editorDocument = bifrost.editors.getFocusedEditorDocument();
+      if (editorDocument == null || editorDocument.documentType !== MODEL_VIEWER_DOCUMENT_TYPE) {
+        return;
+      }
+      const model = await bifrost.editors.getEditorDocumentModel<ModelViewerDocumentModel>(editorDocument);
+      const adapter = model.getViewerAdapter();
+      if (!adapter) {
+        return;
+      }
+      const selection = adapter.getSelection();
+      const selected = selection.get();
+      if (selected.length !== 1) {
+        return;
+      }
+      const element = selected[0] as any;
+      if (element?.type !== 'bpmn:SubProcess') {
+        return;
+      }
+      const canvas = adapter.getCanvas();
+      const planeId = `${element.id}_plane`;
+      const targetRoot = canvas.findRoot(planeId);
+      if (targetRoot != null) {
+        canvas.setRootElement(targetRoot);
+      }
+    },
+    {
+      visibleInSearch: true,
+      description: ['Model Viewer: Drill into subprocess', 'Model Viewer: Enter subprocess'],
+    },
+  );
+
+  bifrost.commands.register(
+    MODEL_VIEWER_COMMANDS.drillUp,
+    async () => {
+      const editorDocument = bifrost.editors.getFocusedEditorDocument();
+      if (editorDocument == null || editorDocument.documentType !== MODEL_VIEWER_DOCUMENT_TYPE) {
+        return;
+      }
+      const model = await bifrost.editors.getEditorDocumentModel<ModelViewerDocumentModel>(editorDocument);
+      if (!model.isInsideSubprocessPlane()) {
+        return;
+      }
+      const adapter = model.getViewerAdapter();
+      if (!adapter) {
+        return;
+      }
+      const canvas = adapter.getCanvas();
+      const rootElement = canvas.getRootElement();
+      const subprocessId = rootElement?.businessObject?.id;
+      if (subprocessId == null) {
+        return;
+      }
+      const elementRegistry = adapter.getElementRegistry();
+      const subprocessShape = elementRegistry.get(subprocessId) as any;
+      if (subprocessShape?.parent != null) {
+        canvas.setRootElement(subprocessShape.parent);
+      }
+    },
+    {
+      visibleInSearch: true,
+      description: ['Model Viewer: Return to parent plane', 'Model Viewer: Exit subprocess'],
+    },
+  );
+
   bifrost.commands.register(
     'std.editor.showExportDialog.engine-model-viewer',
     async (editorDocument: EditorDocument) => {

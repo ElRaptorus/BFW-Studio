@@ -1,12 +1,11 @@
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import { OverlayPosition } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 import type { Studio } from '@evil/bifrost_fw_sdk';
 import { Icon } from '@evil/bifrost_fw_sdk';
 
-import type { StudioEventSubscription } from '../../../../../studio-sdk/types/contracts';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../libs/index';
 
@@ -41,25 +40,6 @@ export function createRetryAtFlowNodeLink(
 }
 
 export function RetryAtFlowNodeLinkRenderer(props: RetryAtFlowNodeLinkProps): React.JSX.Element | null {
-  const [show, setShow] = useState(true);
-
-  useEffect(() => {
-    const eventSubscription: StudioEventSubscription = props.studio.events.on('unspecifiedGlobalUpdate', () => {
-      const retryPending = props.studio.commands.isRegistered('engine.isRetryPending')
-        ? props.studio.commands.executeCommand<boolean>('engine.isRetryPending')
-        : false;
-      setShow(!retryPending);
-    });
-
-    return () => {
-      eventSubscription.dispose();
-    };
-  }, [props.studio]);
-
-  if (!show) {
-    return null;
-  }
-
   return (
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"

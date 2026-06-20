@@ -696,8 +696,8 @@ export function shouldDisplayWritenDataObjectValuesPane(
 
   const selectedFlowNodeInstance = getSelectedFlowNodeInstance(model);
 
-  const hasWrittenToAnyDataObject = model.dataObjectValues.find((dataObjectInstance) =>
-    dataObjectInstance.id.split(';').includes(selectedFlowNodeInstance.id),
+  const hasWrittenToAnyDataObject = model.dataObjectValues.find(
+    (dataObjectInstance) => dataObjectInstance.flowNodeInstanceId === selectedFlowNodeInstance.id,
   );
 
   return hasWrittenToAnyDataObject != null;

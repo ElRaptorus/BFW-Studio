@@ -8,6 +8,8 @@ export const MODEL_VIEWER_COMMANDS = {
   downloadXml: 'engine.modelViewer.downloadXml',
   startProcessAtStartEvent: 'engine.modelViewer.startProcessAtStartEventAndOpenDebugger',
   openCallActivityTarget: 'engine.modelViewer.openCallActivityTargetProcess',
+  drillDown: 'engine.modelViewer.drillDown',
+  drillUp: 'engine.modelViewer.drillUp',
 } as const;
 
 export type ModelViewerCommandId = (typeof MODEL_VIEWER_COMMANDS)[keyof typeof MODEL_VIEWER_COMMANDS];

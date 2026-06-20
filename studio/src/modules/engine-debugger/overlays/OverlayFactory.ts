@@ -214,12 +214,8 @@ export async function createFlowNodeInstanceOverlays(
 
   const childProcessInstanceId = getChildProcessInstanceId(selectedFlowNodeInstance);
   const isCallActivityWithChild = flowNodeModel?.type === FlowNodeType.CallActivity && childProcessInstanceId != null;
-  const isSubProcessWithChild =
-    flowNodeModel?.type === FlowNodeType.SubProcess &&
-    childProcessInstanceId != null &&
-    model.flowNodeInstances.some((fni) => fni.processInstanceId === childProcessInstanceId);
 
-  if (isCallActivityWithChild || isSubProcessWithChild) {
+  if (isCallActivityWithChild) {
     overlays.push(
       createCallActivityTargetLink(
         studio,

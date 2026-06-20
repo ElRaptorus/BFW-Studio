@@ -103,7 +103,7 @@
     "dmn-js": "^17.8.1",
     "dompurify": "^3.4.11",
     "electron": "42.4.1",
-    "electron-builder": "26.15.4",
+    "electron-builder": "26.15.5",
     "electron-chromedriver": "42.4.1",
     "electron-log": "5.4.4",
     "eslint": "^9.39.4",
@@ -137,7 +137,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.1",
     "vitest": "^4.1.9",
-    "webdriverio": "9.28.0"
+    "webdriverio": "9.29.0"
   },
   "overrides": {
     "monaco-editor": {

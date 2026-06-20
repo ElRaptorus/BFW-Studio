@@ -58,13 +58,21 @@ export function getSequenceFlowById(process: BpmnProcess, sequenceFlowId: string
 }
 
 export function getAllDataObjectReferences(process: BpmnProcess): DataObjectReference[] {
-  const references = [...process.dataObjectReferences];
-  for (const flowNode of process.flowNodes) {
+  const collected = [...process.dataObjectReferences];
+  collectSubprocessDataObjectReferences(process.flowNodes, collected);
+  return collected;
+}
+
+function collectSubprocessDataObjectReferences(flowNodes: FlowNode[], collected: DataObjectReference[]): void {
+  for (const flowNode of flowNodes) {
     if (flowNode.typeData.type === 'sub_process') {
-      references.push(...flowNode.typeData.flowNodes.flatMap(() => []));
+      const subRefs = (flowNode.typeData as unknown as Record<string, unknown>)['dataObjectReferences'];
+      if (Array.isArray(subRefs)) {
+        collected.push(...(subRefs as DataObjectReference[]));
+      }
+      collectSubprocessDataObjectReferences(flowNode.typeData.flowNodes, collected);
     }
   }
-  return references;
 }
 
 export function getAllEmbeddedSubProcesses(process: BpmnProcess): FlowNode[] {
@@ -142,7 +150,7 @@ export function getChildProcessInstanceId(flowNodeInstance: FlowNodeInstance): s
   if (!typeProperties) {
     return null;
   }
-  const value = typeProperties['child_process_instance_id'] ?? typeProperties['childProcessInstanceId'];
+  const value = typeProperties['childProcessInstanceId'] ?? typeProperties['child_process_instance_id'];
   return typeof value === 'string' ? value : null;
 }
 

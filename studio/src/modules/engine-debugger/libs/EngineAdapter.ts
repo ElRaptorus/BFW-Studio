@@ -3,7 +3,7 @@ import { SubscribeThenSnapshot } from '#modules/engine-core';
 import type { SnapshotUpdate } from '#modules/engine-core';
 import type { FniSnapshot, ProcessInstanceSnapshot } from '#modules/engine-core';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import { parseBpmn } from '@elraptorus/daemonengine_sdk';
+import { FlowNodeType, parseBpmn } from '@elraptorus/daemonengine_sdk';
 import type {
   DataObjectValue,
   FlowNodeInstance,
@@ -244,6 +244,8 @@ export class EngineAdapter {
       xml: bpmnXml,
     };
 
+    await this.loadEmbeddedSubprocessChildFnis(client);
+
     await this.updateProcessHandler?.(this.processInstanceData, this.processDefinitionData, this.processModelData);
     this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
   }
@@ -298,6 +300,15 @@ export class EngineAdapter {
         for (const id of affectedFniIds) {
           this.pendingFniDetailIds.add(id);
         }
+        this.debouncedFlushPendingFniDetails();
+        break;
+
+      case 'subprocess-child':
+        this.applyFniSnapshotUpdates(snapshot);
+        for (const id of affectedFniIds) {
+          this.pendingFniDetailIds.add(id);
+        }
+        void this.loadNewSubprocessChildFnis(affectedFniIds);
         this.debouncedFlushPendingFniDetails();
         break;
 
@@ -400,6 +411,104 @@ export class EngineAdapter {
     }
   }
 
+  /**
+   * Recursively loads FNIs and data object values for embedded subprocess
+   * child PIs. Call Activity children are intentionally excluded — they
+   * use a different BPMN process and open in separate debugger tabs.
+   *
+   * Returns the list of newly added FNIs so callers can trigger
+   * incremental overlay refresh instead of a full rebuild.
+   */
+  private async loadEmbeddedSubprocessChildFnis(client: DaemonEngineClient): Promise<FlowNodeInstance[]> {
+    const loadedPiIds = new Set(this.flowNodeInstances.map((fni) => fni.processInstanceId));
+    let childPiIds = this.collectSubprocessChildPiIds(this.flowNodeInstances).filter((id) => !loadedPiIds.has(id));
+    const allNewFnis: FlowNodeInstance[] = [];
+
+    while (childPiIds.length > 0) {
+      try {
+        const [fniResult, dovResult] = await Promise.all([
+          client.graphql.queryFlowNodeInstances({
+            fields: [...ALL_FNI_FIELDS],
+            filter: { processInstanceId: { in: childPiIds } },
+          }),
+          client.graphql.queryDataObjectValues({
+            fields: ['id', 'dataObjectId', 'flowNodeInstanceId', 'value', 'createdAt', 'processInstanceId'],
+            filter: { processInstanceId: { in: childPiIds } },
+          }),
+        ]);
+
+        for (const fni of fniResult.data) {
+          if (!this.flowNodeInstances.some((existing) => existing.id === fni.id)) {
+            this.flowNodeInstances.push(fni);
+            allNewFnis.push(fni);
+          }
+        }
+
+        for (const dov of dovResult.data) {
+          if (!this.dataObjectValues.some((existing) => existing.id === dov.id)) {
+            this.dataObjectValues.push({
+              id: dov.id,
+              processInstanceId: dov.processInstanceId ?? '',
+              dataObjectId: dov.dataObjectId,
+              flowNodeInstanceId: dov.flowNodeInstanceId,
+              value: dov.value,
+              createdAt: dov.createdAt,
+            });
+          }
+        }
+
+        for (const id of childPiIds) {
+          loadedPiIds.add(id);
+        }
+        childPiIds = this.collectSubprocessChildPiIds(fniResult.data).filter((id) => !loadedPiIds.has(id));
+      } catch {
+        break;
+      }
+    }
+
+    return allNewFnis;
+  }
+
+  /**
+   * Triggered by a `SubProcessChildStarted` event arriving in real time.
+   * Loads FNIs for the newly spawned child PI so overlays can render on
+   * inner subprocess flow nodes immediately.
+   */
+  private async loadNewSubprocessChildFnis(affectedFniIds: string[]): Promise<void> {
+    const hasSubprocessShell = affectedFniIds.some((id) => {
+      const fni = this.flowNodeInstances.find((existing) => existing.id === id);
+      return fni?.flowNodeType === FlowNodeType.SubProcess;
+    });
+
+    if (!hasSubprocessShell) {
+      return;
+    }
+
+    const client = this.connectionManager.getClient(this.engineId);
+    if (!client) {
+      return;
+    }
+
+    try {
+      const newFnis = await this.loadEmbeddedSubprocessChildFnis(client);
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, newFnis);
+    } catch {
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
+    }
+  }
+
+  private collectSubprocessChildPiIds(fniList: FlowNodeInstance[]): string[] {
+    return fniList
+      .filter((fni) => fni.flowNodeType === FlowNodeType.SubProcess)
+      .map((fni) => {
+        const typeProperties = fni.typeProperties as Record<string, unknown> | null;
+        return (typeProperties?.['childProcessInstanceId'] ?? typeProperties?.['child_process_instance_id']) as
+          | string
+          | undefined;
+      })
+      .filter((id): id is string => typeof id === 'string');
+  }
+
   private async resolveBpmnXmlForProcessVersion(
     client: DaemonEngineClient,
     processVersionId: string,
@@ -409,24 +518,21 @@ export class EngineAdapter {
     }
 
     try {
-      const allProcesses = await client.processes.getAll();
-      for (const process of allProcesses) {
-        const processModelId = process.id;
-        if (process.versionId === processVersionId) {
-          const detail = await client.processes.get(processModelId, { includeXml: true });
-          return { bpmnXml: detail.bpmnXml ?? '', processModelId, version: detail.version };
-        }
+      const result = await client.graphql.queryProcessVersions({
+        fields: ['id', 'version', 'bpmnXml'],
+        filter: { id: { eq: processVersionId } },
+        pagination: { mode: 'offset', limit: 1, offset: 0 },
+      });
 
-        const versions = await client.processes.getVersions(processModelId);
-        if (versions.some((versionEntry) => versionEntry.versionId === processVersionId)) {
-          const versionsWithXml = await client.processes.getVersions(processModelId, { includeXml: true });
-          const matchedVersion = versionsWithXml.find((versionEntry) => versionEntry.versionId === processVersionId);
-          return {
-            bpmnXml: matchedVersion?.bpmnXml ?? '',
-            processModelId,
-            version: matchedVersion?.version,
-          };
-        }
+      const match = result.data[0];
+      if (match?.bpmnXml) {
+        const parsed = parseBpmn(match.bpmnXml);
+        const executableProcess = parsed.processes.find((process) => process.isExecutable);
+        return {
+          bpmnXml: match.bpmnXml,
+          processModelId: executableProcess?.id ?? parsed.processes[0]?.id ?? '',
+          version: match.version,
+        };
       }
     } catch {
       return { bpmnXml: '', processModelId: '' };

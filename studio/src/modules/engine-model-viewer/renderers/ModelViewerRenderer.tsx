@@ -1,7 +1,9 @@
 import {
   BpmnViewerComponentAdapter,
+  EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED,
   EVENT_BPMN_VIEWER_ADAPTER_SELECTION_CHANGED,
 } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
+import '#modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { ENGINE_COMMANDS, EngineContextBreadcrumb } from '#modules/engine-core';
 
@@ -59,6 +61,96 @@ function ProcessExplorerBreadcrumb(props: {
   );
 }
 
+interface BreadcrumbEntry {
+  id: string;
+  label: string;
+  targetSubprocessId: string | null;
+}
+
+function buildBreadcrumbChain(adapter: BpmnViewerComponentAdapter): BreadcrumbEntry[] {
+  const canvas = adapter.getCanvas();
+  const currentRoot = canvas.getRootElement();
+  if (currentRoot == null) {
+    return [];
+  }
+
+  const chain: BreadcrumbEntry[] = [];
+  let businessObject = currentRoot.businessObject;
+
+  while (businessObject != null) {
+    const name = businessObject.name || businessObject.id;
+    const type: string = businessObject.$type;
+
+    if (type === 'bpmn:SubProcess') {
+      chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: businessObject.id });
+    } else if (type === 'bpmn:Process') {
+      chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: null });
+    }
+
+    businessObject = businessObject.$parent;
+  }
+
+  return chain;
+}
+
+function navigateToPlane(adapter: BpmnViewerComponentAdapter, targetSubprocessId: string | null): void {
+  const canvas = adapter.getCanvas();
+
+  if (targetSubprocessId != null) {
+    const targetRoot = canvas.findRoot(`${targetSubprocessId}_plane`);
+    if (targetRoot != null) {
+      canvas.setRootElement(targetRoot);
+    }
+    return;
+  }
+
+  const roots = canvas.getRootElements();
+  const mainRoot = roots.find(
+    (root: any) => root.businessObject != null && root.businessObject.$type !== 'bpmn:SubProcess',
+  );
+  if (mainRoot != null) {
+    canvas.setRootElement(mainRoot);
+  }
+}
+
+function SubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAdapter }): React.JSX.Element | null {
+  const { adapter } = props;
+  const [, setRootRevision] = useState(0);
+
+  useEffect(() => {
+    const subscription = adapter.on(EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED, () => {
+      setRootRevision((revision) => revision + 1);
+    });
+    return () => subscription.dispose();
+  }, [adapter]);
+
+  const rootElement = adapter.getCanvas().getRootElement();
+  if (rootElement?.businessObject?.$type !== 'bpmn:SubProcess') {
+    return null;
+  }
+
+  const chain = buildBreadcrumbChain(adapter);
+
+  return (
+    <div className="bpmn-breadcrumb-bar">
+      {chain.map((entry, index) => {
+        const isLast = index === chain.length - 1;
+        return (
+          <React.Fragment key={entry.id}>
+            {index > 0 && <span className="bpmn-breadcrumb-bar__separator">›</span>}
+            <span
+              className={`bpmn-breadcrumb-bar__item${isLast ? ' bpmn-breadcrumb-bar__item--active' : ''}`}
+              onClick={isLast ? undefined : () => navigateToPlane(adapter, entry.targetSubprocessId)}
+            >
+              {entry.label}
+            </span>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ModelViewerRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
   const bifrost: Studio = studio;
@@ -89,6 +181,7 @@ export default function ModelViewerRenderer(props: EditorDocumentRendererProps):
   };
 
   const [isLoading, setIsLoading] = useState(true);
+  const [activeAdapter, setActiveAdapter] = useState<BpmnViewerComponentAdapter | null>(null);
 
   useEffect(() => {
     if (!viewerContainerRef.current || !data.xml || !model) {
@@ -122,6 +215,7 @@ export default function ModelViewerRenderer(props: EditorDocumentRendererProps):
 
       adapter.onceInteractive(() => {
         setIsLoading(false);
+        setActiveAdapter(adapter);
         model.refreshOverlays();
       });
     });
@@ -151,6 +245,7 @@ export default function ModelViewerRenderer(props: EditorDocumentRendererProps):
     return () => {
       adapter.dispose();
       adapterRef.current = null;
+      setActiveAdapter(null);
       model.registerViewerAdapter(null);
       setIsLoading(true);
     };
@@ -296,6 +391,8 @@ export default function ModelViewerRenderer(props: EditorDocumentRendererProps):
           )}
 
           {data.loading && !data.xml && <div className="engine-model-viewer__loading">Loading process model...</div>}
+
+          {activeAdapter && <SubprocessBreadcrumbBar adapter={activeAdapter} />}
 
           {data.xml && (
             <div className="engine-model-viewer__canvas" ref={viewerContainerRef}>

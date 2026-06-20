@@ -5,12 +5,12 @@ import type { CanvasViewbox } from 'diagram-js/lib/core/Canvas';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type Overlays from 'diagram-js/lib/features/overlays/Overlays';
 import type Selection from 'diagram-js/lib/features/selection/Selection';
+import DrdOutlineModule from 'dmn-js-drd/lib/features/outline';
+import DmnNavigatedViewer from 'dmn-js/lib/NavigatedViewer';
 
 import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import type { DmnView, DmnViewType } from './DmnModelerComponentAdapter';
-
-const DrdOutlineModule = require('dmn-js-drd/lib/features/outline');
 
 export const EVENT_DMN_VIEWER_READY_FOR_INTERACTION = 'EVENT_DMN_VIEWER_READY_FOR_INTERACTION';
 export const EVENT_DMN_VIEWER_ATTACHED_TO_HTML = 'EVENT_DMN_VIEWER_ATTACHED_TO_HTML';
@@ -39,8 +39,6 @@ export class DmnViewerComponentAdapter extends AbstractEmitter {
   constructor(uri: string, options?: DmnViewerOptions) {
     super();
     this.log = Debug(`dmn/${this.constructor.name}(${uri})`);
-
-    const DmnNavigatedViewer = require('dmn-js/lib/NavigatedViewer').default;
 
     this.viewer = new DmnNavigatedViewer({
       drd: {

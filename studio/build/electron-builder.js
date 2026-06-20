@@ -23,12 +23,7 @@ const buildConfiguration = {
     output: 'dist/electron',
   },
   // NOTE: electron-builder adds `package.json` and `node_modules` (among others)
-  files: [
-    'out/**/*',
-    'vendor/**/*',
-    'electron-renderer.html',
-    'migration.html',
-  ],
+  files: ['out/**/*', 'vendor/**/*', 'electron-renderer.html', 'migration.html'],
   extraResources: [
     {
       from: 'assets/',
@@ -97,7 +92,7 @@ const buildConfiguration = {
   },
   publish: {
     provider: 'generic',
-    url: 'https://atlasplatformupdate.blob.core.windows.net/atlas-studio',
+    url: 'https://this-is-a-dummy.com',
   },
 };
 
