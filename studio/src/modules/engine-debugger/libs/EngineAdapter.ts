@@ -102,6 +102,7 @@ export class EngineAdapter {
 
   private pendingFniDetailIds = new Set<string>();
   private piReQueryInFlight = false;
+  private piReQueryPending = false;
 
   private updateErrorHandler: ((error: DebuggerBaseError) => void) | null = null;
   private updateProcessHandler: ProcessUpdatedHandler | null = null;
@@ -293,6 +294,11 @@ export class EngineAdapter {
         this.handlePiStateChange(snapshot);
         break;
 
+      case 'child-pi-state-changed':
+        this.applyFniSnapshotUpdates(snapshot);
+        this.debouncedFlushPendingFniDetails();
+        break;
+
       case 'fni-started':
       case 'fni-finished':
       case 'call-activity-child':
@@ -347,13 +353,13 @@ export class EngineAdapter {
     }
 
     this.debouncedFlushPendingFniDetails.cancel();
-    this.pendingFniDetailIds.clear();
 
     void this.fullReQueryOnPiStateChange();
   }
 
   private async fullReQueryOnPiStateChange(): Promise<void> {
     if (this.piReQueryInFlight) {
+      this.piReQueryPending = true;
       return;
     }
 
@@ -369,6 +375,11 @@ export class EngineAdapter {
       // Best-effort: the in-memory state is already updated from the WS event
     } finally {
       this.piReQueryInFlight = false;
+
+      if (this.piReQueryPending) {
+        this.piReQueryPending = false;
+        void this.fullReQueryOnPiStateChange();
+      }
     }
   }
 

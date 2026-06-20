@@ -18,7 +18,8 @@ export type SnapshotEventType =
   | 'call-activity-child'
   | 'subprocess-child'
   | 'data-object-written'
-  | 'pi-state-changed';
+  | 'pi-state-changed'
+  | 'child-pi-state-changed';
 
 export interface SnapshotUpdate {
   snapshot: ProcessInstanceSnapshot;
@@ -130,10 +131,16 @@ export class SubscribeThenSnapshot {
         affectedFniIds.push(event.flowNodeInstanceId);
         break;
       }
-      case 'ProcessInstanceStateChanged':
-        this.handlePiStateChanged(envelope.data as ProcessInstanceStateChanged);
-        eventType = 'pi-state-changed';
+      case 'ProcessInstanceStateChanged': {
+        const piEvent = envelope.data as ProcessInstanceStateChanged;
+        if (piEvent.processInstanceId === this.processInstanceId) {
+          this.handlePiStateChanged(piEvent);
+          eventType = 'pi-state-changed';
+        } else {
+          eventType = 'child-pi-state-changed';
+        }
         break;
+      }
       case 'CallActivityChildStarted': {
         const event = envelope.data as CallActivityChildStarted;
         this.handleCallActivityChild(event);
