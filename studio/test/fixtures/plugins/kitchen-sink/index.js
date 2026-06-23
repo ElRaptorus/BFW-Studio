@@ -353,17 +353,17 @@ exports.activate = async (api) => {
   // ─── Settings API — Array mutations ──────────────────────────
 
   await api.commands.register('addToArraySetting', async (value) => {
-    await api.settings.add('plugin.kitchen-sink.testArray', value ?? 'item');
+    await api.settings.add('plugin.kitchen-sink.kitchenSinkArray', value ?? 'item');
   });
 
   await api.commands.register('removeFromArray', async (value) => {
-    await api.settings.removeValue('plugin.kitchen-sink.testArray', value ?? 'item');
+    await api.settings.removeValue('plugin.kitchen-sink.kitchenSinkArray', value ?? 'item');
   });
 
   await api.commands.register(
     'readArraySetting',
     async () => {
-      return api.settings.get('plugin.kitchen-sink.testArray');
+      return api.settings.get('plugin.kitchen-sink.kitchenSinkArray');
     },
     { visibleInSearch: true, description: 'Kitchen Sink: Read Array Setting' },
   );
@@ -580,15 +580,13 @@ exports.activate = async (api) => {
 
   await api.commands.register('writeBinaryStorageFile', async (filename, base64Content) => {
     const storageUri = `file://${api.env.storagePath}/${filename ?? 'binary-test.bin'}`;
-    const bytes = Uint8Array.from(Buffer.from(base64Content ?? 'AQID', 'base64'));
-    await api.workspace.writeBinaryFile(storageUri, bytes);
+    await api.workspace.writeBinaryFile(storageUri, base64Content ?? 'AQID');
     return storageUri;
   });
 
   await api.commands.register('readBinaryStorageFile', async (filename) => {
     const storageUri = `file://${api.env.storagePath}/${filename ?? 'binary-test.bin'}`;
-    const bytes = await api.workspace.readBinaryFile(storageUri);
-    return Buffer.from(bytes).toString('base64');
+    return api.workspace.readBinaryFile(storageUri);
   });
 
   await api.commands.register('listProjectDir', async (uri) => {
@@ -675,13 +673,15 @@ exports.activate = async (api) => {
   // ─── Tree View API ──────────────────────────────────────────
 
   await api.commands.register('registerTreeView', async () => {
-    await api.views.registerTreeView({
-      id: 'ks-tree',
-      title: 'Kitchen Sink Tree',
-      area: 'left',
-      icon: 'ph-tree-structure',
-    });
-    treeViewRegistered = true;
+    if (!treeViewRegistered) {
+      await api.views.registerTreeView({
+        id: 'ks-tree',
+        title: 'Kitchen Sink Tree',
+        area: 'left',
+        icon: 'ph-tree-structure',
+      });
+      treeViewRegistered = true;
+    }
     return { registered: true };
   });
 

@@ -14,7 +14,7 @@ exports.deactivate = async () => {
   events.push('deactivated');
   if (pluginApi) {
     try {
-      await pluginApi.settings.set('test.lifecycleDeactivatedAt', Date.now().toString());
+      await pluginApi.settings.set('plugin.lifecycle-plugin.deactivatedAt', Date.now().toString());
     } catch {
       // Settings bridge may already be torn down during full shutdown
     }

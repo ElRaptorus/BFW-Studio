@@ -1,0 +1,12 @@
+{
+  "name": "bpmn-no-perm",
+  "version": "1.0.0",
+  "displayName": "BPMN No Permission",
+  "description": "Fixture plugin for testing BPMN API permission denial (no bpmn permission declared).",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN No Permission",
+    "permissions": []
+  }
+}

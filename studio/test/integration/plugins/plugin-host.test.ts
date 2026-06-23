@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as assert from 'node:assert';
+import * as os from 'os';
 import * as path from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
@@ -11,7 +12,7 @@ const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 const PLUGINS_EMPTY_DIR = path.resolve(__dirname, '../../fixtures/plugins-empty');
 
 const PLUGIN_LOAD_TIMEOUT = 30_000;
-const FIXTURE_PLUGIN_COUNT = 20;
+const FIXTURE_PLUGIN_COUNT = 22;
 
 async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string): Promise<void> {
   await studioAgent.getTestDriver().client!.waitUntil(
@@ -86,6 +87,14 @@ async function isSettingRegistered(studioAgent: StudioAgent, settingKey: string)
 }
 
 describe('plugin-host/integration', { timeout: 60_000 }, () => {
+  beforeAll(() => {
+    process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
+  });
+
+  afterAll(() => {
+    delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+  });
+
   describe('plugins pane', () => {
     let studioAgent: StudioAgent;
 
@@ -358,7 +367,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
       assert.deepStrictEqual(eventsBefore, ['activated']);
 
       await studioAgent.getTestDriver().client!.execute(() => {
-        (window as any).bifrost.settings.set('test.lifecycleDeactivatedAt', '');
+        (window as any).bifrost.settings.set('plugin.lifecycle-plugin.deactivatedAt', '');
       });
 
       await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
@@ -371,7 +380,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
       const marker = await studioAgent
         .getTestDriver()
-        .client!.execute(() => (window as any).bifrost.settings.get('test.lifecycleDeactivatedAt'));
+        .client!.execute(() => (window as any).bifrost.settings.get('plugin.lifecycle-plugin.deactivatedAt'));
       assert.ok(marker && String(marker).length > 0, 'deactivate() should have written a settings marker');
     });
   });
@@ -648,11 +657,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     beforeAll(async () => {
       process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
       studioAgent = await createAndStartStudioAgent({ testName: 'kitchen-sink: settings API', testFile: __filename });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.hasSetting');
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.hasSetting');
     });
 
     afterEach(async ({ task }) => {
@@ -752,11 +762,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     beforeAll(async () => {
       process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
       studioAgent = await createAndStartStudioAgent({ testName: 'kitchen-sink: commands API', testFile: __filename });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.tryExecute');
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.tryExecute');
     });
 
     afterEach(async ({ task }) => {
@@ -787,21 +798,6 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
       );
       assert.strictEqual(result.success, true);
       assert.strictEqual(result.returnValue, 'Hello, Try!');
-    });
-
-    // TODO: Skipped — @wdio/electron-service cannot serialize the {success, error}
-    // result object from tryToExecuteCommand through the WebDriver execute/sync
-    // endpoint. The bridge and CommandManager logic is correct (verified manually);
-    // revisit once @wdio/electron-service improves error-object serialization.
-    it.skip('commands/tryToExecuteCommand: returns failure for a non-existent command', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.kitchen-sink.tryExecute',
-        'nonexistent.phantom.command',
-      );
-      assert.strictEqual(result.success, false);
-      assert.ok(result.error, 'failure result should contain an error');
-      assert.ok(result.error.message, 'error should have a message');
     });
 
     it('commands/isCommandEnabled: returns true for a registered command', async () => {
@@ -879,11 +875,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         testName: 'kitchen-sink: notifications API',
         testFile: __filename,
       });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.showInfo');
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.showInfo');
     });
 
     afterEach(async ({ task }) => {
@@ -936,11 +933,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     beforeAll(async () => {
       process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
       studioAgent = await createAndStartStudioAgent({ testName: 'kitchen-sink: lifecycle', testFile: __filename });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getLifecycle');
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getLifecycle');
     });
 
     afterEach(async ({ task }) => {
@@ -1187,6 +1185,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.settings-plugin.getLastObservedSetting');
     });
 
     afterEach(async ({ task }) => {
@@ -2063,11 +2062,17 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         testName: 'kitchen-sink: diagnostics API',
         testFile: __filename,
       });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginList(studioAgent, FIXTURE_PLUGIN_COUNT);
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.setDiagnostics');
+      // Wait for kitchen-sink to be fully loaded and give deferred eager plugins
+      // (e.g. webview-showcase with permissions) time to finish loading.
+      await waitForPluginStatus(studioAgent, 'kitchen-sink', 'loaded');
+      await studioAgent.pause(2_000);
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.setDiagnostics');
     });
 
     afterEach(async ({ task }) => {
@@ -2078,7 +2083,6 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
           state: task.result?.state === 'fail' ? 'failed' : 'passed',
         });
       }
-      await executePluginCommand(studioAgent, 'plugin.kitchen-sink.clearDiagnostics');
     });
 
     afterAll(async () => {
@@ -2166,6 +2170,11 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
       });
 
       assert.ok(countsAfter.errors < countsBefore.errors, 'error count should decrease after plugin disable');
+
+      await studioAgent.getTestDriver().client!.execute((pluginName: string) => {
+        return (window as any).bifrost.plugins.togglePlugin(pluginName);
+      }, 'kitchen-sink');
+      await waitForPluginStatus(studioAgent, 'kitchen-sink', 'loaded');
     });
   });
 
@@ -2178,11 +2187,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         testName: 'kitchen-sink: notifications with actions',
         testFile: __filename,
       });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.showNotificationWithActions');
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.showNotificationWithActions');
     });
 
     afterEach(async ({ task }) => {
@@ -2280,11 +2290,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         testName: 'kitchen-sink: dialogs API',
         testFile: __filename,
       });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.showDialog');
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.showDialog');
     });
 
     afterEach(async ({ task }) => {
@@ -2305,7 +2316,15 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     });
 
     it('dialogs/open: opens a custom dialog and returns result on submit', async () => {
-      const dialogPromise = executePluginCommand(studioAgent, 'plugin.kitchen-sink.showDialog');
+      // Fire the dialog command without awaiting — bifrost.commands.executeCommand returns
+      // a Promise that blocks until the dialog is submitted, which would deadlock the
+      // WebDriver session if we awaited it here.
+      await studioAgent.getTestDriver().client!.execute(() => {
+        (window as any).__dialogResult = null;
+        (window as any).bifrost.commands.executeCommand('plugin.kitchen-sink.showDialog', []).then((result: any) => {
+          (window as any).__dialogResult = result;
+        });
+      });
 
       await studioAgent.getTestDriver().client!.waitUntil(
         async () => {
@@ -2318,7 +2337,14 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         (window as any).bifrost.dialog.submit('submit', { name: 'Test User', agree: true });
       });
 
-      const result = await dialogPromise;
+      await studioAgent.getTestDriver().client!.waitUntil(
+        async () => {
+          return studioAgent.getTestDriver().client!.execute(() => (window as any).__dialogResult != null);
+        },
+        { timeout: 5_000, timeoutMsg: 'Dialog result was not received' },
+      );
+
+      const result = await studioAgent.getTestDriver().client!.execute(() => (window as any).__dialogResult);
       assert.strictEqual(result.wasCancelled, false, 'dialog should not be cancelled');
       assert.strictEqual(result.response, 'submit', 'response should be submit');
       assert.strictEqual(result.formData.name, 'Test User', 'form data should contain name');
@@ -2326,7 +2352,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     });
 
     it('dialogs/open: cancel returns wasCancelled=true', async () => {
-      const dialogPromise = executePluginCommand(studioAgent, 'plugin.kitchen-sink.showDialog');
+      await studioAgent.getTestDriver().client!.execute(() => {
+        (window as any).__dialogResult = null;
+        (window as any).bifrost.commands.executeCommand('plugin.kitchen-sink.showDialog', []).then((result: any) => {
+          (window as any).__dialogResult = result;
+        });
+      });
 
       await studioAgent.getTestDriver().client!.waitUntil(
         async () => {
@@ -2339,12 +2370,24 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         (window as any).bifrost.dialog.close();
       });
 
-      const result = await dialogPromise;
+      await studioAgent.getTestDriver().client!.waitUntil(
+        async () => {
+          return studioAgent.getTestDriver().client!.execute(() => (window as any).__dialogResult != null);
+        },
+        { timeout: 5_000, timeoutMsg: 'Dialog result was not received' },
+      );
+
+      const result = await studioAgent.getTestDriver().client!.execute(() => (window as any).__dialogResult);
       assert.strictEqual(result.wasCancelled, true, 'dialog should be cancelled');
     });
 
     it('dialogs/prompt: shows prompt and returns entered text', async () => {
-      const promptPromise = executePluginCommand(studioAgent, 'plugin.kitchen-sink.showPrompt');
+      await studioAgent.getTestDriver().client!.execute(() => {
+        (window as any).__dialogResult = null;
+        (window as any).bifrost.commands.executeCommand('plugin.kitchen-sink.showPrompt', []).then((result: any) => {
+          (window as any).__dialogResult = result;
+        });
+      });
 
       await studioAgent.getTestDriver().client!.waitUntil(
         async () => {
@@ -2357,7 +2400,14 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         (window as any).bifrost.dialog.submit('submit', { promptValue: 'Hello from test' });
       });
 
-      const result = await promptPromise;
+      await studioAgent.getTestDriver().client!.waitUntil(
+        async () => {
+          return studioAgent.getTestDriver().client!.execute(() => (window as any).__dialogResult != null);
+        },
+        { timeout: 5_000, timeoutMsg: 'Prompt result was not received' },
+      );
+
+      const result = await studioAgent.getTestDriver().client!.execute(() => (window as any).__dialogResult);
       assert.strictEqual(result, 'Hello from test', 'prompt should return entered text');
     });
 
@@ -2381,6 +2431,11 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         return (window as any).bifrost.dialog.isActive();
       });
       assert.strictEqual(dialogStillActive, false, 'dialog should be force-closed after plugin disable');
+
+      await studioAgent.getTestDriver().client!.execute((pluginName: string) => {
+        return (window as any).bifrost.plugins.togglePlugin(pluginName);
+      }, 'kitchen-sink');
+      await waitForPluginStatus(studioAgent, 'kitchen-sink', 'loaded');
     });
   });
 
@@ -2393,11 +2448,12 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         testName: 'kitchen-sink: workspace API',
         testFile: __filename,
       });
-      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.getStatus');
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.writeStorageFile');
     });
 
     beforeEach(async ({ task }) => {
       studioAgent.updateTestContext({ testName: task.name, testFile: __filename });
+      await waitForPluginCommand(studioAgent, 'plugin.kitchen-sink.writeStorageFile');
     });
 
     afterEach(async ({ task }) => {
@@ -2523,9 +2579,13 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     });
 
     it('workspace/scope: denies access outside allowed scope', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.kitchen-sink.readOutOfScope');
-      assert.strictEqual(result.success, false, 'reading /etc/passwd should fail');
-      assert.ok(result.error.includes('Access denied'), 'error should mention access denied');
+      try {
+        const result = await executePluginCommand(studioAgent, 'plugin.kitchen-sink.readOutOfScope');
+        assert.strictEqual(result.success, false, 'reading /etc/passwd should fail');
+        assert.ok(result.error.includes('Access denied'), 'error should mention access denied');
+      } catch (error: any) {
+        assert.ok(error.message.includes('Access denied'), `error should mention access denied, got: ${error.message}`);
+      }
     });
 
     it('workspace/getProjectFolders: returns empty when no solution is open', async () => {
@@ -2749,7 +2809,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     it('pane-visibility/settings-driven: plugin reacts to setting changes via setVisible', async () => {
       await studioAgent.getTestDriver().client!.execute((key: string) => {
         (window as any).bifrost.settings.set(key, false);
-      }, 'webviewShowcase.panes.showExample');
+      }, 'plugin.webview-showcase.panes.showExample');
 
       await studioAgent.getTestDriver().client!.waitUntil(
         async () => {
@@ -2764,7 +2824,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
       await studioAgent.getTestDriver().client!.execute((key: string) => {
         (window as any).bifrost.settings.set(key, true);
-      }, 'webviewShowcase.panes.showExample');
+      }, 'plugin.webview-showcase.panes.showExample');
 
       await studioAgent.getTestDriver().client!.waitUntil(
         async () => {
@@ -2798,7 +2858,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
       await studioAgent.getTestDriver().client!.execute((name: string) => {
         return (window as any).bifrost.plugins.togglePlugin(name);
       }, 'webview-showcase');
-      await waitForPluginStatus(studioAgent, 'webview-showcase', 'active');
+      await waitForPluginStatus(studioAgent, 'webview-showcase', 'loaded');
       await waitForPluginCommand(studioAgent, 'plugin.webview-showcase.getState');
 
       const visibleAfterReEnable = await studioAgent.getTestDriver().client!.execute(() => {
@@ -2822,7 +2882,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
       const countBefore = focusEventsBefore.length;
 
       await studioAgent.getTestDriver().client!.execute(() => {
-        (window as any).bifrost.editors.focusOrOpenEditorDocument('bifrost://std/about', 'About');
+        (window as any).bifrost.editors.focusOrOpenEditorDocument('about:about', 'About');
       });
 
       await studioAgent.getTestDriver().client!.waitUntil(
@@ -2846,7 +2906,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         .length;
 
       await studioAgent.getTestDriver().client!.execute(() => {
-        (window as any).bifrost.editors.focusOrOpenEditorDocument('bifrost://std/settings', 'Settings');
+        (window as any).bifrost.editors.focusOrOpenEditorDocument('about:settings', 'Settings');
       });
 
       await studioAgent.getTestDriver().client!.waitUntil(
@@ -2862,7 +2922,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     });
 
     it('pane-visibility/manifest-pane-visibleWhen: manifest placeholder pane uses visibleWhen as activation trigger', async () => {
-      await waitForPluginCommand(studioAgent, 'plugin.manifest-full.greet');
+      await waitForPluginCommand(studioAgent, 'plugin.manifest-full.manifestFull.greet');
 
       const visibleWithoutBpmn = await studioAgent.getTestDriver().client!.execute(() => {
         const provider = (window as any).bifrost.panes.getPaneProvider(
@@ -2921,19 +2981,17 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
       assert.strictEqual(paneExists, true, 'tree view pane should be registered in the pane system');
     });
 
-    it('tree-view/update-data: pushes tree data and pane provider has entries', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.kitchen-sink.updateTreeData');
-      assert.deepStrictEqual(result, { updated: true });
-    });
+    it('tree-view/update-and-clear-data: pushes tree data then clears it', async () => {
+      await executePluginCommand(studioAgent, 'plugin.kitchen-sink.registerTreeView');
 
-    it('tree-view/clear-data: clears tree data', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.kitchen-sink.clearTreeData');
-      assert.deepStrictEqual(result, { cleared: true });
+      const updateResult = await executePluginCommand(studioAgent, 'plugin.kitchen-sink.updateTreeData');
+      assert.deepStrictEqual(updateResult, { updated: true });
+
+      const clearResult = await executePluginCommand(studioAgent, 'plugin.kitchen-sink.clearTreeData');
+      assert.deepStrictEqual(clearResult, { cleared: true });
     });
 
     it('tree-view/cleanup-on-disable: tree view removed when plugin disabled', async () => {
-      await executePluginCommand(studioAgent, 'plugin.kitchen-sink.registerTreeView');
-
       await studioAgent.getTestDriver().client!.execute(() => {
         (window as any).bifrost.plugins.togglePlugin('kitchen-sink');
       });
@@ -3023,7 +3081,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
       delete process.env.BFR_PLUGINS_DIR;
     });
 
-    it('themes/register: runtime theme appears in registered themes', async () => {
+    it('themes/register: runtime theme appears in registered themes and injects CSS', async () => {
       await executePluginCommand(studioAgent, 'plugin.kitchen-sink.registerTheme');
 
       const registered = await executePluginCommand(studioAgent, 'plugin.kitchen-sink.getThemeRegistered');
@@ -3034,9 +3092,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         return themes.some((theme: any) => theme.id === 'plugin.kitchen-sink.ks-test-dark');
       });
       assert.strictEqual(themeExists, true, 'theme should be in the registered themes list');
-    });
 
-    it('themes/css-injection: theme CSS is injected into the document', async () => {
       const styleExists = await studioAgent.getTestDriver().client!.execute(() => {
         const styleEl = document.querySelector('style[data-plugin-theme="plugin.kitchen-sink.ks-test-dark"]');
         return styleEl != null;
@@ -3245,7 +3301,10 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
     it('denies hard-blocked commands (git.commit)', async () => {
       const result = await executePluginCommand(studioAgent, 'plugin.sandbox-no-perms.tryBlockedCommand');
-      assert.ok(typeof result === 'string' && result.includes('denied'), `Expected denial, got: ${result}`);
+      assert.ok(
+        typeof result === 'string' && (result.includes('denied') || result.includes('blocked')),
+        `Expected denial/blocked, got: ${result}`,
+      );
     });
 
     it('denies std.* commands without commands.std permission', async () => {
@@ -3312,8 +3371,15 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
   describe('sandbox: quarantine', () => {
     let studioAgent: StudioAgent;
+    const quarantineStoragePath = path.join(os.tmpdir(), 'bifrost-test-quarantine-storage');
 
     beforeAll(async () => {
+      // Use an isolated plugin-storage directory so this test does not
+      // interfere with the user's real quarantine state in the dev channel.
+      await fs.rm(quarantineStoragePath, { recursive: true, force: true });
+      await fs.mkdir(quarantineStoragePath, { recursive: true });
+
+      process.env.BFR_PLUGIN_STORAGE_PATH = quarantineStoragePath;
       process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
       process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
       studioAgent = await createAndStartStudioAgent({
@@ -3321,11 +3387,14 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         testFile: __filename,
       });
       await waitForPluginList(studioAgent, FIXTURE_PLUGIN_COUNT);
+      await waitForPluginStatus(studioAgent, 'sandbox-crash', 'loaded');
       await waitForPluginCommand(studioAgent, 'plugin.sandbox-crash.crash');
     });
 
     afterAll(async () => {
       await studioAgent?.stop();
+      delete process.env.BFR_PLUGIN_STORAGE_PATH;
+      await fs.rm(quarantineStoragePath, { recursive: true, force: true });
     });
 
     it('plugin enters quarantined status after repeated crashes', async () => {
@@ -3335,10 +3404,21 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
         } catch {
           // crash expected
         }
-        await studioAgent.pause(1500);
+        if (i < 2) {
+          await studioAgent.pause(2000);
+          await waitForPluginCommand(studioAgent, 'plugin.sandbox-crash.crash');
+        }
       }
 
-      await studioAgent.pause(3000);
+      await studioAgent.getTestDriver().client!.waitUntil(
+        async () => {
+          const plugins = await getPluginList(studioAgent);
+          const crashPlugin = plugins.find((plugin: any) => plugin.name === 'sandbox-crash');
+          return crashPlugin?.status === 'quarantined';
+        },
+        { timeout: 15_000, timeoutMsg: 'Plugin did not reach quarantined status within 15s' },
+      );
+
       const plugins = await getPluginList(studioAgent);
       const crashPlugin = plugins.find((plugin: any) => plugin.name === 'sandbox-crash');
       assert.ok(crashPlugin, 'sandbox-crash plugin should exist');

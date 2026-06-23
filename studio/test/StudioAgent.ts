@@ -764,6 +764,17 @@ export class StudioAgent {
   }
 
   private async stopApp(): Promise<void> {
+    let pluginHostPid: number | null = null;
+
+    try {
+      pluginHostPid = await withTimeout(
+        this.testDriver.client!.execute(`return window.__pluginHostPid ?? null`),
+        3_000,
+      );
+    } catch {
+      // Session may already be dead — we'll fall through to quit
+    }
+
     try {
       await withTimeout(this.testDriver.client!.execute(`bifrost.commands.executeCommand('std.window.quit')`), 5_000);
     } catch {
@@ -776,6 +787,27 @@ export class StudioAgent {
     } catch {
       // Session cleanup timed out — the old process may be orphaned but
       // beforeEach creates a fresh session anyway.
+    }
+
+    if (pluginHostPid != null) {
+      this.killOrphanedProcess(pluginHostPid);
+    }
+  }
+
+  private killOrphanedProcess(pid: number): void {
+    try {
+      process.kill(pid, 0);
+      process.kill(pid, 'SIGTERM');
+      setTimeout(() => {
+        try {
+          process.kill(pid, 0);
+          process.kill(pid, 'SIGKILL');
+        } catch {
+          // Already dead — good
+        }
+      }, 2_000);
+    } catch {
+      // Process already exited — nothing to do
     }
   }
 

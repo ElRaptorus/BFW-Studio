@@ -17,7 +17,8 @@
     "description": "Exercises every Plugin API feature for manual and automated testing.",
     "permissions": [
       "filesystem",
-      "commands.std"
+      "commands.std",
+      "commands.plugins"
     ],
     "activationEvents": [
       "onStartup"

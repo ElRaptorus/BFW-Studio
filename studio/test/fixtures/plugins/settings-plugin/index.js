@@ -2,7 +2,7 @@ let lastObservedValue = null;
 
 exports.activate = async (api) => {
   await api.settings.register({
-    'test.sampleSetting': {
+    'plugin.settings-plugin.sampleSetting': {
       type: 'string',
       label: 'Sample Setting',
       description: 'A test setting observed by the settings-plugin fixture.',
@@ -11,7 +11,7 @@ exports.activate = async (api) => {
     },
   });
 
-  await api.settings.onDidChange('test.sampleSetting', (newValue) => {
+  await api.settings.onDidChange('plugin.settings-plugin.sampleSetting', (newValue) => {
     lastObservedValue = newValue;
   });
 

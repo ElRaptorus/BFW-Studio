@@ -1,0 +1,15 @@
+{
+  "name": "bpmn-overlay-demo",
+  "version": "1.0.0",
+  "displayName": "BPMN Overlay Demo",
+  "description": "Fixture plugin for testing BPMN overlay API, element events, and permission gating.",
+  "main": "index.js",
+  "readme": "README.md",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN Overlay Demo",
+    "permissions": [
+      "bpmn"
+    ]
+  }
+}

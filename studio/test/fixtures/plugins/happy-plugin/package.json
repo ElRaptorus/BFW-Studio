@@ -14,9 +14,5 @@
     "test"
   ],
   "main": "index.js",
-  "deprecated": "Use kitchen-sink plugin instead",
-  "bifrostStudio": {
-    "apiVersion": "1.0.0",
-    "permissions": []
-  }
+  "deprecated": "Use kitchen-sink plugin instead"
 }
