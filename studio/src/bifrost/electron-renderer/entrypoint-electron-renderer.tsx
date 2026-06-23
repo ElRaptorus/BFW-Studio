@@ -92,6 +92,8 @@ async function startRenderer(bifrostWindowOptions: any): Promise<void> {
     ipcRenderer.on(IPC_MESSAGE_WINDOW_CLOSED_BY_USER, async (event, currentWindowCount) => {
       bifrost.commands.executeCommand('std.window.hide');
 
+      await bifrost.plugins.shutdown();
+
       if (currentWindowCount > 1) {
         bifrost.clearInstance();
       }
@@ -154,6 +156,10 @@ async function startRenderer(bifrostWindowOptions: any): Promise<void> {
 
         const success = await bifrost.editors.warnAboutUnsavedEditorDocumentsAndAskForSaving(editorDocumentsToSave);
 
+        if (success) {
+          await bifrost.plugins.shutdown();
+        }
+
         const windows = (await ipcRenderer.invoke(IPC_MESSAGE_GET_WINDOWS)) as BifrostWindowSerialized[];
         const currentIndex = windows.findIndex(
           (windowInfo: BifrostWindowSerialized) => bifrost.env.instanceKey === windowInfo.instanceKey,
@@ -179,13 +185,15 @@ async function startRenderer(bifrostWindowOptions: any): Promise<void> {
       });
     });
 
-    bifrost.commands.register('std.window.terminate', () => {
+    bifrost.commands.register('std.window.terminate', async () => {
+      await bifrost.plugins.shutdown();
       ipcRenderer.send(IPC_MESSAGE_TERMINATE);
     });
 
     bifrost.commands.register(
       'std.window.quit',
-      () => {
+      async () => {
+        await bifrost.plugins.shutdown();
         ipcRenderer.send(IPC_MESSAGE_QUIT);
       },
       { visibleInSearch: true, description: 'Application: Quit' },

@@ -171,6 +171,38 @@ process.on('message', (raw: PluginHostMessage) => {
   handleMessage(raw);
 });
 
+process.once('disconnect', async () => {
+  console.log('[PluginHost] IPC channel disconnected (parent died). Shutting down.');
+  try {
+    await sandboxManager.deactivateAll();
+  } catch {
+    // Best-effort cleanup — parent is already gone
+  }
+  process.exit(0);
+});
+
+process.once('SIGTERM', async () => {
+  console.log('[PluginHost] Received SIGTERM. Shutting down.');
+  try {
+    await sandboxManager.deactivateAll();
+    connection.rejectAll('Plugin Host shutting down');
+  } catch {
+    // Best-effort
+  }
+  process.exit(0);
+});
+
+process.once('SIGINT', async () => {
+  console.log('[PluginHost] Received SIGINT. Shutting down.');
+  try {
+    await sandboxManager.deactivateAll();
+    connection.rejectAll('Plugin Host shutting down');
+  } catch {
+    // Best-effort
+  }
+  process.exit(0);
+});
+
 process.on('uncaughtException', (error) => {
   console.error('[PluginHost] Uncaught exception:', error);
   process.exit(1);
