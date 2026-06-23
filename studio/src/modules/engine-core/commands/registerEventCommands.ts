@@ -29,4 +29,17 @@ export default function registerEventCommands(bifrost: Bifrost, connectionManage
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
+
+  bifrost.commands.register(
+    'engine.triggerTimerEvent',
+    async (engineId: string, flowNodeInstanceId: string) => {
+      const connection = connectionManager.getConnection(engineId);
+      if (!connection) {
+        throw new Error(`Engine ${engineId} not connected`);
+      }
+
+      return connection.client.events.triggerTimer(flowNodeInstanceId);
+    },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
 }

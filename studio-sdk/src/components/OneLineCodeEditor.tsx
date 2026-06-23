@@ -114,117 +114,114 @@ function OneLineCodeEditorInner(props: OneLineCodeEditorInnerProps): React.JSX.E
     };
   }, []);
 
-  const handleMount: OnMount = useCallback(
-    (editor, monacoObj) => {
-      editorRef.current = editor;
-      latestPropsRef.current.onEditorReady(editor);
+  const handleMount: OnMount = useCallback((editor, monacoObj) => {
+    editorRef.current = editor;
+    latestPropsRef.current.onEditorReady(editor);
 
-      const tsLanguage = (monacoObj.languages as any).typescript;
-      tsLanguage.javascriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: true,
-        noSyntaxValidation: true,
-      });
+    const tsLanguage = (monacoObj.languages as any).typescript;
+    tsLanguage.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+    });
 
-      tsLanguage.javascriptDefaults.setCompilerOptions({
-        target: tsLanguage.ScriptTarget.ES5,
-        allowNonTsExtensions: true,
-        lib: ['es2019'],
-      });
+    tsLanguage.javascriptDefaults.setCompilerOptions({
+      target: tsLanguage.ScriptTarget.ES5,
+      allowNonTsExtensions: true,
+      lib: ['es2019'],
+    });
 
-      editor.onDidChangeModelContent(() => {
-        currentValueRef.current = editor.getValue();
-      });
+    editor.onDidChangeModelContent(() => {
+      currentValueRef.current = editor.getValue();
+    });
 
-      if (latestPropsRef.current.autoFocus === true) {
-        editor.focus();
+    if (latestPropsRef.current.autoFocus === true) {
+      editor.focus();
+    }
+
+    if (latestPropsRef.current.treatInterpolationExpression === true) {
+      disableAutocompletion(editor);
+      setupInterpolationExpressionHandling(editor);
+    }
+
+    editor.onDidBlurEditorText(() => {
+      const value = currentValueRef.current;
+      if (value === latestPropsRef.current.initialValue) {
+        return;
+      }
+      latestPropsRef.current.onChange?.(value);
+    });
+
+    editor.onDidPaste((pasteEvent) => {
+      if (pasteEvent.range.endLineNumber <= 1) {
+        return;
       }
 
-      if (latestPropsRef.current.treatInterpolationExpression === true) {
-        disableAutocompletion(editor);
-        setupInterpolationExpressionHandling(editor);
+      let newContent = '';
+      assertNotNull(editor, 'editor');
+      const textModel = editor.getModel();
+      assertNotNull(textModel, 'textModel');
+
+      const lineCount = textModel.getLineCount();
+      for (let i = 0; i < lineCount; i += 1) {
+        newContent += textModel.getLineContent(i + 1);
       }
 
-      editor.onDidBlurEditorText(() => {
-        const value = currentValueRef.current;
-        if (value === latestPropsRef.current.initialValue) {
-          return;
-        }
-        latestPropsRef.current.onChange?.(value);
-      });
+      textModel.setValue(newContent);
+      editor.setPosition({ column: newContent.length + 1, lineNumber: 1 });
+    });
 
-      editor.onDidPaste((pasteEvent) => {
-        if (pasteEvent.range.endLineNumber <= 1) {
-          return;
-        }
+    editor.createContextKey('isOneLineCodeEditor', true);
+    editor.createContextKey('editorTabMovesFocus', true);
 
-        let newContent = '';
-        assertNotNull(editor, 'editor');
-        const textModel = editor.getModel();
-        assertNotNull(textModel, 'textModel');
+    const ctx = 'isOneLineCodeEditor';
 
-        const lineCount = textModel.getLineCount();
-        for (let i = 0; i < lineCount; i += 1) {
-          newContent += textModel.getLineContent(i + 1);
-        }
+    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyF, () => null, ctx);
+    editor.addCommand(monacoObj.KeyCode.F1, () => null, ctx);
+    editor.addCommand(monacoObj.KeyMod.Shift | monacoObj.KeyCode.Enter, () => null, ctx);
 
-        textModel.setValue(newContent);
-        editor.setPosition({ column: newContent.length + 1, lineNumber: 1 });
-      });
-
-      editor.createContextKey('isOneLineCodeEditor', true);
-      editor.createContextKey('editorTabMovesFocus', true);
-
-      const ctx = 'isOneLineCodeEditor';
-
-      editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyF, () => null, ctx);
-      editor.addCommand(monacoObj.KeyCode.F1, () => null, ctx);
-      editor.addCommand(monacoObj.KeyMod.Shift | monacoObj.KeyCode.Enter, () => null, ctx);
-
-      const pasteFromClipBoard = async () => {
-        const text = (await navigator.clipboard.readText()) ?? '';
-        editor.executeEdits(null, [
-          {
-            range: editor.getSelection() as monaco.IRange,
-            text: text.trim().replace(/\r?\n|\r/g, ' '),
-            forceMoveMarkers: true,
-          },
-        ]);
-      };
-
-      editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyV, pasteFromClipBoard, ctx);
-      editor.addCommand(monacoObj.KeyMod.Shift | monacoObj.KeyCode.Insert, pasteFromClipBoard, ctx);
-
-      editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyMod.Shift | monacoObj.KeyCode.KeyZ, () => null, ctx);
-
-      editor.addCommand(
-        monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyY,
-        () => editor.trigger('OneLineCodeEditor', 'redo', null),
-        ctx,
-      );
-
-      editor.addCommand(
-        monacoObj.KeyCode.Enter,
-        () => {
-          const domNode = editor.getDomNode();
-          const contentWidgetVisible = domNode?.querySelector('[monaco-visible-content-widget="true"]') ?? false;
-          if (contentWidgetVisible) {
-            editor.trigger('OneLineCodeEditor', 'acceptSelectedSuggestion', null);
-          } else {
-            (document.activeElement as HTMLElement).blur();
-          }
+    const pasteFromClipBoard = async () => {
+      const text = (await navigator.clipboard.readText()) ?? '';
+      editor.executeEdits(null, [
+        {
+          range: editor.getSelection() as monaco.IRange,
+          text: text.trim().replace(/\r?\n|\r/g, ' '),
+          forceMoveMarkers: true,
         },
-        ctx,
-      );
+      ]);
+    };
 
-      if (latestPropsRef.current.onKeyDown) {
-        editor.onKeyDown(latestPropsRef.current.onKeyDown);
-      }
-      if (latestPropsRef.current.onKeyUp) {
-        editor.onKeyUp(latestPropsRef.current.onKeyUp);
-      }
-    },
-    [studio],
-  );
+    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyV, pasteFromClipBoard, ctx);
+    editor.addCommand(monacoObj.KeyMod.Shift | monacoObj.KeyCode.Insert, pasteFromClipBoard, ctx);
+
+    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyMod.Shift | monacoObj.KeyCode.KeyZ, () => null, ctx);
+
+    editor.addCommand(
+      monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyY,
+      () => editor.trigger('OneLineCodeEditor', 'redo', null),
+      ctx,
+    );
+
+    editor.addCommand(
+      monacoObj.KeyCode.Enter,
+      () => {
+        const domNode = editor.getDomNode();
+        const contentWidgetVisible = domNode?.querySelector('[monaco-visible-content-widget="true"]') ?? false;
+        if (contentWidgetVisible) {
+          editor.trigger('OneLineCodeEditor', 'acceptSelectedSuggestion', null);
+        } else {
+          (document.activeElement as HTMLElement).blur();
+        }
+      },
+      ctx,
+    );
+
+    if (latestPropsRef.current.onKeyDown) {
+      editor.onKeyDown(latestPropsRef.current.onKeyDown);
+    }
+    if (latestPropsRef.current.onKeyUp) {
+      editor.onKeyUp(latestPropsRef.current.onKeyUp);
+    }
+  }, []);
 
   const handleEditorChange = useCallback(
     (value: string | undefined): void => {

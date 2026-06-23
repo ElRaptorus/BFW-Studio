@@ -557,12 +557,9 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
     return results;
   });
 
-  ipcMain.handle(
-    IPC_INVOKE_CREATE_DIR,
-    (event, ...args: Parameters<typeof fsPromises.mkdir>): ReturnType<typeof fsPromises.mkdir> => {
-      return fsPromises.mkdir(...args);
-    },
-  );
+  ipcMain.handle(IPC_INVOKE_CREATE_DIR, (event, dirPath: string) => {
+    return fsPromises.mkdir(dirPath, { recursive: true });
+  });
 
   ipcMain.handle(IPC_INVOKE_COPY_FILE_OR_DIRECTORY, (event, source: string, destination: string) => {
     return fsPromises.cp(source, destination, { recursive: true });

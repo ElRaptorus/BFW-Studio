@@ -98,7 +98,9 @@ exports.activate = async (api) => {
             type: 'badge',
             text: '!',
             style: 'warning',
-            tooltip: '⚠ Warning: This start event needs attention',
+            tooltip: '⚠ Warning: This start event needs attention — click for details',
+            onClickCommand: 'handleOverlayClick',
+            onClickCommandArgs: ['split-warning:StartEvent_1'],
           },
           {
             elementId: 'StartEvent_1',
@@ -163,9 +165,26 @@ exports.activate = async (api) => {
 
   await api.commands.register(
     'handleOverlayClick',
-    (arg) => {
+    async (arg) => {
       clickCount++;
       events.push(`click:${arg}`);
+
+      const [action, elementId] = (arg ?? '').split(':');
+      let message = `Overlay clicked: ${arg}`;
+
+      if (action === 'split-warning') {
+        message = `⚠ Element "${elementId}" has multiple outgoing flows without a gateway. Consider adding an Exclusive or Inclusive Gateway to control the flow.`;
+      } else if (action === 'info-click') {
+        message = `ℹ Element "${elementId}" — use the Inspector pane to view and edit properties.`;
+      } else if (action === 'test-arg') {
+        message = `⚡ Interactive overlay action triggered successfully (arg: ${arg}).`;
+      }
+
+      await api.notifications.open({
+        type: action === 'split-warning' ? 'warning' : 'info',
+        content: message,
+      });
+
       return `clicked:${arg}`;
     },
     { visibleInSearch: false, description: 'BPMN Overlay Demo: Handle Click' },

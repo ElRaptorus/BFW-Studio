@@ -65,7 +65,8 @@ export async function showPermissionReviewDialog(
   permissions: PluginPermission[],
   permissionStore: PluginPermissionStore,
 ): Promise<boolean> {
-  if (process.env.NODE_ENV === 'test' || process.env.BFR_SKIP_PERMISSION_DIALOG === '1') {
+  if (process.env.APP_TEST === 'true' || process.env.BFR_SKIP_PERMISSION_DIALOG === '1') {
+    permissionStore.set(pluginName, permissions, true);
     return true;
   }
 

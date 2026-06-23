@@ -279,6 +279,7 @@ function createPluginApi(): Record<string, unknown> {
   const editorsCallbackApi = createCallbackApi('editors');
   const workspaceCallbackApi = createCallbackApi('workspace');
   const diagnosticsCallbackApi = createCallbackApi('diagnostics');
+  const bpmnCallbackApi = createCallbackApi('bpmn');
 
   return {
     commands: {
@@ -291,6 +292,15 @@ function createPluginApi(): Record<string, unknown> {
       },
       executeCommand(commandId: string, ...args: unknown[]): Promise<unknown> {
         return sendApiRequest('commands', 'executeCommand', [commandId, ...args]);
+      },
+      tryToExecuteCommand(commandId: string, ...args: unknown[]): Promise<unknown> {
+        return sendApiRequest('commands', 'tryToExecuteCommand', [commandId, ...args]);
+      },
+      isCommandEnabled(commandId: string, ...args: unknown[]): Promise<unknown> {
+        return sendApiRequest('commands', 'isCommandEnabled', [commandId, ...args]);
+      },
+      isRegistered(commandId: string): Promise<unknown> {
+        return sendApiRequest('commands', 'isRegistered', [commandId]);
       },
       getCommands(): Promise<unknown> {
         return sendApiRequest('commands', 'getCommands', []);
@@ -467,6 +477,50 @@ function createPluginApi(): Record<string, unknown> {
     ),
     views: createNamespaceProxy('views'),
     themes: createNamespaceProxy('themes'),
+    bpmn: {
+      setOverlays(uri: string, overlays: unknown[]): Promise<unknown> {
+        return sendApiRequest('bpmn', 'setOverlays', [uri, overlays]);
+      },
+      clearOverlays(uri: string, filter?: unknown): Promise<unknown> {
+        return sendApiRequest('bpmn', 'clearOverlays', [uri, filter]);
+      },
+      getElements(uri: string): Promise<unknown> {
+        return sendApiRequest('bpmn', 'getElements', [uri]);
+      },
+      getElement(uri: string, elementId: string): Promise<unknown> {
+        return sendApiRequest('bpmn', 'getElement', [uri, elementId]);
+      },
+      getXml(uri: string): Promise<unknown> {
+        return sendApiRequest('bpmn', 'getXml', [uri]);
+      },
+      onElementSelected(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return bpmnCallbackApi.register('onElementSelected', [uri], callback);
+      },
+      onElementHover(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return bpmnCallbackApi.register('onElementHover', [uri], callback);
+      },
+      onElementDoubleClick(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return bpmnCallbackApi.register('onElementDoubleClick', [uri], callback);
+      },
+      onElementContextMenu(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return bpmnCallbackApi.register('onElementContextMenu', [uri], callback);
+      },
+      onOverlayContextChanged(
+        uri: string,
+        callback: (...cbArgs: unknown[]) => unknown,
+      ): Promise<{ dispose: () => void }> {
+        return bpmnCallbackApi.register('onOverlayContextChanged', [uri], callback);
+      },
+      registerOverlayFactory(
+        factory: (...cbArgs: unknown[]) => unknown,
+        options?: { priority?: number },
+      ): Promise<{ dispose: () => void }> {
+        return bpmnCallbackApi.register('registerOverlayFactory', [options], factory);
+      },
+      disposeCallbacks() {
+        /* no-op in sandbox — cleanup handled by SandboxManager */
+      },
+    },
     env: Object.freeze({
       pluginPath,
       pluginName,

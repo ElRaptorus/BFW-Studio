@@ -40,6 +40,7 @@
           "commands.std",
           "commands.bpmn",
           "commands.dmn",
+          "commands.plugins",
           "renderer-modules",
           "native",
           "system-info"

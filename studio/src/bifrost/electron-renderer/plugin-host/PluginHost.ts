@@ -371,6 +371,8 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
 
     await this.readyPromise;
 
+    (globalThis as any).__pluginHostPid = this.childProcess?.pid ?? null;
+
     const initialTokens = this.extractThemeTokens();
     const initialThemeType = this.bifrost.theme.getCurrentThemeType();
     this.pluginIframeManager.broadcastThemeTokens(initialTokens, initialThemeType);
@@ -427,11 +429,15 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
         this.emit(EVENT_PLUGIN_LIST_CHANGED);
       }
     } else {
-      console.warn(`[PluginHost] Plugin '${displayName}' crashed (crash #${crashCount}).`);
+      console.warn(`[PluginHost] Plugin '${displayName}' crashed (crash #${crashCount}). Restarting...`);
       this.bifrost.notifications.open({
         type: 'warning',
         source: 'Plugin Host',
-        content: `Plugin '${displayName}' crashed. It will restart automatically if it stabilizes.`,
+        content: `Plugin '${displayName}' crashed. It will restart automatically.`,
+      });
+
+      this.reloadPlugin(pluginName).catch((error) => {
+        console.error(`[PluginHost] Failed to restart plugin '${displayName}' after crash:`, error);
       });
     }
   }
@@ -483,6 +489,7 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
     const discovered = await discoverPlugins();
     const disabled = disabledPlugins ?? [];
     this.pluginList = [];
+    const pendingEagerPlugins: DiscoveredPlugin[] = [];
 
     for (const plugin of discovered) {
       const isDisabled = disabled.includes(plugin.name);
@@ -561,67 +568,59 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
 
         this.pluginList.push(this.toPluginInfo(plugin, { enabled: true, status: 'pending' }));
       } else {
-        // Eager activation: legacy plugins or plugins without activationEvents
         const pluginPermissions = plugin.manifest?.permissions ?? [];
 
-        const allowed = await showPermissionReviewDialog(
-          this.bifrost,
-          plugin.displayName || plugin.name,
-          plugin.name,
-          pluginPermissions,
-          this.permissionStore,
-        );
+        if (pluginPermissions.length > 0) {
+          // Plugins with permissions are deferred to after the UI is ready
+          // because the permission dialog requires a rendered DOM.
+          this.pluginList.push(this.toPluginInfo(plugin, { enabled: true, status: 'pending' }));
+          pendingEagerPlugins.push(plugin);
+        } else {
+          // Plugins without permissions load immediately (no dialog risk)
+          try {
+            this.bridge.permissionGate.register(plugin.name, pluginPermissions);
 
-        if (!allowed) {
-          this.pluginList.push(this.toPluginInfo(plugin, { enabled: false, status: 'disabled' }));
+            await this.getConnection()!.request(PH_LOAD_PLUGIN, {
+              pluginPath: plugin.path,
+              pluginName: plugin.name,
+              permissions: pluginPermissions,
+            } satisfies LoadPluginPayload);
 
-          const disabledPlugins: string[] = (this.bifrost.settings.get('plugins.disabledPlugins') as string[]) ?? [];
-          if (!disabledPlugins.includes(plugin.name)) {
-            this.bifrost.settings.set('plugins.disabledPlugins', [...disabledPlugins, plugin.name]);
+            this.pluginList.push(this.toPluginInfo(plugin, { enabled: true, status: 'loaded' }));
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            console.error(`[PluginHost] Failed to load plugin '${plugin.name}':`, err);
+            this.pluginList.push(
+              this.toPluginInfo(plugin, {
+                enabled: false,
+                status: 'error',
+                errorMessage,
+              }),
+            );
+
+            this.bifrost.notifications.open({
+              type: 'error',
+              content: `Plugin '${plugin.displayName || plugin.name}' failed to load: ${errorMessage}`,
+              source: plugin.displayName || plugin.name,
+            });
           }
-          continue;
-        }
-
-        try {
-          this.bridge.permissionGate.register(plugin.name, pluginPermissions);
-
-          await this.getConnection()!.request(PH_LOAD_PLUGIN, {
-            pluginPath: plugin.path,
-            pluginName: plugin.name,
-            permissions: pluginPermissions,
-          } satisfies LoadPluginPayload);
-
-          this.pluginList.push(this.toPluginInfo(plugin, { enabled: true, status: 'loaded' }));
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          console.error(`[PluginHost] Failed to load plugin '${plugin.name}':`, err);
-          this.pluginList.push(
-            this.toPluginInfo(plugin, {
-              enabled: false,
-              status: 'error',
-              errorMessage,
-            }),
-          );
-
-          this.bifrost.notifications.open({
-            type: 'error',
-            content: `Plugin '${plugin.displayName || plugin.name}' failed to load: ${errorMessage}`,
-            source: plugin.displayName || plugin.name,
-          });
         }
       }
     }
 
     this.emit(EVENT_PLUGIN_LIST_CHANGED);
 
-    // Defer onStartup activations until the Studio UI is fully rendered.
-    // Permission dialogs require the DOM, so activating during the init
-    // chain would deadlock. The 'ready' event guarantees a live UI.
+    // Eager plugins WITH permissions and onStartup plugins are deferred
+    // until the Studio UI is fully rendered. The 'ready' event guarantees
+    // a live DOM — without this, permission dialogs would deadlock the
+    // initialization because React hasn't mounted yet.
     const onStartupPlugins = discovered.filter((plugin) => this.activationManager.hasOnStartupEvent(plugin.name));
-    if (onStartupPlugins.length > 0) {
+    const hasDeferredWork = pendingEagerPlugins.length > 0 || onStartupPlugins.length > 0;
+
+    if (hasDeferredWork) {
       this.onStartupDisposer?.dispose();
       this.onStartupDisposer = this.bifrost.events.on('ready', () => {
-        void this.activatePluginsSequentially(onStartupPlugins);
+        void this.loadDeferredPlugins(pendingEagerPlugins, onStartupPlugins);
       });
     }
   }
@@ -634,6 +633,83 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
     for (const plugin of plugins) {
       await this.activationManager.activatePlugin(plugin.name);
     }
+  }
+
+  /**
+   * Loads eager plugins and activates onStartup plugins after the UI is ready.
+   * Eager plugins (those without activationEvents) show permission dialogs
+   * and load code here — safely deferred from the init chain to avoid
+   * deadlocking before React has rendered.
+   */
+  private async loadDeferredPlugins(
+    eagerPlugins: DiscoveredPlugin[],
+    onStartupPlugins: DiscoveredPlugin[],
+  ): Promise<void> {
+    for (const plugin of eagerPlugins) {
+      await this.loadEagerPlugin(plugin);
+    }
+
+    for (const plugin of onStartupPlugins) {
+      await this.activationManager.activatePlugin(plugin.name);
+    }
+  }
+
+  private async loadEagerPlugin(plugin: DiscoveredPlugin): Promise<void> {
+    const pluginPermissions = plugin.manifest?.permissions ?? [];
+
+    const allowed = await showPermissionReviewDialog(
+      this.bifrost,
+      plugin.displayName || plugin.name,
+      plugin.name,
+      pluginPermissions,
+      this.permissionStore,
+    );
+
+    if (!allowed) {
+      const pluginInfo = this.pluginList.find((entry) => entry.name === plugin.name);
+      if (pluginInfo != null) {
+        pluginInfo.enabled = false;
+        pluginInfo.status = 'disabled';
+      }
+
+      const disabledPlugins: string[] = (this.bifrost.settings.get('plugins.disabledPlugins') as string[]) ?? [];
+      if (!disabledPlugins.includes(plugin.name)) {
+        this.bifrost.settings.set('plugins.disabledPlugins', [...disabledPlugins, plugin.name]);
+      }
+
+      this.emit(EVENT_PLUGIN_LIST_CHANGED);
+      return;
+    }
+
+    try {
+      this.bridge.permissionGate.register(plugin.name, pluginPermissions);
+
+      await this.getConnection()!.request(PH_LOAD_PLUGIN, {
+        pluginPath: plugin.path,
+        pluginName: plugin.name,
+        permissions: pluginPermissions,
+      } satisfies LoadPluginPayload);
+
+      this.updatePluginStatus(plugin.name, 'loaded');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(`[PluginHost] Failed to load plugin '${plugin.name}':`, err);
+
+      const pluginInfo = this.pluginList.find((entry) => entry.name === plugin.name);
+      if (pluginInfo != null) {
+        pluginInfo.enabled = false;
+        pluginInfo.status = 'error';
+        pluginInfo.errorMessage = errorMessage;
+      }
+
+      this.bifrost.notifications.open({
+        type: 'error',
+        content: `Plugin '${plugin.displayName || plugin.name}' failed to load: ${errorMessage}`,
+        source: plugin.displayName || plugin.name,
+      });
+    }
+
+    this.emit(EVENT_PLUGIN_LIST_CHANGED);
   }
 
   getPluginList(): PluginInfo[] {
@@ -929,6 +1005,7 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
     this.childProcess = null;
     this.ready = false;
     this.connection = null;
+    (globalThis as any).__pluginHostPid = null;
   }
 
   kill(): void {
@@ -942,6 +1019,7 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
       this.childProcess = null;
       this.ready = false;
       this.connection = null;
+      (globalThis as any).__pluginHostPid = null;
     }
   }
 

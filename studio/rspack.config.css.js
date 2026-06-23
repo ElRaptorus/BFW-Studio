@@ -47,8 +47,7 @@ module.exports = {
   devtool: 'source-map',
   plugins: [new rspack.CssExtractRspackPlugin({ filename: 'bifrost-styles.css' })],
   performance: {
-    maxAssetSize: 512 * 1024,
-    maxEntrypointSize: 512 * 1024,
+    hints: false,
   },
   optimization,
   target: 'web',

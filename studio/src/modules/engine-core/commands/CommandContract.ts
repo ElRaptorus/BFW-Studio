@@ -32,6 +32,7 @@ export const ENGINE_COMMANDS = {
 
   triggerMessage: 'engine.triggerMessage',
   triggerSignal: 'engine.triggerSignal',
+  triggerTimerEvent: 'engine.triggerTimerEvent',
 } as const;
 
 export type EngineCommandId = (typeof ENGINE_COMMANDS)[keyof typeof ENGINE_COMMANDS];
@@ -58,4 +59,5 @@ export interface EngineCommandArgs {
     options?: TriggerOptions,
   ];
   [ENGINE_COMMANDS.triggerSignal]: [engineId: string, signalName: string];
+  [ENGINE_COMMANDS.triggerTimerEvent]: [engineId: string, flowNodeInstanceId: string];
 }

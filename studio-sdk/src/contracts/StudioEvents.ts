@@ -1,11 +1,10 @@
 export type StudioEventName =
   | 'ready'
-  | 'eulaAccepted'
   | 'settingsUpdate'
   | 'solutionChanged'
   | 'gitStatusChanged'
+  | 'pluginOverlayFactoriesChanged'
   | 'unspecifiedGlobalUpdate';
 
-export type StudioEulaAcceptedEventName = 'eulaAccepted';
 export type StudioSolutionChangedEvent = 'solutionChanged';
-export type StudioEmittableEventName = 'unspecifiedGlobalUpdate';
+export type StudioEmittableEventName = 'unspecifiedGlobalUpdate' | 'pluginOverlayFactoriesChanged';

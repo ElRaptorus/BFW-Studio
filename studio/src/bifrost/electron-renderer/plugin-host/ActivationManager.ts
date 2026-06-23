@@ -182,7 +182,10 @@ export class ActivationManager {
       this.disposeSubscriptions(pluginName);
 
       this.pluginHost.cleanupPluginResources(pluginName);
-      this.pluginHost.updatePluginStatus(pluginName, 'error', errorMessage);
+
+      const isQuarantineError = errorMessage.includes('is quarantined and cannot be loaded');
+      const status = isQuarantineError ? 'quarantined' : 'error';
+      this.pluginHost.updatePluginStatus(pluginName, status, errorMessage);
 
       this.bifrost.notifications.open({
         type: 'error',

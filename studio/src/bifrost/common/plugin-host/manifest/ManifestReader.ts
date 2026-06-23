@@ -19,7 +19,7 @@ import type {
 
 const VALID_PERMISSIONS = new Set<string>(ALL_PERMISSIONS);
 const RESERVED_PERMISSIONS = new Set(['network']);
-const HARD_DENIED_PERMISSION_GROUPS = new Set(['commands.engine', 'commands.git', 'commands.plugins', 'commands.dev']);
+const HARD_DENIED_PERMISSION_GROUPS = new Set(['commands.engine', 'commands.git', 'commands.dev']);
 
 const VALID_SETTING_TYPES = new Set(['boolean', 'string', 'number', 'string[]', 'object']);
 const VALID_PANE_AREAS = new Set(['left', 'right', 'bottom']);

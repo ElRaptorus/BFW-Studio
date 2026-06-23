@@ -101,79 +101,76 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
     };
   }, []);
 
-  const handleMount: OnMount = useCallback(
-    (editor, monacoObj) => {
-      editorRef.current = editor;
-      latestPropsRef.current.onEditorReady(editor);
+  const handleMount: OnMount = useCallback((editor, monacoObj) => {
+    editorRef.current = editor;
+    latestPropsRef.current.onEditorReady(editor);
 
-      const tsLanguage = (monacoObj.languages as any).typescript;
-      tsLanguage.javascriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: true,
-        noSyntaxValidation: true,
-      });
+    const tsLanguage = (monacoObj.languages as any).typescript;
+    tsLanguage.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+    });
 
-      tsLanguage.javascriptDefaults.setCompilerOptions({
-        target: tsLanguage.ScriptTarget.ES5,
-        allowNonTsExtensions: true,
-        lib: ['es2019'],
-      });
+    tsLanguage.javascriptDefaults.setCompilerOptions({
+      target: tsLanguage.ScriptTarget.ES5,
+      allowNonTsExtensions: true,
+      lib: ['es2019'],
+    });
 
-      editor.onDidChangeModelContent(() => {
-        currentValueRef.current = editor.getValue();
-      });
+    editor.onDidChangeModelContent(() => {
+      currentValueRef.current = editor.getValue();
+    });
 
-      if (latestPropsRef.current.autoFocus === true) {
-        editor.focus();
+    if (latestPropsRef.current.autoFocus === true) {
+      editor.focus();
+    }
+
+    editor.onDidBlurEditorText(() => {
+      const value = currentValueRef.current;
+      const current = latestPropsRef.current;
+      const valueIsAlreadySet = value === current.initialValue;
+      const valueIsStillEmpty = value === '' && current.initialValue === undefined;
+      if (valueIsAlreadySet || valueIsStillEmpty) {
+        return;
       }
+      current.onChange?.(value);
+    });
 
-      editor.onDidBlurEditorText(() => {
-        const value = currentValueRef.current;
-        const current = latestPropsRef.current;
-        const valueIsAlreadySet = value === current.initialValue;
-        const valueIsStillEmpty = value === '' && current.initialValue === undefined;
-        if (valueIsAlreadySet || valueIsStillEmpty) {
-          return;
-        }
-        current.onChange?.(value);
-      });
+    editor.createContextKey('isMultiLineCodeEditor', true);
 
-      editor.createContextKey('isMultiLineCodeEditor', true);
+    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyMod.Shift | monacoObj.KeyCode.KeyZ, () => null);
 
-      editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyMod.Shift | monacoObj.KeyCode.KeyZ, () => null);
+    editor.addCommand(
+      monacoObj.KeyMod.Shift | monacoObj.KeyCode.Enter,
+      () => {
+        (document.activeElement as HTMLElement).blur();
+      },
+      'isMultiLineCodeEditor',
+    );
 
-      editor.addCommand(
-        monacoObj.KeyMod.Shift | monacoObj.KeyCode.Enter,
-        () => {
-          (document.activeElement as HTMLElement).blur();
+    const pasteFromClipBoard = async () =>
+      editor.executeEdits(null, [
+        {
+          range: editor.getSelection() as monaco.IRange,
+          text: await navigator.clipboard.readText(),
+          forceMoveMarkers: true,
         },
-        'isMultiLineCodeEditor',
-      );
+      ]);
 
-      const pasteFromClipBoard = async () =>
-        editor.executeEdits(null, [
-          {
-            range: editor.getSelection() as monaco.IRange,
-            text: await navigator.clipboard.readText(),
-            forceMoveMarkers: true,
-          },
-        ]);
+    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyV, pasteFromClipBoard);
+    editor.addCommand(monacoObj.KeyMod.Shift | monacoObj.KeyCode.Insert, pasteFromClipBoard);
 
-      editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyV, pasteFromClipBoard);
-      editor.addCommand(monacoObj.KeyMod.Shift | monacoObj.KeyCode.Insert, pasteFromClipBoard);
+    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyY, () =>
+      editor.trigger('MultiLineCodeEditor', 'redo', null),
+    );
 
-      editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyY, () =>
-        editor.trigger('MultiLineCodeEditor', 'redo', null),
-      );
-
-      if (latestPropsRef.current.onKeyDown) {
-        editor.onKeyDown(latestPropsRef.current.onKeyDown);
-      }
-      if (latestPropsRef.current.onKeyUp) {
-        editor.onKeyUp(latestPropsRef.current.onKeyUp);
-      }
-    },
-    [studio],
-  );
+    if (latestPropsRef.current.onKeyDown) {
+      editor.onKeyDown(latestPropsRef.current.onKeyDown);
+    }
+    if (latestPropsRef.current.onKeyUp) {
+      editor.onKeyUp(latestPropsRef.current.onKeyUp);
+    }
+  }, []);
 
   const sizeClass = props.size ? `pane__textarea--${props.size}` : '';
   return (

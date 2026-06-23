@@ -293,11 +293,7 @@ export async function createFlowNodeInstanceOverlays(
     overlays.push(createTriggerSignalEventLink(selectedFlowNodeInstance, eventName ?? '', model, studio));
   }
 
-  if (
-    (isCatchEvent || flowNodeModel?.type === FlowNodeType.StartEvent) &&
-    selectedFlowNodeInstance.eventType === EventDefinitionType.Timer &&
-    isActive
-  ) {
+  if (isCatchEvent && selectedFlowNodeInstance.eventType === EventDefinitionType.Timer && isActive) {
     overlays.push(createTriggerTimerEventLink(selectedFlowNodeInstance, model, studio));
   }
 

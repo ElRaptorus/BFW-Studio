@@ -1,4 +1,4 @@
-import type { PluginPermission, PluginPermissionSet } from './PermissionTypes';
+import { PERMISSION_HIERARCHY, type PluginPermission, type PluginPermissionSet } from './PermissionTypes';
 
 export class PermissionDeniedError extends Error {
   readonly pluginName: string;
@@ -13,13 +13,30 @@ export class PermissionDeniedError extends Error {
   }
 }
 
+/**
+ * Expands declared permissions by resolving hierarchy rules.
+ * For example, declaring 'bpmn.renderer' also grants 'bpmn.modelling' and 'bpmn'.
+ */
+function expandPermissions(declared: PluginPermission[]): Set<PluginPermission> {
+  const expanded = new Set<PluginPermission>(declared);
+  for (const permission of declared) {
+    const implied = PERMISSION_HIERARCHY[permission];
+    if (implied != null) {
+      for (const impliedPermission of implied) {
+        expanded.add(impliedPermission);
+      }
+    }
+  }
+  return expanded;
+}
+
 class DefaultPermissionSet implements PluginPermissionSet {
   readonly pluginName: string;
   readonly granted: ReadonlySet<PluginPermission>;
 
   constructor(pluginName: string, permissions: PluginPermission[]) {
     this.pluginName = pluginName;
-    this.granted = new Set(permissions);
+    this.granted = expandPermissions(permissions);
   }
 
   has(permission: PluginPermission): boolean {

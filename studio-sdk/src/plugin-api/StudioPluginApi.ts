@@ -1,3 +1,4 @@
+import type { BpmnApi } from './BpmnApi';
 import type { CommandsApi } from './CommandsApi';
 import type { DiagnosticsApi } from './DiagnosticsApi';
 import type { DialogsApi } from './DialogsApi';
@@ -36,6 +37,8 @@ export interface PluginEnvironment {
  * boundary between the Plugin Host child process and the Studio renderer.
  */
 export interface StudioPluginApi {
+  /** BPMN editor interaction: overlays, element events, queries. Requires 'bpmn' permission. */
+  readonly bpmn: BpmnApi;
   /** Command registration and execution. */
   readonly commands: CommandsApi;
   /** Diagnostics (errors, warnings, info) contribution and observation. */

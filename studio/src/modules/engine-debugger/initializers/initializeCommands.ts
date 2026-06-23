@@ -368,28 +368,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
         return;
       }
 
-      const args = {
-        engineId: model.engineId,
-        id: flowNodeInstance.id,
-      };
-
-      bifrost.commands.executeCommand('engine.triggerTimerEvent', [args]);
+      bifrost.commands.executeCommand(ENGINE_COMMANDS.triggerTimerEvent, [model.engineId, flowNodeInstance.id]);
     },
     {
       enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>
         isEngineOnline(connectionManager, model.engineId),
     },
-  );
-
-  bifrost.commands.register(
-    'engine.triggerTimerEvent',
-    async (_args: { engineId: string; id: string }) => {
-      bifrost.notifications.open({
-        type: 'info',
-        content: 'Timer triggering not yet supported by the engine API',
-      });
-    },
-    { enabledWhen: (args: { engineId: string; id: string }) => isEngineOnline(connectionManager, args.engineId) },
   );
 
   async function askMessageTriggerConfirmation(

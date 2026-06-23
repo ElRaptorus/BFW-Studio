@@ -57,6 +57,11 @@ export function checkCommandAccess(commandId: string, pluginName: string, permis
     return;
   }
 
+  if (commandId.startsWith('plugin.')) {
+    permissionGate.assert(pluginName, 'commands.plugins', commandId);
+    return;
+  }
+
   const group = commandId.split('.')[0];
   const requiredPermission = GROUP_PERMISSION[group];
   if (requiredPermission) {

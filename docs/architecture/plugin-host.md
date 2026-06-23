@@ -526,6 +526,40 @@ The bridge registers event subscriptions through `PH_REGISTER_CALLBACK` with `na
 
 **Cleanup on plugin unload**: All themes registered by the plugin (both manifest and runtime) are unregistered. Injected `<style>` elements are removed. If the active theme was contributed by the disposed plugin, the type-aware fallback activates.
 
+#### `bpmn` — BPMN Editor API
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `setOverlays` | `(uri, overlays[]) → void` | Imperative overlay placement — replaces all overlays for this plugin on the given URI |
+| `clearOverlays` | `(uri, filter?) → void` | Remove overlays for this plugin on the given URI (optionally filtered by elementId) |
+| `getElements` | `(uri) → BpmnElementSnapshot[]` | All elements on the current diagram plane |
+| `getElement` | `(uri, elementId) → BpmnElementDetailSnapshot \| null` | Detail snapshot with properties, incoming, outgoing |
+| `getXml` | `(uri) → string` | Current BPMN XML content |
+| `onElementSelected` | `(uri, callback) → Disposable` | Subscribe to selection changes |
+| `onElementHover` | `(uri, callback) → Disposable` | Subscribe to hover events |
+| `onElementDoubleClick` | `(uri, callback) → Disposable` | Subscribe to double-click events |
+| `onElementContextMenu` | `(uri, callback) → Disposable` | Subscribe to context menu events |
+| `onOverlayContextChanged` | `(uri, callback) → Disposable` | Subscribe to overlay context changes (data-updated, selection-changed, document-opened) |
+| `registerOverlayFactory` | `(factory, options?) → Disposable` | Register a factory callback for auto-rendered overlays (see below) |
+
+**Overlay Factory (auto-render model)**:
+
+`registerOverlayFactory` registers a callback that the Studio invokes on every BPMN overlay refresh cycle (document open, data change, root change, settings change). The factory receives an `OverlayFactoryContext` containing the current element list, document URI, and the overlay chain from previous factories. It returns a `BpmnOverlayDescriptor[]` representing the final overlay set for the next factory in the chain.
+
+Key design decisions:
+- **One factory per plugin** — re-registration replaces the previous factory (logs a console warning).
+- **Priority-ordered chain** — factories are called in ascending priority order (lowest first, highest last). Default priority: 100. Higher priority = called later = more power to override.
+- **Element-scoped, not file-scoped** — factories receive elements, not URIs. A factory works on any BPMN file.
+- **Override chain semantics** — each factory receives `currentOverlays` (output of previous factory) and `originalDefaultOverlays` (Studio's built-in overlays, immutable). A factory can add, remove, or replace overlays.
+- **Performance guards** — per-factory 500ms timeout, input fingerprint caching, sequential processing.
+- **Error isolation** — one factory throwing doesn't break the chain; its input is passed unchanged to the next factory.
+
+Files:
+- `studio/src/bifrost/electron-renderer/plugin-host/PluginOverlayStore.ts` — factory registry, invocation, caching
+- `studio/src/bifrost/electron-renderer/plugin-host/BpmnApiBridge.ts` — callback registration, IPC bridge
+- `studio/src/modules/bpmn-editor/BpmnDocumentModel.ts` — `refreshOverlays()` integration point
+- `studio-sdk/src/plugin-api/BpmnApi.ts` — SDK type definitions
+
 ### Command namespacing
 
 Commands registered by plugins are automatically prefixed with `plugin.<pluginName>.` to prevent collisions with module commands.

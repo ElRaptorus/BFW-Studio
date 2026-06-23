@@ -58,6 +58,14 @@ export class PluginService extends AbstractEmitter {
     }
   }
 
+  async shutdown(): Promise<void> {
+    try {
+      await this.pluginHost.dispose();
+    } catch (err) {
+      console.error('[PluginService] Failed to dispose plugin host:', err);
+    }
+  }
+
   cacheLogo(logoPath: string, logoDataUrl: string): void {
     this.logoCache.set(logoPath, logoDataUrl);
   }

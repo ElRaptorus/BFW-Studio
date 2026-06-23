@@ -1,5 +1,6 @@
 import type { PluginHostConnection } from '#bifrost/contracts/PluginHostConnection';
 
+import { BpmnApi } from './BpmnApi';
 import { CommandsApi } from './CommandsApi';
 import { DiagnosticsApi } from './DiagnosticsApi';
 import { DialogsApi } from './DialogsApi';
@@ -24,6 +25,7 @@ export interface PluginEnvironment {
 }
 
 export class StudioPluginApi {
+  readonly bpmn: BpmnApi;
   readonly commands: CommandsApi;
   readonly diagnostics: DiagnosticsApi;
   readonly dialogs: DialogsApi;
@@ -43,6 +45,7 @@ export class StudioPluginApi {
 
   constructor(connection: PluginHostConnection, env: PluginEnvironment) {
     this.env = Object.freeze(env);
+    this.bpmn = new BpmnApi(connection, env.pluginName);
     this.commands = new CommandsApi(connection, env.pluginName);
     this.diagnostics = new DiagnosticsApi(connection, env.pluginName);
     this.dialogs = new DialogsApi(connection, env.pluginName);
@@ -61,6 +64,7 @@ export class StudioPluginApi {
   }
 
   dispose(): void {
+    this.bpmn.disposeCallbacks();
     this.commands.disposeCallbacks();
     this.diagnostics.disposeCallbacks();
     this.notifications.disposeCallbacks();

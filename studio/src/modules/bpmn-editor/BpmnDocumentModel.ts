@@ -5,7 +5,7 @@ import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOv
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 
-import type { AbstractSubscription, ILoadable, Studio } from '@evil/bifrost_fw_sdk';
+import type { AbstractSubscription, BpmnElement, ILoadable, Studio } from '@evil/bifrost_fw_sdk';
 import { EditorDocumentModel, waitForAcceptance } from '@evil/bifrost_fw_sdk';
 import type { FileEventType, WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
 
@@ -13,6 +13,8 @@ import {
   EVENT_FRAGMENT_ID_UPDATED,
   EVENT_METADATA_UPDATED,
 } from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
+import { PLUGIN_OVERLAY_STORE_KEY } from '../../bifrost/electron-renderer/plugin-host/BpmnApiBridge';
+import type { PluginOverlayStore } from '../../bifrost/electron-renderer/plugin-host/PluginOverlayStore';
 import BpmnModelerComponentAdapter, {
   EVENT_BPMN_MODELER_ADAPTER_LOCATION_CHANGED,
   EVENT_BPMN_MODELER_ADAPTER_ROOT_CHANGED,
@@ -62,6 +64,8 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
   private subscriptions: AbstractSubscription[] = [];
 
   private manualSaveTriggered = false;
+  private pluginOverlayDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastPluginOverlaySnapshot: Overlay[] | null = null;
 
   private constructor(
     uri: string,
@@ -135,6 +139,9 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
           this.toggleDataObjectElementsVisibilityIfNecessary();
           this.refreshOverlays();
         }
+      }),
+      studio.events.on('pluginOverlayFactoriesChanged', () => {
+        this.refreshOverlays();
       }),
       this.on('EVENT_DATA_UPDATED', () => {
         this.toggleDataObjectElementsVisibilityIfNecessary();
@@ -271,6 +278,11 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
     this.subscriptions = [];
     this.eventEmitter.removeAllListeners();
     this.watcherDisposable?.dispose();
+    if (this.pluginOverlayDebounceTimer != null) {
+      clearTimeout(this.pluginOverlayDebounceTimer);
+      this.pluginOverlayDebounceTimer = null;
+    }
+    this.lastPluginOverlaySnapshot = null;
     this.overlays?.dispose();
     this.bpmnComponentAdapter?.dispose();
     (this.overlays as any) = undefined;
@@ -494,7 +506,7 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
 
   private refreshOverlays(): void {
     this.bpmnComponentAdapter.onceInteractive(() => {
-      const overlays: Overlay[] = [];
+      const internalOverlays: Overlay[] = [];
 
       const elementsWithoutOverlays = [...ELEMENTS_WITHOUT_OVERLAY_SUPPORT];
 
@@ -508,11 +520,57 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
         .filter((element) => !elementsWithoutOverlays.includes(element.type));
 
       for (const element of elementsWithOverlaySupport) {
-        overlays.push(...createFlowNodeOverlays(element, this.studio, this));
+        internalOverlays.push(...createFlowNodeOverlays(element, this.studio, this));
       }
 
-      this.overlays.updateAll(overlays);
+      const pluginOverlayStore = this.getPluginOverlayStore();
+      if (pluginOverlayStore == null || !pluginOverlayStore.hasFactories()) {
+        this.lastPluginOverlaySnapshot = null;
+        this.overlays.updateAll(internalOverlays);
+        return;
+      }
+
+      if (this.lastPluginOverlaySnapshot != null) {
+        this.overlays.updateAll(this.lastPluginOverlaySnapshot);
+      } else {
+        this.overlays.updateAll(internalOverlays);
+      }
+
+      this.schedulePluginOverlayResolution(elementsWithOverlaySupport, internalOverlays, pluginOverlayStore);
     });
+  }
+
+  private schedulePluginOverlayResolution(
+    elementsWithOverlaySupport: BpmnElement[],
+    internalOverlays: Overlay[],
+    pluginOverlayStore: PluginOverlayStore,
+  ): void {
+    if (this.pluginOverlayDebounceTimer != null) {
+      clearTimeout(this.pluginOverlayDebounceTimer);
+    }
+
+    this.pluginOverlayDebounceTimer = setTimeout(() => {
+      this.pluginOverlayDebounceTimer = null;
+      pluginOverlayStore
+        .resolveWithOverlays(elementsWithOverlaySupport, this.uri, internalOverlays)
+        .then((finalOverlays) => {
+          this.lastPluginOverlaySnapshot = finalOverlays;
+          this.overlays.updateAll(finalOverlays);
+        })
+        .catch((error) => {
+          console.warn('[BpmnDocumentModel] Plugin overlay resolution failed:', error);
+          this.lastPluginOverlaySnapshot = null;
+          this.overlays.updateAll(internalOverlays);
+        });
+    }, 100);
+  }
+
+  private getPluginOverlayStore(): PluginOverlayStore | null {
+    try {
+      return this.studio.getSharedRessource<PluginOverlayStore>(PLUGIN_OVERLAY_STORE_KEY);
+    } catch {
+      return null;
+    }
   }
 
   private startFileWatcher(): void {

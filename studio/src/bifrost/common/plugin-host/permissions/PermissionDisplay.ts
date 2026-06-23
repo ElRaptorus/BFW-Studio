@@ -32,9 +32,35 @@ export const PERMISSION_DISPLAY: Record<PluginPermission, PermissionDisplayInfo>
     warningLevel: 'medium',
     icon: '⚠',
   },
+  'commands.plugins': {
+    label: 'Cross-Plugin Commands',
+    description: 'Execute commands registered by other plugins.',
+    warningLevel: 'high',
+    icon: '⚠',
+  },
+  bpmn: {
+    label: 'BPMN Editor Access',
+    description: 'Read BPMN element data, subscribe to editor events, and place overlays on diagram elements.',
+    warningLevel: 'low',
+    icon: 'ℹ',
+  },
+  'bpmn.modelling': {
+    label: 'BPMN Modelling',
+    description:
+      'Modify the BPMN diagram: update element properties, add/remove elements, and contribute palette and context pad entries.',
+    warningLevel: 'medium',
+    icon: '⚠',
+  },
+  'bpmn.renderer': {
+    label: 'BPMN Renderer Module Injection',
+    description:
+      'Inject custom diagram-js modules directly into the BPMN editor renderer. Has full access to all diagram-js services.',
+    warningLevel: 'high',
+    icon: '⚠',
+  },
   'renderer-modules': {
-    label: 'Editor Integration',
-    description: 'Inject code into the BPMN/DMN editor.',
+    label: 'Editor Integration (Legacy)',
+    description: 'Inject code into the BPMN/DMN editor. Superseded by bpmn.renderer.',
     warningLevel: 'high',
     icon: '⚠',
   },

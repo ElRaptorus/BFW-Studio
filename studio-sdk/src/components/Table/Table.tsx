@@ -136,6 +136,7 @@ export function Table<TData>(props: TableProps<TData>): React.JSX.Element {
   const resolvedColumnSizing = columnSizing ?? internalColumnSizing;
   const resolvedOnColumnSizingChange: OnChangeFn<ColumnSizingState> = onColumnSizingChange ?? setInternalColumnSizing;
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

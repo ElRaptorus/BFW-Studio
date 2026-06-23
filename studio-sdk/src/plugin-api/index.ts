@@ -1,4 +1,22 @@
 export type { StudioPluginApi, PluginEnvironment } from './StudioPluginApi';
+export type {
+  BpmnApi,
+  BpmnElementEvent,
+  BpmnElementDetailSnapshot,
+  BpmnElementSnapshot,
+  BpmnOverlayCallActivityLink,
+  BpmnOverlayDescriptor,
+  BpmnOverlayDocumentationMarker,
+  BpmnOverlayMultiFlowWarning,
+  BpmnOverlayNotExecutableMarker,
+  OverlayContextEvent,
+  OverlayFactoryContext,
+  OverlayFactoryOptions,
+  PluginBpmnOverlay,
+  PluginBpmnOverlayBadge,
+  PluginBpmnOverlayIcon,
+} from './BpmnApi';
+export { PluginBpmnOverlayPosition, PluginBpmnOverlayStyle } from './BpmnApi';
 export type { CommandsApi } from './CommandsApi';
 export type { DiagnosticsApi } from './DiagnosticsApi';
 export type { DialogsApi } from './DialogsApi';

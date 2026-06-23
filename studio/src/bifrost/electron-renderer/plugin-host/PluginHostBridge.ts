@@ -23,6 +23,7 @@ import type { WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
 
 import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { EVENT_SETTINGS_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/SettingsEvents';
+import { BpmnApiBridge } from './BpmnApiBridge';
 import { createIframeDocumentRendererConstructor } from './IframeDocumentRenderer';
 import { createIframePaneProvider } from './IframePaneProvider';
 import type { PluginHost } from './PluginHost';
@@ -114,10 +115,13 @@ export class PluginHostBridge {
 
   private contributionRegistrar: ContributionRegistrar | null = null;
 
+  private bpmnBridge: BpmnApiBridge;
+
   constructor(bifrost: Bifrost, pluginHost: PluginHost, pluginIframeManager: PluginIframeManager) {
     this.bifrost = bifrost;
     this.pluginHost = pluginHost;
     this.pluginIframeManager = pluginIframeManager;
+    this.bpmnBridge = new BpmnApiBridge(bifrost, pluginHost);
   }
 
   setContributionRegistrar(registrar: ContributionRegistrar): void {
@@ -179,6 +183,9 @@ export class PluginHostBridge {
         return this.handleViewsApi(method, args, callerName);
       case 'themes':
         return this.handleThemesApi(method, args, callerName);
+      case 'bpmn':
+        this.permissionGate.assert(callerName, 'bpmn', `bpmn.${method}`);
+        return this.bpmnBridge.handleApiRequest(method, args, callerName);
       default:
         throw new Error(`Unknown API namespace: ${namespace}`);
     }
@@ -514,6 +521,13 @@ export class PluginHostBridge {
       return;
     }
 
+    if (namespace === 'bpmn') {
+      const pluginName = callerName ?? '_unknown';
+      this.permissionGate.assert(pluginName, 'bpmn', `bpmn.${method}`);
+      this.bpmnBridge.registerCallback(payload, (name) => this.getOrCreatePluginGroup(name));
+      return;
+    }
+
     console.warn(
       `[PluginHostBridge] Unhandled callback registration: ${namespace}.${method} (plugin: ${callerName ?? 'unknown'}, callbackId: ${callbackId})`,
     );
@@ -540,6 +554,7 @@ export class PluginHostBridge {
       this.registeredCallbacks.delete(pluginName);
     }
 
+    this.bpmnBridge.disposePlugin(pluginName);
     this.bifrost.diagnostics.clearDiagnostics(`plugin.${pluginName}`);
 
     const panePrefix = `plugin.${pluginName}.`;
@@ -602,6 +617,8 @@ export class PluginHostBridge {
       this.bifrost.dialog.close();
       this.activeDialogOwner = null;
     }
+
+    this.bpmnBridge.dispose();
   }
 
   private getOrCreatePluginGroup(pluginName: string): Map<string, { disposer: () => void }> {
@@ -778,6 +795,10 @@ export class PluginHostBridge {
         const [uri, isDirty] = args as [string, boolean];
         this.bifrost.editors.setDirty(uri, isDirty);
         return undefined;
+      }
+      case 'getFocusedDocumentUri': {
+        const focused = this.bifrost.editors.getFocusedEditorDocument();
+        return focused?.uri ?? null;
       }
       default:
         throw new Error(`Unknown editors method: ${method}`);

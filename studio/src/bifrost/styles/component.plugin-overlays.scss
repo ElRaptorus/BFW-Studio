@@ -1,0 +1,170 @@
+// Plugin overlay tokens are defined on `.bifrost` without a theme qualifier
+// so they resolve regardless of which specific theme is active. Badges are
+// self-contained (opaque background + border) and designed for high contrast
+// on any canvas background.
+.bifrost {
+  --theme-plugin-overlay-info-bg: #1b4b80;
+  --theme-plugin-overlay-info-fg: #9ec5fe;
+  --theme-plugin-overlay-info-border: #3d7cc9;
+  --theme-plugin-overlay-warning-bg: #664d03;
+  --theme-plugin-overlay-warning-fg: #ffda6a;
+  --theme-plugin-overlay-warning-border: #997404;
+  --theme-plugin-overlay-error-bg: #6b1d25;
+  --theme-plugin-overlay-error-fg: #f5a3ab;
+  --theme-plugin-overlay-error-border: #a52834;
+  --theme-plugin-overlay-success-bg: #13653b;
+  --theme-plugin-overlay-success-fg: #75d5a4;
+  --theme-plugin-overlay-success-border: #1f8a55;
+  --theme-plugin-overlay-neutral-bg: #3a3f47;
+  --theme-plugin-overlay-neutral-fg: #d3d6d8;
+  --theme-plugin-overlay-neutral-border: #5a6068;
+}
+
+.evil-plugin-overlay {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  font-size: 11px;
+  line-height: 1;
+  z-index: 200;
+}
+
+.evil-plugin-overlay--badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 2px 6px;
+  border-radius: 9px;
+  font-weight: 700;
+  background: var(--theme-plugin-overlay-neutral-bg);
+  color: var(--theme-plugin-overlay-neutral-fg);
+  border: 1px solid var(--theme-plugin-overlay-neutral-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  cursor: default;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+
+  &:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.evil-plugin-overlay--badge[data-clickable='true'] {
+  cursor: pointer;
+
+  &:hover {
+    transform: scale(1.2);
+    filter: brightness(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.evil-plugin-overlay--icon {
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  color: var(--theme-plugin-overlay-neutral-fg);
+  background: var(--theme-plugin-overlay-neutral-bg);
+  border: 1px solid var(--theme-plugin-overlay-neutral-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: default;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+
+  &:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.evil-plugin-overlay--icon[data-clickable='true'] {
+  cursor: pointer;
+
+  &:hover {
+    transform: scale(1.2);
+    filter: brightness(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.evil-plugin-overlay--info {
+  &.evil-plugin-overlay--badge {
+    background: var(--theme-plugin-overlay-info-bg);
+    color: var(--theme-plugin-overlay-info-fg);
+    border-color: var(--theme-plugin-overlay-info-border);
+  }
+
+  &.evil-plugin-overlay--icon {
+    color: var(--theme-plugin-overlay-info-fg);
+    background: var(--theme-plugin-overlay-info-bg);
+    border-color: var(--theme-plugin-overlay-info-border);
+  }
+}
+
+.evil-plugin-overlay--warning {
+  &.evil-plugin-overlay--badge {
+    background: var(--theme-plugin-overlay-warning-bg);
+    color: var(--theme-plugin-overlay-warning-fg);
+    border-color: var(--theme-plugin-overlay-warning-border);
+  }
+
+  &.evil-plugin-overlay--icon {
+    color: var(--theme-plugin-overlay-warning-fg);
+    background: var(--theme-plugin-overlay-warning-bg);
+    border-color: var(--theme-plugin-overlay-warning-border);
+  }
+}
+
+.evil-plugin-overlay--error {
+  &.evil-plugin-overlay--badge {
+    background: var(--theme-plugin-overlay-error-bg);
+    color: var(--theme-plugin-overlay-error-fg);
+    border-color: var(--theme-plugin-overlay-error-border);
+  }
+
+  &.evil-plugin-overlay--icon {
+    color: var(--theme-plugin-overlay-error-fg);
+    background: var(--theme-plugin-overlay-error-bg);
+    border-color: var(--theme-plugin-overlay-error-border);
+  }
+}
+
+.evil-plugin-overlay--success {
+  &.evil-plugin-overlay--badge {
+    background: var(--theme-plugin-overlay-success-bg);
+    color: var(--theme-plugin-overlay-success-fg);
+    border-color: var(--theme-plugin-overlay-success-border);
+  }
+
+  &.evil-plugin-overlay--icon {
+    color: var(--theme-plugin-overlay-success-fg);
+    background: var(--theme-plugin-overlay-success-bg);
+    border-color: var(--theme-plugin-overlay-success-border);
+  }
+}
+
+.evil-plugin-overlay--neutral {
+  &.evil-plugin-overlay--badge {
+    background: var(--theme-plugin-overlay-neutral-bg);
+    color: var(--theme-plugin-overlay-neutral-fg);
+    border-color: var(--theme-plugin-overlay-neutral-border);
+  }
+
+  &.evil-plugin-overlay--icon {
+    color: var(--theme-plugin-overlay-neutral-fg);
+    background: var(--theme-plugin-overlay-neutral-bg);
+    border-color: var(--theme-plugin-overlay-neutral-border);
+  }
+}
