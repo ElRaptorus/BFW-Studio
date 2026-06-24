@@ -3,6 +3,7 @@ export type {
   BifrostStudioManifest,
   KeybindingWhenCondition,
   ManifestBpmnContextPadEntry,
+  ManifestBpmnModule,
   ManifestBpmnPaletteEntry,
   ManifestCommand,
   ManifestContributions,

@@ -35,6 +35,7 @@ import * as path from 'path';
 import { AbstractEmitter, type PluginInfo } from '@evil/bifrost_fw_sdk';
 
 import { EVENT_THEME_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/ThemeEvents';
+import { pluginModuleLoader } from '../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
 import { checkApiVersionCompatibility } from '../../common/plugin-host/manifest/ApiVersionCheck';
 import { readManifest } from '../../common/plugin-host/manifest/ManifestReader';
 import type {
@@ -321,6 +322,10 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
       this.childProcess?.send(msg);
     });
 
+    pluginModuleLoader.setSendFunction((pluginName, data) => {
+      this.bridge.deliverRendererModuleMessage(pluginName, data);
+    });
+
     this.childProcess.stdout?.on('data', (data: Buffer) => {
       const lines = data.toString().trimEnd().split('\n');
       for (const line of lines) {
@@ -548,8 +553,11 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
 
       // Register manifest contributions before loading plugin code
       if (plugin.manifest != null) {
-        const disposer = this.contributionRegistrar.registerContributions(plugin.name, plugin.manifest, () =>
-          this.activationManager.activatePlugin(plugin.name),
+        const disposer = this.contributionRegistrar.registerContributions(
+          plugin.name,
+          plugin.manifest,
+          () => this.activationManager.activatePlugin(plugin.name),
+          plugin.path,
         );
         this.contributionDisposers.set(plugin.name, disposer);
       }
@@ -897,8 +905,11 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
 
     // Re-register manifest contributions
     if (freshPlugin.manifest != null) {
-      const disposer = this.contributionRegistrar.registerContributions(name, freshPlugin.manifest, () =>
-        this.activationManager.activatePlugin(name),
+      const disposer = this.contributionRegistrar.registerContributions(
+        name,
+        freshPlugin.manifest,
+        () => this.activationManager.activatePlugin(name),
+        freshPlugin.path,
       );
       this.contributionDisposers.set(name, disposer);
     }

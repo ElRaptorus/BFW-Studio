@@ -37,7 +37,6 @@ function buildFlagOverlays(uri) {
   return overlays;
 }
 
-
 function activate(api) {
   // ── Manifest command handlers ──────────────────────────────────────────────
 

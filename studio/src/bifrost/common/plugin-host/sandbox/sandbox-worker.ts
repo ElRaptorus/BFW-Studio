@@ -535,6 +535,12 @@ function createPluginApi(): Record<string, unknown> {
       updateContextPadEntry(entryId: string, update: unknown): Promise<unknown> {
         return sendApiRequest('bpmn', 'updateContextPadEntry', [entryId, update]);
       },
+      onRendererModuleMessage(callback: (data: unknown) => void): Promise<{ dispose: () => void }> {
+        return bpmnCallbackApi.register('onRendererModuleMessage', [], callback);
+      },
+      postToRendererModule(data: unknown): Promise<unknown> {
+        return sendApiRequest('bpmn', 'postToRendererModule', [data]);
+      },
       modeling: {
         updateProperties(uri: string, elementId: string, properties: unknown): Promise<unknown> {
           return sendApiRequest('bpmn', 'modeling.updateProperties', [uri, elementId, properties]);

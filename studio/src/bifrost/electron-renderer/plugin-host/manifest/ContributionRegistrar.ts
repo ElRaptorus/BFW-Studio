@@ -15,6 +15,7 @@ import type { BifrostOperatingSystem } from '#bifrost/contracts/BifrostTypes';
 import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
 
 import { pluginBpmnContributionStore } from '../../../../modules/bpmn-core/PluginBpmnContributionStore';
+import { pluginModuleLoader } from '../../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
 import { createPlaceholderPaneProvider } from './PlaceholderPaneProvider';
 
 export interface ContributionDisposer {
@@ -39,6 +40,7 @@ export class ContributionRegistrar {
     pluginName: string,
     manifest: BifrostStudioManifest,
     activatePlugin: () => Promise<void>,
+    pluginPath?: string,
   ): ContributionDisposer {
     const disposers: (() => void)[] = [];
     const contributes = manifest.contributes;
@@ -145,6 +147,27 @@ export class ContributionRegistrar {
       if (hasBpmnModelling) {
         pluginBpmnContributionStore.setContextPadEntries(pluginName, contributes.bpmnContextPad);
         disposers.push(() => pluginBpmnContributionStore.removeContextPadEntries(pluginName));
+      }
+    }
+
+    // ── BPMN Renderer Modules ─────────────────────────────────
+    if (contributes.bpmnModules != null && contributes.bpmnModules.length > 0 && pluginPath != null) {
+      const hasBpmnRenderer = manifest.permissions?.includes('bpmn.renderer') === true;
+      if (hasBpmnRenderer) {
+        const result = pluginModuleLoader.loadPluginModules(pluginName, pluginPath, contributes.bpmnModules);
+        if (result.success) {
+          disposers.push(() => {
+            pluginModuleLoader.unloadPluginModules(pluginName);
+            this.forceReopenBpmnEditors(pluginName);
+          });
+        } else {
+          console.error(`[ContributionRegistrar] Plugin '${pluginName}' renderer module load failed: ${result.error}`);
+          this.bifrost.notifications.open({
+            type: 'error',
+            content: `Plugin '${pluginName}' failed to load renderer modules: ${result.error}`,
+            source: pluginName,
+          });
+        }
       }
     }
 
@@ -520,6 +543,33 @@ export class ContributionRegistrar {
         this.bifrost.theme.setTheme(fallback);
       }
     };
+  }
+
+  // ── BPMN Editor Force-Reopen ─────────────────────────────────
+
+  private forceReopenBpmnEditors(pluginName: string): void {
+    const openDocs = this.bifrost.editors.getOpenEditorDocuments();
+    const bpmnDocs = openDocs.filter((doc) => doc.documentType === 'bpmn');
+    if (bpmnDocs.length === 0) {
+      return;
+    }
+
+    const uris = bpmnDocs.map((doc) => doc.uri);
+
+    void (async () => {
+      for (const doc of bpmnDocs) {
+        await this.bifrost.editors.closeEditorDocument(doc, false, true);
+      }
+      for (const uri of uris) {
+        this.bifrost.editors.focusOrOpenEditorDocument(uri);
+      }
+
+      this.bifrost.notifications.open({
+        type: 'info',
+        content: `Plugin '${pluginName}' disabled. BPMN editors have been reloaded.`,
+        source: 'Plugins',
+      });
+    })();
   }
 
   // ── Service Task Types ─────────────────────────────────────

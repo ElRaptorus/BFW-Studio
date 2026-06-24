@@ -250,6 +250,42 @@ export class BpmnApi {
     },
   };
 
+  async onRendererModuleMessage(callback: (data: unknown) => void): Promise<void> {
+    const callbackId = randomUUID();
+    const key = 'onRendererModuleMessage:_global';
+
+    registerGlobalCallback(callbackId, callback);
+
+    const payload: RegisterCallbackPayload = {
+      callbackId,
+      namespace: 'bpmn',
+      method: 'onRendererModuleMessage',
+      args: [],
+      pluginName: this.pluginName,
+    };
+
+    try {
+      await this.connection.request(PH_REGISTER_CALLBACK, payload);
+    } catch (error) {
+      unregisterGlobalCallback(callbackId);
+      throw error;
+    }
+
+    if (!this.eventListeners.has(key)) {
+      this.eventListeners.set(key, []);
+    }
+    this.eventListeners.get(key)!.push({ callbackId, callback });
+  }
+
+  async postToRendererModule(data: unknown): Promise<void> {
+    const payload: ApiRequestPayload = {
+      namespace: 'bpmn',
+      method: 'postToRendererModule',
+      args: [data],
+    };
+    await this.connection.request(PH_API_REQUEST, payload);
+  }
+
   disposeCallbacks(): void {
     for (const [, entries] of this.eventListeners) {
       for (const { callbackId } of entries) {

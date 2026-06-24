@@ -4,6 +4,7 @@ import type {
   BifrostStudioManifest,
   KeybindingWhenCondition,
   ManifestBpmnContextPadEntry,
+  ManifestBpmnModule,
   ManifestBpmnPaletteEntry,
   ManifestCommand,
   ManifestContributions,
@@ -229,6 +230,18 @@ export function readManifest(pkg: Record<string, unknown>): ManifestReadResult {
     }
   }
 
+  // Cross-validate: bpmnModules require 'bpmn.renderer' permission
+  if (contributes?.bpmnModules != null && contributes.bpmnModules.length > 0) {
+    if (permissions?.includes('bpmn.renderer') !== true) {
+      errors.push({
+        path: 'bifrostStudio.contributes.bpmnModules',
+        message:
+          'bpmnModules contributions require the "bpmn.renderer" permission. ' +
+          'Renderer modules will not be loaded without this permission.',
+      });
+    }
+  }
+
   return { manifest, errors, warnings };
 }
 
@@ -274,6 +287,9 @@ function validateContributes(
   if (raw.bpmnContextPad != null) {
     result.bpmnContextPad = validateBpmnContextPad(raw.bpmnContextPad, errors);
   }
+  if (raw.bpmnModules != null) {
+    result.bpmnModules = validateBpmnModules(raw.bpmnModules, errors);
+  }
 
   const knownContributes = new Set([
     'commands',
@@ -287,6 +303,7 @@ function validateContributes(
     'themes',
     'bpmnPalette',
     'bpmnContextPad',
+    'bpmnModules',
   ]);
   for (const key of Object.keys(raw)) {
     if (!knownContributes.has(key)) {
@@ -838,6 +855,42 @@ function validateBpmnContextPad(raw: unknown, errors: ManifestError[]): Manifest
       title: obj.title as string,
       command: obj.command as string,
       elementTypes: obj.elementTypes as string[] | undefined,
+    });
+  }
+  return result;
+}
+
+// ─── BPMN Modules ─────────────────────────────────────────────
+
+function validateBpmnModules(raw: unknown, errors: ManifestError[]): ManifestBpmnModule[] {
+  const basePath = 'bifrostStudio.contributes.bpmnModules';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestBpmnModule[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i];
+    const entryPath = `${basePath}[${i}]`;
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      errors.push({ path: entryPath, message: 'Must be an object' });
+      continue;
+    }
+
+    const obj = entry as Record<string, unknown>;
+    if (typeof obj.entry !== 'string' || obj.entry.trim().length === 0) {
+      errors.push({
+        path: `${entryPath}.entry`,
+        message: 'Required field "entry" is missing or not a non-empty string',
+      });
+      continue;
+    }
+
+    result.push({
+      entry: obj.entry,
+      description: typeof obj.description === 'string' ? obj.description : undefined,
     });
   }
   return result;

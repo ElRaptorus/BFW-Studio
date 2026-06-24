@@ -17,6 +17,7 @@ import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '../../../../../studio-sdk/src
 import { EVENT_BPMN_MODELER_ADAPTER_SELECTION_CHANGED } from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
 import type BpmnModelerComponentAdapter from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
 import { pluginBpmnContributionStore } from '../../../modules/bpmn-core/PluginBpmnContributionStore';
+import { pluginModuleLoader } from '../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
 import type { PluginHost } from './PluginHost';
 import { PluginOverlayStore } from './PluginOverlayStore';
 
@@ -151,6 +152,11 @@ export class BpmnApiBridge {
         const [uri, elementId, delta] = args as [string, string, { x: number; y: number }];
         return this.handleModelingMoveElement(uri, elementId, delta);
       }
+      // ─── Renderer module channel ────────────────────────────────────────
+      case 'postToRendererModule': {
+        const [data] = args;
+        return this.handlePostToRendererModule(pluginName, data);
+      }
       default:
         throw new Error(`Unknown bpmn API method: ${method}`);
     }
@@ -183,6 +189,19 @@ export class BpmnApiBridge {
         this.emitPluginOverlayFactoriesChanged();
       });
 
+      return;
+    }
+
+    if (method === 'onRendererModuleMessage') {
+      const disposer = (): void => {
+        this.eventSubscriptions.get(pluginName)?.delete(callbackId);
+      };
+
+      if (!this.eventSubscriptions.has(pluginName)) {
+        this.eventSubscriptions.set(pluginName, new Map());
+      }
+      this.eventSubscriptions.get(pluginName)!.set(callbackId, { callbackId, uri: '', method, disposer });
+      getOrCreatePluginGroup(pluginName).set(callbackId, { disposer });
       return;
     }
 
@@ -841,6 +860,35 @@ export class BpmnApiBridge {
       }
     }
     return result;
+  }
+
+  // ─── Renderer module channel ──────────────────────────────────────
+
+  private handlePostToRendererModule(pluginName: string, data: unknown): void {
+    const channel = pluginModuleLoader.getChannel(pluginName);
+    if (channel == null) {
+      throw new Error(
+        `Plugin '${pluginName}' has no loaded renderer modules. ` +
+          `Declare 'bpmnModules' in the manifest and request 'bpmn.renderer' permission.`,
+      );
+    }
+    channel.deliverMessage(data);
+  }
+
+  /**
+   * Deliver a message from a renderer module to the plugin host.
+   * Called by PluginHostBridge when it receives a PH_RENDERER_MODULE_MESSAGE.
+   */
+  deliverRendererModuleMessage(pluginName: string, data: unknown): void {
+    const subscriptions = this.eventSubscriptions.get(pluginName);
+    if (subscriptions == null) {
+      return;
+    }
+    for (const [, subscription] of subscriptions) {
+      if (subscription.method === 'onRendererModuleMessage') {
+        this.invokeCallback(subscription.callbackId, [data]);
+      }
+    }
   }
 
   private invokeCallback(callbackId: string, args: unknown[]): void {

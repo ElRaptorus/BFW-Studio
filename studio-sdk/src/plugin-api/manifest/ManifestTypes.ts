@@ -66,6 +66,13 @@ export interface ManifestContributions {
   bpmnPalette?: ManifestBpmnPaletteEntry[];
   /** BPMN context pad entries (element-level actions). Requires `'bpmn.modelling'` permission. */
   bpmnContextPad?: ManifestBpmnContextPadEntry[];
+  /**
+   * Diagram-js modules injected into the BPMN renderer process.
+   * Requires the `'bpmn.renderer'` permission (high risk).
+   * Each module bundle has full access to diagram-js services and communicates
+   * with the plugin host via a `pluginChannel` DI value.
+   */
+  bpmnModules?: ManifestBpmnModule[];
 }
 
 // ─── Individual contribution types ──────────────────────────────────
@@ -206,6 +213,20 @@ export interface ManifestBpmnContextPadEntry {
   command: string;
   /** Static element type filter. When present, only show on elements of these types. */
   elementTypes?: string[];
+}
+
+/**
+ * A diagram-js module injected into the BPMN modeler's renderer process.
+ * The module bundle is loaded via `require()` and must export a diagram-js
+ * module object (with `__init__`, service declarations). A `pluginChannel`
+ * value module is injected alongside for bidirectional communication with
+ * the plugin host.
+ */
+export interface ManifestBpmnModule {
+  /** Relative path to the JS bundle (e.g. `'dist/renderer/my-module.js'`). */
+  entry: string;
+  /** Human-readable description of what the module does. */
+  description?: string;
 }
 
 /** A theme contribution with CSS custom property overrides. */

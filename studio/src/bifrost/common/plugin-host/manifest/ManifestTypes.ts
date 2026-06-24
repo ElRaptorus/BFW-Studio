@@ -25,6 +25,12 @@ export interface ManifestContributions {
   themes?: ManifestTheme[];
   bpmnPalette?: ManifestBpmnPaletteEntry[];
   bpmnContextPad?: ManifestBpmnContextPadEntry[];
+  bpmnModules?: ManifestBpmnModule[];
+}
+
+export interface ManifestBpmnModule {
+  entry: string;
+  description?: string;
 }
 
 export interface ManifestCommand {

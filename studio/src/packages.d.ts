@@ -117,3 +117,5 @@ declare module '*.txt' {
 }
 
 declare module 'monaco-editor/esm/vs/language/json/monaco.contribution';
+
+declare const __non_webpack_require__: NodeRequire;

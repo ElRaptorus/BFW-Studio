@@ -195,6 +195,9 @@ export class PluginHostBridge {
         ) {
           this.permissionGate.assert(callerName, 'bpmn.modelling', `bpmn.${method}`);
         }
+        if (method === 'postToRendererModule') {
+          this.permissionGate.assert(callerName, 'bpmn.renderer', `bpmn.${method}`);
+        }
         return this.bpmnBridge.handleApiRequest(method, args, callerName);
       default:
         throw new Error(`Unknown API namespace: ${namespace}`);
@@ -534,6 +537,9 @@ export class PluginHostBridge {
     if (namespace === 'bpmn') {
       const pluginName = callerName ?? '_unknown';
       this.permissionGate.assert(pluginName, 'bpmn', `bpmn.${method}`);
+      if (method === 'onRendererModuleMessage') {
+        this.permissionGate.assert(pluginName, 'bpmn.renderer', `bpmn.${method}`);
+      }
       this.bpmnBridge.registerCallback(payload, (name) => this.getOrCreatePluginGroup(name));
       return;
     }
@@ -552,6 +558,10 @@ export class PluginHostBridge {
         return;
       }
     }
+  }
+
+  deliverRendererModuleMessage(pluginName: string, data: unknown): void {
+    this.bpmnBridge.deliverRendererModuleMessage(pluginName, data);
   }
 
   disposePlugin(pluginName: string): void {

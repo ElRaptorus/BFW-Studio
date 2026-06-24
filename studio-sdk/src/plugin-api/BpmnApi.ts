@@ -302,11 +302,35 @@ export interface BpmnApi {
    */
   updateContextPadEntry(entryId: string, update: ContextPadEntryUpdate): Promise<void>;
 
+  // ─── Renderer Module Channel ─────────────────────────────────────────────
+
+  /**
+   * Subscribe to messages sent by this plugin's renderer-injected diagram-js module
+   * via `pluginChannel.postMessage(data)`.
+   *
+   * Requires 'bpmn.renderer' permission.
+   */
+  onRendererModuleMessage(callback: (data: unknown) => void): Promise<Disposable>;
+
+  /**
+   * Send a message to this plugin's renderer-injected diagram-js module.
+   * The module receives it via `pluginChannel.onMessage(callback)`.
+   *
+   * Requires 'bpmn.renderer' permission.
+   */
+  postToRendererModule(data: unknown): Promise<void>;
+
+  // ─── Modeling ─────────────────────────────────────────────────────────────
+
   /**
    * BPMN Modeling sub-API. All operations are undoable (Ctrl+Z) and go through
    * the diagram-js commandStack. Requires 'bpmn.modelling' permission.
    */
   readonly modeling: BpmnModelingApi;
+}
+
+export interface Disposable {
+  dispose(): void;
 }
 
 // ─── Palette & Context Pad types ────────────────────────────────────────────

@@ -1,0 +1,44 @@
+{
+  "name": "bpmn-renderer-module-demo",
+  "version": "1.0.0",
+  "displayName": "BPMN Path Tracer (Renderer Module Demo)",
+  "description": "Demonstrates renderer module injection: real-time execution path highlighting on hover, with bidirectional channel communication.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN Path Tracer (Renderer Module Demo)",
+    "permissions": [
+      "bpmn",
+      "bpmn.renderer"
+    ],
+    "activationEvents": [
+      "onDocumentType:bpmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "togglePathTracer",
+          "title": "Toggle Path Tracer"
+        },
+        {
+          "id": "setTracerColor",
+          "title": "Set Path Tracer Color"
+        }
+      ],
+      "bpmnPalette": [
+        {
+          "id": "toggle-path-tracer",
+          "icon": "ph-light ph-path",
+          "title": "Toggle Path Tracer",
+          "command": "togglePathTracer"
+        }
+      ],
+      "bpmnModules": [
+        {
+          "entry": "renderer/path-tracer-module.js",
+          "description": "Real-time hover-based execution path highlighter with downstream reachability analysis."
+        }
+      ]
+    }
+  }
+}

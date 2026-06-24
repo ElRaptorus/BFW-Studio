@@ -85,6 +85,15 @@ export interface CallbackResultPayload {
 
 export const PH_CALLBACK_RESULT = 'host.callbackResult';
 
+// ─── Renderer module channel (bidirectional) ────────────────────────
+
+export const PH_RENDERER_MODULE_MESSAGE = 'host.rendererModuleMessage';
+
+export interface RendererModuleMessagePayload {
+  pluginName: string;
+  data: unknown;
+}
+
 // ─── Quarantine & health (host → renderer, renderer → host) ─────────
 
 export const PH_PLUGIN_CRASHED = 'host.pluginCrashed';

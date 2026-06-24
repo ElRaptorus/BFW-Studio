@@ -42,11 +42,11 @@ The flagship feature of this demo plugin. It ties together a **context pad entry
 
 ### APIs demonstrated
 
-| API | Role in the Toggle Flag feature |
-|-----|--------------------------------|
-| `api.bpmn.requestOverlayRefresh()` | Triggers factory re-run after state change |
+| API                                        | Role in the Toggle Flag feature                                |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| `api.bpmn.requestOverlayRefresh()`         | Triggers factory re-run after state change                     |
 | `api.bpmn.registerOverlayFactory(factory)` | Produces flag overlays on document open and on refresh request |
-| `api.bpmn.registerContextPadEntry(entry)` | Registers the "Toggle Flag" entry (always visible) |
+| `api.bpmn.registerContextPadEntry(entry)`  | Registers the "Toggle Flag" entry (always visible)             |
 
 ### Why this matters for plugin developers
 
@@ -58,10 +58,10 @@ This pattern answers the question: "How do I build a context pad action that has
 
 Palette entries appear in the BPMN editor's left-hand toolbar under the "Plugins" group.
 
-| Entry | Icon | Behavior |
-|-------|------|----------|
-| **Run Analysis** | Magnifying glass | Counts all tasks, gateways, and events in the open diagram. Displays the result as a notification. |
-| **Insert Service Task** | Plus circle | Appends a new `bpmn:ServiceTask` (named "New Service Task") after the currently selected element, connected by a sequence flow. Requires an element to be selected first. |
+| Entry                   | Icon             | Behavior                                                                                                                                                                  |
+| ----------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Run Analysis**        | Magnifying glass | Counts all tasks, gateways, and events in the open diagram. Displays the result as a notification.                                                                        |
+| **Insert Service Task** | Plus circle      | Appends a new `bpmn:ServiceTask` (named "New Service Task") after the currently selected element, connected by a sequence flow. Requires an element to be selected first. |
 
 ## Context Pad Entries
 
@@ -69,19 +69,19 @@ Context pad entries appear when an element is selected on the canvas.
 
 ### Manifest-declared (static)
 
-| Entry | Icon | Appears on | Behavior |
-|-------|------|-----------|----------|
+| Entry               | Icon | Appears on             | Behavior                                                                     |
+| ------------------- | ---- | ---------------------- | ---------------------------------------------------------------------------- |
 | **Inspect Element** | Info | Tasks and SubProcesses | Reads the selected element's properties and displays them in a notification. |
 
 ### Runtime-registered (dynamic)
 
-| Entry | Icon | Appears on | Behavior |
-|-------|------|-----------|----------|
-| **Rename Element** | Pencil | Tasks and SubProcesses | Sets the element's name to "Renamed at HH:MM" using `modeling.updateProperties`. Undoable. |
-| **Delete Element** | Trash | All elements | Removes the element from the diagram using `modeling.removeElement`. Undoable. |
-| **Nudge Right** | Arrow right | All elements | Moves the element 50px to the right using `modeling.moveElement`. Undoable. |
-| **Toggle Flag** | Flag | All elements | Toggles the flagged state — adds or removes the flag overlay. |
-| **View Connections** | Git branch | Gateways and Tasks (dynamic) | Shows a notification. Only visible on elements with 2+ outgoing flows. |
+| Entry                | Icon        | Appears on                   | Behavior                                                                                   |
+| -------------------- | ----------- | ---------------------------- | ------------------------------------------------------------------------------------------ |
+| **Rename Element**   | Pencil      | Tasks and SubProcesses       | Sets the element's name to "Renamed at HH:MM" using `modeling.updateProperties`. Undoable. |
+| **Delete Element**   | Trash       | All elements                 | Removes the element from the diagram using `modeling.removeElement`. Undoable.             |
+| **Nudge Right**      | Arrow right | All elements                 | Moves the element 50px to the right using `modeling.moveElement`. Undoable.                |
+| **Toggle Flag**      | Flag        | All elements                 | Toggles the flagged state — adds or removes the flag overlay.                              |
+| **View Connections** | Git branch  | Gateways and Tasks (dynamic) | Shows a notification. Only visible on elements with 2+ outgoing flows.                     |
 
 ---
 
@@ -89,38 +89,38 @@ Context pad entries appear when an element is selected on the canvas.
 
 ### Read-only BPMN API
 
-| API | Used by |
-|-----|---------|
-| `api.bpmn.getElements(uri)` | Run Analysis, Flag context pad refresh |
-| `api.bpmn.getElement(uri, elementId)` | Inspect Element |
+| API                                         | Used by                                       |
+| ------------------------------------------- | --------------------------------------------- |
+| `api.bpmn.getElements(uri)`                 | Run Analysis, Flag context pad refresh        |
+| `api.bpmn.getElement(uri, elementId)`       | Inspect Element                               |
 | `api.bpmn.onElementSelected(uri, callback)` | Selection tracking for "Insert Task Template" |
 
 ### Overlay API
 
-| API | Used by |
-|-----|---------|
-| `api.bpmn.requestOverlayRefresh()` | Triggers factory re-run after toggle |
+| API                                        | Used by                                                       |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| `api.bpmn.requestOverlayRefresh()`         | Triggers factory re-run after toggle                          |
 | `api.bpmn.registerOverlayFactory(factory)` | Produces flag overlays on document open/switch and on refresh |
 
 ### Modeling API (undoable via Ctrl+Z)
 
-| API | Used by |
-|-----|---------|
-| `api.bpmn.modeling.updateProperties(uri, elementId, props)` | Rename Element |
-| `api.bpmn.modeling.removeElement(uri, elementId)` | Delete Element |
-| `api.bpmn.modeling.appendElement(uri, sourceId, descriptor)` | Insert Service Task |
-| `api.bpmn.modeling.moveElement(uri, elementId, delta)` | Nudge Right |
+| API                                                                  | Used by             |
+| -------------------------------------------------------------------- | ------------------- |
+| `api.bpmn.modeling.updateProperties(uri, elementId, props)`          | Rename Element      |
+| `api.bpmn.modeling.removeElement(uri, elementId)`                    | Delete Element      |
+| `api.bpmn.modeling.appendElement(uri, sourceId, descriptor)`         | Insert Service Task |
+| `api.bpmn.modeling.moveElement(uri, elementId, delta)`               | Nudge Right         |
 | `api.bpmn.modeling.createConnection(uri, sourceId, targetId, type?)` | (Test utility only) |
 
 ### Palette & Context Pad Registration API
 
-| API | Used for |
-|-----|----------|
-| `api.bpmn.registerContextPadEntry(entry)` | All runtime context pad entries |
-| `api.bpmn.unregisterContextPadEntry(entryId)` | Removal (test utility) |
-| `api.bpmn.updateContextPadEntry(entryId, update)` | View Connections dynamic filter |
-| `api.bpmn.registerPaletteEntry(entry)` | Available; manifest-declared entries used in this demo |
-| `api.bpmn.unregisterPaletteEntry(entryId)` | Removal (test utility) |
+| API                                               | Used for                                               |
+| ------------------------------------------------- | ------------------------------------------------------ |
+| `api.bpmn.registerContextPadEntry(entry)`         | All runtime context pad entries                        |
+| `api.bpmn.unregisterContextPadEntry(entryId)`     | Removal (test utility)                                 |
+| `api.bpmn.updateContextPadEntry(entryId, update)` | View Connections dynamic filter                        |
+| `api.bpmn.registerPaletteEntry(entry)`            | Available; manifest-declared entries used in this demo |
+| `api.bpmn.unregisterPaletteEntry(entryId)`        | Removal (test utility)                                 |
 
 ---
 
@@ -155,17 +155,17 @@ The Toggle Flag feature demonstrates the `requestOverlayRefresh()` pattern:
 
 These commands exist solely as programmatic hooks for integration tests.
 
-| Command | Purpose |
-|---------|---------|
-| `test.isActivated` | Returns `true` — confirms activation |
-| `test.tryUnregisterContextPadEntry` | Unregisters a context pad entry by ID |
-| `test.tryUnregisterPaletteEntry` | Unregisters a palette entry by ID |
-| `test.updateContextPadEntry` | Calls `updateContextPadEntry` with given ID and update |
-| `test.modeling.updateProperties` | Calls `modeling.updateProperties` |
-| `test.modeling.removeElement` | Calls `modeling.removeElement` |
-| `test.modeling.appendElement` | Calls `modeling.appendElement` |
-| `test.modeling.createConnection` | Calls `modeling.createConnection` |
-| `test.modeling.moveElement` | Calls `modeling.moveElement` |
+| Command                             | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
+| `test.isActivated`                  | Returns `true` — confirms activation                   |
+| `test.tryUnregisterContextPadEntry` | Unregisters a context pad entry by ID                  |
+| `test.tryUnregisterPaletteEntry`    | Unregisters a palette entry by ID                      |
+| `test.updateContextPadEntry`        | Calls `updateContextPadEntry` with given ID and update |
+| `test.modeling.updateProperties`    | Calls `modeling.updateProperties`                      |
+| `test.modeling.removeElement`       | Calls `modeling.removeElement`                         |
+| `test.modeling.appendElement`       | Calls `modeling.appendElement`                         |
+| `test.modeling.createConnection`    | Calls `modeling.createConnection`                      |
+| `test.modeling.moveElement`         | Calls `modeling.moveElement`                           |
 
 ---
 
