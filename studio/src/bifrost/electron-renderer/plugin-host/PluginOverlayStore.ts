@@ -319,31 +319,35 @@ export class PluginOverlayStore {
   private convertDescriptorsToOverlays(descriptors: BpmnOverlayDescriptor[]): Overlay[] {
     const overlays: Overlay[] = [];
     for (const descriptor of descriptors) {
-      if (descriptor.type === 'badge' || descriptor.type === 'icon') {
+      if (
+        descriptor.type === 'badge' ||
+        descriptor.type === 'icon' ||
+        descriptor.type === 'action' ||
+        descriptor.type === 'status'
+      ) {
         overlays.push(this.createPluginOverlay(descriptor));
       }
     }
     return overlays;
   }
 
-  private createPluginOverlay(descriptor: BpmnOverlayDescriptor & { type: 'badge' | 'icon' }): Overlay_Positioned {
+  private createPluginOverlay(
+    descriptor: BpmnOverlayDescriptor & { type: 'badge' | 'icon' | 'action' | 'status' },
+  ): Overlay_Positioned {
     const position = this.mapPluginPositionToOverlay(descriptor.position);
     const bifrost = this.bifrost;
 
     const PluginOverlayComponent = (props: { descriptor: typeof descriptor }): React.ReactElement | null => {
       const { descriptor: desc } = props;
-      const hasClickCommand = desc.onClickCommand != null;
-
-      const handleClick = hasClickCommand
-        ? (event: React.MouseEvent) => {
-            event.stopPropagation();
-            const commandId = desc.onClickCommand!;
-            const commandArgs = (desc.onClickCommandArgs ?? []) as any[];
-            bifrost.commands.executeCommand(commandId, commandArgs);
-          }
-        : undefined;
 
       if (desc.type === 'badge') {
+        const hasClickCommand = desc.onClickCommand != null;
+        const handleClick = hasClickCommand
+          ? (event: React.MouseEvent) => {
+              event.stopPropagation();
+              bifrost.commands.executeCommand(desc.onClickCommand!, (desc.onClickCommandArgs ?? []) as any[]);
+            }
+          : undefined;
         const styleClass = desc.style ? `evil-plugin-overlay--${desc.style}` : '';
         return React.createElement(
           'div',
@@ -356,7 +360,15 @@ export class PluginOverlayStore {
           desc.text,
         );
       }
+
       if (desc.type === 'icon') {
+        const hasClickCommand = desc.onClickCommand != null;
+        const handleClick = hasClickCommand
+          ? (event: React.MouseEvent) => {
+              event.stopPropagation();
+              bifrost.commands.executeCommand(desc.onClickCommand!, (desc.onClickCommandArgs ?? []) as any[]);
+            }
+          : undefined;
         const styleClass = desc.style ? `evil-plugin-overlay--${desc.style}` : '';
         return React.createElement(
           'div',
@@ -369,6 +381,56 @@ export class PluginOverlayStore {
           React.createElement('i', { className: desc.icon }),
         );
       }
+
+      if (desc.type === 'action') {
+        const handleClick = (event: React.MouseEvent) => {
+          event.stopPropagation();
+          bifrost.commands.executeCommand(desc.onClickCommand, (desc.onClickCommandArgs ?? []) as any[]);
+        };
+        const styleModifier = desc.style ? ` evil-plugin-action--${desc.style}` : '';
+        const hoverIcon = desc.iconHover ?? deriveFilledVariant(desc.icon);
+        return React.createElement(
+          'div',
+          {
+            className: `bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action${styleModifier}`,
+            title: desc.tooltip ?? undefined,
+            onClick: handleClick,
+            'data-bs-toggle': desc.tooltip ? 'tooltip' : undefined,
+          },
+          React.createElement(
+            'div',
+            { className: 'action-icon', key: 'rest' },
+            React.createElement('i', { className: desc.icon }),
+          ),
+          React.createElement(
+            'div',
+            { className: 'action-icon-hovered', key: 'hover' },
+            React.createElement('i', { className: hoverIcon }),
+          ),
+        );
+      }
+
+      if (desc.type === 'status') {
+        const styleModifier = desc.style ? ` evil-plugin-status--${desc.style}` : '';
+        const innerChildren: React.ReactNode[] = [];
+        if (desc.icon) {
+          innerChildren.push(React.createElement('i', { className: desc.icon, key: 'icon' }));
+        }
+        if (desc.text) {
+          innerChildren.push(' ');
+          innerChildren.push(desc.text);
+        }
+        return React.createElement(
+          'div',
+          {
+            className: `bpmn-element-overlay__below-item evil-plugin-status${styleModifier}`,
+            title: desc.tooltip ?? undefined,
+            'data-bs-toggle': desc.tooltip ? 'tooltip' : undefined,
+          },
+          React.createElement('div', { className: 'fw-bold' }, ...innerChildren),
+        );
+      }
+
       return null;
     };
     PluginOverlayComponent.displayName = `PluginOverlay_${descriptor.type}_${descriptor.elementId}`;
@@ -456,4 +518,20 @@ export class PluginOverlayStore {
     const overlayParts = internalOverlays.map((overlay) => `${overlay.type}:${overlay.elementId}`);
     return elementParts.join('|') + '##' + overlayParts.join('|');
   }
+}
+
+/**
+ * Derives a filled icon variant from a light/thin Phosphor icon class string.
+ * "ph-light ph-play" -> "ph-fill ph-play"
+ * "ph-thin ph-heart"  -> "ph-fill ph-heart"
+ * Anything else returns the original (no swap).
+ */
+function deriveFilledVariant(iconClass: string): string {
+  if (iconClass.includes('ph-light')) {
+    return iconClass.replace('ph-light', 'ph-fill');
+  }
+  if (iconClass.includes('ph-thin')) {
+    return iconClass.replace('ph-thin', 'ph-fill');
+  }
+  return iconClass;
 }

@@ -18,6 +18,9 @@
   --theme-plugin-overlay-neutral-bg: #3a3f47;
   --theme-plugin-overlay-neutral-fg: #d3d6d8;
   --theme-plugin-overlay-neutral-border: #5a6068;
+
+  --theme-plugin-overlay-status-bg: #ccc;
+  --theme-plugin-overlay-status-fg: #333;
 }
 
 .evil-plugin-overlay {
@@ -167,4 +170,66 @@
     background: var(--theme-plugin-overlay-neutral-bg);
     border-color: var(--theme-plugin-overlay-neutral-border);
   }
+}
+
+// ─── Pill-style overlays: action & status ─────────────────────────────────────
+// These reuse bpmn-element-overlay__below-item from BpmnElementOverlays.scss
+// and match the Studio's internal action/status badge designs.
+
+// Action pill color modifiers (override default #607d8b background)
+.bpmn-element-overlay__below-item--action.evil-plugin-action--info {
+  background-color: var(--theme-plugin-overlay-info-bg);
+  color: var(--theme-plugin-overlay-info-fg);
+}
+
+.bpmn-element-overlay__below-item--action.evil-plugin-action--warning {
+  background-color: var(--theme-plugin-overlay-warning-bg);
+  color: var(--theme-plugin-overlay-warning-fg);
+}
+
+.bpmn-element-overlay__below-item--action.evil-plugin-action--error {
+  background-color: var(--theme-plugin-overlay-error-bg);
+  color: var(--theme-plugin-overlay-error-fg);
+}
+
+.bpmn-element-overlay__below-item--action.evil-plugin-action--success {
+  background-color: var(--theme-plugin-overlay-success-bg);
+  color: var(--theme-plugin-overlay-success-fg);
+}
+
+.bpmn-element-overlay__below-item--action.evil-plugin-action--neutral {
+  background-color: var(--theme-plugin-overlay-neutral-bg);
+  color: var(--theme-plugin-overlay-neutral-fg);
+}
+
+// Status pill — inverse color scheme (informational, non-interactive)
+.evil-plugin-status {
+  color: var(--theme-plugin-overlay-status-fg);
+  background-color: var(--theme-plugin-overlay-status-bg);
+  cursor: default;
+}
+
+.evil-plugin-status--info {
+  background-color: var(--theme-plugin-overlay-info-bg);
+  color: var(--theme-plugin-overlay-info-fg);
+}
+
+.evil-plugin-status--warning {
+  background-color: var(--theme-plugin-overlay-warning-bg);
+  color: var(--theme-plugin-overlay-warning-fg);
+}
+
+.evil-plugin-status--error {
+  background-color: var(--theme-plugin-overlay-error-bg);
+  color: var(--theme-plugin-overlay-error-fg);
+}
+
+.evil-plugin-status--success {
+  background-color: var(--theme-plugin-overlay-success-bg);
+  color: var(--theme-plugin-overlay-success-fg);
+}
+
+.evil-plugin-status--neutral {
+  background-color: var(--theme-plugin-overlay-neutral-bg);
+  color: var(--theme-plugin-overlay-neutral-fg);
 }

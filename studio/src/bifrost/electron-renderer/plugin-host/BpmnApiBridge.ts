@@ -436,12 +436,12 @@ export class BpmnApiBridge {
       container.appendChild(iconElement);
     }
 
-    if (descriptor.onClickCommand != null) {
+    if ('onClickCommand' in descriptor && descriptor.onClickCommand != null) {
       container.style.pointerEvents = 'auto';
       container.style.cursor = 'pointer';
 
       const commandId = descriptor.onClickCommand;
-      const commandArgs = descriptor.onClickCommandArgs ?? [];
+      const commandArgs = ('onClickCommandArgs' in descriptor ? descriptor.onClickCommandArgs : []) ?? [];
 
       container.addEventListener('click', (event) => {
         event.stopPropagation();

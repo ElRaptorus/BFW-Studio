@@ -50,7 +50,43 @@ export interface PluginBpmnOverlayIcon {
   onClickCommandArgs?: unknown[];
 }
 
-export type PluginBpmnOverlay = PluginBpmnOverlayBadge | PluginBpmnOverlayIcon;
+export interface PluginBpmnOverlayAction {
+  elementId: string;
+  position: PluginBpmnOverlayPosition;
+  type: 'action';
+  /** Phosphor icon ID (light variant, e.g. "ph-light ph-play"). */
+  icon: string;
+  /** Phosphor icon ID for hover state. When omitted, derived automatically (ph-light -> ph-fill). */
+  iconHover?: string;
+  /** Native browser tooltip shown on hover (via title attribute). */
+  tooltip?: string;
+  /** Semantic color modifier. When omitted, uses the standard action gray (#607d8b). */
+  style?: PluginBpmnOverlayStyle;
+  /** Command ID to execute on click (required — actions are always interactive). Must be owned by the same plugin. */
+  onClickCommand: string;
+  /** Optional arguments passed to the click command. */
+  onClickCommandArgs?: unknown[];
+}
+
+export interface PluginBpmnOverlayStatus {
+  elementId: string;
+  position: PluginBpmnOverlayPosition;
+  type: 'status';
+  /** Phosphor icon ID (single icon, no hover swap). */
+  icon?: string;
+  /** Text content (e.g. a counter number "3"). Displayed alongside or instead of the icon. */
+  text?: string;
+  /** Native browser tooltip shown on hover (via title attribute). */
+  tooltip?: string;
+  /** Semantic color modifier. When omitted, uses the standard inverse gray. */
+  style?: PluginBpmnOverlayStyle;
+}
+
+export type PluginBpmnOverlay =
+  | PluginBpmnOverlayBadge
+  | PluginBpmnOverlayIcon
+  | PluginBpmnOverlayAction
+  | PluginBpmnOverlayStatus;
 
 // --- Event types ---
 
@@ -116,6 +152,8 @@ export interface BpmnOverlayNotExecutableMarker {
 export type BpmnOverlayDescriptor =
   | PluginBpmnOverlayBadge
   | PluginBpmnOverlayIcon
+  | PluginBpmnOverlayAction
+  | PluginBpmnOverlayStatus
   | BpmnOverlayDocumentationMarker
   | BpmnOverlayCallActivityLink
   | BpmnOverlayMultiFlowWarning

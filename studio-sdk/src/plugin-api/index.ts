@@ -13,8 +13,10 @@ export type {
   OverlayFactoryContext,
   OverlayFactoryOptions,
   PluginBpmnOverlay,
+  PluginBpmnOverlayAction,
   PluginBpmnOverlayBadge,
   PluginBpmnOverlayIcon,
+  PluginBpmnOverlayStatus,
 } from './BpmnApi';
 export { PluginBpmnOverlayPosition, PluginBpmnOverlayStyle } from './BpmnApi';
 export type { CommandsApi } from './CommandsApi';

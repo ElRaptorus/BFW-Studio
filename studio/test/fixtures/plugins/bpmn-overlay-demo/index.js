@@ -56,7 +56,7 @@ exports.activate = async (api) => {
           });
         }
 
-        // Info icon on service tasks
+        // Info icon on service tasks (corner indicator)
         if (element.type.includes('ServiceTask')) {
           autoOverlays.push({
             elementId: element.id,
@@ -65,6 +65,29 @@ exports.activate = async (api) => {
             icon: 'ph ph-plugs-connected',
             style: 'info',
             tooltip: `ℹ Service Task — requires external handler`,
+          });
+
+          // Action pill: "Inspect" button below Service Tasks
+          autoOverlays.push({
+            elementId: element.id,
+            position: 'below',
+            type: 'action',
+            icon: 'ph-light ph-magnifying-glass',
+            tooltip: `Inspect Service Task "${element.name || element.id}"`,
+            onClickCommand: 'plugin.bpmn-overlay-demo.handleOverlayClick',
+            onClickCommandArgs: [`inspect:${element.id}`],
+          });
+        }
+
+        // Status pill: connection counter on User Tasks
+        if (element.type.includes('UserTask')) {
+          autoOverlays.push({
+            elementId: element.id,
+            position: 'below',
+            type: 'status',
+            icon: 'ph ph-users',
+            text: String(element.incoming.length),
+            tooltip: `${element.incoming.length} incoming connection(s)`,
           });
         }
 
@@ -176,6 +199,8 @@ exports.activate = async (api) => {
         message = `⚠ Element "${elementId}" has multiple outgoing flows without a gateway. Consider adding an Exclusive or Inclusive Gateway to control the flow.`;
       } else if (action === 'info-click') {
         message = `ℹ Element "${elementId}" — use the Inspector pane to view and edit properties.`;
+      } else if (action === 'inspect') {
+        message = `🔍 Inspecting Service Task "${elementId}" — implementation details would appear here in a real plugin.`;
       } else if (action === 'test-arg') {
         message = `⚡ Interactive overlay action triggered successfully (arg: ${arg}).`;
       }
