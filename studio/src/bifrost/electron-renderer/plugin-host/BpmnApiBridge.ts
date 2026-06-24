@@ -89,6 +89,11 @@ export class BpmnApiBridge {
         const [uri] = args as [string];
         return this.handleGetXml(uri);
       }
+      case 'requestOverlayRefresh': {
+        this.overlayStore.invalidateCache();
+        this.emitPluginOverlayFactoriesChanged();
+        return;
+      }
       case 'registerPaletteEntry': {
         const [entry] = args as [{ id: string; group?: string; icon: string; title: string; command: string }];
         pluginBpmnContributionStore.addPaletteEntry(pluginName, entry);
@@ -124,6 +129,27 @@ export class BpmnApiBridge {
           throw new Error(`Context pad entry '${entryId}' not found for plugin '${pluginName}'`);
         }
         return;
+      }
+      // ─── Modeling sub-API ─────────────────────────────────────────────
+      case 'modeling.updateProperties': {
+        const [uri, elementId, properties] = args as [string, string, Record<string, unknown>];
+        return this.handleModelingUpdateProperties(uri, elementId, properties);
+      }
+      case 'modeling.removeElement': {
+        const [uri, elementId] = args as [string, string];
+        return this.handleModelingRemoveElement(uri, elementId);
+      }
+      case 'modeling.appendElement': {
+        const [uri, sourceElementId, newElement] = args as [string, string, { type: string; name?: string }];
+        return this.handleModelingAppendElement(uri, sourceElementId, newElement);
+      }
+      case 'modeling.createConnection': {
+        const [uri, sourceId, targetId, type] = args as [string, string, string, string | undefined];
+        return this.handleModelingCreateConnection(uri, sourceId, targetId, type);
+      }
+      case 'modeling.moveElement': {
+        const [uri, elementId, delta] = args as [string, string, { x: number; y: number }];
+        return this.handleModelingMoveElement(uri, elementId, delta);
       }
       default:
         throw new Error(`Unknown bpmn API method: ${method}`);
@@ -607,6 +633,158 @@ export class BpmnApiBridge {
     } catch {
       throw new Error(`Failed to export BPMN XML for URI: ${uri}`);
     }
+  }
+
+  // --- Modeling operations ---
+
+  private handleModelingUpdateProperties(uri: string, elementId: string, properties: Record<string, unknown>): void {
+    const adapter = this.resolveAdapter(uri);
+    if (adapter == null) {
+      throw new Error(`No BPMN document open for URI: ${uri}`);
+    }
+
+    const elementRegistry = adapter.getElementRegistry();
+    const element = elementRegistry.get(elementId);
+    if (element == null) {
+      throw new Error(`Element '${elementId}' not found in document`);
+    }
+
+    const blockedKeys = new Set(['$parent', '$type', 'di', '$attrs', '$descriptor', 'id']);
+    for (const key of Object.keys(properties)) {
+      if (blockedKeys.has(key)) {
+        throw new Error(`Property '${key}' cannot be set via modeling API (internal/structural property)`);
+      }
+      const value = properties[key];
+      if (value != null && typeof value === 'object' && !Array.isArray(value)) {
+        throw new Error(`Property '${key}' must be a primitive or array-of-primitives, got object`);
+      }
+      if (Array.isArray(value)) {
+        const allPrimitive = value.every(
+          (item) => typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean',
+        );
+        if (!allPrimitive) {
+          throw new Error(`Property '${key}' array contains non-primitive values`);
+        }
+      }
+    }
+
+    const modeling = adapter.getModelerComponentByName<any>('modeling');
+    modeling.updateProperties(element, properties);
+  }
+
+  private handleModelingRemoveElement(uri: string, elementId: string): void {
+    const adapter = this.resolveAdapter(uri);
+    if (adapter == null) {
+      throw new Error(`No BPMN document open for URI: ${uri}`);
+    }
+
+    const elementRegistry = adapter.getElementRegistry();
+    const element = elementRegistry.get(elementId);
+    if (element == null) {
+      throw new Error(`Element '${elementId}' not found in document`);
+    }
+
+    if (element.parent == null) {
+      throw new Error(`Cannot remove root element '${elementId}'`);
+    }
+
+    const modeling = adapter.getModelerComponentByName<any>('modeling');
+    modeling.removeElements([element]);
+  }
+
+  private handleModelingAppendElement(
+    uri: string,
+    sourceElementId: string,
+    newElement: { type: string; name?: string },
+  ): { elementId: string } {
+    const adapter = this.resolveAdapter(uri);
+    if (adapter == null) {
+      throw new Error(`No BPMN document open for URI: ${uri}`);
+    }
+
+    const elementRegistry = adapter.getElementRegistry();
+    const sourceElement = elementRegistry.get(sourceElementId);
+    if (sourceElement == null) {
+      throw new Error(`Source element '${sourceElementId}' not found in document`);
+    }
+
+    if (typeof newElement?.type !== 'string' || newElement.type.trim().length === 0) {
+      throw new Error(`'type' is required and must be a non-empty string`);
+    }
+
+    const modeling = adapter.getModelerComponentByName<any>('modeling');
+    const elementFactory = adapter.getModelerComponentByName<any>('elementFactory');
+
+    const shape = elementFactory.createShape({ type: newElement.type });
+    if (newElement.name != null) {
+      shape.businessObject.name = newElement.name;
+    }
+
+    const position = {
+      x: sourceElement.x + sourceElement.width + 130,
+      y: sourceElement.y + sourceElement.height / 2,
+    };
+
+    const appended = modeling.appendShape(sourceElement, shape, position, sourceElement.parent);
+
+    return { elementId: appended.id };
+  }
+
+  private handleModelingCreateConnection(
+    uri: string,
+    sourceId: string,
+    targetId: string,
+    type?: string,
+  ): { connectionId: string } {
+    const adapter = this.resolveAdapter(uri);
+    if (adapter == null) {
+      throw new Error(`No BPMN document open for URI: ${uri}`);
+    }
+
+    const elementRegistry = adapter.getElementRegistry();
+    const sourceElement = elementRegistry.get(sourceId);
+    if (sourceElement == null) {
+      throw new Error(`Source element '${sourceId}' not found in document`);
+    }
+    const targetElement = elementRegistry.get(targetId);
+    if (targetElement == null) {
+      throw new Error(`Target element '${targetId}' not found in document`);
+    }
+
+    const connectionType = type ?? 'bpmn:SequenceFlow';
+
+    const modeling = adapter.getModelerComponentByName<any>('modeling');
+    const elementFactory = adapter.getModelerComponentByName<any>('elementFactory');
+
+    const connection = elementFactory.createConnection({
+      type: connectionType,
+      source: sourceElement,
+      target: targetElement,
+    });
+
+    const created = modeling.createConnection(sourceElement, targetElement, connection, sourceElement.parent);
+
+    return { connectionId: created.id };
+  }
+
+  private handleModelingMoveElement(uri: string, elementId: string, delta: { x: number; y: number }): void {
+    const adapter = this.resolveAdapter(uri);
+    if (adapter == null) {
+      throw new Error(`No BPMN document open for URI: ${uri}`);
+    }
+
+    const elementRegistry = adapter.getElementRegistry();
+    const element = elementRegistry.get(elementId);
+    if (element == null) {
+      throw new Error(`Element '${elementId}' not found in document`);
+    }
+
+    if (!Number.isFinite(delta?.x) || !Number.isFinite(delta?.y)) {
+      throw new Error(`Delta must contain finite numbers for x and y`);
+    }
+
+    const modeling = adapter.getModelerComponentByName<any>('modeling');
+    modeling.moveElements([element], delta);
   }
 
   // --- Helpers ---

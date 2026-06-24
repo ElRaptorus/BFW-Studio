@@ -517,6 +517,9 @@ function createPluginApi(): Record<string, unknown> {
       ): Promise<{ dispose: () => void }> {
         return bpmnCallbackApi.register('registerOverlayFactory', [options], factory);
       },
+      requestOverlayRefresh(): Promise<unknown> {
+        return sendApiRequest('bpmn', 'requestOverlayRefresh', []);
+      },
       registerPaletteEntry(entry: unknown): Promise<unknown> {
         return sendApiRequest('bpmn', 'registerPaletteEntry', [entry]);
       },
@@ -531,6 +534,23 @@ function createPluginApi(): Record<string, unknown> {
       },
       updateContextPadEntry(entryId: string, update: unknown): Promise<unknown> {
         return sendApiRequest('bpmn', 'updateContextPadEntry', [entryId, update]);
+      },
+      modeling: {
+        updateProperties(uri: string, elementId: string, properties: unknown): Promise<unknown> {
+          return sendApiRequest('bpmn', 'modeling.updateProperties', [uri, elementId, properties]);
+        },
+        removeElement(uri: string, elementId: string): Promise<unknown> {
+          return sendApiRequest('bpmn', 'modeling.removeElement', [uri, elementId]);
+        },
+        appendElement(uri: string, sourceElementId: string, newElement: unknown): Promise<unknown> {
+          return sendApiRequest('bpmn', 'modeling.appendElement', [uri, sourceElementId, newElement]);
+        },
+        createConnection(uri: string, sourceId: string, targetId: string, type?: string): Promise<unknown> {
+          return sendApiRequest('bpmn', 'modeling.createConnection', [uri, sourceId, targetId, type]);
+        },
+        moveElement(uri: string, elementId: string, delta: unknown): Promise<unknown> {
+          return sendApiRequest('bpmn', 'modeling.moveElement', [uri, elementId, delta]);
+        },
       },
       disposeCallbacks() {
         /* no-op in sandbox — cleanup handled by SandboxManager */

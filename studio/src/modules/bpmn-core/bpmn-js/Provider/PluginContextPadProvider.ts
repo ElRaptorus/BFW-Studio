@@ -18,13 +18,24 @@ class PluginContextPadProvider {
 
   private contextPad: any;
   private changeDisposer: { dispose: () => void } | null = null;
+  private reopenScheduled = false;
 
   constructor(contextPad: any) {
     this.contextPad = contextPad;
     contextPad.registerProvider(600, this);
 
     this.changeDisposer = pluginBpmnContributionStore.onChange(() => {
-      this.contextPad.close();
+      if (this.reopenScheduled) {
+        return;
+      }
+      this.reopenScheduled = true;
+      queueMicrotask(() => {
+        this.reopenScheduled = false;
+        const current = this.contextPad._current;
+        if (current != null) {
+          this.contextPad.open(current.element);
+        }
+      });
     });
   }
 

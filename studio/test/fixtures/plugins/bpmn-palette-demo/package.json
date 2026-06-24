@@ -1,12 +1,12 @@
 {
   "name": "bpmn-palette-demo",
-  "version": "1.0.0",
-  "displayName": "BPMN Palette & Context Pad Demo",
-  "description": "Fixture plugin for testing palette and context pad contributions (manifest + runtime + dynamic elementIds).",
+  "version": "2.0.0",
+  "displayName": "BPMN Palette & Modeling Demo",
+  "description": "Fixture plugin demonstrating palette, context pad, and modeling API usage.",
   "main": "index.js",
   "bifrostStudio": {
     "apiVersion": "1.0.0",
-    "displayName": "BPMN Palette & Context Pad Demo",
+    "displayName": "BPMN Palette & Modeling Demo",
     "permissions": [
       "bpmn.modelling"
     ],
@@ -24,8 +24,24 @@
           "title": "Inspect Element"
         },
         {
-          "id": "flagElement",
-          "title": "Flag Element"
+          "id": "insertTaskTemplate",
+          "title": "Insert Task Template"
+        },
+        {
+          "id": "renameElement",
+          "title": "Rename Element"
+        },
+        {
+          "id": "deleteElement",
+          "title": "Delete Element"
+        },
+        {
+          "id": "nudgeRight",
+          "title": "Nudge Right"
+        },
+        {
+          "id": "toggleFlag",
+          "title": "Toggle Flag"
         },
         {
           "id": "viewConnections",
@@ -41,15 +57,35 @@
         },
         {
           "id": "test.tryUnregisterContextPadEntry",
-          "title": "Test: Try Unregister Context Pad Entry"
+          "title": "Test: Unregister Context Pad"
         },
         {
           "id": "test.tryUnregisterPaletteEntry",
-          "title": "Test: Try Unregister Palette Entry"
+          "title": "Test: Unregister Palette"
         },
         {
           "id": "test.updateContextPadEntry",
-          "title": "Test: Update Context Pad Entry"
+          "title": "Test: Update Context Pad"
+        },
+        {
+          "id": "test.modeling.updateProperties",
+          "title": "Test: updateProperties"
+        },
+        {
+          "id": "test.modeling.removeElement",
+          "title": "Test: removeElement"
+        },
+        {
+          "id": "test.modeling.appendElement",
+          "title": "Test: appendElement"
+        },
+        {
+          "id": "test.modeling.createConnection",
+          "title": "Test: createConnection"
+        },
+        {
+          "id": "test.modeling.moveElement",
+          "title": "Test: moveElement"
         }
       ],
       "bpmnPalette": [
@@ -58,6 +94,13 @@
           "icon": "ph-light ph-magnifying-glass",
           "title": "Run Analysis",
           "command": "runAnalysis"
+        },
+        {
+          "id": "insert-task-template",
+          "icon": "ph-light ph-plus-circle",
+          "title": "Insert Service Task",
+          "command": "insertTaskTemplate",
+          "group": "modeling"
         }
       ],
       "bpmnContextPad": [

@@ -249,6 +249,15 @@ export interface BpmnApi {
   getXml(uri: string): Promise<string>;
 
   /**
+   * Request the editor to re-run all plugin overlay factories.
+   *
+   * Call this after your plugin's internal state has changed in a way that affects
+   * what your overlay factory produces. The editor will invalidate the factory cache
+   * and schedule a full overlay refresh cycle on all open BPMN documents.
+   */
+  requestOverlayRefresh(): Promise<void>;
+
+  /**
    * Register an overlay factory that is called on every BPMN overlay refresh cycle
    * (document open, data change, root change, settings change).
    *
@@ -292,6 +301,12 @@ export interface BpmnApi {
    * - `{ elementIds: null }` — clear the allowlist (show on all type-matching elements).
    */
   updateContextPadEntry(entryId: string, update: ContextPadEntryUpdate): Promise<void>;
+
+  /**
+   * BPMN Modeling sub-API. All operations are undoable (Ctrl+Z) and go through
+   * the diagram-js commandStack. Requires 'bpmn.modelling' permission.
+   */
+  readonly modeling: BpmnModelingApi;
 }
 
 // ─── Palette & Context Pad types ────────────────────────────────────────────
@@ -315,4 +330,66 @@ export interface PluginBpmnContextPadEntry {
 
 export interface ContextPadEntryUpdate {
   elementIds?: string[] | null;
+}
+
+// ─── Modeling API types ─────────────────────────────────────────────────────
+
+export interface AppendElementDescriptor {
+  type: string;
+  name?: string;
+}
+
+export interface AppendElementResult {
+  elementId: string;
+}
+
+export interface CreateConnectionResult {
+  connectionId: string;
+}
+
+export interface MoveDelta {
+  x: number;
+  y: number;
+}
+
+/**
+ * BPMN Modeling API — programmatic diagram modification.
+ * All operations go through the diagram-js commandStack and are undoable.
+ * Requires 'bpmn.modelling' permission.
+ */
+export interface BpmnModelingApi {
+  /**
+   * Update properties on a BPMN element's business object.
+   * Only primitive and array-of-primitive values are allowed.
+   * Internal properties (`$parent`, `$type`, `di`) are blocked.
+   */
+  updateProperties(uri: string, elementId: string, properties: Record<string, unknown>): Promise<void>;
+
+  /**
+   * Remove an element from the diagram.
+   * The root process element cannot be removed.
+   */
+  removeElement(uri: string, elementId: string): Promise<void>;
+
+  /**
+   * Append a new element connected to the source element via a sequence flow.
+   * Returns the ID of the newly created element.
+   */
+  appendElement(
+    uri: string,
+    sourceElementId: string,
+    newElement: AppendElementDescriptor,
+  ): Promise<AppendElementResult>;
+
+  /**
+   * Create a connection (sequence flow) between two elements.
+   * Optionally specify the connection type (defaults to 'bpmn:SequenceFlow').
+   */
+  createConnection(uri: string, sourceId: string, targetId: string, type?: string): Promise<CreateConnectionResult>;
+
+  /**
+   * Move an element by a pixel delta.
+   * Both `x` and `y` must be finite numbers.
+   */
+  moveElement(uri: string, elementId: string, delta: MoveDelta): Promise<void>;
 }

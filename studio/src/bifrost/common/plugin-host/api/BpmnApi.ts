@@ -125,6 +125,15 @@ export class BpmnApi {
     return this.connection.request(PH_API_REQUEST, payload) as Promise<string>;
   }
 
+  async requestOverlayRefresh(): Promise<void> {
+    const payload: ApiRequestPayload = {
+      namespace: 'bpmn',
+      method: 'requestOverlayRefresh',
+      args: [],
+    };
+    await this.connection.request(PH_API_REQUEST, payload);
+  }
+
   async registerPaletteEntry(entry: {
     id: string;
     group?: string;
@@ -182,6 +191,64 @@ export class BpmnApi {
     };
     await this.connection.request(PH_API_REQUEST, payload);
   }
+
+  // ─── Modeling sub-API ─────────────────────────────────────────────────────
+
+  readonly modeling = {
+    updateProperties: async (uri: string, elementId: string, properties: Record<string, unknown>): Promise<void> => {
+      const payload: ApiRequestPayload = {
+        namespace: 'bpmn',
+        method: 'modeling.updateProperties',
+        args: [uri, elementId, properties],
+      };
+      await this.connection.request(PH_API_REQUEST, payload);
+    },
+
+    removeElement: async (uri: string, elementId: string): Promise<void> => {
+      const payload: ApiRequestPayload = {
+        namespace: 'bpmn',
+        method: 'modeling.removeElement',
+        args: [uri, elementId],
+      };
+      await this.connection.request(PH_API_REQUEST, payload);
+    },
+
+    appendElement: async (
+      uri: string,
+      sourceElementId: string,
+      newElement: { type: string; name?: string },
+    ): Promise<{ elementId: string }> => {
+      const payload: ApiRequestPayload = {
+        namespace: 'bpmn',
+        method: 'modeling.appendElement',
+        args: [uri, sourceElementId, newElement],
+      };
+      return this.connection.request(PH_API_REQUEST, payload) as Promise<{ elementId: string }>;
+    },
+
+    createConnection: async (
+      uri: string,
+      sourceId: string,
+      targetId: string,
+      type?: string,
+    ): Promise<{ connectionId: string }> => {
+      const payload: ApiRequestPayload = {
+        namespace: 'bpmn',
+        method: 'modeling.createConnection',
+        args: [uri, sourceId, targetId, type],
+      };
+      return this.connection.request(PH_API_REQUEST, payload) as Promise<{ connectionId: string }>;
+    },
+
+    moveElement: async (uri: string, elementId: string, delta: { x: number; y: number }): Promise<void> => {
+      const payload: ApiRequestPayload = {
+        namespace: 'bpmn',
+        method: 'modeling.moveElement',
+        args: [uri, elementId, delta],
+      };
+      await this.connection.request(PH_API_REQUEST, payload);
+    },
+  };
 
   disposeCallbacks(): void {
     for (const [, entries] of this.eventListeners) {

@@ -68,7 +68,7 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 - **`EngineCommandArgs`** — maps each command ID to its typed argument tuple.
 - **File:** `studio/src/modules/engine-core/commands/CommandContract.ts`
 
-18 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `terminateProcessInstance`, `deleteProcessInstance`, `triggerMessage`, `triggerSignal`.
+20 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerTimerEvent`.
 
 ### SDK Imports
 
@@ -135,10 +135,12 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 | `engine.configuredStartProcess` | Opens the Configured Start dialog (start event picker, payload JSON editor, business key) then starts |
 | `engine.startProcessAndOpenDebugger` | Smart start: if 1 start event, starts immediately; if 2+, opens dialog. Opens debugger on success |
 | `engine.configuredStartProcessAndOpenDebugger` | Always opens the Configured Start dialog, then opens debugger on success |
-| `engine.abortProcessInstance` | Aborts a running process instance |
+| `engine.abortProcessInstance` | Aborts a running process instance (thin REST wrapper, no UI) |
+| `engine.configuredAbortProcessInstance` | Opens a confirmation dialog, then delegates to `abortProcessInstance`. Catches `ProcessInstanceAlreadyTerminalError` with a user-friendly notification. Returns `boolean` (true if aborted). **File:** `registerConfiguredAbortCommands.ts` |
 | `engine.retryProcessInstance` | Retries a failed/aborted/error process instance (thin REST wrapper, no UI) |
 | `engine.configuredRetryProcessInstance` | Opens a confirmation dialog with version picker (same version, latest, or specific deployed version), then delegates to `retryProcessInstance`. Catches `IncompatibleVersionMigrationError` and `ProcessInstanceNotRetriableError` with user-friendly notifications. Accepts optional `RetryContext` for checkpoint reset (debugger) and version pre-fill. Returns `RetryResult \| null`. **File:** `registerConfiguredRetryCommands.ts` |
-| `engine.deleteProcessInstance` | Deletes a process instance |
+| `engine.deleteProcessInstance` | Deletes a terminal process instance (thin REST wrapper, no UI) |
+| `engine.configuredDeleteProcessInstance` | Opens a confirmation dialog, then delegates to `deleteProcessInstance`. Catches `ProcessInstanceNotTerminalError` with a user-friendly notification. Returns `boolean` (true if deleted). **File:** `registerConfiguredDeleteCommands.ts` |
 
 ### Events
 
@@ -184,8 +186,30 @@ Returns `null` when the user cancels.
 **Subprocess retry routing:** When the retry overlay is on a flow node inside an embedded subprocess, the FNI's `processInstanceId` differs from the root PI (the Engine creates a child PI per subprocess activation). `RetryAtFlowNodeLink` detects this and passes the child PI ID as `resetOptions.processInstanceId`. `retryWithConfirmation` forwards this ID to `engine.configuredRetryProcessInstance`, which retries the child PI with the inner FNI as the checkpoint.
 
 **Debugger toolbar `enabledWhen` guards:**
-- `engine.debugger.abortProcessInstance` — wraps the core `engine.abortProcessInstance` command; enabled only when the PI is in `Running` state
+- `engine.debugger.abortProcessInstance` — wraps the core `engine.configuredAbortProcessInstance` command (confirmation dialog); enabled only when the PI is in `Running` state
 - `engine.debugger.retryWithConfirmation` — enabled only when the PI is in a retryable state (`Fatal`, `Aborted`, `Error`)
+
+### Configured Abort Architecture
+
+**File:** `studio/src/modules/engine-core/commands/registerConfiguredAbortCommands.ts`
+
+The `engine.configuredAbortProcessInstance` command shows a confirmation dialog before aborting. Unlike retry, abort has no options — the dialog is purely a safety gate.
+
+**Consumers:**
+- **Debugger** — `engine.debugger.abortProcessInstance` delegates to `configuredAbortProcessInstance` and refreshes the model on success
+- **Instance Search (single)** — `engine.workspace.instanceSearch.abortSingle` delegates to `configuredAbortProcessInstance` (context menu, shown only for running instances)
+- **Instance Search (bulk)** — `engine.workspace.instanceSearch.abortSelected` pre-filters to running instances, shows a bulk confirmation dialog, then loops `engine.abortProcessInstance` per instance with per-call error handling and a summary notification
+
+### Configured Delete Architecture
+
+**File:** `studio/src/modules/engine-core/commands/registerConfiguredDeleteCommands.ts`
+
+The `engine.configuredDeleteProcessInstance` command shows a confirmation dialog before permanently deleting a terminal process instance and all its data.
+
+**Consumers:**
+- **Debugger** — not wired; delete is a housekeeping action and belongs in the instance list only
+- **Instance Search (single)** — `engine.workspace.instanceSearch.deleteSingle` delegates to `configuredDeleteProcessInstance` (context menu, shown only for terminal instances)
+- **Instance Search (bulk)** — `engine.workspace.instanceSearch.deleteSelected` pre-filters to terminal instances, shows a bulk confirmation dialog, then loops `engine.deleteProcessInstance` per instance with per-call error handling and a summary notification
 
 ### Debugger Event Trigger Commands
 

@@ -73,6 +73,72 @@ exports.activate = async (api) => {
     },
     { visibleInSearch: true, description: 'Try Update Context Pad Entry' },
   );
+
+  // Modeling API permission tests
+  await api.commands.register(
+    'tryModelingUpdateProperties',
+    async () => {
+      try {
+        await api.bpmn.modeling.updateProperties('file:///test.bpmn', 'Task_1', { name: 'test' });
+        return 'ok';
+      } catch (err) {
+        return err.message;
+      }
+    },
+    { visibleInSearch: true, description: 'Try modeling.updateProperties' },
+  );
+
+  await api.commands.register(
+    'tryModelingRemoveElement',
+    async () => {
+      try {
+        await api.bpmn.modeling.removeElement('file:///test.bpmn', 'Task_1');
+        return 'ok';
+      } catch (err) {
+        return err.message;
+      }
+    },
+    { visibleInSearch: true, description: 'Try modeling.removeElement' },
+  );
+
+  await api.commands.register(
+    'tryModelingAppendElement',
+    async () => {
+      try {
+        await api.bpmn.modeling.appendElement('file:///test.bpmn', 'Task_1', { type: 'bpmn:Task' });
+        return 'ok';
+      } catch (err) {
+        return err.message;
+      }
+    },
+    { visibleInSearch: true, description: 'Try modeling.appendElement' },
+  );
+
+  await api.commands.register(
+    'tryModelingCreateConnection',
+    async () => {
+      try {
+        await api.bpmn.modeling.createConnection('file:///test.bpmn', 'Task_1', 'Task_2');
+        return 'ok';
+      } catch (err) {
+        return err.message;
+      }
+    },
+    { visibleInSearch: true, description: 'Try modeling.createConnection' },
+  );
+
+  await api.commands.register(
+    'tryModelingMoveElement',
+    async () => {
+      try {
+        await api.bpmn.modeling.moveElement('file:///test.bpmn', 'Task_1', { x: 10, y: 0 });
+        return 'ok';
+      } catch (err) {
+        return err.message;
+      }
+    },
+    { visibleInSearch: true, description: 'Try modeling.moveElement' },
+  );
 };
 
 exports.deactivate = () => {};

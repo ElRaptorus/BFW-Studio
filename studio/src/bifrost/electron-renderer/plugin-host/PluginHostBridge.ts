@@ -190,7 +190,8 @@ export class PluginHostBridge {
           method === 'unregisterPaletteEntry' ||
           method === 'registerContextPadEntry' ||
           method === 'unregisterContextPadEntry' ||
-          method === 'updateContextPadEntry'
+          method === 'updateContextPadEntry' ||
+          method.startsWith('modeling.')
         ) {
           this.permissionGate.assert(callerName, 'bpmn.modelling', `bpmn.${method}`);
         }
