@@ -112,10 +112,58 @@ Available injectable services include any standard diagram-js / bpmn-js service:
 
 Modules are collected at module init time (during `onLoad`), but `BpmnModelerComponentAdapter` is only instantiated when a user opens a BPMN document. By the time a user can open any document, all modules have finished their `onLoad`. Therefore, the order in which modules register diagram-js modules is irrelevant — the only constraint is that `bpmn-core` loads before any module that calls `bpmn.modeler.registerModule`.
 
+## Plugin Module Support (Phase 8)
+
+The registry was extended to support per-plugin module tracking. Plugins with the `bpmn.renderer` permission can declare `bpmnModules` in their manifest, which are loaded by `PluginModuleLoader` and registered separately from internal modules.
+
+```typescript
+class BpmnModelerModuleRegistry {
+  private modules: any[] = [];
+  private pluginModules = new Map<string, any[]>();
+
+  register(module: any): void;                               // internal modules
+  registerPluginModule(pluginName: string, module: any): void;  // plugin modules
+  unregisterPluginModules(pluginName: string): void;            // cleanup on disable
+  hasPluginModules(pluginName: string): boolean;
+  getAll(): any[];  // returns [...this.modules, ...all plugin modules]
+}
+```
+
+Key differences from internal modules:
+
+- Plugin modules are **removable** (via `unregisterPluginModules`) — internal modules are append-only
+- Plugin modules receive a `pluginChannel` DI value for bidirectional communication with the plugin host
+- When a plugin is disabled, its modules are unregistered and open BPMN editors are force-reopened
+
+### PluginModuleLoader
+
+**File:** `studio/src/modules/bpmn-core/plugin-modules/PluginModuleLoader.ts`
+
+Responsible for loading plugin-provided JS bundles via `__non_webpack_require__()` (bypasses bundler static analysis), creating `PluginChannel` instances, and managing the lifecycle.
+
+### PluginChannel
+
+**File:** `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts`
+
+Per-plugin bidirectional message channel injected as a DI value (`pluginChannel`). The renderer module calls `pluginChannel.postMessage(data)` to send to the host; the host calls `api.bpmn.postToRendererModule(data)` to send to the renderer.
+
+See [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) for the full renderer module architecture.
+
+### PluginPaletteProvider & PluginContextPadProvider
+
+**Files:**
+- `studio/src/modules/bpmn-core/plugin-contributions/PluginPaletteProvider.ts`
+- `studio/src/modules/bpmn-core/plugin-contributions/PluginContextPadProvider.ts`
+
+These are diagram-js modules registered internally (not by plugins) that act as multiplexers for all plugin-contributed palette and context pad entries. They read from `PluginBpmnContributionStore` and present aggregated entries to the bpmn-js palette/context pad system.
+
+`PluginContextPadProvider` implements a two-level filter: `elementTypes` (static, from manifest) + `elementIds` (dynamic Set, updated at runtime via `updateContextPadEntry`). Both must match for an entry to appear on a given element.
+
 ## Design Constraints
 
-- Modules are **static**: once registered, a module is included in every `BpmnModeler` instance. There is no per-document opt-in/opt-out.
-- Modules are **append-only**: there is no API to unregister a module.
+- Internal modules are **static**: once registered, a module is included in every `BpmnModeler` instance. There is no per-document opt-in/opt-out.
+- Internal modules are **append-only**: there is no API to unregister an internal module.
+- Plugin modules are **removable**: they can be unregistered when the plugin is disabled. Open editors must be reopened for changes to take effect.
 - The `modelerAdapter` getter on `BpmnDocumentModel` is **generic**: it does not know about any specific module. Modules reach their own injected services by name.
 
 ## File Path Reference
@@ -128,3 +176,8 @@ Modules are collected at module init time (during `onLoad`), but `BpmnModelerCom
 | Adapter (spreads modules) | `studio/src/modules/bpmn-core/BpmnModelerComponentAdapter.ts` (constructor) |
 | SDK adapter type | `studio-sdk/types/bpmn/BpmnModelerComponentAdapter.ts` |
 | SDK model type | `studio-sdk/types/BpmnDocumentModel.ts` |
+| PluginModuleLoader | `studio/src/modules/bpmn-core/plugin-modules/PluginModuleLoader.ts` |
+| PluginChannel | `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts` |
+| PluginPaletteProvider | `studio/src/modules/bpmn-core/plugin-contributions/PluginPaletteProvider.ts` |
+| PluginContextPadProvider | `studio/src/modules/bpmn-core/plugin-contributions/PluginContextPadProvider.ts` |
+| PluginBpmnContributionStore | `studio/src/modules/bpmn-core/plugin-contributions/PluginBpmnContributionStore.ts` |

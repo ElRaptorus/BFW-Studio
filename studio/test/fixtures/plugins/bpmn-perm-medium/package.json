@@ -1,0 +1,41 @@
+{
+  "name": "bpmn-perm-medium",
+  "version": "1.0.0",
+  "displayName": "BPMN Permission Medium",
+  "description": "Fixture plugin with 'bpmn.modelling' — tests that modeling API works but renderer module access is denied.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN Permission Medium",
+    "permissions": [
+      "bpmn.modelling"
+    ],
+    "activationEvents": [
+      "onDocumentType:bpmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "tryModelingUpdateProperties",
+          "title": "Try modeling.updateProperties"
+        },
+        {
+          "id": "tryModelingAppendElement",
+          "title": "Try modeling.appendElement"
+        },
+        {
+          "id": "tryPostToRendererModule",
+          "title": "Try postToRendererModule"
+        },
+        {
+          "id": "tryOnRendererModuleMessage",
+          "title": "Try onRendererModuleMessage"
+        },
+        {
+          "id": "test.isActivated",
+          "title": "Test: Is Activated"
+        }
+      ]
+    }
+  }
+}

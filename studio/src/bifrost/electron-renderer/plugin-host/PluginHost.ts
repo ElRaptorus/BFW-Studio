@@ -780,6 +780,7 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
       throw new Error(`Plugin '${name}' not found`);
     }
 
+    this.activationManager.disposePlugin(name);
     this.disposeContributions(name);
     this.bridge.disposePlugin(name);
     this.pluginIframeManager.disposePlugin(name);

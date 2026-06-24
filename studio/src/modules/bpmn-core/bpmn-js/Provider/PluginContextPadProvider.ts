@@ -33,7 +33,9 @@ class PluginContextPadProvider {
         this.reopenScheduled = false;
         const current = this.contextPad._current;
         if (current != null) {
-          this.contextPad.open(current.element);
+          const target = current.target;
+          this.contextPad.close();
+          this.contextPad.open(target);
         }
       });
     });

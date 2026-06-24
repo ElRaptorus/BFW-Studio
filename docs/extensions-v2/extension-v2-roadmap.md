@@ -1,8 +1,8 @@
 # Bifrost Forge World — Extension Mechanism Roadmap
 
-> **Status**: DRAFT — Awaiting review and approval
+> **Status**: ACTIVE — Phase 8 complete, Phase 9 next
 > **Created**: 2026-05-12
-> **Last updated**: 2026-06-02
+> **Last updated**: 2026-06-24
 
 ---
 
@@ -26,7 +26,7 @@ The roadmap is organized into **phases** (numbered 0 through 11), each broken in
 - [Phase 5 (**DONE**) — Developer Experience & Tooling](#phase-5--developer-experience--tooling)
 - [Phase 6 (**DONE**) — Advanced Plugin Capabilities](#phase-6--advanced-plugin-capabilities)
 - [Phase 7 (**DONE**) — Per-Plugin Sandboxing](#phase-7--per-plugin-sandboxing)
-- [Phase 8 — Editor Document Enrichment (BPMN)](#phase-8--editor-document-enrichment)
+- [Phase 8 (**DONE**) — Editor Document Enrichment (BPMN)](#phase-8--editor-document-enrichment)
 - [Phase 9 — DMN Editor Enrichment](#phase-9--dmn-editor-enrichment)
 - [Phase 10 — SDK Audit & Refactoring](#phase-10--sdk-audit--refactoring)
 - [Phase 11 — Marketplace](#phase-11--marketplace)
@@ -1196,9 +1196,18 @@ Per-plugin sandboxing addresses all three concerns by giving each plugin its own
 
 ---
 
-## Phase 8 — Editor Document Enrichment
+## [DONE] Phase 8 — Editor Document Enrichment
 
 **Goal**: Allow plugins to enrich the Studio's editor documents — most critically the BPMN modeler — with custom overlays, event listeners, palette/context pad entries, and, for advanced use cases, full diagram-js module injection. This phase is what turns plugins from passive sidebar/pane tools into first-class participants in the editing experience.
+
+**Permission model (implemented)**: Tiered permissions replace the previous `renderer-modules` single gate:
+- `bpmn` (low risk) — read elements, events, overlays
+- `bpmn.modelling` (medium risk) — model modification, palette/context pad
+- `bpmn.renderer` (high risk) — renderer module injection
+
+**Dropped from v1**: `setElementColor` / `setElementColors` — custom element coloring is deferred. Renderer modules cover the use case for plugins that truly need it.
+
+**Completed**: 2026-06-24. All batches (8.1–8.4, 8.KS, 8.PG, 8.5) delivered. Detailed plan and checklist: `.cursor/plans/phase_7_editor_enrichment_09c9a866.plan.md`. Architecture reference: `docs/architecture/plugin-bpmn-enrichment.md`.
 
 The BPMN editor is the Studio's core differentiator. Plugins must be able to enhance it meaningfully — from simple annotation overlays (like a linter) to complex interactive features (like a token simulator). This phase addresses the fundamental tension between process isolation (plugins run in the Plugin Host, not the renderer) and deep editor integration (the bpmn-js modeler lives in the renderer DOM).
 
@@ -1476,9 +1485,11 @@ api.editors.onElementSelected(uri, callback);
 
 ## Phase 9 — DMN Editor Enrichment
 
-**Goal**: Extend the plugin enrichment capabilities from Phase 8 to the DMN editor. Plugins should be able to enrich the DMN Decision Requirements Diagram (DRD) with custom overlays, event listeners, palette/context pad entries, modeling operations, and renderer module injection — mirroring the BPMN enrichment API. Phase 8's `EditorEnrichmentBridge` interface (Batch 8.5) provides the generic framework; this phase implements the DMN-specific bridge.
+**Goal**: Extend the plugin enrichment capabilities from Phase 8 to the DMN editor. Plugins should be able to enrich the DMN Decision Requirements Diagram (DRD) with custom overlays, event listeners, palette/context pad entries, modeling operations, and renderer module injection — mirroring the BPMN enrichment API. Phase 8's `BpmnApiBridge` establishes the patterns; this phase implements a parallel `DmnApiBridge` (no shared generic bridge — per Phase 8 Decision #2).
 
-**Prerequisite**: Phase 8 (BPMN Editor Enrichment) must be complete — specifically Batch 8.5 (`EditorEnrichmentBridge` interface).
+**Prerequisite**: Phase 8 (BPMN Editor Enrichment) must be complete.
+
+**Permission model**: `dmn` → `dmn.modelling` → `dmn.renderer` (mirrors the BPMN tiered model).
 
 **Scope**: The DMN editor has four views: **DRD** (Decision Requirements Diagram), **Decision Table**, **Literal Expression**, and **Boxed Expression**. Plugin enrichment targets the **DRD view only** — it is the diagrammatic view with positioned elements, a palette, and a context pad. The expression editors (table, literal, boxed) are data-entry views without the spatial element model that overlays and palette entries require.
 
@@ -1506,9 +1517,9 @@ Key differences:
 ### Batch 9.1 — DMN Enrichment Bridge (`DmnEnrichmentBridge`)
 
 **What it introduces**:
-- A `DmnEnrichmentBridge` class implementing the `EditorEnrichmentBridge` interface (from Phase 8, Batch 8.5).
-- The bridge is registered in the `PluginHostBridge` enrichment bridge map for the `'dmn'` document type.
-- Plugins can use the **generic** `api.editors.*` enrichment methods (from 7.5) to place overlays, subscribe to element events, and query elements on DMN documents — or a new **`api.dmn`** namespace for DMN-specific operations.
+- A `DmnApiBridge` class parallel to `BpmnApiBridge` (no shared generic bridge — each diagram type gets its own explicit API per Phase 8 Decision #2).
+- The bridge is registered in the `PluginHostBridge` namespace dispatch for the `'dmn'` namespace.
+- Plugins use the **`api.dmn`** namespace for DMN-specific operations (overlays, element queries, modeling, renderer modules).
 
 **Overlay support (DRD only)**:
 - Same descriptor format as BPMN: `{ elementId, position, type, content, style }`.

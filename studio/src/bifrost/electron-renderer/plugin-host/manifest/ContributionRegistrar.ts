@@ -156,6 +156,7 @@ export class ContributionRegistrar {
       if (hasBpmnRenderer) {
         const result = pluginModuleLoader.loadPluginModules(pluginName, pluginPath, contributes.bpmnModules);
         if (result.success) {
+          this.forceReopenBpmnEditors(pluginName);
           disposers.push(() => {
             pluginModuleLoader.unloadPluginModules(pluginName);
             this.forceReopenBpmnEditors(pluginName);

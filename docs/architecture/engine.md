@@ -185,6 +185,14 @@ Returns `null` when the user cancels.
 
 **Subprocess retry routing:** When the retry overlay is on a flow node inside an embedded subprocess, the FNI's `processInstanceId` differs from the root PI (the Engine creates a child PI per subprocess activation). `RetryAtFlowNodeLink` detects this and passes the child PI ID as `resetOptions.processInstanceId`. `retryWithConfirmation` forwards this ID to `engine.configuredRetryProcessInstance`, which retries the child PI with the inner FNI as the checkpoint.
 
+**Retry overlay eligibility** (`shouldDisplayRetryOverlay` in `OverlayFactory.ts`):
+- PI must be in a retryable state (`fatal`, `aborted`, `error`)
+- Excluded BPMN types: all gateways + boundary events
+- No multi-instance loop characteristics
+- Not directly following an Event-Based Gateway (structural check via predecessor FNI's `flowNodeType`)
+- Not an Event-Based Gateway loser (FNI state `aborted` + `typeProperties.reason === 'event_based_gateway_sibling_cancelled'`)
+- Not in an open parallel branch (split gateway without matching join before the node)
+
 **Debugger toolbar `enabledWhen` guards:**
 - `engine.debugger.abortProcessInstance` — wraps the core `engine.configuredAbortProcessInstance` command (confirmation dialog); enabled only when the PI is in `Running` state
 - `engine.debugger.retryWithConfirmation` — enabled only when the PI is in a retryable state (`Fatal`, `Aborted`, `Error`)

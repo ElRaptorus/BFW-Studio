@@ -189,42 +189,10 @@ function activate(api) {
     { visibleInSearch: false, description: 'BPMN Palette Demo: View Connections' },
   );
 
-  // ── Runtime context pad entries ────────────────────────────────────────────
-
-  // "Rename" — on all tasks and subprocesses
-  api.bpmn.registerContextPadEntry({
-    id: 'rename-element',
-    icon: 'ph-light ph-pencil-simple',
-    title: 'Rename Element',
-    command: 'renameElement',
-    elementTypes: ['bpmn:Task', 'bpmn:ServiceTask', 'bpmn:UserTask', 'bpmn:ScriptTask', 'bpmn:SubProcess'],
-  });
-
-  // "Delete" — on all non-root flow nodes
-  api.bpmn.registerContextPadEntry({
-    id: 'delete-element',
-    icon: 'ph-light ph-trash',
-    title: 'Delete Element',
-    command: 'deleteElement',
-  });
-
-  // "Nudge Right" — on all shapes
-  api.bpmn.registerContextPadEntry({
-    id: 'nudge-right',
-    icon: 'ph-light ph-arrow-right',
-    title: 'Nudge Right (+50px)',
-    command: 'nudgeRight',
-  });
-
-  // "Toggle Flag" — single button that flags or unflags based on current state.
-  api.bpmn.registerContextPadEntry({
-    id: 'toggle-flag',
-    icon: 'ph-light ph-flag',
-    title: 'Toggle Flag',
-    command: 'toggleFlag',
-  });
-
-  // Dynamic: "View Connections" with elementIds allowlist pattern
+  // ── Runtime context pad entry: View Connections (dynamic elementIds) ───────
+  // This entry is also declared in the manifest for base visibility, but the
+  // runtime call adds elementIds: [] which restricts it to only elements
+  // explicitly populated later via updateContextPadEntry.
   api.bpmn.registerContextPadEntry({
     id: 'view-connections',
     icon: 'ph-light ph-git-branch',

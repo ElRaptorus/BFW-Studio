@@ -116,6 +116,49 @@
             "bpmn:UserTask",
             "bpmn:ScriptTask"
           ]
+        },
+        {
+          "id": "rename-element",
+          "icon": "ph-light ph-pencil-simple",
+          "title": "Rename Element",
+          "command": "renameElement",
+          "elementTypes": [
+            "bpmn:Task",
+            "bpmn:ServiceTask",
+            "bpmn:UserTask",
+            "bpmn:ScriptTask",
+            "bpmn:SubProcess"
+          ]
+        },
+        {
+          "id": "delete-element",
+          "icon": "ph-light ph-trash",
+          "title": "Delete Element",
+          "command": "deleteElement"
+        },
+        {
+          "id": "nudge-right",
+          "icon": "ph-light ph-arrow-right",
+          "title": "Nudge Right (+50px)",
+          "command": "nudgeRight"
+        },
+        {
+          "id": "toggle-flag",
+          "icon": "ph-light ph-flag",
+          "title": "Toggle Flag",
+          "command": "toggleFlag"
+        },
+        {
+          "id": "view-connections",
+          "icon": "ph-light ph-git-branch",
+          "title": "View Connections (2+ outgoing)",
+          "command": "viewConnections",
+          "elementTypes": [
+            "bpmn:ExclusiveGateway",
+            "bpmn:ParallelGateway",
+            "bpmn:InclusiveGateway",
+            "bpmn:Task"
+          ]
         }
       ]
     }

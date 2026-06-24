@@ -262,7 +262,7 @@ A process-isolated, permission-gated plugin architecture.
 - Declarative feature manifest for commands, panes, webview-based documents, menus, settings, themes, and more
 - Full API bridge for runtime interaction with the Studio
 
-**Current status:** Phase 8 of 11 — see the [full roadmap](./docs/extensions-v2/extension-v2-roadmap.md), [example plugins](./studio/test/fixtures/plugins), and the [plugin template generator](./tools/create-evil-plugin/).
+**Current status:** Phase 8 of 11 finished — see the [full roadmap](./docs/extensions-v2/extension-v2-roadmap.md), [example plugins](./studio/test/fixtures/plugins), and the [plugin template generator](./tools/create-evil-plugin/).
 
 See [architecture](./docs/architecture/plugin-host.md) and [manifest reference](./docs/architecture/plugin-manifest.md).
 

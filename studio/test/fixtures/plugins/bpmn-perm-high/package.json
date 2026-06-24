@@ -1,0 +1,43 @@
+{
+  "name": "bpmn-perm-high",
+  "version": "1.0.0",
+  "displayName": "BPMN Permission High",
+  "description": "Fixture plugin with 'bpmn.renderer' — tests full hierarchy (implies bpmn.modelling implies bpmn).",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN Permission High",
+    "permissions": [
+      "bpmn.renderer"
+    ],
+    "activationEvents": [
+      "onDocumentType:bpmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "tryModelingUpdateProperties",
+          "title": "Try modeling.updateProperties"
+        },
+        {
+          "id": "tryPostToRendererModule",
+          "title": "Try postToRendererModule"
+        },
+        {
+          "id": "tryOnRendererModuleMessage",
+          "title": "Try onRendererModuleMessage"
+        },
+        {
+          "id": "test.isActivated",
+          "title": "Test: Is Activated"
+        }
+      ],
+      "bpmnModules": [
+        {
+          "entry": "renderer/noop-module.js",
+          "description": "Minimal no-op module for permission gate testing."
+        }
+      ]
+    }
+  }
+}

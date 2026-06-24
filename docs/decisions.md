@@ -1149,3 +1149,27 @@ Additionally, `{ ...createNamespaceProxy('editors') }` produced `{}` because Jav
 **Decision**: (1) **Engine hard cut**: Remove `payload_contract` from `EventDefinition.Message` entirely. Move contracts to flow-node position structs with direction-aware naming: throw-side events (`IntermediateThrowEvent`, `EndEvent`, `SendTask`) get `payload_contract`; catch-side events (`IntermediateCatchEvent`, `BoundaryEvent`, `StartEvent`, `ReceiveTask`) get `result_contract`. (2) **Studio pane visibility**: Add catch-side message events to `DATA_PIPELINE_RESULT_CONTRACT_TYPES`; split payload contract and input mapping visibility into separate type lists (`DATA_PIPELINE_PAYLOAD_CONTRACT_TYPES` and `DATA_PIPELINE_INPUT_MAPPING_TYPES`) so signal throw events retain input mappings without showing payload contract. (3) **Element access**: Expose `resultContract` on catch-side message events; add `outputMappings`/`inputMappings` to signal events. (4) **SDK types**: Add `resultContract` to catch-side message event types; add mapping arrays to signal event types.
 
 **Rationale**: Aligns with D-MSG-1 (mappings at flow-node level) and existing task semantics. The hard cut eliminates backward-compatibility complexity — all BPMNs with event-level contracts must be updated to use flow-node-level `<evil:resultContract>` (catch) or `<evil:payloadContract>` (throw). Signal events carry no payload and no contracts per the Engine design, so showing a contract pane was misleading.
+
+---
+
+### 2026-06-24 — Phase 8: BPMN Editor Plugin Enrichment architecture decisions
+
+**Context**: Phase 8 introduces a tiered plugin permission model for BPMN editor enrichment, allowing plugins to read diagram data, modify models, contribute palette/context pad entries, and inject renderer modules.
+
+**Decisions**:
+
+1. **Tiered permission model** (`bpmn` → `bpmn.modelling` → `bpmn.renderer`) instead of a single gate. Each tier unlocks progressively more powerful capabilities. Higher tiers implicitly grant lower-tier permissions via `PERMISSION_HIERARCHY` in `PermissionGate.ts`.
+
+2. **No generic `EditorEnrichmentBridge`** — each diagram type gets its own explicit API (`BpmnApiBridge`). This avoids premature abstraction; DMN will get its own `DmnApiBridge` in Phase 9 following the same patterns.
+
+3. **Layered approach**: declarative manifest contributions (palette, context pad) + runtime API methods (register/unregister) + privileged renderer module injection. This gives plugin developers a progressive complexity ramp.
+
+4. **Event-driven overlays, command-based click interaction** — overlays are non-interactive by default (`pointer-events: none`). Interactive overlays require `onClickCommand` referencing the plugin's own command. This prevents plugins from silently intercepting user clicks.
+
+5. **Pre-evaluated `elementIds` allowlist for context pad dynamic visibility** instead of synchronous `visibleWhen` callbacks. The async plugin sandbox bridge makes synchronous per-render callbacks architecturally impossible. Plugins subscribe to element events, compute qualifying IDs reactively, and push updates via `updateContextPadEntry`.
+
+6. **DI-scoping only for renderer modules** — renderer modules receive diagram-js services + `pluginChannel` via DI. No `bifrost` reference is injected. The existing SES sandbox (Phase 7) provides baseline isolation for the host-side plugin code.
+
+7. **Element coloring dropped from v1** — custom element coloring (background/border color) is deferred. Renderer module injection covers the use case for plugins that truly need it.
+
+**Rationale**: The tiered model balances developer ergonomics (most plugins only need `bpmn` for read-only overlays) with security (renderer injection is rare and high-risk). Command-based overlay interaction leverages the existing command system for authorization. The allowlist pattern for context pad visibility is the only architecturally sound solution given the async boundary between plugin sandbox and renderer.

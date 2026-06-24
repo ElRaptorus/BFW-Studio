@@ -10,6 +10,46 @@ interface LoadedPlugin {
   channel: PluginChannel;
 }
 
+const CHANNEL_DI_PREFIX = 'pluginChannel__';
+
+function makeChannelDiName(pluginName: string): string {
+  return `${CHANNEL_DI_PREFIX}${pluginName}`;
+}
+
+/**
+ * Rewrites `$inject` arrays in a loaded module, replacing the generic
+ * `pluginChannel` dependency name with the plugin-specific DI name.
+ *
+ * This prevents multiple plugins from overwriting each other's channel
+ * in the shared diagram-js DI container.
+ */
+function rewriteChannelInjections(moduleDescriptor: Record<string, any>, channelDiName: string): void {
+  for (const key of Object.keys(moduleDescriptor)) {
+    if (key === '__init__') {
+      continue;
+    }
+    const entry = moduleDescriptor[key];
+    if (!Array.isArray(entry) || entry.length < 2) {
+      continue;
+    }
+    const [kind, serviceConstructor] = entry;
+    if (kind !== 'type' && kind !== 'factory') {
+      continue;
+    }
+    if (typeof serviceConstructor !== 'function') {
+      continue;
+    }
+    const inject: string[] | undefined = serviceConstructor.$inject;
+    if (!Array.isArray(inject)) {
+      continue;
+    }
+    const channelIndex = inject.indexOf('pluginChannel');
+    if (channelIndex !== -1) {
+      inject[channelIndex] = channelDiName;
+    }
+  }
+}
+
 /**
  * Loads plugin-provided diagram-js modules into the renderer process
  * and manages their lifecycle.
@@ -17,6 +57,10 @@ interface LoadedPlugin {
  * Each plugin's modules are registered in the BpmnModelerModuleRegistry.
  * A PluginChannel is injected alongside the modules for bidirectional
  * communication with the plugin host.
+ *
+ * Each plugin receives a unique DI name for its channel
+ * (`pluginChannel__<pluginName>`) to prevent collisions when multiple
+ * plugins register renderer modules simultaneously.
  */
 class PluginModuleLoader {
   private loadedPlugins = new Map<string, LoadedPlugin>();
@@ -45,8 +89,9 @@ class PluginModuleLoader {
       this.unloadPluginModules(pluginName);
     }
 
+    const channelDiName = makeChannelDiName(pluginName);
     const channel = new PluginChannel(pluginName, this.sendFn);
-    const channelModule = { pluginChannel: ['value', channel] };
+    const channelModule = { [channelDiName]: ['value', channel] };
 
     try {
       bpmnModelerModuleRegistry.registerPluginModule(pluginName, channelModule);
@@ -56,8 +101,12 @@ class PluginModuleLoader {
         let loadedModule: any;
 
         try {
-          // Runtime-only require for plugin bundles loaded from arbitrary paths.
-          // Must bypass the bundler's static analysis.
+          // Evict from Node's require cache so we always load the latest version
+          // from disk. Without this, disable → re-enable cycles or plugin updates
+          // would keep serving stale module code.
+          const resolvedPath = __non_webpack_require__.resolve(modulePath);
+          delete __non_webpack_require__.cache[resolvedPath];
+
           loadedModule = __non_webpack_require__(modulePath);
         } catch (loadError) {
           const message = loadError instanceof Error ? loadError.message : String(loadError);
@@ -77,6 +126,7 @@ class PluginModuleLoader {
           };
         }
 
+        rewriteChannelInjections(resolvedModule, channelDiName);
         bpmnModelerModuleRegistry.registerPluginModule(pluginName, resolvedModule);
       }
 

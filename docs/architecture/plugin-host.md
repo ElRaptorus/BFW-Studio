@@ -149,7 +149,7 @@ When a single plugin is unloaded or reloaded (via `bifrost.plugins.togglePlugin(
 
 1. **Re-discover from disk** — `discoverSinglePlugin(pluginPath)` re-reads `package.json`, re-validates the manifest, and refreshes all metadata fields on the `PluginInfo` entry. This picks up user edits to the manifest.
 2. **Re-validate** — Manifest errors and API version checks are re-run. If validation fails, the plugin stays in `status: 'error'` with a refreshed `errorMessage` and a toast notification. No IPC is sent to the child process.
-3. **Re-register contributions** — If validation passes, manifest contributions (commands, menus, keybindings, settings, panes, icons) are re-registered via the `ContributionRegistrar`.
+3. **Re-register contributions** — If validation passes, manifest contributions (commands, menus, keybindings, settings, panes, icons, bpmnPalette, bpmnContextPad, bpmnModules) are re-registered via the `ContributionRegistrar`.
 4. **Load or defer** — Plugins with `activationEvents` go to `status: 'pending'` (lazy). Others attempt an IPC `PH_RELOAD_PLUGIN`. IPC failures are caught and preserve the `error` state.
 
 `togglePlugin` cooperates by routing errored plugins (not in `plugins.disabledPlugins`) to `reloadPlugin` instead of the disable branch. Plugins in `status: 'quarantined'` are not retried via toggle alone — use `bifrost.plugins.trustAndReEnablePlugin(name)` (see _Per-plugin crash recovery and quarantine_).
@@ -208,7 +208,7 @@ export async function activate(api: StudioPluginApi): Promise<void> {
   // api.commands, api.diagnostics, api.dialogs, api.notifications,
   // api.settings, api.events, api.webviews, api.editors, api.panes,
   // api.statusBar, api.menuBar, api.menus, api.workspace,
-  // api.views, api.themes, api.env
+  // api.views, api.themes, api.bpmn, api.env
 }
 ```
 
@@ -560,6 +560,46 @@ Files:
 - `studio/src/modules/bpmn-editor/BpmnDocumentModel.ts` — `refreshOverlays()` integration point
 - `studio-sdk/src/plugin-api/BpmnApi.ts` — SDK type definitions
 
+**Modeling sub-namespace** (requires `bpmn.modelling`):
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `modeling.updateProperties` | `(uri, elementId, properties) → void` | Update element properties (undoable) |
+| `modeling.removeElement` | `(uri, elementId) → void` | Remove element (undoable) |
+| `modeling.appendElement` | `(uri, sourceId, descriptor) → { elementId }` | Append connected element (undoable) |
+| `modeling.createConnection` | `(uri, sourceId, targetId, type?) → { connectionId }` | Create sequence flow (undoable) |
+| `modeling.moveElement` | `(uri, elementId, delta) → void` | Move element by delta (undoable) |
+
+**Palette/Context Pad contributions** (requires `bpmn.modelling`):
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `registerPaletteEntry` | `(entry) → void` | Runtime palette entry registration |
+| `unregisterPaletteEntry` | `(id) → void` | Remove a palette entry |
+| `registerContextPadEntry` | `(entry) → void` | Runtime context pad entry registration |
+| `unregisterContextPadEntry` | `(id) → void` | Remove a context pad entry |
+| `updateContextPadEntry` | `(id, update) → void` | Update elementIds/elementTypes dynamically |
+
+Manifest equivalents: `contributes.bpmnPalette` and `contributes.bpmnContextPad` in `package.json`.
+
+**Renderer module messaging** (requires `bpmn.renderer`):
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `postToRendererModule` | `(data) → void` | Send message to renderer-injected module |
+| `onRendererModuleMessage` | `(callback) → Disposable` | Subscribe to messages from renderer module |
+
+Manifest: `contributes.bpmnModules` declares JS bundles injected into the renderer.
+
+Files:
+- `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts` — per-plugin bidirectional message channel
+- `studio/src/modules/bpmn-core/plugin-modules/PluginModuleLoader.ts` — loads plugin renderer modules
+- `studio/src/modules/bpmn-core/plugin-contributions/PluginBpmnContributionStore.ts` — palette/context pad registry
+- `studio/src/modules/bpmn-core/plugin-contributions/PluginPaletteProvider.ts` — diagram-js palette multiplexer
+- `studio/src/modules/bpmn-core/plugin-contributions/PluginContextPadProvider.ts` — diagram-js context pad multiplexer
+
+See [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) for the full architecture.
+
 ### Command namespacing
 
 Commands registered by plugins are automatically prefixed with `plugin.<pluginName>.` to prevent collisions with module commands.
@@ -577,7 +617,7 @@ Commands registered by plugins are automatically prefixed with `plugin.<pluginNa
 | Rule | Commands |
 |------|----------|
 | **Hard-denied** (no permission can grant) | `git.*`, `engine.*`, `plugins.*`, `dev.*`, plus `std.solution.*`, `std.window.*`, `std.internal.*`, `std.test.*` |
-| **Permission-gated** | `std.*` → `commands.std`; `bpmn.*` (except modeler register) → `commands.bpmn`; `dmn.*` → `commands.dmn`; `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` → `renderer-modules` |
+| **Permission-gated** | `std.*` → `commands.std`; `bpmn.*` (except modeler register) → `commands.bpmn`; `dmn.*` → `commands.dmn`; `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` → `bpmn.renderer` (legacy alias: `renderer-modules`); `api.bpmn.modeling.*` → `bpmn.modelling`; `api.bpmn.postToRendererModule` / `api.bpmn.onRendererModuleMessage` → `bpmn.renderer` |
 | **Always allowed** | `plugin.<pluginName>.*` (own commands) |
 
 Failures throw `CommandBlockedError` or `PermissionDeniedError`, serialized back to the worker as API errors.
@@ -606,7 +646,10 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 | `commands.std` | Execute `std.*` commands (subject to hard-deny subpatterns) |
 | `commands.bpmn` | Execute `bpmn.*` commands |
 | `commands.dmn` | Execute `dmn.*` commands |
-| `renderer-modules` | `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` |
+| `bpmn` | Read BPMN elements, subscribe to events, place overlays |
+| `bpmn.modelling` | All of `bpmn` + model modification + palette/context pad contributions |
+| `bpmn.renderer` | All of `bpmn.modelling` + inject diagram-js modules into renderer |
+| `renderer-modules` | _(deprecated alias for `bpmn.renderer`)_ `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` |
 | `native` | Load `.node` native addons via `require()` |
 | `system-info` | `require('os')` (safe subset only, via `ModuleGate`) |
 
@@ -618,7 +661,7 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 - **Read**: Unrestricted (user preferences, not secrets)
 - **Register**: Descriptor keys must start with `plugin.<name>.`
 
-- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workspace, views, themes).
+- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workspace, views, themes, bpmn). The `bpmn` namespace is handled by `BpmnApiBridge` and enforces tiered permissions (`bpmn` → `bpmn.modelling` → `bpmn.renderer`).
 - **Command registration**: Handled via `PH_REGISTER_CALLBACK` with `namespace: 'commands'` and `method: 'register'`. The bridge creates a proxy handler in `bifrost.commands` that forwards invocations to the plugin Worker via `PH_CALLBACK_INVOCATION`. Manifest stub commands are unregistered and replaced when the real handler registers.
 - **Settings change listeners**: Subscribes to `EVENT_SETTINGS_CHANGED` with key filtering, invokes callbacks via the connection.
 - **Webview messaging**: `postMessage` forwards data to `PluginIframeManager.postMessageToIframe()`. `onMessage` sets a `messageHandler` on the iframe entry which routes incoming iframe messages back to the child process via `PH_CALLBACK_INVOCATION`. `createPanel` returns a deterministic `iframeId`.
@@ -949,10 +992,12 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/common/plugin-host/sandbox/ModuleGate.ts` | Worker | Permission-gated `require()` factory |
 | `studio/src/bifrost/common/plugin-host/sandbox/QuarantineManager.ts` | Host | Crash counting, `quarantine.json` persistence, `trustAndReEnable` |
 | `studio/src/bifrost/common/plugin-host/sandbox/PluginHealthReport.ts` | Host | Health metric types for sandbox state |
-| `studio/src/bifrost/common/plugin-host/permissions/PermissionTypes.ts` | Shared | `PluginPermission` union, `ALL_PERMISSIONS` |
-| `studio/src/bifrost/common/plugin-host/permissions/PermissionGate.ts` | Shared | Runtime permission sets (used in renderer bridge) |
+| `studio/src/bifrost/common/plugin-host/permissions/PermissionTypes.ts` | Shared | `PluginPermission` union, `ALL_PERMISSIONS`, `PERMISSION_HIERARCHY` |
+| `studio/src/bifrost/common/plugin-host/permissions/PermissionGate.ts` | Shared | Runtime permission sets (used in renderer bridge); hierarchy enforcement |
 | `studio/src/bifrost/common/plugin-host/permissions/CommandDenylist.ts` | Shared | Command hard-deny and permission-gated groups |
-| `studio/src/bifrost/common/plugin-host/permissions/PermissionDisplay.ts` | Shared | Human-readable permission labels for dialog |
+| `studio/src/bifrost/common/plugin-host/permissions/PermissionDisplay.ts` | Shared | Human-readable permission labels, descriptions, risk levels for dialog |
+| `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts` | Renderer | Per-plugin bidirectional message channel for renderer modules |
+| `studio/src/modules/bpmn-core/plugin-modules/PluginModuleLoader.ts` | Renderer | Loads plugin-provided diagram-js module bundles into the renderer |
 | `studio/src/bifrost/common/plugin-host/permissions/ScopedPluginName.ts` | Shared | Scoped npm name normalization (`@scope/name` → `scope--name`); used at discovery time and for webview hostname mapping |
 | `studio/src/bifrost/electron-renderer/plugin-host/PluginPermissionDialog.ts` | Renderer | Permission review dialog on enable/reload |
 | `studio/src/bifrost/common/plugin-host/PluginPermissionStore.ts` | Shared | Local-storage-backed permission trust records (per plugin) |
@@ -977,7 +1022,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the SDK `Tree` component |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Renderer | Event-driven lazy activation: subscribes to activation events, defers `PH_LOAD_PLUGIN` until trigger fires. Stores a `pendingActivations` promise so concurrent callers (e.g. stub callbacks) join an in-flight activation instead of returning early |
-| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, service task types, pane toggles, themes |
+| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, service task types, pane toggles, themes, bpmnPalette, bpmnContextPad, bpmnModules |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Renderer | Pane UI showing "Activating plugin…" while the plugin is pending activation |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestTypes.ts` | Shared | TypeScript interfaces for the `bifrostStudio` manifest section |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestReader.ts` | Shared | Parser + validator for `bifrostStudio` in `package.json` |

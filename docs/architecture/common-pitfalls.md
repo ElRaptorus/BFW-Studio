@@ -1329,3 +1329,43 @@ The `selectionRevision` counter in metadata acts as a lightweight re-render trig
 **Root cause:** `SubscribeThenSnapshot.handleFniFinished` previously only updated the `state` field from the event, silently discarding `typeProperties` and `errorInfo` even though the Engine includes them in the event payload.
 
 **Correct approach:** Always merge all available fields from WS event payloads into the in-memory snapshot. The batched GraphQL fetch supplements this with fields not on the event (tokens, timestamps), but fields that ARE on the event should be consumed immediately.
+
+### P-Studio-5 — Plugin overlays only support pre-defined types
+
+**Symptom:** A plugin tries to inject custom HTML or arbitrary CSS into a BPMN overlay and gets an empty div or no visual output.
+
+**Root cause:** The plugin overlay system supports exactly four types: `badge`, `icon`, `action`, `status`. The `BpmnApiBridge.createOverlayHtmlElement()` renders only these known types. Any other type string produces an empty container.
+
+**Correct approach:** Use one of the four supported overlay types. For complex visuals, use an overlay factory (`registerOverlayFactory`) which renders via React components managed by the `PluginOverlayStore`.
+
+### P-Studio-6 — `onClickCommand` must reference the same plugin's command
+
+**Symptom:** An interactive overlay's click handler silently does nothing, or the command is rejected at execution time.
+
+**Root cause:** Plugin overlays with `onClickCommand` are validated at render time — the command must be prefixed with the plugin's own namespace (`plugin.<name>.<commandId>`). Cross-plugin command triggers are rejected to prevent privilege escalation.
+
+**Correct approach:** Always reference your own plugin's commands. Use the full prefixed command ID.
+
+### P-Studio-7 — Renderer modules must not access `window.bifrost`
+
+**Symptom:** A renderer module works in development but breaks after an update.
+
+**Root cause:** Renderer modules are injected into the same V8 isolate as the Studio, so `window.bifrost` is technically accessible. However, it is undocumented, unstable, and may be restricted or removed in future phases.
+
+**Correct approach:** Use only diagram-js DI services and the `pluginChannel` for all communication. The channel is the sanctioned boundary between renderer modules and the plugin host.
+
+### P-Studio-8 — Context pad entries cannot use synchronous visibility callbacks
+
+**Symptom:** A plugin developer expects a `visibleWhen(element)` callback on context pad entries, but no such API exists.
+
+**Root cause:** The plugin sandbox runs in a separate process with an asynchronous IPC bridge. The diagram-js `getContextPadEntries(element)` method is synchronous. A callback-based filter would require blocking the renderer on IPC — unacceptable for responsiveness.
+
+**Correct approach:** Use the `elementIds` allowlist pattern. Subscribe to element events in the host, compute qualifying IDs, then push `updateContextPadEntry(id, { elementIds: [...] })` through the bridge. The `PluginContextPadProvider` performs an O(1) Set lookup synchronously.
+
+### P-Studio-9 — Plugin module `require()` cache is not invalidated on reload
+
+**Symptom:** After modifying a renderer module's JS file and reloading the plugin, the old behavior persists.
+
+**Root cause:** Node.js's `require()` cache is per-process. The renderer process caches the module on first load. `PluginModuleLoader.unloadPluginModules()` removes the module from the registry but does not invalidate the require cache.
+
+**Correct approach:** For development iteration, restart the Studio (or toggle the plugin off → save → toggle on). Production plugins are not expected to change at runtime.

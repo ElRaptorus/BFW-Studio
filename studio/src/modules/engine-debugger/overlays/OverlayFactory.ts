@@ -408,6 +408,10 @@ const shouldDisplayRetryOverlay = (
     model.flowNodeInstances.find((instance) => instance.id === previousFlowNodeInstanceId)?.flowNodeType !==
     FlowNodeType.EventBasedGateway;
 
+  const isNotEventBasedGatewayLoser =
+    firstFlowNodeInstance.state !== FlowNodeInstanceState.Aborted ||
+    firstFlowNodeInstance.typeProperties?.reason !== 'event_based_gateway_sibling_cancelled';
+
   const isRegularFlowNode = flowNode.flowNodeModel ? !hasMultiInstance(flowNode.flowNodeModel) : false;
 
   return (
@@ -415,6 +419,7 @@ const shouldDisplayRetryOverlay = (
     processIsRetryable &&
     isSupportedFlowNode &&
     isNotFollowingAnEventBasedGateway &&
+    isNotEventBasedGatewayLoser &&
     !isFlowNodeInParallelRunningBranch(model.processModel, flowNode.flowNodeModel)
   );
 };

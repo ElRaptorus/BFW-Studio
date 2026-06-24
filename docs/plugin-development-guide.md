@@ -150,7 +150,10 @@ Declare every permission your plugin needs in `package.json` (see [Declaring Per
 | `commands.std` | Execute standard workbench, editor, and UI commands in the `std.*` namespace |
 | `commands.bpmn` | Execute BPMN editor, diff, and linter commands in the `bpmn.*` namespace |
 | `commands.dmn` | Execute DMN editor and diff commands in the `dmn.*` namespace |
-| `renderer-modules` | Inject code into the BPMN/DMN modeler via `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` (diagram-js modules) |
+| `bpmn` | Read BPMN elements, subscribe to selection/change events, place overlays (badge, icon, action, status) |
+| `bpmn.modelling` | All of `bpmn` + modify the BPMN model (updateProperties, removeElement, appendElement, createConnection, moveElement) + contribute palette/context pad entries |
+| `bpmn.renderer` | All of `bpmn.modelling` + inject diagram-js modules directly into the renderer process via `bpmnModules` manifest entries |
+| `renderer-modules` | _(deprecated — use `bpmn.renderer` instead)_ Legacy alias for renderer module injection |
 | `native` | Load compiled native `.node` modules (bypasses the SES sandbox entirely — high trust) |
 | `system-info` | Read basic OS information (`platform`, `arch`) through the restricted `os` module |
 
@@ -739,6 +742,146 @@ Plugin registrations (commands, status bar items, menu bar items, save handlers,
 
 ---
 
+## BPMN Integration
+
+Plugins can read, modify, and enrich BPMN diagrams through the `api.bpmn` namespace. Capabilities are gated by a tiered permission model.
+
+### Permission requirements
+
+| API surface | Required permission |
+|-------------|---------------------|
+| `api.bpmn.getElements()`, `api.bpmn.onElementSelected()`, `api.bpmn.setOverlays()`, `api.bpmn.registerOverlayFactory()`, `api.bpmn.requestOverlayRefresh()` | `bpmn` |
+| `api.bpmn.modeling.*`, `api.bpmn.registerPaletteEntry()`, `api.bpmn.registerContextPadEntry()`, `api.bpmn.updateContextPadEntry()` | `bpmn.modelling` |
+| `api.bpmn.postToRendererModule()`, `api.bpmn.onRendererModuleMessage()`, manifest `bpmnModules` | `bpmn.renderer` |
+
+### Overlays
+
+Place badges or icons on BPMN elements:
+
+```javascript
+// Non-interactive badge (requires 'bpmn' permission)
+await api.bpmn.setOverlays('file:///my.bpmn', 'StartEvent_1', [
+  { type: 'badge', position: 'top-right', text: '!', tooltip: 'Warning', style: 'warning' }
+]);
+
+// Interactive icon with command (requires 'bpmn' permission)
+await api.bpmn.setOverlays('file:///my.bpmn', 'Task_1', [
+  { type: 'icon', position: 'bottom-left', icon: 'ph-light ph-info',
+    onClickCommand: 'myPlugin.showInfo', onClickCommandArgs: ['Task_1'] }
+]);
+```
+
+For dynamic overlays, use overlay factories:
+
+```javascript
+await api.bpmn.registerOverlayFactory({
+  id: 'my-badge',
+  type: 'status',
+  position: 'bottom-right',
+  elementTypes: ['bpmn:Task', 'bpmn:ServiceTask'],
+  factory: (context) => ({ icon: 'ph-light ph-clock', text: 'pending', style: 'neutral' })
+});
+```
+
+Call `api.bpmn.requestOverlayRefresh()` when your plugin's internal state changes to force re-evaluation.
+
+### Palette & context pad contributions
+
+**Manifest (static):**
+
+```json
+{
+  "contributes": {
+    "bpmnPalette": [{ "id": "my-tool", "icon": "ph-light ph-wrench", "title": "My Tool", "command": "myCmd" }],
+    "bpmnContextPad": [{ "id": "my-action", "icon": "ph-light ph-info", "title": "Inspect", "command": "inspectCmd", "elementTypes": ["bpmn:Task"] }]
+  }
+}
+```
+
+**Runtime (dynamic):**
+
+```javascript
+await api.bpmn.registerContextPadEntry({
+  id: 'conditional-action', icon: 'ph-light ph-flag', title: 'Flag',
+  command: 'myPlugin.flagElement', elementTypes: ['bpmn:Task'], elementIds: []
+});
+```
+
+### Context pad dynamic filtering
+
+Since the plugin sandbox is asynchronous but `getContextPadEntries()` is synchronous, use the `elementIds` allowlist pattern:
+
+```javascript
+// Start hidden (elementIds: [])
+await api.bpmn.registerContextPadEntry({
+  id: 'my-entry', elementTypes: ['bpmn:Task'], elementIds: [], /* ... */
+});
+
+// React to element changes and compute qualifying IDs
+await api.bpmn.onElementsChanged((event) => {
+  const qualifying = event.elements.filter(el => shouldShow(el)).map(el => el.id);
+  api.bpmn.updateContextPadEntry('my-entry', { elementIds: qualifying });
+});
+
+// Show on ALL matching types: set elementIds to null
+await api.bpmn.updateContextPadEntry('my-entry', { elementIds: null });
+```
+
+### Modeling API
+
+All operations are undoable (Ctrl+Z) and require `bpmn.modelling`:
+
+```javascript
+const uri = 'file:///my.bpmn';
+await api.bpmn.modeling.updateProperties(uri, 'Task_1', { name: 'New Name' });
+await api.bpmn.modeling.appendElement(uri, 'Task_1', { type: 'bpmn:EndEvent', name: 'Done' });
+await api.bpmn.modeling.removeElement(uri, 'Task_1');
+await api.bpmn.modeling.createConnection(uri, 'Gateway_1', 'Task_2');
+await api.bpmn.modeling.moveElement(uri, 'Task_1', { x: 50, y: 0 });
+```
+
+### Renderer module injection (advanced)
+
+For full diagram-js access (custom renderers, token simulators), declare `bpmnModules` and request `bpmn.renderer`:
+
+```json
+{
+  "permissions": ["bpmn.renderer"],
+  "contributes": {
+    "bpmnModules": [{ "entry": "renderer/my-module.js", "description": "Custom behavior" }]
+  }
+}
+```
+
+The renderer module is a standard diagram-js module with `pluginChannel` DI:
+
+```javascript
+function MyService(eventBus, canvas, pluginChannel) {
+  eventBus.on('element.hover', function(event) {
+    pluginChannel.postMessage({ type: 'hovered', elementId: event.element.id });
+  });
+  pluginChannel.onMessage(function(data) { /* handle host messages */ });
+}
+MyService.$inject = ['eventBus', 'canvas', 'pluginChannel'];
+module.exports = { __init__: ['myService'], myService: ['type', MyService] };
+```
+
+Host-side communication:
+
+```javascript
+await api.bpmn.onRendererModuleMessage((data) => { /* handle renderer messages */ });
+await api.bpmn.postToRendererModule({ type: 'configure', color: 'red' });
+```
+
+### Security considerations
+
+- Renderer modules run in the same V8 isolate as the Studio — do NOT access `window.bifrost`
+- `onClickCommand` must reference your own plugin's commands (cross-plugin triggers rejected)
+- Overlay types are limited to `badge`, `icon`, `action`, `status` — no arbitrary HTML injection
+- Module crashes are caught; the plugin is deactivated with an error notification
+
+---
+
 ## Webview Development
 
 Webview content runs inside a sandboxed iframe with no Node.js or Electron access. Communication with the Plugin Host goes through a message bridge.
@@ -919,6 +1062,16 @@ The `@evil/bifrost_fw_sdk` package exports the following plugin-relevant types:
 - `PluginDiagnostic`, `PluginDiagnosticCounts`, `PluginDiagnosticSeverity`
 - `FileStat`, `FileChangeEvent`, `FileChangeType`, `ProjectFolder`, `FileListEntry`
 
+### BPMN API types
+
+- `BpmnApi` — Full BPMN editor API interface
+- `BpmnModelingApi` — Modeling sub-API (updateProperties, removeElement, appendElement, createConnection, moveElement)
+- `BpmnOverlayDescriptor`, `BpmnOverlayType`, `BpmnOverlayPosition`, `BpmnOverlayStyle`
+- `BpmnElementSnapshot`, `BpmnElementDetailSnapshot`
+- `PluginBpmnPaletteEntry`, `PluginBpmnContextPadEntry`, `ContextPadEntryUpdate`
+- `ManifestBpmnModule` — Renderer module manifest declaration
+- `Disposable` — Subscription cleanup handle
+
 ### Manifest types
 
 - `BifrostStudioManifest`, `ManifestContributions`
@@ -926,6 +1079,7 @@ The `@evil/bifrost_fw_sdk` package exports the following plugin-relevant types:
 - `ManifestPaneContribution`, `ManifestServiceTaskType`
 - `ManifestPaneToggle` — declarative pane toggle for the menu bar
 - `ManifestTheme` — theme declaration in `contributes.themes`
+- `ManifestBpmnModule` — BPMN renderer module declaration in `contributes.bpmnModules`
 - `ActivationEvent`, `KeybindingWhenCondition`
 
 ### Webview types

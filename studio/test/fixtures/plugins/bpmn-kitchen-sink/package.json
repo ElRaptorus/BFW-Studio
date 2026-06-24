@@ -1,0 +1,73 @@
+{
+  "name": "bpmn-kitchen-sink",
+  "version": "1.0.0",
+  "displayName": "BPMN Kitchen Sink",
+  "description": "End-to-end fixture exercising all BPMN editor enrichment features in combination.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN Kitchen Sink",
+    "permissions": [
+      "bpmn.renderer"
+    ],
+    "activationEvents": [
+      "onDocumentType:bpmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "ks.highlightAll",
+          "title": "KS: Highlight All Tasks"
+        },
+        {
+          "id": "ks.renameSelected",
+          "title": "KS: Rename Selected"
+        },
+        {
+          "id": "ks.appendTask",
+          "title": "KS: Append Task"
+        },
+        {
+          "id": "ks.sendToRenderer",
+          "title": "KS: Send To Renderer"
+        },
+        {
+          "id": "ks.overlayClick",
+          "title": "KS: Overlay Click"
+        },
+        {
+          "id": "test.isActivated",
+          "title": "Test: Is Activated"
+        }
+      ],
+      "bpmnPalette": [
+        {
+          "id": "ks-highlight",
+          "icon": "ph-light ph-highlighter-circle",
+          "title": "Highlight All Tasks",
+          "command": "ks.highlightAll"
+        }
+      ],
+      "bpmnContextPad": [
+        {
+          "id": "ks-rename",
+          "icon": "ph-light ph-pencil-simple",
+          "title": "Rename (KS)",
+          "command": "ks.renameSelected",
+          "elementTypes": [
+            "bpmn:Task",
+            "bpmn:ServiceTask",
+            "bpmn:UserTask",
+            "bpmn:ScriptTask"
+          ]
+        }
+      ],
+      "bpmnModules": [
+        {
+          "entry": "renderer/highlight-module.js",
+          "description": "Highlights elements on pluginChannel command."
+        }
+      ]
+    }
+  }
+}
