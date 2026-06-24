@@ -1,0 +1,38 @@
+{
+  "name": "bpmn-perm-low",
+  "version": "1.0.0",
+  "displayName": "BPMN Permission Low",
+  "description": "Fixture plugin with 'bpmn' but NOT 'bpmn.modelling' — tests permission gate for palette/context pad.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN Permission Low",
+    "permissions": [
+      "bpmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "tryRegisterPaletteEntry",
+          "title": "Try Register Palette Entry"
+        },
+        {
+          "id": "tryUnregisterPaletteEntry",
+          "title": "Try Unregister Palette Entry"
+        },
+        {
+          "id": "tryRegisterContextPadEntry",
+          "title": "Try Register Context Pad Entry"
+        },
+        {
+          "id": "tryUnregisterContextPadEntry",
+          "title": "Try Unregister Context Pad Entry"
+        },
+        {
+          "id": "tryUpdateContextPadEntry",
+          "title": "Try Update Context Pad Entry"
+        }
+      ]
+    }
+  }
+}

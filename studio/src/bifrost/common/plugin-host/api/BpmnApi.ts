@@ -125,6 +125,64 @@ export class BpmnApi {
     return this.connection.request(PH_API_REQUEST, payload) as Promise<string>;
   }
 
+  async registerPaletteEntry(entry: {
+    id: string;
+    group?: string;
+    icon: string;
+    title: string;
+    command: string;
+  }): Promise<void> {
+    const payload: ApiRequestPayload = {
+      namespace: 'bpmn',
+      method: 'registerPaletteEntry',
+      args: [entry],
+    };
+    await this.connection.request(PH_API_REQUEST, payload);
+  }
+
+  async unregisterPaletteEntry(entryId: string): Promise<void> {
+    const payload: ApiRequestPayload = {
+      namespace: 'bpmn',
+      method: 'unregisterPaletteEntry',
+      args: [entryId],
+    };
+    await this.connection.request(PH_API_REQUEST, payload);
+  }
+
+  async registerContextPadEntry(entry: {
+    id: string;
+    icon: string;
+    title: string;
+    command: string;
+    elementTypes?: string[];
+    elementIds?: string[];
+  }): Promise<void> {
+    const payload: ApiRequestPayload = {
+      namespace: 'bpmn',
+      method: 'registerContextPadEntry',
+      args: [entry],
+    };
+    await this.connection.request(PH_API_REQUEST, payload);
+  }
+
+  async unregisterContextPadEntry(entryId: string): Promise<void> {
+    const payload: ApiRequestPayload = {
+      namespace: 'bpmn',
+      method: 'unregisterContextPadEntry',
+      args: [entryId],
+    };
+    await this.connection.request(PH_API_REQUEST, payload);
+  }
+
+  async updateContextPadEntry(entryId: string, update: { elementIds?: string[] | null }): Promise<void> {
+    const payload: ApiRequestPayload = {
+      namespace: 'bpmn',
+      method: 'updateContextPadEntry',
+      args: [entryId, update],
+    };
+    await this.connection.request(PH_API_REQUEST, payload);
+  }
+
   disposeCallbacks(): void {
     for (const [, entries] of this.eventListeners) {
       for (const { callbackId } of entries) {

@@ -3,6 +3,8 @@ import type {
   ActivationEvent,
   BifrostStudioManifest,
   KeybindingWhenCondition,
+  ManifestBpmnContextPadEntry,
+  ManifestBpmnPaletteEntry,
   ManifestCommand,
   ManifestContributions,
   ManifestError,
@@ -205,6 +207,28 @@ export function readManifest(pkg: Record<string, unknown>): ManifestReadResult {
     permissions,
   };
 
+  // Cross-validate: bpmnPalette/bpmnContextPad require 'bpmn.modelling' permission
+  const hasBpmnModellingPermission =
+    permissions?.includes('bpmn.modelling') === true || permissions?.includes('bpmn.renderer') === true;
+  if (!hasBpmnModellingPermission) {
+    if (contributes?.bpmnPalette != null && contributes.bpmnPalette.length > 0) {
+      warnings.push({
+        path: 'bifrostStudio.contributes.bpmnPalette',
+        message:
+          'bpmnPalette contributions require the "bpmn.modelling" permission. ' +
+          'These entries will be ignored at runtime until the permission is declared.',
+      });
+    }
+    if (contributes?.bpmnContextPad != null && contributes.bpmnContextPad.length > 0) {
+      warnings.push({
+        path: 'bifrostStudio.contributes.bpmnContextPad',
+        message:
+          'bpmnContextPad contributions require the "bpmn.modelling" permission. ' +
+          'These entries will be ignored at runtime until the permission is declared.',
+      });
+    }
+  }
+
   return { manifest, errors, warnings };
 }
 
@@ -244,6 +268,12 @@ function validateContributes(
   if (raw.themes != null) {
     result.themes = validateThemes(raw.themes, errors);
   }
+  if (raw.bpmnPalette != null) {
+    result.bpmnPalette = validateBpmnPalette(raw.bpmnPalette, errors);
+  }
+  if (raw.bpmnContextPad != null) {
+    result.bpmnContextPad = validateBpmnContextPad(raw.bpmnContextPad, errors);
+  }
 
   const knownContributes = new Set([
     'commands',
@@ -255,6 +285,8 @@ function validateContributes(
     'serviceTaskTypes',
     'paneToggles',
     'themes',
+    'bpmnPalette',
+    'bpmnContextPad',
   ]);
   for (const key of Object.keys(raw)) {
     if (!knownContributes.has(key)) {
@@ -696,6 +728,116 @@ function validateThemes(raw: unknown, errors: ManifestError[]): ManifestTheme[] 
       label: obj.label,
       type: obj.type as ManifestTheme['type'],
       tokens,
+    });
+  }
+  return result;
+}
+
+// ─── BPMN Palette ────────────────────────────────────────────
+
+function validateBpmnPalette(raw: unknown, errors: ManifestError[]): ManifestBpmnPaletteEntry[] {
+  const basePath = 'bifrostStudio.contributes.bpmnPalette';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestBpmnPaletteEntry[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i];
+    const entryPath = `${basePath}[${i}]`;
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      errors.push({ path: entryPath, message: 'Must be an object' });
+      continue;
+    }
+
+    const obj = entry as Record<string, unknown>;
+    let valid = true;
+
+    for (const field of ['id', 'icon', 'title', 'command'] as const) {
+      if (typeof obj[field] !== 'string' || (obj[field] as string).trim().length === 0) {
+        errors.push({
+          path: `${entryPath}.${field}`,
+          message: `Required field "${field}" is missing or not a non-empty string`,
+        });
+        valid = false;
+      }
+    }
+    if (!valid) {
+      continue;
+    }
+
+    result.push({
+      id: obj.id as string,
+      group: typeof obj.group === 'string' ? obj.group : undefined,
+      icon: obj.icon as string,
+      title: obj.title as string,
+      command: obj.command as string,
+    });
+  }
+  return result;
+}
+
+// ─── BPMN Context Pad ────────────────────────────────────────
+
+function validateBpmnContextPad(raw: unknown, errors: ManifestError[]): ManifestBpmnContextPadEntry[] {
+  const basePath = 'bifrostStudio.contributes.bpmnContextPad';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestBpmnContextPadEntry[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i];
+    const entryPath = `${basePath}[${i}]`;
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      errors.push({ path: entryPath, message: 'Must be an object' });
+      continue;
+    }
+
+    const obj = entry as Record<string, unknown>;
+    let valid = true;
+
+    for (const field of ['id', 'icon', 'title', 'command'] as const) {
+      if (typeof obj[field] !== 'string' || (obj[field] as string).trim().length === 0) {
+        errors.push({
+          path: `${entryPath}.${field}`,
+          message: `Required field "${field}" is missing or not a non-empty string`,
+        });
+        valid = false;
+      }
+    }
+    if (!valid) {
+      continue;
+    }
+
+    if (obj.elementTypes != null) {
+      if (!Array.isArray(obj.elementTypes) || obj.elementTypes.length === 0) {
+        errors.push({
+          path: `${entryPath}.elementTypes`,
+          message: '"elementTypes" must be a non-empty array of strings when present',
+        });
+        continue;
+      }
+      const allStrings = obj.elementTypes.every((item: unknown) => typeof item === 'string');
+      if (!allStrings) {
+        errors.push({
+          path: `${entryPath}.elementTypes`,
+          message: 'All items in "elementTypes" must be strings',
+        });
+        continue;
+      }
+    }
+
+    result.push({
+      id: obj.id as string,
+      icon: obj.icon as string,
+      title: obj.title as string,
+      command: obj.command as string,
+      elementTypes: obj.elementTypes as string[] | undefined,
     });
   }
   return result;

@@ -517,6 +517,21 @@ function createPluginApi(): Record<string, unknown> {
       ): Promise<{ dispose: () => void }> {
         return bpmnCallbackApi.register('registerOverlayFactory', [options], factory);
       },
+      registerPaletteEntry(entry: unknown): Promise<unknown> {
+        return sendApiRequest('bpmn', 'registerPaletteEntry', [entry]);
+      },
+      unregisterPaletteEntry(entryId: string): Promise<unknown> {
+        return sendApiRequest('bpmn', 'unregisterPaletteEntry', [entryId]);
+      },
+      registerContextPadEntry(entry: unknown): Promise<unknown> {
+        return sendApiRequest('bpmn', 'registerContextPadEntry', [entry]);
+      },
+      unregisterContextPadEntry(entryId: string): Promise<unknown> {
+        return sendApiRequest('bpmn', 'unregisterContextPadEntry', [entryId]);
+      },
+      updateContextPadEntry(entryId: string, update: unknown): Promise<unknown> {
+        return sendApiRequest('bpmn', 'updateContextPadEntry', [entryId, update]);
+      },
       disposeCallbacks() {
         /* no-op in sandbox — cleanup handled by SandboxManager */
       },

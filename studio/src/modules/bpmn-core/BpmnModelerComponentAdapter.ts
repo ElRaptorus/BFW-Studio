@@ -25,6 +25,8 @@ import { CommandHandler } from './bpmn-js/CommandHandler/index';
 import ColorContextPadProvider from './bpmn-js/Provider/ColorContextPadProvider';
 import CustomPaletteProvider from './bpmn-js/Provider/CustomPaletteProvider';
 import CustomPopupProvider from './bpmn-js/Provider/CustomPopupProvider';
+import { PluginContextPadProvider } from './bpmn-js/Provider/PluginContextPadProvider';
+import { PluginPaletteProvider } from './bpmn-js/Provider/PluginPaletteProvider';
 import CustomResizeRule from './bpmn-js/Rules/CustomResizeRule';
 import evilPlatformBehaviorsModule from './bpmn-js/behaviors';
 import evilPlatformModdleDescriptor from './bpmn-js/moddle/evil-platform.json';
@@ -116,6 +118,9 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
 
     const colorContextPadProvider = this.getColorContextProvider();
     colorContextPadProvider.setStudio(studio);
+
+    PluginPaletteProvider.setStudio(studio);
+    PluginContextPadProvider.setStudio(studio);
   }
 
   async initialize(xml: string, metadata: Record<string, unknown> | null = null): Promise<string> {

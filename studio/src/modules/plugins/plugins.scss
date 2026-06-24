@@ -173,6 +173,13 @@
 
 // ─── Status badges ──────────────────────────────────────────────────
 
+.plugin-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
 .plugin-card__badge {
   display: inline-block;
   font-size: 10px;

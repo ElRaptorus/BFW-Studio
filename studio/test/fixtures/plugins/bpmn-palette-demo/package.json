@@ -1,0 +1,80 @@
+{
+  "name": "bpmn-palette-demo",
+  "version": "1.0.0",
+  "displayName": "BPMN Palette & Context Pad Demo",
+  "description": "Fixture plugin for testing palette and context pad contributions (manifest + runtime + dynamic elementIds).",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "BPMN Palette & Context Pad Demo",
+    "permissions": [
+      "bpmn.modelling"
+    ],
+    "activationEvents": [
+      "onDocumentType:bpmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "runAnalysis",
+          "title": "Run Analysis"
+        },
+        {
+          "id": "inspectElement",
+          "title": "Inspect Element"
+        },
+        {
+          "id": "flagElement",
+          "title": "Flag Element"
+        },
+        {
+          "id": "viewConnections",
+          "title": "View Connections"
+        },
+        {
+          "id": "updateViewConnectionsFilter",
+          "title": "Update View Connections Filter"
+        },
+        {
+          "id": "test.isActivated",
+          "title": "Test: Is Activated"
+        },
+        {
+          "id": "test.tryUnregisterContextPadEntry",
+          "title": "Test: Try Unregister Context Pad Entry"
+        },
+        {
+          "id": "test.tryUnregisterPaletteEntry",
+          "title": "Test: Try Unregister Palette Entry"
+        },
+        {
+          "id": "test.updateContextPadEntry",
+          "title": "Test: Update Context Pad Entry"
+        }
+      ],
+      "bpmnPalette": [
+        {
+          "id": "run-analysis",
+          "icon": "ph-light ph-magnifying-glass",
+          "title": "Run Analysis",
+          "command": "runAnalysis"
+        }
+      ],
+      "bpmnContextPad": [
+        {
+          "id": "inspect-element",
+          "icon": "ph-light ph-info",
+          "title": "Inspect Element",
+          "command": "inspectElement",
+          "elementTypes": [
+            "bpmn:Task",
+            "bpmn:SubProcess",
+            "bpmn:ServiceTask",
+            "bpmn:UserTask",
+            "bpmn:ScriptTask"
+          ]
+        }
+      ]
+    }
+  }
+}

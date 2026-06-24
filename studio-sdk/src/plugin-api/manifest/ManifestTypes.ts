@@ -62,6 +62,10 @@ export interface ManifestContributions {
   serviceTaskTypes?: ManifestServiceTaskType[];
   /** CSS theme contributions with custom property overrides. */
   themes?: ManifestTheme[];
+  /** BPMN palette entries (left toolbar). Requires `'bpmn.modelling'` permission. */
+  bpmnPalette?: ManifestBpmnPaletteEntry[];
+  /** BPMN context pad entries (element-level actions). Requires `'bpmn.modelling'` permission. */
+  bpmnContextPad?: ManifestBpmnContextPadEntry[];
 }
 
 // ─── Individual contribution types ──────────────────────────────────
@@ -174,6 +178,34 @@ export interface ManifestServiceTaskType {
   implementation: string;
   /** Human-readable label shown in the modeler's service task type dropdown. */
   label: string;
+}
+
+/** A BPMN palette entry contributed by a plugin. */
+export interface ManifestBpmnPaletteEntry {
+  /** Entry identifier (unique within this plugin). */
+  id: string;
+  /** Palette group name. Defaults to `'plugins'`. */
+  group?: string;
+  /** Phosphor icon class or plugin-provided icon key. */
+  icon: string;
+  /** Tooltip / label shown on hover. */
+  title: string;
+  /** Command ID to execute (auto-prefixed with `plugin.<name>.`). */
+  command: string;
+}
+
+/** A BPMN context pad entry contributed by a plugin. */
+export interface ManifestBpmnContextPadEntry {
+  /** Entry identifier (unique within this plugin). */
+  id: string;
+  /** Phosphor icon class or plugin-provided icon key. */
+  icon: string;
+  /** Tooltip / label shown on hover. */
+  title: string;
+  /** Command ID to execute (auto-prefixed with `plugin.<name>.`). */
+  command: string;
+  /** Static element type filter. When present, only show on elements of these types. */
+  elementTypes?: string[];
 }
 
 /** A theme contribution with CSS custom property overrides. */

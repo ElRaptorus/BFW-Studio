@@ -68,7 +68,7 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 - **`EngineCommandArgs`** — maps each command ID to its typed argument tuple.
 - **File:** `studio/src/modules/engine-core/commands/CommandContract.ts`
 
-17 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `retryProcessInstance`, `terminateProcessInstance`, `deleteProcessInstance`, `triggerMessage`, `triggerSignal`.
+18 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `terminateProcessInstance`, `deleteProcessInstance`, `triggerMessage`, `triggerSignal`.
 
 ### SDK Imports
 
@@ -136,7 +136,8 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 | `engine.startProcessAndOpenDebugger` | Smart start: if 1 start event, starts immediately; if 2+, opens dialog. Opens debugger on success |
 | `engine.configuredStartProcessAndOpenDebugger` | Always opens the Configured Start dialog, then opens debugger on success |
 | `engine.abortProcessInstance` | Aborts a running process instance |
-| `engine.retryProcessInstance` | Retries a failed/aborted process instance |
+| `engine.retryProcessInstance` | Retries a failed/aborted/error process instance (thin REST wrapper, no UI) |
+| `engine.configuredRetryProcessInstance` | Opens a confirmation dialog with version picker (same version, latest, or specific deployed version), then delegates to `retryProcessInstance`. Catches `IncompatibleVersionMigrationError` and `ProcessInstanceNotRetriableError` with user-friendly notifications. Accepts optional `RetryContext` for checkpoint reset (debugger) and version pre-fill. Returns `RetryResult \| null`. **File:** `registerConfiguredRetryCommands.ts` |
 | `engine.deleteProcessInstance` | Deletes a process instance |
 
 ### Events
@@ -145,6 +146,46 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 |---------|---------|
 | `engine.triggerMessage` | Triggers a message event on the engine |
 | `engine.triggerSignal` | Triggers a signal event on the engine |
+
+### Configured Retry Architecture
+
+**File:** `studio/src/modules/engine-core/commands/registerConfiguredRetryCommands.ts`
+
+The `engine.configuredRetryProcessInstance` command follows the same pattern as `engine.configuredStartProcess`: dialog in engine-core, then delegation to the raw command. It provides a shared retry UX consumed by both the Debugger and Instance Search.
+
+**`RetryContext` interface** (exported from engine-core barrel):
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `processModelId` | `string?` | Needed to fetch deployed versions for the version picker |
+| `currentVersion` | `string?` | Pre-fills the "Same version (X)" label |
+| `resetToFlowNodeInstanceId` | `string?` | FNI checkpoint reset — debugger-only |
+| `flowNodeName` | `string?` | Human-readable label for checkpoint warning text |
+
+**`RetryResult` interface** (return value):
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `retried` | `boolean` | Whether the retry API call succeeded |
+| `retryRequest` | `RetryRequest?` | The options that were sent to the engine |
+
+Returns `null` when the user cancels.
+
+**Version picker entries:**
+1. "Same version (current)" — default, sends no `version` field
+2. "Latest enabled version" — sends `version: "latest"` (resolved server-side by the Engine SDK)
+3. Specific deployed versions — fetched via `client.processes.getVersions(processModelId)` when available
+
+**Consumers:**
+- **Debugger** — `engine.debugger.retryWithConfirmation` passes `RetryContext` (with optional FNI checkpoint) and calls `model.refresh()` on success. Accepts an optional `processInstanceId` override in `resetOptions` to route retries to embedded subprocess child PIs instead of the root PI.
+- **Instance Search (single)** — `engine.workspace.instanceSearch.retrySingle` delegates with enriched `processModelId` / `currentVersion`
+- **Instance Search (bulk)** — `engine.workspace.instanceSearch.retrySelected` pre-filters to retryable states, shows a batch confirmation dialog, then loops `engine.retryProcessInstance` per instance with per-call error handling and a summary notification
+
+**Subprocess retry routing:** When the retry overlay is on a flow node inside an embedded subprocess, the FNI's `processInstanceId` differs from the root PI (the Engine creates a child PI per subprocess activation). `RetryAtFlowNodeLink` detects this and passes the child PI ID as `resetOptions.processInstanceId`. `retryWithConfirmation` forwards this ID to `engine.configuredRetryProcessInstance`, which retries the child PI with the inner FNI as the checkpoint.
+
+**Debugger toolbar `enabledWhen` guards:**
+- `engine.debugger.abortProcessInstance` — wraps the core `engine.abortProcessInstance` command; enabled only when the PI is in `Running` state
+- `engine.debugger.retryWithConfirmation` — enabled only when the PI is in a retryable state (`Fatal`, `Aborted`, `Error`)
 
 ### Debugger Event Trigger Commands
 

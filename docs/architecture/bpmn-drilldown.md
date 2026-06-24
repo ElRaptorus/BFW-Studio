@@ -267,7 +267,7 @@ The document model uses `whitelistedProcessInstanceIds` to control which FNIs ar
 |---------|-------------------|-----------------------------|
 | Execution state cover | Yes | Yes (when child PI FNIs loaded and whitelisted) |
 | Execution count badge | Yes | Yes |
-| Retry link | Yes | No (`flowNodeIsNotInsideOfSubProcess` guard) |
+| Retry link | Yes | Yes (routes retry to the child PI) |
 | "Open in new tab" link | Call Activity only | Not applicable |
 | Sequence flow markers | Yes | Yes (via `executedSequenceFlows`) |
 
@@ -275,7 +275,7 @@ The document model uses `whitelistedProcessInstanceIds` to control which FNIs ar
 
 - **Full drill-down enabled**: bpmn-js drilldown overlays are active. Users click the drilldown button on collapsed subprocesses to navigate into the subprocess plane, where execution overlays show child-PI FNI state. The `DebuggerSubprocessBreadcrumbBar` provides the "back to parent" navigation, styled identically to the Model Viewer breadcrumb bar.
 - **No "Open in new tab" for subprocesses**: Unlike Call Activity children (which have independent BPMN processes), subprocess children share the parent's BPMN. Opening a subprocess child PI in a separate tab would show the same BPMN with a synthetic model ID that doesn't resolve correctly.
-- **Retry blocked for inner nodes**: Retry is only meaningful at the subprocess shell level (which retries the entire child PI). Inner flow node retry would bypass the subprocess boundary.
+- **Retry supported for inner nodes**: Inner subprocess flow nodes display retry overlays. Since the Engine creates a child PI for each embedded subprocess, the retry targets the child PI (not the root PI) with the inner FNI as the checkpoint. `RetryAtFlowNodeLink` detects subprocess children by comparing `flowNodeInstance.processInstanceId` against `model.processInstance.id` and passes the child PI ID as a `processInstanceId` override to `engine.debugger.retryWithConfirmation`.
 
 ### Files
 

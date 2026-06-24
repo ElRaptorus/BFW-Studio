@@ -14,6 +14,7 @@ import type { BifrostOperatingSystem } from '#bifrost/contracts/BifrostTypes';
 
 import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
 
+import { pluginBpmnContributionStore } from '../../../../modules/bpmn-core/PluginBpmnContributionStore';
 import { createPlaceholderPaneProvider } from './PlaceholderPaneProvider';
 
 export interface ContributionDisposer {
@@ -122,6 +123,28 @@ export class ContributionRegistrar {
         if (disposer != null) {
           disposers.push(disposer);
         }
+      }
+    }
+
+    // ── BPMN Palette ─────────────────────────────────────────
+    if (contributes.bpmnPalette != null && contributes.bpmnPalette.length > 0) {
+      const hasBpmnModelling =
+        manifest.permissions?.includes('bpmn.modelling') === true ||
+        manifest.permissions?.includes('bpmn.renderer') === true;
+      if (hasBpmnModelling) {
+        pluginBpmnContributionStore.setPaletteEntries(pluginName, contributes.bpmnPalette);
+        disposers.push(() => pluginBpmnContributionStore.removePaletteEntries(pluginName));
+      }
+    }
+
+    // ── BPMN Context Pad ─────────────────────────────────────
+    if (contributes.bpmnContextPad != null && contributes.bpmnContextPad.length > 0) {
+      const hasBpmnModelling =
+        manifest.permissions?.includes('bpmn.modelling') === true ||
+        manifest.permissions?.includes('bpmn.renderer') === true;
+      if (hasBpmnModelling) {
+        pluginBpmnContributionStore.setContextPadEntries(pluginName, contributes.bpmnContextPad);
+        disposers.push(() => pluginBpmnContributionStore.removeContextPadEntries(pluginName));
       }
     }
 

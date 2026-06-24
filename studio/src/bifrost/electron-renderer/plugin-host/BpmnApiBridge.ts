@@ -16,6 +16,7 @@ import type { AbstractSubscription } from '@evil/bifrost_fw_sdk';
 import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { EVENT_BPMN_MODELER_ADAPTER_SELECTION_CHANGED } from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
 import type BpmnModelerComponentAdapter from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
+import { pluginBpmnContributionStore } from '../../../modules/bpmn-core/PluginBpmnContributionStore';
 import type { PluginHost } from './PluginHost';
 import { PluginOverlayStore } from './PluginOverlayStore';
 
@@ -87,6 +88,42 @@ export class BpmnApiBridge {
       case 'getXml': {
         const [uri] = args as [string];
         return this.handleGetXml(uri);
+      }
+      case 'registerPaletteEntry': {
+        const [entry] = args as [{ id: string; group?: string; icon: string; title: string; command: string }];
+        pluginBpmnContributionStore.addPaletteEntry(pluginName, entry);
+        return;
+      }
+      case 'unregisterPaletteEntry': {
+        const [entryId] = args as [string];
+        const removed = pluginBpmnContributionStore.removePaletteEntry(pluginName, entryId);
+        if (!removed) {
+          throw new Error(`Palette entry '${entryId}' not found for plugin '${pluginName}'`);
+        }
+        return;
+      }
+      case 'registerContextPadEntry': {
+        const [entry] = args as [
+          { id: string; icon: string; title: string; command: string; elementTypes?: string[]; elementIds?: string[] },
+        ];
+        pluginBpmnContributionStore.addContextPadEntry(pluginName, entry);
+        return;
+      }
+      case 'unregisterContextPadEntry': {
+        const [entryId] = args as [string];
+        const removed = pluginBpmnContributionStore.removeContextPadEntry(pluginName, entryId);
+        if (!removed) {
+          throw new Error(`Context pad entry '${entryId}' not found for plugin '${pluginName}'`);
+        }
+        return;
+      }
+      case 'updateContextPadEntry': {
+        const [entryId, update] = args as [string, { elementIds?: string[] | null }];
+        const updated = pluginBpmnContributionStore.updateContextPadEntry(pluginName, entryId, update);
+        if (!updated) {
+          throw new Error(`Context pad entry '${entryId}' not found for plugin '${pluginName}'`);
+        }
+        return;
       }
       default:
         throw new Error(`Unknown bpmn API method: ${method}`);
@@ -247,6 +284,8 @@ export class BpmnApiBridge {
     }
 
     this.overlayStore.unregisterFactory(pluginName);
+    pluginBpmnContributionStore.removePaletteEntries(pluginName);
+    pluginBpmnContributionStore.removeContextPadEntries(pluginName);
   }
 
   dispose(): void {

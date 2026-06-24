@@ -23,6 +23,8 @@ export interface ManifestContributions {
   paneToggles?: ManifestPaneToggle[];
   serviceTaskTypes?: ManifestServiceTaskType[];
   themes?: ManifestTheme[];
+  bpmnPalette?: ManifestBpmnPaletteEntry[];
+  bpmnContextPad?: ManifestBpmnContextPadEntry[];
 }
 
 export interface ManifestCommand {
@@ -70,6 +72,22 @@ export interface ManifestPaneContribution {
 export interface ManifestServiceTaskType {
   implementation: string;
   label: string;
+}
+
+export interface ManifestBpmnPaletteEntry {
+  id: string;
+  group?: string;
+  icon: string;
+  title: string;
+  command: string;
+}
+
+export interface ManifestBpmnContextPadEntry {
+  id: string;
+  icon: string;
+  title: string;
+  command: string;
+  elementTypes?: string[];
 }
 
 export interface ManifestPaneToggle {

@@ -185,6 +185,15 @@ export class PluginHostBridge {
         return this.handleThemesApi(method, args, callerName);
       case 'bpmn':
         this.permissionGate.assert(callerName, 'bpmn', `bpmn.${method}`);
+        if (
+          method === 'registerPaletteEntry' ||
+          method === 'unregisterPaletteEntry' ||
+          method === 'registerContextPadEntry' ||
+          method === 'unregisterContextPadEntry' ||
+          method === 'updateContextPadEntry'
+        ) {
+          this.permissionGate.assert(callerName, 'bpmn.modelling', `bpmn.${method}`);
+        }
         return this.bpmnBridge.handleApiRequest(method, args, callerName);
       default:
         throw new Error(`Unknown API namespace: ${namespace}`);

@@ -265,4 +265,54 @@ export interface BpmnApi {
     factory: (context: OverlayFactoryContext) => BpmnOverlayDescriptor[],
     options?: OverlayFactoryOptions,
   ): Promise<{ dispose: () => void }>;
+
+  /**
+   * Register a palette entry at runtime. Requires 'bpmn.modelling' permission.
+   * The entry appears in the BPMN palette under the "Plugins" group.
+   */
+  registerPaletteEntry(entry: PluginBpmnPaletteEntry): Promise<void>;
+
+  /** Remove a previously registered palette entry. */
+  unregisterPaletteEntry(entryId: string): Promise<void>;
+
+  /**
+   * Register a context pad entry at runtime. Requires 'bpmn.modelling' permission.
+   * Supports two-level filtering: static elementTypes + dynamic elementIds allowlist.
+   */
+  registerContextPadEntry(entry: PluginBpmnContextPadEntry): Promise<void>;
+
+  /** Remove a previously registered context pad entry. */
+  unregisterContextPadEntry(entryId: string): Promise<void>;
+
+  /**
+   * Update a registered context pad entry's dynamic allowlist.
+   * Use this to control which elements the entry appears on without re-registering.
+   *
+   * - `{ elementIds: ['Task_1', 'Task_3'] }` — show only on listed elements.
+   * - `{ elementIds: null }` — clear the allowlist (show on all type-matching elements).
+   */
+  updateContextPadEntry(entryId: string, update: ContextPadEntryUpdate): Promise<void>;
+}
+
+// ─── Palette & Context Pad types ────────────────────────────────────────────
+
+export interface PluginBpmnPaletteEntry {
+  id: string;
+  group?: string;
+  icon: string;
+  title: string;
+  command: string;
+}
+
+export interface PluginBpmnContextPadEntry {
+  id: string;
+  icon: string;
+  title: string;
+  command: string;
+  elementTypes?: string[];
+  elementIds?: string[];
+}
+
+export interface ContextPadEntryUpdate {
+  elementIds?: string[] | null;
 }

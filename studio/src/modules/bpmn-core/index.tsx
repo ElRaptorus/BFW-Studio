@@ -1,6 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
 import { bpmnModelerModuleRegistry } from './BpmnModelerModuleRegistry';
+import PluginContextPadProviderModule from './bpmn-js/Provider/PluginContextPadProvider';
+import PluginPaletteProviderModule from './bpmn-js/Provider/PluginPaletteProvider';
 import './sanitizer/sanitizer.scss';
 
 export function onLoad(bifrost: Bifrost): void {
@@ -15,4 +17,7 @@ export function onLoad(bifrost: Bifrost): void {
   bifrost.commands.register('bpmn.modeler.registerModule', (module: any) => {
     bpmnModelerModuleRegistry.register(module);
   });
+
+  bpmnModelerModuleRegistry.register(PluginPaletteProviderModule);
+  bpmnModelerModuleRegistry.register(PluginContextPadProviderModule);
 }

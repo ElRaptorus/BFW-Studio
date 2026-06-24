@@ -9,14 +9,17 @@ export type {
   BpmnOverlayDocumentationMarker,
   BpmnOverlayMultiFlowWarning,
   BpmnOverlayNotExecutableMarker,
+  ContextPadEntryUpdate,
   OverlayContextEvent,
   OverlayFactoryContext,
   OverlayFactoryOptions,
+  PluginBpmnContextPadEntry,
   PluginBpmnOverlay,
   PluginBpmnOverlayAction,
   PluginBpmnOverlayBadge,
   PluginBpmnOverlayIcon,
   PluginBpmnOverlayStatus,
+  PluginBpmnPaletteEntry,
 } from './BpmnApi';
 export { PluginBpmnOverlayPosition, PluginBpmnOverlayStyle } from './BpmnApi';
 export type { CommandsApi } from './CommandsApi';
@@ -75,18 +78,20 @@ export type {
 } from './types';
 
 export type {
+  ActivationEvent,
   BifrostStudioManifest,
-  ManifestContributions,
-  ManifestCommand,
-  ManifestMenuItem,
-  ManifestSetting,
   KeybindingWhenCondition,
+  ManifestBpmnContextPadEntry,
+  ManifestBpmnPaletteEntry,
+  ManifestCommand,
+  ManifestContributions,
   ManifestKeybinding,
+  ManifestMenuItem,
   ManifestPaneContribution,
   ManifestPaneToggle,
   ManifestServiceTaskType,
+  ManifestSetting,
   ManifestTheme,
-  ActivationEvent,
 } from './manifest';
 
 export type { StudioWebviewApi, WebviewMessageEvent } from './webview';

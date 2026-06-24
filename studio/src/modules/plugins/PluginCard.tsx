@@ -120,16 +120,6 @@ export function PluginCard({
           <span className="plugin-card__name" title={plugin.displayName}>
             {plugin.displayName}
           </span>
-          {getStatusBadge(plugin.status)}
-          {hasPermissions(plugin) && (
-            <span
-              className="plugin-card__badge plugin-card__badge--permissions"
-              title="This plugin requests special permissions"
-              data-test--plugin-card-permissions={plugin.name}
-            >
-              Permissions
-            </span>
-          )}
 
           <div className="plugin-card__menu-anchor" ref={menuRef}>
             <button
@@ -225,6 +215,20 @@ export function PluginCard({
             )}
           </div>
         </div>
+        {(getStatusBadge(plugin.status) != null || hasPermissions(plugin)) && (
+          <div className="plugin-card__badges">
+            {getStatusBadge(plugin.status)}
+            {hasPermissions(plugin) && (
+              <span
+                className="plugin-card__badge plugin-card__badge--permissions"
+                title="This plugin requests special permissions"
+                data-test--plugin-card-permissions={plugin.name}
+              >
+                Permissions
+              </span>
+            )}
+          </div>
+        )}
         {plugin.description && (
           <div className="plugin-card__description" title={plugin.description}>
             {plugin.description}
