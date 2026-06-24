@@ -15,7 +15,6 @@ import {
   createCallActivityTargetLink,
   createDocumentationBadge,
   createMultipleOutgoingSequenceFlowsWarning,
-  createSingletonProcessOverlay,
 } from '../../bpmn-core/overlays';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import type { ExecutableFlowNode } from '../libs';
@@ -42,13 +41,6 @@ import {
   createTriggerSignalEventLink,
 } from './index';
 
-function processModelIsSingleton(model: EngineBpmnDebuggerEditorDocumentModel): boolean {
-  return (
-    model.processModel?.extensions.some((extension) => extension.key === 'isSingleton' && extension.value === 'true') ??
-    false
-  );
-}
-
 export function createProcessModelOverlays(studio: Studio, model: EngineBpmnDebuggerEditorDocumentModel): Overlay[] {
   const overlays: Overlay[] = [];
 
@@ -64,10 +56,6 @@ export function createProcessModelOverlays(studio: Studio, model: EngineBpmnDebu
     overlays.push(
       createParentProcessInstanceLink(participant.id, model, model.processInstance.parentProcessInstanceId, studio),
     );
-  }
-
-  if (processModelIsSingleton(model)) {
-    overlays.push(createSingletonProcessOverlay(participant.id, studio));
   }
 
   if (model.processInstance?.processModelId) {

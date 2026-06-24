@@ -308,8 +308,8 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
             studio={studio}
             icon="ph ph-arrow-clockwise"
             tooltip="Retry"
-            command={ENGINE_COMMANDS.retryProcessInstance}
-            commandArgs={[model.engineId, model.processInstance?.id ?? '']}
+            command="engine.debugger.retryWithConfirmation"
+            commandArgs={[model]}
           />
           {!model.processInstance?.parentProcessInstanceId && (
             <EditorToolbarButton

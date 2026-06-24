@@ -30,10 +30,12 @@ export function createRetryAtFlowNodeLink(
     overlayProps: {
       flowNode: flowNode,
       studio: studio,
-      onClick: cmd('engine.retryProcessInstance', [
-        model.engineId,
-        model.processInstance?.id,
-        { resetToFlowNodeInstanceId: selectedFlowNodeInstance.id },
+      onClick: cmd('engine.debugger.retryWithConfirmation', [
+        model,
+        {
+          resetToFlowNodeInstanceId: selectedFlowNodeInstance.id,
+          flowNodeName: flowNode.name ?? flowNode.id,
+        },
       ]),
     },
   };
