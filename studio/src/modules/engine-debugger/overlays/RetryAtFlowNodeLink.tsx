@@ -22,6 +22,15 @@ export function createRetryAtFlowNodeLink(
 ): Overlay {
   const selectedFlowNodeInstance = model.getSelectedFlowNodeInstanceByFlowNode(flowNode);
   const cmd = studio.commands.getClickHandler();
+
+  const resetOptions: Record<string, string> = {
+    resetToFlowNodeInstanceId: selectedFlowNodeInstance.id,
+    flowNodeName: flowNode.name ?? flowNode.id,
+  };
+  if (selectedFlowNodeInstance.processInstanceId !== model.processInstance?.id) {
+    resetOptions.processInstanceId = selectedFlowNodeInstance.processInstanceId;
+  }
+
   return {
     type: 'positioned',
     elementId: flowNode.id,
@@ -30,13 +39,7 @@ export function createRetryAtFlowNodeLink(
     overlayProps: {
       flowNode: flowNode,
       studio: studio,
-      onClick: cmd('engine.debugger.retryWithConfirmation', [
-        model,
-        {
-          resetToFlowNodeInstanceId: selectedFlowNodeInstance.id,
-          flowNodeName: flowNode.name ?? flowNode.id,
-        },
-      ]),
+      onClick: cmd('engine.debugger.retryWithConfirmation', [model, resetOptions]),
     },
   };
 }

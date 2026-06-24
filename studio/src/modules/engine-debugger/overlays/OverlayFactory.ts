@@ -408,14 +408,12 @@ const shouldDisplayRetryOverlay = (
     model.flowNodeInstances.find((instance) => instance.id === previousFlowNodeInstanceId)?.flowNodeType !==
     FlowNodeType.EventBasedGateway;
 
-  const flowNodeIsNotInsideOfSubProcess = firstFlowNodeInstance.processInstanceId === model.processInstance?.id;
   const isRegularFlowNode = flowNode.flowNodeModel ? !hasMultiInstance(flowNode.flowNodeModel) : false;
 
   return (
     isRegularFlowNode &&
     processIsRetryable &&
     isSupportedFlowNode &&
-    flowNodeIsNotInsideOfSubProcess &&
     isNotFollowingAnEventBasedGateway &&
     !isFlowNodeInParallelRunningBranch(model.processModel, flowNode.flowNodeModel)
   );

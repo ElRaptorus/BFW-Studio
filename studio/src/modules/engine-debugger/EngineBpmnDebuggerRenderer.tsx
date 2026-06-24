@@ -301,8 +301,8 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
             studio={studio}
             icon="ph ph-stop-circle"
             tooltip="Abort Process Instance"
-            command={ENGINE_COMMANDS.abortProcessInstance}
-            commandArgs={[model.engineId, model.processInstance?.id ?? '']}
+            command="engine.debugger.abortProcessInstance"
+            commandArgs={[model]}
           />
           <EditorToolbarButton
             studio={studio}

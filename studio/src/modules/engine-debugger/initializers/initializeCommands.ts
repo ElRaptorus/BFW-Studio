@@ -3,7 +3,7 @@ import { removeMultilineIndent } from '#bifrost/common/StringFunctions';
 import type { EngineConnectionManager, RetryContext, RetryResult } from '#modules/engine-core';
 import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
 import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/daemonengine_sdk';
-import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
+import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
 import * as json5 from 'json5';
 
 import type {
@@ -27,6 +27,12 @@ import { getFlowNodeById } from '../libs/BpmnProcessHelpers';
 import { createCsvExportString } from '../libs/CsvExportHelper';
 import type { FlowNode } from '../libs/SelectableElement';
 import { resolveFlowNodeIconForDebugger } from '../libs/flowNodeDisplay';
+
+const RETRYABLE_STATES = new Set([
+  ProcessInstanceState.Fatal,
+  ProcessInstanceState.Aborted,
+  ProcessInstanceState.Error,
+]);
 
 function resolveEngineConnection(connectionManager: EngineConnectionManager, engineIdOrUrl: string) {
   return connectionManager.getConnection(engineIdOrUrl) ?? connectionManager.getConnectionByUrl(engineIdOrUrl);
@@ -294,14 +300,35 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   );
 
   bifrost.commands.register(
+    'engine.debugger.abortProcessInstance',
+    async (model: EngineBpmnDebuggerEditorDocumentModel) => {
+      if (!model.processInstance) {
+        return;
+      }
+      await bifrost.commands.executeCommand(ENGINE_COMMANDS.abortProcessInstance, [
+        model.engineId,
+        model.processInstance.id,
+      ]);
+      await model.refresh();
+    },
+    {
+      enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>
+        isEngineOnline(connectionManager, model.engineId) &&
+        model.processInstance?.state === ProcessInstanceState.Running,
+    },
+  );
+
+  bifrost.commands.register(
     'engine.debugger.retryWithConfirmation',
     async (
       model: EngineBpmnDebuggerEditorDocumentModel,
-      resetOptions?: { resetToFlowNodeInstanceId: string; flowNodeName?: string },
+      resetOptions?: { resetToFlowNodeInstanceId: string; flowNodeName?: string; processInstanceId?: string },
     ) => {
       if (!model.processInstance) {
         return;
       }
+
+      const targetProcessInstanceId = resetOptions?.processInstanceId ?? model.processInstance.id;
 
       const context: RetryContext = {
         processModelId: model.processInstance.processModelId,
@@ -317,7 +344,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
       const result: RetryResult | null = await bifrost.commands.executeCommand(
         ENGINE_COMMANDS.configuredRetryProcessInstance,
-        [model.engineId, model.processInstance.id, context],
+        [model.engineId, targetProcessInstanceId, context],
       );
 
       if (result?.retried) {
@@ -326,7 +353,9 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     },
     {
       enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>
-        isEngineOnline(connectionManager, model.engineId),
+        isEngineOnline(connectionManager, model.engineId) &&
+        model.processInstance != null &&
+        RETRYABLE_STATES.has(model.processInstance.state),
     },
   );
 
