@@ -305,11 +305,13 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       if (!model.processInstance) {
         return;
       }
-      await bifrost.commands.executeCommand(ENGINE_COMMANDS.abortProcessInstance, [
+      const aborted: boolean = await bifrost.commands.executeCommand(ENGINE_COMMANDS.configuredAbortProcessInstance, [
         model.engineId,
         model.processInstance.id,
       ]);
-      await model.refresh();
+      if (aborted) {
+        await model.refresh();
+      }
     },
     {
       enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>

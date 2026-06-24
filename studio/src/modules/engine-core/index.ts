@@ -3,6 +3,8 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { EngineConnectionManager } from './EngineConnectionManager';
 import { WebSocketBridge } from './WebSocketBridge';
 import registerAuthCommands from './commands/registerAuthCommands';
+import registerConfiguredAbortCommands from './commands/registerConfiguredAbortCommands';
+import registerConfiguredDeleteCommands from './commands/registerConfiguredDeleteCommands';
 import registerConfiguredRetryCommands from './commands/registerConfiguredRetryCommands';
 import registerConfiguredStartCommands from './commands/registerConfiguredStartCommands';
 import registerConnectionCommands from './commands/registerConnectionCommands';
@@ -70,6 +72,8 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   registerProcessInstanceCommands(bifrost, connectionManager);
   registerConfiguredStartCommands(bifrost, connectionManager);
   registerConfiguredRetryCommands(bifrost, connectionManager);
+  registerConfiguredAbortCommands(bifrost, connectionManager);
+  registerConfiguredDeleteCommands(bifrost, connectionManager);
   registerEventCommands(bifrost, connectionManager);
   registerAuthCommands(bifrost, connectionManager);
 

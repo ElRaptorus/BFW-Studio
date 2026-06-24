@@ -690,11 +690,33 @@ export class InstanceSearchDocumentModel extends EditorDocumentModel {
     return this.instances.filter((instance) => this.selectedInstanceIds.has(instance.id));
   }
 
-  async bulkAbortSelected(): Promise<void> {
-    const selected = this.getSelectedInstances();
-    for (const instance of selected) {
-      await this.studio.commands.executeCommand(ENGINE_COMMANDS.abortProcessInstance, [this.engineId, instance.id]);
+  async bulkAbortSelected(abortableInstances: ProcessInstance[]): Promise<void> {
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const instance of abortableInstances) {
+      try {
+        await this.studio.commands.executeCommand(ENGINE_COMMANDS.abortProcessInstance, [this.engineId, instance.id]);
+        succeeded++;
+      } catch {
+        failed++;
+      }
     }
+
+    if (failed > 0) {
+      this.studio.notifications.open({
+        type: 'warning',
+        content: `${succeeded} of ${abortableInstances.length} instances aborted, ${failed} failed.`,
+        source: 'Engine',
+      });
+    } else {
+      this.studio.notifications.open({
+        type: 'info',
+        content: `${succeeded} instance${succeeded === 1 ? '' : 's'} aborted.`,
+        source: 'Engine',
+      });
+    }
+
     this.selectedInstanceIds.clear();
     await this.refresh();
   }
@@ -738,6 +760,37 @@ export class InstanceSearchDocumentModel extends EditorDocumentModel {
       this.studio.notifications.open({
         type: 'info',
         content: `${succeeded} instance${succeeded === 1 ? '' : 's'} retried.`,
+        source: 'Engine',
+      });
+    }
+
+    this.selectedInstanceIds.clear();
+    await this.refresh();
+  }
+
+  async bulkDeleteSelected(deletableInstances: ProcessInstance[]): Promise<void> {
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const instance of deletableInstances) {
+      try {
+        await this.studio.commands.executeCommand(ENGINE_COMMANDS.deleteProcessInstance, [this.engineId, instance.id]);
+        succeeded++;
+      } catch {
+        failed++;
+      }
+    }
+
+    if (failed > 0) {
+      this.studio.notifications.open({
+        type: 'warning',
+        content: `${succeeded} of ${deletableInstances.length} instances deleted, ${failed} failed.`,
+        source: 'Engine',
+      });
+    } else {
+      this.studio.notifications.open({
+        type: 'info',
+        content: `${succeeded} instance${succeeded === 1 ? '' : 's'} deleted.`,
         source: 'Engine',
       });
     }

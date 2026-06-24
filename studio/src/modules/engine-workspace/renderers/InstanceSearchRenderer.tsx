@@ -407,6 +407,13 @@ export default function InstanceSearchRenderer(props: EditorDocumentRendererProp
           />
           <EditorToolbarButton
             studio={bifrost}
+            icon="ph ph-trash"
+            tooltip="Delete selected instances"
+            command="engine.workspace.instanceSearch.deleteSelected"
+            commandArgs={[model]}
+          />
+          <EditorToolbarButton
+            studio={bifrost}
             icon="ph ph-arrows-clockwise"
             tooltip="Refresh"
             command="engine.workspace.instanceSearch.refresh"

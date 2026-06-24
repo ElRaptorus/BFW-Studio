@@ -29,9 +29,11 @@ export const ENGINE_COMMANDS = {
   configuredStartProcessAndOpenDebugger: 'engine.configuredStartProcessAndOpenDebugger',
 
   abortProcessInstance: 'engine.abortProcessInstance',
+  configuredAbortProcessInstance: 'engine.configuredAbortProcessInstance',
   retryProcessInstance: 'engine.retryProcessInstance',
   configuredRetryProcessInstance: 'engine.configuredRetryProcessInstance',
   deleteProcessInstance: 'engine.deleteProcessInstance',
+  configuredDeleteProcessInstance: 'engine.configuredDeleteProcessInstance',
 
   triggerMessage: 'engine.triggerMessage',
   triggerSignal: 'engine.triggerSignal',
@@ -53,6 +55,7 @@ export interface EngineCommandArgs {
   [ENGINE_COMMANDS.startProcessAndOpenDebugger]: [engineId: string, processModelId: string];
   [ENGINE_COMMANDS.configuredStartProcessAndOpenDebugger]: [engineId: string, processModelId: string];
   [ENGINE_COMMANDS.abortProcessInstance]: [engineId: string, processInstanceId: string];
+  [ENGINE_COMMANDS.configuredAbortProcessInstance]: [engineId: string, processInstanceId: string];
   [ENGINE_COMMANDS.retryProcessInstance]: [engineId: string, processInstanceId: string, options?: RetryRequest];
   [ENGINE_COMMANDS.configuredRetryProcessInstance]: [
     engineId: string,
@@ -60,6 +63,7 @@ export interface EngineCommandArgs {
     context?: RetryContext,
   ];
   [ENGINE_COMMANDS.deleteProcessInstance]: [engineId: string, processInstanceId: string];
+  [ENGINE_COMMANDS.configuredDeleteProcessInstance]: [engineId: string, processInstanceId: string];
   [ENGINE_COMMANDS.triggerMessage]: [
     engineId: string,
     messageName: string,

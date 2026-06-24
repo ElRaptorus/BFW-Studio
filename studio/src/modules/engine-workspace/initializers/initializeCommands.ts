@@ -28,6 +28,8 @@ import type { TaskInboxContextMetadata } from '../types/TaskInboxContext';
 import type { TimerSchedulesContextMetadata } from '../types/TimerSchedulesContext';
 
 const RETRYABLE_STATES = new Set(['fatal', 'aborted', 'error']);
+const ABORTABLE_STATES = new Set(['running']);
+const TERMINAL_STATES = new Set(['finished', 'fatal', 'aborted', 'error']);
 
 function hasDeployBpmnCapability(connectionManager: EngineConnectionManager, engineId: string): boolean {
   const connection = connectionManager.getConnection(engineId);
@@ -347,8 +349,48 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.instanceSearch.abortSelected',
-    async (model: InstanceSearchDocumentModel) => model.bulkAbortSelected(),
-    { enabledWhen: (model: InstanceSearchDocumentModel) => model?.getSelectedInstanceIds()?.length > 0 },
+    async (model: InstanceSearchDocumentModel) => {
+      const selected = model.getSelectedInstances();
+      const abortable = selected.filter((inst) => ABORTABLE_STATES.has(inst.state));
+
+      if (abortable.length === 0) {
+        return;
+      }
+
+      const confirmed = await showBulkAbortDialog(bifrost, abortable.length, selected.length);
+      if (!confirmed) {
+        return;
+      }
+
+      await model.bulkAbortSelected(abortable);
+    },
+    {
+      enabledWhen: (model: InstanceSearchDocumentModel) =>
+        model?.getSelectedInstances().some((inst) => ABORTABLE_STATES.has(inst.state)) ?? false,
+    },
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.instanceSearch.deleteSelected',
+    async (model: InstanceSearchDocumentModel) => {
+      const selected = model.getSelectedInstances();
+      const deletable = selected.filter((inst) => TERMINAL_STATES.has(inst.state));
+
+      if (deletable.length === 0) {
+        return;
+      }
+
+      const confirmed = await showBulkDeleteDialog(bifrost, deletable.length, selected.length);
+      if (!confirmed) {
+        return;
+      }
+
+      await model.bulkDeleteSelected(deletable);
+    },
+    {
+      enabledWhen: (model: InstanceSearchDocumentModel) =>
+        model?.getSelectedInstances().some((inst) => TERMINAL_STATES.has(inst.state)) ?? false,
+    },
   );
 
   bifrost.commands.register(
@@ -468,7 +510,14 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.instanceSearch.abortSingle',
     async (engineId: string, instanceId: string) => {
-      await bifrost.commands.executeCommand(ENGINE_COMMANDS.abortProcessInstance, [engineId, instanceId]);
+      await bifrost.commands.executeCommand(ENGINE_COMMANDS.configuredAbortProcessInstance, [engineId, instanceId]);
+    },
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.instanceSearch.deleteSingle',
+    async (engineId: string, instanceId: string) => {
+      await bifrost.commands.executeCommand(ENGINE_COMMANDS.configuredDeleteProcessInstance, [engineId, instanceId]);
     },
   );
 
@@ -549,6 +598,50 @@ async function showBulkRetryDialog(
     retryRequest.version = selectedVersion;
   }
   return retryRequest;
+}
+
+async function showBulkAbortDialog(
+  bifrost: Bifrost,
+  abortableCount: number,
+  totalSelectedCount: number,
+): Promise<boolean> {
+  const summary =
+    abortableCount === totalSelectedCount
+      ? `This will abort **${abortableCount}** process instance${abortableCount === 1 ? '' : 's'}.`
+      : `This will abort **${abortableCount}** of **${totalSelectedCount}** selected process instances (only running instances).`;
+
+  const dialogResult = await bifrost.dialog.open({
+    title: `Abort ${abortableCount} Process Instance${abortableCount === 1 ? '' : 's'}`,
+    content: [{ type: 'markdown', text: `${summary} This action cannot be undone.` }],
+    actions: [
+      { label: 'Cancel', response: StandardDialogResponse.Cancel, cancel: true },
+      { label: 'Abort All', response: 'abort', dangerous: true, default: true },
+    ],
+  });
+
+  return !dialogResult.wasCancelled && dialogResult.response === 'abort';
+}
+
+async function showBulkDeleteDialog(
+  bifrost: Bifrost,
+  deletableCount: number,
+  totalSelectedCount: number,
+): Promise<boolean> {
+  const summary =
+    deletableCount === totalSelectedCount
+      ? `This will permanently delete **${deletableCount}** process instance${deletableCount === 1 ? '' : 's'} and all associated data.`
+      : `This will permanently delete **${deletableCount}** of **${totalSelectedCount}** selected process instances (only terminal instances).`;
+
+  const dialogResult = await bifrost.dialog.open({
+    title: `Delete ${deletableCount} Process Instance${deletableCount === 1 ? '' : 's'}`,
+    content: [{ type: 'markdown', text: `${summary} This action cannot be undone.` }],
+    actions: [
+      { label: 'Cancel', response: StandardDialogResponse.Cancel, cancel: true },
+      { label: 'Delete All', response: 'delete', dangerous: true, default: true },
+    ],
+  });
+
+  return !dialogResult.wasCancelled && dialogResult.response === 'delete';
 }
 
 function truncateForMenu(value: string, maxLength = 24): string {
@@ -714,6 +807,7 @@ export function buildInstanceSearchContextMenu(_studio: Studio, metadata: Instan
   const { engineId, instance, columnId, cellValue } = metadata;
   const isRetryable = RETRYABLE_STATES.has(instance.state);
   const isRunning = instance.state === 'running';
+  const isTerminal = TERMINAL_STATES.has(instance.state);
 
   const filterEntry: Menu =
     columnId && cellValue && FILTERABLE_COLUMN_LABELS[columnId]
@@ -781,6 +875,18 @@ export function buildInstanceSearchContextMenu(_studio: Studio, metadata: Instan
                 currentVersion: (instance as any).version,
               } satisfies RetryContext,
             ],
+          },
+        ]
+      : []),
+    ...(isTerminal
+      ? [
+          {
+            type: 'command' as const,
+            id: 'engine-workspace/instance-search/delete',
+            label: 'Delete Instance',
+            icon: 'ph ph-trash',
+            command: 'engine.workspace.instanceSearch.deleteSingle',
+            commandArgs: [engineId, instance.id],
           },
         ]
       : []),
