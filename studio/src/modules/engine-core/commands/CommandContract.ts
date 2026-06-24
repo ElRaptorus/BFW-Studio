@@ -10,6 +10,8 @@
  */
 import type { RetryRequest, StartRequest, TriggerOptions } from '@elraptorus/daemonengine_sdk';
 
+import type { RetryContext } from './registerConfiguredRetryCommands';
+
 export const ENGINE_COMMANDS = {
   connect: 'engine.connect',
   connectWithDialog: 'engine.connectWithDialog',
@@ -28,6 +30,7 @@ export const ENGINE_COMMANDS = {
 
   abortProcessInstance: 'engine.abortProcessInstance',
   retryProcessInstance: 'engine.retryProcessInstance',
+  configuredRetryProcessInstance: 'engine.configuredRetryProcessInstance',
   deleteProcessInstance: 'engine.deleteProcessInstance',
 
   triggerMessage: 'engine.triggerMessage',
@@ -51,6 +54,11 @@ export interface EngineCommandArgs {
   [ENGINE_COMMANDS.configuredStartProcessAndOpenDebugger]: [engineId: string, processModelId: string];
   [ENGINE_COMMANDS.abortProcessInstance]: [engineId: string, processInstanceId: string];
   [ENGINE_COMMANDS.retryProcessInstance]: [engineId: string, processInstanceId: string, options?: RetryRequest];
+  [ENGINE_COMMANDS.configuredRetryProcessInstance]: [
+    engineId: string,
+    processInstanceId: string,
+    context?: RetryContext,
+  ];
   [ENGINE_COMMANDS.deleteProcessInstance]: [engineId: string, processInstanceId: string];
   [ENGINE_COMMANDS.triggerMessage]: [
     engineId: string,

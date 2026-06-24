@@ -1,8 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { removeMultilineIndent } from '#bifrost/common/StringFunctions';
-import type { EngineConnectionManager } from '#modules/engine-core';
+import type { EngineConnectionManager, RetryContext, RetryResult } from '#modules/engine-core';
 import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
-import type { FlowNodeInstance, ProcessInstance, RetryRequest } from '@elraptorus/daemonengine_sdk';
+import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/daemonengine_sdk';
 import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
 import * as json5 from 'json5';
 
@@ -303,26 +303,26 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
         return;
       }
 
-      const confirmationResult = await showRetryConfirmationDialog(model, resetOptions);
-      if (!confirmationResult) {
-        return;
-      }
+      const context: RetryContext = {
+        processModelId: model.processInstance.processModelId,
+        currentVersion: model.processInstance.version,
+      };
 
-      const retryRequest: RetryRequest = {};
       if (resetOptions?.resetToFlowNodeInstanceId) {
-        retryRequest.resetToFlowNodeInstanceId = resetOptions.resetToFlowNodeInstanceId;
+        context.resetToFlowNodeInstanceId = resetOptions.resetToFlowNodeInstanceId;
       }
-      if (confirmationResult.targetVersion) {
-        retryRequest.version = confirmationResult.targetVersion;
+      if (resetOptions?.flowNodeName) {
+        context.flowNodeName = resetOptions.flowNodeName;
       }
 
-      await bifrost.commands.executeCommand(ENGINE_COMMANDS.retryProcessInstance, [
-        model.engineId,
-        model.processInstance.id,
-        retryRequest,
-      ]);
+      const result: RetryResult | null = await bifrost.commands.executeCommand(
+        ENGINE_COMMANDS.configuredRetryProcessInstance,
+        [model.engineId, model.processInstance.id, context],
+      );
 
-      await model.refresh();
+      if (result?.retried) {
+        await model.refresh();
+      }
     },
     {
       enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>
@@ -509,74 +509,6 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       return null;
     }
     return true;
-  }
-
-  async function showRetryConfirmationDialog(
-    model: EngineBpmnDebuggerEditorDocumentModel,
-    resetOptions?: { resetToFlowNodeInstanceId: string; flowNodeName?: string },
-  ): Promise<{ targetVersion?: string } | null> {
-    assertNotNull(model.processInstance, 'model.processInstance');
-
-    const currentVersion = model.processInstance.version;
-    const processModelId = model.processInstance.processModelId;
-
-    let versionEntries: { label: string; value: string }[] = [
-      { label: `Same version${currentVersion ? ` (${currentVersion})` : ''}`, value: '' },
-    ];
-
-    if (processModelId) {
-      try {
-        const client = getEngineClient(connectionManager, model.engineId);
-        if (client) {
-          const versions = await client.processes.getVersions(processModelId);
-          const otherVersions = versions
-            .filter((pm) => pm.version !== currentVersion)
-            .map((pm) => ({
-              label: `${pm.version ?? '(no version)'}${pm.enabled === false ? ' (disabled)' : ''}`,
-              value: pm.version ?? '',
-            }));
-          versionEntries = [...versionEntries, ...otherVersions];
-        }
-      } catch {
-        // Version listing failed — proceed with "same version" only
-      }
-    }
-
-    const warningText = resetOptions?.flowNodeName
-      ? removeMultilineIndent(`**Caution:** This will retry the process instance from **${resetOptions.flowNodeName}**.
-        All flow node instances created after this checkpoint will be deleted. This action cannot be undone.`)
-      : removeMultilineIndent(`**Caution:** This will retry the process instance.
-        This action cannot be undone.`);
-
-    const content: DialogContent = [
-      { type: 'markdown', text: warningText },
-      { type: 'divider' },
-      {
-        type: 'select',
-        id: 'targetVersion',
-        label: 'Target Version',
-        value: '',
-        entries: versionEntries,
-      },
-    ];
-
-    const dialogResult = await bifrost.dialog.open({
-      title: 'Retry Process Instance',
-      content,
-      actions: [
-        { label: 'Cancel', response: StandardDialogResponse.Cancel, cancel: true },
-        { label: 'Retry', response: 'retry', dangerous: true, default: true },
-      ],
-    });
-
-    if (dialogResult.wasCancelled || dialogResult.response === 'cancel') {
-      return null;
-    }
-
-    const selectedVersion = dialogResult.formData?.targetVersion as string | undefined;
-    return {
-      targetVersion: selectedVersion && selectedVersion.length > 0 ? selectedVersion : undefined,
-    };
   }
 
   function getMessageEventDialogContent(examplePayload: string | undefined): DialogContent {

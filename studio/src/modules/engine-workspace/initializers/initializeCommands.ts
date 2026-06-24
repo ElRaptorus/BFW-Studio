@@ -1,10 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import type { EngineConnectionManager } from '#modules/engine-core';
+import type { EngineConnectionManager, RetryContext } from '#modules/engine-core';
 import { ENGINE_COMMANDS, formatDeployErrorMessage } from '#modules/engine-core';
+import type { RetryRequest } from '@elraptorus/daemonengine_sdk';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Menu, Studio } from '@evil/bifrost_fw_sdk';
+import type { DialogContent, Menu, Studio } from '@evil/bifrost_fw_sdk';
+import { StandardDialogResponse } from '@evil/bifrost_fw_sdk';
 
 import {
   openDecisionViewer,
@@ -24,6 +26,8 @@ import type { InstanceSearchContextMetadata } from '../types/InstanceSearchConte
 import type { ProcessExplorerContextMetadata } from '../types/ProcessExplorerContext';
 import type { TaskInboxContextMetadata } from '../types/TaskInboxContext';
 import type { TimerSchedulesContextMetadata } from '../types/TimerSchedulesContext';
+
+const RETRYABLE_STATES = new Set(['fatal', 'aborted', 'error']);
 
 function hasDeployBpmnCapability(connectionManager: EngineConnectionManager, engineId: string): boolean {
   const connection = connectionManager.getConnection(engineId);
@@ -349,8 +353,25 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.instanceSearch.retrySelected',
-    async (model: InstanceSearchDocumentModel) => model.bulkRetrySelected(),
-    { enabledWhen: (model: InstanceSearchDocumentModel) => model?.getSelectedInstanceIds()?.length > 0 },
+    async (model: InstanceSearchDocumentModel) => {
+      const selected = model.getSelectedInstances();
+      const retryable = selected.filter((inst) => RETRYABLE_STATES.has(inst.state));
+
+      if (retryable.length === 0) {
+        return;
+      }
+
+      const dialogResult = await showBulkRetryDialog(bifrost, retryable.length, selected.length);
+      if (!dialogResult) {
+        return;
+      }
+
+      await model.bulkRetrySelected(retryable, dialogResult);
+    },
+    {
+      enabledWhen: (model: InstanceSearchDocumentModel) =>
+        model?.getSelectedInstances().some((inst) => RETRYABLE_STATES.has(inst.state)) ?? false,
+    },
   );
 
   bifrost.commands.register('engine.workspace.instanceSearch.refresh', async (model: InstanceSearchDocumentModel) =>
@@ -453,8 +474,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.instanceSearch.retrySingle',
-    async (engineId: string, instanceId: string) => {
-      await bifrost.commands.executeCommand(ENGINE_COMMANDS.retryProcessInstance, [engineId, instanceId]);
+    async (engineId: string, instanceId: string, context?: RetryContext) => {
+      await bifrost.commands.executeCommand(ENGINE_COMMANDS.configuredRetryProcessInstance, [
+        engineId,
+        instanceId,
+        context,
+      ]);
     },
   );
 
@@ -478,6 +503,52 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     }
     await client.userTasks.finish(taskId, {});
   });
+}
+
+async function showBulkRetryDialog(
+  bifrost: Bifrost,
+  retryableCount: number,
+  totalSelectedCount: number,
+): Promise<RetryRequest | null> {
+  const summary =
+    retryableCount === totalSelectedCount
+      ? `This will retry **${retryableCount}** process instance${retryableCount === 1 ? '' : 's'}.`
+      : `This will retry **${retryableCount}** of **${totalSelectedCount}** selected process instances (only instances in error, fatal, or aborted state).`;
+
+  const content: DialogContent = [
+    { type: 'markdown', text: `${summary} This action cannot be undone.` },
+    { type: 'divider' },
+    {
+      type: 'select',
+      id: 'targetVersion',
+      label: 'Target Version',
+      value: '',
+      entries: [
+        { label: 'Same version per instance', value: '' },
+        { label: 'Latest enabled version', value: 'latest' },
+      ],
+    },
+  ];
+
+  const dialogResult = await bifrost.dialog.open({
+    title: `Retry ${retryableCount} Process Instance${retryableCount === 1 ? '' : 's'}`,
+    content,
+    actions: [
+      { label: 'Cancel', response: StandardDialogResponse.Cancel, cancel: true },
+      { label: 'Retry All', response: 'retry', dangerous: true, default: true },
+    ],
+  });
+
+  if (dialogResult.wasCancelled || dialogResult.response === 'cancel') {
+    return null;
+  }
+
+  const selectedVersion = dialogResult.formData?.targetVersion as string | undefined;
+  const retryRequest: RetryRequest = {};
+  if (selectedVersion && selectedVersion.length > 0) {
+    retryRequest.version = selectedVersion;
+  }
+  return retryRequest;
 }
 
 function truncateForMenu(value: string, maxLength = 24): string {
@@ -641,7 +712,7 @@ const FILTERABLE_COLUMN_LABELS: Record<string, string> = {
 
 export function buildInstanceSearchContextMenu(_studio: Studio, metadata: InstanceSearchContextMetadata): Menu {
   const { engineId, instance, columnId, cellValue } = metadata;
-  const isTerminal = instance.state === 'fatal' || instance.state === 'aborted';
+  const isRetryable = RETRYABLE_STATES.has(instance.state);
   const isRunning = instance.state === 'running';
 
   const filterEntry: Menu =
@@ -694,7 +765,7 @@ export function buildInstanceSearchContextMenu(_studio: Studio, metadata: Instan
           },
         ]
       : []),
-    ...(isTerminal
+    ...(isRetryable
       ? [
           {
             type: 'command' as const,
@@ -702,7 +773,14 @@ export function buildInstanceSearchContextMenu(_studio: Studio, metadata: Instan
             label: 'Retry Instance',
             icon: 'ph ph-arrow-counter-clockwise',
             command: 'engine.workspace.instanceSearch.retrySingle',
-            commandArgs: [engineId, instance.id],
+            commandArgs: [
+              engineId,
+              instance.id,
+              {
+                processModelId: (instance as any).processModelId,
+                currentVersion: (instance as any).version,
+              } satisfies RetryContext,
+            ],
           },
         ]
       : []),

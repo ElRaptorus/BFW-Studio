@@ -6,6 +6,7 @@ import type {
   ProcessInstance,
   ProcessInstanceField,
   ProcessInstanceFilter,
+  RetryRequest,
   SortClause,
 } from '@elraptorus/daemonengine_sdk';
 
@@ -710,11 +711,37 @@ export class InstanceSearchDocumentModel extends EditorDocumentModel {
     }
   }
 
-  async bulkRetrySelected(): Promise<void> {
-    const selected = this.getSelectedInstances();
-    for (const instance of selected) {
-      await this.studio.commands.executeCommand(ENGINE_COMMANDS.retryProcessInstance, [this.engineId, instance.id]);
+  async bulkRetrySelected(retryableInstances: ProcessInstance[], retryRequest?: RetryRequest): Promise<void> {
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const instance of retryableInstances) {
+      try {
+        await this.studio.commands.executeCommand(ENGINE_COMMANDS.retryProcessInstance, [
+          this.engineId,
+          instance.id,
+          retryRequest,
+        ]);
+        succeeded++;
+      } catch {
+        failed++;
+      }
     }
+
+    if (failed > 0) {
+      this.studio.notifications.open({
+        type: 'warning',
+        content: `${succeeded} of ${retryableInstances.length} instances retried, ${failed} failed.`,
+        source: 'Engine',
+      });
+    } else {
+      this.studio.notifications.open({
+        type: 'info',
+        content: `${succeeded} instance${succeeded === 1 ? '' : 's'} retried.`,
+        source: 'Engine',
+      });
+    }
+
     this.selectedInstanceIds.clear();
     await this.refresh();
   }

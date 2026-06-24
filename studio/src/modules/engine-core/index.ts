@@ -3,6 +3,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { EngineConnectionManager } from './EngineConnectionManager';
 import { WebSocketBridge } from './WebSocketBridge';
 import registerAuthCommands from './commands/registerAuthCommands';
+import registerConfiguredRetryCommands from './commands/registerConfiguredRetryCommands';
 import registerConfiguredStartCommands from './commands/registerConfiguredStartCommands';
 import registerConnectionCommands from './commands/registerConnectionCommands';
 import registerDeployCommands from './commands/registerDeployCommands';
@@ -39,6 +40,7 @@ export { ENGINE_COMMANDS } from './commands/CommandContract';
 export type { EngineCommandId } from './commands/CommandContract';
 export type { EngineCommandArgs } from './commands/CommandContract';
 
+export type { RetryContext, RetryResult } from './commands/registerConfiguredRetryCommands';
 export { formatDeployErrorMessage } from './commands/registerDeployCommands';
 export type { DeployFailureDetail } from './commands/registerDeployCommands';
 
@@ -67,6 +69,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   registerDeployCommands(bifrost, connectionManager);
   registerProcessInstanceCommands(bifrost, connectionManager);
   registerConfiguredStartCommands(bifrost, connectionManager);
+  registerConfiguredRetryCommands(bifrost, connectionManager);
   registerEventCommands(bifrost, connectionManager);
   registerAuthCommands(bifrost, connectionManager);
 
