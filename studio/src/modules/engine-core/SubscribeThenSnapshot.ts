@@ -5,6 +5,7 @@ import type {
   EngineEventEnvelope,
   FlowNodeInstanceFinished,
   FlowNodeInstanceStarted,
+  FlowNodeInstanceStateChanged,
   ProcessInstanceStateChanged,
   SubProcessChildStarted,
 } from '@elraptorus/daemonengine_sdk';
@@ -15,6 +16,7 @@ import type { ProcessInstanceSnapshot } from './types';
 export type SnapshotEventType =
   | 'fni-started'
   | 'fni-finished'
+  | 'fni-state-changed'
   | 'call-activity-child'
   | 'subprocess-child'
   | 'data-object-written'
@@ -131,6 +133,13 @@ export class SubscribeThenSnapshot {
         affectedFniIds.push(event.flowNodeInstanceId);
         break;
       }
+      case 'FlowNodeInstanceStateChanged': {
+        const event = envelope.data as FlowNodeInstanceStateChanged;
+        this.handleFniStateChanged(event);
+        eventType = 'fni-state-changed';
+        affectedFniIds.push(event.flowNodeInstanceId);
+        break;
+      }
       case 'ProcessInstanceStateChanged': {
         const piEvent = envelope.data as ProcessInstanceStateChanged;
         if (piEvent.processInstanceId === this.processInstanceId) {
@@ -210,6 +219,17 @@ export class SubscribeThenSnapshot {
       if (event.errorInfo) {
         fni.errorInfo = event.errorInfo;
       }
+    }
+  }
+
+  private handleFniStateChanged(event: FlowNodeInstanceStateChanged): void {
+    if (!this.snapshot) {
+      return;
+    }
+
+    const fni = this.snapshot.flowNodeInstances.find((overlay) => overlay.id === event.flowNodeInstanceId);
+    if (fni) {
+      fni.state = event.newState as any;
     }
   }
 
