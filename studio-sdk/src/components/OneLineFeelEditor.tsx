@@ -5,7 +5,7 @@ import { EditorView, keymap } from '@codemirror/view';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Studio } from '../../index';
-import { studioFeelTheme } from './FeelEditorTheme';
+import { studioFeelHighlighting, studioFeelTheme } from './FeelEditorTheme';
 
 type FeelEditorInstance = InstanceType<typeof FeelEditorLib>;
 
@@ -118,7 +118,7 @@ function OneLineFeelEditorInner(props: OneLineFeelEditorInnerProps): React.JSX.E
 
     const instance = new FeelEditorImport({
       container,
-      extensions: [studioFeelTheme, singleLineKeymap, pasteHandler, singleLineTheme],
+      extensions: [studioFeelTheme, studioFeelHighlighting, singleLineKeymap, pasteHandler, singleLineTheme],
       dialect: props.dialect ?? 'expression',
       value: props.initialValue ?? '',
       variables: props.variables,

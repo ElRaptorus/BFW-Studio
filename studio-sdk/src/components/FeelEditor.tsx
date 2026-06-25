@@ -4,7 +4,7 @@ import type { FeelEditorVariable } from '@bpmn-io/feel-editor';
 import React, { useCallback, useEffect, useRef } from 'react';
 
 import type { Studio } from '../../index';
-import { studioFeelTheme } from './FeelEditorTheme';
+import { studioFeelHighlighting, studioFeelTheme } from './FeelEditorTheme';
 
 export type { FeelEditorVariable } from '@bpmn-io/feel-editor';
 
@@ -94,7 +94,7 @@ function FeelEditorInner(props: FeelEditorInnerProps): React.JSX.Element {
 
     const instance = new FeelEditorImport({
       container,
-      extensions: [studioFeelTheme],
+      extensions: [studioFeelTheme, studioFeelHighlighting],
       dialect: props.dialect ?? 'expression',
       value: props.initialValue ?? '',
       variables: props.variables,
