@@ -380,6 +380,46 @@ Declares a pane toggle button in the menu bar. The button appears without loadin
 
 Themes registered via manifest are available immediately at plugin discovery time (before activation). Token keys may omit the `--` prefix — the bridge auto-prepends it. See also [`api.themes`](#apithemes) for runtime registration.
 
+### `contributes.bpmnPalette`
+
+Declares palette entries. Requires `bpmn.modelling` permission.
+
+```json
+{
+  "bpmnPalette": [
+    { "id": "my-tool", "icon": "ph-light ph-wrench", "title": "My Tool", "command": "myCommand" }
+  ]
+}
+```
+
+### `contributes.bpmnContextPad`
+
+Declares context pad entries. Requires `bpmn.modelling` permission.
+
+```json
+{
+  "bpmnContextPad": [
+    { "id": "my-action", "icon": "ph-light ph-info", "title": "Inspect", "command": "inspectCmd", "elementTypes": ["bpmn:Task"] }
+  ]
+}
+```
+
+The `command` handler receives `{ elementId, elementType }` as argument. Use `elementTypes` to restrict which BPMN element types show the entry. Dynamic filtering is also possible via `api.bpmn.updateContextPadEntry()` at runtime.
+
+### `contributes.bpmnModules`
+
+Declares diagram-js modules injected into the renderer. Requires `bpmn.renderer` permission.
+
+```json
+{
+  "bpmnModules": [
+    { "entry": "renderer/my-module.js", "description": "Custom behavior" }
+  ]
+}
+```
+
+See [Renderer module injection](#renderer-module-injection-advanced) for the module authoring pattern.
+
 ---
 
 ## API Reference
@@ -473,6 +513,7 @@ api.notifications.onResponse(id, (response) => {
 |--------|-------------|
 | `registerWebviewDocumentType(options)` | Register a webview-backed editor document type |
 | `openDocument(uri)` | Open a document by URI |
+| `getFocusedDocumentUri()` | Get the URI of the currently focused editor document (or `null`) |
 | `setDirty(uri, isDirty)` | Mark an open document as dirty (has unsaved changes) or clean |
 | `onSaveRequest(uri, callback)` | Register a save handler invoked on Ctrl+S / Cmd+S; returns `{ dispose }` |
 
@@ -750,9 +791,22 @@ Plugins can read, modify, and enrich BPMN diagrams through the `api.bpmn` namesp
 
 | API surface | Required permission |
 |-------------|---------------------|
-| `api.bpmn.getElements()`, `api.bpmn.onElementSelected()`, `api.bpmn.setOverlays()`, `api.bpmn.registerOverlayFactory()`, `api.bpmn.requestOverlayRefresh()` | `bpmn` |
+| `api.bpmn.getElements()`, `api.bpmn.getElement()`, `api.bpmn.getXml()`, `api.bpmn.getFocusedDocumentUri()`, `api.bpmn.onElementSelected()`, `api.bpmn.setOverlays()`, `api.bpmn.registerOverlayFactory()`, `api.bpmn.requestOverlayRefresh()` | `bpmn` |
 | `api.bpmn.modeling.*`, `api.bpmn.registerPaletteEntry()`, `api.bpmn.registerContextPadEntry()`, `api.bpmn.updateContextPadEntry()` | `bpmn.modelling` |
 | `api.bpmn.postToRendererModule()`, `api.bpmn.onRendererModuleMessage()`, manifest `bpmnModules` | `bpmn.renderer` |
+
+### Getting the active document
+
+Many BPMN API calls require a document URI. Use `getFocusedDocumentUri()` to obtain the currently focused BPMN editor:
+
+```javascript
+const uri = await api.bpmn.getFocusedDocumentUri();
+if (!uri) return; // no BPMN editor is focused
+
+const elements = await api.bpmn.getElements(uri);
+```
+
+For commands triggered by context pad entries, the URI is typically already known to the plugin (stored during an earlier subscription). For palette commands, always use `getFocusedDocumentUri()`.
 
 ### Overlays
 
@@ -806,6 +860,21 @@ await api.bpmn.registerContextPadEntry({
   command: 'myPlugin.flagElement', elementTypes: ['bpmn:Task'], elementIds: []
 });
 ```
+
+### Context pad command arguments
+
+When a context pad entry triggers a command, the handler receives a single argument object (not a bare string):
+
+```javascript
+// The command is invoked with { elementId, elementType }
+api.commands.register('myPlugin.inspect', async (info) => {
+  const elementId = info?.elementId;   // e.g. "Task_1"
+  const elementType = info?.elementType; // e.g. "bpmn:ServiceTask"
+  // ... do something with the element
+});
+```
+
+This applies to both manifest-declared and runtime-registered context pad entries.
 
 ### Context pad dynamic filtering
 
@@ -865,6 +934,10 @@ function MyService(eventBus, canvas, pluginChannel) {
 MyService.$inject = ['eventBus', 'canvas', 'pluginChannel'];
 module.exports = { __init__: ['myService'], myService: ['type', MyService] };
 ```
+
+**Multi-plugin coexistence**: Multiple plugins can each declare `bpmnModules` and all run simultaneously. The Studio automatically namespaces each plugin's `pluginChannel` in the DI container so they never interfere with each other. Always use `'pluginChannel'` in your `$inject` array — never use internal prefixed names.
+
+**Module reloading**: When a plugin with renderer modules is disabled or re-enabled, all open BPMN editors are automatically closed and reopened so the modeler picks up the updated module set. The `require` cache is evicted before loading, so code changes take effect immediately on re-enable.
 
 Host-side communication:
 

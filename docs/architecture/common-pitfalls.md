@@ -1362,10 +1362,16 @@ The `selectionRevision` counter in metadata acts as a lightweight re-render trig
 
 **Correct approach:** Use the `elementIds` allowlist pattern. Subscribe to element events in the host, compute qualifying IDs, then push `updateContextPadEntry(id, { elementIds: [...] })` through the bridge. The `PluginContextPadProvider` performs an O(1) Set lookup synchronously.
 
-### P-Studio-9 — Plugin module `require()` cache is not invalidated on reload
+### ~~P-Studio-9 — Plugin module `require()` cache is not invalidated on reload~~ (RESOLVED)
 
-**Symptom:** After modifying a renderer module's JS file and reloading the plugin, the old behavior persists.
+Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the module from `__non_webpack_require__.cache` before every load, so disable → re-enable cycles and file changes on disk are always picked up without a Studio restart.
 
-**Root cause:** Node.js's `require()` cache is per-process. The renderer process caches the module on first load. `PluginModuleLoader.unloadPluginModules()` removes the module from the registry but does not invalidate the require cache.
+### P-Studio-10 — Multiple renderer-module plugins collide on the `pluginChannel` DI name
 
-**Correct approach:** For development iteration, restart the Studio (or toggle the plugin off → save → toggle on). Production plugins are not expected to change at runtime.
+**Symptom:** When two or more plugins declare `bpmnModules`, only one plugin's renderer module receives `postToRendererModule` messages. The other plugin's module is instantiated but never gets messages from the host. Disabling all other plugins "fixes" it.
+
+**Root cause:** diagram-js uses a single flat DI container. All `additionalModules` contribute to the same injector. If two plugins both registered `{ pluginChannel: ['value', channel] }`, the last entry wins — both modules receive the same channel instance, but `postToRendererModule` delivers messages to the plugin's own channel (which may no longer be the one injected by DI).
+
+**Correct approach (implemented in `PluginModuleLoader`):** Each plugin's channel is registered under a unique DI name (`pluginChannel__<pluginName>`). At load time, `rewriteChannelInjections()` rewrites the module's `$inject` arrays, replacing the generic `pluginChannel` token with the plugin-specific name. This is fully transparent to plugin authors — they always write `$inject = [..., 'pluginChannel']` and the loader handles namespacing.
+
+**Plugin authors:** Always use `'pluginChannel'` in `$inject` arrays. Never use `pluginChannel__*` directly — the prefixed names are internal and may change.

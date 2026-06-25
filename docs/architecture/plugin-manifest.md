@@ -41,7 +41,7 @@ The manifest lives in `package.json` under the `bifrostStudio` key:
 | `activationEvents` | `string[]` | No | Events that trigger lazy loading. Without this, the plugin loads eagerly. |
 | `contributes` | `object` | No | Declarative contribution entries (see below). |
 
-### Permissions (Phase 7)
+### Permissions (Phase 7+8)
 
 The `permissions` array declares which sandbox capabilities the plugin needs. Plugins without `permissions` (or with `permissions: []`) run fully sandboxed with no special access.
 
@@ -51,9 +51,14 @@ The `permissions` array declares which sandbox capabilities the plugin needs. Pl
 | `commands.std` | Execute `std.*` commands | Medium |
 | `commands.bpmn` | Execute `bpmn.*` commands | Medium |
 | `commands.dmn` | Execute `dmn.*` commands | Medium |
-| `renderer-modules` | `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` | High |
+| `bpmn` | Read BPMN elements, subscribe to events, place overlays | Low |
+| `bpmn.modelling` | All of `bpmn` + modify BPMN model + palette/context pad contributions | Medium |
+| `bpmn.renderer` | All of `bpmn.modelling` + inject diagram-js modules into renderer | High |
+| `renderer-modules` | _(deprecated alias for `bpmn.renderer`)_ | High |
 | `native` | Load `.node` native addons | Critical |
 | `system-info` | `require('os')` (safe subset: `platform`, `arch`, `tmpdir`, `EOL`) | Low |
+
+**BPMN permission hierarchy**: `bpmn.renderer` ⊃ `bpmn.modelling` ⊃ `bpmn`. Declaring a higher tier implicitly grants all lower tiers.
 
 **Reserved**: `network` is recognized but rejected — plugins have zero network access in v1.
 
@@ -179,6 +184,53 @@ Array of Service Task implementation types for the BPMN editor dropdown.
 | `implementation` | `string` | Yes |
 | `label` | `string` | Yes |
 
+#### `contributes.themes`
+
+Array of theme declarations. Themes registered via manifest are available immediately at discovery time (before activation).
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | `string` | Yes | Theme ID (auto-namespaced to `plugin.<name>.<id>`) |
+| `label` | `string` | Yes | Human-readable name in Settings dropdown |
+| `type` | `'dark' \| 'light'` | Yes | Determines fallback behaviour on removal |
+| `tokens` | `Record<string, string>` | Yes | CSS custom property overrides (leading `--` auto-prepended if missing) |
+
+#### `contributes.bpmnPalette`
+
+Array of palette entry declarations. Requires `bpmn.modelling` permission.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | `string` | Yes | Entry identifier |
+| `icon` | `string` | Yes | Phosphor icon class (e.g. `ph-light ph-wrench`) |
+| `title` | `string` | Yes | Tooltip/label |
+| `command` | `string` | Yes | Command ID to execute on click |
+
+#### `contributes.bpmnContextPad`
+
+Array of context pad entry declarations. Requires `bpmn.modelling` permission.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | `string` | Yes | Entry identifier |
+| `icon` | `string` | Yes | Phosphor icon class |
+| `title` | `string` | Yes | Tooltip/label |
+| `command` | `string` | Yes | Command ID to execute (receives `{ elementId, elementType }`) |
+| `elementTypes` | `string[]` | No | Restrict to specific BPMN types (e.g. `["bpmn:Task", "bpmn:ServiceTask"]`). If omitted, shown on all elements |
+
+Context pad entries support a two-level filter: `elementTypes` (static, from manifest) + `elementIds` (dynamic, updated at runtime via `api.bpmn.updateContextPadEntry()`). Both must match for an entry to appear.
+
+#### `contributes.bpmnModules`
+
+Array of diagram-js module bundles injected into the renderer process. Requires `bpmn.renderer` permission.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `entry` | `string` | Yes | Relative path to the CommonJS module file |
+| `description` | `string` | No | Human-readable description of what the module does |
+
+Modules are standard diagram-js modules exporting `__init__` and service factories. They receive `pluginChannel` via DI for bidirectional communication with the plugin host.
+
 ## API Versioning
 
 The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `1.0.0`, defined in `studio/src/bifrost/contracts/PluginApiVersion.ts`). Compatibility rules:
@@ -219,6 +271,10 @@ discoverAndLoadPlugins()
 | Panes | `PaneMediator.unregisterPane()` + `unregisterPaneProvider()` |
 | Pane Toggles | Menu bar item/modifier disposer + `updateMenuBarItems()` |
 | Service Task Types | `bpmn.serviceTasks.removeCustomType` command |
+| Themes | `ThemeManager.unregisterTheme()` + injected `<style>` removal + type-aware fallback if active |
+| bpmnPalette | `PluginBpmnContributionStore.removePaletteEntries(pluginName)` |
+| bpmnContextPad | `PluginBpmnContributionStore.removeContextPadEntries(pluginName)` |
+| bpmnModules | `PluginModuleLoader.unloadPluginModules(pluginName)` + force-reopen BPMN editors |
 
 ## Backward Compatibility
 

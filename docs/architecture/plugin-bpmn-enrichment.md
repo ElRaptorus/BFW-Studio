@@ -88,6 +88,27 @@ The plugin sandbox runs in an isolated process with an asynchronous bridge. The 
 
 The two-level filter model: `elementTypes` (static, declared in manifest) + `elementIds` (dynamic Set, updated at runtime). Both must match for an entry to appear.
 
+### Command argument format
+
+When a context pad or palette entry triggers a command, the `PluginContextPadProvider` / `PluginPaletteProvider` pass a single argument object to the command handler:
+
+```javascript
+{ elementId: string, elementType: string }
+```
+
+Plugin command handlers must destructure this object — not treat it as a bare string:
+
+```javascript
+// Correct
+api.commands.register('myCommand', async (info) => {
+  const elementId = info?.elementId;
+  // ...
+});
+
+// WRONG — info is an object, not a string
+api.commands.register('myCommand', async (elementId) => { ... });
+```
+
 ### Architecture
 
 - `PluginBpmnContributionStore` — Singleton registry for all plugin-contributed palette and context pad entries
@@ -130,10 +151,13 @@ For advanced use cases (Token Simulator, custom renderers, path highlighting), p
 1. `ContributionRegistrar` detects `bpmnModules` + `bpmn.renderer` permission
 2. `PluginModuleLoader.loadPluginModules(name, path, modules)`:
    - Creates a `PluginChannel` for bidirectional communication
-   - Injects `{ pluginChannel: ['value', channel] }` as a DI module
+   - Registers the channel under a **unique DI name** `pluginChannel__<pluginName>` (prevents multi-plugin collisions in the flat DI container)
+   - Evicts the Node.js `require` cache for each module path (ensures the latest code is loaded from disk)
    - Loads each bundle via `__non_webpack_require__()` (runtime Node.js require)
+   - Rewrites `$inject` arrays in the loaded module: replaces `'pluginChannel'` with the plugin-specific DI name (`rewriteChannelInjections`)
    - Registers all modules in `BpmnModelerModuleRegistry`
-3. The modeler's `getAll()` returns both internal and plugin modules
+3. On success, `forceReopenBpmnEditors()` closes and reopens all open BPMN editors so the new modeler instances include the freshly registered modules
+4. The modeler's `getAll()` returns both internal and plugin modules
 
 ### PluginChannel message pipe
 
@@ -151,9 +175,13 @@ For advanced use cases (Token Simulator, custom renderers, path highlighting), p
 
 Messages are routed through `PluginHostBridge` → `BpmnApiBridge` → `PluginChannel` (and back). The channel is per-plugin — modules from different plugins cannot intercept each other's messages.
 
-### DI scoping
+### DI scoping and multi-plugin isolation
 
-The renderer module receives diagram-js services + `pluginChannel` via DI. No `bifrost` or `window.bifrost` reference is injected. Accessing `window.bifrost` is unsupported and may break in future versions.
+The renderer module receives diagram-js services + `pluginChannel` via standard `$inject` dependency injection. Plugin authors declare `'pluginChannel'` in their `$inject` array — the `PluginModuleLoader` transparently rewrites this to a per-plugin unique name (`pluginChannel__<pluginName>`) at registration time. This ensures multiple renderer-module plugins can coexist without their channels interfering with each other in the shared diagram-js DI container.
+
+No `bifrost` or `window.bifrost` reference is injected. Accessing `window.bifrost` is unsupported and may break in future versions.
+
+**Important for plugin authors**: Always use `'pluginChannel'` in `$inject`. Never hardcode `pluginChannel__*` names — they are internal and subject to change.
 
 ### Force-reopen on unload
 

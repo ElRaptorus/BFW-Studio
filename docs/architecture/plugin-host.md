@@ -541,6 +541,8 @@ The bridge registers event subscriptions through `PH_REGISTER_CALLBACK` with `na
 | `onElementContextMenu` | `(uri, callback) → Disposable` | Subscribe to context menu events |
 | `onOverlayContextChanged` | `(uri, callback) → Disposable` | Subscribe to overlay context changes (data-updated, selection-changed, document-opened) |
 | `registerOverlayFactory` | `(factory, options?) → Disposable` | Register a factory callback for auto-rendered overlays (see below) |
+| `requestOverlayRefresh` | `() → void` | Force re-evaluation of all overlay factories (use when plugin state affecting overlays has changed) |
+| `getFocusedDocumentUri` | `() → string \| null` | URI of the currently focused BPMN editor document (convenience for context-free commands) |
 
 **Overlay Factory (auto-render model)**:
 
@@ -1018,6 +1020,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/common/plugin-host/api/WorkspaceApi.ts` | Host | Workspace: `readFile`, `writeFile`, `listDirectory`, `stat`, file watchers |
 | `studio/src/bifrost/common/plugin-host/api/ViewsApi.ts` | Host | Views: `registerTreeView`, `updateTreeData` |
 | `studio/src/bifrost/common/plugin-host/api/ThemesApi.ts` | Host | Themes: `register`, `unregister`, `getActiveTheme` |
+| `studio/src/bifrost/common/plugin-host/api/BpmnApi.ts` | Host | BPMN API: overlays, elements, modeling, palette/context pad, renderer module messaging |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframeDocumentRenderer.tsx` | Renderer | Factory creating iframe-backed editor document renderers (`createIframeDocumentRendererConstructor`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the SDK `Tree` component |

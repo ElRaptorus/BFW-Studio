@@ -72,9 +72,7 @@ async function activate(api) {
     if (elements == null) {
       return;
     }
-    const taskIds = elements
-      .filter((el) => el.type.includes('Task'))
-      .map((el) => el.id);
+    const taskIds = elements.filter((el) => el.type.includes('Task')).map((el) => el.id);
     await api.bpmn.postToRendererModule({
       type: 'highlightElements',
       elementIds: taskIds,
