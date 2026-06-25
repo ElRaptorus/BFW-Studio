@@ -81,6 +81,10 @@ function ActionPropertiesForm(props: ActionPropertiesFormProps): React.JSX.Eleme
       existingAction.id === action.id ? { ...existingAction, ...patch } : existingAction,
     );
     snapshot.setActions(updated);
+
+    if (patch.id != null && patch.id !== action.id) {
+      snapshot.selectAction(patch.id);
+    }
   };
 
   return (

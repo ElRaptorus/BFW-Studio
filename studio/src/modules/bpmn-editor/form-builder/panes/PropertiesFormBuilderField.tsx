@@ -82,6 +82,10 @@ function FieldPropertiesForm(props: FieldPropertiesFormProps): React.JSX.Element
       existingField.id === field.id ? { ...existingField, ...patch } : existingField,
     );
     snapshot.setFields(updated);
+
+    if (patch.id != null && patch.id !== field.id) {
+      snapshot.selectField(patch.id);
+    }
   };
 
   const hasOptions =
