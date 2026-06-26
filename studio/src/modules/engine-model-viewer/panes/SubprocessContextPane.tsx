@@ -22,8 +22,8 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
   if (!isModelViewerDocument(editorDocument)) {
     return false;
   }
-  const model = editorDocumentModel as ModelViewerDocumentModel;
-  if (!model.isInsideSubprocessPlane()) {
+  const model = editorDocumentModel as ModelViewerDocumentModel | null;
+  if (model == null || !model.isInsideSubprocessPlane()) {
     return false;
   }
   return model.getSelectedElement() == null;
