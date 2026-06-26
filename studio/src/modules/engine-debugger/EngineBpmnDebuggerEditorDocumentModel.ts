@@ -175,6 +175,13 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
       this.sortedFlowNodeInstances = flowNodeInstances;
       this.dataObjectData = dataObjectData;
 
+      const isFullReload = newFlowNodeInstances == null;
+
+      if (isFullReload) {
+        this.subProcessesWithSelectionByUser = [];
+        this.selectedSubProcessInstances = {};
+      }
+
       const flowNodes = this.mapFlowNodeInstancesToFlowNodes(flowNodeInstances);
       this.executedFlowNodes = flowNodes;
 
@@ -322,7 +329,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
   get flowNodesWithInstances(): ExecutableFlowNode[] {
     const whitelistedProcessInstances = this.whitelistedProcessInstanceIds;
-    return this.executedFlowNodes
+    const result = this.executedFlowNodes
       .map((fn) => ({
         ...fn,
         flowNodeInstances: fn.flowNodeInstances.filter((fni) =>
@@ -330,6 +337,8 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
         ),
       }))
       .filter((fn) => fn.flowNodeInstances.length > 0);
+
+    return result;
   }
 
   get flowNodeInstances(): FlowNodeInstance[] {
@@ -533,6 +542,9 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
   get executedSequenceFlows(): string[] {
     const flowNodes = this.flowNodesWithInstances;
+    const finishedFlowNodeIds = new Set(
+      flowNodes.filter((fn) => fn.flowNodeInstances.some((fni) => fni.state === 'finished')).map((fn) => fn.id),
+    );
     const executedFlowNodeIds = new Set(flowNodes.filter(flowNodeWasExecuted).map((fn) => fn.id));
 
     const allSequenceFlows =
@@ -543,7 +555,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
       .filter((flow) => {
         const sourceId = flow.businessObject?.sourceRef?.id;
         const targetId = flow.businessObject?.targetRef?.id;
-        return sourceId && targetId && executedFlowNodeIds.has(sourceId) && executedFlowNodeIds.has(targetId);
+        return sourceId && targetId && finishedFlowNodeIds.has(sourceId) && executedFlowNodeIds.has(targetId);
       })
       .map((flow) => flow.id);
   }
@@ -1194,35 +1206,39 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
   private refreshFlowNodeOverlays(): void {
     this.bpmnViewerComponentAdapter?.onceInteractive(async () => {
-      this.refreshSequenceFlowMarkers();
+      try {
+        this.refreshSequenceFlowMarkers();
 
-      const overlays: Overlay[] = [];
+        const overlays: Overlay[] = [];
 
-      assertNotNull(this.processModel, 'this.processModel');
+        assertNotNull(this.processModel, 'this.processModel');
 
-      overlays.push(...createProcessModelOverlays(this.bifrost, this));
+        overlays.push(...createProcessModelOverlays(this.bifrost, this));
 
-      for (const flowNode of getAllFlowNodes(this.processModel)) {
-        overlays.push(...createFlowNodeModelOverlays(flowNode, this.bifrost, this));
-      }
-
-      const includeDataObjectOverlays = this.dataObjectDetailLevel != DataObjectDetailLevel.hideAll;
-      if (includeDataObjectOverlays) {
-        for (const dataObject of getAllDataObjectReferences(this.processModel)) {
-          overlays.push(...createDataObjectModelOverlays(dataObject, this.bifrost, this));
+        for (const flowNode of getAllFlowNodes(this.processModel)) {
+          overlays.push(...createFlowNodeModelOverlays(flowNode, this.bifrost, this));
         }
-      }
 
-      for (const flowNode of this.flowNodesWithInstances) {
-        overlays.push(createFlowNodeInstanceCover(flowNode, this));
-        overlays.push(...(await createFlowNodeInstanceOverlays(flowNode, this.bifrost, this)));
-      }
+        const includeDataObjectOverlays = this.dataObjectDetailLevel != DataObjectDetailLevel.hideAll;
+        if (includeDataObjectOverlays) {
+          for (const dataObject of getAllDataObjectReferences(this.processModel)) {
+            overlays.push(...createDataObjectModelOverlays(dataObject, this.bifrost, this));
+          }
+        }
 
-      for (const dataStore of this.processModel.dataStoreReferences) {
-        overlays.push(...createDataStoreOverlays(dataStore, this.bifrost, this));
-      }
+        for (const flowNode of this.flowNodesWithInstances) {
+          overlays.push(createFlowNodeInstanceCover(flowNode, this));
+          overlays.push(...(await createFlowNodeInstanceOverlays(flowNode, this.bifrost, this)));
+        }
 
-      this.overlays.updateAll(overlays);
+        for (const dataStore of this.processModel.dataStoreReferences) {
+          overlays.push(...createDataStoreOverlays(dataStore, this.bifrost, this));
+        }
+
+        this.overlays.updateAll(overlays);
+      } catch (error) {
+        console.error('[EngineDebugger] refreshFlowNodeOverlays failed:', error);
+      }
     });
   }
 

@@ -101,8 +101,10 @@ export class EngineAdapter {
   private dataObjectValues: DataObjectValue[] = [];
 
   private pendingFniDetailIds = new Set<string>();
-  private piReQueryInFlight = false;
-  private piReQueryPending = false;
+
+  private loadInProgress = false;
+  private pendingReload = false;
+  private fullLoadInProgress = false;
 
   private updateErrorHandler: ((error: DebuggerBaseError) => void) | null = null;
   private updateProcessHandler: ProcessUpdatedHandler | null = null;
@@ -134,12 +136,20 @@ export class EngineAdapter {
     return this.loadInitialData();
   }
 
-  refresh = debounce(() => this.loadInitialData(), 500, { leading: true });
+  async refresh(): Promise<void> {
+    if (this.loadInProgress) {
+      this.pendingReload = true;
+      return;
+    }
+    await this.loadInitialData();
+  }
 
   dispose(): void {
     this.subscribeThenSnapshot?.dispose();
     this.subscribeThenSnapshot = null;
     this.debouncedFlushPendingFniDetails.cancel();
+    this.pendingFniDetailIds.clear();
+    this.pendingReload = false;
   }
 
   private async loadInitialData(): Promise<void> {
@@ -149,8 +159,15 @@ export class EngineAdapter {
       return;
     }
 
+    this.loadInProgress = true;
+    this.pendingReload = false;
+    this.fullLoadInProgress = true;
+
     try {
       this.subscribeThenSnapshot?.dispose();
+      this.debouncedFlushPendingFniDetails.cancel();
+      this.pendingFniDetailIds.clear();
+
       const snapshot = new SubscribeThenSnapshot(this.connectionManager, this.engineId, this.processInstanceId);
       this.subscribeThenSnapshot = snapshot;
 
@@ -170,11 +187,61 @@ export class EngineAdapter {
 
       const initialSnapshot = this.buildSnapshotFromCurrentData();
       snapshot.setInitialSnapshot(initialSnapshot);
+
+      this.mergeSnapshotIntoLoadedData(snapshot);
+      this.fullLoadInProgress = false;
+
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load process instance';
       this.updateErrorHandler?.({ message, statusCode: (error as { status?: number }).status });
       throw error;
+    } finally {
+      this.fullLoadInProgress = false;
+      this.loadInProgress = false;
+
+      if (this.pendingReload) {
+        this.pendingReload = false;
+        void this.loadInitialData();
+      }
     }
+  }
+
+  /**
+   * After setInitialSnapshot drains buffered WS events, the WS-layer
+   * snapshot may contain state changes that occurred during the GraphQL
+   * load window. Merge those into the adapter's cached arrays so the
+   * final handler callback has the most up-to-date data.
+   */
+  private mergeSnapshotIntoLoadedData(subscribeThenSnapshot: SubscribeThenSnapshot): void {
+    const currentSnapshot = subscribeThenSnapshot.getSnapshot();
+    if (!currentSnapshot) {
+      return;
+    }
+
+    if (this.processInstanceData) {
+      this.processInstanceData = {
+        ...this.processInstanceData,
+        state: currentSnapshot.state,
+      };
+    }
+
+    for (const fniSnapshot of currentSnapshot.flowNodeInstances) {
+      const existingIndex = this.flowNodeInstances.findIndex((fni) => fni.id === fniSnapshot.id);
+      if (existingIndex >= 0) {
+        const existing = this.flowNodeInstances[existingIndex];
+        this.flowNodeInstances[existingIndex] = {
+          ...existing,
+          state: fniSnapshot.state,
+          typeProperties: fniSnapshot.typeProperties ?? existing.typeProperties,
+          errorInfo: fniSnapshot.errorInfo ?? existing.errorInfo,
+        };
+      } else {
+        this.flowNodeInstances.push(fniSnapshotToFlowNodeInstance(fniSnapshot));
+      }
+    }
+
+    this.dataObjectValues = currentSnapshot.dataObjectValues;
   }
 
   private async loadProcessWithXml(client: DaemonEngineClient): Promise<void> {
@@ -287,6 +354,10 @@ export class EngineAdapter {
   }
 
   private handleSnapshotUpdate(update: SnapshotUpdate): void {
+    if (this.fullLoadInProgress) {
+      return;
+    }
+
     const { snapshot, eventType, affectedFniIds } = update;
 
     switch (eventType) {
@@ -354,33 +425,7 @@ export class EngineAdapter {
 
     this.debouncedFlushPendingFniDetails.cancel();
 
-    void this.fullReQueryOnPiStateChange();
-  }
-
-  private async fullReQueryOnPiStateChange(): Promise<void> {
-    if (this.piReQueryInFlight) {
-      this.piReQueryPending = true;
-      return;
-    }
-
-    const client = this.connectionManager.getClient(this.engineId);
-    if (!client) {
-      return;
-    }
-
-    this.piReQueryInFlight = true;
-    try {
-      await this.loadProcessWithXml(client);
-    } catch {
-      // Best-effort: the in-memory state is already updated from the WS event
-    } finally {
-      this.piReQueryInFlight = false;
-
-      if (this.piReQueryPending) {
-        this.piReQueryPending = false;
-        void this.fullReQueryOnPiStateChange();
-      }
-    }
+    void this.refresh();
   }
 
   private async flushPendingFniDetails(): Promise<void> {
