@@ -37,9 +37,38 @@ function getPaneTitle(): string {
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
+  const bpmnDocumentModel = props.editorDocumentModel as BpmnDocumentModel | null;
+  const element = bpmnDocumentModel?.selection.getOnlyElementOrNull() ?? null;
+
+  const handleAddClick = (event: React.MouseEvent): void => {
+    event.preventDefault();
+    if (bpmnDocumentModel != null && element != null) {
+      bpmnDocumentModel.elements.setElementProperty(element.id, 'dataPipeline', {
+        command: 'addMapping',
+        mappingType: 'output',
+        source: '',
+        target: '',
+      });
+    }
+  };
+
   return (
     <Pane>
       <PaneHeader studio={props.studio} title={getPaneTitle()} paneId={props.paneId} collapsed={props.collapsed}>
+        {props.collapsed !== true && (
+          <>
+            <FeelExpressionHint studio={props.studio} />
+            <a
+              href="#"
+              className="pane-header__icon"
+              onClick={handleAddClick}
+              title="Add Output Mapping"
+              data-test--data-pipeline-add-mapping="output"
+            >
+              <Icon id="ph ph-plus" />
+            </a>
+          </>
+        )}
         <PaneHeaderHelpIcon studio={props.studio} id="bpmn/properties/output_mappings" />
       </PaneHeader>
       {props.collapsed !== true && <PaneContent {...props} />}
@@ -83,15 +112,6 @@ function OutputMappingsContent(props: PaneComponentProps): React.JSX.Element {
   const dataPipeline = bpmnDocumentModel.elements.getElementPropertyValue(element.id, 'dataPipeline') as any;
   const mappings: DataPipelineMapping[] = dataPipeline?.outputMappings ?? [];
 
-  const addMapping = (): void => {
-    bpmnDocumentModel.elements.setElementProperty(element.id, 'dataPipeline', {
-      command: 'addMapping',
-      mappingType: 'output',
-      source: '',
-      target: '',
-    });
-  };
-
   const updateSource = (index: number, source: string): void => {
     bpmnDocumentModel.elements.setElementProperty(element.id, 'dataPipeline', {
       command: 'updateMapping',
@@ -118,27 +138,8 @@ function OutputMappingsContent(props: PaneComponentProps): React.JSX.Element {
     });
   };
 
-  const handleAddClick = (event: React.MouseEvent): void => {
-    event.preventDefault();
-    addMapping();
-  };
-
   return (
     <div className="form-group">
-      <label className="d-block" style={{ width: '100%' }}>
-        <span className="float-right">
-          <FeelExpressionHint studio={props.studio} />
-          <a
-            href="#"
-            className="pane-header__icon"
-            onClick={handleAddClick}
-            title="Add Output Mapping"
-            data-test--data-pipeline-add-mapping="output"
-          >
-            <Icon id="ph ph-plus" />
-          </a>
-        </span>
-      </label>
       {mappings.map((mapping, index) => (
         <div
           key={`output-mapping-${index}`}
