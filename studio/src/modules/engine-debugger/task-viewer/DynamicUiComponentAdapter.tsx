@@ -16,6 +16,11 @@ type UserTaskFormField = {
   type: string;
   label?: string;
   defaultValue?: unknown;
+  required?: boolean;
+  placeholder?: string;
+  pattern?: string;
+  hint?: string;
+  options?: { value: string; label: string }[];
   enumValues?: { id: string; name: string }[];
 };
 
@@ -75,19 +80,26 @@ function mapEngineFieldToDefinition(engineField: UserTaskFormField): FormFieldDe
 
   const mappedType = typeMapping[engineField.type] ?? FormFieldType.Text;
 
-  const options =
-    engineField.enumValues?.map((enumValue) => ({
+  let options: { value: string; label: string }[] | undefined;
+  if (engineField.options != null && engineField.options.length > 0) {
+    options = engineField.options;
+  } else if (engineField.enumValues != null && engineField.enumValues.length > 0) {
+    options = engineField.enumValues.map((enumValue) => ({
       label: enumValue.name,
       value: enumValue.id,
-    })) ?? [];
+    }));
+  }
 
   return {
     id: engineField.id,
     type: mappedType,
     label: engineField.label ?? '',
-    required: false,
+    required: engineField.required ?? false,
+    placeholder: engineField.placeholder,
+    pattern: engineField.pattern,
+    hint: engineField.hint,
     defaultValue: engineField.defaultValue != null ? String(engineField.defaultValue) : undefined,
-    options: options.length > 0 ? options : undefined,
+    options,
   };
 }
 

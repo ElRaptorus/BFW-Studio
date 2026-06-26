@@ -43,6 +43,27 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
 
       const inputElement = formRef.current.elements.namedItem(field.id);
 
+      if (field.type === 'checkbox' && field.options != null && field.options.length > 0) {
+        if (field.required) {
+          let anyChecked = false;
+          if (inputElement instanceof RadioNodeList) {
+            for (let i = 0; i < inputElement.length; i++) {
+              const checkbox = inputElement[i];
+              if (checkbox instanceof HTMLInputElement && checkbox.checked) {
+                anyChecked = true;
+                break;
+              }
+            }
+          } else if (inputElement instanceof HTMLInputElement) {
+            anyChecked = inputElement.checked;
+          }
+          if (!anyChecked) {
+            errors[field.id] = `${field.label} is required`;
+          }
+        }
+        continue;
+      }
+
       let value = '';
       if (inputElement instanceof RadioNodeList) {
         value = inputElement.value;
@@ -90,7 +111,20 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
         continue;
       }
 
-      if (inputElement instanceof RadioNodeList) {
+      if (field.type === 'checkbox' && field.options != null && field.options.length > 0) {
+        const checkedValues: string[] = [];
+        if (inputElement instanceof RadioNodeList) {
+          for (let i = 0; i < inputElement.length; i++) {
+            const checkbox = inputElement[i];
+            if (checkbox instanceof HTMLInputElement && checkbox.checked) {
+              checkedValues.push(checkbox.value);
+            }
+          }
+        } else if (inputElement instanceof HTMLInputElement && inputElement.checked) {
+          checkedValues.push(inputElement.value);
+        }
+        result[field.id] = checkedValues;
+      } else if (inputElement instanceof RadioNodeList) {
         result[field.id] = inputElement.value || null;
       } else if (inputElement instanceof HTMLInputElement) {
         switch (field.type) {
