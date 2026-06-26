@@ -48,7 +48,7 @@ type ElementOverlay = {
 type TrackedOverlay = {
   overlayId: string;
   fingerprint: string;
-  reactRoot: Root | null;
+  reactRoot: Root;
 };
 
 export default class BpmnElementOverlayManager {
@@ -137,22 +137,33 @@ export default class BpmnElementOverlayManager {
     const type = shape.type.replace('bpmn:', '').toLowerCase();
 
     const overlayService = this.bpmnComponentAdapter.getOverlays();
-    const overlayId = overlayService.add(elementId, type, {
-      position: { top: 0, left: 0 },
-      html: containerMarkup,
-    });
+    let overlayId: string;
+    try {
+      overlayId = overlayService.add(elementId, type, {
+        position: { top: 0, left: 0 },
+        html: containerMarkup,
+      });
+    } catch {
+      return;
+    }
 
     const overlayObject = overlayService.get(overlayId) as any;
     if (overlayObject?.htmlContainer instanceof HTMLElement) {
       overlayObject.htmlContainer.style.pointerEvents = 'none';
     }
 
-    let reactRoot: Root | null = null;
     const container = document.querySelector(`#${containerId}`);
-    if (container) {
-      reactRoot = createRoot(container);
-      reactRoot.render(reactElement);
+    if (!container) {
+      try {
+        overlayService.remove(overlayId);
+      } catch {
+        // overlay may already be gone
+      }
+      return;
     }
+
+    const reactRoot = createRoot(container);
+    reactRoot.render(reactElement);
 
     this.activeOverlays.set(elementId, { overlayId, fingerprint, reactRoot });
   }
@@ -162,7 +173,7 @@ export default class BpmnElementOverlayManager {
       return;
     }
 
-    tracked.reactRoot?.unmount();
+    tracked.reactRoot.unmount();
 
     try {
       this.bpmnComponentAdapter.getOverlays().remove(tracked.overlayId);

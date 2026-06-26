@@ -46,6 +46,7 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
   private modelerEventsMap: Record<string, (event: DjsEvent & Record<string, any>) => void> | null = null;
   private readyForInteraction: boolean = false;
   private initializationStarted: boolean = false;
+  private xmlImportInProgress: boolean = false;
   private lastSetViewbox: CanvasViewbox | null = null;
 
   constructor(uri: string, bpmnComponentOptions: Record<string, unknown> = {}, additionalModules: unknown[] = []) {
@@ -123,14 +124,14 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
   }
 
   /**
-   * Run the given `callbackFn` once the modeler is interactive (i.e. has finished initializing, attaching *and* rendering).
-   * @param callbackFn
+   * Run the given `callbackFn` once the viewer is interactive and no XML
+   * import is in progress. If an import is currently running, the callback
+   * is deferred until the next `READY_FOR_INTERACTION` event (emitted at
+   * the end of `setXml`).
    */
   onceInteractive(callbackFn: () => void | Promise<void>): void {
-    // This is a really ugly hack
-    // we must find a way to delay this by a frame or so
     setTimeout(() => {
-      if (this.isReadyForInteraction()) {
+      if (this.isReadyForInteraction() && !this.xmlImportInProgress) {
         callbackFn();
       } else {
         this.once(EVENT_BPMN_VIEWER_ADAPTER_READY_FOR_INTERACTION, () => callbackFn());
@@ -372,6 +373,7 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
   }
 
   private async setXml(currentXml: string): Promise<string> {
+    this.xmlImportInProgress = true;
     try {
       const result = await this.viewer.importXML(currentXml);
       const { warnings } = result;
@@ -384,6 +386,11 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
       throw new Error(
         `ERROR: failed to import xml\n\nError given:\n\n${JSON.stringify(error)}\n\nXML given:\n\n${currentXml}`,
       );
+    } finally {
+      this.xmlImportInProgress = false;
+      if (this.readyForInteraction) {
+        this.emit(EVENT_BPMN_VIEWER_ADAPTER_READY_FOR_INTERACTION);
+      }
     }
   }
 
