@@ -375,8 +375,14 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
             flowNode.flowNodeInstances.find((fni) => fni.id === id),
           ]);
         case FlowNodeType.ManualTask:
-        case FlowNodeType.Task:
+        case FlowNodeType.Task: {
+          const client = getEngineClient(connectionManager, model.engineId);
+          if (client == null) {
+            return;
+          }
+          await client.userTasks.finish(id, { result: {} });
           return;
+        }
       }
       throw new Error(`Invalid BpmnType ${flowNode.flowNodeModel?.type} for interactive task ${id}.`);
     },
