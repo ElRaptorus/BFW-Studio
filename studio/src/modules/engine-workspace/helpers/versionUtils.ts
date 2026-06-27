@@ -235,14 +235,17 @@ export async function ensureProcessVersions(
  * Queries the engine for the latest deployed version of each conflicting process
  * to provide accurate version suggestions.
  *
- * Returns `null` if the user cancelled. Otherwise returns the updated XML.
+ * Returns `null` if the user cancelled. When `allowRunExisting` is true and the
+ * user chooses "Run Latest Deployed Version", returns `{ runExisting, processModelId }`.
+ * Otherwise returns the updated XML.
  */
 export async function resolveVersionConflicts(
   xml: string,
   conflicts: { processModelId: string; version: string }[],
   bifrost: Bifrost,
   client: DaemonEngineClient | null,
-): Promise<{ xml: string } | null> {
+  options?: { allowRunExisting?: boolean },
+): Promise<{ xml: string } | { runExisting: true; processModelId: string } | null> {
   const moddle = createModdle();
   const { rootElement: definitions } = await moddle.fromXML(xml);
 
@@ -318,14 +321,19 @@ export async function resolveVersionConflicts(
     resolvedConflicts.push({ processId: conflict.processModelId, element: processElement, localVersion });
   }
 
+  const actions: { label: string; response: string; cancel?: boolean; default?: boolean }[] = [
+    { label: 'Cancel', response: 'cancel', cancel: true },
+  ];
+  if (options?.allowRunExisting) {
+    actions.push({ label: 'Run Latest Deployed Version', response: 'run_existing' });
+  }
+  actions.push({ label: 'Update & Deploy', response: 'deploy', default: true });
+
   const dialogResult = await bifrost.dialog.open(
     {
       title: 'Version Conflict',
       content: contentItems,
-      actions: [
-        { label: 'Cancel', response: 'cancel', cancel: true },
-        { label: 'Update & Deploy', response: 'deploy', default: true },
-      ],
+      actions,
     },
     async (result) => {
       if (result.response !== 'deploy') {
@@ -334,6 +342,10 @@ export async function resolveVersionConflicts(
       return validateConflictFields(result.formData, resolvedConflicts);
     },
   );
+
+  if (dialogResult.response === 'run_existing') {
+    return { runExisting: true, processModelId: conflicts[0].processModelId };
+  }
 
   if (dialogResult.wasCancelled || dialogResult.response !== 'deploy') {
     return null;

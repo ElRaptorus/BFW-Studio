@@ -77,6 +77,7 @@ interface BpmnDeployResult {
 async function deployFocusedBpmnFile(
   bifrost: Bifrost,
   connectionManager: EngineConnectionManager,
+  options?: { allowRunExistingOnConflict?: boolean },
 ): Promise<BpmnDeployResult | null> {
   const doc = bifrost.editors.getFocusedEditorDocument();
   if (!doc?.uri) {
@@ -133,9 +134,14 @@ async function deployFocusedBpmnFile(
       return { processModelId, engineId: activeEngineId, filePath, fileName };
     } catch (deployError: any) {
       if (deployError?.errorCode === 'version_exists' && Array.isArray(deployError?.conflicts)) {
-        const resolved = await resolveVersionConflicts(content, deployError.conflicts, bifrost, client);
+        const resolved = await resolveVersionConflicts(content, deployError.conflicts, bifrost, client, {
+          allowRunExisting: options?.allowRunExistingOnConflict,
+        });
         if (resolved == null) {
           return null;
+        }
+        if ('runExisting' in resolved) {
+          return { processModelId: resolved.processModelId, engineId: activeEngineId, filePath, fileName };
         }
         await fs.writeFile(filePath, resolved.xml, 'utf-8');
         content = resolved.xml;
@@ -388,7 +394,9 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
   bifrost.commands.register(
     'engine.quickDeployAndDebug',
     async () => {
-      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager);
+      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager, {
+        allowRunExistingOnConflict: true,
+      });
       if (!deployResult) {
         return;
       }
@@ -418,7 +426,9 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
   bifrost.commands.register(
     'engine.quickDeployAndConfiguredDebug',
     async () => {
-      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager);
+      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager, {
+        allowRunExistingOnConflict: true,
+      });
       if (!deployResult) {
         return;
       }
