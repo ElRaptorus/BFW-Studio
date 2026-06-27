@@ -258,6 +258,8 @@ These commands are registered by `engine-workspace` and orchestrate deploy+start
 | `engine.menubar.deployButton` | Shift-aware deploy button router. Click = deploy, Shift+Click = deploy & open |
 | `engine.menubar.setActiveEngine` | Engine dropdown onChange handler, calls `connectionManager.setActiveEngine()` |
 
+**Shared deploy pipeline:** The four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) all call the shared `deployFocusedBpmnFile()` helper which encapsulates: file read → `ensureProcessVersions()` → deploy with `resolveVersionConflicts()` retry loop (max 3). Each command only differs in its post-deploy action. DMN deploy logic is handled inline in `deployCurrentProcess` and `deployAndOpenCurrentProcess` only (no version checks or conflict resolution for DMN).
+
 ### Menubar Structure
 
 The engine menubar (center area) contains:
@@ -455,9 +457,9 @@ Before every deployment (all 5 Run Menu commands + file explorer deploy), `ensur
 
 ### Version Conflict Resolution
 
-When an explicit deploy command (`deployCurrentProcess`, `deployAndOpenCurrentProcess`) receives a 409 `version_exists` error, `resolveVersionConflicts` shows the "Version Conflict" dialog. It queries the engine for the latest deployed version (which may be higher than the conflicting version) and suggests `suggestNextVersion(max(local, deployed))`. On confirm, the updated XML is saved and deployment is retried automatically, up to 3 times.
+When any BPMN deploy command receives a 409 `version_exists` error, `resolveVersionConflicts` shows the "Version Conflict" dialog. It queries the engine for the latest deployed version (which may be higher than the conflicting version) and suggests `suggestNextVersion(max(local, deployed))`. On confirm, the updated XML is saved to disk and deployment is retried automatically, up to 3 times.
 
-Quick-deploy commands (`quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) do **not** show the conflict dialog — they silently continue on 409 since the existing version is sufficient for debugging.
+All four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) share the same deploy pipeline via the `deployFocusedBpmnFile()` helper. This ensures consistent version checking and conflict resolution regardless of the entry point. The commands differ only in their post-deploy action (notification, open viewer, start debugger, or configured start).
 
 ### Bump Version Command
 

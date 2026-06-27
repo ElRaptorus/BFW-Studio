@@ -62,6 +62,102 @@ function formatEngineLabel(connection: { displayName: string | null; url: string
   return name;
 }
 
+interface BpmnDeployResult {
+  processModelId: string;
+  engineId: string;
+  filePath: string;
+  fileName: string;
+}
+
+/**
+ * Shared BPMN deploy pipeline: read file, ensure versions, deploy with
+ * version-conflict retry loop. Returns null when the user cancels a dialog
+ * or an unrecoverable error occurs.
+ */
+async function deployFocusedBpmnFile(
+  bifrost: Bifrost,
+  connectionManager: EngineConnectionManager,
+): Promise<BpmnDeployResult | null> {
+  const doc = bifrost.editors.getFocusedEditorDocument();
+  if (!doc?.uri) {
+    return null;
+  }
+
+  const activeEngineId = connectionManager.getActiveEngineId();
+  if (!activeEngineId) {
+    bifrost.notifications.open({ type: 'warning', content: 'No engine connected.', source: 'Engine' });
+    return null;
+  }
+
+  const filePath = doc.uri.startsWith('file://') ? doc.uri.slice(7) : doc.uri;
+  const fileName = path.basename(filePath);
+
+  if (!fileName.toLowerCase().endsWith('.bpmn')) {
+    bifrost.notifications.open({
+      type: 'info',
+      content: 'This action is only available for BPMN files.',
+      source: 'Engine',
+    });
+    return null;
+  }
+
+  let content = await fs.readFile(filePath, 'utf-8');
+
+  const client = connectionManager.getClient(activeEngineId);
+  const checked = await ensureProcessVersions(content, bifrost, client);
+  if (checked == null) {
+    return null;
+  }
+  if (checked.modified) {
+    await fs.writeFile(filePath, checked.xml, 'utf-8');
+  }
+  content = checked.xml;
+
+  const maxConflictRetries = 3;
+  for (let attempt = 0; attempt <= maxConflictRetries; attempt++) {
+    try {
+      const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deploy, [
+        activeEngineId,
+        content,
+        fileName,
+      ]);
+      const processModelId: string | null = result?.deployed?.[0]?.processModelId ?? null;
+      if (!processModelId) {
+        bifrost.notifications.open({
+          type: 'error',
+          content: 'Deploy succeeded but the engine did not return a process model ID.',
+          source: 'Engine',
+        });
+        return null;
+      }
+      return { processModelId, engineId: activeEngineId, filePath, fileName };
+    } catch (deployError: any) {
+      if (deployError?.errorCode === 'version_exists' && Array.isArray(deployError?.conflicts)) {
+        const resolved = await resolveVersionConflicts(content, deployError.conflicts, bifrost, client);
+        if (resolved == null) {
+          return null;
+        }
+        await fs.writeFile(filePath, resolved.xml, 'utf-8');
+        content = resolved.xml;
+        continue;
+      }
+      bifrost.notifications.open({
+        type: 'error',
+        content: formatDeployErrorMessage(deployError),
+        source: 'Engine',
+      });
+      return null;
+    }
+  }
+
+  bifrost.notifications.open({
+    type: 'error',
+    content: 'Deployment failed after multiple version-conflict retries.',
+    source: 'Engine',
+  });
+  return null;
+}
+
 export default function initializeRunMenu(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
   // ─── Deploy commands ───────────────────────────────────────────────
 
@@ -80,28 +176,13 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
       }
 
       const filePath = doc.uri.startsWith('file://') ? doc.uri.slice(7) : doc.uri;
-      let content = await fs.readFile(filePath, 'utf-8');
       const fileName = path.basename(filePath);
-
-      const connection = connectionManager.getConnection(activeEngineId);
-      const engineLabel = connection?.displayName ?? activeEngineId;
       const isDmn = fileName.toLowerCase().endsWith('.dmn');
-      const isBpmn = fileName.toLowerCase().endsWith('.bpmn');
 
-      if (isBpmn) {
-        const client = connectionManager.getClient(activeEngineId);
-        const checked = await ensureProcessVersions(content, bifrost, client);
-        if (checked == null) {
-          return;
-        }
-        if (checked.modified) {
-          await fs.writeFile(filePath, checked.xml, 'utf-8');
-        }
-        content = checked.xml;
-      }
-
-      const maxConflictRetries = 3;
-      for (let attempt = 0; attempt <= maxConflictRetries; attempt++) {
+      if (isDmn) {
+        const content = await fs.readFile(filePath, 'utf-8');
+        const connection = connectionManager.getConnection(activeEngineId);
+        const engineLabel = connection?.displayName ?? activeEngineId;
         try {
           const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deploy, [
             activeEngineId,
@@ -109,9 +190,7 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
             fileName,
           ]);
           const deployed = result?.deployed?.[0];
-          const viewerCommand = isDmn ? 'engine.workspace.openDecisionViewer' : 'engine.workspace.openModelViewer';
-          const modelId = isDmn ? deployed?.decisionDefinitionId : deployed?.processModelId;
-
+          const modelId = deployed?.decisionDefinitionId;
           const notificationId = bifrost.notifications.open(
             {
               type: 'info',
@@ -124,29 +203,44 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
                 return;
               }
               bifrost.notifications.close(notificationId);
-              bifrost.commands.executeCommand(viewerCommand, [activeEngineId, modelId]);
+              bifrost.commands.executeCommand('engine.workspace.openDecisionViewer', [activeEngineId, modelId]);
             },
           );
-          return;
         } catch (error: any) {
-          if (isBpmn && error?.errorCode === 'version_exists' && Array.isArray(error?.conflicts)) {
-            const client = connectionManager.getClient(activeEngineId);
-            const resolved = await resolveVersionConflicts(content, error.conflicts, bifrost, client);
-            if (resolved == null) {
-              return;
-            }
-            await fs.writeFile(filePath, resolved.xml, 'utf-8');
-            content = resolved.xml;
-            continue;
-          }
           bifrost.notifications.open({
             type: 'error',
             content: formatDeployErrorMessage(error),
             source: 'Engine',
           });
-          return;
         }
+        return;
       }
+
+      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager);
+      if (!deployResult) {
+        return;
+      }
+
+      const connection = connectionManager.getConnection(deployResult.engineId);
+      const engineLabel = connection?.displayName ?? deployResult.engineId;
+      const notificationId = bifrost.notifications.open(
+        {
+          type: 'info',
+          content: `Deployed "${deployResult.fileName}" to ${engineLabel}.`,
+          source: 'Engine',
+          actions: [{ action: 'view', label: 'View on Engine', default: true }],
+        },
+        (response) => {
+          if (response.action !== 'view') {
+            return;
+          }
+          bifrost.notifications.close(notificationId);
+          bifrost.commands.executeCommand('engine.workspace.openModelViewer', [
+            deployResult.engineId,
+            deployResult.processModelId,
+          ]);
+        },
+      );
     },
     { enabledWhen: () => isDeployEnabled(bifrost, connectionManager) },
   );
@@ -166,27 +260,11 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
       }
 
       const filePath = doc.uri.startsWith('file://') ? doc.uri.slice(7) : doc.uri;
-      let content = await fs.readFile(filePath, 'utf-8');
       const fileName = path.basename(filePath);
       const isDmn = fileName.toLowerCase().endsWith('.dmn');
-      const isBpmn = fileName.toLowerCase().endsWith('.bpmn');
 
-      if (isBpmn) {
-        const client = connectionManager.getClient(activeEngineId);
-        const checked = await ensureProcessVersions(content, bifrost, client);
-        if (checked == null) {
-          return;
-        }
-        if (checked.modified) {
-          await fs.writeFile(filePath, checked.xml, 'utf-8');
-        }
-        content = checked.xml;
-      }
-
-      let deployedModelId: string | null = null;
-
-      const maxConflictRetries = 3;
-      for (let attempt = 0; attempt <= maxConflictRetries; attempt++) {
+      if (isDmn) {
+        const content = await fs.readFile(filePath, 'utf-8');
         try {
           const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deploy, [
             activeEngineId,
@@ -194,32 +272,29 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
             fileName,
           ]);
           const deployed = result?.deployed?.[0];
-          deployedModelId = isDmn ? deployed?.decisionDefinitionId : deployed?.processModelId;
-          break;
-        } catch (deployError: any) {
-          if (isBpmn && deployError?.errorCode === 'version_exists' && Array.isArray(deployError?.conflicts)) {
-            const client = connectionManager.getClient(activeEngineId);
-            const resolved = await resolveVersionConflicts(content, deployError.conflicts, bifrost, client);
-            if (resolved == null) {
-              return;
-            }
-            await fs.writeFile(filePath, resolved.xml, 'utf-8');
-            content = resolved.xml;
-            continue;
+          const modelId = deployed?.decisionDefinitionId;
+          if (modelId) {
+            await bifrost.commands.executeCommand('engine.workspace.openDecisionViewer', [activeEngineId, modelId]);
           }
+        } catch (error: any) {
           bifrost.notifications.open({
             type: 'error',
-            content: formatDeployErrorMessage(deployError),
+            content: formatDeployErrorMessage(error),
             source: 'Engine',
           });
-          return;
         }
+        return;
       }
 
-      if (deployedModelId) {
-        const viewerCommand = isDmn ? 'engine.workspace.openDecisionViewer' : 'engine.workspace.openModelViewer';
-        await bifrost.commands.executeCommand(viewerCommand, [activeEngineId, deployedModelId]);
+      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager);
+      if (!deployResult) {
+        return;
       }
+
+      await bifrost.commands.executeCommand('engine.workspace.openModelViewer', [
+        deployResult.engineId,
+        deployResult.processModelId,
+      ]);
     },
     { enabledWhen: () => isDeployEnabled(bifrost, connectionManager) },
   );
@@ -313,86 +388,15 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
   bifrost.commands.register(
     'engine.quickDeployAndDebug',
     async () => {
-      const doc = bifrost.editors.getFocusedEditorDocument();
-      if (!doc?.uri) {
-        return;
-      }
-
-      const activeEngineId = connectionManager.getActiveEngineId();
-      if (!activeEngineId) {
-        bifrost.notifications.open({ type: 'warning', content: 'No engine connected.', source: 'Engine' });
-        return;
-      }
-
-      const filePath = doc.uri.startsWith('file://') ? doc.uri.slice(7) : doc.uri;
-      let content = await fs.readFile(filePath, 'utf-8');
-      const fileName = path.basename(filePath);
-      const isBpmn = fileName.toLowerCase().endsWith('.bpmn');
-
-      if (!isBpmn) {
-        bifrost.notifications.open({
-          type: 'info',
-          content: 'Quick Deploy & Start is only available for BPMN files.',
-          source: 'Engine',
-        });
-        return;
-      }
-
-      const client = connectionManager.getClient(activeEngineId);
-      const checked = await ensureProcessVersions(content, bifrost, client);
-      if (checked == null) {
-        return;
-      }
-      if (checked.modified) {
-        await fs.writeFile(filePath, checked.xml, 'utf-8');
-      }
-      content = checked.xml;
-
-      let deployedProcessModelId: string | null = null;
-
-      try {
-        const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deploy, [
-          activeEngineId,
-          content,
-          fileName,
-        ]);
-        deployedProcessModelId = result?.deployed?.[0]?.processModelId ?? null;
-      } catch (deployError: any) {
-        const statusCode = deployError?.statusCode;
-        const message = deployError?.message ?? String(deployError);
-        const isVersionConflict = statusCode === 409 || message.toLowerCase().includes('already');
-        if (!isVersionConflict) {
-          bifrost.notifications.open({
-            type: 'error',
-            content: formatDeployErrorMessage(deployError),
-            source: 'Engine',
-          });
-          return;
-        }
-      }
-
-      if (!deployedProcessModelId) {
-        const idMatch = content.match(/<bpmn:process[^>]+id="([^"]+)"[^>]*isExecutable="true"/);
-        deployedProcessModelId = idMatch?.[1] ?? null;
-      }
-      if (!deployedProcessModelId) {
-        const fallbackMatch = content.match(/<bpmn:process[^>]+id="([^"]+)"/);
-        deployedProcessModelId = fallbackMatch?.[1] ?? null;
-      }
-
-      if (!deployedProcessModelId) {
-        bifrost.notifications.open({
-          type: 'error',
-          content: 'Could not determine process ID from the BPMN file.',
-          source: 'Engine',
-        });
+      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager);
+      if (!deployResult) {
         return;
       }
 
       try {
         await bifrost.commands.executeCommand(ENGINE_COMMANDS.startProcessAndOpenDebugger, [
-          activeEngineId,
-          deployedProcessModelId,
+          deployResult.engineId,
+          deployResult.processModelId,
         ]);
       } catch (startError: any) {
         bifrost.notifications.open({
@@ -414,86 +418,15 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
   bifrost.commands.register(
     'engine.quickDeployAndConfiguredDebug',
     async () => {
-      const doc = bifrost.editors.getFocusedEditorDocument();
-      if (!doc?.uri) {
-        return;
-      }
-
-      const activeEngineId = connectionManager.getActiveEngineId();
-      if (!activeEngineId) {
-        bifrost.notifications.open({ type: 'warning', content: 'No engine connected.', source: 'Engine' });
-        return;
-      }
-
-      const filePath = doc.uri.startsWith('file://') ? doc.uri.slice(7) : doc.uri;
-      let content = await fs.readFile(filePath, 'utf-8');
-      const fileName = path.basename(filePath);
-      const isBpmn = fileName.toLowerCase().endsWith('.bpmn');
-
-      if (!isBpmn) {
-        bifrost.notifications.open({
-          type: 'info',
-          content: 'Configured Start is only available for BPMN files.',
-          source: 'Engine',
-        });
-        return;
-      }
-
-      const client = connectionManager.getClient(activeEngineId);
-      const checked = await ensureProcessVersions(content, bifrost, client);
-      if (checked == null) {
-        return;
-      }
-      if (checked.modified) {
-        await fs.writeFile(filePath, checked.xml, 'utf-8');
-      }
-      content = checked.xml;
-
-      let deployedProcessModelId: string | null = null;
-
-      try {
-        const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deploy, [
-          activeEngineId,
-          content,
-          fileName,
-        ]);
-        deployedProcessModelId = result?.deployed?.[0]?.processModelId ?? null;
-      } catch (deployError: any) {
-        const statusCode = deployError?.statusCode;
-        const message = deployError?.message ?? String(deployError);
-        const isVersionConflict = statusCode === 409 || message.toLowerCase().includes('already');
-        if (!isVersionConflict) {
-          bifrost.notifications.open({
-            type: 'error',
-            content: formatDeployErrorMessage(deployError),
-            source: 'Engine',
-          });
-          return;
-        }
-      }
-
-      if (!deployedProcessModelId) {
-        const idMatch = content.match(/<bpmn:process[^>]+id="([^"]+)"[^>]*isExecutable="true"/);
-        deployedProcessModelId = idMatch?.[1] ?? null;
-      }
-      if (!deployedProcessModelId) {
-        const fallbackMatch = content.match(/<bpmn:process[^>]+id="([^"]+)"/);
-        deployedProcessModelId = fallbackMatch?.[1] ?? null;
-      }
-
-      if (!deployedProcessModelId) {
-        bifrost.notifications.open({
-          type: 'error',
-          content: 'Could not determine process ID from the BPMN file.',
-          source: 'Engine',
-        });
+      const deployResult = await deployFocusedBpmnFile(bifrost, connectionManager);
+      if (!deployResult) {
         return;
       }
 
       try {
         await bifrost.commands.executeCommand(ENGINE_COMMANDS.configuredStartProcessAndOpenDebugger, [
-          activeEngineId,
-          deployedProcessModelId,
+          deployResult.engineId,
+          deployResult.processModelId,
         ]);
       } catch (startError: any) {
         bifrost.notifications.open({
