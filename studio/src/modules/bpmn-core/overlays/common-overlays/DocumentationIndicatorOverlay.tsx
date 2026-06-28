@@ -30,7 +30,7 @@ export function DocumentationIndicatorOverlay(props: DocumentationIndicatorOverl
     <div
       className="flow-node-overlay__docu-indicator"
       onClick={props.onClick}
-      title="View Element Documentation"
+      data-bs-title="View Element Documentation"
       data-bs-toggle="tooltip"
     >
       <Icon id="bpmn/element/overlay/documentation" />

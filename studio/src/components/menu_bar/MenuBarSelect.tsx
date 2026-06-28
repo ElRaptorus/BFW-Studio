@@ -32,7 +32,12 @@ export default function MenuBarSelect(props: MenuBarSelectProps): React.JSX.Elem
 
   return (
     <div className="menu-bar__element" {...props.htmlAttributes}>
-      <select className="form-control form-control-sm" {...selectProps} title={props.tooltip} data-bs-toggle="tooltip">
+      <select
+        className="form-control form-control-sm"
+        {...selectProps}
+        data-bs-title={props.tooltip}
+        data-bs-toggle="tooltip"
+      >
         {entries.map((entry: any, index: number) => (
           <option key={`${index}_${entry.value}_${entry.label}`} value={entry.value}>
             {entry.label}

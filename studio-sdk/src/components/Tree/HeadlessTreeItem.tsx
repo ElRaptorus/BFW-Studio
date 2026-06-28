@@ -69,7 +69,8 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
           <span
             key={action.id}
             className="treeview__action-icon-item"
-            title={action.tooltip}
+            data-bs-title={action.tooltip}
+            data-bs-toggle="tooltip"
             onClick={(e: any) => {
               e.stopPropagation();
               props.onActionIconClick?.({ ...data, actionId: action.id }, e);
@@ -214,7 +215,8 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
         className={classNames.join(' ')}
         style={indentStyle}
         onContextMenu={handleContextMenu}
-        title={tooltip}
+        data-bs-title={tooltip}
+        data-bs-toggle="tooltip"
         {...dataTestAttrs}
       >
         <div className="treeview__action-or-twistie" onClick={onActionIconClick}>
@@ -245,7 +247,8 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
           className={classNames.join(' ')}
           style={indentStyle}
           onContextMenu={handleContextMenu}
-          title={tooltip}
+          data-bs-title={tooltip}
+          data-bs-toggle="tooltip"
           {...dataTestAttrs}
         >
           <div className="treeview__action-or-twistie" onClick={onActionIconClick}>

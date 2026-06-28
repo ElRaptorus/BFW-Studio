@@ -276,7 +276,7 @@ export class PaneContent extends Component<PaneComponentProps, GlobalSearchPaneS
             />
 
             <div className="search-input__options">
-              <label className="form-check-label" data-bs-toggle="tooltip" title="Match Case">
+              <label className="form-check-label" data-bs-toggle="tooltip" data-bs-title="Match Case">
                 <input
                   type="checkbox"
                   className="form-check-input"
@@ -286,7 +286,7 @@ export class PaneContent extends Component<PaneComponentProps, GlobalSearchPaneS
                 <Icon id="ph ph-text-aa" />
               </label>
 
-              <label className="form-check-label" data-bs-toggle="tooltip" title="Match Whole Word">
+              <label className="form-check-label" data-bs-toggle="tooltip" data-bs-title="Match Whole Word">
                 <input
                   type="checkbox"
                   className="form-check-input"

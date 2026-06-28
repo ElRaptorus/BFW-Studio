@@ -253,7 +253,7 @@ export default class BpmnDocumentRenderer extends React.Component<EditorDocument
             !showAllDataObjectDetails(this.bpmnEditorDocumentModel.dataObjectDetailLevel) && (
               <div
                 className="hidden-data-object-elements-hint"
-                title={`Data Object visibility level is set to '${getHumanReadableTextForDataObjectSetting(
+                data-bs-title={`Data Object visibility level is set to '${getHumanReadableTextForDataObjectSetting(
                   this.bpmnEditorDocumentModel.dataObjectDetailLevel,
                 )}'`}
                 data-bs-toggle="tooltip"

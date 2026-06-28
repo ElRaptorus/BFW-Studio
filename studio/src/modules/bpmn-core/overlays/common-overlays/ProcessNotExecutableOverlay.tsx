@@ -24,7 +24,7 @@ export function ProcessNotExecutableOverlay(props: ProcessNotExecutableOverlayPr
   return (
     <div
       className="bpmn-element-overlay__process-not-executable"
-      title="Process is not marked as executable"
+      data-bs-title="Process is not marked as executable"
       data-bs-toggle="tooltip"
     >
       <Icon id="bpmn/element/overlay/processNotExecutable" />

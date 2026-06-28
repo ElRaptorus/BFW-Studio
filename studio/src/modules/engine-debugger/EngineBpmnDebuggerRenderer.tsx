@@ -222,7 +222,7 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
     processModelLink = (
       <a
         href="#"
-        title="View deployed process model"
+        data-bs-title="View deployed process model"
         data-bs-toggle="tooltip"
         onClick={cmd('engine.workspace.openModelViewer', [model.engineId, model.processInstance.processModelId])}
       >
@@ -475,7 +475,7 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
         {model && !showAllDataObjectDetails(model.dataObjectDetailLevel) && (
           <div
             className="engine-debugger__hidden-data-object-elements-hint"
-            title={`Data Object visibility level is set to '${getHumanReadableTextForDataObjectSetting(
+            data-bs-title={`Data Object visibility level is set to '${getHumanReadableTextForDataObjectSetting(
               model.dataObjectDetailLevel,
             )}'`}
             data-bs-toggle="tooltip"

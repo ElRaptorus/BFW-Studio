@@ -51,7 +51,7 @@ export function FlowNodeExecutionCountBadge(props: {
       className={
         'bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action bpmn-element-overlay__below-item--execution-count'
       }
-      title={tooltip}
+      data-bs-title={tooltip}
       data-bs-toggle="tooltip"
       onClick={(e) => props.selectNextFlowNodeInstance(e.shiftKey ? -1 : 1)}
     >

@@ -34,7 +34,7 @@ export default function MenuBarButton(props: MenuBarButtonProps): React.JSX.Elem
     <span
       className={`menu-bar__button ${inactiveClassName}`}
       {...handlers}
-      title={tooltip}
+      data-bs-title={tooltip}
       data-bs-toggle="tooltip"
       {...props.htmlAttributes}
     >

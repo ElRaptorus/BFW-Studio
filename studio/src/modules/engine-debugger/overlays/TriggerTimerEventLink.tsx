@@ -32,7 +32,7 @@ function TriggerTimerEventLink(props: { Icon: IconComponent; onClick: () => void
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={() => props.onClick()}
-      title="Trigger Timer Event"
+      data-bs-title="Trigger Timer Event"
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

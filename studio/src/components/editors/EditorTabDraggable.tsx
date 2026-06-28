@@ -170,7 +170,7 @@ export default function EditorTabDraggable(props: EditorTabProps): React.JSX.Ele
         onDoubleClick={onDoubleClick}
         onMouseDown={onMouseDown}
         onContextMenu={onContextMenu}
-        title={tooltipText}
+        data-bs-title={tooltipText}
         data-bs-toggle="tooltip"
         data-test--editor-tab-label={editorDocument.label}
         ref={drag as any}

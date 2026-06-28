@@ -51,7 +51,7 @@ export default function NotificationContainer(props: NotificationContainerProps)
           <span
             className="notification__option"
             data-bs-toggle="tooltip"
-            title="Close all Notifications"
+            data-bs-title="Close all Notifications"
             onClick={() => closeAllNotifications()}
           >
             <Icon id="std/notification/closed" />
@@ -59,7 +59,7 @@ export default function NotificationContainer(props: NotificationContainerProps)
           <span
             className="notification__option"
             data-bs-toggle="tooltip"
-            title="Hide Notifications"
+            data-bs-title="Hide Notifications"
             onClick={() => toggleNotifications()}
           >
             <Icon id="ph ph-rotate-180 ph-x-square" />

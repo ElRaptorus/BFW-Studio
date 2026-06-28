@@ -9,7 +9,7 @@ export function BpmnElementMixedGatewayWarning(props: BpmnElementMixedGatewayWar
 
   return (
     <div className="pane-item pane-item--hoverable">
-      <div className="pane-item__squared-rounded-icon" title="Invalid Gateway usage" data-bs-toggle="tooltip">
+      <div className="pane-item__squared-rounded-icon" data-bs-title="Invalid Gateway usage" data-bs-toggle="tooltip">
         <span className={`pane-item__options-icon pane-item__options-icon--no-hover pane-item__options-icon--warning`}>
           <Icon id="ph ph-warning" />
         </span>

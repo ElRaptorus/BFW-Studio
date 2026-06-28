@@ -39,7 +39,7 @@ export function ParentProcessInstanceLink(props: ParentProcessInstanceLinkProps)
           props.parentProcessInstanceId,
         ])
       }
-      title="Go to Parent Process Instance"
+      data-bs-title="Go to Parent Process Instance"
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

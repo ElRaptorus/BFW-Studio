@@ -49,7 +49,7 @@ export function RetryAtFlowNodeLinkRenderer(props: RetryAtFlowNodeLinkProps): Re
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={(event) => props.onClick(event)}
-      title="Retry at FlowNodeInstance"
+      data-bs-title="Retry at FlowNodeInstance"
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

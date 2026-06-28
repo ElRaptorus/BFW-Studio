@@ -35,7 +35,7 @@ export function HasUnfinishedInstancesInfoBadge(props: {
   return (
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--active-instances"
-      title={tooltip}
+      data-bs-title={tooltip}
       data-bs-toggle="tooltip"
     >
       <div className="fw-bold">

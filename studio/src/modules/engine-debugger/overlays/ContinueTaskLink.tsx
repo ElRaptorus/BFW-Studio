@@ -33,7 +33,7 @@ export function ContinueTaskLink(props: { Icon: IconComponent; onClick: () => vo
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={() => props.onClick()}
-      title="Continue Task"
+      data-bs-title="Continue Task"
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

@@ -33,7 +33,7 @@ export function TriggerMessageEventLink(props: { Icon: IconComponent; onClick: (
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={() => props.onClick()}
-      title="Trigger Message Event"
+      data-bs-title="Trigger Message Event"
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

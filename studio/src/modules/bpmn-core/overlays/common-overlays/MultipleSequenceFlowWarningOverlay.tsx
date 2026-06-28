@@ -23,7 +23,7 @@ export function MultipleSequenceFlowsWarningOverlay(
   return (
     <div
       className="flow-node-overlay__multiple-outgoing-sequence-flows-indicator"
-      title={`Error: Flow Node has ${props.outgoingSequenceFlows} outgoing Sequence Flows. Only one is allowed.`}
+      data-bs-title={`Error: Flow Node has ${props.outgoingSequenceFlows} outgoing Sequence Flows. Only one is allowed.`}
       data-bs-toggle="tooltip"
     >
       <span>{props.outgoingSequenceFlows}</span>

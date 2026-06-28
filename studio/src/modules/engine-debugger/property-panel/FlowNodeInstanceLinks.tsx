@@ -166,7 +166,7 @@ export function ConditionalSequenceFlowLink(props: ConditionalSequenceFlowLinkPr
       <div
         ref={iconDivRef}
         className="pane-item__squared-rounded-icon"
-        title={conditionIsMissing ? 'Missing condition' : undefined}
+        data-bs-title={conditionIsMissing ? 'Missing condition' : undefined}
         data-bs-toggle="tooltip"
         onClick={() => props.model.selectElement(props.targetFlowNodeId)}
       >

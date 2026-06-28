@@ -100,7 +100,7 @@ function ProcessPaneItem(props: ProcessPaneItemProps): React.JSX.Element {
   return (
     <div
       className="pane-item pane-item--hoverable"
-      title="Select Process"
+      data-bs-title="Select Process"
       data-bs-toggle="tooltip"
       onClick={onClick}
       data-test--process-pane-item={props.index}

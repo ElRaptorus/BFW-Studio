@@ -34,7 +34,7 @@ export function ReviewCompletedTaskLink(props: { Icon: IconComponent; onClick: (
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={() => props.onClick()}
-      title="Review completed form"
+      data-bs-title="Review completed form"
       data-bs-toggle="tooltip"
       data-test--review-completed-task-overlay
     >

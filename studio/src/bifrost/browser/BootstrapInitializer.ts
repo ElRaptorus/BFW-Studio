@@ -46,9 +46,14 @@ function initTooltip(el: Element): void {
     return;
   }
 
-  const title = el.getAttribute('title');
+  const title = el.getAttribute('data-bs-title') ?? el.getAttribute('title');
   if (title == null || title === '') {
     return;
+  }
+
+  if (!el.hasAttribute('data-bs-title')) {
+    el.setAttribute('data-bs-title', title);
+    el.removeAttribute('title');
   }
 
   const instance = new Tooltip(el, {

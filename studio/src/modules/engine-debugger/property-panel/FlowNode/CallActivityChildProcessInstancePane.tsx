@@ -83,7 +83,7 @@ export function ChildProcessInstanceLink(props: ChildProcessInstanceLinkProps): 
   return (
     <div
       className="pane-item pane-item--hoverable"
-      title="Open Child Process Instance in new tab"
+      data-bs-title="Open Child Process Instance in new tab"
       data-bs-toggle="tooltip"
       onClick={cmd('engine.debugger.focusOrOpen', [props.model.engineUrl, props.processInstanceId])}
     >

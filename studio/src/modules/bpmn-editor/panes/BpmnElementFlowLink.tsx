@@ -70,7 +70,7 @@ export function ConditionalFlowLink(props: ConditionalFlowLinkProps): React.JSX.
       <div
         ref={iconDivRef}
         className="pane-item__squared-rounded-icon"
-        title={showMissingConditionWarning ? 'Missing condition' : undefined}
+        data-bs-title={showMissingConditionWarning ? 'Missing condition' : undefined}
         data-bs-toggle="tooltip"
         onClick={() => props.bpmnDocumentModel.selection.selectElement(props.flowId)}
       >

@@ -32,7 +32,7 @@ function StartProcessOverlayComponent(props: { onClick: (event: React.MouseEvent
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={props.onClick}
-      title={'Start at this Event\n[Shift+Click] Configured Start'}
+      data-bs-title={'Start at this Event\n[Shift+Click] Configured Start'}
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

@@ -50,6 +50,8 @@
   --color__gold--on-dark: #ffd700;
 
   --color__bg-main: #ddd;
+
+  --bs-font-sans-serif: 'Helvetica Neue', Helvetica, Cantarell, Arial, sans-serif;
 }
 
 html,
@@ -59,7 +61,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: var(--theme-bg, #2f2f2f);
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Cantarell, Arial, sans-serif;
   user-select: none;
 }
 

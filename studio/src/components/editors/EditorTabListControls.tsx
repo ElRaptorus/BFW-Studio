@@ -43,7 +43,7 @@ export default function EditorTabListControls(props: EditorTabListControlsProps)
         {canSplitEditor && (
           <span
             className="editor-tab-list-controls-icon"
-            title="Split Editor Right, [⇧] Split Editor Down"
+            data-bs-title="Split Editor Right, [⇧] Split Editor Down"
             onClick={onSplitButtonClick}
             data-bs-toggle="tooltip"
           >
@@ -52,7 +52,7 @@ export default function EditorTabListControls(props: EditorTabListControlsProps)
         )}
         <span
           className="editor-tab-list-controls-icon"
-          title="Tab Actions"
+          data-bs-title="Tab Actions"
           onClick={onMoreButtonClick}
           data-bs-toggle="tooltip"
         >

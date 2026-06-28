@@ -20,7 +20,7 @@ export default function StatusBarMenu(props: StatusBarMenuProps): React.JSX.Elem
   return (
     <div
       className="status-bar__element"
-      title={item.tooltip}
+      data-bs-title={item.tooltip}
       data-bs-toggle="tooltip"
       onClick={(event: any) => showContextMenu(event, item.menu, [bifrost])}
       onContextMenu={(event: any) => showContextMenu(event, item.menu, [bifrost])}

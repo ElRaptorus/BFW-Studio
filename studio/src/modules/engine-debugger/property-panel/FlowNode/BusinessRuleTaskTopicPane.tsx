@@ -106,7 +106,7 @@ function OpenInDecisionViewerLink(props: {
   return (
     <div
       className={`pane-item pane-item--hoverable${isEnabled ? '' : ' pane-item--disabled'}`}
-      title="Open decision model in Decision Viewer"
+      data-bs-title="Open decision model in Decision Viewer"
       data-bs-toggle="tooltip"
       onClick={
         isEnabled

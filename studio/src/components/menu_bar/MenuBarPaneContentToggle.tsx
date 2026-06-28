@@ -36,7 +36,7 @@ export default function MenuBarPaneContentToggle(props: MenuBarPaneContentToggle
     <span
       className={classNames.join(' ')}
       onClick={handleClick}
-      title={props.tooltip}
+      data-bs-title={props.tooltip}
       data-bs-toggle="tooltip"
       {...htmlAttributes}
     >

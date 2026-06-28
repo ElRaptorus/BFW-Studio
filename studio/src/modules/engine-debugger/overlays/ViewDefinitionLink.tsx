@@ -45,7 +45,7 @@ export function ViewDefinitionLink(props: ViewDefinitionLinkProps): React.JSX.El
           props.model.processInstance?.processModelId ?? '',
         ]);
       }}
-      title="View deployed process model"
+      data-bs-title="View deployed process model"
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

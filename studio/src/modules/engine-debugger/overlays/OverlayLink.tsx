@@ -39,7 +39,7 @@ export function EventOverlayLink(props: {
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={props.onClick}
-      title={props.tooltip}
+      data-bs-title={props.tooltip}
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

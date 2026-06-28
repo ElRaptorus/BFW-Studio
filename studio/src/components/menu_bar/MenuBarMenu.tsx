@@ -19,7 +19,7 @@ export default function MenuBarMenu(props: MenuBarMenuProps): React.JSX.Element 
   return (
     <span
       className="menu-bar__button"
-      title={props.tooltip}
+      data-bs-title={props.tooltip}
       data-bs-toggle="tooltip"
       onClick={(event: any) => showContextMenu(event, props.menu, [bifrost])}
       onContextMenu={(event: any) => showContextMenu(event, props.menu, [bifrost])}

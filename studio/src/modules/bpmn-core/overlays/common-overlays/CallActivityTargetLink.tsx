@@ -34,7 +34,7 @@ export function CallActivityTargetLink(props: {
     <div
       className="bpmn-element-overlay__below-item bpmn-element-overlay__below-item--action"
       onClick={props.onClick}
-      title={props.tooltip ?? 'Open Target Process in new tab'}
+      data-bs-title={props.tooltip ?? 'Open Target Process in new tab'}
       data-bs-toggle="tooltip"
     >
       <div className="action-icon">

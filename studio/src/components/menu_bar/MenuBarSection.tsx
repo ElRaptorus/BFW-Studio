@@ -79,13 +79,18 @@ function renderMenuBarItemObject(item: MenuBarItem, Icon: IconComponent): React.
       );
     case 'text':
       return (
-        <div className="menu-bar__text" title={item.tooltip} data-bs-toggle="tooltip" {...getHtmlAttributes(item)}>
+        <div
+          className="menu-bar__text"
+          data-bs-title={item.tooltip}
+          data-bs-toggle="tooltip"
+          {...getHtmlAttributes(item)}
+        >
           {item.label}
         </div>
       );
     case 'icon':
       return (
-        <span title={item.tooltip} data-bs-toggle="tooltip" {...getHtmlAttributes(item)}>
+        <span data-bs-title={item.tooltip} data-bs-toggle="tooltip" {...getHtmlAttributes(item)}>
           <Icon id={item.icon} />
         </span>
       );
