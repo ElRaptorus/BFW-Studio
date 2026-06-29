@@ -1,13 +1,18 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import { ENGINE_COMMANDS, SETTINGS_KEYS, formatDeployErrorMessage } from '#modules/engine-core';
+import {
+  ENGINE_COMMANDS,
+  SETTINGS_KEYS,
+  ensureProcessVersions,
+  formatDeployErrorMessage,
+  resolveVersionConflicts,
+} from '#modules/engine-core';
 import type { AutoRefreshInterval } from '#modules/engine-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 import type { Menu, Studio } from '@evil/bifrost_fw_sdk';
 
-import { ensureProcessVersions } from '../helpers/versionUtils';
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
 import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';
 import type { ProcessExplorerContextMetadata } from '../types/ProcessExplorerContext';
@@ -67,8 +72,10 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
     }
 
     const client = connectionManager.getClient(activeEngineId);
+    const connection = connectionManager.getConnection(activeEngineId);
+    const engineLabel = connection?.displayName ?? activeEngineId;
 
-    const files: { content: string; name: string }[] = [];
+    const filesToDeploy: { filePath: string; content: string; name: string }[] = [];
     for (const uri of deployableUris) {
       const filePath = uriToFilePath(uri);
       let content = await fs.readFile(filePath, 'utf-8');
@@ -85,69 +92,122 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
         }
       }
 
-      files.push({ content, name: fileName });
+      filesToDeploy.push({ filePath, content, name: fileName });
     }
 
-    const connection = connectionManager.getConnection(activeEngineId);
-    const engineLabel = connection?.displayName ?? activeEngineId;
-    const hasBpmn = files.some((file) => !file.name.toLowerCase().endsWith('.dmn'));
-    const hasDmn = files.some((file) => file.name.toLowerCase().endsWith('.dmn'));
+    let deployedCount = 0;
+    let lastDeployedItem: { processModelId?: string; decisionDefinitionId?: string } | null = null;
+    let aborted = false;
+
+    for (const file of filesToDeploy) {
+      if (aborted) {
+        break;
+      }
+
+      const maxConflictRetries = 3;
+      let currentContent = file.content;
+      let deployed = false;
+
+      for (let attempt = 0; attempt <= maxConflictRetries; attempt++) {
+        try {
+          const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deploy, [
+            activeEngineId,
+            currentContent,
+            file.name,
+          ]);
+          const item = extractSingleDeployedItem(result, file.name.toLowerCase().endsWith('.dmn'));
+          if (item) {
+            lastDeployedItem = item;
+          }
+          deployedCount++;
+          deployed = true;
+          break;
+        } catch (deployError: any) {
+          if (deployError?.errorCode === 'version_exists' && Array.isArray(deployError?.conflicts)) {
+            const resolved = await resolveVersionConflicts(currentContent, deployError.conflicts, bifrost, client);
+            if (resolved == null) {
+              aborted = true;
+              break;
+            }
+            if ('runExisting' in resolved) {
+              aborted = true;
+              break;
+            }
+            await fs.writeFile(file.filePath, resolved.xml, 'utf-8');
+            currentContent = resolved.xml;
+            continue;
+          }
+          bifrost.notifications.open({
+            type: 'error',
+            content: formatDeployErrorMessage(deployError),
+            source: 'Engine',
+          });
+          aborted = true;
+          break;
+        }
+      }
+
+      if (!deployed && !aborted) {
+        bifrost.notifications.open({
+          type: 'error',
+          content: `Deployment of "${file.name}" failed after multiple version-conflict retries.`,
+          source: 'Engine',
+        });
+        aborted = true;
+      }
+    }
+
+    if (deployedCount === 0) {
+      return;
+    }
+
+    const hasBpmn = filesToDeploy.some((file) => !file.name.toLowerCase().endsWith('.dmn'));
+    const hasDmn = filesToDeploy.some((file) => file.name.toLowerCase().endsWith('.dmn'));
     const onlyDmn = hasDmn && !hasBpmn;
 
-    try {
-      const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deployBatch, [activeEngineId, files]);
-
-      if (files.length === 1) {
-        const deployedItem = extractSingleDeployedItem(result, onlyDmn);
-        const notificationId = bifrost.notifications.open(
-          {
-            type: 'info',
-            content: `Deployed "${files[0].name}" to ${engineLabel}.`,
-            source: 'Engine',
-            actions: [{ action: 'view', label: 'View on Engine', default: true }],
-          },
-          (response) => {
-            if (response.action !== 'view') {
-              return;
-            }
-            bifrost.notifications.close(notificationId);
-            if (onlyDmn && deployedItem?.decisionDefinitionId) {
-              bifrost.commands.executeCommand('engine.workspace.openDecisionViewer', [
-                activeEngineId,
-                deployedItem.decisionDefinitionId,
-              ]);
-            } else if (deployedItem?.processModelId) {
-              bifrost.commands.executeCommand('engine.workspace.openModelViewer', [
-                activeEngineId,
-                deployedItem.processModelId,
-              ]);
-            }
-          },
-        );
-      } else {
-        const viewCommand = onlyDmn ? 'engine.workspace.openDecisionCatalog' : 'engine.workspace.openProcessExplorer';
-        const notificationId = bifrost.notifications.open(
-          {
-            type: 'info',
-            content: `Deployed ${files.length} files to ${engineLabel}.`,
-            source: 'Engine',
-            actions: [{ action: 'view', label: 'View on Engine', default: true }],
-          },
-          (response) => {
-            if (response.action !== 'view') {
-              return;
-            }
-            bifrost.notifications.close(notificationId);
-            bifrost.commands.executeCommand(viewCommand, [activeEngineId]);
-          },
-        );
-      }
-    } catch (error: any) {
-      bifrost.notifications.open({
-        type: 'error',
-        content: formatDeployErrorMessage(error),
-        source: 'Engine',
-      });
+    if (filesToDeploy.length === 1) {
+      const notificationId = bifrost.notifications.open(
+        {
+          type: 'info',
+          content: `Deployed "${filesToDeploy[0].name}" to ${engineLabel}.`,
+          source: 'Engine',
+          actions: [{ action: 'view', label: 'View on Engine', default: true }],
+        },
+        (response) => {
+          if (response.action !== 'view') {
+            return;
+          }
+          bifrost.notifications.close(notificationId);
+          if (onlyDmn && lastDeployedItem?.decisionDefinitionId) {
+            bifrost.commands.executeCommand('engine.workspace.openDecisionViewer', [
+              activeEngineId,
+              lastDeployedItem.decisionDefinitionId,
+            ]);
+          } else if (lastDeployedItem?.processModelId) {
+            bifrost.commands.executeCommand('engine.workspace.openModelViewer', [
+              activeEngineId,
+              lastDeployedItem.processModelId,
+            ]);
+          }
+        },
+      );
+    } else {
+      const viewCommand = onlyDmn ? 'engine.workspace.openDecisionCatalog' : 'engine.workspace.openProcessExplorer';
+      const notificationId = bifrost.notifications.open(
+        {
+          type: 'info',
+          content: `Deployed ${deployedCount} of ${filesToDeploy.length} files to ${engineLabel}.`,
+          source: 'Engine',
+          actions: [{ action: 'view', label: 'View on Engine', default: true }],
+        },
+        (response) => {
+          if (response.action !== 'view') {
+            return;
+          }
+          bifrost.notifications.close(notificationId);
+          bifrost.commands.executeCommand(viewCommand, [activeEngineId]);
+        },
+      );
     }
   });
 

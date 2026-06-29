@@ -4,7 +4,7 @@ import { renderBpmnToPng, renderBpmnToSvg } from '#modules/bpmn-core/BpmnExportF
 import type { ProjectProcess } from '#modules/bpmn-core/BpmnSpecificSolutionAndProjectTypes';
 import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import evilPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
-import { suggestNextVersion } from '#modules/engine-workspace/helpers/versionUtils';
+import { suggestNextVersion } from '#modules/engine-core';
 import { BpmnModdle } from 'bpmn-moddle';
 import * as path from 'path';
 

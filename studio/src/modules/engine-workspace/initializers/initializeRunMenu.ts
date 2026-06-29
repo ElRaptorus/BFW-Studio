@@ -1,13 +1,16 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { MenuBarItemMap } from '#bifrost/contracts/MenuBarTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import { ENGINE_COMMANDS, formatDeployErrorMessage } from '#modules/engine-core';
+import {
+  ENGINE_COMMANDS,
+  ensureProcessVersions,
+  formatDeployErrorMessage,
+  resolveVersionConflicts,
+} from '#modules/engine-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 import type { CommandContext, Menu, MenuItem } from '@evil/bifrost_fw_sdk';
-
-import { ensureProcessVersions, resolveVersionConflicts } from '../helpers/versionUtils';
 
 const DEPLOYABLE_EXTENSIONS = ['.bpmn', '.dmn'];
 

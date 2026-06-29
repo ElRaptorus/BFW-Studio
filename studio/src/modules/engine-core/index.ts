@@ -22,6 +22,12 @@ export type { SnapshotUpdate, SnapshotUpdateHandler } from './SubscribeThenSnaps
 export { WebSocketBridge } from './WebSocketBridge';
 export { EventDrivenRefresh } from './services/EventDrivenRefresh';
 export { checkEngineConnectivity, extractEngineIdFromUri } from './helpers/checkEngineConnectivity';
+export {
+  discoverLatestVersion,
+  ensureProcessVersions,
+  resolveVersionConflicts,
+  suggestNextVersion,
+} from './helpers/versionUtils';
 
 export { EngineContextBreadcrumb } from './components/EngineContextBreadcrumb';
 export { EngineHealthBadge, resolveHealthState } from './components/EngineHealthBadge';
