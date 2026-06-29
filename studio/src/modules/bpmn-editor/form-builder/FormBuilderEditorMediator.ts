@@ -1,9 +1,7 @@
 import type { FormAction, FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 export type FormBuilderSelection =
-  | { type: 'field'; fieldId: string }
-  | { type: 'action'; actionId: string }
-  | { type: 'none' };
+  { type: 'field'; fieldId: string } | { type: 'action'; actionId: string } | { type: 'none' };
 
 export type FormBuilderEditorSnapshot = {
   fields: FormFieldDefinition[];

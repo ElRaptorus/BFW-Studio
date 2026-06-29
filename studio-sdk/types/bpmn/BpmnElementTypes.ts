@@ -788,8 +788,7 @@ export type BpmnElement_Participant_Expanded = BpmnElement_Participant_Base & {
 };
 
 export type BpmnElement_Participant_WithCollapseCheck =
-  | BpmnElement_Participant_Collapsed
-  | BpmnElement_Participant_Expanded;
+  BpmnElement_Participant_Collapsed | BpmnElement_Participant_Expanded;
 
 export type BpmnElementCustomProperty = {
   readonly name: string;

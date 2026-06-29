@@ -21,11 +21,7 @@ export declare type TreeItemTransformer = {
   entryTransform?: (...args: any[]) => any;
 };
 export declare type TreeItem =
-  | TreeItem_Directory
-  | TreeItem_Section
-  | TreeItem_File
-  | TreeItem_SearchResult
-  | TreeItem_PropertyString;
+  TreeItem_Directory | TreeItem_Section | TreeItem_File | TreeItem_SearchResult | TreeItem_PropertyString;
 declare type TreeItemBase = {
   readonly subtype?: string;
   pathId?: string;
@@ -56,17 +52,7 @@ export declare type TreeItemStyles = {
   readonly shrinking?: boolean;
 };
 export declare type TreeItemColor =
-  | 'black'
-  | 'gray'
-  | 'white'
-  | 'blue'
-  | 'yellow'
-  | 'gold'
-  | 'red'
-  | 'purple'
-  | 'orange'
-  | 'green'
-  | string;
+  'black' | 'gray' | 'white' | 'blue' | 'yellow' | 'gold' | 'red' | 'purple' | 'orange' | 'green' | string;
 declare type TreeItem_Directory = TreeItemBase & {
   type: 'directory';
 };

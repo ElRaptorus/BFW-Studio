@@ -218,9 +218,7 @@ export function assertBpmnElementIsTimerIntermediateEvent(
 export function assertBpmnElementIsTimerEvent(
   element: BpmnElement | null,
 ): asserts element is
-  | BpmnElement_TimerStartEvent
-  | BpmnElement_TimerBoundaryEvent
-  | BpmnElement_TimerIntermediateEvent {
+  BpmnElement_TimerStartEvent | BpmnElement_TimerBoundaryEvent | BpmnElement_TimerIntermediateEvent {
   const elementIsTimer = element?.type.endsWith('/Timer');
   if (elementIsTimer) {
     return;

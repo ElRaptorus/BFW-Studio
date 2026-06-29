@@ -19,11 +19,7 @@ import type {
 import { registerGlobalCallback, unregisterGlobalCallback } from '../callbackRegistry';
 
 type BpmnEventMethod =
-  | 'onElementSelected'
-  | 'onElementHover'
-  | 'onElementDoubleClick'
-  | 'onElementContextMenu'
-  | 'onOverlayContextChanged';
+  'onElementSelected' | 'onElementHover' | 'onElementDoubleClick' | 'onElementContextMenu' | 'onOverlayContextChanged';
 
 interface RegisteredEventCallback {
   callbackId: string;

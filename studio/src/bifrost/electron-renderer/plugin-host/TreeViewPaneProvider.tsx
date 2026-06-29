@@ -13,9 +13,7 @@ interface PluginTreeItem {
   children?: PluginTreeItem[];
   command?: string;
   badges?: (
-    | { type: 'character'; character: string }
-    | { type: 'icon'; icon: string }
-    | { type: 'number'; number: number }
+    { type: 'character'; character: string } | { type: 'icon'; icon: string } | { type: 'number'; number: number }
   )[];
   contextMenuId?: string;
   metadata?: unknown;

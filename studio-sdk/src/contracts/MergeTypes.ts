@@ -5,12 +5,7 @@ export type MergeConflictKind = 'content' | 'ours-deleted' | 'theirs-deleted' | 
 export type MergeOperationKind = 'merge' | 'rebase' | 'cherry-pick' | null;
 
 export type ElementResolutionStatus =
-  | 'auto-applied'
-  | 'pending'
-  | 'accepted-ours'
-  | 'accepted-theirs'
-  | 'custom'
-  | 'reverted';
+  'auto-applied' | 'pending' | 'accepted-ours' | 'accepted-theirs' | 'custom' | 'reverted';
 
 /**
  * Conflict key format:

@@ -137,8 +137,7 @@ function readExistingScore(definitions: ModdleDefinitions, rulesetId: string): R
     return null;
   }
   const evilProps = values.find((val: unknown) => (val as { $type?: string }).$type === 'evil:Properties') as
-    | { linterRulesetScores?: unknown[] }
-    | undefined;
+    { linterRulesetScores?: unknown[] } | undefined;
   const scores = evilProps?.linterRulesetScores;
   if (!Array.isArray(scores)) {
     return null;

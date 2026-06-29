@@ -93,8 +93,7 @@ function PropertiesScriptTask(props: PaneComponentProps): React.JSX.Element {
   const scriptRef = element.scriptRef ?? '';
   const hasScriptRef = scriptRef.trim().length > 0;
   const scriptFormat = bpmnDocumentModel.elements.getElementPropertyValue(element.id, 'scriptFormat') as
-    | string
-    | undefined;
+    string | undefined;
 
   const updateScript = (newScript: string): void => {
     bpmnDocumentModel.elements.setElementProperty(element.id, 'script', newScript);

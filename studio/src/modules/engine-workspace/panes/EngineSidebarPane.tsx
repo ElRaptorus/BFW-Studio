@@ -146,12 +146,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 }
 
 type EnginePageAction =
-  | 'open-dashboard'
-  | 'open-processes'
-  | 'open-decisions'
-  | 'open-task-inbox'
-  | 'open-instances'
-  | 'open-timers';
+  'open-dashboard' | 'open-processes' | 'open-decisions' | 'open-task-inbox' | 'open-instances' | 'open-timers';
 
 type EngineTreeAction = 'connect' | EnginePageAction;
 

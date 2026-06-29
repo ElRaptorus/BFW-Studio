@@ -83,10 +83,7 @@ export interface PluginBpmnOverlayStatus {
 }
 
 export type PluginBpmnOverlay =
-  | PluginBpmnOverlayBadge
-  | PluginBpmnOverlayIcon
-  | PluginBpmnOverlayAction
-  | PluginBpmnOverlayStatus;
+  PluginBpmnOverlayBadge | PluginBpmnOverlayIcon | PluginBpmnOverlayAction | PluginBpmnOverlayStatus;
 
 // --- Event types ---
 

@@ -15,8 +15,7 @@ import { registerGlobalCallback, unregisterGlobalCallback } from '../callbackReg
  * Error objects are converted to plain objects with message and stack.
  */
 export type SerializedCommandResult<T = unknown> =
-  | { success: true; returnValue: T }
-  | { success: false; error: { message: string; stack?: string } };
+  { success: true; returnValue: T } | { success: false; error: { message: string; stack?: string } };
 
 /**
  * Serializable subset of a Command for cross-process transfer.

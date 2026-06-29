@@ -264,8 +264,7 @@ export class StudioAgent {
 
   async getSolutionFileUri(): Promise<string | null> {
     return (await this.testDriver.client!.execute(`return bifrost.solution.getSolution()?.solutionFileUri ?? null`)) as
-      | string
-      | null;
+      string | null;
   }
 
   async addFolderToSolutionViaApi(directoryUri: string): Promise<void> {

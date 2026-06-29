@@ -1,12 +1,5 @@
 export type GitFileStatusCode =
-  | 'modified'
-  | 'added'
-  | 'deleted'
-  | 'renamed'
-  | 'copied'
-  | 'untracked'
-  | 'ignored'
-  | 'conflicted';
+  'modified' | 'added' | 'deleted' | 'renamed' | 'copied' | 'untracked' | 'ignored' | 'conflicted';
 
 export type GitFileStatus = {
   readonly uri: string;

@@ -26,11 +26,9 @@ import type { SearchQuery } from '../../contracts/internal/SearchTypes';
  */
 export function buildSimplePropertyPaneProvider(
   documentTypeOrPredicateFn:
-    | string
-    | ((editorDocument: EditorDocument, editorDocumentModel: any, studio: Studio) => boolean),
+    string | ((editorDocument: EditorDocument, editorDocumentModel: any, studio: Studio) => boolean),
   titleOrTitleFn:
-    | string
-    | ((editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Studio) => string),
+    string | ((editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Studio) => string),
   PaneContentComponent: any,
   PaneTabOptionsComponent?: any,
 ): PaneProvider {

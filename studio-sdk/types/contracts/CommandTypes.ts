@@ -61,10 +61,7 @@ export declare type CommandEnabledPredicateFn = (...commandsArgs: any[]) => bool
  * mouse event that triggered the command, thus exposing the target DOM element, modifier keys, mouse position etc.
  */
 export declare type CommandContext =
-  | CommandContext_Keybinding
-  | CommandContext_Mouse
-  | CommandContext_Generic
-  | undefined;
+  CommandContext_Keybinding | CommandContext_Mouse | CommandContext_Generic | undefined;
 export declare type CommandContext_Keybinding = {
   readonly type: 'keybinding';
   readonly keyboardEvent: KeyboardEvent;

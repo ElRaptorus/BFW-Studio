@@ -7,8 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { assertNotNull } from '../../common';
 
 export type Suggestion =
-  | string
-  | { label: string | React.JSX.Element; sublabel?: string | React.JSX.Element; value: string };
+  string | { label: string | React.JSX.Element; sublabel?: string | React.JSX.Element; value: string };
 
 type ReactSelectOption = {
   label: string | React.JSX.Element;

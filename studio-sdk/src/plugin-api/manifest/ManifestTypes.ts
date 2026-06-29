@@ -257,9 +257,4 @@ export interface ManifestTheme {
  * - `` `onSetting:${key}` `` — activated when the specified setting is accessed
  */
 export type ActivationEvent =
-  | `onCommand:${string}`
-  | `onDocumentType:${string}`
-  | `onUri:${string}`
-  | `onSetting:${string}`
-  | 'onStartup'
-  | '*';
+  `onCommand:${string}` | `onDocumentType:${string}` | `onUri:${string}` | `onSetting:${string}` | 'onStartup' | '*';

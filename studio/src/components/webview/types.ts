@@ -37,9 +37,7 @@ export interface PluginIframeGuestMessage_Theme {
 }
 
 export type PluginIframeGuestMessage =
-  | PluginIframeGuestMessage_PluginMessage
-  | PluginIframeGuestMessage_RestoreState
-  | PluginIframeGuestMessage_Theme;
+  PluginIframeGuestMessage_PluginMessage | PluginIframeGuestMessage_RestoreState | PluginIframeGuestMessage_Theme;
 
 // ─── Message types: iframe → host (to-host) ─────────────────────────
 

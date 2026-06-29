@@ -559,8 +559,7 @@ export class EngineAdapter {
       .map((fni) => {
         const typeProperties = fni.typeProperties as Record<string, unknown> | null;
         return (typeProperties?.['childProcessInstanceId'] ?? typeProperties?.['child_process_instance_id']) as
-          | string
-          | undefined;
+          string | undefined;
       })
       .filter((id): id is string => typeof id === 'string');
   }
