@@ -219,6 +219,9 @@ export class SubscribeThenSnapshot {
       if (event.errorInfo) {
         fni.errorInfo = event.errorInfo;
       }
+      if (event.triggererFlowNodeInstanceId != null) {
+        fni.triggererFlowNodeInstanceId = event.triggererFlowNodeInstanceId;
+      }
     }
   }
 
