@@ -99,7 +99,6 @@ export type DialogOptionsStrict_OpenFile = {
     | 'openFile'
     | 'openDirectory'
     | 'multiSelections'
-    | 'showHiddenFiles'
     | 'createDirectory'
     | 'promptToCreate'
     | 'noResolveAliases'
