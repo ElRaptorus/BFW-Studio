@@ -6,6 +6,7 @@ import type {
   DialogContentStrict,
   DialogOptions,
   DialogOptionsStrict,
+  DialogOptionsStrict_OpenDirectory,
   DialogOptionsStrict_OpenFile,
   DialogOptionsStrict_SaveFile,
   DialogResponseCallbackFn,
@@ -21,8 +22,39 @@ import {
   EVENT_VALIDATED_DIALOG,
 } from '../../../../studio-sdk/src/contracts/internal/DialogEvents';
 import type { DialogService } from './DialogService';
+import type { SettingsMediator } from './SettingsMediator';
 
 const DEFAULT_DIALOG_OPTIONS_TYPE = 'custom';
+
+/**
+ * The native dialog families that support directory tracking.
+ */
+type DialogPathType = 'openFile' | 'openDirectory' | 'saveFile';
+
+/**
+ * User-facing setting holding a global fallback directory for native file dialogs.
+ */
+const SETTING_DEFAULT_DIRECTORY = 'dialog.defaultDirectory';
+
+/**
+ * Hidden, auto-tracked "last used directory" setting per native dialog family.
+ */
+const SETTING_LAST_DIRECTORY: Record<DialogPathType, string> = {
+  openFile: 'dialog.internal.lastDirectory.openFile',
+  openDirectory: 'dialog.internal.lastDirectory.openDirectory',
+  saveFile: 'dialog.internal.lastDirectory.saveFile',
+};
+
+/**
+ * Collaborators the `DialogManager` needs to resolve and persist default directories.
+ * Injected via {@link DialogManager.setPathContext} once the owning `Bifrost` instance
+ * has constructed its settings and solution mediators. When absent (e.g. the base
+ * browser build), directory tracking degrades to a passthrough.
+ */
+export type DialogPathContext = {
+  settings: Pick<SettingsMediator, 'has' | 'get' | 'set'>;
+  getSolutionRoot: () => string | null;
+};
 
 /**
  * `DialogManager` provides the business logic around queueing, displaying and validating dialogs and their results.
@@ -32,6 +64,7 @@ export class DialogManager extends AbstractEmitter {
   private dialogQueue: Dialog[];
   private activeDialog: Dialog | null;
   private counter: number;
+  private pathContext: DialogPathContext | null = null;
 
   constructor(dialogService: DialogService) {
     super();
@@ -43,6 +76,14 @@ export class DialogManager extends AbstractEmitter {
     this.dialogQueue = [];
     this.activeDialog = null;
     this.counter = 0;
+  }
+
+  /**
+   * Injects the collaborators used to resolve and persist native dialog default directories.
+   * Called once during `Bifrost` construction, after the settings and solution mediators exist.
+   */
+  setPathContext(context: DialogPathContext): void {
+    this.pathContext = context;
   }
 
   /**
@@ -160,24 +201,129 @@ export class DialogManager extends AbstractEmitter {
   }
 
   async showOpenFile(dialogOptions: Omit<DialogOptionsStrict_OpenFile, 'type'> = {}): Promise<string[] | null> {
-    const dialogResult = await this.open({ type: 'open-file', ...dialogOptions });
+    const defaultPath = this.resolveDefaultPath('openFile', dialogOptions.defaultPath);
+    const dialogResult = await this.open({ type: 'open-file', ...dialogOptions, defaultPath });
     assertNotNull(dialogResult.formData, 'dialogResult.formData');
 
-    return dialogResult.formData.filenames;
+    const filenames: string[] | null = dialogResult.formData.filenames;
+    if (filenames != null && filenames.length > 0) {
+      this.recordUsedPath('openFile', filenames[0]);
+    }
+
+    return filenames;
   }
 
-  async showOpenDirectory(): Promise<string[] | null> {
-    const dialogResult = await this.open({ type: 'open-directory' });
+  async showOpenDirectory(
+    dialogOptions: Omit<DialogOptionsStrict_OpenDirectory, 'type'> = {},
+  ): Promise<string[] | null> {
+    const defaultPath = this.resolveDefaultPath('openDirectory', dialogOptions.defaultPath);
+    const dialogResult = await this.open({ type: 'open-directory', ...dialogOptions, defaultPath });
     assertNotNull(dialogResult.formData, 'dialogResult.formData');
 
-    return dialogResult.formData.filenames;
+    const filenames: string[] | null = dialogResult.formData.filenames;
+    if (filenames != null && filenames.length > 0) {
+      this.recordUsedPath('openDirectory', filenames[0]);
+    }
+
+    return filenames;
   }
 
   async showSaveFile(dialogOptions: Omit<DialogOptionsStrict_SaveFile, 'type'> = {}): Promise<string | null> {
-    const dialogResult = await this.open({ type: 'save-file', ...dialogOptions });
+    const defaultPath = this.resolveDefaultPath('saveFile', dialogOptions.defaultPath);
+    const dialogResult = await this.open({ type: 'save-file', ...dialogOptions, defaultPath });
     assertNotNull(dialogResult.formData, 'dialogResult.formData');
 
-    return dialogResult.formData.filename;
+    const filename: string | null = dialogResult.formData.filename;
+    if (filename != null && filename !== '') {
+      this.recordUsedPath('saveFile', filename);
+    }
+
+    return filename;
+  }
+
+  /**
+   * Resolves the `defaultPath` to hand to a native dialog, restoring the "remember last
+   * directory" behavior that Electron dropped in v43.
+   *
+   * Priority:
+   * 1. An explicit absolute `defaultPath` from the caller is used as-is.
+   * 2. An explicit relative `defaultPath` (a bare filename) is joined onto the resolved directory.
+   * 3. Last-used directory for this dialog family.
+   * 4. The user-configured `dialog.defaultDirectory` setting.
+   * 5. The current solution root.
+   *
+   * When nothing resolves, `undefined` is returned and the Electron main process applies the
+   * final home-directory fallback (keeping this renderer code free of Node `os`/`path` imports).
+   */
+  private resolveDefaultPath(dialogType: DialogPathType, explicitDefault?: string): string | undefined {
+    const hasExplicit = explicitDefault != null && explicitDefault !== '';
+
+    if (hasExplicit && isAbsolutePath(explicitDefault)) {
+      return explicitDefault;
+    }
+
+    if (this.pathContext == null) {
+      return explicitDefault;
+    }
+
+    const baseDirectory = this.resolveBaseDirectory(dialogType);
+
+    if (hasExplicit) {
+      return baseDirectory != null ? joinPath(baseDirectory, explicitDefault) : explicitDefault;
+    }
+
+    return baseDirectory ?? undefined;
+  }
+
+  /**
+   * Resolves the base directory for a dialog family from (in order) the last-used directory,
+   * the user setting, and the solution root. Returns `null` when none apply.
+   */
+  private resolveBaseDirectory(dialogType: DialogPathType): string | null {
+    const context = this.pathContext;
+    if (context == null) {
+      return null;
+    }
+
+    const lastDirectoryKey = SETTING_LAST_DIRECTORY[dialogType];
+    if (context.settings.has(lastDirectoryKey)) {
+      const lastDirectory = context.settings.get(lastDirectoryKey);
+      if (typeof lastDirectory === 'string' && lastDirectory.trim() !== '') {
+        return lastDirectory;
+      }
+    }
+
+    if (context.settings.has(SETTING_DEFAULT_DIRECTORY)) {
+      const configuredDirectory = context.settings.get(SETTING_DEFAULT_DIRECTORY);
+      if (typeof configuredDirectory === 'string' && configuredDirectory.trim() !== '') {
+        return configuredDirectory;
+      }
+    }
+
+    const solutionRoot = context.getSolutionRoot();
+    if (solutionRoot != null && solutionRoot.trim() !== '') {
+      return solutionRoot;
+    }
+
+    return null;
+  }
+
+  /**
+   * Persists the directory of the user's selection so the next dialog of the same family reopens there.
+   * For directory pickers, the parent of the chosen folder is stored so the dialog reopens showing it.
+   */
+  private recordUsedPath(dialogType: DialogPathType, selectedPath: string): void {
+    const context = this.pathContext;
+    if (context == null || selectedPath == null || selectedPath === '') {
+      return;
+    }
+
+    const directory = dirnameOf(selectedPath);
+    if (directory === '') {
+      return;
+    }
+
+    context.settings.set(SETTING_LAST_DIRECTORY[dialogType], directory);
   }
 
   normalizeDialogOptions(dialogOptions: DialogOptions): DialogOptionsStrict {
@@ -294,4 +440,48 @@ export class DialogManager extends AbstractEmitter {
     this.counter++;
     return this.counter;
   }
+}
+
+/**
+ * Pure, cross-platform path helpers. `DialogManager` is bundled for both the browser and Electron,
+ * so it must not import Node's `path`/`os`. These helpers infer the separator from the input and
+ * cover the small amount of manipulation needed for directory tracking.
+ */
+
+/** Removes trailing `/` or `\` separators (but preserves a lone root such as `/`). */
+function stripTrailingSeparators(inputPath: string): string {
+  const stripped = inputPath.replace(/[\\/]+$/, '');
+  return stripped === '' ? inputPath.slice(0, 1) : stripped;
+}
+
+/** True for POSIX (`/foo`), Windows drive (`C:\foo`, `C:/foo`), and UNC (`\\host`) absolute paths. */
+function isAbsolutePath(inputPath: string): boolean {
+  return /^([a-zA-Z]:[\\/]|\\\\|\/)/.test(inputPath);
+}
+
+/** Returns the directory portion of a path, or `''` when there is no separator. */
+function dirnameOf(inputPath: string): string {
+  const stripped = stripTrailingSeparators(inputPath);
+  const lastSeparatorIndex = Math.max(stripped.lastIndexOf('/'), stripped.lastIndexOf('\\'));
+
+  if (lastSeparatorIndex < 0) {
+    return '';
+  }
+
+  if (lastSeparatorIndex === 0) {
+    return stripped.slice(0, 1);
+  }
+
+  const head = stripped.slice(0, lastSeparatorIndex);
+  if (/^[a-zA-Z]:$/.test(head)) {
+    return stripped.slice(0, lastSeparatorIndex + 1);
+  }
+
+  return head;
+}
+
+/** Joins a filename onto a directory using the directory's own separator style. */
+function joinPath(directory: string, name: string): string {
+  const separator = directory.includes('\\') && !directory.includes('/') ? '\\' : '/';
+  return `${stripTrailingSeparators(directory)}${separator}${name}`;
 }

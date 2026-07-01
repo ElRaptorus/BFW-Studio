@@ -336,6 +336,36 @@ export class Bifrost {
         description: 'When enabled, single-clicked files open in a temporary tab that gets replaced by the next file.',
         default: false,
       },
+      'dialog.defaultDirectory': {
+        type: 'string',
+        label: 'Default Dialog Directory',
+        description:
+          'Fallback directory for file and folder dialogs. Used when no directory was recently used for that ' +
+          'kind of dialog and no solution is open. Leave empty to fall back to your home directory.',
+        category: 'File Dialogs',
+        default: '',
+      },
+      'dialog.internal.lastDirectory.openFile': {
+        type: 'string',
+        label: 'Last open-file directory',
+        description: 'Internal: last directory used for the native open-file dialog.',
+        default: '',
+        hidden: true,
+      },
+      'dialog.internal.lastDirectory.openDirectory': {
+        type: 'string',
+        label: 'Last open-directory directory',
+        description: 'Internal: last directory used for the native open-directory dialog.',
+        default: '',
+        hidden: true,
+      },
+      'dialog.internal.lastDirectory.saveFile': {
+        type: 'string',
+        label: 'Last save-file directory',
+        description: 'Internal: last directory used for the native save-file dialog.',
+        default: '',
+        hidden: true,
+      },
     });
 
     this.theme = new ThemeMediator(this.settings);
@@ -377,6 +407,17 @@ export class Bifrost {
         this.fileExplorerView.clearSolution();
       }
       this.events.emitInternalBifrostEvent('solutionChanged', [solution]);
+    });
+
+    this.dialog.setPathContext({
+      settings: this.settings,
+      getSolutionRoot: () => {
+        const solution = this.solution.getSolution();
+        if (solution?.baseUri == null) {
+          return null;
+        }
+        return this.files.getLocalFilenameForUri(solution.baseUri);
+      },
     });
 
     this.commands = new CommandMediator(this.dialog, this.performance, this.notifications);

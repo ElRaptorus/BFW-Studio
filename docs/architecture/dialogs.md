@@ -67,8 +67,10 @@ The central orchestration class. Manages the queue, normalization, validation lo
 | `open` | `open(options: DialogOptions, validation?: DialogValidationCallbackFn): Promise<DialogResult>` | Opens a custom or native dialog; returns when user responds |
 | `prompt` | `prompt(title: string, placeholder?: string): Promise<string \| null>` | Convenience for a single text input dialog |
 | `showOpenFile` | `showOpenFile(options?): Promise<string[] \| null>` | Native file picker (Electron only). Options: `title`, `defaultPath`, `message`, `filters`, `properties` |
-| `showOpenDirectory` | `showOpenDirectory(): Promise<string[] \| null>` | Native directory picker (Electron only) |
+| `showOpenDirectory` | `showOpenDirectory(options?): Promise<string[] \| null>` | Native directory picker (Electron only). Options: `defaultPath` |
 | `showSaveFile` | `showSaveFile(options?): Promise<string \| null>` | Native save dialog (Electron only). Options: `title`, `defaultPath`, `buttonLabel`, `filters` |
+
+All three resolve `defaultPath` through the [default path tracking](#default-path-tracking) chain before opening, and record the used directory afterwards.
 | `close` | `close(): void` | Programmatically closes the active dialog (cancels it) |
 | `isActive` | `isActive(): boolean` | Whether a dialog is currently displayed |
 
@@ -112,9 +114,9 @@ Extends `DialogService`. Overrides `open()` to intercept native dialog types bef
 |-------------|----------|-----------|
 | `custom` | Falls through to `super.open()` → emits `EVENT_OPEN_DIALOG` → React renders it |
 | `message-box` | `ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_MESSAGE_BOX)` |
-| `open-file` | `ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_OPEN_FILE_DIALOG)` |
-| `open-directory` | `ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG)` |
-| `save-file` | `ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_SAVE_FILE_DIALOG)` |
+| `open-file` | `ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_OPEN_FILE_DIALOG, options)` |
+| `open-directory` | `ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG, options)` |
+| `save-file` | `ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_SAVE_FILE_DIALOG, options)` |
 
 Native dialogs bypass the React rendering pipeline entirely. Their result is fed back into the response callback with `formData: { filenames }` (for open) or `formData: { filename }` (for save).
 
@@ -425,10 +427,67 @@ The `registerDialogHandlers()` function sets up `ipcMain.handle` listeners:
 
 | IPC Event | Electron API | Returns |
 |-----------|-------------|---------|
-| `IPC_MESSAGE_SHOW_NATIVE_OPEN_FILE_DIALOG` | `dialog.showOpenDialogSync(browserWindow, { properties: ['openFile', 'multiSelections'] })` | `string[] \| null` |
-| `IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG` | `dialog.showOpenDialogSync(browserWindow, { properties: ['openDirectory'] })` | `string[] \| null` |
-| `IPC_MESSAGE_SHOW_NATIVE_SAVE_FILE_DIALOG` | `dialog.showSaveDialogSync(browserWindow, options)` | `string \| null` |
+| `IPC_MESSAGE_SHOW_NATIVE_OPEN_FILE_DIALOG` | `dialog.showOpenDialogSync(browserWindow, withHomeFallback({ properties: ['openFile', 'multiSelections'], ...options }))` | `string[] \| null` |
+| `IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG` | `dialog.showOpenDialogSync(browserWindow, withHomeFallback({ properties: ['openDirectory'], ...options }))` | `string[] \| null` |
+| `IPC_MESSAGE_SHOW_NATIVE_SAVE_FILE_DIALOG` | `dialog.showSaveDialogSync(browserWindow, withHomeFallback(options))` | `string \| null` |
 | `IPC_MESSAGE_SHOW_NATIVE_MESSAGE_BOX` | `dialog.showMessageBoxSync(browserWindow, options)` | Button index → `DialogResult` |
+
+All three file/directory handlers accept caller `options` (including `defaultPath`) and pass them through `withHomeFallback()` — the last step of the [default path tracking](#default-path-tracking) chain. `withHomeFallback()` anchors an empty or relative `defaultPath` to `app.getPath('home')`, so a dialog never falls back to Electron v43's Downloads default.
+
+---
+
+## Default Path Tracking
+
+**Path:** `studio/src/bifrost/common/DialogManager.ts`
+
+Electron v43 dropped the built-in "remember last directory" behavior for native dialogs — without an explicit `defaultPath`, every dialog opens in Downloads. `DialogManager` restores sensible behavior by resolving a `defaultPath` before each native dialog and recording the used directory afterwards. The logic lives entirely inside `DialogManager` (no separate service).
+
+### Path Context
+
+`DialogManager` needs two collaborators, injected once from the `Bifrost` constructor via `setPathContext()` (after the settings and solution mediators exist):
+
+```typescript
+export type DialogPathContext = {
+  settings: Pick<SettingsMediator, 'has' | 'get' | 'set'>;
+  getSolutionRoot: () => string | null;
+};
+```
+
+The base browser `DialogService` never sets a context; when it is absent, resolution and recording degrade to a passthrough (the caller's `defaultPath` is used unchanged).
+
+### Resolution Chain
+
+`resolveDefaultPath(dialogType, explicitDefault?)` picks the first applicable source:
+
+| Priority | Source | Notes |
+|----------|--------|-------|
+| 1 | Explicit **absolute** `defaultPath` | Used as-is |
+| 2 | Explicit **relative** `defaultPath` (bare filename) | Joined onto the resolved base directory (steps 3-5); if none resolves, passed through as the filename |
+| 3 | Last-used directory for the dialog family | Hidden setting `dialog.internal.lastDirectory.<type>` |
+| 4 | User setting `dialog.defaultDirectory` | Manual fallback, when non-empty |
+| 5 | Solution root | `getSolutionRoot()` → first project `baseUri` |
+| 6 | OS home directory | Applied in the **main process** (`withHomeFallback`), not the renderer |
+
+Steps 1-5 run in the renderer (`DialogManager`). Step 6 runs in the main process so the renderer stays free of Node `os`/`path` imports. Path string manipulation in `DialogManager` uses pure, separator-inferring helpers (`dirnameOf`, `joinPath`, `isAbsolutePath`) rather than Node's `path`.
+
+### Recording
+
+`recordUsedPath(dialogType, selectedPath)` runs after a non-cancelled dialog and stores `dirnameOf(selectedPath)` into the matching hidden setting. Because `dirnameOf` strips trailing separators before taking the parent segment, a directory pick records the **parent** of the chosen folder (so the dialog reopens showing that folder), while a file pick records the containing folder.
+
+### Settings
+
+Registered in the `Bifrost` constructor:
+
+| Key | Type | Hidden | Purpose |
+|-----|------|--------|---------|
+| `dialog.defaultDirectory` | `string` | No | User-configurable global fallback directory (category "File Dialogs") |
+| `dialog.internal.lastDirectory.openFile` | `string` | Yes | Auto-tracked last directory for open-file dialogs |
+| `dialog.internal.lastDirectory.openDirectory` | `string` | Yes | Auto-tracked last directory for open-directory dialogs |
+| `dialog.internal.lastDirectory.saveFile` | `string` | Yes | Auto-tracked last directory for save-file dialogs |
+
+### Scope
+
+All callers of `showOpenFile` / `showOpenDirectory` / `showSaveFile` (internal modules and plugins via `DialogsApi`) benefit transparently — no call-site changes. The internal `std.internal.pickNativeFile` / `pickNativeDirectory` commands bypass `DialogManager` and are **not** tracked.
 
 ---
 

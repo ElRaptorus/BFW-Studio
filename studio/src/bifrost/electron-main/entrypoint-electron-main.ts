@@ -758,6 +758,28 @@ function getBrowserWindow(): BrowserWindow | null {
   return allWindows[0];
 }
 
+/**
+ * Applies the ultimate home-directory fallback for native file dialogs.
+ *
+ * Since Electron v43, a dialog with no `defaultPath` opens in Downloads. The renderer
+ * (`DialogManager`) resolves last-used / configured / solution directories, but when it
+ * resolves nothing it leaves `defaultPath` empty (or a bare, relative filename). Here we
+ * anchor that to the user's home directory so dialogs never fall back to Downloads.
+ */
+function withHomeFallback<T extends { defaultPath?: string }>(options: T): T {
+  const provided = options.defaultPath;
+
+  if (provided == null || provided.trim() === '') {
+    return { ...options, defaultPath: app.getPath('home') };
+  }
+
+  if (!path.isAbsolute(provided)) {
+    return { ...options, defaultPath: path.join(app.getPath('home'), provided) };
+  }
+
+  return options;
+}
+
 function registerDialogHandlers() {
   ipcMain.handle(
     IPC_MESSAGE_SHOW_NATIVE_OPEN_FILE_DIALOG,
@@ -772,21 +794,24 @@ function registerDialogHandlers() {
         return null;
       }
 
-      const filenames = dialog.showOpenDialogSync(browserWindow, dialogOptions);
+      const filenames = dialog.showOpenDialogSync(browserWindow, withHomeFallback(dialogOptions));
 
       return filenames || null;
     },
   );
 
-  ipcMain.handle(IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG, () => {
+  ipcMain.handle(IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG, (_event, options: DialogOptionsStrict | undefined) => {
     const browserWindow = getBrowserWindow();
     if (!browserWindow) {
       return null;
     }
 
-    const filenames = dialog.showOpenDialogSync(browserWindow, {
+    const dialogOptions: Electron.OpenDialogSyncOptions = {
       properties: ['openDirectory'],
-    });
+      ...options,
+    };
+
+    const filenames = dialog.showOpenDialogSync(browserWindow, withHomeFallback(dialogOptions));
 
     return filenames || null;
   });
@@ -816,7 +841,9 @@ function registerDialogHandlers() {
       return null;
     }
 
-    const filename = dialog.showSaveDialogSync(browserWindow, options ?? {});
+    const dialogOptions: Electron.SaveDialogSyncOptions = { ...(options ?? {}) };
+
+    const filename = dialog.showSaveDialogSync(browserWindow, withHomeFallback(dialogOptions));
 
     return filename || null;
   });

@@ -43,7 +43,7 @@ export default class DialogServiceElectron extends DialogService {
           });
           return;
         case 'open-directory':
-          this.showNativeOpenDirectoryDialog().then((filenames) => {
+          this.showNativeOpenDirectoryDialog(normalizedDialogOptions).then((filenames) => {
             const wasCancelled = filenames == null;
             annotatedResponseCallback({
               wasCancelled,
@@ -74,8 +74,10 @@ export default class DialogServiceElectron extends DialogService {
     return ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_OPEN_FILE_DIALOG, options);
   }
 
-  private async showNativeOpenDirectoryDialog(): Promise<string[] | null> {
-    return ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG);
+  private async showNativeOpenDirectoryDialog(
+    options: DialogOptionsStrict = { type: 'open-directory' },
+  ): Promise<string[] | null> {
+    return ipcRenderer.invoke(IPC_MESSAGE_SHOW_NATIVE_OPEN_DIRECTORY_DIALOG, options);
   }
 
   private async showNativeSaveFileDialog(options?: DialogOptionsStrict): Promise<string | null> {

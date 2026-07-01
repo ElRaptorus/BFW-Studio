@@ -109,6 +109,8 @@ export type DialogOptionsStrict_OpenFile = {
 
 export type DialogOptionsStrict_OpenDirectory = {
   readonly type: 'open-directory';
+
+  defaultPath?: string;
 };
 
 export type DialogOptionsStrict_SaveFile = {

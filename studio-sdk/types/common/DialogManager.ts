@@ -1,5 +1,6 @@
 import type {
   DialogOptions,
+  DialogOptionsStrict_OpenDirectory,
   DialogOptionsStrict_OpenFile,
   DialogOptionsStrict_SaveFile,
   DialogResult,
@@ -74,7 +75,7 @@ export declare class DialogManager {
   /**
    * Shows a (native) dialog to open a directory.
    */
-  showOpenDirectory(): Promise<string[] | null>;
+  showOpenDirectory(dialogOptions?: Omit<DialogOptionsStrict_OpenDirectory, 'type'>): Promise<string[] | null>;
 
   /**
    * Shows a (native) dialog to save a file.
