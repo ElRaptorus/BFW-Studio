@@ -2,6 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 
 import * as BusinessRuleTaskPane from '../panes/BusinessRuleTaskPane';
 import * as CallActivityPane from '../panes/CallActivityPane';
+import * as ComplexGatewayActivationConditionPane from '../panes/ComplexGatewayActivationConditionPane';
 import * as ConditionalEventPane from '../panes/ConditionalEventPane';
 import * as CorrelationRetrievalExpressionPane from '../panes/CorrelationRetrievalExpressionPane';
 import * as DataObjectPane from '../panes/DataObjectPane';
@@ -98,6 +99,11 @@ function registerPropertyPanes(bifrost: Bifrost): void {
       'engine-model-viewer/panes/Gateway',
       'engine-model-viewer/pane-providers/Gateway',
       GatewayPane,
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'engine-model-viewer/panes/ComplexGatewayActivationCondition',
+      'engine-model-viewer/pane-providers/ComplexGatewayActivationCondition',
+      ComplexGatewayActivationConditionPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
       'engine-model-viewer/panes/SubProcess',

@@ -101,6 +101,9 @@ Notable set handlers:
 | `loopConfig` | Creates/updates loop characteristics elements | `UpdateLoopCharacteristicsHandler` |
 | `userTaskResources` | Manages `bpmn:HumanPerformer` / `bpmn:PotentialOwner` | `UpdateUserTaskResourcesHandler` |
 | `correlationRetrievalExpression` | Sets `evil:CorrelationRetrievalExpression` on `MessageEventDefinition` or element | `UpdateCorrelationRetrievalExpressionHandler` |
+| `activationCondition` | Creates/updates/clears the standard `<bpmn:activationCondition>` child (a `bpmn:FormalExpression`) on a Complex Gateway; mirrors the `transformation` handler | `modeling.updateProperties` |
+
+The matching `getHandlers.activationCondition` returns `element.businessObject.activationCondition?.body`. Both handlers follow the same pattern as `transformation`/`conditionExpression`: write creates a `bpmn:FormalExpression { body }` (or `undefined` to remove the child), read returns the child's `body` text. The engine parses this element as trimmed body text (see `docs/architecture/engine.md` §Complex Gateway).
 
 ### Command Handlers
 
@@ -170,6 +173,7 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 - User task: `PropertiesUserTask`, `PropertiesUserTaskFormSummary`, `PropertiesUserTaskAssignees`
 - All event panes (message, signal, error, escalation, conditional, timer, link)
 - `PropertiesConditionalFlow`
+- `PropertiesComplexGatewayActivationCondition` — FEEL multi-line editor for the Complex Gateway join **activation condition** (visible only when the selected Complex Gateway is a join or mixed gateway, i.e. more than one incoming sequence flow)
 - Loop/MI: `PropertiesLoop`, `PropertiesInstanceCount`, `PropertiesCompletionCondition`, `PropertiesInputCollection`, `PropertiesOutputCollection`, `PropertiesMultiInstanceExtensions`
 - Data Object: `PropertiesDataObject`
 
@@ -411,3 +415,5 @@ Available on `BpmnElementCommonProperties.loopConfig`.
 | DefaultCustomStartToken | `studio/src/modules/bpmn-editor/panes/properties/DefaultCustomStartToken/PropertiesDefaultCustomStartToken.tsx` |
 | PropertiesExamplePayload | `studio/src/modules/bpmn-editor/panes/properties/ExamplePayload/PropertiesExamplePayload.tsx` |
 | PropertiesExampleResult | `studio/src/modules/bpmn-editor/panes/properties/ExampleResult/PropertiesExampleResult.tsx` |
+| PropertiesComplexGatewayActivationCondition | `studio/src/modules/bpmn-editor/panes/properties/ComplexGateway/PropertiesComplexGatewayActivationCondition.tsx` |
+| Complex Gateway help text | `studio/src/modules/bpmn-editor/panes/properties/ComplexGateway/PropertiesComplexGateway.md` |

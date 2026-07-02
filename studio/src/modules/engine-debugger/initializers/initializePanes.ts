@@ -259,6 +259,11 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       require('../property-panel/FlowNode/ExclusiveSplitGatewayPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
+      'EngineDebugger/panes/ComplexGatewayActivationCondition',
+      'EngineDebugger/pane-providers/ComplexGatewayActivationCondition',
+      require('../property-panel/FlowNode/ComplexGatewayActivationConditionPane'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/BusinessRuleTaskInstance',
       'EngineDebugger/pane-providers/BusinessRuleTaskInstance',
       require('../property-panel/FlowNode/BusinessRuleTaskInstancePane'),

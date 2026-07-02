@@ -1173,3 +1173,21 @@ Additionally, `{ ...createNamespaceProxy('editors') }` produced `{}` because Jav
 7. **Element coloring dropped from v1** — custom element coloring (background/border color) is deferred. Renderer module injection covers the use case for plugins that truly need it.
 
 **Rationale**: The tiered model balances developer ergonomics (most plugins only need `bpmn` for read-only overlays) with security (renderer injection is rare and high-risk). Command-based overlay interaction leverages the existing command system for authorization. The allowlist pattern for context pad visibility is the only architecturally sound solution given the async boundary between plugin sandbox and renderer.
+
+---
+
+### 2026-07-02 — Complex Gateway activation condition: Studio modelling & inspection
+
+**Context**: The Engine fully supports Complex Gateways (conditional split + single-fire threshold join driven by a FEEL `<bpmn:activationCondition>`), but the Studio offered no editor for the activation condition, carried outdated help text, and could not display the condition read-only in the Engine BPMN Viewer or Debugger.
+
+**Decisions**:
+
+1. **Supported-elements scope → verify only.** `bpmn:ComplexGateway` is already in `SupportedBpmnElements.ts` and survives the "Show only supported elements" toggle in the context-pad/replace menu (the palette never had a dedicated Complex Gateway entry by design). No code change; no dedicated palette entry added.
+
+2. **Debugger activation-condition data source → moddle, not SDK.** The `@elraptorus/daemonengine_sdk` parser hardcodes `activationCondition: null`, so the Debugger pane reads `businessObject.activationCondition?.body` directly from the live bpmn-js moddle via `bpmnViewerComponentAdapter` (`getActivationConditionFromViewer`). This avoids a cross-repo SDK fix + npm bump. The SDK parser gap remains a known upstream issue, out of scope here. See `common-pitfalls.md`.
+
+3. **Activation-condition pane visibility → join/mixed only.** The editor pane (and both read-only panes) appear only when the Complex Gateway acts as a join or mixed gateway (more than one incoming sequence flow), mirroring the existing gateway-pane topology predicate. This matches the engine, which only evaluates the activation condition on the join side.
+
+4. **Persistence via the standard `transformation` handler pattern.** `activationCondition` get/set handlers in `BpmnDocumentElementAccess.ts` create/clear a `bpmn:FormalExpression` child exactly like `transformation`/`conditionExpression`, rather than an `evil:*` extension — because the engine parses the standard `<bpmn:activationCondition>` element as trimmed body text.
+
+**Rationale**: Reuse of the proven `transformation`/`conditionExpression` moddle-child pattern keeps serialization identical to what the engine already consumes. Reading the moddle in the debugger is a small, deliberate deviation from the debugger's usual `flowNodeModel.typeData` convention that avoids a cross-repo release. Verify-only scope on supported elements avoids adding a redundant palette entry.

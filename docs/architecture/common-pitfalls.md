@@ -1375,3 +1375,13 @@ Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the mod
 **Correct approach (implemented in `PluginModuleLoader`):** Each plugin's channel is registered under a unique DI name (`pluginChannel__<pluginName>`). At load time, `rewriteChannelInjections()` rewrites the module's `$inject` arrays, replacing the generic `pluginChannel` token with the plugin-specific name. This is fully transparent to plugin authors — they always write `$inject = [..., 'pluginChannel']` and the loader handles namespacing.
 
 **Plugin authors:** Always use `'pluginChannel'` in `$inject` arrays. Never use `pluginChannel__*` directly — the prefixed names are internal and may change.
+
+---
+
+## Complex Gateway `activationCondition` is not in the parsed SDK model
+
+**Mistake**: Reading a Complex Gateway's activation condition in the Engine Debugger from the parsed SDK model — `flowNode.flowNodeModel.typeData.activationCondition` (`@elraptorus/daemonengine_sdk`).
+
+**Why it fails**: The SDK BPMN parser hardcodes `activationCondition: null` for Complex Gateways (`packages/js/sdk/src/bpmn/parser.ts`), even though the `ComplexGatewayTypeData.activationCondition` type field exists. The Studio depends on this SDK via npm, so a pane relying on the parsed value shows empty until the SDK is fixed **and** re-published/bumped.
+
+**Correct approach**: Read the value directly from the live bpmn-js moddle instead of the parsed model. The debugger's `EngineBpmnDebuggerEditorDocumentModel` exposes `bpmnViewerComponentAdapter`; `getActivationConditionFromViewer(adapter, elementId)` in `engine-debugger/libs/BpmnCustomPropertyAccessor.ts` resolves the element from the registry and returns `businessObject.activationCondition?.body`. This is the same moddle-read pattern already used for studio-internal `evil:Property` values (`getCustomPropertyFromViewer`). The Engine BPMN Viewer panes already read the moddle directly (`getSelection(model).businessObject.activationCondition?.body`), so they are unaffected.

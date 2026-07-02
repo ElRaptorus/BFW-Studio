@@ -839,6 +839,15 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
           modeling.updateProperties(element, { transformation: formalExpression });
         }
       },
+      activationCondition: (element: any, propertyName: string, propertyValue: ModelerElementPropertyValue) => {
+        const moddle = this.bpmnModelerProxy.getModdle();
+        if (propertyValue == null || propertyValue === '') {
+          modeling.updateProperties(element, { activationCondition: undefined });
+        } else {
+          const formalExpression = moddle.create('bpmn:FormalExpression', { body: propertyValue });
+          modeling.updateProperties(element, { activationCondition: formalExpression });
+        }
+      },
       dataPipeline: (element: any, propertyName: string, propertyValue: any) => {
         const commandStack = this.bpmnModelerProxy.getCommandStack();
         const commandToExecute = CmdHelper.updateDataPipeline(element, propertyValue);
@@ -1331,6 +1340,9 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       },
       transformation: (element: any) => {
         return element.businessObject.transformation?.body;
+      },
+      activationCondition: (element: any) => {
+        return element.businessObject.activationCondition?.body;
       },
       dataObjectExtensions: (element: any) => {
         return {

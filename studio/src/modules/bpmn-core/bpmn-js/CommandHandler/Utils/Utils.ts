@@ -4,6 +4,8 @@ const MODDLE_BPMN_EXCLUSIVE_GATEWAY = 'bpmn:ExclusiveGateway';
 
 const MODDLE_BPMN_INCLUSIVE_GATEWAY = 'bpmn:InclusiveGateway';
 
+const MODDLE_BPMN_COMPLEX_GATEWAY = 'bpmn:ComplexGateway';
+
 export function getRoot(businessObject: any): any {
   let parent = businessObject;
 
@@ -32,8 +34,9 @@ export function isSequenceFlowDefault(element: ElementLike): boolean {
 export function isSequenceFlowConditional(element: ElementLike): boolean {
   const flowSourceIsExclusiveGateway = element.businessObject.sourceRef?.$type === MODDLE_BPMN_EXCLUSIVE_GATEWAY;
   const flowSourceIsInclusiveSplitGateway = element.businessObject.sourceRef?.$type === MODDLE_BPMN_INCLUSIVE_GATEWAY;
+  const flowSourceIsComplexGateway = element.businessObject.sourceRef?.$type === MODDLE_BPMN_COMPLEX_GATEWAY;
 
-  return flowSourceIsExclusiveGateway || flowSourceIsInclusiveSplitGateway;
+  return flowSourceIsExclusiveGateway || flowSourceIsInclusiveSplitGateway || flowSourceIsComplexGateway;
 }
 
 export function isHttpServiceTask(element: ElementLike): boolean {

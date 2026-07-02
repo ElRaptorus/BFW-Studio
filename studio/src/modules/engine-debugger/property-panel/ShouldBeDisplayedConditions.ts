@@ -380,6 +380,27 @@ export function ShouldDisplayOutgoingFlowsAndConditionsPane(
   );
 }
 
+export function shouldDisplayComplexGatewayActivationConditionPane(
+  document: EditorDocument,
+  model: EngineBpmnDebuggerEditorDocumentModel,
+): boolean {
+  if (!editorDocumentTypeIsDebugger(document, model) || !targetEngineIsOnline(model)) {
+    return false;
+  }
+  if (!hasSingleSelectedFlowNode(model)) {
+    return false;
+  }
+
+  const selectedFlowNode = getSelectedFlowNode(model).flowNodeModel as BpmnFlowNode | undefined;
+  if (!selectedFlowNode) {
+    return false;
+  }
+
+  // The activation condition only governs a Complex Join (or the join side of a mixed gateway),
+  // which the engine classifies by having more than one incoming sequence flow.
+  return selectedFlowNode.type === FlowNodeType.ComplexGateway && selectedFlowNode.incoming.length > 1;
+}
+
 export function shouldDisplayHttpServiceTaskInstancePane(
   document: EditorDocument,
   model: EngineBpmnDebuggerEditorDocumentModel,

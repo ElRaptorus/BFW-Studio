@@ -23,7 +23,10 @@ const SEQUENCE_FLOW_TYPES: Set<string> = new Set([
   BpmnElementType.SequenceFlow,
 ]);
 
-const GATEWAYS_WITH_CONDITIONAL_OUTGOING: Set<string> = new Set([BpmnElementType.ExclusiveGateway]);
+const GATEWAYS_WITH_CONDITIONAL_OUTGOING: Set<string> = new Set([
+  BpmnElementType.ExclusiveGateway,
+  BpmnElementType.ComplexGateway,
+]);
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,

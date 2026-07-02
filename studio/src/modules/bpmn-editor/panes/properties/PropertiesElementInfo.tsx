@@ -35,7 +35,8 @@ const elementInfoMap: Record<string, ElementInfoEntry> = {
   },
   [BpmnElementType.ComplexGateway]: {
     title: 'Complex Gateway',
-    description: 'Complex Gateways can be used for splitting or merging a complicated process flow scenario.',
+    description:
+      'A Complex Gateway is either a conditional split (every outgoing flow must be conditional or the default) or a single-fire threshold join that fires when its FEEL activation condition becomes true. These semantics are engine-specific and not portable BPMN.',
     helpId: 'bpmn/properties/complex_gateway',
   },
   [BpmnElementType.EventBasedGateway]: {

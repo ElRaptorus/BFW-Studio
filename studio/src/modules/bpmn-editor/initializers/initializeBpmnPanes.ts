@@ -29,6 +29,13 @@ export function initializeBpmnPanes(bifrost: Bifrost): void {
       require('../panes/properties/PropertiesGatewayOutgoingFlows'),
     ),
 
+    // Complex Gateway join activation condition (FEEL)
+    bifrost.panes.getPaneViaPaneProvider(
+      'bpmn/panes/properties/PropertiesComplexGatewayActivationCondition',
+      'bpmn/pane-providers/properties/PropertiesComplexGatewayActivationCondition',
+      require('../panes/properties/ComplexGateway/PropertiesComplexGatewayActivationCondition'),
+    ),
+
     // Generic panes (any element or multi-selection)
     bifrost.panes.getPaneViaPaneProvider(
       'bpmn/panes/properties_basic',
