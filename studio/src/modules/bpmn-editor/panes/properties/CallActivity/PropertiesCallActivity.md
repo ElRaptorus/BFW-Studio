@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Call Activity
 ---
 
@@ -7,11 +6,9 @@ title: Call Activity
 
 ![Call Activity](CallActivity.svg)
 
-A `Call Activity` is a specialized `Task` for executing another `Process` as `Child Process Instance`.
+A `Call Activity` runs another process as a separate sub-run and waits for it to finish. Use it to reuse a process you have modelled once — such as an approval or a fulfilment flow — from many other processes.
 
-The `Call Activity` itself will be suspended, until the `Child Process Instance` has finished. Its result will be stored by the `Call Activity` as activity output and will also include the Name and ID of the End Event at which the `Child Process Instance` was finished.
-
-For example:
+When the called process finishes, its result is handed back as this activity's output, together with which end point the sub-run reached. For example:
 
 ```
 {
@@ -23,28 +20,19 @@ For example:
 
 ## Configuration
 
-The following parameters can be set:
-
 ### Process
 
-**Required.**
+**Required.** The `Process` field names the process to run. That process must already be deployed to the system.
 
-The name of the `Process` that the `Call Activity` should execute as a `Child Process Instance`.
+### Start Event
 
-### Start Event ID
+_Optional._ The `Start Event` field picks where the called process should begin.
 
-_Optional_.
+Leave it empty when the called process has a single, obvious starting point. If a process has several plain start events, the system cannot guess which one to use and the Call Activity fails — in that case, either give the called process a single plain start, or name the start point here.
 
-The ID of the Start Event at which the `Child Process Instance` should be started.
-If omitted, the Process' first `Start Event` will be used as entry point.
+### Input & Output Mappings
 
-### Input/Output Mappings
+_Optional._ Because parent and child are separate runs, you decide exactly which data crosses between them:
 
-_Optional_.
-
-The `Call Activity` uses `evil:inputMapping` and `evil:outputMapping` to map data between the parent and child process, instead of passing a raw payload.
-
-- **Input Mappings** — Each mapping has a `source` (FEEL expression evaluated in the parent scope) and a `target` (variable name in the child process). Use these to pass specific values into the `Child Process Instance`.
-- **Output Mappings** — Each mapping has a `source` (FEEL expression evaluated against the child result) and a `target` (variable name written back to the parent token).
-
-If no input mappings are configured, the parent token is available to the child process according to the engine's default scoping rules.
+- **Input Mappings** — carry selected values from the parent into the child before it starts. See [Input Mappings](help://bpmn/properties/input_mappings).
+- **Output Mappings** — carry selected values from the child's result back into the parent. See [Output Mappings](help://bpmn/properties/output_mappings).

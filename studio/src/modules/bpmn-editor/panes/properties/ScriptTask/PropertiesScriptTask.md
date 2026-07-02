@@ -1,34 +1,39 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Script Task
 ---
 
-# Script Tasks
+# Script Task
 
 ![Script Task](ScriptTask.svg)
 
-The `Script Task` contains a script that will be executed by the connected business process engine. After the execution is completed the task is also completed.
+A `Script Task` runs a small [formula](help://bpmn/runtime_expressions) and uses its result as the task's output. Every Script Task needs **either** an inline formula **or** a `Script Ref` (see below) — at least one is required.
 
-The script must be a [FEEL expression](help://bpmn/runtime_expressions). The evaluated result becomes the activity output.
+## Using the current data
 
-Optionally, you can set **Script Ref** (`evil:scriptRef`) to a plugin dispatch key. When set, the engine delegates script execution to the registered named-script plugin instead of evaluating the inline FEEL script.
-
-## Using values from the current token
-
-You can use values from the current token with the `token` binding:
+Read values from the process data with the `token` prefix:
 
 ```feel
 { myValue: token.myValue }
 ```
 
-## Modifying the current token
+## Producing new data
 
-It is not possible to manipulate existing token values directly. But what you _can_ do is create a new context _derived_ from the token using FEEL context syntax:
+You cannot change an existing value in place. Instead, build a new result. To start from the current data and add or override a single value, use `context put`:
 
 ```feel
-{ ...token, someValue: 7 }
+context put(token, "someValue", 7)
+```
+
+To combine several sets of values into one, use `context merge`:
+
+```feel
+context merge([token, { someValue: 7, status: "done" }])
 ```
 
 ## Script Ref
 
-When **Script Ref** is set, the inline script editor is hidden and the engine dispatches to the plugin registered under that key. Use this when script logic is implemented as an engine plugin rather than an inline FEEL expression.
+The `Script Ref` field lets you run a named script provided by an Engine plugin, instead of writing a formula here. When `Script Ref` is filled in, the inline editor is hidden and the named script is used.
+
+## Data Pipeline
+
+Like all activities, a Script Task can shape the data it sends and receives. See [Input Mappings](help://bpmn/properties/input_mappings), [Output Mappings](help://bpmn/properties/output_mappings), [Payload Contract](help://bpmn/properties/payload_contract), and [Result Contract](help://bpmn/properties/result_contract).

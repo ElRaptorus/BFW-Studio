@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Data Object
 ---
 
@@ -7,8 +6,22 @@ title: Data Object
 
 ![Data Object](DataObject.svg)
 
-`Data Objects` are used to store data in the context of a `Process Instance`.
-Information stored in a `Data Object` is available to every `Flow Node Instance` of the respective `Process Instance`.
-Storing data is achieved, by connecting a [Data Output Association](help://bpmn/properties/data_output_association) from your `Activity` or `Event` to the `Data Object` you wish to write data to.
-Each `Data Output Association` will **overwrite** the content of the `Data Object` in question.
-To read data from the `Data Object`, you have to set a [Data Input Association](help://bpmn/properties/data_input_association) from the `Data Object` to the `Activity` or `Event` that needs the `Data Object`'s data.
+A `Data Object` is a named piece of data that belongs to the whole process run. Once written, its value is available to every step until the process ends.
+
+## Writing to it
+
+Draw a [Data Output Association](help://bpmn/properties/data_output_association) from a step to the Data Object. When that step finishes, it writes to the Data Object — each write **replaces** the previous value. You can shape what gets written with a [Transformation](help://bpmn/properties/data_output_association_transformation).
+
+## Reading from it
+
+Read a Data Object inside any [formula](help://bpmn/runtime_expressions) using `dataObjects` followed by its name, for example:
+
+```feel
+dataObjects.myOrder
+```
+
+Drawing a [Data Input Association](help://bpmn/properties/data_input_association) shows the read on the diagram, but the actual reading happens in the formula.
+
+## Validation
+
+The `Value Contract` field lets you describe the shape every value written to this Data Object must have (as a JSON Schema). A write that does not fit is rejected and the writing step fails.

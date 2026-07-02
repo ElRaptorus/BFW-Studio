@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Message Intermediate Catch Event
 ---
 
@@ -7,12 +6,15 @@ title: Message Intermediate Catch Event
 
 ![Message Intermediate Catch Event](MessageIntermediateCatchEvent.svg)
 
-The `Message Intermediate Catch Event` is a specialized [Intermediate Event](help://bpmn/properties/intermediate_event) that pauses the Process until a `Message` with a matching name is received.
+A `Message Intermediate Catch Event` pauses the flow and waits for a matching message to arrive before continuing.
 
-## Properties
+## Configuration
 
-The following properties can be configured:
+- **`Message`** — the message this event waits for. Messages are named once in the diagram and matched by that name.
+- **`Output Mappings`** — optionally copy values from the incoming message into your process data. See [Output Mappings](help://bpmn/properties/output_mappings).
+- **`Result Contract`** — optionally describe the shape the incoming message must have. A message that does not fit is rejected. See [Result Contract](help://bpmn/properties/result_contract).
+- **`Example Payload`** — a sample message for testing and simulation. It does not affect the running process. See [Example Payload](help://bpmn/properties/example_payload).
 
-### Name
+## Waiting for a message meant for this case
 
-The name of the `Message` that the `Message Intermediate Catch Event` should wait for.
+By default the event accepts any message with the matching name. To wait only for a message intended for this specific running process, give the process a [Correlation Key](help://bpmn/properties/process). The sender then marks its message with a matching value (see [Correlation Retrieval Expression](help://bpmn/properties/correlation_retrieval_expression)).

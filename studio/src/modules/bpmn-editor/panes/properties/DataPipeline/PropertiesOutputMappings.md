@@ -4,28 +4,32 @@ title: Output Mappings
 
 # Output Mappings
 
-**Output Mappings** define how data from the activity's result is transformed and bound to variables in the outgoing token. Each mapping consists of a **source** (FEEL expression) and a **target** (variable name).
+`Output Mappings` decide which parts of an activity's result are kept, and under what names, before the flow continues. Instead of carrying the whole raw result forward, you pick out and tidy up just what later steps need.
 
-## How It Works
+Each mapping has two parts:
 
-After the activity completes, each output mapping is evaluated:
+- **Source** — a [formula](help://bpmn/runtime_expressions) that reads from the activity's result.
+- **Target** — the name the value is carried forward under.
 
-1. The **source** [FEEL expression](help://bpmn/runtime_expressions) is evaluated against the activity's result.
-2. The result is bound to the **target** variable name in the outgoing token.
+## How it works
+
+After the activity finishes, each mapping's **Source** formula is worked out against the result, and the value is carried forward under its **Target** name.
 
 ## Examples
 
-| Source (FEEL)               | Target            | Effect                                    |
-| --------------------------- | ----------------- | ----------------------------------------- |
-| `token.result`              | `processedResult` | Renames the result variable               |
-| `token.response.statusCode` | `httpStatus`      | Extracts a specific value from the result |
-| `count(token.items)`        | `itemCount`       | Computes a derived value                  |
+| Source                      | Target            | Effect                                 |
+| --------------------------- | ----------------- | -------------------------------------- |
+| `token.result`              | `processedResult` | Renames the result                     |
+| `token.response.statusCode` | `httpStatus`      | Keeps just one value from the result   |
+| `count(token.items)`        | `itemCount`       | Works out a new value (how many items) |
 
-## When to Use
+## When to use
 
-Use output mappings when you want to:
+- To rename or reshape what an activity produces.
+- To keep only the values later steps actually need.
+- To work out a new value from the result.
+- To give later steps a consistent, predictable data shape.
 
-- Rename or restructure the activity's output
-- Extract specific values from a complex result
-- Compute derived values from the activity's output
-- Ensure downstream elements receive a consistent data shape
+## Where it appears
+
+Output Mappings are available on data-carrying steps: Service Tasks, Script Tasks, Business Rule Tasks, User Tasks, Call Activities, and message-receiving elements.

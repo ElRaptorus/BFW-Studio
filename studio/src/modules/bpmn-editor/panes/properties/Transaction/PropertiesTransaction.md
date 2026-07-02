@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Transaction
 ---
 
@@ -7,6 +6,6 @@ title: Transaction
 
 ![Transaction](Transaction.svg)
 
-The `Transaction` is a specialized [Subprocess](help://bpmn/properties/subprocess) which ensured that all process members should be completed or canceled.
-This will be guaranteed by a so called `Transaction Protocol`, which verifies that all the `Participants` have successfully completed their work.
-If in this verification it comes up, that one `Participant` ended with a `Cancel` or `Error` the flow will move to an appropriate `Intermediate Event` like a `Compensation` or `Error Catch Event`.
+> **Not executed by the current Engine.** You can draw and deploy a Transaction, but the Engine will not run it. Avoid it in executable processes for now.
+
+A `Transaction` is a specialized [Subprocess](help://bpmn/properties/subprocess) whose contained work is meant to either complete as a whole or be cancelled and compensated together. The current Engine does not provide transaction semantics; use an ordinary [Subprocess](help://bpmn/properties/subprocess) with explicit error handling instead.

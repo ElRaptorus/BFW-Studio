@@ -4,32 +4,18 @@ title: Completion Condition
 
 # Completion Condition
 
-The **Completion Condition** is a boolean [FEEL expression](help://bpmn/runtime_expressions) evaluated after each instance of a Multi Instance activity completes. When the expression evaluates to `true`, all remaining instances are cancelled and the activity completes.
+> **Not executed by the current Engine.** You can draw and deploy Multi-Instance loops, but the Engine will not run them. Avoid them in executable processes for now.
+
+The `Completion Condition` is a yes/no [formula](help://bpmn/runtime_expressions) checked after each round of a Multi-Instance activity finishes. When it becomes true, the remaining rounds are cancelled and the activity finishes early.
 
 ## Usage
 
-Write a FEEL expression that evaluates to `true` when the Multi Instance should finish early.
+Write a formula that becomes true when the activity should stop early.
 
-### Examples
-
-**Complete after 3 instances finish:**
-
-```feel
-loop.completed >= 3
-```
-
-**Complete when a specific result is found:**
+**Complete once a result is approved:**
 
 ```feel
 token.result = "approved"
 ```
 
-## Behavior
-
-- Evaluated once after **each** instance completes.
-- If omitted, all instances must complete before the activity finishes.
-- When triggered, all **remaining** (not yet completed) instances are cancelled.
-
-## Note
-
-This property maps to the BPMN 2.0 `completionCondition` element within `multiInstanceLoopCharacteristics`.
+If omitted, all instances run to completion before the activity finishes.

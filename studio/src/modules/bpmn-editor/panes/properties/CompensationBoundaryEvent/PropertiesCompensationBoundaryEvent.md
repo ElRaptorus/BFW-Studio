@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Compensation Boundary Event
 ---
 
@@ -7,5 +6,6 @@ title: Compensation Boundary Event
 
 ![Compensation Boundary Event](CompensationBoundaryEvent.svg)
 
-The `Compensation Boundary Event` is a specialized [Boundary Event](help://bpmn/properties/boundary_event) that is triggered if a `Compensation Event` is triggered in the process.
-The `Compensation Activity` that is connected to the `Compensation Boundary Event` will be performed when the `Event` is triggered.
+> **Not executed by the current Engine.** You can draw and deploy this element, but the Engine will not run it. Avoid it in executable processes for now.
+
+The `Compensation Boundary Event` is a specialized [Boundary Event](help://bpmn/properties/boundary_event) that marks the compensation handler for its activity. When compensation is requested, the activity connected to this event would be run to undo the original activity's effect.

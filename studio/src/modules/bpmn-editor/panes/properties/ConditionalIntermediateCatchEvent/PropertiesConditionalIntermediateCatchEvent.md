@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Conditional Intermediate Catch Event
 ---
 
@@ -7,14 +6,12 @@ title: Conditional Intermediate Catch Event
 
 ![Conditional Intermediate Catch Event](ConditionalIntermediateCatchEvent.svg)
 
-The `Conditional Intermediate Catch Event` is a specialized [Intermediate Event](help://bpmn/properties/intermediate_event) that is triggered when an annotated condition becomes true.
-Conditions are modeled by using FEEL expressions.
+A `Conditional Intermediate Catch Event` pauses the flow until a condition becomes true, then continues.
 
-This FEEL expression must evaluate to a **boolean** value. Otherwise, an error will be thrown.
+## Configuration
 
-## Scope
+- **`Condition`** — a [formula](help://bpmn/runtime_expressions) that results in `true` or `false`. The event waits, re-checks the condition every time the process data changes, and continues as soon as it becomes `true`.
 
-`Intermediate Conditional Catch Events` can currently only access data from the Process Instance in which they are executed.
-FEEL expressions cannot access data from other process instances.
+If the formula ever returns something other than `true` or `false`, it is treated as "not yet true" and the event keeps waiting. This is not reported as an error, so make sure your formula really resolves to `true` or `false`.
 
-Therefore, it is currently not possible to listen for changes in a child process or a parent process.
+The condition can only read data from its own process, not from a parent or child process.

@@ -1,11 +1,9 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Definition
 ---
 
 # Definition
 
-The `Definition` defines the overall structure of the BPMN diagram. Each diagram has a unique `Definition ID`.
+The `Definition` is the top-level container of a BPMN file. It holds all of the diagram's processes and carries its own `Definition ID`, which simply names the file.
 
-**Important:**
-Definition IDs must be unique **across the entire solution**, since it is this ID that the engine will use to identify a diagram.
+**Important:** A deployed process is identified by its **Process ID**, not by the Definition ID. Make sure every runnable process has a stable, unique Process ID — that is the name used to start and manage it. The Definition ID only labels the file that contains it.

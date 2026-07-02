@@ -13,7 +13,7 @@ It is usually used by Subprocesses or processes that are designed to be started 
 
 The enclosing parent can use an [Escalation Boundary Event](help://bpmn/properties/escalation_boundary_event) to catch the `Escalation` thrown by the `Escalation End Event`.
 
-It is important to note that an Escalation will be passed back up through the process chain, until it reaches the _first_ `Escalation Boundary Event´ capable of handling it.
+It is important to note that an Escalation will be passed back up through the process chain, until it reaches the _first_ [Escalation Boundary Event](help://bpmn/properties/escalation_boundary_event) capable of handling it.
 
 This means that each escalation will only ever be handled by a _single_ Escalation Boundary Event.
 

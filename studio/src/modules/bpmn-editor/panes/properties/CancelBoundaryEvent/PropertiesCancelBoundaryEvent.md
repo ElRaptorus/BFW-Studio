@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Cancel Boundary Event
 ---
 
@@ -7,5 +6,6 @@ title: Cancel Boundary Event
 
 ![Cancel Boundary Event](CancelBoundaryEvent.svg)
 
-The `Cancel Boundary Event` is a specialized [Boundary Event](help://bpmn/properties/boundary_event) that is triggered if a `Cancel Event` is triggered in the `Transaction Sub-Process`.
-The `Transaction Sub-Process` throws the `Cancel Event` if the [Cancel End Event](help://bpmn/properties/cancel_end_event) is reached or a `Cancel Message` is received during the execution.
+> **Not executed by the current Engine.** You can draw and deploy this element, but the Engine will not run it. Avoid it in executable processes for now.
+
+The `Cancel Boundary Event` is a specialized [Boundary Event](help://bpmn/properties/boundary_event) that reacts to a cancellation. In BPMN it belongs to Transaction Subprocesses, which the current Engine does not run — so this event has no runtime effect.

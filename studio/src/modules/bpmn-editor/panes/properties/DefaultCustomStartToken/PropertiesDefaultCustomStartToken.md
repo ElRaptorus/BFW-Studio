@@ -1,15 +1,14 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Default Configured Start Payload
 ---
 
 # Default Configured Start Payload
 
-You can use `Default Configured Start Payloads` to configure a default `Payload` for `Configured Start` dialogs.
+The `Default Configured Start Payload` is a Studio convenience for modeling. It pre-fills the `Payload` field of the **Configured Start** dialog, so you do not have to retype the same sample data every time you start the process from the Studio.
 
-Example:
+It is remembered on the Start Event for use inside the Studio only — it is not part of the deployed process and does not change how the process actually runs.
 
-If you configure the following `Default Configured Start Payload`:
+Example — this payload:
 
 ```json
 {
@@ -17,6 +16,6 @@ If you configure the following `Default Configured Start Payload`:
 }
 ```
 
-Then the `Configured Start` dialog will pre-fill the `Payload` field with this value.
+pre-fills the **Configured Start** dialog:
 
 ![Configured Start Dialog](custom_start_dialog.png)

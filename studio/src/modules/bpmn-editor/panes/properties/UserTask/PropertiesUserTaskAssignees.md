@@ -1,45 +1,43 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
-title: Assigned Users
+title: Assignees
 ---
 
-# Assigned Users
+# Assignees
 
-Assigning Users to a `User Task` ensures that only these specific Users can read, reserve and finish the `User Task`.
+Assignees are the people or groups allowed to see, reserve, and finish a [User Task](help://bpmn/properties/user_task). When a task has assignees, only they can work on it.
 
-Assignees are configured via a single `evil:assignees` FEEL expression. The expression must resolve to a string or a list of strings.
+The `Assignees` field is a [formula](help://bpmn/runtime_expressions) that must resolve to a single name or a list of names. Because it is a formula, you can name people directly or work them out from the process data.
 
-**Note:**
-Assignees do not require the Lane Claim for accessing the `User Task`.
+> Assignees can open the task even without the usual lane permission.
 
 ## Examples
 
-Single assignee:
+A single person, named directly:
 
-```
+```feel
 "UserIdA"
 ```
 
-From token:
+Taken from the process data:
 
-```
+```feel
 token.assignedUser
 ```
 
-List of assignees:
+Several people at once:
 
-```
+```feel
 ["UserIdA", "User@Email.com"]
 ```
 
-From identity:
+The person who started the process:
 
-```
+```feel
 [identity.id]
 ```
 
-Conditional assignees:
+Different people depending on the situation:
 
-```
+```feel
 if token.priority > 5 then ["admin"] else ["standard"]
 ```

@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Business Rule Task
 ---
 
@@ -7,42 +6,22 @@ title: Business Rule Task
 
 ![Business Rule Task](BusinessRuleTask.svg)
 
-The `Business Rule Task` allows you to make decisions based on a specific set of business rules. The engine supports two implementation modes, selected via the standard BPMN `implementation` attribute.
+A `Business Rule Task` works out a decision automatically and continues with the result. Use it wherever a choice follows clear, repeatable rules — for example a discount tier, a risk rating, or an approval limit.
 
-## Implementation Modes
+## Implementation
 
-### FEEL Expression (`implementation="feel"`)
+The `Implementation` field chooses how the decision is made:
 
-The task evaluates an inline [FEEL expression](help://bpmn/runtime_expressions) stored in the `<bpmn:script>` child element. The expression receives the standard FEEL context bindings (`token`, `this`, `context`, `dataObjects`, `process`, `processInstance`, `identity`, and `loop` when applicable). The evaluated result becomes the activity output.
+- **FEEL Expression** — you write the rule directly as a [formula](help://bpmn/runtime_expressions) in the `FEEL Script` field. Its result becomes the task's output. Best for short, self-contained rules.
+- **DMN Decision** — the task runs a separately maintained decision model (a decision table). Best for richer rule sets that are managed on their own and reused across processes.
 
-### DMN Decision (`implementation="dmn"`)
+## Settings for DMN Decision
 
-The task evaluates a deployed DMN decision model at runtime. The engine resolves the decision reference, evaluates the decision table (including DRG chaining when required), and returns the decision result.
+- **`Decision Reference`** — the decision model to run. It must already be deployed to the system.
+- **`Decision Element ID`** — only needed when a decision model contains more than one decision. It names which decision to run; without it, a multi-decision model cannot tell which one you mean.
+- **`Result Variable`** — an optional name under which the decision result is stored.
+- **`Trace Unmatched Rules`** — when on, the result also records the rules that did **not** apply. Handy when checking why a decision turned out the way it did.
 
-## Settings
+## Data Pipeline
 
-A `Business Rule Task` can be configured with the following properties:
-
-### Implementation
-
-Select **FEEL Expression** or **DMN Decision**. This sets the BPMN `implementation` attribute to `feel` or `dmn`.
-
-### FEEL Script
-
-Required when **FEEL Expression** is selected. A [FEEL expression](help://bpmn/runtime_expressions) evaluated by the engine when the task is reached.
-
-### Decision Reference
-
-Required when **DMN Decision** is selected. The ID of the deployed DMN decision model to evaluate (stored as `evil:decisionRef`).
-
-### Decision Element ID
-
-Optional. When the referenced DMN model contains multiple `<decision>` elements, specifies which decision element to evaluate as the DRG root. If omitted on a multi-decision model, the engine returns an ambiguous-decision error.
-
-### Result Variable
-
-Optional. The output variable name for the decision result.
-
-### Trace Unmatched Rules
-
-Optional. When enabled, the DMN evaluator includes full detail for unmatched rules in the execution trace (useful for debugging in the Studio).
+Like all activities, a Business Rule Task can shape the data it works with. See [Input Mappings](help://bpmn/properties/input_mappings), [Output Mappings](help://bpmn/properties/output_mappings), [Payload Contract](help://bpmn/properties/payload_contract), and [Result Contract](help://bpmn/properties/result_contract).

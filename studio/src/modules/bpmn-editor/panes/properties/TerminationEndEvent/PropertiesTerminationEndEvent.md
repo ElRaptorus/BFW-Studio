@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Termination End Event
 ---
 
@@ -7,6 +6,6 @@ title: Termination End Event
 
 ![Termination End Event](TerminationEndEvent.svg)
 
-The `Termination End Event` is a specialized [End Event](help://bpmn/properties/end_event) that is designed to immediately end the `Process` and all its Flow Node Instances.
+The `Termination End Event` is a special [End Event](help://bpmn/properties/end_event) that stops the **entire** process at once — including any other paths that are still running in parallel.
 
-This is useful for Processes that make use of `Parallel Gateways`.
+This is useful in processes that split into several parallel paths with a [Parallel Gateway](help://bpmn/properties/parallel_gateway): reaching a Termination End Event on one path ends them all immediately, rather than waiting for the others to finish.

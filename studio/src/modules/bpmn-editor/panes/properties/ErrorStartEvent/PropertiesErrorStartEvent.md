@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Error Start Event
 ---
 
@@ -7,5 +6,8 @@ title: Error Start Event
 
 ![Error Start Event](ErrorStartEvent.svg)
 
-The `Error Start Event` is a specialized [Start Event](help://bpmn/properties/start_event) that is triggered by an `Error` from another `Process` or `Participant` respectively.
-It is used in the context of an [Event Subprocess](help://bpmn/properties/event_subprocess).
+> **Not executed by the current Engine.** You can draw and deploy this element, but the Engine will not run it. Avoid it in executable processes for now.
+
+An `Error Start Event` is meant to start an Event Subprocess in reaction to an `Error` raised elsewhere in the process. The current Engine does not run Event Subprocesses, and a top-level [Start Event](help://bpmn/properties/start_event) only accepts plain, Message, Signal, Timer, or Conditional triggers — so an Error trigger on a Start Event will not execute.
+
+To react to an error today, catch it with an [Error Boundary Event](help://bpmn/properties/error_boundary_event) on the Activity (or Call Activity) that can raise it.

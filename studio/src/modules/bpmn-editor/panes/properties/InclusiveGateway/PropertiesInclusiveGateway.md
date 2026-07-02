@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Inclusive Gateway
 ---
 
@@ -7,9 +6,15 @@ title: Inclusive Gateway
 
 ![Inclusive Gateway](InclusiveGateway.svg)
 
-The `Inclusive Gateway` is used to create both alternative and parallel paths within a process flow.
-This differs from both the `Exclusive Gateway`, which only routes through one path based on the first condition that evaluates to true,
-and the `Parallel Gateway`, which doesn't evaluate conditions and activates all outgoing flows simultaneously.
-The `Inclusive Gateway` assesses all condition `Expression`s for each connected flow, allowing for one, some, or all paths to be activated.
-If no conditions are met, the process will terminate and result in a runtime error.
-To mitigate this, it's best practice to set up a [Default Flow](help://bpmn/properties/default_flow).
+The `Inclusive Gateway` can activate one, several, or all of its outgoing paths at once. It sits between the [Exclusive Gateway](help://bpmn/properties/exclusive_gateway) (exactly one path) and the [Parallel Gateway](help://bpmn/properties/parallel_gateway) (always all paths).
+
+## Splitting
+
+The gateway checks the [condition](help://bpmn/runtime_expressions) on **every** outgoing [Conditional Flow](help://bpmn/properties/conditional_flow) and follows each path whose condition is true. An outgoing flow **without** a condition is always taken.
+
+- If none of the conditions are true, the [Default Flow](help://bpmn/properties/default_flow) is taken instead.
+- If none are true and there is no default (and no unconditional flow), the process stops with an error — so always model a default as a safety net.
+
+## Merging
+
+As a merge, the Inclusive Gateway waits for exactly the branches that were actually activated upstream, then continues.

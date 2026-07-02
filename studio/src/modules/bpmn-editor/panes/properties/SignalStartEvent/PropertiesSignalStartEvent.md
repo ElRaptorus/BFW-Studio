@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Signal Start Event
 ---
 
@@ -7,18 +6,16 @@ title: Signal Start Event
 
 ![Signal Start Event](SignalStartEvent.svg)
 
-The `Signal Start Event` is a specialized [Start Event](help://bpmn/properties/start_event) that is used to automatically start a process.
-The process will be started when a `Signal` with a matching name is received by the engine.
-The source of that `Signal` can be another process, or a `Signal` triggered through an Engine Extension.
+A `Signal Start Event` starts a new process whenever a matching signal is broadcast. A signal is like a public announcement: every element listening for it reacts. The signal can come from another process in the diagram or from a connected system, and the process can still also be started manually.
 
-Processes with a `Signal Start Event` can also be started by hand, as you would a process with a regular `Start Event`.
+If several processes start on the **same** signal, all of them start when it is broadcast.
 
-Note that if multiple processes use a `Signal Start Event` with the _same_ `Signal`, then **all** the corresponding processes will be started, when a matching `Signal` is received.
+## Configuration
 
-## Properties
+- **`Signal`** — the signal to listen for. Signals are named once in the diagram and matched by that name.
 
-The following properties can be configured:
+A signal is a pure notification and carries **no data**. To start a process _with_ data, use a [Message Start Event](help://bpmn/properties/message_start_event) instead.
 
-### Name
+## Shaping the data
 
-The name of the `Signal` that the `Signal Start Event` should wait for.
+Although the signal brings no data, you can still prepare the process data the new run begins with using [Output Mappings](help://bpmn/properties/output_mappings).

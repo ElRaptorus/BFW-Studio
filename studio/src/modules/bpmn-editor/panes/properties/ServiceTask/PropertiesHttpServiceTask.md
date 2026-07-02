@@ -4,18 +4,21 @@ title: HTTP Service Task
 
 # HTTP Service Task
 
-The `HTTP Service Task` is a Service Task with `implementation` set to `"http"`. It performs an HTTP request to an external endpoint during process execution.
+An `HTTP Service Task` is a [Service Task](help://bpmn/properties/service_task) whose `Type` is set to **HTTP**. It calls a web address (a URL) while the process runs — for example to look something up in, or send something to, another system.
 
 ## Configuration
 
-| Property                 | Description                                                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| **URL**                  | The target endpoint URL                                                                                              |
-| **Method**               | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`                                                              |
-| **Body**                 | [FEEL expression](help://bpmn/runtime_expressions) for the request body (typically used with `POST`, `PUT`, `PATCH`) |
-| **Authorization Header** | [FEEL expression](help://bpmn/runtime_expressions) for the `Authorization` header value                              |
-| **Response Headers**     | [FEEL expression](help://bpmn/runtime_expressions) for handling response headers                                     |
+Two fields are plain text and are used exactly as you type them:
+
+- **`Url`** — the web address to call. **Required.**
+- **`Method`** — the kind of request: `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`. Defaults to `GET`.
+
+The remaining fields are [formulas](help://bpmn/runtime_expressions), so their values can be built from the current process data:
+
+- **`Body`** — the content sent with the request. Usually used with `POST`, `PUT`, or `PATCH`.
+- **`Auth Header`** — the value for the request's `Authorization` header, when the target system requires sign-in.
+- **`Response Headers`** — selects which of the response's headers are carried over into the task's result.
 
 ## Data Pipeline
 
-Like all activity types, the HTTP Service Task supports [Input Mappings](help://bpmn/properties/input_mappings), [Output Mappings](help://bpmn/properties/output_mappings), [Payload Contract](help://bpmn/properties/payload_contract), and [Result Contract](help://bpmn/properties/result_contract).
+Like all activities, the HTTP Service Task can shape the data it sends and receives. See [Input Mappings](help://bpmn/properties/input_mappings), [Output Mappings](help://bpmn/properties/output_mappings), [Payload Contract](help://bpmn/properties/payload_contract), and [Result Contract](help://bpmn/properties/result_contract).

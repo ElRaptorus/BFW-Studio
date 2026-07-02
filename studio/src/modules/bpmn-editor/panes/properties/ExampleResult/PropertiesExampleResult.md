@@ -6,7 +6,7 @@ title: Example Result
 # Example Result
 
 Optional.
-You can use this property to document the result produced by this element — i.e. the activity output that downstream flow nodes receive.
+You can use this property to document the result produced by this element — that is, the output later steps receive.
 
 Available on:
 

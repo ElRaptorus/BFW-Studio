@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Conditional Boundary Event
 ---
 
@@ -7,22 +6,19 @@ title: Conditional Boundary Event
 
 ![Conditional Boundary Event](ConditionalBoundaryEvent.svg)
 
-The `Conditional Boundary Event` is a specialized [Boundary Event](help://bpmn/properties/boundary_event) that is triggered when an annotated condition becomes true.
-Conditions are modeled by using FEEL expressions.
+A `Conditional Boundary Event` is attached to an activity and fires when a condition becomes true while that activity is running.
 
-This FEEL expression must evaluate to a **boolean** value. Otherwise, an error will be thrown.
+## Configuration
 
-## Scope
+- **`Condition`** — a [formula](help://bpmn/runtime_expressions) that results in `true` or `false`. It is re-checked every time the process data changes, and the event fires as soon as it becomes `true`.
 
-`Conditional Boundary Events` can currently only access data from the Process Instance in which they are executed.
-FEEL expressions cannot access data from other process instances.
+If the formula returns something other than `true` or `false`, it is treated as "not yet true" and the event keeps waiting. This is not reported as an error.
 
-Therefore, it is currently not possible to listen for changes in a child process or a parent process.
+The condition can only read data from its own process, not from a parent or child process.
 
-## Non-Interrupting Conditional Boundary Event
+## Interrupting vs. non-interrupting
 
-If the `Conditional Boundary Event` is marked as **non-interrupting**, the decorated `Activity` won't be canceled when the Boundary Event triggers.
+- **Interrupting** (solid border): the activity is cancelled when the event fires.
+- **Non-interrupting** (dashed border): the activity keeps running and an additional path starts alongside it.
 
-However, even a non-interrupting `Conditional Boundary Event` will only ever be **triggered once**. This is because this Event Type has no deterministic Event Source, but basically reacts to _any_ changes in the process instance.
-
-So to prevent a host of unintented trigger occurences, the non-interrupting `Condition Boundary Event` will only wait until the condition is fulfilled once and then finish.
+Either way, the event fires **only once**. Because it reacts to ongoing changes rather than a single incoming trigger, it waits for the condition to become true one time and then completes — this avoids a flood of repeated triggers.

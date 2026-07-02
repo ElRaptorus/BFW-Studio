@@ -1,17 +1,18 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Timer Boundary Event
 ---
 
-# Timer Boundary Events
+# Timer Boundary Event
 
 ![Timer Boundary Event](TimerBoundaryEvent.svg)
 
-The `Timer Boundary Event` is a specialized [Boundary Event](help://bpmn/properties/boundary_event) that triggers, after the specified timer has expired.
+A `Timer Boundary Event` sits on the edge of an activity and fires after its timer elapses while that activity runs. Choose the timer `Type` — **Date**, **Duration**, or **Cycle** — and enter its value in the `Definition` field.
 
-There are two types of Timer Boundary Events:
+- [Date Timer Boundary Event](help://bpmn/properties/timer_boundary_event_date) — fires at a specific date and time
+- [Duration Timer Boundary Event](help://bpmn/properties/timer_boundary_event_duration) — fires after a delay
 
-- [Date Timer Boundary Events](help://bpmn/properties/timer_boundary_event_date)
-- [Duration Timer Boundary Events](help://bpmn/properties/timer_boundary_event_duration).
+If set to **non-interrupting**, the activity keeps running when the event fires.
 
-If the `Timer Boundary Event` is set to **non-interrupting**, the decorated `Activity` will not be canceled by the Boundary Event.
+## Repeating (cyclic) timer boundary
+
+A Timer Boundary Event can also use a repeating **Cycle**. An **interrupting** cyclic boundary fires once and cancels the activity. A **non-interrupting** cyclic boundary fires again on each interval while the activity keeps running — useful for periodic reminders or escalations. Repeating intervals use the ISO 8601 form `R3/PT1H` (or `R/PT1H` for no end).

@@ -1,31 +1,16 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Cyclic Timer Start Event
 ---
 
-# Cyclic Timer Start Events
+# Cyclic Timer Start Event
 
-A `Cyclic Timer Start Event` is used to repeatedly trigger a process, using a specific interval.
+A Cyclic timer starts the process again and again on a schedule. Set the `Type` to **Cycle** and enter the schedule in the `Definition` field.
 
-This interval are configured as [crontabs](https://en.wikipedia.org/wiki/Cron).
+Use an ISO 8601 repeating interval:
 
-In Short, a crontab is made up of 6 values:
+- `R3/PT1H` — three times, once every hour
+- `R/PT30M` — every 30 minutes, with no end
+- `R5/P1D` — five times, once per day
+- `R/2026-06-01T10:00:00Z/P1D` — starting on a specific date, then once per day with no end
 
-- `second` (Optional): 0-59
-- `minute`: 0-59
-- `Hour`: 0-23
-- `day`: 1-31
-- `month`: 1-12
-- `dayofweek`: (0-7, Sunday is 0 or 7)
-
-The `second` value is optional and can be omitted.
-
-You can use a wildcard `*` to configure the timer to run at every second/minute/hour/day/month/dayofweek.
-
-A few Examples:
-
-- `0 0 * * 1` - Triggers every monday at midnight
-- `0,30 3 * * *` - Triggers every day at 3am and 3:30am
-- `*/30 * * * * *` - Triggers every 30 seconds
-
-For more information on how to use crontabs, see [this guide](https://en.wikipedia.org/wiki/Cron).
+The duration part (after the last `/`) uses the same format as the [Duration Timer Start Event](help://bpmn/properties/timer_start_event_duration). You can also enter a [formula](help://bpmn/runtime_expressions) that produces a repeating interval.

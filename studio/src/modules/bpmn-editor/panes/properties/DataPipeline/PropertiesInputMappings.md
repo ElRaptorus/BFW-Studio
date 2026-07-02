@@ -4,29 +4,31 @@ title: Input Mappings
 
 # Input Mappings
 
-**Input Mappings** define how data from the current token is transformed and bound to variables in the activity's input scope. Each mapping consists of a **source** (FEEL expression) and a **target** (variable name).
+`Input Mappings` decide exactly which data an activity receives, and in what shape, before it runs. Instead of handing the activity everything, you pick out and prepare just what it needs.
 
-## How It Works
+Each mapping has two parts:
 
-Before the activity executes, each input mapping is evaluated:
+- **Source** — a [formula](help://bpmn/runtime_expressions) that reads from the current process data.
+- **Target** — the name the activity will see that value under.
 
-1. The **source** [FEEL expression](help://bpmn/runtime_expressions) is evaluated against the current token and context bindings.
-2. The result is bound to the **target** variable name in the activity's input scope.
+## How it works
 
-The activity then executes with these mapped variables as its input, rather than receiving the raw token.
+Before the activity runs, each mapping's **Source** formula is worked out and the result is handed to the activity under its **Target** name. The activity then runs with just these prepared values.
 
 ## Examples
 
-| Source (FEEL)                              | Target         | Effect                                  |
-| ------------------------------------------ | -------------- | --------------------------------------- |
-| `token.customer.id`                        | `customerId`   | Extracts the customer ID from the token |
-| `token.items[status = "pending"]`          | `pendingItems` | Filters and maps a subset of items      |
-| `{ name: token.name, email: token.email }` | `contactInfo`  | Constructs a new context object         |
+| Source                                     | Target         | Effect                                    |
+| ------------------------------------------ | -------------- | ----------------------------------------- |
+| `token.customer.id`                        | `customerId`   | Passes just the customer ID               |
+| `token.items[status = "pending"]`          | `pendingItems` | Passes only the items still pending       |
+| `{ name: token.name, email: token.email }` | `contactInfo`  | Builds a small package of contact details |
 
-## When to Use
+## When to use
 
-Use input mappings when you want to:
+- To give an activity only what it needs, nothing more.
+- To reshape or rename data before the activity sees it.
+- To keep an activity's input stable even when earlier steps change.
 
-- Narrow down the data an activity receives (principle of least privilege)
-- Transform or restructure token data before it enters the activity
-- Provide a stable interface for the activity regardless of upstream token changes
+## Where it appears
+
+Input Mappings are available on data-carrying steps: Service Tasks, Script Tasks, Business Rule Tasks, User Tasks, Call Activities, and message-sending elements.

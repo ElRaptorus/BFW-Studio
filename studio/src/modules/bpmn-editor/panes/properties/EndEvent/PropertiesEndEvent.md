@@ -7,10 +7,9 @@ title: End Event
 
 ![EndEvent](EndEvent.svg)
 
-The `End Event` is the last element in a Process and indicates its end.
+The `End Event` marks where a path through the process ends.
 
-When the Process arrives at the End Event, the Process Instance is finished.
-It is possible to define multiple End Events in one Process. However, only _one_ End Event may ever be reached for each Process Instance.
+A process can have several End Events for its different outcomes. Each path that reaches one ends there; the whole process finishes once all of its active paths have ended.
 
 There are several types of End Events:
 
@@ -40,23 +39,21 @@ See also: ([ErrorEndEvent](help://bpmn/properties/error_end_event)).
 
 ## Termination End Event
 
-Immediately stops the Process Instance and all its Flow Node Instances.
+Immediately stops the whole process, including any other paths that are still running in parallel.
 
-This is useful for Processes that make use of `Parallel Gateways`.
+This is useful for processes that split into several parallel paths with `Parallel Gateways`.
 
 See also: [Termination End Event](help://bpmn/properties/terminate_end_event).
 
 ## Escalation End Event
 
-**Currently not supported by the engine**.
-
-Finishes the Process with a success result and triggers an `Escalation` Event.
+Finishes the Process and raises an `Escalation` that a parent process can react to with a matching [Escalation Boundary Event](help://bpmn/properties/escalation_boundary_event).
 
 See also: ([EscalationEndEvent](help://bpmn/properties/escalation_end_event))
 
 ## Compensation End Event
 
-**Currently not supported by the engine**.
+> **Not executed by the current Engine.** You can draw and deploy this element, but the Engine will not run it. Avoid it in executable processes for now.
 
 Finishes the Process and triggers `Compensation` for all previous Tasks with a [Compensation Boundary Event](help://bpmn/properties/compensation_boundary_event).
 

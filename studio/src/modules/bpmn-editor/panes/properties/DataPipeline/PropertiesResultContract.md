@@ -4,15 +4,15 @@ title: Result Contract
 
 # Result Contract
 
-The **Result Contract** is a JSON Schema that is validated against the activity's output at runtime. If the output does not conform to the schema, the flow node instance transitions to a **Fatal** state.
+A `Result Contract` describes the shape the data **coming out of** an activity must have. When the result does not match, it is rejected and the step fails instead of passing bad data on.
 
 ## Purpose
 
-Result Contracts enforce data quality at the output boundary of an activity. They ensure that downstream elements receive correctly structured data, preventing malformed output from propagating through the process.
+A Result Contract makes sure later steps only ever receive well-formed data, stopping a malformed result from spreading through the rest of the process.
 
 ## Format
 
-The contract must be a valid [JSON Schema](https://json-schema.org/) document. Example:
+The contract is written as a [JSON Schema](https://json-schema.org/) — a standard way to describe the expected structure of data. For example:
 
 ```json
 {
@@ -25,6 +25,6 @@ The contract must be a valid [JSON Schema](https://json-schema.org/) document. E
 }
 ```
 
-## Note
+This example requires a `status` of either `success` or `failure`, and a `processedAt` date and time.
 
-Result Contracts are **not** FEEL expressions. They are static JSON Schema definitions evaluated by the engine's schema validator.
+> A Result Contract is a fixed description of the data — not a [formula](help://bpmn/runtime_expressions).

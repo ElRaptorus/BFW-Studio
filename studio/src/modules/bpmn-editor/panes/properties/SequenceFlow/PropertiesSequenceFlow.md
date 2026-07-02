@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Sequence Flow
 ---
 
@@ -7,6 +6,10 @@ title: Sequence Flow
 
 ![SequenceFlow](SequenceFlow.svg)
 
-The `sequence flow` makes the sequence of the individual process steps clear.
-It describes the chronological-logical order in which the flow elements are related to each other.
-It connects activities, events and gateways to each other.
+A `Sequence Flow` connects activities, events, and gateways, and defines the order in which they are executed.
+
+## Conditions
+
+A Sequence Flow can carry a [FEEL expression](help://bpmn/runtime_expressions) condition (see [Conditional Flow](help://bpmn/properties/conditional_flow)), but the Engine only honors that condition when the flow **leaves a split gateway** — an [Exclusive](help://bpmn/properties/exclusive_gateway), [Inclusive](help://bpmn/properties/inclusive_gateway), or [Complex](help://bpmn/properties/complex_gateway) Gateway.
+
+On any other Sequence Flow (leaving an activity, an event, or a join gateway), a condition is **ignored** and the flow is always taken. Put your branching logic on the flows that come out of a split gateway.

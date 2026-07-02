@@ -1,26 +1,21 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Duration Timer Start Event
 ---
 
-# Duration Timer Start Events
+# Duration Timer Start Event
 
-A `Duration Timer Start Event` will start the process, after the configured duration timer has expired.
+A Duration timer starts the process once, after a delay. Set the `Type` to **Duration** and enter the delay in the `Definition` field.
 
-The duration must be supplied in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601).
+The delay uses the ISO 8601 duration format, for example `P1Y2M4DT5H6M7S`. It always begins with `P`, each part is a number followed by a unit (`1Y` = one year), and `T` separates the date parts from the time parts.
 
-Example: `P1Y2M4DT5H6M7S`
+- `Y` — years
+- `M` (before `T`) — months
+- `D` — days
+- `T` — separates the date and time parts
+- `H` — hours
+- `M` (after `T`) — minutes
+- `S` — seconds
 
-The `P` stands for `period` and marks the beginning of the duration.
+For example, `PT5S` means five seconds and `P1D` means one day.
 
-Note that each value must be stated as a `value` - `unit` Combination; i.e. `1Y` for `One Year` and so forth.
-
-The following parameters are allowed:
-
-- `Y` - Year
-- `M` - Month
-- `D` - Day
-- `T` - Seperates the `Date` and `Time` Parts of the duration. No value must be supplied
-- `H` - Hour
-- `M` - Minute
-- `S` - Second
+You can also enter a [formula](help://bpmn/runtime_expressions) that produces a duration.

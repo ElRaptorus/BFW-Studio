@@ -6,30 +6,30 @@ title: FEEL Expressions
 
 ## Introduction
 
-The ThomasTheDaemonEngine uses **FEEL** (Friendly Enough Expression Language) for all dynamic expressions in BPMN processes. FEEL is part of the [DMN specification](https://www.omg.org/spec/DMN) and provides a concise, readable syntax for data access, transformation, and decision logic.
+The Studio uses **FEEL** (Friendly Enough Expression Language) for all the small formulas in a process — for conditions, data mapping, and calculations. FEEL is part of the open [DMN standard](https://www.omg.org/spec/DMN) and has a concise, readable syntax.
 
-Properties that accept FEEL expressions are marked with a <span class="feel-expression-hint feel-expression-hint--no-hover">FEEL</span> badge in the property panes.
+Fields that accept a formula are marked with a <span class="feel-expression-hint feel-expression-hint--no-hover">FEEL</span> badge in the properties panel.
 
 > Looking for a quick reference? See the [FEEL Cheatsheet](help://bpmn/feel_cheatsheet).
 
-## Expression Context
+## What a formula can read
 
-Every FEEL expression has access to the following context bindings at runtime:
+Every formula can read from the following, using the names below:
 
-| Binding           | Description                                                                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `token`           | The current token payload — a JSON object whose shape depends on the preceding flow node's output                                   |
-| `this`            | Metadata about the current flow node: `id`, `name`, `type`                                                                          |
-| `context`         | Read-only process context (initial input values / process variables)                                                                |
-| `dataObjects`     | Map of Data Object values, keyed by Data Object element ID (e.g., `dataObjects.MyDataObject`)                                       |
-| `process`         | Process metadata: `id`, `name`, `version`                                                                                           |
-| `processInstance` | Instance metadata: `id`, `businessKey`, `startedAt`, `startedBy`, `parentId`                                                        |
-| `identity`        | Information about the process instance owner: `id`, `roles`, `groups`, `claims`                                                     |
-| `loop`            | Loop iteration context (only available inside Multi-Instance or Standard Loop activities): `index`, `total`, `completed`, `results` |
+| Name              | What it gives you                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `token`           | The current process data — the values flowing through the process at this step                              |
+| `this`            | Details about the current step: `id`, `name`, `type`                                                        |
+| `context`         | The values the process was started with (read-only for the whole run)                                       |
+| `dataObjects`     | The [Data Objects](help://bpmn/properties/data_object) in the process, by name (e.g. `dataObjects.MyOrder`) |
+| `process`         | Details about the process: `id`, `name`, `version`                                                          |
+| `processInstance` | Details about this run: `id`, `businessKey`, `startedAt`, `startedBy`, `parentId`                           |
+| `identity`        | Details about who the run belongs to: `id`, `roles`, `groups`, `claims`                                     |
+| `loop`            | Values for the current round (only inside a loop): `index`, `total`, `completed`, `results`                 |
 
 ### Examples
 
-**Access a value from the token:**
+**Read a value from the process data:**
 
 ```
 token.customer.name
@@ -45,81 +45,67 @@ token.customer.name
 }
 ```
 
-**Use Data Objects:**
+**Read a Data Object:**
 
 ```
 dataObjects.OrderConfig.maxRetries
 ```
 
-**Loop context (inside Multi-Instance):**
+**Use the round values inside a loop:**
 
 ```
 if loop.index = loop.total - 1 then "last" else "processing"
 ```
 
-## Where FEEL Expressions Are Used
+## Where formulas are used
 
-FEEL expressions appear in the following BPMN element properties:
+Formulas appear in these places:
 
-### Activity Scripts & Conditions
+### Conditions and logic
 
-- **Script Task** — inline script body (`<bpmn:script>`)
-- **Business Rule Task** — inline FEEL expression (when `implementation = "feel"`)
-- **Sequence Flow** — condition expression on exclusive gateway outgoing flows
-- **Conditional Event** — condition expression
+- [Script Task](help://bpmn/properties/script_task) — the script body
+- [Business Rule Task](help://bpmn/properties/business_rule_task) — the rule, when its type is FEEL Expression
+- [Conditional Flow](help://bpmn/properties/conditional_flow) — the condition on a flow leaving a split gateway ([Exclusive](help://bpmn/properties/exclusive_gateway), [Inclusive](help://bpmn/properties/inclusive_gateway), or [Complex](help://bpmn/properties/complex_gateway)); conditions on flows leaving anything else are ignored
+- Conditional events — the [Condition](help://bpmn/properties/conditional_intermediate_catch_event) field
 
-### Data Pipeline
+### Shaping data
 
-- **Input Mapping** — `source` field (FEEL expression producing the mapped value)
-- **Output Mapping** — `source` field (FEEL expression producing the mapped value)
+- [Input Mappings](help://bpmn/properties/input_mappings) and [Output Mappings](help://bpmn/properties/output_mappings) — the **Source** of each mapping
+- [Transformation](help://bpmn/properties/data_output_association_transformation) — what a step writes into a Data Object
 
-### User Task
+### User Tasks
 
-- **Assignees** (`evil:assignees`) — FEEL expression resolving to an assignee list
-- **Due Date** (`evil:dueDate`) — FEEL expression or ISO 8601 date string
+- [Assignees](help://bpmn/properties/user_task_assignees) — who the task goes to
+- **Due Date** — when the [task](help://bpmn/properties/user_task) is due
 
-### Service Task (HTTP)
+### HTTP Service Tasks
 
-- **HTTP Body** (`evil:httpBody`) — FEEL expression for the request body
-- **HTTP Auth Header** (`evil:httpAuthHeader`) — FEEL expression for the Authorization header
-- **HTTP Response Headers** (`evil:httpResponseHeaders`) — FEEL expression for response header handling
+- **Body**, **Auth Header**, and **Response Headers** on an [HTTP Service Task](help://bpmn/properties/http_service_task)
 
-### Events
+### Messages
 
-- **Payload** (`evil:payload`) — outgoing message/signal payload
-- **Event Mapping** (`evil:eventMapping`) — maps received event data into the token
-- **Correlation Retrieval** (`evil:correlationRetrievalExpression`) — extracts correlation value from incoming messages
+- [Correlation Retrieval Expression](help://bpmn/properties/correlation_retrieval_expression) — the value a sender attaches to a message
+- [Correlation Key](help://bpmn/properties/process) — the value a waiting case listens for
 
-### Multi-Instance / Loop
+### Loops (Multi-Instance)
 
-- **Input Collection** (`evil:inputCollection`) — collection to iterate over
-- **Output Collection** (`evil:outputCollection`) — aggregation expression for results
-- **Loop Break Condition** (`evil:loopBreakCondition`) — early termination condition
-- **Loop Cardinality** — number of instances
-- **Completion Condition** — early completion condition
+- [Input Collection](help://bpmn/properties/multi_instance_input) and [Output Collection](help://bpmn/properties/multi_instance_output)
+- [Instance Count](help://bpmn/properties/multi_instance_count) and [Completion Condition](help://bpmn/properties/multi_instance_completion)
+- [Loop Break Condition](help://bpmn/properties/multi_instance_extensions)
 
-### Process Level
+### Timers
 
-- **Correlation Key** (`evil:correlationKey`) — process-level correlation expression
+- The **Definition** of a timer, when set as a schedule rather than a fixed date
 
-### Timer Events
+## Fields that are not formulas
 
-- **Time Date**, **Time Duration**, **Time Cycle** — ISO 8601 expressions (FEEL-evaluable)
+A few fields describe the **shape** of data instead of calculating a value. These use JSON Schema, not a formula:
 
-### Data Output Association
+- [Payload Contract](help://bpmn/properties/payload_contract) and [Result Contract](help://bpmn/properties/result_contract)
+- [Value Contract](help://bpmn/properties/data_object) on a Data Object
 
-- **Transformation** (`<bpmn:transformation>`) — projects activity output into a Data Object value
+User Task **Form Fields** are also not a formula — they describe the form the person fills in.
 
-## Properties That Are NOT FEEL
+## Testing a formula
 
-The following properties store structured data (typically JSON Schema) and do **not** contain FEEL expressions:
-
-- `evil:payloadContract` — JSON Schema for input validation
-- `evil:resultContract` — JSON Schema for output validation
-- `evil:valueContract` — JSON Schema for Data Object validation
-- `evil:dataContract` — JSON Schema with direction metadata
-- `evil:formFields` — JSON structure for User Task form definitions
-
-## FEEL Expression Simulator
-
-You can test FEEL expressions interactively in the **FEEL Expression Simulator**, available under `about:machine-sanctum/feel_editor`. The simulator provides live evaluation with customizable sample context data.
+You can try formulas out interactively in the **FEEL Expression Simulator**, which evaluates them live against sample data you provide — a safe way to check a formula before using it in a process.

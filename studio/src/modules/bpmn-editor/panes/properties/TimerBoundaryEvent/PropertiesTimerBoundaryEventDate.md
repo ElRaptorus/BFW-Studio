@@ -1,12 +1,15 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Date Timer Boundary Event
 ---
 
-# Date Timer Boundary Events
+# Date Timer Boundary Event
 
-A `Date Timer Boundary Event` will trigger the connected path, after the configured datetime has been reached.
+A Date timer boundary fires once a specific date and time is reached. Set the `Type` to **Date** and enter the moment in the `Definition` field.
 
-The datetime must be supplied in the following format: `YYYY-MM-DD HH:MM`.
+Use an ISO 8601 date-time with a time zone, for example:
 
-FEEL expressions are supported.
+```
+2026-12-25T08:00:00Z
+```
+
+You can also enter a [formula](help://bpmn/runtime_expressions) that produces a date-time.

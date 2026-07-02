@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Data Store
 ---
 
@@ -7,4 +6,6 @@ title: Data Store
 
 ![Data Store](DataStore.svg)
 
-A `Data Store` symbolizes a data source that exists outside of the process in an external system. It has only a symbolic value and doesn't actually do anything.
+A `Data Store` represents data that lives **outside** the process, in another system — unlike a [Data Object](help://bpmn/properties/data_object), whose data belongs to the process run itself.
+
+On its own, a Data Store is just a symbol on the diagram and stores nothing. Reading from or writing to a real external system requires a matching Engine plugin; without one, the Data Store has no effect when the process runs.

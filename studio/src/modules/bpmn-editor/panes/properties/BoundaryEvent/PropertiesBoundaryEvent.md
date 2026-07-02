@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Boundary Event
 ---
 
@@ -7,5 +6,20 @@ title: Boundary Event
 
 ![Boundary Event](BoundaryEvent.svg)
 
-The `Boundary Event` is like an [Intermediate Event](help://bpmn/properties/intermediate_event), that is connected to an activity.
-When the activity emits the event that is defined as `Boundary Event`, the process flow will execute the alternative path that is connected to the event.
+A `Boundary Event` is attached to the edge of an Activity and waits for something to happen **while that Activity runs**. When it fires, the flow continues along the path leaving the Boundary Event.
+
+## Interrupting vs. non-interrupting
+
+- **Interrupting** (solid border): the attached Activity is cancelled when the event fires.
+- **Non-interrupting** (dashed border): the Activity keeps running and the event starts an additional, parallel path.
+
+## Boundary Event types executed by the Engine
+
+- [Message Boundary Event](help://bpmn/properties/message_boundary_event)
+- [Signal Boundary Event](help://bpmn/properties/signal_boundary_event)
+- [Timer Boundary Event](help://bpmn/properties/timer_boundary_event)
+- [Error Boundary Event](help://bpmn/properties/error_boundary_event) (interrupting only)
+- [Escalation Boundary Event](help://bpmn/properties/escalation_boundary_event)
+- [Conditional Boundary Event](help://bpmn/properties/conditional_boundary_event)
+
+[Compensation](help://bpmn/properties/compensation_boundary_event) and [Cancel](help://bpmn/properties/cancel_boundary_event) Boundary Events can be modeled but are not executed by the current Engine.

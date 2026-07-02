@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Error End Event
 ---
 
@@ -7,8 +6,9 @@ title: Error End Event
 
 ![Error End Event](ErrorEndEvent.svg)
 
-The `Error End Event` is a specialized [End Event](help://bpmn/properties/end_event) that is used for throwing a named `Error`.
+An `Error End Event` ends the process by raising a named error. The process finishes in an **error** state instead of completing normally. It is typically used inside a subprocess or a process started by a [Call Activity](help://bpmn/properties/call_activity), so the parent can react with an [Error Boundary Event](help://bpmn/properties/error_boundary_event).
 
-It is usually used by Subprocesses or Processes that are designed to be started by a `Call Activity`.
+## Configuration
 
-The enclosing parent can use an [Error Boundary Event](help://bpmn/properties/error_boundary_event) to catch the error thrown by the `Error End Event`.
+- **`Error Code`** — a short code that identifies the error (for example `404`). A catching [Error Boundary Event](help://bpmn/properties/error_boundary_event) uses it to decide whether to react.
+- **`Error Message`** — a readable description of what went wrong.

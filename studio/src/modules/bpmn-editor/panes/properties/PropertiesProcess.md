@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Process / Participant / Pool
 ---
 
@@ -7,38 +6,27 @@ title: Process / Participant / Pool
 
 ![Participant](Participant.svg)
 
-A BPMN is defined by the following core concepts:
+A BPMN diagram is built from a few core ideas:
 
-- `Collaboration`
-- `Participant`
-- `Pool`
-- `Process`
+- A `Pool` is a container for one `Process`, and represents a `Participant` in a `Collaboration`.
+- A `Process` is the sequence of events, activities, and gateways that actually runs.
 
-Every `Pool` is a `Participant` of a `Collaboration`.
-A `Pool` is a container for a `Process`.
-A `Process` is a Sequence of `Events`, `Activities` and `Gateways`. This is the actual executable part of a diagram.
-`Collaborations` and `Participants` have only symbolic value and are not evaluated by the engine.
+Pools and participants are there to organise and label the diagram; only the process inside them runs. A diagram can hold as many pools and processes as you need. Processes do not talk to each other directly — use [message](help://bpmn/properties/message_intermediate_throw_event) or [signal](help://bpmn/properties/signal_intermediate_throw_event) events for that.
 
-Each diagram can contain as many `Pools` and `Processes` as you require.
+## Process configuration
 
-`Processes` cannot interact with each other directly. However, you can use `Message Events` and `Signal Events` to realize inter-process communication.
-
-## Process Configuration
-
-Apart from some basic properties, like ID and Name, the following settings are available for a process:
+Besides the basics like ID and name, a process has these settings:
 
 ### Version
 
-**Required by the engine.**
-
-The deployment version of the process, stored as `evil:version`. There are no naming conventions enforced by the engine, allowing you to use the versioning schema you need (for example `1.0.0`).
+**Required.** The `Version` field is the process's release label. You can use any scheme you like — for example `1.0.0`. It lets you tell different releases of the same process apart.
 
 ### Correlation Key
 
-_Optional_.
+_Optional._ The `Correlation Key` is a [formula](help://bpmn/runtime_expressions) that makes sure an incoming message reaches the **right** waiting case rather than every process listening for that message. Each waiting case remembers its Correlation Key value; a message is delivered to the case whose value matches.
 
-A FEEL expression (`evil:correlationKey`) used for message-based process start correlation. When a message arrives, the engine evaluates this expression to determine which process instances are related.
+This is the receiving side of message correlation. The sending side sets a matching value with its [Correlation Retrieval Expression](help://bpmn/properties/correlation_retrieval_expression).
 
 ### Executable
 
-Determines if the Process is executable or not. You can use this to prevent the engine from executing certain processes of a diagram, which are not yet ready to run.
+The `Executable` switch decides whether this process is allowed to run. Turn it off to keep a process that is still being worked on from being started.

@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Subprocess
 ---
 
@@ -7,7 +6,6 @@ title: Subprocess
 
 ![Subprocess](Subprocess.svg)
 
-A `Subprocess` is a `Process` that is encapsulated into an `Activity`.
-The `Process` in the `Subprocess` is modeled like a normal `Process` with `Activities`, `Gateways`, `Events` and `Sequence Flows`.
-If the `Subprocess` is instantiated, its containing `Elements` behave like in a normal `Process`.
-The `Subprocess` is completed when all tokens inside the instance are consumed or an `Event` end the `Process` abnormally.
+A `Subprocess` is a group of steps — activities, gateways, events, and the flows between them — drawn directly inside the parent process. It runs as part of the **same** process run; it does not start a separate one. To run a whole separate process instead, use a [Call Activity](help://bpmn/properties/call_activity).
+
+A Subprocess begins when the flow reaches it and finishes once everything inside it has completed. It is a handy way to keep a busy diagram tidy by tucking related steps into one collapsible box, while still sharing the same data as the surrounding process.

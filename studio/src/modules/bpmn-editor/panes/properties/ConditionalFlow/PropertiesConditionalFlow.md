@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Conditional Flow
 ---
 
@@ -7,6 +6,14 @@ title: Conditional Flow
 
 ![ConditionalFlow](ConditionalFlow.svg)
 
-A [Sequence Flow](help://bpmn/properties/sequence_flow) can optionally contain a condition.
-If such a condition exists, it is called a `Conditional Flow`.
-The symbols of both are identical. A `Conditional Flow` is usually attached to an `Exclusive Split Gateway` or an `Inclusive Split Gateway`.
+A `Conditional Flow` is a [Sequence Flow](help://bpmn/properties/sequence_flow) that carries a `Condition` — a [formula](help://bpmn/runtime_expressions) that must result in `true` or `false`.
+
+The condition is only checked when the flow **leaves a split gateway**: an [Exclusive](help://bpmn/properties/exclusive_gateway), [Inclusive](help://bpmn/properties/inclusive_gateway), or [Complex](help://bpmn/properties/complex_gateway) Gateway. A condition on a flow that leaves anything else (an activity, an event, or a join gateway) is **ignored**, and the flow is always taken.
+
+Pair Conditional Flows with a [Default Flow](help://bpmn/properties/default_flow) on the same gateway so there is always a path to take when no condition matches.
+
+Example condition:
+
+```feel
+token.amount > 1000
+```

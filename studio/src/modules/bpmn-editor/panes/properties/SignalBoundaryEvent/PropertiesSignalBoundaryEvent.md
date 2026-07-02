@@ -1,5 +1,4 @@
 ---
-# This is a comment, which might be helpful to explain the concept of help texts
 title: Signal Boundary Event
 ---
 
@@ -7,16 +6,19 @@ title: Signal Boundary Event
 
 ![Signal Boundary Event](SignalBoundaryEvent.svg)
 
-The `Signal Boundary Event` is a specialized [Boundary Event](help://bpmn/properties/boundary_event) that is triggered, when a `Signal` with a matching name is received.
+A `Signal Boundary Event` sits on the edge of an activity and waits for a matching signal while that activity runs.
 
-If the `Signal Boundary Event` is modeled as an **interrupting** Event, the decorated `Activity` will be canceled when the `Signal Boundary Event` is triggered.
+- **Interrupting** (solid border): the activity is cancelled when the signal arrives, and the flow continues from the boundary event.
+- **Non-interrupting** (dashed border): the activity keeps running and an additional path starts alongside it.
 
-It is possible to attach multiple `Signal Boundary Events` to the same Activity, to implement different handlers for multiple `Signals`.
+You can attach several Signal Boundary Events to one activity.
 
-## Properties
+## Configuration
 
-The following properties can be configured:
+- **`Signal`** — the signal to listen for. Signals are named once in the diagram and matched by that name.
 
-### Name
+A signal carries **no data**. To receive data alongside the trigger, use a [Message Boundary Event](help://bpmn/properties/message_boundary_event) instead.
 
-The name of the `Signal` that the `Signal Boundary Event` should listen for.
+## Shaping the data
+
+Although the signal brings no data, you can still tidy up the process data that continues from the boundary using [Output Mappings](help://bpmn/properties/output_mappings).
