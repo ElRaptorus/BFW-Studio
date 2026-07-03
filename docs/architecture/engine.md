@@ -197,6 +197,18 @@ Returns `null` when the user cancels.
 - `engine.debugger.abortProcessInstance` — wraps the core `engine.configuredAbortProcessInstance` command (confirmation dialog); enabled only when the PI is in `Running` state
 - `engine.debugger.retryWithConfirmation` — enabled only when the PI is in a retryable state (`Fatal`, `Aborted`, `Error`)
 
+### Event Subprocess debugging
+
+Event Subprocesses (ESPs) reuse the existing embedded-subprocess child-PI machinery with no debugger-specific code path. An ESP shell is a `bpmn:SubProcess` (`FlowNodeType.SubProcess`) that spawns a child PI; the Engine emits `SubProcessChildStarted` and stamps `type_properties.child_process_instance_id` on the shell FNI, exactly like an embedded subprocess.
+
+- **Child-PI FNI loading:** `EngineAdapter.loadEmbeddedSubprocessChildFnis` collects child PI IDs from any `SubProcess` FNI's `childProcessInstanceId` and recursively fetches their FNIs. `loadNewSubprocessChildFnis` reacts to real-time `SubProcessChildStarted` events (`SnapshotEventType` `subprocess-child`). ESP children flow through this unchanged.
+- **Inline rendering:** bpmn-js keeps ESPs expanded, so inner-scope nodes live on the same visible plane and carry their own BPMN element IDs. `OverlayFactory` maps FNIs to flow nodes by element ID, so inner-ESP FNIs render inline just like inner embedded-subprocess FNIs. No drill-down is offered (ESPs are never collapsed).
+- **Non-interrupting multi-instance:** a non-interrupting ESP can spawn several concurrent child PIs whose inner nodes share the same BPMN element IDs. Each activation produces a distinct FNI on the same node; `ExecutableFlowNode.flowNodeInstances` accumulates all of them. The **Flow Node Instance selector** (`FlowNodeInstancePane.tsx`) lets the user pick between concurrent instances, the execution-count badge shows the total, and the "has unfinished instances" badge flags still-running ones — the same UX used for multi-instance loops. `getSelectedFlowNodeInstanceByFlowNode` provides the default selection.
+
+- **ESP badge:** `SubProcessChildProcessInstancePane.tsx` reads `typeProperties.isEventSubprocess` from the selected FNI. When `true`, a Bootstrap badge ("Event Sub-Process") renders above the child-PI link, allowing users to distinguish an ESP shell from a plain embedded subprocess. The flag is propagated in two paths: (1) at snapshot load time, the engine persists `is_event_subprocess: true` in the FNI's `type_properties` (camelCased on wire to `isEventSubprocess`); (2) at real-time `SubProcessChildStarted` delivery, `SubscribeThenSnapshot.handleSubProcessChild` stamps `isEventSubprocess` into the in-memory FNI's `typeProperties`.
+
+> **Pending (blocked on engine SDK):** the `interrupted_by_event_subprocess` FNI-reason label depends on the engine surfacing this reason in the SDK's type definitions. Once available, map it to a readable label in `engine-core/Formatters.ts`.
+
 ### Configured Abort Architecture
 
 **File:** `studio/src/modules/engine-core/commands/registerConfiguredAbortCommands.ts`

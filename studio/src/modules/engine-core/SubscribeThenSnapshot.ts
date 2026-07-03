@@ -265,6 +265,7 @@ export class SubscribeThenSnapshot {
       fni.typeProperties = {
         ...(fni.typeProperties ?? {}),
         childProcessInstanceId: event.childProcessInstanceId,
+        isEventSubprocess: event.isEventSubprocess,
       };
     }
   }

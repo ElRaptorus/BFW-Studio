@@ -222,6 +222,18 @@ Event Subprocesses (`bpmn:SubProcess` with `triggeredByEvent === true`) are trig
 
 When adding new rules that walk `flowElements` of a `bpmn:Process` or `bpmn:SubProcess`, always check `!el.triggeredByEvent` before treating event subprocesses as regular flow nodes or recursing into them.
 
+### Event Subprocess validation rules
+
+The engine executes Event Subprocesses (ESPs) and validates them at deploy time. The linter mirrors those deploy-time checks so authors see violations before deployment. Severities are `warn` in `bpmn-development` and `error` in `bpmn-production-ready`.
+
+| Rule | Path | Mirrors engine rule | Reports |
+|------|------|---------------------|---------|
+| `event-subprocess-no-flows` | `bpmn-spec/event-subprocess-no-flows.ts` | `event_subprocess_has_sequence_flow` | An ESP shell with any incoming/outgoing sequence flow (BSC-005). Previously `off`; now enabled in both profiles. |
+| `event-subprocess-single-start-event` | `bpmn-spec/event-subprocess-single-start-event.ts` | `event_subprocess_no_start_event` + `event_subprocess_multiple_start_events` | An ESP with zero or more than one Start Event (BSC-013). |
+| `event-subprocess-start-event-type` | `bpmn-spec/event-subprocess-start-event-type.ts` | `event_subprocess_untyped_start` + `event_subprocess_error_start_must_interrupt` | An ESP Start Event whose trigger type is not in the allow-list (Message, Timer, Signal, Conditional, Error, Escalation) — e.g. Compensation (BSC-014); and a non-interrupting Error start (BSC-015). |
+
+The allowed trigger set matches the modeler replace-menu whitelist in `bpmn-core/bpmn-js/Provider/CustomPopupProvider.ts` (interrupting: Message/Timer/Signal/Conditional/Error/Escalation; non-interrupting: the same minus Error). The blank/untyped start case is left to the built-in `event-sub-process-typed-start-event` rule so it is not double-reported by `event-subprocess-start-event-type`; the cross-boundary case remains covered by `no-cross-boundary-flows`.
+
 ### Profiles and Custom Rulesets
 
 Two built-in profiles are immutable and defined in `rules/config.ts`:

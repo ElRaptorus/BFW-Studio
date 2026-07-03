@@ -44,6 +44,8 @@ function SubProcessChildProcessInstancePane(props: SubProcessChildProcessInstanc
   const subProcessInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode) as FlowNodeInstance;
 
   const childProcessInstanceId = getChildProcessInstanceId(subProcessInstance);
+  const isEventSubprocess =
+    (subProcessInstance.typeProperties as Record<string, unknown> | null)?.isEventSubprocess === true;
 
   if (!childProcessInstanceId) {
     return <PaneBody>Child Process Instance has not yet started.</PaneBody>;
@@ -51,6 +53,7 @@ function SubProcessChildProcessInstancePane(props: SubProcessChildProcessInstanc
 
   return (
     <PaneBody>
+      {isEventSubprocess && <span className="badge bg-info text-dark mb-2 d-inline-block">Event Sub-Process</span>}
       <ChildProcessInstanceLink
         model={props.model}
         processModelId={flowNode.flowNodeModel?.id}

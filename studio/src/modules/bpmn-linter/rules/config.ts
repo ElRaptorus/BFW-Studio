@@ -32,6 +32,8 @@ import eventGatewayMinOutgoing from './bpmn-spec/event-gateway-min-outgoing';
 import eventGatewayTargetTypes from './bpmn-spec/event-gateway-target-types';
 import eventGatewayTargetsNoExtraIncoming from './bpmn-spec/event-gateway-targets-no-extra-incoming';
 import eventSubprocessNoFlows from './bpmn-spec/event-subprocess-no-flows';
+import eventSubprocessSingleStartEvent from './bpmn-spec/event-subprocess-single-start-event';
+import eventSubprocessStartEventType from './bpmn-spec/event-subprocess-start-event-type';
 import gatewayDirectionConsistency from './bpmn-spec/gateway-direction-consistency';
 import noCrossBoundaryFlows from './bpmn-spec/no-cross-boundary-flows';
 import startEventNoConditions from './bpmn-spec/start-event-no-conditions';
@@ -119,6 +121,8 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'default-flow-no-condition': defaultFlowNoCondition,
   'start-event-no-conditions': startEventNoConditions,
   'event-subprocess-no-flows': eventSubprocessNoFlows,
+  'event-subprocess-single-start-event': eventSubprocessSingleStartEvent,
+  'event-subprocess-start-event-type': eventSubprocessStartEventType,
   'event-gateway-min-outgoing': eventGatewayMinOutgoing,
   'event-gateway-target-types': eventGatewayTargetTypes,
   'event-gateway-targets-no-extra-incoming': eventGatewayTargetsNoExtraIncoming,
@@ -227,7 +231,9 @@ export const profiles: Record<string, LintProfileConfig> = {
       // BPMN Spec (BSC)
       'default-flow-no-condition': 'error',
       'start-event-no-conditions': 'off',
-      'event-subprocess-no-flows': 'off',
+      'event-subprocess-no-flows': 'warn',
+      'event-subprocess-single-start-event': 'warn',
+      'event-subprocess-start-event-type': 'warn',
       'event-gateway-min-outgoing': 'error',
       'event-gateway-target-types': 'error',
       'event-gateway-targets-no-extra-incoming': 'error',
@@ -312,7 +318,9 @@ export const profiles: Record<string, LintProfileConfig> = {
       // BPMN Spec (BSC)
       'default-flow-no-condition': 'error',
       'start-event-no-conditions': 'off',
-      'event-subprocess-no-flows': 'off',
+      'event-subprocess-no-flows': 'error',
+      'event-subprocess-single-start-event': 'error',
+      'event-subprocess-start-event-type': 'error',
       'event-gateway-min-outgoing': 'error',
       'event-gateway-target-types': 'error',
       'event-gateway-targets-no-extra-incoming': 'error',
@@ -469,6 +477,17 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     category: 'bpmn-spec',
     why: 'Event sub-processes are triggered by their start event, not by incoming sequence flows.',
     suggestion: 'Remove sequence flows connecting to or from the event sub-process.',
+  },
+  'event-subprocess-single-start-event': {
+    category: 'bpmn-spec',
+    why: 'An event sub-process is triggered by exactly one start event. Zero start events make it unreachable; more than one is ambiguous and rejected by the engine.',
+    suggestion: 'Ensure the event sub-process contains exactly one typed start event.',
+  },
+  'event-subprocess-start-event-type': {
+    category: 'bpmn-spec',
+    why: 'The engine only executes event sub-processes triggered by Message, Timer, Signal, Conditional, Error, or Escalation start events, and an Error start must be interrupting.',
+    suggestion:
+      'Use a supported start-event trigger (Message, Timer, Signal, Conditional, Error, or Escalation). Make Error starts interrupting via the modeler.',
   },
   'event-gateway-min-outgoing': {
     category: 'bpmn-spec',
