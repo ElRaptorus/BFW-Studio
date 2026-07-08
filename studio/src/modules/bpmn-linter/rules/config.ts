@@ -26,8 +26,10 @@ import type { ProcessModelAnalyzer } from './ProcessModelAnalyzer';
 // --- Custom: BPMN Spec ---
 
 import boundaryEventNoIncoming from './bpmn-spec/boundary-event-no-incoming';
+import cancelEventTransactionScope from './bpmn-spec/cancel-event-transaction-scope';
 import compensationBoundaryNoOutgoing from './bpmn-spec/compensation-boundary-no-outgoing';
 import defaultFlowNoCondition from './bpmn-spec/default-flow-no-condition';
+import escalationBoundaryHost from './bpmn-spec/escalation-boundary-host';
 import eventGatewayMinOutgoing from './bpmn-spec/event-gateway-min-outgoing';
 import eventGatewayTargetTypes from './bpmn-spec/event-gateway-target-types';
 import eventGatewayTargetsNoExtraIncoming from './bpmn-spec/event-gateway-targets-no-extra-incoming';
@@ -37,6 +39,7 @@ import eventSubprocessStartEventType from './bpmn-spec/event-subprocess-start-ev
 import gatewayDirectionConsistency from './bpmn-spec/gateway-direction-consistency';
 import noCrossBoundaryFlows from './bpmn-spec/no-cross-boundary-flows';
 import startEventNoConditions from './bpmn-spec/start-event-no-conditions';
+import topLevelStartEventType from './bpmn-spec/top-level-start-event-type';
 // --- Custom: Execution Readiness ---
 
 import callActivityTarget from './execution-readiness/call-activity-target';
@@ -130,6 +133,9 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'no-cross-boundary-flows': noCrossBoundaryFlows,
   'compensation-boundary-no-outgoing': compensationBoundaryNoOutgoing,
   'gateway-direction-consistency': gatewayDirectionConsistency,
+  'escalation-boundary-host': escalationBoundaryHost,
+  'cancel-event-transaction-scope': cancelEventTransactionScope,
+  'top-level-start-event-type': topLevelStartEventType,
   // Structure
   'service-task-error-boundary': serviceTaskErrorBoundary,
   'timer-definition': timerDefinition,
@@ -241,6 +247,9 @@ export const profiles: Record<string, LintProfileConfig> = {
       'no-cross-boundary-flows': 'error',
       'compensation-boundary-no-outgoing': 'error',
       'gateway-direction-consistency': 'warn',
+      'escalation-boundary-host': 'warn',
+      'cancel-event-transaction-scope': 'warn',
+      'top-level-start-event-type': 'warn',
       // Structure (AST)
       'service-task-error-boundary': 'warn',
       'timer-definition': 'error',
@@ -328,6 +337,9 @@ export const profiles: Record<string, LintProfileConfig> = {
       'no-cross-boundary-flows': 'error',
       'compensation-boundary-no-outgoing': 'error',
       'gateway-direction-consistency': 'error',
+      'escalation-boundary-host': 'error',
+      'cancel-event-transaction-scope': 'error',
+      'top-level-start-event-type': 'error',
       // Structure (AST)
       'service-task-error-boundary': 'error',
       'timer-definition': 'error',
@@ -523,6 +535,24 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     category: 'bpmn-spec',
     why: 'A converging gateway should have at most one outgoing flow, and a diverging gateway at most one incoming.',
     suggestion: 'Separate the gateway into distinct converging and diverging gateways.',
+  },
+  'escalation-boundary-host': {
+    category: 'bpmn-spec',
+    why: 'Escalations bubble up from an inner scope, so an escalation boundary event only makes sense on a call activity or sub-process.',
+    suggestion:
+      'Attach the escalation boundary event to a call activity or sub-process, or use a different boundary event type.',
+  },
+  'cancel-event-transaction-scope': {
+    category: 'bpmn-spec',
+    why: 'Cancel events require a transaction sub-process scope, which the engine does not yet support, so they cannot be used.',
+    suggestion:
+      'Remove the cancel event. Cancel end events belong inside a transaction sub-process and cancel boundary events on one.',
+  },
+  'top-level-start-event-type': {
+    category: 'bpmn-spec',
+    why: 'Error, Escalation, and Compensation start events require a surrounding scope instance and are only valid inside an event sub-process.',
+    suggestion:
+      'Use a None, Message, Timer, or Signal start event at the process level, or move the trigger into an event sub-process.',
   },
 
   // Structure

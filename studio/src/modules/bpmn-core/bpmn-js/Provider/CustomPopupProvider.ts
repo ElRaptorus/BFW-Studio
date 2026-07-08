@@ -24,6 +24,16 @@ const EVENT_SUB_PROCESS_DOWNGRADE_ENTRY_IDS: ReadonlySet<string> = new Set([
   'replace-with-subprocess',
 ]);
 
+const ESCALATION_BOUNDARY_ENTRY_IDS: ReadonlySet<string> = new Set([
+  'replace-with-escalation-boundary',
+  'replace-with-non-interrupting-escalation-boundary',
+]);
+
+// Escalation boundary events are only meaningful on activities that can raise an
+// escalation from an inner scope. Transaction / AdHoc are omitted because they
+// are unsupported by the engine; add 'bpmn:Transaction' here if that changes.
+const ESCALATION_BOUNDARY_ALLOWED_HOST_TYPES: ReadonlySet<string> = new Set(['bpmn:CallActivity', 'bpmn:SubProcess']);
+
 class CustomPopupProvider {
   static $inject: string[];
 
@@ -58,8 +68,9 @@ class CustomPopupProvider {
       const entriesWithEventSubProcess = this.injectEventSubProcessEntry(element, entries);
       const supportedEntries = this.filterEntriesBySupportedBpmnElements(entriesWithEventSubProcess);
       const oneWayEnforcedEntries = this.filterEventSubProcessDowngrades(element, supportedEntries);
+      const hostRestrictedEntries = this.filterBoundaryEventHostRestrictions(element, oneWayEnforcedEntries);
       return {
-        ...oneWayEnforcedEntries,
+        ...hostRestrictedEntries,
       };
     };
   }
@@ -143,6 +154,25 @@ class CustomPopupProvider {
     const filteredEntries = Object.entries(entries).filter(
       (entry) => !EVENT_SUB_PROCESS_DOWNGRADE_ENTRY_IDS.has(entry[0]),
     );
+
+    return Object.fromEntries(filteredEntries);
+  }
+
+  private filterBoundaryEventHostRestrictions(element: ElementLike, entries: object): object {
+    if (this.showUnsupportedElements) {
+      return entries;
+    }
+
+    if (element.type !== 'bpmn:BoundaryEvent') {
+      return entries;
+    }
+
+    const hostType = element.host?.type ?? element.businessObject?.get?.('attachedToRef')?.$type;
+    if (hostType != null && ESCALATION_BOUNDARY_ALLOWED_HOST_TYPES.has(hostType)) {
+      return entries;
+    }
+
+    const filteredEntries = Object.entries(entries).filter((entry) => !ESCALATION_BOUNDARY_ENTRY_IDS.has(entry[0]));
 
     return Object.fromEntries(filteredEntries);
   }

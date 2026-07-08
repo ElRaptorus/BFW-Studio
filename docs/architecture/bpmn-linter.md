@@ -234,6 +234,16 @@ The engine executes Event Subprocesses (ESPs) and validates them at deploy time.
 
 The allowed trigger set matches the modeler replace-menu whitelist in `bpmn-core/bpmn-js/Provider/CustomPopupProvider.ts` (interrupting: Message/Timer/Signal/Conditional/Error/Escalation; non-interrupting: the same minus Error). The blank/untyped start case is left to the built-in `event-sub-process-typed-start-event` rule so it is not double-reported by `event-subprocess-start-event-type`; the cross-boundary case remains covered by `no-cross-boundary-flows`.
 
+### Event-type placement rules
+
+These `bpmn-spec` rules backstop the modeler's replace-menu gating for BPMN files that arrive by import, hand-editing, or merge (i.e. never pass through the menu). Severities are `warn` in `bpmn-development` and `error` in `bpmn-production-ready`.
+
+| Rule | Path | Reports |
+|------|------|---------|
+| `escalation-boundary-host` | `bpmn-spec/escalation-boundary-host.ts` | A Boundary Event carrying `bpmn:EscalationEventDefinition` whose host is not a Call Activity or Sub-Process (BSC-016). `is(host, 'bpmn:SubProcess')` covers Transaction / Ad-Hoc sub-processes via moddle inheritance. Mirrors the escalation-boundary host restriction in `CustomPopupProvider.ts`. |
+| `cancel-event-transaction-scope` | `bpmn-spec/cancel-event-transaction-scope.ts` | A Cancel End Event whose parent is not a `bpmn:Transaction` (BSC-017), and a Cancel Boundary Event whose host is not a `bpmn:Transaction` (BSC-018). Because transaction sub-processes are not yet supported by the engine (and `bpmn:Transaction` was removed from the modeler whitelist), this effectively forbids all cancel events today; the transaction check keeps the rule forward-compatible so cancel events become valid automatically once transaction support lands. |
+| `top-level-start-event-type` | `bpmn-spec/top-level-start-event-type.ts` | A Start Event directly under a `bpmn:Process` whose trigger type is Error, Escalation, or Compensation (BSC-019). These require a surrounding scope instance and are only valid inside an Event Sub-Process. Conditional is intentionally **not** flagged (its top-level semantics are left unchanged for now). Defense-in-depth: redundant with the engine validator and the stock replace menu, useful mainly for imports. |
+
 ### Profiles and Custom Rulesets
 
 Two built-in profiles are immutable and defined in `rules/config.ts`:

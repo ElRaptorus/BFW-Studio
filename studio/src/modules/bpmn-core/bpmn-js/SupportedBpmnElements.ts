@@ -14,7 +14,6 @@ export const SupportedBpmnElements: SupportedBpmnElementListEntry[] = [
       'bpmn:SignalEventDefinition',
       'bpmn:ErrorEventDefinition',
       'bpmn:ConditionalEventDefinition',
-      'bpmn:CompensateEventDefinition',
       'bpmn:EscalationEventDefinition',
     ],
   },
@@ -55,8 +54,6 @@ export const SupportedBpmnElements: SupportedBpmnElementListEntry[] = [
       'bpmn:ErrorEventDefinition',
       'bpmn:TerminateEventDefinition',
       'bpmn:EscalationEventDefinition',
-      'bpmn:CompensateEventDefinition',
-      'bpmn:CancelEventDefinition',
     ],
   },
   {
@@ -81,8 +78,6 @@ export const SupportedBpmnElements: SupportedBpmnElementListEntry[] = [
       'bpmn:ErrorEventDefinition',
       'bpmn:ConditionalEventDefinition',
       'bpmn:EscalationEventDefinition',
-      'bpmn:CompensateEventDefinition',
-      'bpmn:CancelEventDefinition',
     ],
   },
   {
@@ -93,7 +88,6 @@ export const SupportedBpmnElements: SupportedBpmnElementListEntry[] = [
       'bpmn:LinkEventDefinition',
       'bpmn:SignalEventDefinition',
       'bpmn:EscalationEventDefinition',
-      'bpmn:CompensateEventDefinition',
     ],
   },
   {
@@ -133,10 +127,6 @@ export const SupportedBpmnElements: SupportedBpmnElementListEntry[] = [
   },
   {
     type: 'bpmn:EventSubProcess',
-    supportedEventDefinitions: [''],
-  },
-  {
-    type: 'bpmn:Transaction',
     supportedEventDefinitions: [''],
   },
   {

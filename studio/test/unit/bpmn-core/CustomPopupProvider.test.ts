@@ -117,12 +117,11 @@ describe('CustomPopupProvider — direct activity→ESP entry', () => {
 });
 
 describe('CustomPopupProvider — event subprocess one-way trip', () => {
-  it('removes downgrade entries but keeps transaction / event-subprocess options', () => {
+  it('removes downgrade entries and keeps the event-subprocess option', () => {
     const entries: PopupEntries = {
       'replace-with-task': { label: 'Task' },
       'replace-with-collapsed-subprocess': { label: 'Sub-process (collapsed)' },
       'replace-with-expanded-subprocess': { label: 'Sub-process' },
-      'replace-with-transaction': { label: 'Transaction' },
       'replace-with-event-subprocess': { label: 'Event Sub-process' },
     };
     const result = runEntries(eventSubProcessElement(), entries);
@@ -130,7 +129,17 @@ describe('CustomPopupProvider — event subprocess one-way trip', () => {
     assert.equal(Object.hasOwn(result, 'replace-with-task'), false);
     assert.equal(Object.hasOwn(result, 'replace-with-collapsed-subprocess'), false);
     assert.equal(Object.hasOwn(result, 'replace-with-expanded-subprocess'), false);
-    assert.equal(Object.hasOwn(result, 'replace-with-transaction'), true);
+    assert.equal(Object.hasOwn(result, 'replace-with-event-subprocess'), true);
+  });
+
+  it('drops the transaction morph entry now that bpmn:Transaction is unsupported', () => {
+    const entries: PopupEntries = {
+      'replace-with-transaction': { label: 'Transaction' },
+      'replace-with-event-subprocess': { label: 'Event Sub-process' },
+    };
+    const result = runEntries(eventSubProcessElement(), entries);
+
+    assert.equal(Object.hasOwn(result, 'replace-with-transaction'), false);
     assert.equal(Object.hasOwn(result, 'replace-with-event-subprocess'), true);
   });
 });
