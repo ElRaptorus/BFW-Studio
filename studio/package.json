@@ -87,7 +87,7 @@
     "@types/react-dom": "^19.2.3",
     "@wdio/electron-service": "^10.1.0",
     "bootstrap": "^5.3.8",
-    "bpmn-js": "18.20.0",
+    "bpmn-js": "18.21.0",
     "bpmn-js-differ": "^3.2.0",
     "bpmnlint": "^11.12.1",
     "bpmnlint-utils": "^1.1.1",
