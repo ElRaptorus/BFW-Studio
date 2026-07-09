@@ -6,8 +6,8 @@ This guide covers everything you need to build, test, and deploy plugins for Evi
 
 ### Prerequisites
 
-- Node.js 24+
-- npm 11+
+- Node.js >= 24.18.0
+- npm >= 12.0.0
 - Evil Studio (development build or release)
 
 ### Create a new plugin
