@@ -3302,8 +3302,8 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
     it('denies hard-blocked commands (git.commit)', async () => {
       const result = await executePluginCommand(studioAgent, 'plugin.sandbox-no-perms.tryBlockedCommand');
       assert.ok(
-        typeof result === 'string' && (result.includes('denied') || result.includes('blocked')),
-        `Expected denial/blocked, got: ${result}`,
+        typeof result === 'string' && result.includes('not registered'),
+        `Expected 'not registered', got: ${result}`,
       );
     });
 

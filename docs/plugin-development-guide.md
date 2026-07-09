@@ -153,25 +153,13 @@ Declare every permission your plugin needs in `package.json` (see [Declaring Per
 | `bpmn` | Read BPMN elements, subscribe to selection/change events, place overlays (badge, icon, action, status) |
 | `bpmn.modelling` | All of `bpmn` + modify the BPMN model (updateProperties, removeElement, appendElement, createConnection, moveElement) + contribute palette/context pad entries |
 | `bpmn.renderer` | All of `bpmn.modelling` + inject diagram-js modules directly into the renderer process via `bpmnModules` manifest entries |
-| `renderer-modules` | _(deprecated — use `bpmn.renderer` instead)_ Legacy alias for renderer module injection |
+| `dmn` | Read DMN elements, subscribe to selection/change events, place overlays (badge, icon, action, status) |
+| `dmn.modelling` | All of `dmn` + modify the DMN model (updateProperties, removeElement, appendElement, createConnection, moveElement) + contribute palette/context pad entries |
+| `dmn.renderer` | All of `dmn.modelling` + inject diagram-js modules directly into the renderer process via `dmnModules` manifest entries |
 | `native` | Load compiled native `.node` modules (bypasses the SES sandbox entirely — high trust) |
 | `system-info` | Read basic OS information (`platform`, `arch`) through the restricted `os` module |
 
 Your plugin's own commands (`plugin.<pluginName>.*`) are always executable by your plugin without extra permissions.
-
-### Hard-Denied Commands
-
-Some command groups are **unconditionally blocked** for plugins. No permission can override this — not even if you could otherwise run a related `std.*` command.
-
-| Prefix | Reason |
-|--------|--------|
-| `engine.*` | Engine connectivity and runtime operations |
-| `git.*` | Version control |
-| `plugins.*` | Plugin management (install, enable, host console, etc.) |
-| `dev.*` | Developer tools |
-| `std.solution.*` | Solution and project management |
-
-If `api.commands.executeCommand()` targets a hard-denied ID, the bridge throws `CommandBlockedError`. Design your plugin to use supported APIs (`api.workspace`, `api.dialogs`, your own namespaced commands) instead of reaching for internal Studio commands.
 
 ### Settings Namespace Isolation
 

@@ -58,9 +58,23 @@ export const PERMISSION_DISPLAY: Record<PluginPermission, PermissionDisplayInfo>
     warningLevel: 'high',
     icon: '⚠',
   },
-  'renderer-modules': {
-    label: 'Editor Integration (Legacy)',
-    description: 'Inject code into the BPMN/DMN editor. Superseded by bpmn.renderer.',
+  dmn: {
+    label: 'DMN Editor Access',
+    description: 'Read DMN element data, subscribe to editor events, and place overlays on diagram elements.',
+    warningLevel: 'low',
+    icon: 'ℹ',
+  },
+  'dmn.modelling': {
+    label: 'DMN Modelling',
+    description:
+      'Modify the DMN diagram: update element properties, add/remove elements, and contribute palette and context pad entries.',
+    warningLevel: 'medium',
+    icon: '⚠',
+  },
+  'dmn.renderer': {
+    label: 'DMN Renderer Module Injection',
+    description:
+      'Inject custom diagram-js modules directly into the DMN editor renderer. Has full access to all diagram-js services.',
     warningLevel: 'high',
     icon: '⚠',
   },

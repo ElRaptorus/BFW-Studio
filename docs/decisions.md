@@ -258,7 +258,7 @@ Merged the four command registration methods (`register`, `registerInCommandSear
 - `##WebService` for HTTP Service Tasks
 - `##unspecified` (or absent) for generic service tasks
 
-The `BpmnServiceTaskType` enum was deleted. The `CustomServiceTaskType` type now uses `implementation: string` instead of `type: BpmnServiceTaskType; subType: string`. All utility functions (`isExternalServiceTask`, `isHttpServiceTask`) now check `businessObject.get('implementation')`. HTTP Service Tasks are un-deprecated and serve as the recommended default.
+The `BpmnServiceTaskType` enum was deleted. The `CustomServiceTaskType` type now uses `implementation: string` instead of `type: BpmnServiceTaskType; subType: string`. All utility functions (`isExternalServiceTask`, `isHttpServiceTask`) now check `businessObject.get('implementation')`. HTTP Service Tasks serve as the recommended default.
 
 **Rationale**: Standard BPMN 2.0 attribute, simpler detection logic, no dependency on Camunda namespace for type discrimination. All existing BPMN test fixtures were updated for a clean break.
 
@@ -374,22 +374,6 @@ The `BpmnServiceTaskType` enum was deleted. The `CustomServiceTaskType` type now
 **Rationale**: Simpler implementation, no temp directory management, and the folder stays at its original path throughout. The tradeoff is that `git init` + `fetch` is slightly less atomic than clone, but the cleanup logic handles failure cases.
 
 **Superseded**: This approach failed when the target folder contained files also present in the remote branch — `git checkout` refused to overwrite untracked files. See the 2026-04-21 entry for the replacement.
-
----
-
-### 2026-04-20 — OIDC: Migrate from oidc-client to oidc-client-ts, drop jose
-
-**Context**: The Studio's OIDC authentication relied on the deprecated, unmaintained `oidc-client` (v1.11.5, plain JS) and `jose` (for JWT signature verification before signout). The migration targets `oidc-client-ts` (v3.x, actively maintained TypeScript rewrite by the same community).
-
-**Key decisions**:
-
-1. **Drop implicit flow support** — `oidc-client-ts` only supports `response_type: 'code'` (PKCE). The old code had a fallback to `response_type: 'id_token token'` for legacy authority versions (pre-3.2.0). Since all supported authorities now use the code flow, the `response_type` field was removed from `UserLoginProviderOidcConfig`, the Configure OAuth dialog, and all plumbing. The `authoritySupportsClientWithRefreshToken` version check was removed entirely.
-
-2. **Drop jose** — The `validateToken` method used `jose.jwtVerify` with JWKS to check whether the ID token was still valid before initiating signout. This was a resilience heuristic (not a security measure), since `oidc-client-ts` does not perform JWT signature verification by design (tokens arrive over HTTPS in the code flow). Replaced with a simple `isTokenExpired` check using the `expiresAt` field already stored on `UserLogin`.
-
-3. **Navigators as constructor args** — `oidc-client-ts` moved `popupNavigator` and `iframeNavigator` from `UserManagerSettings` to separate `UserManager` constructor parameters. A `createUserManager` method was introduced on `OidcStrategyBrowser` to centralize this, overridden in `OidcStrategyElectron`.
-
-**Rationale**: Removes two dependencies (`oidc-client`, `jose`), gains TypeScript types, active maintenance, and PKCE enforcement. The implicit flow removal simplifies the authentication code significantly.
 
 ---
 

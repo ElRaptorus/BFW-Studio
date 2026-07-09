@@ -41,7 +41,12 @@
           "commands.bpmn",
           "commands.dmn",
           "commands.plugins",
-          "renderer-modules",
+          "bpmn",
+          "bpmn.modelling",
+          "bpmn.renderer",
+          "dmn",
+          "dmn.modelling",
+          "dmn.renderer",
           "native",
           "system-info"
         ]

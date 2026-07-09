@@ -85,7 +85,7 @@ Key settings for module resolution:
 
 ### ts-node Config
 
-The `ts-node` block in `tsconfig.base.json` overrides `target` to `"es2022"` (TS 6.0 deprecated `"es5"`) and `module` to `"CommonJS"` for integration test execution.
+The `ts-node` block in `tsconfig.base.json` overrides `target` to `"es2022"` and `module` to `"CommonJS"` for integration test execution.
 
 ### Per-Target Configs
 

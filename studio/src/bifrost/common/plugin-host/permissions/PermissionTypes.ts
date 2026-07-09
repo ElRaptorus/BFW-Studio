@@ -17,7 +17,9 @@ export type PluginPermission =
   | 'bpmn'
   | 'bpmn.modelling'
   | 'bpmn.renderer'
-  | 'renderer-modules'
+  | 'dmn'
+  | 'dmn.modelling'
+  | 'dmn.renderer'
   | 'native'
   | 'system-info';
 
@@ -30,7 +32,9 @@ export const ALL_PERMISSIONS: readonly PluginPermission[] = [
   'bpmn',
   'bpmn.modelling',
   'bpmn.renderer',
-  'renderer-modules',
+  'dmn',
+  'dmn.modelling',
+  'dmn.renderer',
   'native',
   'system-info',
 ] as const;

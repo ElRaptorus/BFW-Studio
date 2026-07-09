@@ -1268,13 +1268,13 @@ export class PluginHostBridge {
       case 'executeCommand': {
         const [rawCommandId, commandArgs] = args as [string, unknown[]];
         const commandId = this.resolveCommandIdForExecution(rawCommandId, pluginName);
-        checkCommandAccess(commandId, pluginName, this.permissionGate);
+        checkCommandAccess(this.bifrost, commandId, pluginName, this.permissionGate);
         return Promise.resolve(this.bifrost.commands.executeCommand(commandId, commandArgs));
       }
       case 'tryToExecuteCommand': {
         const [rawCommandId, commandArgs] = args as [string, unknown[]];
         const commandId = this.resolveCommandIdForExecution(rawCommandId, pluginName);
-        checkCommandAccess(commandId, pluginName, this.permissionGate);
+        checkCommandAccess(this.bifrost, commandId, pluginName, this.permissionGate);
         try {
           const result = this.bifrost.commands.tryToExecuteCommand(commandId, commandArgs);
           if (result.success) {
@@ -1301,7 +1301,7 @@ export class PluginHostBridge {
       case 'isCommandEnabled': {
         const [rawCommandId, commandArgs] = args as [string, unknown[]];
         const commandId = this.resolveCommandIdForExecution(rawCommandId, pluginName);
-        checkCommandAccess(commandId, pluginName, this.permissionGate);
+        checkCommandAccess(this.bifrost, commandId, pluginName, this.permissionGate);
         return this.bifrost.commands.isCommandEnabled(commandId, commandArgs);
       }
       case 'isRegistered': {
@@ -1312,7 +1312,7 @@ export class PluginHostBridge {
       case 'getCommands': {
         return this.bifrost.commands
           .getCommands()
-          .filter((cmd) => canAccessCommand(cmd.name, pluginName, this.permissionGate))
+          .filter((cmd) => canAccessCommand(this.bifrost, cmd.name, pluginName, this.permissionGate))
           .map((cmd) => ({
             name: cmd.name,
             description: cmd.description,

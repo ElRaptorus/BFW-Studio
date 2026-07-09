@@ -651,7 +651,6 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 | `bpmn` | Read BPMN elements, subscribe to events, place overlays |
 | `bpmn.modelling` | All of `bpmn` + model modification + palette/context pad contributions |
 | `bpmn.renderer` | All of `bpmn.modelling` + inject diagram-js modules into renderer |
-| `renderer-modules` | _(deprecated alias for `bpmn.renderer`)_ `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` |
 | `native` | Load `.node` native addons via `require()` |
 | `system-info` | `require('os')` (safe subset only, via `ModuleGate`) |
 

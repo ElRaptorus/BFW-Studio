@@ -41,7 +41,7 @@ The manifest lives in `package.json` under the `bifrostStudio` key:
 | `activationEvents` | `string[]` | No | Events that trigger lazy loading. Without this, the plugin loads eagerly. |
 | `contributes` | `object` | No | Declarative contribution entries (see below). |
 
-### Permissions (Phase 7+8)
+### Permissions
 
 The `permissions` array declares which sandbox capabilities the plugin needs. Plugins without `permissions` (or with `permissions: []`) run fully sandboxed with no special access.
 
@@ -54,7 +54,9 @@ The `permissions` array declares which sandbox capabilities the plugin needs. Pl
 | `bpmn` | Read BPMN elements, subscribe to events, place overlays | Low |
 | `bpmn.modelling` | All of `bpmn` + modify BPMN model + palette/context pad contributions | Medium |
 | `bpmn.renderer` | All of `bpmn.modelling` + inject diagram-js modules into renderer | High |
-| `renderer-modules` | _(deprecated alias for `bpmn.renderer`)_ | High |
+| `dmn` | Read DMN elements, subscribe to events, place overlays | Low |
+| `dmn.modelling` | All of `dmn` + modify DMN model + palette/context pad contributions | Medium |
+| `dmn.renderer` | All of `dmn.modelling` + inject diagram-js modules into renderer | High |
 | `native` | Load `.node` native addons | Critical |
 | `system-info` | `require('os')` (safe subset: `platform`, `arch`, `tmpdir`, `EOL`) | Low |
 

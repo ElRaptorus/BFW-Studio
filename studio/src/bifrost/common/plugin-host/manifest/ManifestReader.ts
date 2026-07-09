@@ -147,12 +147,6 @@ export function readManifest(pkg: Record<string, unknown>): ManifestReadResult {
             message: '"native" without "filesystem" is unusual — native addons typically need file access',
           });
         }
-        if (permissions.includes('renderer-modules')) {
-          warnings.push({
-            path: 'bifrostStudio.permissions',
-            message: '"renderer-modules" is a security-sensitive permission — it allows injecting code into the editor',
-          });
-        }
         if (permissions.includes('system-info')) {
           warnings.push({
             path: 'bifrostStudio.permissions',

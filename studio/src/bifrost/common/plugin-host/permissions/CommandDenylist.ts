@@ -1,3 +1,7 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+
+import { getClosestMatch } from '@evil/bifrost_fw_sdk';
+
 import type { PermissionGate } from './PermissionGate';
 import type { PluginPermission } from './PermissionTypes';
 
@@ -11,8 +15,8 @@ const HARD_DENIED: RegExp[] = [/^git\./, /^engine\./, /^plugins\./, /^dev\./];
 const HARD_DENIED_SUBPATTERNS: RegExp[] = [/^std\.solution\./, /^std\.window\./, /^std\.internal\./, /^std\.test\./];
 
 const PERMISSION_GATED = new Map<RegExp, PluginPermission>([
-  [/^bpmn\.modeler\.registerModule$/, 'renderer-modules'],
-  [/^dmn\.modeler\.registerModule$/, 'renderer-modules'],
+  [/^bpmn\.modeler\.registerModule$/, 'bpmn.renderer'],
+  [/^dmn\.modeler\.registerModule$/, 'dmn.renderer'],
 ]);
 
 const GROUP_PERMISSION: Record<string, PluginPermission> = {
@@ -33,16 +37,28 @@ export class CommandBlockedError extends Error {
   }
 }
 
-export function checkCommandAccess(commandId: string, pluginName: string, permissionGate: PermissionGate): void {
+export function checkCommandAccess(
+  bifrost: Bifrost,
+  commandId: string,
+  pluginName: string,
+  permissionGate: PermissionGate,
+): void {
   for (const pattern of HARD_DENIED) {
     if (pattern.test(commandId)) {
       throw new CommandBlockedError(pluginName, commandId);
     }
   }
 
+  // NOTE:
+  // The "not found error" is actually intentional.
+  // Throwing a "Blocked" Error would tell potential malware plugins, that the command they try to access actually exists.
+  // So instead, we throw the same kind of error a user would get when trying to execute a non-existent command.
   for (const pattern of HARD_DENIED_SUBPATTERNS) {
     if (pattern.test(commandId)) {
-      throw new CommandBlockedError(pluginName, commandId);
+      const commandNames = bifrost.commands.getCommands().map((command) => command.name);
+      const suggestion = getClosestMatch(commandId, commandNames);
+
+      throw new Error(`Command '${name}' is not registered. Did you mean '${suggestion}'?`);
     }
   }
 
@@ -75,9 +91,14 @@ export function checkCommandAccess(commandId: string, pluginName: string, permis
 /**
  * Non-throwing check for filtering `getCommands()` results.
  */
-export function canAccessCommand(commandId: string, pluginName: string, permissionGate: PermissionGate): boolean {
+export function canAccessCommand(
+  bifrost: Bifrost,
+  commandId: string,
+  pluginName: string,
+  permissionGate: PermissionGate,
+): boolean {
   try {
-    checkCommandAccess(commandId, pluginName, permissionGate);
+    checkCommandAccess(bifrost, commandId, pluginName, permissionGate);
     return true;
   } catch {
     return false;
