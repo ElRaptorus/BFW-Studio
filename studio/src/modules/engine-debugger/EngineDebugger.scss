@@ -42,6 +42,8 @@
   --color-engine__debugger-context-pad-hover-fg: #7dd3fc;
 
   --color-connection-done: #11ca00;
+  --color-compensation-flow: 218, 165, 32;
+  --color-compensation-handler-badge: #daa520;
   --color-engine__debugger-hidden-hint-bg: #555;
   --color-engine__debugger-hidden-hint-fg: #e8e8e8;
   --color-engine__debugger-controls-fg: #999;
@@ -92,6 +94,8 @@
   --color-engine__debugger-context-pad-hover-fg: #1976d2;
 
   --color-connection-done: #11ca00;
+  --color-compensation-flow: 218, 165, 32;
+  --color-compensation-handler-badge: #b8860b;
   --color-engine__debugger-hidden-hint-bg: #aaa;
   --color-engine__debugger-hidden-hint-fg: #222;
   --color-engine__debugger-controls-fg: #a5a5a5;
@@ -229,6 +233,11 @@
   .bpmn-element-overlay-backdrop--unknown {
     background-color: rgba(var(--color-flow-node-state-unknown), 0.5);
   }
+
+  .bpmn-element-overlay-backdrop-compensation {
+    outline: 2px dashed rgb(var(--color-compensation-flow));
+    outline-offset: 2px;
+  }
 }
 
 .editor-toolbar__button.engine__debugger_auto_follow--enabled {
@@ -248,6 +257,11 @@
 
 .connection-done .djs-visual > * {
   stroke: #11ca00 !important;
+}
+
+.association-compensation .djs-visual > * {
+  stroke: rgb(var(--color-compensation-flow)) !important;
+  stroke-dasharray: none !important;
 }
 
 .process-instance-viewer__right-title-button {

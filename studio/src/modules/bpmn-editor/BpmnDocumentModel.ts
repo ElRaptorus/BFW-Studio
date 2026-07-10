@@ -125,10 +125,8 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
       this.selection.on(EVENT_BPMN_SELECTION_ELEMENTS_UPDATED, (selectedElements: BpmnElementObject[]) =>
         this.updateMetadata({ selection: selectedElements, hasSelection: selectedElements.length > 0 }),
       ),
-      studio.events.on('settingsUpdate', (settingName, value) => {
-        if (settingName === 'bpmn.editor.showUnsupportedElements') {
-          this.bpmnComponentAdapter.setShowUnsupportedElements(value);
-        } else if (settingName === 'bpmn.editor.showGrid') {
+      studio.events.on('settingsUpdate', (settingName, _value) => {
+        if (settingName === 'bpmn.editor.showGrid') {
           this.toggleGrid();
         } else if (
           settingName === 'bpmn.editor.showDocumentationMarker' ||
@@ -152,7 +150,6 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
     this.overlays = new BpmnElementOverlayManager(this.bpmnComponentAdapter);
     this.onceInteractive(() => {
       this.restoreMetadata(this.restoredMetadata);
-      this.bpmnComponentAdapter.setShowUnsupportedElements(studio.settings.get('bpmn.editor.showUnsupportedElements'));
 
       this.toggleGrid();
       this.toggleDataObjectElementsVisibilityIfNecessary();

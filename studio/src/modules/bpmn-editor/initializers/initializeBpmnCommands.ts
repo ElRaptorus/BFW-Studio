@@ -41,23 +41,6 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
   );
 
   bifrost.commands.register(
-    'bpmn.editor.showUnsupportedElements',
-    () =>
-      bifrost.settings.set(
-        'bpmn.editor.showUnsupportedElements',
-        !bifrost.settings.get('bpmn.editor.showUnsupportedElements'),
-      ),
-    {
-      visibleInSearch: true,
-      description: [
-        'Editor: Toggle Only Supported Elements',
-        'Toggle Show All BPMN Elements',
-        'Toggle BPMN Elements Supported by Engine',
-      ],
-    },
-  );
-
-  bifrost.commands.register(
     'bpmn.editor.showDocumentationMarker',
     () =>
       bifrost.settings.set(

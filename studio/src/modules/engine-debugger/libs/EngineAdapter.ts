@@ -1,7 +1,12 @@
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { SubscribeThenSnapshot } from '#modules/engine-core';
 import type { SnapshotUpdate } from '#modules/engine-core';
-import type { FniSnapshot, ProcessInstanceSnapshot } from '#modules/engine-core';
+import type {
+  CompensatedActivitySnapshot,
+  CompensationRunSnapshot,
+  FniSnapshot,
+  ProcessInstanceSnapshot,
+} from '#modules/engine-core';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
 import { FlowNodeType, parseBpmn } from '@elraptorus/daemonengine_sdk';
 import type {
@@ -43,6 +48,7 @@ type ProcessUpdatedHandler = (
 type FlowNodeInstancesUpdatedHandler = (
   flowNodeInstances: FlowNodeInstance[],
   dataObjectValues: DataObjectValue[],
+  compensatedActivities: CompensatedActivitySnapshot[],
   newFlowNodeInstances?: FlowNodeInstance[],
 ) => void;
 
@@ -99,6 +105,8 @@ export class EngineAdapter {
   private processModelData: BpmnProcess | null = null;
   private flowNodeInstances: FlowNodeInstance[] = [];
   private dataObjectValues: DataObjectValue[] = [];
+  private compensationRuns = new Map<string, CompensationRunSnapshot>();
+  private compensatedActivities: CompensatedActivitySnapshot[] = [];
 
   private pendingFniDetailIds = new Set<string>();
 
@@ -191,7 +199,9 @@ export class EngineAdapter {
       this.mergeSnapshotIntoLoadedData(snapshot);
       this.fullLoadInProgress = false;
 
-      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
+        ...this.compensatedActivities,
+      ]);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load process instance';
       this.updateErrorHandler?.({ message, statusCode: (error as { status?: number }).status });
@@ -242,6 +252,8 @@ export class EngineAdapter {
     }
 
     this.dataObjectValues = currentSnapshot.dataObjectValues;
+    this.compensationRuns = currentSnapshot.compensationRuns;
+    this.compensatedActivities = currentSnapshot.compensatedActivities;
   }
 
   private async loadProcessWithXml(client: DaemonEngineClient): Promise<void> {
@@ -315,7 +327,9 @@ export class EngineAdapter {
     await this.loadEmbeddedSubprocessChildFnis(client);
 
     await this.updateProcessHandler?.(this.processInstanceData, this.processDefinitionData, this.processModelData);
-    this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
+    this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
+      ...this.compensatedActivities,
+    ]);
   }
 
   private buildSnapshotFromCurrentData(): ProcessInstanceSnapshot {
@@ -350,6 +364,8 @@ export class EngineAdapter {
         typeProperties: fni.typeProperties,
         errorInfo: fni.errorInfo,
       })),
+      compensationRuns: new Map(),
+      compensatedActivities: [],
     };
   }
 
@@ -393,6 +409,15 @@ export class EngineAdapter {
         this.dataObjectValues = snapshot.dataObjectValues;
         this.debouncedFlushPendingFniDetails();
         break;
+
+      case 'compensation-triggered':
+      case 'activity-compensated':
+        this.applyFniSnapshotUpdates(snapshot);
+        for (const id of affectedFniIds) {
+          this.pendingFniDetailIds.add(id);
+        }
+        this.debouncedFlushPendingFniDetails();
+        break;
     }
   }
 
@@ -433,13 +458,17 @@ export class EngineAdapter {
     this.pendingFniDetailIds.clear();
 
     if (idsToFetch.length === 0) {
-      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
+        ...this.compensatedActivities,
+      ]);
       return;
     }
 
     const client = this.connectionManager.getClient(this.engineId);
     if (!client) {
-      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
+        ...this.compensatedActivities,
+      ]);
       return;
     }
 
@@ -461,9 +490,16 @@ export class EngineAdapter {
         }
       }
 
-      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, newFlowNodeInstances);
+      this.updateFlowNodeInstancesHandler?.(
+        this.flowNodeInstances,
+        this.dataObjectValues,
+        [...this.compensatedActivities],
+        newFlowNodeInstances,
+      );
     } catch {
-      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
+        ...this.compensatedActivities,
+      ]);
     }
   }
 
@@ -547,9 +583,16 @@ export class EngineAdapter {
 
     try {
       const newFnis = await this.loadEmbeddedSubprocessChildFnis(client);
-      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, newFnis);
+      this.updateFlowNodeInstancesHandler?.(
+        this.flowNodeInstances,
+        this.dataObjectValues,
+        [...this.compensatedActivities],
+        newFnis,
+      );
     } catch {
-      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues);
+      this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
+        ...this.compensatedActivities,
+      ]);
     }
   }
 

@@ -54,6 +54,8 @@ export type { DeployFailureDetail } from './commands/registerDeployCommands';
 
 export type {
   AutoRefreshInterval,
+  CompensatedActivitySnapshot,
+  CompensationRunSnapshot,
   EngineConnection,
   EngineConnectionConfig,
   EngineConnectionState,

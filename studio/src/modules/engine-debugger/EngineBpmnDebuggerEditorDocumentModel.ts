@@ -2,7 +2,7 @@ import { Bifrost } from '#bifrost/Bifrost';
 import { DataObjectDetailLevel, showAllDataObjectDetails } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
-import type { EngineConnectionManager } from '#modules/engine-core';
+import type { CompensatedActivitySnapshot, EngineConnectionManager } from '#modules/engine-core';
 import { getShortId } from '#modules/engine-core';
 import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
 import type { DataObjectValue, FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
@@ -66,6 +66,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
   private overlays: BpmnElementOverlayManager;
 
   private dataObjectData: DataObjectValue[] = [];
+  private compensatedActivitiesData: CompensatedActivitySnapshot[] = [];
   private sortedFlowNodeInstances: FlowNodeInstance[] = [];
   private executedFlowNodes: ExecutableFlowNode[] = [];
   private processDefinitionData: BpmnDefinitions | null = null;
@@ -171,44 +172,47 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
       },
     );
 
-    this.engineAdapter.onFlowNodeInstancesUpdated((flowNodeInstances, dataObjectData, newFlowNodeInstances) => {
-      this.sortedFlowNodeInstances = flowNodeInstances;
-      this.dataObjectData = dataObjectData;
+    this.engineAdapter.onFlowNodeInstancesUpdated(
+      (flowNodeInstances, dataObjectData, compensatedActivities, newFlowNodeInstances) => {
+        this.sortedFlowNodeInstances = flowNodeInstances;
+        this.dataObjectData = dataObjectData;
+        this.compensatedActivitiesData = compensatedActivities;
 
-      const isFullReload = newFlowNodeInstances == null;
+        const isFullReload = newFlowNodeInstances == null;
 
-      if (isFullReload) {
-        this.subProcessesWithSelectionByUser = [];
-        this.selectedSubProcessInstances = {};
-      }
+        if (isFullReload) {
+          this.subProcessesWithSelectionByUser = [];
+          this.selectedSubProcessInstances = {};
+        }
 
-      const flowNodes = this.mapFlowNodeInstancesToFlowNodes(flowNodeInstances);
-      this.executedFlowNodes = flowNodes;
+        const flowNodes = this.mapFlowNodeInstancesToFlowNodes(flowNodeInstances);
+        this.executedFlowNodes = flowNodes;
 
-      this.sanitizeSelectedSubProcessInstances();
+        this.sanitizeSelectedSubProcessInstances();
 
-      const hasNewFlowNodeInstances = newFlowNodeInstances != null && newFlowNodeInstances.length > 0;
-      const newSubprocessShellFnis =
-        newFlowNodeInstances?.filter(
-          (fni) => fni.flowNodeType === FlowNodeType.SubProcess && fni.processInstanceId === this.processInstanceId,
-        ) ?? [];
+        const hasNewFlowNodeInstances = newFlowNodeInstances != null && newFlowNodeInstances.length > 0;
+        const newSubprocessShellFnis =
+          newFlowNodeInstances?.filter(
+            (fni) => fni.flowNodeType === FlowNodeType.SubProcess && fni.processInstanceId === this.processInstanceId,
+          ) ?? [];
 
-      if (newSubprocessShellFnis.length > 0) {
-        this.refreshFlowNodeOverlays();
-      } else if (hasNewFlowNodeInstances) {
-        newFlowNodeInstances!.forEach((fni) => this.refreshFlowNodeOverlay(fni.flowNodeId));
-        this.refreshSequenceFlowMarkers();
-      } else {
-        this.refreshFlowNodeOverlays();
-      }
-      this.error = null;
+        if (newSubprocessShellFnis.length > 0) {
+          this.refreshFlowNodeOverlays();
+        } else if (hasNewFlowNodeInstances) {
+          newFlowNodeInstances!.forEach((fni) => this.refreshFlowNodeOverlay(fni.flowNodeId));
+          this.refreshSequenceFlowMarkers();
+        } else {
+          this.refreshFlowNodeOverlays();
+        }
+        this.error = null;
 
-      this.debouncedDataUpdated();
+        this.debouncedDataUpdated();
 
-      if (this.isAutoFollowEnabled) {
-        this.focusViewOnCurrentProgress();
-      }
-    });
+        if (this.isAutoFollowEnabled) {
+          this.focusViewOnCurrentProgress();
+        }
+      },
+    );
 
     if (this.engineIsOnline) {
       void this.loadAncestorProcessInstanceIds();
@@ -300,6 +304,10 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
   get engineUrl(): string {
     return this.connectionManager.getConnection(this.engineId)?.url ?? this.engineId;
+  }
+
+  get compensatedActivities(): CompensatedActivitySnapshot[] {
+    return this.compensatedActivitiesData;
   }
 
   get dataObjectValues(): DataObjectValue[] {
@@ -538,6 +546,24 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
         }),
       );
     }
+  }
+
+  get executedCompensationAssociations(): string[] {
+    const compensatedHandlerIds = new Set(this.compensatedActivitiesData.map((entry) => entry.handlerActivityId));
+    if (compensatedHandlerIds.size === 0) {
+      return [];
+    }
+
+    const allAssociations =
+      this.bpmnViewerComponentAdapter?.getElementRegistry().filter((element) => element.type === 'bpmn:Association') ??
+      [];
+
+    return allAssociations
+      .filter((association) => {
+        const targetId = (association as any).businessObject?.targetRef?.id;
+        return targetId != null && compensatedHandlerIds.has(targetId);
+      })
+      .map((association) => association.id);
   }
 
   get executedSequenceFlows(): string[] {
@@ -1160,6 +1186,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
     switch (this.processInstance.state) {
       case ProcessInstanceState.Finished:
+      case ProcessInstanceState.Compensated:
         elementsToFocusViewOn = this.flowNodeInstances
           .filter((flowNodeInstance) => flowNodeInstance.state === 'finished')
           .map((flowNodeInstance) => flowNodeInstance.flowNodeId);
@@ -1294,6 +1321,25 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
           bpmnCanvas.addMarker(sequenceFlow.id, 'connection-done');
         } else if (!isExecuted && hasMarker) {
           bpmnCanvas.removeMarker(sequenceFlow.id, 'connection-done');
+        }
+      });
+
+    this.refreshCompensationAssociationMarkers(bpmnCanvas);
+  }
+
+  private refreshCompensationAssociationMarkers(bpmnCanvas: any): void {
+    const executedAssociationIds = new Set(this.executedCompensationAssociations);
+
+    this.bpmnViewerComponentAdapter
+      ?.getElementRegistry()
+      .filter((element) => element.type === 'bpmn:Association')
+      .forEach((association) => {
+        const isExecuted = executedAssociationIds.has(association.id);
+        const hasMarker = bpmnCanvas.hasMarker(association.id, 'association-compensation');
+        if (isExecuted && !hasMarker) {
+          bpmnCanvas.addMarker(association.id, 'association-compensation');
+        } else if (!isExecuted && hasMarker) {
+          bpmnCanvas.removeMarker(association.id, 'association-compensation');
         }
       });
   }

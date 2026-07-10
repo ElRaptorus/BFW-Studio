@@ -14,6 +14,8 @@ export type BpmnElement =
   | BpmnElement_ErrorBoundaryEvent
   | BpmnElement_ErrorEndEvent
   | BpmnElement_ErrorStartEvent
+  | BpmnElement_CompensationEndEvent
+  | BpmnElement_CompensationIntermediateThrowEvent
   | BpmnElement_EscalationBoundaryEvent
   | BpmnElement_EscalationEndEvent
   | BpmnElement_EscalationIntermediateThrowEvent
@@ -359,6 +361,22 @@ export type BpmnElement_EscalationIntermediateThrowEvent = BpmnElementCommonProp
   readonly type: BpmnElementType.EscalationIntermediateThrowEvent;
   readonly escalationCode: string;
   readonly name?: string;
+};
+
+//
+// Compensation End Event
+//
+export type BpmnElement_CompensationEndEvent = BpmnElementCommonProperties & {
+  readonly type: BpmnElementType.CompensationEndEvent;
+  readonly compensationActivityRef?: string;
+};
+
+//
+// Compensation Intermediate Throw Event
+//
+export type BpmnElement_CompensationIntermediateThrowEvent = BpmnElementCommonProperties & {
+  readonly type: BpmnElementType.CompensationIntermediateThrowEvent;
+  readonly compensationActivityRef?: string;
 };
 
 //

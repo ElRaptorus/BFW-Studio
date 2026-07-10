@@ -231,6 +231,18 @@ export function initializeBpmnPanes(bifrost: Bifrost): void {
       require('../panes/properties/EscalationEndEvent/PropertiesEscalationEndEvent'),
     ),
 
+    // Compensation events
+    bifrost.panes.getPaneViaPaneProvider(
+      'bpmn/panes/properties/PropertiesCompensationBoundaryEvent',
+      'bpmn/pane-providers/properties/PropertiesCompensationBoundaryEvent',
+      require('../panes/properties/CompensationBoundaryEvent/PropertiesCompensationBoundaryEvent'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'bpmn/panes/properties/PropertiesCompensationThrowEvent',
+      'bpmn/pane-providers/properties/PropertiesCompensationThrowEvent',
+      require('../panes/properties/CompensationThrowEvent/PropertiesCompensationThrowEvent'),
+    ),
+
     // Conditional events
     bifrost.panes.getPaneViaPaneProvider(
       'bpmn/panes/properties/PropertiesConditionalStartEvent',

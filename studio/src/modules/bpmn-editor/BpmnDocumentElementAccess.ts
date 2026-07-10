@@ -732,6 +732,24 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         const commandToExecute = CmdHelper.updateEscalationEvent(element, name, escalationCode);
         commandStack.execute(commandToExecute.cmd, commandToExecute.context);
       },
+      compensationActivityRef: (element: any, _propertyName: string, propertyValue: ModelerElementPropertyValue) => {
+        const businessObject = element.businessObject;
+        const compensateDefinition = businessObject?.eventDefinitions?.find(
+          (definition: any) => definition.$type === MODDLE_BPMN_COMPENSATION_EVENT_DEFINITION_TYPE,
+        );
+        if (compensateDefinition == null) {
+          return;
+        }
+
+        const elementRegistry = this.bpmnModelerProxy.getElementRegistry();
+        const targetActivityId: string | null = propertyValue ?? null;
+        const targetElement = targetActivityId ? elementRegistry.get(targetActivityId) : null;
+        const activityRef = targetElement?.businessObject ?? undefined;
+
+        const commandStack = this.bpmnModelerProxy.getCommandStack();
+        const commandToExecute = CmdHelper.updateBusinessObject(element, compensateDefinition, { activityRef });
+        commandStack.execute(commandToExecute.cmd, commandToExecute.context);
+      },
       textAnnotation: (element: any, propertyName: string, propertyValue: ModelerElementPropertyValue) => {
         const props = {
           text: propertyValue,
@@ -1248,6 +1266,12 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
           name: escalationRef?.name,
           escalationCode: escalationRef?.escalationCode,
         };
+      },
+      compensationActivityRef: (element: any) => {
+        const compensateDefinition = element.businessObject?.eventDefinitions?.find(
+          (definition) => definition.$type === MODDLE_BPMN_COMPENSATION_EVENT_DEFINITION_TYPE,
+        );
+        return compensateDefinition?.activityRef?.id ?? null;
       },
       textAnnotation: (element: any, propertyName: string) => {
         return element.businessObject.get(MODDLE_BPMN_TEXT_SELECTOR);
@@ -1896,6 +1920,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         return {
           type: BpmnElementType.CompensationEndEvent,
           ...genericProperties,
+          compensationActivityRef: this.getCompensationActivityRef(element),
         };
 
       case BpmnElementType.CancelEndEvent:
@@ -1932,6 +1957,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         return {
           type: BpmnElementType.CompensationIntermediateThrowEvent,
           ...genericProperties,
+          compensationActivityRef: this.getCompensationActivityRef(element),
         };
 
       default:
@@ -2268,6 +2294,13 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       default:
         return null;
     }
+  }
+
+  private getCompensationActivityRef(element: any): string | undefined {
+    const eventDefinition = element.businessObject?.eventDefinitions?.find(
+      (definition: any) => definition.$type === MODDLE_BPMN_COMPENSATION_EVENT_DEFINITION_TYPE,
+    );
+    return eventDefinition?.activityRef?.id;
   }
 
   private getEventDefinitionType(elementId: string): any {

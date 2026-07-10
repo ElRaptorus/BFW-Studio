@@ -27,30 +27,6 @@ export function initializeBpmnMenus(bifrost: Bifrost): void {
           id: 'view/bpmn-editor',
           submenu: [
             {
-              type: 'menu',
-              id: 'view/bpmn-editor/elements',
-              label: 'Show BPMN Elements',
-              submenu: [
-                {
-                  type: 'command',
-                  label: 'Supported',
-                  checked: !bifrost.settings.get('bpmn.editor.showUnsupportedElements'),
-                  id: 'view/bpmn-editor/show-elements/only-supported',
-                  command: 'bpmn.editor.showUnsupportedElements',
-                },
-                {
-                  type: 'command',
-                  label: 'All',
-                  checked: bifrost.settings.get('bpmn.editor.showUnsupportedElements'),
-                  id: 'view/bpmn-editor/show-elements/all',
-                  command: 'bpmn.editor.showUnsupportedElements',
-                },
-              ],
-            },
-            {
-              type: 'divider',
-            },
-            {
               type: 'command',
               label: 'Show BPMN Grid',
               checked: bifrost.settings.get('bpmn.editor.showGrid'),

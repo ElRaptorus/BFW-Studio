@@ -63,6 +63,20 @@ export interface FniSnapshot {
   errorInfo: ErrorInfo | null;
 }
 
+export interface CompensationRunSnapshot {
+  throwType: 'throw' | 'end';
+  activityRef: string | null;
+  targetCount: number;
+}
+
+export interface CompensatedActivitySnapshot {
+  compensatedFniId: string;
+  handlerFniId: string;
+  throwFniId: string;
+  flowNodeId: string;
+  handlerActivityId: string;
+}
+
 export interface ProcessInstanceSnapshot {
   id: string;
   state: ProcessInstanceState;
@@ -78,6 +92,8 @@ export interface ProcessInstanceSnapshot {
   errorInfo: ErrorInfo | null;
   dataObjectValues: DataObjectValue[];
   flowNodeInstances: FniSnapshot[];
+  compensationRuns: Map<string, CompensationRunSnapshot>;
+  compensatedActivities: CompensatedActivitySnapshot[];
 }
 
 export type EngineManagerEventType =

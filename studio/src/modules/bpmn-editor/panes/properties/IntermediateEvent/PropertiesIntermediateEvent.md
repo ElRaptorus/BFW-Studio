@@ -22,5 +22,4 @@ An `Intermediate Event` happens between the Start and End of a Process. It does 
 - [Signal Intermediate Throw Event](help://bpmn/properties/signal_intermediate_throw_event)
 - [Escalation Intermediate Throw Event](help://bpmn/properties/escalation_intermediate_throw_event)
 - [Link Intermediate Throw Event](help://bpmn/properties/link_intermediate-throw_event)
-
-A [Compensation Intermediate Throw Event](help://bpmn/properties/compensation_intermediate_throw_event) can be modeled but is not executed by the current Engine.
+- [Compensation Intermediate Throw Event](help://bpmn/properties/compensation_intermediate_throw_event)

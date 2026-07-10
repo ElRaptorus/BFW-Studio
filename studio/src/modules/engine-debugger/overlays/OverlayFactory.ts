@@ -130,6 +130,8 @@ export function createFlowNodeInstanceCover(
   const shadowEffect = `bpmn-element-overlay-backdrop-shadow--${flowNodeShadowRendererFlag}`;
   const baseCoverStyle = `bpmn-element-overlay-backdrop--${selectedFlowNodeInstance?.state ?? 'unknown'} ${shadowEffect}`;
 
+  const isCompensationHandler = hasCompensationTypeProperty(selectedFlowNodeInstance);
+
   if (flowNodeIsAGateway) {
     const shape = model.bpmnViewerComponentAdapter?.getElementRegistry().get(flowNode.id) as Shape | undefined;
     return {
@@ -148,6 +150,10 @@ export function createFlowNodeInstanceCover(
     flowNodeCover = `${baseCoverStyle} bpmn-element-overlay-backdrop--subprocess`;
   } else {
     flowNodeCover = baseCoverStyle;
+  }
+
+  if (isCompensationHandler) {
+    flowNodeCover = `${flowNodeCover} bpmn-element-overlay-backdrop-compensation`;
   }
 
   const cornerFlagForRunningOrSuspendedInstancesRequired =
@@ -283,6 +289,48 @@ export async function createFlowNodeInstanceOverlays(
 
   if (isCatchEvent && selectedFlowNodeInstance.eventType === EventDefinitionType.Timer && isActive) {
     overlays.push(createTriggerTimerEventLink(selectedFlowNodeInstance, model, studio));
+  }
+
+  if (hasCompensationTypeProperty(selectedFlowNodeInstance)) {
+    const properties = selectedFlowNodeInstance.typeProperties as Record<string, unknown>;
+    const compensatedForFlowNodeId = properties['compensation_for'] as string | undefined;
+    if (compensatedForFlowNodeId) {
+      const compensatedFni = model.flowNodeInstances.find(
+        (instance) =>
+          instance.flowNodeId === compensatedForFlowNodeId && instance.state === FlowNodeInstanceState.Finished,
+      );
+      if (compensatedFni) {
+        overlays.push(
+          createEventOverlayLink(
+            studio,
+            flowNode.id,
+            'Go to Compensated Activity',
+            'ph ph-arrow-square-out',
+            'engine.debugger.selectFlowNodeInstance',
+            [compensatedFni.id],
+          ),
+        );
+      }
+    }
+  }
+
+  if (isFinished && model.compensatedActivities.length > 0) {
+    const compensatedEntry = model.compensatedActivities.find((entry) => entry.flowNodeId === flowNode.id);
+    if (compensatedEntry) {
+      const handlerFni = model.flowNodeInstances.find((instance) => instance.id === compensatedEntry.handlerFniId);
+      if (handlerFni) {
+        overlays.push(
+          createEventOverlayLink(
+            studio,
+            flowNode.id,
+            'Go to Compensation Handler',
+            'ph ph-arrow-square-out',
+            'engine.debugger.selectFlowNodeInstance',
+            [handlerFni.id],
+          ),
+        );
+      }
+    }
   }
 
   const triggererLookup = new Map(model.flowNodeInstances.map((instance) => [instance.id, instance]));
@@ -423,5 +471,13 @@ const shouldDisplayRetryOverlay = (
     !isFlowNodeInParallelRunningBranch(model.processModel, flowNode.flowNodeModel)
   );
 };
+
+function hasCompensationTypeProperty(fni: FlowNodeInstance | null | undefined): boolean {
+  if (!fni?.typeProperties) {
+    return false;
+  }
+  const properties = fni.typeProperties as Record<string, unknown>;
+  return properties['compensation_for'] != null || properties['compensation_throw_fni_id'] != null;
+}
 
 export { isFlowNodeInParallelRunningBranch };

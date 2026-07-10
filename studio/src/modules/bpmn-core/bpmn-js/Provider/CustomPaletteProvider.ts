@@ -3,7 +3,6 @@ import type { ElementLike } from 'diagram-js/lib/model/Types';
 class CustomPaletteProvider {
   static $inject: string[];
 
-  private showUnsupportedElements: boolean = false;
   private palette;
   private canvas;
 
@@ -27,11 +26,6 @@ class CustomPaletteProvider {
       }
       return { ...entries };
     };
-  }
-
-  setShowUnsupportedElements(value: boolean): void {
-    this.showUnsupportedElements = value;
-    this.palette._rebuild();
   }
 }
 

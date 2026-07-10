@@ -329,6 +329,16 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       require('../property-panel/FlowNode/EscalationBoundaryEventPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
+      'EngineDebugger/panes/CompensationBoundaryEvent',
+      'EngineDebugger/pane-providers/CompensationBoundaryEvent',
+      require('../property-panel/FlowNode/CompensationBoundaryEventPane'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'EngineDebugger/panes/CompensationThrowEvent',
+      'EngineDebugger/pane-providers/CompensationThrowEvent',
+      require('../property-panel/FlowNode/CompensationThrowEventPane'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/TimerEventDefinition',
       'EngineDebugger/pane-providers/TimerEventDefinition',
       require('../property-panel/FlowNode/TimerEventDefinitionPane'),

@@ -667,6 +667,15 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     }
   });
 
+  bifrost.commands.register('engine.debugger.selectFlowNodeInstance', async (flowNodeInstanceId: string) => {
+    const editorDocument = bifrost.editors.getFocusedEditorDocument();
+    if (!editorDocument || editorDocument.documentType !== ENGINE_DEBUGGER_DOCUMENT_TYPE) {
+      return;
+    }
+    const model = await bifrost.editors.getEditorDocumentModel<EngineBpmnDebuggerEditorDocumentModel>(editorDocument);
+    model.navigateToFlowNodeInstance(flowNodeInstanceId);
+  });
+
   bifrost.commands.register('engine.debugger.toggleAutoFollow', () =>
     bifrost.settings.set('engineDebugger.viewer.autoFollow', !bifrost.settings.get('engineDebugger.viewer.autoFollow')),
   );

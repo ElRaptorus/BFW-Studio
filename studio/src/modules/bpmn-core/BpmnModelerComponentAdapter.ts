@@ -667,14 +667,6 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
     return injector.get('colorContextPadProvider');
   }
 
-  setShowUnsupportedElements(value: boolean = false) {
-    const customPopupInstance = this.modeler.get('customPopupProvider') as any;
-    const customPaletteInstance = this.modeler.get('customPaletteProvider') as any;
-
-    customPopupInstance.setShowUnsupportedElements(value);
-    customPaletteInstance.setShowUnsupportedElements(value);
-  }
-
   private getPasteObjectReviver(moddle: any): any {
     return (_key: string, object: any) => {
       if (object != null && typeof object === 'object' && typeof object.$type === 'string') {

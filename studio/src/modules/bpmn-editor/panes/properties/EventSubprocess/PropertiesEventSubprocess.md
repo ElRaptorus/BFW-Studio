@@ -12,16 +12,17 @@ An `Event Subprocess` is an embedded [Subprocess](help://bpmn/properties/subproc
 
 The Start Event of an Event Subprocess must be **typed** — a blank (None) start is not allowed. The following trigger types are supported:
 
-| Trigger     | Interrupting | Non-interrupting |
-| ----------- | :----------: | :--------------: |
-| Message     |      ✓       |        ✓         |
-| Timer       |      ✓       |        ✓         |
-| Signal      |      ✓       |        ✓         |
-| Conditional |      ✓       |        ✓         |
-| Escalation  |      ✓       |        ✓         |
-| Error       |      ✓       |        —         |
+| Trigger      | Interrupting | Non-interrupting |
+| ------------ | :----------: | :--------------: |
+| Message      |      ✓       |        ✓         |
+| Timer        |      ✓       |        ✓         |
+| Signal       |      ✓       |        ✓         |
+| Conditional  |      ✓       |        ✓         |
+| Escalation   |      ✓       |        ✓         |
+| Error        |      ✓       |        —         |
+| Compensation |      ✓       |        —         |
 
-An **Error** start event must be **interrupting**; a non-interrupting Error start is not permitted. **Compensation** starts are not supported.
+An **Error** start event must be **interrupting**; a non-interrupting Error start is not permitted. A **Compensation** start event must also be **interrupting** — it fires when compensation is triggered within the enclosing scope.
 
 ## Interrupting vs non-interrupting
 

@@ -1,6 +1,8 @@
 import type { DaemonEngineClient, Subscription } from '@elraptorus/daemonengine_client';
 import type {
+  ActivityCompensated,
   CallActivityChildStarted,
+  CompensationTriggered,
   DataObjectWritten,
   EngineEventEnvelope,
   FlowNodeInstanceFinished,
@@ -21,7 +23,9 @@ export type SnapshotEventType =
   | 'subprocess-child'
   | 'data-object-written'
   | 'pi-state-changed'
-  | 'child-pi-state-changed';
+  | 'child-pi-state-changed'
+  | 'compensation-triggered'
+  | 'activity-compensated';
 
 export interface SnapshotUpdate {
   snapshot: ProcessInstanceSnapshot;
@@ -168,6 +172,20 @@ export class SubscribeThenSnapshot {
         this.handleDataObjectWritten(envelope.data as DataObjectWritten);
         eventType = 'data-object-written';
         break;
+      case 'CompensationTriggered': {
+        const event = envelope.data as CompensationTriggered;
+        this.handleCompensationTriggered(event);
+        eventType = 'compensation-triggered';
+        affectedFniIds.push(event.flowNodeInstanceId);
+        break;
+      }
+      case 'ActivityCompensated': {
+        const event = envelope.data as ActivityCompensated;
+        this.handleActivityCompensated(event);
+        eventType = 'activity-compensated';
+        affectedFniIds.push(event.handlerFniId, event.compensatedFniId);
+        break;
+      }
     }
 
     if (eventType) {
@@ -282,6 +300,32 @@ export class SubscribeThenSnapshot {
       flowNodeInstanceId: event.flowNodeInstanceId,
       value: event.value,
       createdAt: event.createdAt,
+    });
+  }
+
+  private handleCompensationTriggered(event: CompensationTriggered): void {
+    if (!this.snapshot) {
+      return;
+    }
+
+    this.snapshot.compensationRuns.set(event.flowNodeInstanceId, {
+      throwType: event.throwType,
+      activityRef: event.activityRef,
+      targetCount: event.targetCount,
+    });
+  }
+
+  private handleActivityCompensated(event: ActivityCompensated): void {
+    if (!this.snapshot) {
+      return;
+    }
+
+    this.snapshot.compensatedActivities.push({
+      compensatedFniId: event.compensatedFniId,
+      handlerFniId: event.handlerFniId,
+      throwFniId: event.throwFniId,
+      flowNodeId: event.flowNodeId,
+      handlerActivityId: event.handlerActivityId,
     });
   }
 }

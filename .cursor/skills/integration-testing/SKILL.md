@@ -164,6 +164,43 @@ Examples of good fixture names:
 
 Avoid names like `test-plugin-1`, `fixture-a`, or `sample-003`. If a fixture has a specific purpose, give it a name that tells a story.
 
+## MANDATORY: Fix ALL Test Failures
+
+**Every agent MUST fix ALL test failures, warnings, and errors encountered
+during test runs — no exceptions.**
+
+This is a **non-negotiable** rule. Violations of this rule directly endanger
+the CI pipeline and block every other contributor.
+
+### Why "pre-existing" is not an excuse
+
+Bifrost Forge World is a highly interconnected application. A change to a
+shared component can break tests in unrelated modules. A new command
+registration can cause cascading failures in integration tests. **It is
+never safe to assume a failing test is unrelated to your changes.**
+
+Even if a failure genuinely predates your work, the CI pipeline does not
+distinguish "your fault" from "someone else's fault" — it sees red and
+blocks the merge. Leaving a known failure for "someone else to fix" is
+functionally identical to introducing it yourself.
+
+### Rules
+
+1. **Run the build verification steps after every logical change.** This is
+   defined in `.cursor/rules/build.mdc` and is non-optional.
+2. **If any test fails, fix it.** Do not move on to the next task. Do not
+   mark your work as complete. Do not report "N tests failed but they seem
+   pre-existing."
+3. **If a test that previously passed now fails, the cause is almost
+   certainly your change.** Investigate the connection before assuming
+   otherwise.
+4. **If you genuinely cannot fix a failure** (e.g., it requires domain
+   knowledge you lack, or it depends on infrastructure you cannot access),
+   **explicitly report it as a blocker** with full error output, your
+   analysis of the root cause, and what you tried. Do not silently skip it.
+
+---
+
 ## Reference
 
 See `docs/testing.md` for comprehensive testing documentation.

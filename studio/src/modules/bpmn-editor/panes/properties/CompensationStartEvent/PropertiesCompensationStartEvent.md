@@ -6,6 +6,17 @@ title: Compensation Start Event
 
 ![Compensation Start Event](CompensationStartEvent.svg)
 
-> **Not executed by the current Engine.** You can draw and deploy this element, but the Engine will not run it. Avoid it in executable processes for now.
+The `Compensation Start Event` is a specialized [Start Event](help://bpmn/properties/start_event) that begins a compensation [Event Subprocess](help://bpmn/properties/event_subprocess). When compensation is triggered within the enclosing scope, this Event Subprocess runs as the scope-level compensation handler.
 
-The `Compensation Start Event` is a specialized [Start Event](help://bpmn/properties/start_event) intended to start a compensation Event Subprocess. The current Engine runs neither Event Subprocesses nor compensation, so it will not execute.
+## Precedence
+
+A compensation Event Subprocess takes precedence over individual [Compensation Boundary Events](help://bpmn/properties/compensation_boundary_event) for **broadcast** compensation (no `activityRef`). Targeted compensation (specifying a specific activity) bypasses the Event Subprocess and uses the boundary handler directly.
+
+## Interrupting behavior
+
+Compensation Event Subprocesses are always **interrupting** — when triggered, they cancel the remaining active work in the enclosing scope before running the subprocess flow.
+
+## Modelling rules
+
+- The compensation Event Subprocess must have exactly **one** Compensation Start Event.
+- No sequence flows may cross the Event Subprocess boundary.

@@ -640,6 +640,39 @@ export function shouldDisplayEscalationThrowEventPane(
   return isThrowingEvent && selectedFlowNodeInstance.eventType === EventDefinitionType.Escalation;
 }
 
+export function shouldDisplayCompensationBoundaryEventPane(
+  document: EditorDocument,
+  model: EngineBpmnDebuggerEditorDocumentModel,
+): boolean {
+  if (!isDebuggerDocumentWithSingleSelectedExecutedFlowNode(document, model)) {
+    return false;
+  }
+
+  const selectedFlowNodeInstance = getSelectedFlowNodeInstance(model);
+
+  return (
+    selectedFlowNodeInstance.flowNodeType === FlowNodeType.BoundaryEvent &&
+    selectedFlowNodeInstance.eventType === EventDefinitionType.Compensation
+  );
+}
+
+export function shouldDisplayCompensationThrowEventPane(
+  document: EditorDocument,
+  model: EngineBpmnDebuggerEditorDocumentModel,
+): boolean {
+  if (!isDebuggerDocumentWithSingleSelectedExecutedFlowNode(document, model)) {
+    return false;
+  }
+
+  const selectedFlowNodeInstance = getSelectedFlowNodeInstance(model);
+
+  const isThrowingEvent =
+    selectedFlowNodeInstance.flowNodeType === FlowNodeType.EndEvent ||
+    selectedFlowNodeInstance.flowNodeType === FlowNodeType.IntermediateThrowEvent;
+
+  return isThrowingEvent && selectedFlowNodeInstance.eventType === EventDefinitionType.Compensation;
+}
+
 export function shouldDisplayEscalationBoundaryEventPane(
   document: EditorDocument,
   model: EngineBpmnDebuggerEditorDocumentModel,

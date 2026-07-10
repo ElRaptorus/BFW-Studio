@@ -21,5 +21,6 @@ A `Boundary Event` is attached to the edge of an Activity and waits for somethin
 - [Error Boundary Event](help://bpmn/properties/error_boundary_event) (interrupting only)
 - [Escalation Boundary Event](help://bpmn/properties/escalation_boundary_event)
 - [Conditional Boundary Event](help://bpmn/properties/conditional_boundary_event)
+- [Compensation Boundary Event](help://bpmn/properties/compensation_boundary_event) (always non-interrupting)
 
-[Compensation](help://bpmn/properties/compensation_boundary_event) and [Cancel](help://bpmn/properties/cancel_boundary_event) Boundary Events can be modeled but are not executed by the current Engine.
+[Cancel](help://bpmn/properties/cancel_boundary_event) Boundary Events can be modeled but are not executed by the current Engine.

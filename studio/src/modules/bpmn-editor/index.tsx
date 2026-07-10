@@ -169,13 +169,6 @@ export function onLoad(bifrost: Bifrost): void {
       description: 'Display internal custom extension properties on BPMN elements.',
       default: false,
     },
-    'bpmn.editor.showUnsupportedElements': {
-      category: 'BPMN Editor',
-      type: 'boolean',
-      label: 'Show Unsupported Elements',
-      description: 'Display elements that are not fully supported by the editor.',
-      default: false,
-    },
     'bpmn.editor.showDocumentationMarker': {
       category: 'BPMN Editor',
       type: 'boolean',
