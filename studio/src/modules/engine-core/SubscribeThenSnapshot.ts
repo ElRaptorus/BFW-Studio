@@ -10,6 +10,7 @@ import type {
   FlowNodeInstanceStateChanged,
   ProcessInstanceStateChanged,
   SubProcessChildStarted,
+  TransactionCancelled,
 } from '@elraptorus/daemonengine_sdk';
 
 import type { EngineConnectionManager } from './EngineConnectionManager';
@@ -25,7 +26,8 @@ export type SnapshotEventType =
   | 'pi-state-changed'
   | 'child-pi-state-changed'
   | 'compensation-triggered'
-  | 'activity-compensated';
+  | 'activity-compensated'
+  | 'transaction-cancelled';
 
 export interface SnapshotUpdate {
   snapshot: ProcessInstanceSnapshot;
@@ -184,6 +186,12 @@ export class SubscribeThenSnapshot {
         this.handleActivityCompensated(event);
         eventType = 'activity-compensated';
         affectedFniIds.push(event.handlerFniId, event.compensatedFniId);
+        break;
+      }
+      case 'TransactionCancelled': {
+        const event = envelope.data as TransactionCancelled;
+        eventType = 'transaction-cancelled';
+        affectedFniIds.push(event.processInstanceId);
         break;
       }
     }

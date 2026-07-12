@@ -40,6 +40,8 @@ import gatewayDirectionConsistency from './bpmn-spec/gateway-direction-consisten
 import noCrossBoundaryFlows from './bpmn-spec/no-cross-boundary-flows';
 import startEventNoConditions from './bpmn-spec/start-event-no-conditions';
 import topLevelStartEventType from './bpmn-spec/top-level-start-event-type';
+import transactionCancelNoBoundary from './bpmn-spec/transaction-cancel-no-boundary';
+import transactionCancelNoCompensable from './bpmn-spec/transaction-cancel-no-compensable';
 // --- Custom: Execution Readiness ---
 
 import callActivityTarget from './execution-readiness/call-activity-target';
@@ -135,6 +137,8 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'gateway-direction-consistency': gatewayDirectionConsistency,
   'escalation-boundary-host': escalationBoundaryHost,
   'cancel-event-transaction-scope': cancelEventTransactionScope,
+  'transaction-cancel-no-boundary': transactionCancelNoBoundary,
+  'transaction-cancel-no-compensable': transactionCancelNoCompensable,
   'top-level-start-event-type': topLevelStartEventType,
   // Structure
   'service-task-error-boundary': serviceTaskErrorBoundary,
@@ -249,6 +253,8 @@ export const profiles: Record<string, LintProfileConfig> = {
       'gateway-direction-consistency': 'warn',
       'escalation-boundary-host': 'warn',
       'cancel-event-transaction-scope': 'warn',
+      'transaction-cancel-no-boundary': 'warn',
+      'transaction-cancel-no-compensable': 'info',
       'top-level-start-event-type': 'warn',
       // Structure (AST)
       'service-task-error-boundary': 'warn',
@@ -339,6 +345,8 @@ export const profiles: Record<string, LintProfileConfig> = {
       'gateway-direction-consistency': 'error',
       'escalation-boundary-host': 'error',
       'cancel-event-transaction-scope': 'error',
+      'transaction-cancel-no-boundary': 'error',
+      'transaction-cancel-no-compensable': 'warn',
       'top-level-start-event-type': 'error',
       // Structure (AST)
       'service-task-error-boundary': 'error',
@@ -544,9 +552,21 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'cancel-event-transaction-scope': {
     category: 'bpmn-spec',
-    why: 'Cancel events require a transaction sub-process scope, which the engine does not yet support, so they cannot be used.',
+    why: 'Cancel End Events are only valid inside a Transaction subprocess, and Cancel Boundary Events may only be attached to one.',
     suggestion:
-      'Remove the cancel event. Cancel end events belong inside a transaction sub-process and cancel boundary events on one.',
+      'Move the Cancel End Event inside a Transaction subprocess, or attach the Cancel Boundary Event to a Transaction subprocess.',
+  },
+  'transaction-cancel-no-boundary': {
+    category: 'bpmn-spec',
+    why: 'A Transaction with a Cancel End Event but no Cancel Boundary Event on the shell will fatal when the cancel fires, because there is no boundary outgoing flow to route the parent process.',
+    suggestion:
+      'Add a Cancel Boundary Event to the Transaction subprocess shell and connect it to the continuation of the parent process.',
+  },
+  'transaction-cancel-no-compensable': {
+    category: 'bpmn-spec',
+    why: 'A Cancel End Event triggers automatic LIFO compensation for completed activities. If no activities inside the transaction have compensation boundary events, the cancel produces no rollback effect.',
+    suggestion:
+      'Add compensation boundary events and compensation handlers to the activities inside the transaction that change external state.',
   },
   'top-level-start-event-type': {
     category: 'bpmn-spec',

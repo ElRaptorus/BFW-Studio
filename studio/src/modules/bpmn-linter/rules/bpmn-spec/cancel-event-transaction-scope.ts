@@ -12,9 +12,7 @@ function hasCancelEventDefinition(node: ModdleNode): boolean {
 /**
  * Flags Cancel events outside a transaction scope. A Cancel End Event must sit
  * directly inside a transaction sub-process, and a Cancel Boundary Event must be
- * attached to one. Transaction sub-processes are not yet supported by the
- * engine, so today this rule forbids Cancel events everywhere; the transaction
- * check keeps it forward-compatible for when that support lands.
+ * attached to one.
  */
 export default function () {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {

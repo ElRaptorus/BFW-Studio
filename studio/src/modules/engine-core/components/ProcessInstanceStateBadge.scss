@@ -39,6 +39,11 @@
     color: var(--theme-engine-ws-badge-escalated-fg);
   }
 
+  &--cancelled {
+    background-color: var(--theme-engine-ws-badge-cancelled-bg);
+    color: var(--theme-engine-ws-badge-cancelled-fg);
+  }
+
   &--error {
     background-color: var(--theme-engine-ws-badge-error-bg);
     color: var(--theme-engine-ws-badge-error-fg);

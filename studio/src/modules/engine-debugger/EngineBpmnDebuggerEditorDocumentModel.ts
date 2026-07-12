@@ -1187,6 +1187,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
     switch (this.processInstance.state) {
       case ProcessInstanceState.Finished:
       case ProcessInstanceState.Compensated:
+      case ProcessInstanceState.Cancelled:
         elementsToFocusViewOn = this.flowNodeInstances
           .filter((flowNodeInstance) => flowNodeInstance.state === 'finished')
           .map((flowNodeInstance) => flowNodeInstance.flowNodeId);

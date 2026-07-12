@@ -14,8 +14,11 @@ export type BpmnElement =
   | BpmnElement_ErrorBoundaryEvent
   | BpmnElement_ErrorEndEvent
   | BpmnElement_ErrorStartEvent
+  | BpmnElement_CancelBoundaryEvent
+  | BpmnElement_CancelEndEvent
   | BpmnElement_CompensationEndEvent
   | BpmnElement_CompensationIntermediateThrowEvent
+  | BpmnElement_Transaction
   | BpmnElement_EscalationBoundaryEvent
   | BpmnElement_EscalationEndEvent
   | BpmnElement_EscalationIntermediateThrowEvent
@@ -377,6 +380,29 @@ export type BpmnElement_CompensationEndEvent = BpmnElementCommonProperties & {
 export type BpmnElement_CompensationIntermediateThrowEvent = BpmnElementCommonProperties & {
   readonly type: BpmnElementType.CompensationIntermediateThrowEvent;
   readonly compensationActivityRef?: string;
+};
+
+//
+// Transaction Subprocess
+//
+export type BpmnElement_Transaction = BpmnElementCommonProperties & {
+  readonly type: BpmnElementType.Transaction;
+  readonly childrenIds: string[];
+  readonly transactionMethod?: string;
+};
+
+//
+// Cancel End Event
+//
+export type BpmnElement_CancelEndEvent = BpmnElementCommonProperties & {
+  readonly type: BpmnElementType.CancelEndEvent;
+};
+
+//
+// Cancel Boundary Event
+//
+export type BpmnElement_CancelBoundaryEvent = BpmnElementCommonProperties & {
+  readonly type: BpmnElementType.CancelBoundaryEvent;
 };
 
 //

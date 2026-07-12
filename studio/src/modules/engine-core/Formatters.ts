@@ -126,6 +126,7 @@ export function getProcessInstanceStateName(state: string): string {
     aborted: 'Aborted',
     compensated: 'Compensated',
     escalated: 'Escalated',
+    cancelled: 'Cancelled',
     error: 'Error',
   };
 

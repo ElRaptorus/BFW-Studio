@@ -290,6 +290,7 @@ export default function InstanceSearchRenderer(props: EditorDocumentRendererProp
           { value: ProcessInstanceState.Error, label: 'Error' },
           { value: ProcessInstanceState.Compensated, label: 'Compensated' },
           { value: ProcessInstanceState.Escalated, label: 'Escalated' },
+          { value: ProcessInstanceState.Cancelled, label: 'Cancelled' },
         ],
       },
     },

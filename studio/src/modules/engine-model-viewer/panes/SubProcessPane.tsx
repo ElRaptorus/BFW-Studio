@@ -12,7 +12,11 @@ export const paneProvider: PaneProvider = {
   PaneContent,
 };
 
-function getPaneTitle(): string {
+function getPaneTitle(_editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel): string {
+  const selection = getSelection(editorDocumentModel);
+  if (selection && matchesType(selection, [':Transaction'])) {
+    return 'Transaction Subprocess';
+  }
   return 'Sub Process';
 }
 
@@ -20,13 +24,15 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
   if (!isModelViewerDocument(editorDocument)) {
     return false;
   }
-  return matchesType(getSelection(editorDocumentModel), [':SubProcess']);
+  const selection = getSelection(editorDocumentModel);
+  return matchesType(selection, [':SubProcess', ':Transaction']);
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
+  const title = getPaneTitle(props.editorDocument, props.editorDocumentModel);
   return (
     <Pane>
-      <PaneHeader studio={props.studio} title={getPaneTitle()} paneId={props.paneId} collapsed={props.collapsed} />
+      <PaneHeader studio={props.studio} title={title} paneId={props.paneId} collapsed={props.collapsed} />
       {props.collapsed !== true && <PaneContent {...props} />}
     </Pane>
   );
@@ -38,11 +44,25 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     return null;
   }
 
+  const isTransaction = matchesType(selection, [':Transaction']);
   const triggeredByEvent = selection.businessObject.triggeredByEvent === true;
+  const transactionMethod = isTransaction ? ((selection.businessObject.method as string | undefined) ?? null) : null;
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Triggered by Event" value={triggeredByEvent ? 'Yes' : 'No'} disabled />
+      {isTransaction ? (
+        <>
+          <PaneProperty type="text" label="Type" value="Transaction Subprocess" disabled />
+          <PaneProperty
+            type="text"
+            label="Method"
+            value={transactionMethod ?? '(default — saga-pattern compensation)'}
+            disabled
+          />
+        </>
+      ) : (
+        <PaneProperty type="text" label="Triggered by Event" value={triggeredByEvent ? 'Yes' : 'No'} disabled />
+      )}
     </div>
   );
 }

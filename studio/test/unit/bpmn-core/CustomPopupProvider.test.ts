@@ -132,14 +132,14 @@ describe('CustomPopupProvider — event subprocess one-way trip', () => {
     assert.equal(Object.hasOwn(result, 'replace-with-event-subprocess'), true);
   });
 
-  it('drops the transaction morph entry now that bpmn:Transaction is unsupported', () => {
+  it('keeps the transaction morph entry because bpmn:Transaction is a supported element', () => {
     const entries: PopupEntries = {
       'replace-with-transaction': { label: 'Transaction' },
       'replace-with-event-subprocess': { label: 'Event Sub-process' },
     };
     const result = runEntries(eventSubProcessElement(), entries);
 
-    assert.equal(Object.hasOwn(result, 'replace-with-transaction'), false);
+    assert.equal(Object.hasOwn(result, 'replace-with-transaction'), true);
     assert.equal(Object.hasOwn(result, 'replace-with-event-subprocess'), true);
   });
 });
