@@ -243,21 +243,11 @@ export function initializeBpmnPanes(bifrost: Bifrost): void {
       require('../panes/properties/CompensationThrowEvent/PropertiesCompensationThrowEvent'),
     ),
 
-    // Transaction subprocess and cancel events
+    // Transaction subprocess
     bifrost.panes.getPaneViaPaneProvider(
       'bpmn/panes/properties/PropertiesTransaction',
       'bpmn/pane-providers/properties/PropertiesTransaction',
       require('../panes/properties/Transaction/PropertiesTransaction'),
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
-      'bpmn/panes/properties/PropertiesCancelEndEvent',
-      'bpmn/pane-providers/properties/PropertiesCancelEndEvent',
-      require('../panes/properties/CancelEndEvent/PropertiesCancelEndEvent'),
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
-      'bpmn/panes/properties/PropertiesCancelBoundaryEvent',
-      'bpmn/pane-providers/properties/PropertiesCancelBoundaryEvent',
-      require('../panes/properties/CancelBoundaryEvent/PropertiesCancelBoundaryEvent'),
     ),
 
     // Conditional events

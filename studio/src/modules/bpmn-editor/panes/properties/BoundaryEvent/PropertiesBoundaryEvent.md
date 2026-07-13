@@ -22,4 +22,4 @@ A `Boundary Event` is attached to the edge of an Activity and waits for somethin
 - [Escalation Boundary Event](help://bpmn/properties/escalation_boundary_event)
 - [Conditional Boundary Event](help://bpmn/properties/conditional_boundary_event)
 - [Compensation Boundary Event](help://bpmn/properties/compensation_boundary_event) (always non-interrupting)
-- [Cancel Boundary Event](help://bpmn/properties/cancel_boundary_event) (always interrupting; attached to a Transaction subprocess only)
+- [Cancel Boundary Event](help://bpmn/properties/cancel_boundary_event) (always interrupting; Can only be used with Transaction Subprocesses)
