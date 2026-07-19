@@ -37,6 +37,8 @@ const ALL_FNI_FIELDS = [
   'outputToken',
   'typeProperties',
   'errorInfo',
+  'multiInstanceId',
+  'iterationIndex',
 ] as const;
 
 type ProcessUpdatedHandler = (
@@ -88,6 +90,8 @@ function fniSnapshotToFlowNodeInstance(snapshot: FniSnapshot): FlowNodeInstance 
     outputToken: snapshot.outputToken,
     typeProperties: snapshot.typeProperties,
     errorInfo: snapshot.errorInfo,
+    multiInstanceId: snapshot.multiInstanceId,
+    iterationIndex: snapshot.iterationIndex,
   };
 }
 
@@ -363,6 +367,8 @@ export class EngineAdapter {
         outputToken: fni.outputToken,
         typeProperties: fni.typeProperties,
         errorInfo: fni.errorInfo,
+        multiInstanceId: fni.multiInstanceId,
+        iterationIndex: fni.iterationIndex,
       })),
       compensationRuns: new Map(),
       compensatedActivities: [],

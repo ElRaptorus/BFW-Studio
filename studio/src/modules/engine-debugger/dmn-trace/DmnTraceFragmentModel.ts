@@ -232,6 +232,8 @@ export class DmnTraceFragmentModel extends EditorDocumentModel {
         'outputToken',
         'typeProperties',
         'errorInfo',
+        'multiInstanceId',
+        'iterationIndex',
       ],
     });
   }

@@ -61,6 +61,8 @@ export interface FniSnapshot {
   outputToken: Record<string, unknown> | null;
   typeProperties: Record<string, unknown> | null;
   errorInfo: ErrorInfo | null;
+  multiInstanceId: string | null;
+  iterationIndex: number | null;
 }
 
 export interface CompensationRunSnapshot {

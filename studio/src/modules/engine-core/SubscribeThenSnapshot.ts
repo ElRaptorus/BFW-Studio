@@ -228,6 +228,8 @@ export class SubscribeThenSnapshot {
       outputToken: null,
       typeProperties: null,
       errorInfo: null,
+      multiInstanceId: event.multiInstanceId ?? null,
+      iterationIndex: event.iterationIndex ?? null,
     });
   }
 
