@@ -30,6 +30,7 @@ import type { DataObject, ExecutableFlowNode, SelectableElement } from './libs/i
 import {
   EngineAdapter,
   ShapeMappers,
+  buildMultiInstanceGroups,
   getAllDataObjectReferences,
   getAllEmbeddedSubProcesses,
   getAllFlowNodes,
@@ -1372,6 +1373,10 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
         flowNodeInstance,
       );
       executedFlowNodes.push(newFlowNode);
+    }
+
+    for (const flowNode of executedFlowNodes) {
+      flowNode.multiInstanceGroups = buildMultiInstanceGroups(flowNode.flowNodeInstances, flowNode.flowNodeModel);
     }
 
     return executedFlowNodes;

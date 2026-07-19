@@ -849,17 +849,20 @@ export type BpmnLoopConfig = BpmnStandardLoopConfig | BpmnMultiInstanceLoopConfi
 
 export type BpmnStandardLoopConfig = {
   readonly kind: 'standard';
+  readonly testBefore?: boolean;
   readonly loopCondition?: string;
   readonly loopMaximum?: string;
+  readonly loopInterval?: string;
 };
 
 export type BpmnMultiInstanceLoopConfig = {
   readonly kind: 'multiInstance';
   readonly isSequential: boolean;
-  readonly loopCardinality?: string;
   readonly completionCondition?: string;
   readonly inputDataItem?: string;
   readonly outputDataItem?: string;
+  readonly elementVariable?: string;
+  readonly outputElementVariable?: string;
   readonly inputCollection?: string;
   readonly outputCollection?: string;
   readonly loopBreakCondition?: string;

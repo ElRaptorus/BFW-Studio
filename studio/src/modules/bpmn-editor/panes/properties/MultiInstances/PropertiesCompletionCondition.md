@@ -4,8 +4,6 @@ title: Completion Condition
 
 # Completion Condition
 
-> **Not executed by the current Engine.** You can draw and deploy Multi-Instance loops, but the Engine will not run them. Avoid them in executable processes for now.
-
 The `Completion Condition` is a yes/no [formula](help://bpmn/runtime_expressions) checked after each round of a Multi-Instance activity finishes. When it becomes true, the remaining rounds are cancelled and the activity finishes early.
 
 ## Usage

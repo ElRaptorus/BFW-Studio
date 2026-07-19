@@ -239,9 +239,14 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       require('../property-panel/FlowNode/LoopConfigurationPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'EngineDebugger/panes/SequentialMultiInstance',
-      'EngineDebugger/pane-providers/SequentialMultiInstance',
+      'EngineDebugger/panes/MultiInstanceConfig',
+      'EngineDebugger/pane-providers/MultiInstanceConfig',
       require('../property-panel/FlowNode/SequentialMultiInstancePane'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'EngineDebugger/panes/MultiInstanceProgress',
+      'EngineDebugger/pane-providers/MultiInstanceProgress',
+      require('../property-panel/FlowNode/MultiInstanceProgressPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/FlowNodeInstanceError',

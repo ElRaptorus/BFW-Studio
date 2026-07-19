@@ -11,10 +11,11 @@ const LOOP_VARIABLE: FeelEditorVariable = {
   detail: 'Loop context (multi-instance / standard loop)',
   type: 'variable',
   entries: [
-    { name: 'index', detail: 'number' },
-    { name: 'total', detail: 'number' },
-    { name: 'completed', detail: 'number' },
-    { name: 'results', detail: 'list', isList: true },
+    { name: 'index', detail: 'number (0-based iteration index)' },
+    { name: 'item', detail: 'any (current collection element; null for standard loops)' },
+    { name: 'total', detail: 'number | null (collection length; null for standard loops)' },
+    { name: 'completed', detail: 'number (iterations completed so far)' },
+    { name: 'results', detail: 'list (results from completed iterations)', isList: true },
   ],
 };
 

@@ -310,11 +310,6 @@ export function initializeBpmnPanes(bifrost: Bifrost): void {
       require('../panes/properties/Loop/PropertiesLoop'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'bpmn/panes/properties/PropertiesInstanceCount',
-      'bpmn/pane-providers/properties/PropertiesInstanceCount',
-      require('../panes/properties/MultiInstances/PropertiesInstanceCount'),
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
       'bpmn/panes/properties/PropertiesCompletionCondition',
       'bpmn/pane-providers/properties/PropertiesCompletionCondition',
       require('../panes/properties/MultiInstances/PropertiesCompletionCondition'),
@@ -330,9 +325,14 @@ export function initializeBpmnPanes(bifrost: Bifrost): void {
       require('../panes/properties/MultiInstances/PropertiesOutputCollection'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'bpmn/panes/properties/PropertiesMultiInstanceExtensions',
-      'bpmn/pane-providers/properties/PropertiesMultiInstanceExtensions',
-      require('../panes/properties/MultiInstances/PropertiesMultiInstanceExtensions'),
+      'bpmn/panes/properties/PropertiesParallelMiSettings',
+      'bpmn/pane-providers/properties/PropertiesParallelMiSettings',
+      require('../panes/properties/MultiInstances/PropertiesParallelMiSettings'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'bpmn/panes/properties/PropertiesSequentialMiSettings',
+      'bpmn/pane-providers/properties/PropertiesSequentialMiSettings',
+      require('../panes/properties/MultiInstances/PropertiesSequentialMiSettings'),
     ),
 
     // Data Object

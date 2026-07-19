@@ -4,8 +4,6 @@ title: Input Collection
 
 # Input Collection
 
-> **Not executed by the current Engine.** You can draw and deploy Multi-Instance loops, but the Engine will not run them. Avoid them in executable processes for now.
-
 The `Input Collection` is the list a Multi-Instance activity works through. Each item in the list produces one round.
 
 ## Usage
@@ -24,6 +22,10 @@ token.items
 token.candidates[active = true]
 ```
 
+## Element Variable
+
+The **Element Variable** specifies the variable name bound to the current collection item in each iteration. Accessible as `loop.item` in FEEL expressions.
+
 ## Default (no Input Collection)
 
-If no Input Collection is set, the activity uses the current process data. When that data is itself a list, each entry becomes one round's input; otherwise the number of rounds is set by the [Instance Count](help://bpmn/properties/multi_instance_count).
+If no Input Collection is set, the activity uses the current process data. When that data is itself a list, each entry becomes one round's input.

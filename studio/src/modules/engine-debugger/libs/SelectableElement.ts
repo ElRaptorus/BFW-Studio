@@ -9,6 +9,7 @@ import type {
 
 import type { BpmnDiagramShape, BpmnProcessRef } from '../types/BpmnDiagramShape';
 import type { DebuggerProcessInstance } from '../types/DebuggerTypes';
+import { isSequentialMultiInstance, isStandardLoop } from './BpmnProcessHelpers';
 import {
   findDataInputAssociationTarget,
   findDataOutputAssociationSource,
@@ -57,6 +58,13 @@ export type DataOutputAssociation = {
   documentation?: string;
 };
 
+export interface MultiInstanceGroup {
+  multiInstanceId: string;
+  shellFni: FlowNodeInstance;
+  iterationFnis: FlowNodeInstance[];
+  loopType: 'parallel_mi' | 'sequential_mi' | 'standard_loop';
+}
+
 export type ExecutableFlowNode = {
   type: 'FlowNode';
   id: string;
@@ -64,6 +72,7 @@ export type ExecutableFlowNode = {
   shapeType: string;
   flowNodeModel: BpmnFlowNode | undefined;
   flowNodeInstances: FlowNodeInstance[];
+  multiInstanceGroups: MultiInstanceGroup[];
   documentation?: string;
 };
 
@@ -190,6 +199,7 @@ const mapFlowNode = (
     shapeType: shape.type,
     flowNodeModel: flowNode,
     flowNodeInstances: flowNodeInstance ? [flowNodeInstance] : [],
+    multiInstanceGroups: [],
     documentation,
   };
 };
@@ -223,6 +233,48 @@ const mapSequenceFlow = (shape: BpmnDiagramShape, processModel: BpmnProcess): Se
     documentation: '',
   };
 };
+
+export function buildMultiInstanceGroups(
+  fnis: FlowNodeInstance[],
+  flowNode: BpmnFlowNode | undefined,
+): MultiInstanceGroup[] {
+  const grouped = new Map<string, FlowNodeInstance[]>();
+
+  for (const fni of fnis) {
+    if (fni.multiInstanceId) {
+      const existing = grouped.get(fni.multiInstanceId);
+      if (existing) {
+        existing.push(fni);
+      } else {
+        grouped.set(fni.multiInstanceId, [fni]);
+      }
+    }
+  }
+
+  let loopType: MultiInstanceGroup['loopType'] = 'parallel_mi';
+  if (flowNode && isStandardLoop(flowNode)) {
+    loopType = 'standard_loop';
+  } else if (flowNode && isSequentialMultiInstance(flowNode)) {
+    loopType = 'sequential_mi';
+  }
+
+  const groups: MultiInstanceGroup[] = [];
+
+  for (const [miId, iterationFnis] of grouped) {
+    const shellFni = fnis.find((fni) => fni.id === miId);
+    if (!shellFni) {
+      continue;
+    }
+
+    const sortedIterations = iterationFnis.sort(
+      (left, right) => (left.iterationIndex ?? 0) - (right.iterationIndex ?? 0),
+    );
+
+    groups.push({ multiInstanceId: miId, shellFni, iterationFnis: sortedIterations, loopType });
+  }
+
+  return groups;
+}
 
 export const ShapeMappers = {
   GenericElement: mapGenericElement,

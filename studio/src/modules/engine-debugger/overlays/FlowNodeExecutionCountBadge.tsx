@@ -10,6 +10,7 @@ export function createFlowNodeExecutionCountBadge(
   selectedCycle: number,
   model: EngineBpmnDebuggerEditorDocumentModel,
   instancesCount: number,
+  customLabel?: string,
 ): Overlay {
   return {
     type: 'positioned',
@@ -21,6 +22,7 @@ export function createFlowNodeExecutionCountBadge(
       uri: model.getUri(),
       flowNodeId: flowNodeId,
       instancesCount: instancesCount,
+      customLabel: customLabel,
       selectNextFlowNodeInstance: (direction: -1 | 1) => {
         model.navigateToNextFlowNodeInstance(flowNodeId, direction);
       },
@@ -32,15 +34,19 @@ export function FlowNodeExecutionCountBadge(props: {
   selectedCycle: number;
   uri: string;
   instancesCount: number;
+  customLabel?: string;
   selectNextFlowNodeInstance: (direction: -1 | 1) => void;
 }): React.JSX.Element {
   const linkText =
-    props.selectedCycle === props.instancesCount
+    props.customLabel ??
+    (props.selectedCycle === props.instancesCount
       ? props.instancesCount
-      : `${props.selectedCycle}/${props.instancesCount}`;
+      : `${props.selectedCycle}/${props.instancesCount}`);
 
   let tooltip;
-  if (props.selectedCycle !== props.instancesCount) {
+  if (props.customLabel) {
+    tooltip = `Multi-Instance / Loop: ${props.customLabel} iterations. Click to navigate.`;
+  } else if (props.selectedCycle !== props.instancesCount) {
     tooltip = `Currently viewing Iteration No. ${props.selectedCycle} of ${props.instancesCount}. Click to view previous Iteration.`;
   } else {
     tooltip = `Flow Node was executed ${props.instancesCount} times. Click to view previous Iteration.`;

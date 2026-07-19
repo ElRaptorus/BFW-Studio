@@ -115,8 +115,8 @@ Handles creation and modification of `bpmn:StandardLoopCharacteristics` and `bpm
 
 | Sub-command | What it updates |
 |-------------|----------------|
-| `updateStandardLoop` | `loopCondition` (FormalExpression body), `loopMaximum` |
-| `updateMultiInstance` | `loopCardinality`, `completionCondition` (FormalExpression), `inputDataItem` (DataInput), `outputDataItem` (DataOutput) |
+| `updateStandardLoop` | `loopCondition` (FormalExpression body), `loopMaximum`, `testBefore` (standard BPMN attribute), `evil:LoopInterval` (evil extension) |
+| `updateMultiInstance` | `completionCondition` (FormalExpression), `inputDataItem` (DataInput), `outputDataItem` (DataOutput), `evil:ElementVariable`, `evil:OutputElementVariable`, `evil:LoopBreakCondition`, `evil:LoopInterval`, `evil:MaxIterations` (evil extensions). `loopCardinality` is no longer supported. The editor splits these across two panes: `PropertiesSequentialMiSettings` (Break Condition, Loop Interval, Max Iterations — sequential MI only) and `PropertiesParallelMiSettings` (Max Iterations — parallel MI only). |
 
 #### UpdateUserTaskResourcesHandler
 
@@ -174,7 +174,7 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 - All event panes (message, signal, error, escalation, conditional, timer, link)
 - `PropertiesConditionalFlow`
 - `PropertiesComplexGatewayActivationCondition` — FEEL multi-line editor for the Complex Gateway join **activation condition** (visible only when the selected Complex Gateway is a join or mixed gateway, i.e. more than one incoming sequence flow)
-- Loop/MI: `PropertiesLoop`, `PropertiesInstanceCount`, `PropertiesCompletionCondition`, `PropertiesInputCollection`, `PropertiesOutputCollection`, `PropertiesMultiInstanceExtensions`
+- Loop/MI: `PropertiesLoop`, `PropertiesCompletionCondition`, `PropertiesInputCollection`, `PropertiesOutputCollection`, `PropertiesParallelMiSettings`, `PropertiesSequentialMiSettings`
 - Data Object: `PropertiesDataObject`
 
 ### scripting group
@@ -359,15 +359,23 @@ export type BpmnStandardLoopConfig = {
   readonly kind: 'standard';
   readonly loopCondition?: string;
   readonly loopMaximum?: string;
+  readonly testBefore?: boolean;
+  readonly loopInterval?: string;
 };
 
 export type BpmnMultiInstanceLoopConfig = {
   readonly kind: 'multiInstance';
   readonly isSequential: boolean;
-  readonly loopCardinality?: string;
   readonly completionCondition?: string;
   readonly inputDataItem?: string;
   readonly outputDataItem?: string;
+  readonly inputCollection?: string;
+  readonly outputCollection?: string;
+  readonly elementVariable?: string;
+  readonly outputElementVariable?: string;
+  readonly loopBreakCondition?: string;
+  readonly maxIterations?: string;
+  readonly loopInterval?: string;
 };
 ```
 
@@ -390,7 +398,6 @@ Available on `BpmnElementCommonProperties.loopConfig`.
 | PropertiesResultContract | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesResultContract.tsx` |
 | PropertiesUserTaskAssignees | `studio/src/modules/bpmn-editor/panes/properties/UserTask/PropertiesUserTaskAssignees.tsx` |
 | PropertiesLoop | `studio/src/modules/bpmn-editor/panes/properties/Loop/PropertiesLoop.tsx` |
-| PropertiesInstanceCount | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesInstanceCount.tsx` |
 | PropertiesCompletionCondition | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesCompletionCondition.tsx` |
 | PropertiesInputCollection | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesInputCollection.tsx` |
 | PropertiesOutputCollection | `studio/src/modules/bpmn-editor/panes/properties/MultiInstances/PropertiesOutputCollection.tsx` |

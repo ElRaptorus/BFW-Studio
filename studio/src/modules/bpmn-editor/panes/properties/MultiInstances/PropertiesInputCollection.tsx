@@ -47,6 +47,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const loopConfig = element.loopConfig;
   const inputDataItem = loopConfig?.kind === 'multiInstance' ? (loopConfig.inputDataItem ?? '') : '';
   const inputCollection = loopConfig?.kind === 'multiInstance' ? (loopConfig.inputCollection ?? '') : '';
+  const elementVariable = loopConfig?.kind === 'multiInstance' ? (loopConfig.elementVariable ?? '') : '';
 
   const changeInputDataItem = (value: string): void => {
     bpmnDocumentModel.elements.setElementProperty(element.id, 'loopConfig', {
@@ -59,6 +60,13 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     bpmnDocumentModel.elements.setElementProperty(element.id, 'loopConfig', {
       command: 'updateMultiInstance',
       inputCollection: value,
+    });
+  };
+
+  const changeElementVariable = (value: string): void => {
+    bpmnDocumentModel.elements.setElementProperty(element.id, 'loopConfig', {
+      command: 'updateMultiInstance',
+      elementVariable: value,
     });
   };
 
@@ -96,6 +104,15 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           htmlAttributes={{ 'data-test--mi-evil-input-collection-input': true }}
         />
       </div>
+      <PaneProperty
+        type="text"
+        label="Element Variable"
+        value={elementVariable}
+        placeholder="e.g. item"
+        onCommit={changeElementVariable}
+        htmlId="mi-element-variable-property"
+        htmlAttributes={{ 'data-test--mi-element-variable-input': true }}
+      />
     </PaneBody>
   );
 }

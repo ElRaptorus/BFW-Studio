@@ -27,7 +27,9 @@ export type SnapshotEventType =
   | 'child-pi-state-changed'
   | 'compensation-triggered'
   | 'activity-compensated'
-  | 'transaction-cancelled';
+  | 'transaction-cancelled'
+  | 'mi-started'
+  | 'mi-completed';
 
 export interface SnapshotUpdate {
   snapshot: ProcessInstanceSnapshot;
@@ -194,6 +196,18 @@ export class SubscribeThenSnapshot {
         affectedFniIds.push(event.processInstanceId);
         break;
       }
+      case 'MultiInstanceStarted': {
+        const event = envelope.data as { flowNodeInstanceId: string };
+        eventType = 'mi-started';
+        affectedFniIds.push(event.flowNodeInstanceId);
+        break;
+      }
+      case 'MultiInstanceCompleted': {
+        const event = envelope.data as { flowNodeInstanceId: string };
+        eventType = 'mi-completed';
+        affectedFniIds.push(event.flowNodeInstanceId);
+        break;
+      }
     }
 
     if (eventType) {
@@ -209,6 +223,8 @@ export class SubscribeThenSnapshot {
     const existing = this.snapshot.flowNodeInstances.find((fni) => fni.id === event.flowNodeInstanceId);
     if (existing) {
       existing.state = 'active' as any;
+      existing.multiInstanceId = event.multiInstanceId ?? existing.multiInstanceId;
+      existing.iterationIndex = event.iterationIndex ?? existing.iterationIndex;
       return;
     }
 
@@ -250,6 +266,8 @@ export class SubscribeThenSnapshot {
       if (event.triggererFlowNodeInstanceId != null) {
         fni.triggererFlowNodeInstanceId = event.triggererFlowNodeInstanceId;
       }
+      fni.multiInstanceId = event.multiInstanceId ?? fni.multiInstanceId;
+      fni.iterationIndex = event.iterationIndex ?? fni.iterationIndex;
     }
   }
 

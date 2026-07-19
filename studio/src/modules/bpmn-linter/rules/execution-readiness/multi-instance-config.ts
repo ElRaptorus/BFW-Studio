@@ -15,6 +15,20 @@ const ACTIVITY_TYPES = [
   'bpmn:SubProcess',
 ];
 
+function getExtensionBody(parent: ModdleNode, type: string): string | undefined {
+  const extEl = parent.extensionElements as { values?: ModdleNode[] } | undefined;
+  const extensions = extEl?.values;
+  if (!extensions) {
+    return undefined;
+  }
+  const match = extensions.find((ext) => ext.$type === type);
+  const body = match?.body;
+  if (body == null) {
+    return undefined;
+  }
+  return String(body);
+}
+
 export default function () {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
     if (!isAny(node, ACTIVITY_TYPES)) {
@@ -24,18 +38,36 @@ export default function () {
     if (loop == null || !is(loop, 'bpmn:MultiInstanceLoopCharacteristics')) {
       return;
     }
-    const hasCardinality = !!(loop.loopCardinality as ModdleNode | undefined);
-    const hasInput = !!(loop.inputDataItem as ModdleNode | undefined);
-    const hasCollection =
-      !!(loop.loopDataInputRef as ModdleNode | undefined) ||
-      !!(loop.collection as string | undefined) ||
-      !!(loop.$attrs && (loop.$attrs['camunda:collection'] || loop.$attrs['flowable:collection']));
 
-    if (!hasCardinality && !hasInput && !hasCollection) {
+    const hasEvilInputCollection = !!getExtensionBody(loop, 'evil:InputCollection');
+    const hasInputDataItem = !!(loop.inputDataItem as ModdleNode | undefined);
+    const hasLoopDataInputRef = !!(loop.loopDataInputRef as ModdleNode | undefined);
+    const hasCamundaCollection = !!(
+      loop.$attrs &&
+      (loop.$attrs['camunda:collection'] || loop.$attrs['flowable:collection'])
+    );
+
+    if (!hasEvilInputCollection && !hasInputDataItem && !hasLoopDataInputRef && !hasCamundaCollection) {
       reporter.report(
         node.id,
-        'Multi-instance should define loopCardinality, collection/input, or data item (EXR-010)',
+        'Multi-instance must define an Input Collection (evil:InputCollection) or a data item / collection reference (EXR-010)',
       );
+    }
+
+    const hasLoopCardinality = !!(loop.loopCardinality as ModdleNode | undefined);
+    if (hasLoopCardinality) {
+      reporter.report(
+        node.id,
+        'loopCardinality is not supported by the engine — use Input Collection instead (EXR-010)',
+      );
+    }
+
+    const maxIterationsRaw = getExtensionBody(loop, 'evil:MaxIterations');
+    if (maxIterationsRaw != null && maxIterationsRaw.trim() !== '') {
+      const parsed = parseInt(maxIterationsRaw.trim(), 10);
+      if (isNaN(parsed) || parsed <= 0) {
+        reporter.report(node.id, 'evil:maxIterations must be a positive integer (EXR-010)');
+      }
     }
   }
 

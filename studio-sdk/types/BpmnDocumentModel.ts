@@ -3,9 +3,16 @@ import type { BpmnDocumentElementAccess } from './bpmn/BpmnDocumentElementAccess
 import type { BpmnDocumentSelection } from './bpmn/BpmnDocumentSelection';
 import type { BpmnModelerComponentAdapter } from './bpmn/BpmnModelerComponentAdapter';
 
-export { BpmnElementType } from './bpmn/BpmnElementTypes';
+export { BpmnElementType, LoopCharacteristics } from './bpmn/BpmnElementTypes';
 export type { BpmnElement } from './bpmn/BpmnElementTypes';
-export type { FormFieldDefinition, FormFieldOption, FormAction } from './bpmn/BpmnElementTypes';
+export type {
+  BpmnLoopConfig,
+  BpmnStandardLoopConfig,
+  BpmnMultiInstanceLoopConfig,
+  FormFieldDefinition,
+  FormFieldOption,
+  FormAction,
+} from './bpmn/BpmnElementTypes';
 export { FormFieldType, FormActionPreset } from './bpmn/BpmnElementTypes';
 export type { BpmnModelerComponentAdapter } from './bpmn/BpmnModelerComponentAdapter';
 

@@ -24,7 +24,7 @@ export const paneProvider: PaneProvider = {
 };
 
 function getPaneTitle(): string {
-  return 'Multi-Instance Extensions';
+  return 'Sequential Iteration Settings';
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element | null {
@@ -32,7 +32,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element | null {
     <Pane>
       <PaneHeader studio={props.studio} title={getPaneTitle()} paneId={props.paneId} collapsed={props.collapsed}>
         <FeelExpressionHint studio={props.studio} />
-        <PaneHeaderHelpIcon studio={props.studio} id="bpmn/properties/multi_instance_extensions" />
+        <PaneHeaderHelpIcon studio={props.studio} id="bpmn/properties/sequential_mi_settings" />
       </PaneHeader>
       {props.collapsed !== true && <PaneContent {...props} />}
     </Pane>
@@ -91,8 +91,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           initialValue={loopBreakCondition}
           onChange={(value: string) => changeLoopBreakCondition(value)}
           variables={feelVariables}
-          htmlId="mi-loop-break-condition-property"
-          htmlAttributes={{ 'data-test--mi-loop-break-condition-input': true }}
+          htmlId="seq-mi-loop-break-condition-property"
+          htmlAttributes={{ 'data-test--seq-mi-loop-break-condition-input': true }}
         />
       </div>
       <PaneProperty
@@ -101,16 +101,16 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
         placeholder="e.g. PT5S"
         value={loopInterval}
         onCommit={changeLoopInterval}
-        htmlId="mi-loop-interval-property"
-        htmlAttributes={{ 'data-test--mi-loop-interval-input': true }}
+        htmlId="seq-mi-loop-interval-property"
+        htmlAttributes={{ 'data-test--seq-mi-loop-interval-input': true }}
       />
       <PaneProperty
         type="text"
         label="Max Iterations"
         value={maxIterations}
         onCommit={changeMaxIterations}
-        htmlId="mi-max-iterations-property"
-        htmlAttributes={{ 'data-test--mi-max-iterations-input': true }}
+        htmlId="seq-mi-max-iterations-property"
+        htmlAttributes={{ 'data-test--seq-mi-max-iterations-input': true }}
       />
     </PaneBody>
   );
@@ -120,8 +120,5 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
   const isActivity = isActivityType(editorDocument, editorDocumentModel);
   const loopCharacteristics = getLoopCharacteristicType(editorDocumentModel);
 
-  return (
-    isActivity &&
-    (loopCharacteristics === LoopCharacteristics.Sequential || loopCharacteristics === LoopCharacteristics.Parallel)
-  );
+  return isActivity && loopCharacteristics === LoopCharacteristics.Sequential;
 }

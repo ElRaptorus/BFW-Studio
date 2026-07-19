@@ -52,6 +52,7 @@ import processExecutable from './execution-readiness/process-executable';
 import processVersion from './execution-readiness/process-version';
 import scriptTaskConfig from './execution-readiness/script-task-config';
 import serviceTaskImplementation from './execution-readiness/service-task-implementation';
+import standardLoopConfig from './execution-readiness/standard-loop-config';
 import timerFormat from './execution-readiness/timer-format';
 import userTaskAssignment from './execution-readiness/user-task-assignment';
 import validProcessId from './execution-readiness/valid-process-id';
@@ -161,6 +162,7 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'script-task-config': scriptTaskConfig,
   'call-activity-target': callActivityTarget,
   'multi-instance-config': multiInstanceConfig,
+  'standard-loop-config': standardLoopConfig,
   'xor-gateway-conditions': xorGatewayConditions,
   // Naming Quality
   'task-name-verb-pattern': taskNameVerbPattern,
@@ -277,6 +279,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'script-task-config': 'off',
       'call-activity-target': 'off',
       'multi-instance-config': 'off',
+      'standard-loop-config': 'off',
       'xor-gateway-conditions': 'off',
       // Naming Quality
       'task-name-verb-pattern': 'info',
@@ -369,6 +372,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'script-task-config': 'warn',
       'call-activity-target': 'error',
       'multi-instance-config': 'error',
+      'standard-loop-config': 'error',
       'xor-gateway-conditions': 'error',
       // Naming Quality
       'task-name-verb-pattern': 'warn',
@@ -672,8 +676,15 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'multi-instance-config': {
     category: 'execution-readiness',
-    why: 'Multi-instance activities need loop configuration to determine how many instances to create.',
-    suggestion: 'Set loopCardinality or a collection/inputDataItem on the multi-instance configuration.',
+    why: 'Multi-instance activities need an input collection to determine iteration count and input data. The engine does not support loopCardinality.',
+    suggestion:
+      'Set an Input Collection (evil:InputCollection) on the multi-instance configuration. Optionally set maxIterations as a safety cap.',
+  },
+  'standard-loop-config': {
+    category: 'execution-readiness',
+    why: 'Standard loops need a loop condition to control iteration and should have a maximum iteration limit as a safety guard.',
+    suggestion:
+      'Set a loop condition (FEEL expression that returns true to continue). Add loopMaximum to prevent runaway loops.',
   },
   'xor-gateway-conditions': {
     category: 'execution-readiness',

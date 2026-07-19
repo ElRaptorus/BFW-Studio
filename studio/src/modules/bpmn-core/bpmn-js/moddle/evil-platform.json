@@ -326,6 +326,18 @@
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
     },
     {
+      "name": "ElementVariable",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "OutputElementVariable",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
       "name": "LoopBreakCondition",
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
@@ -334,7 +346,9 @@
     {
       "name": "LoopInterval",
       "superClass": ["Element"],
-      "meta": { "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics"] },
+      "meta": {
+        "allowedIn": ["bpmn:MultiInstanceLoopCharacteristics", "bpmn:StandardLoopCharacteristics"]
+      },
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
     },
     {

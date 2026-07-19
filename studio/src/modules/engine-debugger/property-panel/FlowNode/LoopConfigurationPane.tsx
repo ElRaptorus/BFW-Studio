@@ -24,7 +24,7 @@ export const paneProvider: PaneProvider = {
 };
 
 function getPaneTitle(): string {
-  return 'Loop Configuration';
+  return 'Standard Loop Configuration';
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
@@ -42,33 +42,39 @@ function LoopConfigurationPane(props: LoopConfigurationPaneProps): React.JSX.Ele
   const flowNode = props.model.selectedElements[0] as FlowNode;
   const flowNodeInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode);
   const flowNodeModel = flowNode.flowNodeModel as BpmnFlowNode;
-  const multiInstance = flowNodeModel.multiInstance;
+  const standardLoop = flowNodeModel.standardLoop;
 
   return (
     <PaneBody>
-      {multiInstance?.loopBreakCondition && (
+      <PaneProperty
+        type="text"
+        label="Test Before (while-do)"
+        disabled={true}
+        value={standardLoop?.testBefore ? 'Yes' : 'No'}
+      />
+      {standardLoop?.loopCondition && (
         <CopyableJsonDataRenderer
           editorDocument={props.editorDocument}
           id={flowNodeInstance.id}
           flowNodeId={flowNodeInstance.flowNodeId}
           flowNodeName={flowNode.name ?? flowNodeInstance.flowNodeId}
           language="json"
-          propertyName="Break Condition"
+          propertyName="Loop Condition"
           studio={props.studio}
-          value={multiInstance.loopBreakCondition}
+          value={standardLoop.loopCondition}
         />
       )}
       <PaneProperty
         type="text"
-        label="Timeout between iterations (Definition)"
+        label="Maximum Iterations"
         disabled={true}
-        value={multiInstance?.loopInterval ?? ''}
+        value={standardLoop?.loopMaximum != null ? String(standardLoop.loopMaximum) : ''}
       />
       <PaneProperty
         type="text"
-        label="Maximum Number of iterations (Definition)"
+        label="Interval between Iterations"
         disabled={true}
-        value={multiInstance?.maxIterations != null ? String(multiInstance.maxIterations) : ''}
+        value={standardLoop?.loopInterval ?? ''}
       />
     </PaneBody>
   );

@@ -7,13 +7,7 @@ import type { EditorDocument } from '@evil/bifrost_fw_sdk';
 import { ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import { hasDataPipeline } from '../libs/BpmnFlowNodeAccessors';
-import {
-  getHttpMethod,
-  isDivergingGateway,
-  isHttpServiceTask,
-  isSequentialMultiInstance,
-  isStandardLoop,
-} from '../libs/BpmnProcessHelpers';
+import { getHttpMethod, isDivergingGateway, isHttpServiceTask, isStandardLoop } from '../libs/BpmnProcessHelpers';
 import type { DataObject, FlowNode } from '../libs/SelectableElement';
 
 export function shouldDisplayGenericPane(
@@ -181,21 +175,6 @@ export function shouldDisplayLoopConfigurationPane(
     return false;
   }
   return isStandardLoop(selectedFlowNode);
-}
-
-export function shouldDisplaySequentialMultiInstancePane(
-  document: EditorDocument,
-  model: EngineBpmnDebuggerEditorDocumentModel,
-): boolean {
-  if (!isDebuggerDocumentWithSingleSelectedExecutedFlowNode(document, model)) {
-    return false;
-  }
-
-  const selectedFlowNode = getSelectedFlowNode(model).flowNodeModel;
-  if (!selectedFlowNode) {
-    return false;
-  }
-  return isSequentialMultiInstance(selectedFlowNode);
 }
 
 export function shouldDisplayBusinessRuleTaskInstancePane(

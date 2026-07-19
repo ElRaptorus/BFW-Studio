@@ -479,6 +479,47 @@ All four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProc
 
 ---
 
+## Multi-Instance & Standard Loop (Debugger)
+
+The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop execution at runtime. The implementation spans three layers: data model, canvas overlays, and property panes.
+
+### Data Model
+
+- `FniSnapshot` (`engine-core/types.ts`) carries `multiInstanceId` and `iterationIndex` from the engine SDK's `FlowNodeInstance`.
+- `ALL_FNI_FIELDS` (`engine-debugger/libs/EngineAdapter.ts`) includes `'multiInstanceId'` and `'iterationIndex'` so GraphQL detail queries fetch iteration metadata.
+- `SubscribeThenSnapshot` (`engine-core/SubscribeThenSnapshot.ts`) maps these fields from the `FlowNodeInstanceStarted` WebSocket event and handles `MultiInstanceStarted`/`MultiInstanceCompleted` events by queueing the shell FNI for a detail refresh.
+
+### Grouping (MultiInstanceGroup)
+
+`buildMultiInstanceGroups()` in `engine-debugger/libs/SelectableElement.ts` groups flow node instances by `multiInstanceId`:
+
+- The FNI with `iterationIndex === null` becomes the **shell** FNI.
+- All other FNIs sharing the same `multiInstanceId` become **iteration** FNIs, sorted by `iterationIndex`.
+- `loopType` (`parallel_mi` | `sequential_mi` | `standard_loop`) is determined from the BPMN model's `FlowNode.multiInstance` / `FlowNode.standardLoop`.
+
+`ExecutableFlowNode` carries `multiInstanceGroups: MultiInstanceGroup[]`, populated in `EngineBpmnDebuggerEditorDocumentModel.mapFlowNodeInstancesToFlowNodes()`.
+
+### Canvas Overlays
+
+- `OverlayFactory.createFlowNodeInstanceOverlays()` detects MI/loop flow nodes and generates a progress badge (`completedIterations / totalIterations`) instead of a plain execution count.
+- Retry overlays are suppressed for any element with loop characteristics (`hasLoopCharacteristics()`).
+- `FlowNodeExecutionCountBadge` accepts an optional `customLabel` prop for iteration progress display.
+
+### Property Panes
+
+| Pane | File | Condition |
+|------|------|-----------|
+| Multi-Instance Configuration | `property-panel/FlowNode/SequentialMultiInstancePane.tsx` | `hasMultiInstance(flowNodeModel)` — mode-aware: title is "Parallel Multi-Instance Configuration" or "Sequential Multi-Instance Configuration"; Break Condition and Loop Interval are hidden for parallel MI |
+| Standard Loop Configuration | `property-panel/FlowNode/LoopConfigurationPane.tsx` | `isStandardLoop(flowNodeModel)` — shows testBefore, loopCondition, loopMaximum, loopInterval |
+| Iteration Progress | `property-panel/FlowNode/MultiInstanceProgressPane.tsx` | Any loop with active `multiInstanceGroups` — shows type, shell state, total/completed/active/failed counts |
+| FNI Instance Pane | `property-panel/FlowNode/FlowNodeInstancePane.tsx` | Two-tier `MultiInstanceSelector` for MI/loop elements (shell selector + iteration selector); plain selector for non-loop elements |
+
+### Selection
+
+`EngineBpmnDebuggerEditorDocumentModel` tracks `_selectedMultiInstanceId` to support shell-level selection independent of individual FNI selection. `selectMultiInstance(id)` sets this and triggers pane re-rendering.
+
+---
+
 ## File Path Reference
 
 | Component | Path |

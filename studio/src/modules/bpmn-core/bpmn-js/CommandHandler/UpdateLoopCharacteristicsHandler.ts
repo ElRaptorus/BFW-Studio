@@ -17,7 +17,7 @@ UpdateLoopCharacteristicsHandler.prototype.preExecute = function (context: any) 
   const { command, ...restArgs } = context;
 
   const updateStandardLoop = (args: any): void => {
-    const { element, loopCondition, loopMaximum } = args;
+    const { element, loopCondition, loopMaximum, testBefore, loopInterval } = args;
     const businessObject = getBusinessObject(element);
     const loopCharacteristics = businessObject.loopCharacteristics;
 
@@ -52,6 +52,18 @@ UpdateLoopCharacteristicsHandler.prototype.preExecute = function (context: any) 
       }
     }
 
+    if (testBefore !== undefined) {
+      const boolValue = testBefore === true || testBefore === 'true';
+      if (loopCharacteristics.testBefore !== boolValue) {
+        commands.push(CmdHelper.updateBusinessObject(element, loopCharacteristics, { testBefore: boolValue }));
+      }
+    }
+
+    const loopCharsElement = { businessObject: loopCharacteristics };
+    if (loopInterval !== undefined) {
+      commands.push(...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:LoopInterval', loopInterval));
+    }
+
     if (commands.length > 0) {
       const commandToExecute = CmdHelper.executeMultipleCommands(commands);
       this.commandStack.execute(commandToExecute.cmd, commandToExecute.context);
@@ -61,10 +73,11 @@ UpdateLoopCharacteristicsHandler.prototype.preExecute = function (context: any) 
   const updateMultiInstance = (args: any): void => {
     const {
       element,
-      loopCardinality,
       completionCondition,
       inputDataItem,
       outputDataItem,
+      elementVariable,
+      outputElementVariable,
       inputCollection,
       outputCollection,
       loopBreakCondition,
@@ -101,7 +114,6 @@ UpdateLoopCharacteristicsHandler.prototype.preExecute = function (context: any) 
       }
     };
 
-    updateOrCreateFormalExpression('loopCardinality', loopCardinality);
     updateOrCreateFormalExpression('completionCondition', completionCondition);
 
     if (inputDataItem !== undefined) {
@@ -139,6 +151,21 @@ UpdateLoopCharacteristicsHandler.prototype.preExecute = function (context: any) 
     if (outputCollection !== undefined) {
       commands.push(
         ...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:OutputCollection', outputCollection),
+      );
+    }
+    if (elementVariable !== undefined) {
+      commands.push(
+        ...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:ElementVariable', elementVariable),
+      );
+    }
+    if (outputElementVariable !== undefined) {
+      commands.push(
+        ...setEvilBodyExtension(
+          loopCharsElement,
+          this.bpmnFactory,
+          'evil:OutputElementVariable',
+          outputElementVariable,
+        ),
       );
     }
     if (loopBreakCondition !== undefined) {

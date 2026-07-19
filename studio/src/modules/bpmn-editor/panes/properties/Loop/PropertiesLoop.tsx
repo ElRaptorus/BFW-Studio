@@ -46,6 +46,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const loopConfig = element.loopConfig;
   const loopCondition = loopConfig?.kind === 'standard' ? (loopConfig.loopCondition ?? '') : '';
   const loopMaximum = loopConfig?.kind === 'standard' ? (loopConfig.loopMaximum ?? '') : '';
+  const testBefore = loopConfig?.kind === 'standard' ? (loopConfig.testBefore ?? false) : false;
+  const loopInterval = loopConfig?.kind === 'standard' ? (loopConfig.loopInterval ?? '') : '';
 
   const changeLoopCondition = (value: string): void => {
     bpmnDocumentModel.elements.setElementProperty(element.id, 'loopConfig', {
@@ -61,6 +63,20 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     });
   };
 
+  const changeTestBefore = (option: { value: string }): void => {
+    bpmnDocumentModel.elements.setElementProperty(element.id, 'loopConfig', {
+      command: 'updateStandardLoop',
+      testBefore: option.value === 'true',
+    });
+  };
+
+  const changeLoopInterval = (value: string): void => {
+    bpmnDocumentModel.elements.setElementProperty(element.id, 'loopConfig', {
+      command: 'updateStandardLoop',
+      loopInterval: value,
+    });
+  };
+
   const [feelVariables, setFeelVariables] = useState<FeelEditorVariable[]>([]);
   const { editorDocument } = props;
   const { commands } = props.studio;
@@ -72,6 +88,21 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   return (
     <PaneBody>
+      <PaneProperty
+        type="select"
+        label="Evaluation Mode"
+        value={
+          testBefore
+            ? { label: 'While-Do (test before)', value: 'true' }
+            : { label: 'Do-While (test after)', value: 'false' }
+        }
+        onChange={changeTestBefore}
+        htmlId="loop-test-before-property"
+        options={[
+          { label: 'Do-While (test after)', value: 'false', dataTestOptionValue: 'false' },
+          { label: 'While-Do (test before)', value: 'true', dataTestOptionValue: 'true' },
+        ]}
+      />
       <div className="form-group">
         <label className="d-block" style={{ width: '100%' }}>
           Loop Condition{' '}
@@ -96,6 +127,15 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
         onCommit={changeLoopMaximum}
         htmlId="loop-max-iterations-property"
         htmlAttributes={{ 'data-test--loop-max-iterations-input': true }}
+      />
+      <PaneProperty
+        type="text"
+        label="Loop Interval"
+        value={loopInterval}
+        placeholder="e.g. PT30S"
+        onCommit={changeLoopInterval}
+        htmlId="loop-interval-property"
+        htmlAttributes={{ 'data-test--loop-interval-input': true }}
       />
     </PaneBody>
   );

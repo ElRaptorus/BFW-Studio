@@ -55,7 +55,12 @@ function getExtensionElements(businessObject: Record<string, unknown>): Extensio
 }
 
 export function getExtensionValue(businessObject: Record<string, unknown>, typeSuffix: string): string | null {
-  const element = getExtensionElements(businessObject).find((entry) => String(entry.$type ?? '').endsWith(typeSuffix));
+  const lowerSuffix = typeSuffix.toLowerCase();
+  const element = getExtensionElements(businessObject).find((entry) =>
+    String(entry.$type ?? '')
+      .toLowerCase()
+      .endsWith(lowerSuffix),
+  );
   if (!element) {
     return null;
   }
@@ -68,7 +73,12 @@ export function getExtensionAttribute(
   typeSuffix: string,
   attribute: string,
 ): string | null {
-  const element = getExtensionElements(businessObject).find((entry) => String(entry.$type ?? '').endsWith(typeSuffix));
+  const lowerSuffix = typeSuffix.toLowerCase();
+  const element = getExtensionElements(businessObject).find((entry) =>
+    String(entry.$type ?? '')
+      .toLowerCase()
+      .endsWith(lowerSuffix),
+  );
   if (!element) {
     return null;
   }
@@ -79,8 +89,13 @@ export function getExtensionAttribute(
 export type MappingEntry = { source: string; target: string };
 
 export function getExtensionMappings(businessObject: Record<string, unknown>, typeSuffix: string): MappingEntry[] {
+  const lowerSuffix = typeSuffix.toLowerCase();
   return getExtensionElements(businessObject)
-    .filter((entry) => String(entry.$type ?? '').endsWith(typeSuffix))
+    .filter((entry) =>
+      String(entry.$type ?? '')
+        .toLowerCase()
+        .endsWith(lowerSuffix),
+    )
     .map((entry) => ({
       source: String(entry.source ?? ''),
       target: String(entry.target ?? ''),

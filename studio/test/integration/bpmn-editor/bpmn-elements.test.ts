@@ -52,11 +52,11 @@ const SEND_TASK_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesSendTa
 const USER_TASK_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesUserTask"]';
 const DATA_OBJECT_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesDataObject"]';
 const GATEWAY_OUTGOING_FLOWS_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesGatewayOutgoingFlows"]';
-const MULTI_INSTANCE_EXTENSIONS_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesMultiInstanceExtensions"]';
+const PARALLEL_MI_SETTINGS_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesParallelMiSettings"]';
+const SEQUENTIAL_MI_SETTINGS_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesSequentialMiSettings"]';
 const INPUT_COLLECTION_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesInputCollection"]';
 const OUTPUT_COLLECTION_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesOutputCollection"]';
 const COMPLETION_CONDITION_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesCompletionCondition"]';
-const INSTANCE_COUNT_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesInstanceCount"]';
 const MESSAGE_INTERMEDIATE_CATCH_EVENT_PANE =
   '[data-test--pane="bpmn/panes/properties/PropertiesMessageIntermediateCatchEvent"]';
 const LOOP_CONFIGURATION_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesLoop"]';
@@ -2866,10 +2866,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('bpmn/elements/property-panel/MultiInstance: should change the instance count', async () => {
+  it('bpmn/elements/property-panel/MultiInstance: should change the element variable', async () => {
     const parallelMultiInstance = 'ParallelMultiInstanceTask';
     const startEvent = 'StartEvent_1';
-    const newCount = '10';
+    const newElementVariable = 'currentItem';
 
     await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
@@ -2879,23 +2879,55 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       parallelMultiInstance,
-      INSTANCE_COUNT_PANE,
+      INPUT_COLLECTION_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.assertVisible('[data-test--mi-loop-cardinality-input]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.clickOnCodeEditor('[data-test--mi-loop-cardinality-input]');
-    await studioAgent.sendKeyboardInput([...newCount.split('')]);
+    await studioAgent.assertVisible('[data-test--mi-element-variable-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.setInputValue('[data-test--mi-element-variable-input]', newElementVariable);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       parallelMultiInstance,
-      INSTANCE_COUNT_PANE,
+      INPUT_COLLECTION_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const count = await studioAgent.getCodeEditorText('[data-test--mi-loop-cardinality-input]');
-    assert.strictEqual(count, newCount);
+    const value = await studioAgent.getInputValue('[data-test--mi-element-variable-input]');
+    assert.strictEqual(value, newElementVariable);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/MultiInstance: should change the output element variable', async () => {
+    const parallelMultiInstance = 'ParallelMultiInstanceTask';
+    const startEvent = 'StartEvent_1';
+    const newOutputElementVariable = 'processedItem';
+
+    await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      parallelMultiInstance,
+      OUTPUT_COLLECTION_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    await studioAgent.assertVisible('[data-test--mi-output-element-variable-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.setInputValue('[data-test--mi-output-element-variable-input]', newOutputElementVariable);
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      parallelMultiInstance,
+      OUTPUT_COLLECTION_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const value = await studioAgent.getInputValue('[data-test--mi-output-element-variable-input]');
+    assert.strictEqual(value, newOutputElementVariable);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -3002,8 +3034,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('bpmn/elements/property-panel/MultiInstanceExtensions: should change the loop break condition', async () => {
-    const parallelMultiInstance = 'ParallelMultiInstanceTask';
+  it('bpmn/elements/property-panel/SequentialMiSettings: should change the loop break condition', async () => {
+    const sequentialMultiInstance = 'SequentialMultiInstanceTask';
     const startEvent = 'StartEvent_1';
     const newBreakCondition = 'token.current.error != null';
 
@@ -3014,24 +3046,138 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      parallelMultiInstance,
-      MULTI_INSTANCE_EXTENSIONS_PANE,
+      sequentialMultiInstance,
+      SEQUENTIAL_MI_SETTINGS_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.assertVisible('[data-test--mi-loop-break-condition-input]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.clickOnCodeEditor('[data-test--mi-loop-break-condition-input]');
+    await studioAgent.assertVisible('[data-test--seq-mi-loop-break-condition-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnCodeEditor('[data-test--seq-mi-loop-break-condition-input]');
     await studioAgent.sendKeyboardInput([...newBreakCondition.split('')]);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      parallelMultiInstance,
-      MULTI_INSTANCE_EXTENSIONS_PANE,
+      sequentialMultiInstance,
+      SEQUENTIAL_MI_SETTINGS_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const breakCondition = await studioAgent.getCodeEditorText('[data-test--mi-loop-break-condition-input]');
+    const breakCondition = await studioAgent.getCodeEditorText('[data-test--seq-mi-loop-break-condition-input]');
     assert.strictEqual(breakCondition, newBreakCondition);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/SequentialMiSettings: should change the loop interval', async () => {
+    const sequentialMultiInstance = 'SequentialMultiInstanceTask';
+    const startEvent = 'StartEvent_1';
+    const newLoopInterval = 'PT5S';
+
+    await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      sequentialMultiInstance,
+      SEQUENTIAL_MI_SETTINGS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    await studioAgent.assertVisible('[data-test--seq-mi-loop-interval-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clearTextInput('[data-test--seq-mi-loop-interval-input]');
+    await studioAgent.clickOn('[data-test--seq-mi-loop-interval-input]');
+    await studioAgent.sendKeyboardInput([...newLoopInterval.split(''), 'enter']);
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      sequentialMultiInstance,
+      SEQUENTIAL_MI_SETTINGS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const loopInterval = await studioAgent.getValue('[data-test--seq-mi-loop-interval-input]');
+    assert.strictEqual(loopInterval, newLoopInterval);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/ParallelMiSettings: should change the max iterations', async () => {
+    const parallelMultiInstance = 'ParallelMultiInstanceTask';
+    const startEvent = 'StartEvent_1';
+    const newMaxIterations = '50';
+
+    await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      parallelMultiInstance,
+      PARALLEL_MI_SETTINGS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    await studioAgent.assertVisible('[data-test--par-mi-max-iterations-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clearTextInput('[data-test--par-mi-max-iterations-input]');
+    await studioAgent.clickOn('[data-test--par-mi-max-iterations-input]');
+    await studioAgent.sendKeyboardInput([...newMaxIterations.split(''), 'enter']);
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      parallelMultiInstance,
+      PARALLEL_MI_SETTINGS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const maxIterations = await studioAgent.getValue('[data-test--par-mi-max-iterations-input]');
+    assert.strictEqual(maxIterations, newMaxIterations);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/ParallelMiSettings: parallel MI shows parallel pane, not sequential pane', async () => {
+    const parallelMultiInstance = 'ParallelMultiInstanceTask';
+    const startEvent = 'StartEvent_1';
+
+    await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      parallelMultiInstance,
+      PARALLEL_MI_SETTINGS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    await studioAgent.assertVisible(PARALLEL_MI_SETTINGS_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertNotVisible(SEQUENTIAL_MI_SETTINGS_PANE);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/SequentialMiSettings: sequential MI shows sequential pane, not parallel pane', async () => {
+    const sequentialMultiInstance = 'SequentialMultiInstanceTask';
+    const startEvent = 'StartEvent_1';
+
+    await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      sequentialMultiInstance,
+      SEQUENTIAL_MI_SETTINGS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    await studioAgent.assertVisible(SEQUENTIAL_MI_SETTINGS_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertNotVisible(PARALLEL_MI_SETTINGS_PANE);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -3528,6 +3674,46 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     const maxIterations = await studioAgent.getValue('[data-test--loop-max-iterations-input]');
 
     assert.strictEqual(maxIterations, newMaxIterations);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/LoopInstance: should display the testBefore select of a Loop Task', async () => {
+    const loopTask = 'LoopTask';
+
+    await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement('StartEvent_1');
+    await studioAgent.switchToPaneGroup('property');
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(loopTask, LOOP_CONFIGURATION_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesLoop');
+
+    await studioAgent.assertVisible('#loop-test-before-property', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/LoopInstance: should change the loop interval of a Loop Task', async () => {
+    const loopTask = 'LoopTask';
+    const newInterval = 'PT5S';
+
+    await studioAgent.jumpToFileInSolution('multi-instance.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement('StartEvent_1');
+    await studioAgent.switchToPaneGroup('property');
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(loopTask, LOOP_CONFIGURATION_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesLoop');
+
+    await studioAgent.assertVisible('[data-test--loop-interval-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOn('[data-test--loop-interval-input]');
+    await studioAgent.sendKeyboardInput([...newInterval.split('')]);
+
+    await studioAgent.assertVisible('[data-test--loop-interval-input]', ASSERT_VISIBLE_TIMEOUT);
+
+    const interval = await studioAgent.getValue('[data-test--loop-interval-input]');
+    assert.strictEqual(interval, newInterval);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

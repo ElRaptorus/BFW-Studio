@@ -4,8 +4,6 @@ title: Output Collection
 
 # Output Collection
 
-> **Not executed by the current Engine.** You can draw and deploy Multi-Instance loops, but the Engine will not run them. Avoid them in executable processes for now.
-
 The `Output Collection` gathers the result of each round into a single list.
 
 ## Usage
@@ -23,6 +21,10 @@ token.result
 ```feel
 { id: token.id, status: token.status }
 ```
+
+## Output Element Variable
+
+The **Output Element Variable** specifies the variable name used to collect each iteration's output into the output collection.
 
 ## Default (no Output Collection)
 

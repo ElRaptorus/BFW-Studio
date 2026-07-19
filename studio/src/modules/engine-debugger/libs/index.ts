@@ -14,6 +14,7 @@ export {
   getPreviousFlowNodes,
   getSequenceFlowById,
   getTriggererFlowNodeInstance,
+  hasLoopCharacteristics,
   hasMultiInstance,
   isDivergingGateway,
   isFlowNodeInParallelRunningBranch,

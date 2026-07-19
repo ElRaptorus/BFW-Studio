@@ -242,6 +242,18 @@ const PARALLEL_MI_INFO: ElementInfoEntry = {
   helpId: 'bpmn/properties/parallel-multi-instance',
 };
 
+const SEQUENTIAL_MI_INFO: ElementInfoEntry = {
+  title: 'Sequential Multi Instance',
+  description: 'A sequential multi instance processes a list of values one after another.',
+  helpId: 'bpmn/properties/sequential-multi-instance',
+};
+
+const STANDARD_LOOP_INFO: ElementInfoEntry = {
+  title: 'Standard Loop',
+  description: 'A standard loop repeats a single activity while a condition holds.',
+  helpId: 'bpmn/properties/loop',
+};
+
 function getInfoForElement(editorDocumentModel: any, elementType: string | undefined): ElementInfoEntry | undefined {
   if (elementType == null) {
     return undefined;
@@ -250,6 +262,12 @@ function getInfoForElement(editorDocumentModel: any, elementType: string | undef
   const loopType = getLoopCharacteristicType(editorDocumentModel);
   if (loopType === LoopCharacteristics.Parallel) {
     return PARALLEL_MI_INFO;
+  }
+  if (loopType === LoopCharacteristics.Sequential) {
+    return SEQUENTIAL_MI_INFO;
+  }
+  if (loopType === LoopCharacteristics.Loop) {
+    return STANDARD_LOOP_INFO;
   }
 
   return elementInfoMap[elementType];

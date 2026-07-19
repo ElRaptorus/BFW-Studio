@@ -90,8 +90,8 @@ Formulas appear in these places:
 ### Loops (Multi-Instance)
 
 - [Input Collection](help://bpmn/properties/multi_instance_input) and [Output Collection](help://bpmn/properties/multi_instance_output)
-- [Instance Count](help://bpmn/properties/multi_instance_count) and [Completion Condition](help://bpmn/properties/multi_instance_completion)
-- [Loop Break Condition](help://bpmn/properties/multi_instance_extensions)
+- [Completion Condition](help://bpmn/properties/multi_instance_completion)
+- [Loop Break Condition](help://bpmn/properties/sequential_mi_settings)
 
 ### Timers
 

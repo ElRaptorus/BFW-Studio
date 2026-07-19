@@ -249,6 +249,8 @@ export class EngineAdapter {
           state: fniSnapshot.state,
           typeProperties: fniSnapshot.typeProperties ?? existing.typeProperties,
           errorInfo: fniSnapshot.errorInfo ?? existing.errorInfo,
+          multiInstanceId: fniSnapshot.multiInstanceId ?? existing.multiInstanceId,
+          iterationIndex: fniSnapshot.iterationIndex ?? existing.iterationIndex,
         };
       } else {
         this.flowNodeInstances.push(fniSnapshotToFlowNodeInstance(fniSnapshot));
@@ -424,6 +426,15 @@ export class EngineAdapter {
         }
         this.debouncedFlushPendingFniDetails();
         break;
+
+      case 'mi-started':
+      case 'mi-completed':
+        this.applyFniSnapshotUpdates(snapshot);
+        for (const id of affectedFniIds) {
+          this.pendingFniDetailIds.add(id);
+        }
+        this.debouncedFlushPendingFniDetails();
+        break;
     }
   }
 
@@ -437,6 +448,8 @@ export class EngineAdapter {
           state: fniSnapshot.state,
           typeProperties: fniSnapshot.typeProperties ?? existing.typeProperties,
           errorInfo: fniSnapshot.errorInfo ?? existing.errorInfo,
+          multiInstanceId: fniSnapshot.multiInstanceId ?? existing.multiInstanceId,
+          iterationIndex: fniSnapshot.iterationIndex ?? existing.iterationIndex,
         };
       } else {
         this.flowNodeInstances.push(fniSnapshotToFlowNodeInstance(fniSnapshot));

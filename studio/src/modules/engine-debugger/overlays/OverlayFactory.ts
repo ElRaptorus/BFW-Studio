@@ -22,7 +22,7 @@ import {
   getChildProcessInstanceId,
   getEventDefinition,
   getTriggererFlowNodeInstance,
-  hasMultiInstance,
+  hasLoopCharacteristics,
   isFlowNodeInParallelRunningBranch,
   resolveMessageName,
   resolveSignalName,
@@ -197,7 +197,16 @@ export async function createFlowNodeInstanceOverlays(
     overlays.push(createHasUnfinishedInstancesInfoBadge(flowNode.id, unfinishedInstancesCount, studio));
   }
 
-  if (flowNode.flowNodeInstances.length > 1) {
+  const hasMiGroups = flowNode.multiInstanceGroups.length > 0;
+  if (hasMiGroups) {
+    const latestGroup = flowNode.multiInstanceGroups[flowNode.multiInstanceGroups.length - 1];
+    const completedIterations = latestGroup.iterationFnis.filter(
+      (fni) => fni.state === FlowNodeInstanceState.Finished,
+    ).length;
+    const totalIterations = latestGroup.iterationFnis.length;
+    const label = totalIterations > 0 ? `${completedIterations}/${totalIterations}` : '0';
+    overlays.push(createFlowNodeExecutionCountBadge(flowNode.id, completedIterations, model, totalIterations, label));
+  } else if (flowNode.flowNodeInstances.length > 1) {
     const executionCycle =
       flowNode.flowNodeInstances.length -
       flowNode.flowNodeInstances.findIndex((flowNodeInstance) => flowNodeInstance.id === selectedFlowNodeInstance.id);
@@ -460,7 +469,7 @@ const shouldDisplayRetryOverlay = (
     firstFlowNodeInstance.state !== FlowNodeInstanceState.Aborted ||
     firstFlowNodeInstance.typeProperties?.reason !== 'event_based_gateway_sibling_cancelled';
 
-  const isRegularFlowNode = flowNode.flowNodeModel ? !hasMultiInstance(flowNode.flowNodeModel) : false;
+  const isRegularFlowNode = flowNode.flowNodeModel ? !hasLoopCharacteristics(flowNode.flowNodeModel) : false;
 
   return (
     isRegularFlowNode &&

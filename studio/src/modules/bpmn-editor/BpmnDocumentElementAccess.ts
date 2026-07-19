@@ -985,8 +985,10 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         if (loopChars.$type === 'bpmn:StandardLoopCharacteristics') {
           return {
             kind: 'standard' as const,
+            testBefore: loopChars.testBefore === true,
             loopCondition: loopChars.loopCondition?.body ?? undefined,
             loopMaximum: loopChars.loopMaximum != null ? String(loopChars.loopMaximum) : undefined,
+            loopInterval: getEvilBodyValue(loopChars, 'evil:LoopInterval'),
           };
         }
 
@@ -994,10 +996,11 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
           return {
             kind: 'multiInstance' as const,
             isSequential: loopChars.isSequential === true,
-            loopCardinality: loopChars.loopCardinality?.body ?? undefined,
             completionCondition: loopChars.completionCondition?.body ?? undefined,
             inputDataItem: loopChars.inputDataItem?.name ?? undefined,
             outputDataItem: loopChars.outputDataItem?.name ?? undefined,
+            elementVariable: getEvilBodyValue(loopChars, 'evil:ElementVariable'),
+            outputElementVariable: getEvilBodyValue(loopChars, 'evil:OutputElementVariable'),
             inputCollection: getEvilBodyValue(loopChars, 'evil:InputCollection'),
             outputCollection: getEvilBodyValue(loopChars, 'evil:OutputCollection'),
             loopBreakCondition: getEvilBodyValue(loopChars, 'evil:LoopBreakCondition'),

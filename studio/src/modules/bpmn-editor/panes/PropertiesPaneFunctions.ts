@@ -30,6 +30,7 @@ export function isActivityType(editorDocument: EditorDocument, editorDocumentMod
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.SendTask) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.ServiceTask) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.Subprocess) ||
+    shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.Transaction) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.UntypedTask) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.UserTask)
   );

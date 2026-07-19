@@ -96,11 +96,11 @@ export function isSequentialMultiInstance(flowNode: FlowNode): boolean {
 }
 
 export function isStandardLoop(flowNode: FlowNode): boolean {
-  return (
-    flowNode.multiInstance != null &&
-    flowNode.multiInstance.collectionExpression == null &&
-    flowNode.multiInstance.cardinalityExpression == null
-  );
+  return flowNode.standardLoop != null;
+}
+
+export function hasLoopCharacteristics(flowNode: FlowNode): boolean {
+  return flowNode.multiInstance != null || flowNode.standardLoop != null;
 }
 
 export function isDivergingGateway(flowNode: FlowNode): boolean {
