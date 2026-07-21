@@ -316,6 +316,16 @@ function updateLoopCharacteristics(element: ElementLike | undefined, loopConfig:
   };
 }
 
+function updateAdHocSubprocess(element: ElementLike | undefined, properties: any): CmdHelperDescriptor {
+  return {
+    cmd: 'UpdateAdHocSubprocessHandler',
+    context: {
+      element: element,
+      ...properties,
+    },
+  };
+}
+
 function updateUserTaskResources(
   element: ElementLike | undefined,
   resources: { assignee?: string; candidateUsers?: string },
@@ -436,4 +446,5 @@ export const CmdHelper = {
   updateUserTaskResources,
   updateCorrelationRetrievalExpression,
   updateDataPipeline,
+  updateAdHocSubprocess,
 };

@@ -94,6 +94,7 @@ export function initializeBpmnHelpTexts(bifrost: Bifrost): void {
     'bpmn/properties/example_result': require('../panes/properties/ExampleResult/PropertiesExampleResult.md'),
     'bpmn/properties/custom_service_task': require('../panes/properties/ServiceTask/PropertiesCustomServiceTask.md'),
     'bpmn/properties/transaction': require('../panes/properties/Transaction/PropertiesTransaction.md'),
+    'bpmn/properties/adhoc_subprocess': require('../panes/properties/AdHocSubprocess/PropertiesAdHocSubprocess.md'),
     'bpmn/properties/business_rule_task': require('../panes/properties/BusinessRuleTask/PropertiesBusinessRuleTask.md'),
     'bpmn/properties/subprocess': require('../panes/properties/Subprocess/PropertiesSubprocess.md'),
     'bpmn/properties/event_subprocess': require('../panes/properties/EventSubprocess/PropertiesEventSubprocess.md'),

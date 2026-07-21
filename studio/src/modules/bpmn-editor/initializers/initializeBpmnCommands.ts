@@ -71,7 +71,12 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
       }
       const bpmnDocumentModel = await bifrost.editors.getEditorDocumentModel<BpmnDocumentModel>(editorDocument);
       const selected = bpmnDocumentModel.selection.getOnlyElementOrNull();
-      if (selected == null || selected.type !== BpmnElementType.Subprocess) {
+      const drillableTypes: string[] = [
+        BpmnElementType.Subprocess,
+        BpmnElementType.Transaction,
+        BpmnElementType.AdHocSubprocess,
+      ];
+      if (selected == null || !drillableTypes.includes(selected.type)) {
         return;
       }
       const canvas = bpmnDocumentModel.modelerAdapter.getCanvas();

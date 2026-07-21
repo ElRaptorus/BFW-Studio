@@ -209,6 +209,22 @@ Event Subprocesses (ESPs) reuse the existing embedded-subprocess child-PI machin
 
 > **Pending (blocked on engine SDK):** the `interrupted_by_event_subprocess` FNI-reason label depends on the engine surfacing this reason in the SDK's type definitions. Once available, map it to a readable label in `engine-core/Formatters.ts`.
 
+### Ad-hoc Sub-Process debugging
+
+An Ad-hoc Sub-Process shell is a `bpmn:AdHocSubProcess` (still `FlowNodeType.SubProcess` on the wire, discriminated via `typeProperties.isAdHocSubprocess` / persisted `is_ad_hoc`) that spawns a child PI exactly like an embedded subprocess or Transaction shell. `BpmnProcessHelpers.ts` provides the detection helpers used throughout the debugger:
+
+| Helper | Purpose |
+|--------|---------|
+| `isAdHocSubprocess(flowNode)` | `SubProcessTypeData.isAdHoc === true` on the model's flow node |
+| `getAdHocInnerActivities(flowNode)` | Non-event inner activities of an ad-hoc subprocess (mirrors the linter's activity filter) |
+| `isAdHocSubprocessFni(fni)` | Checks both `typeProperties.is_ad_hoc` (persisted, snake_case, from initial GraphQL snapshot load) and `typeProperties.isAdHocSubprocess` (camelCase, from the real-time `SubProcessChildStarted` event) defensively — either key marks the FNI as an ad-hoc shell |
+
+- **Event handling (`SubscribeThenSnapshot.ts`):** `AdHocActivityActivated` and `AdHocSubProcessCompleted` are new `SnapshotEventType`s. `handleAdHocActivityActivated` increments `activationCount` and sets `lastActivatedFlowNodeId` on the shell FNI's `typeProperties` on every activation (an inner activity may activate multiple times — AH-D16). `handleAdHocSubProcessCompleted` sets `totalActivations` and `completionReason` when the shell finishes. `handleSubProcessChild` propagates `event.isAdHocSubprocess` into the shell FNI's `typeProperties`, mirroring the ESP `isEventSubprocess` flag.
+- **Definition pane:** `AdHocSubProcessDefinitionPane.tsx` (registered for `shouldDisplayAdHocSubProcessInstancePane` in `ShouldBeDisplayedConditions.ts`) shows ordering, completion condition, `cancelRemainingInstances`, implementation, total activations, and completion reason, plus a live list of inner activities with their current status — derived from the child PI's FNIs, not from the shell FNI itself.
+- **Child-PI badge:** `SubProcessChildProcessInstancePane.tsx` shows an "Ad-hoc Sub-Process" badge (via `isAdHocSubprocessFni`) above the child-PI link, the same UX pattern as the ESP badge.
+- **Overlay badge:** `OverlayFactory.createFlowNodeInstanceOverlays()` renders `AdHocActivationCountBadge` below ad-hoc shell FNIs, showing `totalActivations` (once completed) or `activationCount` (while running). The flow-node backdrop additionally gets a `bpmn-element-overlay-backdrop--adhoc-subprocess` class for visual distinction from plain/transaction subprocess shells.
+- **Inline rendering:** like Transaction and embedded subprocess shells, an ad-hoc shell can be collapsed or expanded in bpmn-js; inner activities are on their own plane and are reached via the same drill-down mechanism (`isInsideSubprocessPlane()` — see `docs/architecture/bpmn-editor-properties.md` §Subprocess Plane Behavior for the shared `$instanceOf('bpmn:SubProcess')` detection fix that also covers ad-hoc).
+
 ### Configured Abort Architecture
 
 **File:** `studio/src/modules/engine-core/commands/registerConfiguredAbortCommands.ts`

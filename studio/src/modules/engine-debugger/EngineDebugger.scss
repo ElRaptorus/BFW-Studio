@@ -121,6 +121,11 @@
       background-color: var(--backcolor-flow-node-active-instances);
     }
 
+    .bpmn-element-overlay__below-item--adhoc-subprocess {
+      color: var(--color-flow-node-active-instances);
+      background-color: var(--backcolor-flow-node-active-instances);
+    }
+
     .bpmn-element-overlay__below-item--flow-node-instance-state-active {
       background-color: rgb(var(--color-flow-node-state-active));
       color: var(--color-flow-node-badge-active);

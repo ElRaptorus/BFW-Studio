@@ -1,9 +1,10 @@
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 import type Canvas from 'diagram-js/lib/core/Canvas';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type EventBus from 'diagram-js/lib/core/EventBus';
 
 function isCollapsedSubProcess(element: any): boolean {
-  return element?.type === 'bpmn:SubProcess' && element.collapsed === true;
+  return is(element, 'bpmn:SubProcess') && element.collapsed === true;
 }
 
 /**

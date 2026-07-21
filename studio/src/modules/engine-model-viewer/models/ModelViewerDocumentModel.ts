@@ -383,7 +383,15 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
       return false;
     }
     const rootElement = canvas.getRootElement();
-    return rootElement?.businessObject?.$type === 'bpmn:SubProcess';
+    const businessObject = rootElement?.businessObject;
+    if (businessObject == null) {
+      return false;
+    }
+    // Transaction and AdHocSubProcess are moddle subclasses of SubProcess, so
+    // $instanceOf catches all three; a strict $type check would miss them.
+    return typeof businessObject.$instanceOf === 'function'
+      ? businessObject.$instanceOf('bpmn:SubProcess')
+      : businessObject.$type === 'bpmn:SubProcess';
   }
 
   getCurrentRootElement(): any {

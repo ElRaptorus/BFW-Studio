@@ -1385,3 +1385,23 @@ Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the mod
 **Why it fails**: The SDK BPMN parser hardcodes `activationCondition: null` for Complex Gateways (`packages/js/sdk/src/bpmn/parser.ts`), even though the `ComplexGatewayTypeData.activationCondition` type field exists. The Studio depends on this SDK via npm, so a pane relying on the parsed value shows empty until the SDK is fixed **and** re-published/bumped.
 
 **Correct approach**: Read the value directly from the live bpmn-js moddle instead of the parsed model. The debugger's `EngineBpmnDebuggerEditorDocumentModel` exposes `bpmnViewerComponentAdapter`; `getActivationConditionFromViewer(adapter, elementId)` in `engine-debugger/libs/BpmnCustomPropertyAccessor.ts` resolves the element from the registry and returns `businessObject.activationCondition?.body`. This is the same moddle-read pattern already used for studio-internal `evil:Property` values (`getCustomPropertyFromViewer`). The Engine BPMN Viewer panes already read the moddle directly (`getSelection(model).businessObject.activationCondition?.body`), so they are unaffected.
+
+---
+
+## Setting a non-standard attribute on a standard BPMN element silently fails to serialize without a moddle `extends` entry
+
+**Mistake**: A command handler sets `businessObject.someEngineOnlyAttribute = value` directly on a moddle instance of a **standard** BPMN type (e.g. `bpmn:AdHocSubProcess`, `bpmn:ServiceTask`) for an attribute that is engine-specific and not part of the upstream `bpmn-moddle` schema for that type — without first adding a corresponding `extends` entry in `evil-platform.json`.
+
+**Why it fails**: moddle only serializes properties that are declared in the schema for the element's type (or one of the types it `extends`). Setting an undeclared property works fine **in memory** for the current editing session — the property round-trips through undo/redo and even through `PropertiesEditor` panes, because those all operate on the live JS object. The failure only appears at `moddle.toXML()`: the writer silently drops the property, so the saved file never contains it. Reloading that file then shows the property as unset, even though it displayed correctly right before saving. This makes the bug easy to miss during interactive testing (the pane always "looks right") and only surfaces on save → reload roundtrip.
+
+**Concrete example (fixed 2026-07)**: `bpmn:AdHocSubProcess.implementation` (the ad-hoc plugin dispatch key, analogous to `ServiceTask.implementation`) is not a standard BPMN 2.0 attribute — `ordering` and `cancelRemainingInstances` are standard and worked immediately, but `implementation` needed its own `extends` entry:
+
+```json
+{
+  "name": "AdHocSubProcessImplementation",
+  "extends": ["bpmn:AdHocSubProcess"],
+  "properties": [{ "name": "implementation", "isAttr": true, "type": "String" }]
+}
+```
+
+**Correct approach**: Whenever a command handler introduces a new engine-specific attribute directly on a standard BPMN element's business object (as opposed to an `evil:*` extension element under `<bpmn:extensionElements>`), add a matching `extends` block to `studio/src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json` (see the existing `BusinessRuleTaskScript` entry for the established pattern) **before** relying on the property surviving a save. Write a roundtrip unit test (parse → mutate → `toXML()` → re-parse → assert) for every new attribute — see `studio/test/unit/bpmn-core/adhocSubprocessModdleRoundtrip.test.ts` for the pattern. In-memory-only manual testing in the editor cannot catch this class of bug.

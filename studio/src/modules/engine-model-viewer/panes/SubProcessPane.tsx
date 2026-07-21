@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getExtensionValue, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -17,6 +17,9 @@ function getPaneTitle(_editorDocument: EditorDocument, editorDocumentModel: Edit
   if (selection && matchesType(selection, [':Transaction'])) {
     return 'Transaction Subprocess';
   }
+  if (selection && matchesType(selection, [':AdHocSubProcess'])) {
+    return 'Ad-hoc Sub-Process';
+  }
   return 'Sub Process';
 }
 
@@ -25,7 +28,7 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
     return false;
   }
   const selection = getSelection(editorDocumentModel);
-  return matchesType(selection, [':SubProcess', ':Transaction']);
+  return matchesType(selection, [':SubProcess', ':Transaction', ':AdHocSubProcess']);
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
@@ -45,12 +48,24 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   }
 
   const isTransaction = matchesType(selection, [':Transaction']);
+  const isAdHoc = matchesType(selection, [':AdHocSubProcess']);
   const triggeredByEvent = selection.businessObject.triggeredByEvent === true;
   const transactionMethod = isTransaction ? ((selection.businessObject.method as string | undefined) ?? null) : null;
 
+  const adHocOrdering = isAdHoc ? ((selection.businessObject.ordering as string | undefined) ?? 'Parallel') : null;
+  const adHocCancelRemaining = isAdHoc
+    ? (selection.businessObject.cancelRemainingInstances as boolean | undefined) !== false
+    : null;
+  const adHocCompletionCondition = isAdHoc
+    ? ((selection.businessObject.completionCondition as { body?: string } | undefined)?.body ?? null)
+    : null;
+  const adHocImplementation = isAdHoc
+    ? ((selection.businessObject.implementation as string | undefined) ?? null)
+    : null;
+
   return (
     <div className="engine-pane-process-info">
-      {isTransaction ? (
+      {isTransaction && (
         <>
           <PaneProperty type="text" label="Type" value="Transaction Subprocess" disabled />
           <PaneProperty
@@ -60,7 +75,33 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
             disabled
           />
         </>
-      ) : (
+      )}
+      {isAdHoc && (
+        <>
+          <PaneProperty type="text" label="Type" value="Ad-hoc Sub-Process" disabled />
+          <PaneProperty type="text" label="Ordering" value={adHocOrdering ?? 'Parallel'} disabled />
+          <PaneProperty
+            type="text"
+            label="Completion Condition"
+            value={adHocCompletionCondition ?? '(all activities performed)'}
+            disabled
+          />
+          <PaneProperty
+            type="text"
+            label="Cancel Remaining Instances"
+            value={adHocCancelRemaining ? 'Yes' : 'No'}
+            disabled
+          />
+          <PaneProperty type="text" label="Implementation" value={adHocImplementation ?? '(engine-managed)'} disabled />
+          <PaneProperty
+            type="text"
+            label="Active Elements"
+            value={getExtensionValue(selection.businessObject, 'ActiveElements') ?? '(all enabled activities)'}
+            disabled
+          />
+        </>
+      )}
+      {!isTransaction && !isAdHoc && (
         <PaneProperty type="text" label="Triggered by Event" value={triggeredByEvent ? 'Yes' : 'No'} disabled />
       )}
     </div>

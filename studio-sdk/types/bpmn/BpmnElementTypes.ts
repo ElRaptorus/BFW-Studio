@@ -19,6 +19,7 @@ export type BpmnElement =
   | BpmnElement_CompensationEndEvent
   | BpmnElement_CompensationIntermediateThrowEvent
   | BpmnElement_Transaction
+  | BpmnElement_AdHocSubprocess
   | BpmnElement_EscalationBoundaryEvent
   | BpmnElement_EscalationEndEvent
   | BpmnElement_EscalationIntermediateThrowEvent
@@ -59,6 +60,7 @@ export type BpmnElement =
   | BpmnElement_Generic;
 
 export enum BpmnElementType {
+  AdHocSubprocess = 'AdHocSubprocess',
   BoundaryEvent = 'BoundaryEvent',
   BusinessRuleTask = 'BusinessRuleTask',
   CallActivity = 'CallActivity',
@@ -389,6 +391,23 @@ export type BpmnElement_Transaction = BpmnElementCommonProperties & {
   readonly type: BpmnElementType.Transaction;
   readonly childrenIds: string[];
   readonly transactionMethod?: string;
+};
+
+//
+// Ad-hoc Subprocess
+//
+export type BpmnElement_AdHocSubprocess = BpmnElementCommonProperties & {
+  readonly type: BpmnElementType.AdHocSubprocess;
+  readonly childrenIds: string[];
+  readonly ordering?: 'Parallel' | 'Sequential';
+  readonly completionCondition?: string;
+  readonly cancelRemainingInstances?: boolean;
+  readonly implementation?: string;
+  readonly activeElementsExpression?: string;
+  readonly inputMappings: BpmnDataMapping[];
+  readonly outputMappings: BpmnDataMapping[];
+  readonly payloadContract?: string;
+  readonly resultContract?: string;
 };
 
 //

@@ -46,7 +46,12 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 
   const rootElement = model.getCurrentRootElement();
   const businessObject = rootElement?.businessObject;
-  if (!businessObject || businessObject.$type !== 'bpmn:SubProcess') {
+  const isSubProcess =
+    businessObject != null &&
+    (typeof businessObject.$instanceOf === 'function'
+      ? businessObject.$instanceOf('bpmn:SubProcess')
+      : businessObject.$type === 'bpmn:SubProcess');
+  if (!isSubProcess) {
     return null;
   }
 
@@ -63,11 +68,26 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     }
   }
 
+  const isAdHoc = businessObject.$type === 'bpmn:AdHocSubProcess';
+  const adHocOrdering = isAdHoc ? (businessObject.ordering ?? 'Parallel') : null;
+  const adHocCompletionCondition = isAdHoc ? (businessObject.completionCondition?.body ?? null) : null;
+
   return (
     <PaneBody>
       <PaneProperty type="text" label="Subprocess ID" value={subprocessId} disabled />
       <PaneProperty type="text" label="Name" value={subprocessName} disabled />
       <PaneProperty type="text" label="Loop" value={loopLabel} disabled />
+      {isAdHoc && (
+        <>
+          <PaneProperty type="text" label="Ordering" value={adHocOrdering} disabled />
+          <PaneProperty
+            type="text"
+            label="Completion Condition"
+            value={adHocCompletionCondition ?? '(all activities performed)'}
+            disabled
+          />
+        </>
+      )}
       <div className="form-group">
         <button
           type="button"

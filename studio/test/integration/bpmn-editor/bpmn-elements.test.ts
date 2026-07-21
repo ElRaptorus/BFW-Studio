@@ -60,6 +60,7 @@ const COMPLETION_CONDITION_PANE = '[data-test--pane="bpmn/panes/properties/Prope
 const MESSAGE_INTERMEDIATE_CATCH_EVENT_PANE =
   '[data-test--pane="bpmn/panes/properties/PropertiesMessageIntermediateCatchEvent"]';
 const LOOP_CONFIGURATION_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesLoop"]';
+const AD_HOC_SUBPROCESS_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesAdHocSubprocess"]';
 
 describe('bpmn/elements', { timeout: 20_000 }, () => {
   let studioAgent: StudioAgentBpmnExtension;
@@ -4026,6 +4027,202 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
 
     assert.strictEqual(newMessageName, selectedMessage);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/AdHocSubprocess: should change the ordering', async () => {
+    const startEvent = 'StartEvent_1';
+    const adHocSubProcess = 'AdHocSubProcess_1';
+
+    await studioAgent.jumpToFileInSolution('adhoc-subprocess.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+    await studioAgent.assertVisible('#adhoc-subprocess-ordering-property', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOn('#adhoc-subprocess-ordering-property');
+    await studioAgent.clickOn('#adhoc-subprocess-ordering-property [data-test-option-value="Sequential"]');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const ordering = await studioAgent.getText('#adhoc-subprocess-ordering-property .react-select__single-value');
+    assert.strictEqual(ordering, 'Sequential');
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/AdHocSubprocess: should change cancel remaining instances', async () => {
+    const startEvent = 'StartEvent_1';
+    const adHocSubProcess = 'AdHocSubProcess_1';
+
+    await studioAgent.jumpToFileInSolution('adhoc-subprocess.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+    await studioAgent.assertVisible('#adhoc-subprocess-cancel-remaining-property', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOn('#adhoc-subprocess-cancel-remaining-property');
+    await studioAgent.clickOn('#adhoc-subprocess-cancel-remaining-property [data-test-option-value="false"]');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const label = await studioAgent.getText('#adhoc-subprocess-cancel-remaining-property .react-select__single-value');
+    assert.strictEqual(label, 'No (drain naturally)');
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/AdHocSubprocess: should change the implementation', async () => {
+    const startEvent = 'StartEvent_1';
+    const adHocSubProcess = 'AdHocSubProcess_1';
+    const newImplementation = 'my-adhoc-plugin';
+
+    await studioAgent.jumpToFileInSolution('adhoc-subprocess.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+    await studioAgent.assertVisible('#adhoc-subprocess-implementation-property', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clearTextInput('#adhoc-subprocess-implementation-property');
+    await studioAgent.clickOn('#adhoc-subprocess-implementation-property');
+    await studioAgent.sendKeyboardInput([...newImplementation.split(''), 'enter']);
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const implementation = await studioAgent.getValue('#adhoc-subprocess-implementation-property');
+    assert.strictEqual(implementation, newImplementation);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/AdHocSubprocess: should change the completion condition', async () => {
+    const startEvent = 'StartEvent_1';
+    const adHocSubProcess = 'AdHocSubProcess_1';
+    const newCondition = 'performedActivities >= 1';
+
+    await studioAgent.jumpToFileInSolution('adhoc-subprocess.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    await studioAgent.assertVisible('[data-test--adhoc-subprocess-completion-condition-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnCodeEditor('[data-test--adhoc-subprocess-completion-condition-input]');
+    await studioAgent.sendKeyboardInput([...newCondition.split('')]);
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const condition = await studioAgent.getCodeEditorText('[data-test--adhoc-subprocess-completion-condition-input]');
+    assert.strictEqual(condition, newCondition);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/AdHocSubprocess: should change the active elements expression', async () => {
+    const startEvent = 'StartEvent_1';
+    const adHocSubProcess = 'AdHocSubProcess_1';
+    const newExpression = 'context.activeTaskIds';
+
+    await studioAgent.jumpToFileInSolution('adhoc-subprocess.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    await studioAgent.assertVisible('[data-test--adhoc-subprocess-active-elements-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnCodeEditor('[data-test--adhoc-subprocess-active-elements-input]');
+    await studioAgent.sendKeyboardInput([...newExpression.split('')]);
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+
+    const expression = await studioAgent.getCodeEditorText('[data-test--adhoc-subprocess-active-elements-input]');
+    assert.strictEqual(expression, newExpression);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/property-panel/AdHocSubprocess: should only show the ad-hoc pane for ad-hoc sub-processes', async () => {
+    const startEvent = 'StartEvent_1';
+    const adHocSubProcess = 'AdHocSubProcess_1';
+    const endEvent = 'EndEvent_1';
+
+    await studioAgent.jumpToFileInSolution('adhoc-subprocess.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      adHocSubProcess,
+      AD_HOC_SUBPROCESS_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+    await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesAdHocSubprocess');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesAdHocSubprocess');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(endEvent);
+    await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesAdHocSubprocess');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

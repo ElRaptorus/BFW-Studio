@@ -1,6 +1,8 @@
 import type { DaemonEngineClient, Subscription } from '@elraptorus/daemonengine_client';
 import type {
   ActivityCompensated,
+  AdHocActivityActivated,
+  AdHocSubProcessCompleted,
   CallActivityChildStarted,
   CompensationTriggered,
   DataObjectWritten,
@@ -29,7 +31,9 @@ export type SnapshotEventType =
   | 'activity-compensated'
   | 'transaction-cancelled'
   | 'mi-started'
-  | 'mi-completed';
+  | 'mi-completed'
+  | 'adhoc-activity-activated'
+  | 'adhoc-subprocess-completed';
 
 export interface SnapshotUpdate {
   snapshot: ProcessInstanceSnapshot;
@@ -208,6 +212,20 @@ export class SubscribeThenSnapshot {
         affectedFniIds.push(event.flowNodeInstanceId);
         break;
       }
+      case 'AdHocActivityActivated': {
+        const event = envelope.data as AdHocActivityActivated;
+        this.handleAdHocActivityActivated(event);
+        eventType = 'adhoc-activity-activated';
+        affectedFniIds.push(event.adhocFlowNodeInstanceId, event.activatedFlowNodeInstanceId);
+        break;
+      }
+      case 'AdHocSubProcessCompleted': {
+        const event = envelope.data as AdHocSubProcessCompleted;
+        this.handleAdHocSubProcessCompleted(event);
+        eventType = 'adhoc-subprocess-completed';
+        affectedFniIds.push(event.adhocFlowNodeInstanceId);
+        break;
+      }
     }
 
     if (eventType) {
@@ -312,6 +330,46 @@ export class SubscribeThenSnapshot {
         ...(fni.typeProperties ?? {}),
         childProcessInstanceId: event.childProcessInstanceId,
         isEventSubprocess: event.isEventSubprocess,
+        isAdHocSubprocess: event.isAdHocSubprocess,
+      };
+    }
+  }
+
+  /**
+   * Increments the shell FNI's activation counter each time an inner
+   * activity of an ad-hoc subprocess is activated (initial activation or
+   * repeated plugin-managed activation).
+   */
+  private handleAdHocActivityActivated(event: AdHocActivityActivated): void {
+    if (!this.snapshot) {
+      return;
+    }
+    const shellFni = this.snapshot.flowNodeInstances.find((overlay) => overlay.id === event.adhocFlowNodeInstanceId);
+    if (shellFni) {
+      const existingProperties = (shellFni.typeProperties as Record<string, unknown> | null) ?? {};
+      const previousCount = Number(existingProperties['activationCount'] ?? 0);
+      shellFni.typeProperties = {
+        ...existingProperties,
+        activationCount: previousCount + 1,
+        lastActivatedFlowNodeId: event.activatedFlowNodeId,
+      };
+    }
+  }
+
+  /**
+   * Records the final activation count and completion reason on the ad-hoc
+   * subprocess shell FNI once its child PI reaches a terminal state.
+   */
+  private handleAdHocSubProcessCompleted(event: AdHocSubProcessCompleted): void {
+    if (!this.snapshot) {
+      return;
+    }
+    const shellFni = this.snapshot.flowNodeInstances.find((overlay) => overlay.id === event.adhocFlowNodeInstanceId);
+    if (shellFni) {
+      shellFni.typeProperties = {
+        ...(shellFni.typeProperties ?? {}),
+        totalActivations: event.totalActivations,
+        completionReason: event.completionReason,
       };
     }
   }

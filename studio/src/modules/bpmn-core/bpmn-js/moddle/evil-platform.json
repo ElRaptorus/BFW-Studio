@@ -84,7 +84,8 @@
           "bpmn:CallActivity",
           "bpmn:IntermediateThrowEvent",
           "bpmn:EndEvent",
-          "bpmn:SendTask"
+          "bpmn:SendTask",
+          "bpmn:AdHocSubProcess"
         ]
       }
     },
@@ -101,7 +102,8 @@
           "bpmn:IntermediateCatchEvent",
           "bpmn:StartEvent",
           "bpmn:BoundaryEvent",
-          "bpmn:ReceiveTask"
+          "bpmn:ReceiveTask",
+          "bpmn:AdHocSubProcess"
         ]
       }
     },
@@ -117,7 +119,8 @@
           "bpmn:CallActivity",
           "bpmn:SendTask",
           "bpmn:IntermediateThrowEvent",
-          "bpmn:EndEvent"
+          "bpmn:EndEvent",
+          "bpmn:AdHocSubProcess"
         ]
       },
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
@@ -135,9 +138,16 @@
           "bpmn:ReceiveTask",
           "bpmn:IntermediateCatchEvent",
           "bpmn:BoundaryEvent",
-          "bpmn:StartEvent"
+          "bpmn:StartEvent",
+          "bpmn:AdHocSubProcess"
         ]
       },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
+      "name": "ActiveElements",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:AdHocSubProcess"] },
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
     },
     {
@@ -241,6 +251,12 @@
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:ScriptTask"] },
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
+      "name": "AdHocSubProcessImplementation",
+      "extends": ["bpmn:AdHocSubProcess"],
+      "properties": [{ "name": "implementation", "isAttr": true, "type": "String" }]
     },
 
     {

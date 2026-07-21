@@ -128,6 +128,12 @@ const elementInfoMap: Record<string, ElementInfoEntry> = {
       'An Event Subprocess is a specialized Subprocess that is triggered by an event. The triggering event is modeled as a Start Event.',
     helpId: 'bpmn/properties/event_subprocess',
   },
+  [BpmnElementType.AdHocSubprocess]: {
+    title: 'Ad-hoc Sub-Process',
+    description:
+      'An Ad-hoc Sub-Process is an unstructured "menu" of activities that can be activated in any order (or in a defined sequence), instead of following a fixed sequence flow.',
+    helpId: 'bpmn/properties/adhoc_subprocess',
+  },
   [BpmnElementType.ManualTask]: {
     title: 'Manual Task',
     description: 'A manual task is used to represent work that has to be performed and confirmed by a human.',

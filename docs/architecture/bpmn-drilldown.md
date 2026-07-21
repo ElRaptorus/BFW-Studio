@@ -193,12 +193,14 @@ The viewer adapter now listens to `root.set` in its event map and emits `EVENT_B
 - Subscribes to `EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED` in `registerViewerAdapter()`
 - On root change: calls `refreshOverlays()` (plane-scoped) and persists `currentRootId` in metadata
 - `refreshOverlays()` uses `getVisibleElements()` which filters to elements on the current plane only (same algorithm as `BpmnDocumentElementAccess.getVisibleElements()`)
-- `isInsideSubprocessPlane()` checks if the current root's businessObject is `bpmn:SubProcess`
+- `isInsideSubprocessPlane()` checks `businessObject.$instanceOf('bpmn:SubProcess')` (not a strict `$type` equality), so Transaction and Ad-hoc Sub-Process planes are recognized identically to plain embedded subprocesses
 - `getCurrentRootElement()` returns the raw canvas root element
 
 ### Breadcrumb Bar
 
 The breadcrumb bar is rendered inline in `ModelViewerRenderer` via the `SubprocessBreadcrumbBar` component. It is only visible when inside a subprocess plane. The breadcrumb chain is derived at render time by walking `businessObject.$parent` from the current canvas root — identical to the BPMN editor pattern. The bar reuses the shared `bpmn-breadcrumb-bar` CSS classes from `studio/src/modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss`.
+
+`ModelViewerRenderer.tsx` defines a shared `isSubProcessBusinessObject(businessObject)` helper (`$instanceOf('bpmn:SubProcess')`) used by `buildBreadcrumbChain`, `navigateToPlane` (root-finding), and the `SubprocessBreadcrumbBar` visibility check, so Transaction and Ad-hoc Sub-Process planes participate in breadcrumbs/navigation exactly like plain embedded and event subprocesses.
 
 ### Subprocess Context Pane
 
@@ -210,6 +212,14 @@ Shown in the inspector when inside a subprocess plane with no element selected. 
 - Subprocess name
 - Loop characteristics
 - "Back to parent" button (executes `engine.modelViewer.drillUp`)
+
+For an Ad-hoc Sub-Process context (`businessObject.$type === 'bpmn:AdHocSubProcess'`), the pane additionally shows the (read-only) `ordering` and `completionCondition`.
+
+### Subprocess Element Pane
+
+**Path:** `studio/src/modules/engine-model-viewer/panes/SubProcessPane.tsx`
+
+Shown in the inspector when a `bpmn:SubProcess` (or subclass: Transaction, Event Subprocess, Ad-hoc Sub-Process) element is selected on the canvas (as opposed to the context-pane's "no selection inside the plane" state above). `shouldBeDisplayed` matches on `:SubProcess`, `:Transaction`, `:AdHocSubProcess`. For an Ad-hoc Sub-Process, `getPaneTitle` returns "Ad-hoc Sub-Process" and the content additionally renders: Type, Ordering, Completion Condition, Cancel Remaining Instances, Implementation, and Active Elements (`evil:ActiveElements`) — all read-only, sourced directly from the deployed model's `businessObject`.
 
 ### Commands
 

@@ -25,6 +25,7 @@ CustomResizeRule.prototype.init = function () {
       type === 'bpmn:LaneSet' ||
       type === 'bpmn:TextAnnotation' ||
       type === 'bpmn:Transaction' ||
+      type === 'bpmn:AdHocSubProcess' ||
       type === 'bpmn:Group' ||
       type === 'bpmn:EventSubProcess';
 

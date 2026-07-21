@@ -57,6 +57,8 @@ When the user drills into a collapsed subprocess, top-level panes are hidden and
 
 Panes that depend on element enumeration use `getVisibleElements()` (plane-scoped) instead of `getAllElements()` (cross-plane).
 
+`isInsideSubprocessPlane()` (in `BpmnDocumentModel.ts` / `ModelViewerDocumentModel.ts`) uses `businessObject.$instanceOf('bpmn:SubProcess')` rather than a strict `$type` check, so Transaction and Ad-hoc Sub-Process planes are recognized identically to plain embedded subprocesses. `PropertiesSubprocessContext` additionally detects `BpmnElementType.AdHocSubprocess` and shows the current `ordering` and `completionCondition` (read-only) alongside the usual name/ID/loop-config fields.
+
 ### Property Read/Write Flow
 
 ```
@@ -144,6 +146,22 @@ Switches service task implementation type via the `implementation` attribute:
 
 Persists `evil:CorrelationRetrievalExpression` for catch-side message elements. The handler navigates from the BPMN element to its `MessageEventDefinition` child (for events) or targets the element directly (for `ReceiveTask`), then uses `setEvilBodyExtension` to create/update/clear the extension element.
 
+#### UpdateAdHocSubprocessHandler
+
+**Path:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateAdHocSubprocessHandler.ts`
+
+Persists all `bpmn:AdHocSubProcess`-specific properties. Invoked via `CmdHelper.updateAdHocSubprocess(element, changes)`.
+
+| Property | Storage |
+|----------|---------|
+| `ordering` | Direct attribute on the business object (`Parallel` \| `Sequential`) |
+| `cancelRemainingInstances` | Direct boolean attribute on the business object |
+| `implementation` | Direct attribute on the business object (empty/absent = engine-managed mode) |
+| `completionCondition` | `bpmn:FormalExpression` child element (same pattern as Loop/MI completion condition) |
+| `activeElementsExpression` | `evil:ActiveElements` extension element body via `setEvilBodyExtension` |
+
+The pane (`PropertiesAdHocSubprocess`, path `studio/src/modules/bpmn-editor/panes/properties/AdHocSubprocess/PropertiesAdHocSubprocess.tsx`) shows all five properties. `activeElementsExpression` uses the standard FEEL expression context (`bpmn.feel.getExpressionContext`). `completionCondition` uses a dedicated, narrower variable set (`ADHOC_COMPLETION_CONDITION_VARIABLES`: `performedActivities`, `activeCount`, `totalActivities`) because the engine evaluates it against `AdHocMode`'s dedicated completion bindings, not the standard token/context/this bindings — mixing in the standard bindings would suggest availability that does not exist at runtime.
+
 ### Service Task Implementation Model
 
 The BPMN 2.0 `implementation` attribute on `<bpmn:serviceTask>` replaced the legacy `BpmnServiceTaskType` enum and Camunda-specific `camunda:type` / `camunda:module` attributes. Built-in HTTP tasks use `"http"`; other values are free-text plugin dispatch keys.
@@ -176,6 +194,7 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 - `PropertiesComplexGatewayActivationCondition` — FEEL multi-line editor for the Complex Gateway join **activation condition** (visible only when the selected Complex Gateway is a join or mixed gateway, i.e. more than one incoming sequence flow)
 - Loop/MI: `PropertiesLoop`, `PropertiesCompletionCondition`, `PropertiesInputCollection`, `PropertiesOutputCollection`, `PropertiesParallelMiSettings`, `PropertiesSequentialMiSettings`
 - Data Object: `PropertiesDataObject`
+- `PropertiesAdHocSubprocess` — ordering, cancel remaining instances, implementation, active elements, completion condition (visible only for `BpmnElementType.AdHocSubprocess`)
 
 ### scripting group
 

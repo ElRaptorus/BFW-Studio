@@ -33,6 +33,7 @@ const ESCALATION_BOUNDARY_ALLOWED_HOST_TYPES: ReadonlySet<string> = new Set([
   'bpmn:Transaction',
   'bpmn:CallActivity',
   'bpmn:SubProcess',
+  'bpmn:AdHocSubProcess',
 ]);
 
 class CustomPopupProvider {

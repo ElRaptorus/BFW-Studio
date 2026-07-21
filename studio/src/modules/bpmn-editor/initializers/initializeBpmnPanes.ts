@@ -250,6 +250,13 @@ export function initializeBpmnPanes(bifrost: Bifrost): void {
       require('../panes/properties/Transaction/PropertiesTransaction'),
     ),
 
+    // Ad-hoc subprocess
+    bifrost.panes.getPaneViaPaneProvider(
+      'bpmn/panes/properties/PropertiesAdHocSubprocess',
+      'bpmn/pane-providers/properties/PropertiesAdHocSubprocess',
+      require('../panes/properties/AdHocSubprocess/PropertiesAdHocSubprocess'),
+    ),
+
     // Conditional events
     bifrost.panes.getPaneViaPaneProvider(
       'bpmn/panes/properties/PropertiesConditionalStartEvent',

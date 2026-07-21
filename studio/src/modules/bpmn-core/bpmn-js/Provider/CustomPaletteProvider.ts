@@ -18,7 +18,8 @@ class CustomPaletteProvider {
 
   getPaletteEntries(element: ElementLike) {
     const rootType = this.canvas.getRootElement()?.businessObject?.$type;
-    const isInsideSubprocess = rootType === 'bpmn:SubProcess' || rootType === 'bpmn:Transaction';
+    const isInsideSubprocess =
+      rootType === 'bpmn:SubProcess' || rootType === 'bpmn:Transaction' || rootType === 'bpmn:AdHocSubProcess';
 
     return function (entries) {
       if (isInsideSubprocess) {

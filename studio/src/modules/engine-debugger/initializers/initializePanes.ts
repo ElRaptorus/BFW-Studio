@@ -259,6 +259,11 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       require('../property-panel/FlowNode/CallActivityDefinitionPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
+      'EngineDebugger/panes/AdHocSubProcessDefinition',
+      'EngineDebugger/pane-providers/AdHocSubProcessDefinition',
+      require('../property-panel/FlowNode/AdHocSubProcessDefinitionPane'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/ExclusiveSplitGateway',
       'EngineDebugger/pane-providers/ExclusiveSplitGateway',
       require('../property-panel/FlowNode/ExclusiveSplitGatewayPane'),

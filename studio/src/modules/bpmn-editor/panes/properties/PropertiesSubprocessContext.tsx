@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { BpmnElementType, Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 import type { LoopCharacteristics } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
@@ -68,6 +68,9 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     return null;
   }
 
+  const isAdHoc = subprocessElement.type === BpmnElementType.AdHocSubprocess;
+  const adHocElement = isAdHoc ? (subprocessElement as any) : null;
+
   const navigateToParent = (): void => {
     const canvas = bpmnDocumentModel.modelerAdapter.getCanvas();
     const elementRegistry = bpmnDocumentModel.modelerAdapter.getElementRegistry();
@@ -100,6 +103,24 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
         value={getLoopCharacteristicsLabel(subprocessElement.loopCharacteristics)}
         disabled={true}
       />
+      {isAdHoc && (
+        <>
+          <PaneProperty
+            key={`subprocess-adhoc-ordering-${adHocElement?.ordering}`}
+            type="text"
+            label="Ordering"
+            value={adHocElement?.ordering ?? 'Parallel'}
+            disabled={true}
+          />
+          <PaneProperty
+            key={`subprocess-adhoc-completion-${adHocElement?.completionCondition}`}
+            type="text"
+            label="Completion Condition"
+            value={adHocElement?.completionCondition ? adHocElement.completionCondition : '(all activities performed)'}
+            disabled={true}
+          />
+        </>
+      )}
       <div className="form-group">
         <button type="button" className="btn btn-sm btn-secondary" onClick={navigateToParent}>
           Back to parent

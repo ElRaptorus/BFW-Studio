@@ -67,6 +67,17 @@ interface BreadcrumbEntry {
   targetSubprocessId: string | null;
 }
 
+// Transaction and AdHocSubProcess are moddle subclasses of SubProcess, so $instanceOf
+// catches all three; a strict $type check would miss the latter two.
+function isSubProcessBusinessObject(businessObject: any): boolean {
+  if (businessObject == null) {
+    return false;
+  }
+  return typeof businessObject.$instanceOf === 'function'
+    ? businessObject.$instanceOf('bpmn:SubProcess')
+    : businessObject.$type === 'bpmn:SubProcess';
+}
+
 function buildBreadcrumbChain(adapter: BpmnViewerComponentAdapter): BreadcrumbEntry[] {
   const canvas = adapter.getCanvas();
   const currentRoot = canvas.getRootElement();
@@ -81,7 +92,7 @@ function buildBreadcrumbChain(adapter: BpmnViewerComponentAdapter): BreadcrumbEn
     const name = businessObject.name || businessObject.id;
     const type: string = businessObject.$type;
 
-    if (type === 'bpmn:SubProcess') {
+    if (isSubProcessBusinessObject(businessObject)) {
       chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: businessObject.id });
     } else if (type === 'bpmn:Process') {
       chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: null });
@@ -106,7 +117,7 @@ function navigateToPlane(adapter: BpmnViewerComponentAdapter, targetSubprocessId
 
   const roots = canvas.getRootElements();
   const mainRoot = roots.find(
-    (root: any) => root.businessObject != null && root.businessObject.$type !== 'bpmn:SubProcess',
+    (root: any) => root.businessObject != null && !isSubProcessBusinessObject(root.businessObject),
   );
   if (mainRoot != null) {
     canvas.setRootElement(mainRoot);
@@ -125,7 +136,7 @@ function SubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAdapter })
   }, [adapter]);
 
   const rootElement = adapter.getCanvas().getRootElement();
-  if (rootElement?.businessObject?.$type !== 'bpmn:SubProcess') {
+  if (!isSubProcessBusinessObject(rootElement?.businessObject)) {
     return null;
   }
 

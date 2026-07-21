@@ -25,6 +25,7 @@ import type {
 import type { ProcessModelAnalyzer } from './ProcessModelAnalyzer';
 // --- Custom: BPMN Spec ---
 
+import adhocSubprocessStructure from './bpmn-spec/adhoc-subprocess-structure';
 import boundaryEventNoIncoming from './bpmn-spec/boundary-event-no-incoming';
 import cancelEventTransactionScope from './bpmn-spec/cancel-event-transaction-scope';
 import compensationBoundaryNoOutgoing from './bpmn-spec/compensation-boundary-no-outgoing';
@@ -44,6 +45,7 @@ import transactionCancelNoBoundary from './bpmn-spec/transaction-cancel-no-bound
 import transactionCancelNoCompensable from './bpmn-spec/transaction-cancel-no-compensable';
 // --- Custom: Execution Readiness ---
 
+import adhocSubprocessConfig from './execution-readiness/adhoc-subprocess-config';
 import callActivityTarget from './execution-readiness/call-activity-target';
 import errorEventConfig from './execution-readiness/error-event-config';
 import messageEventReference from './execution-readiness/message-event-reference';
@@ -141,6 +143,7 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'transaction-cancel-no-boundary': transactionCancelNoBoundary,
   'transaction-cancel-no-compensable': transactionCancelNoCompensable,
   'top-level-start-event-type': topLevelStartEventType,
+  'adhoc-subprocess-structure': adhocSubprocessStructure,
   // Structure
   'service-task-error-boundary': serviceTaskErrorBoundary,
   'timer-definition': timerDefinition,
@@ -164,6 +167,7 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'multi-instance-config': multiInstanceConfig,
   'standard-loop-config': standardLoopConfig,
   'xor-gateway-conditions': xorGatewayConditions,
+  'adhoc-subprocess-config': adhocSubprocessConfig,
   // Naming Quality
   'task-name-verb-pattern': taskNameVerbPattern,
   'end-event-generic-label': endEventGenericLabel,
@@ -258,6 +262,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'transaction-cancel-no-boundary': 'warn',
       'transaction-cancel-no-compensable': 'info',
       'top-level-start-event-type': 'warn',
+      'adhoc-subprocess-structure': 'warn',
       // Structure (AST)
       'service-task-error-boundary': 'warn',
       'timer-definition': 'error',
@@ -281,6 +286,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'multi-instance-config': 'off',
       'standard-loop-config': 'off',
       'xor-gateway-conditions': 'off',
+      'adhoc-subprocess-config': 'off',
       // Naming Quality
       'task-name-verb-pattern': 'info',
       'end-event-generic-label': 'info',
@@ -351,6 +357,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'transaction-cancel-no-boundary': 'error',
       'transaction-cancel-no-compensable': 'warn',
       'top-level-start-event-type': 'error',
+      'adhoc-subprocess-structure': 'error',
       // Structure (AST)
       'service-task-error-boundary': 'error',
       'timer-definition': 'error',
@@ -374,6 +381,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'multi-instance-config': 'error',
       'standard-loop-config': 'error',
       'xor-gateway-conditions': 'error',
+      'adhoc-subprocess-config': 'error',
       // Naming Quality
       'task-name-verb-pattern': 'warn',
       'end-event-generic-label': 'warn',
@@ -578,6 +586,12 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     suggestion:
       'Use a None, Message, Timer, or Signal start event at the process level, or move the trigger into an event sub-process.',
   },
+  'adhoc-subprocess-structure': {
+    category: 'bpmn-spec',
+    why: 'Ad-hoc sub-processes have no sequence flows between their inner activities, so Start/End Events are meaningless, nesting is unsupported, and the engine has nothing to activate if the sub-process is empty.',
+    suggestion:
+      'Remove Start/End Events from the ad-hoc sub-process, add at least one activity, and flatten any nested ad-hoc sub-process into the parent.',
+  },
 
   // Structure
   'service-task-error-boundary': {
@@ -690,6 +704,12 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     category: 'execution-readiness',
     why: 'An exclusive gateway without a default flow or complete conditions may fail at runtime.',
     suggestion: 'Add conditions to all outgoing flows, or designate one as the default flow.',
+  },
+  'adhoc-subprocess-config': {
+    category: 'execution-readiness',
+    why: 'Ad-hoc sub-processes need a deterministic way to know when to complete and, in sequential engine-managed mode, a deterministic way to choose the next activity.',
+    suggestion:
+      'Set a Completion Condition or an implementation, choose an explicit Ordering, and provide an evil:ActiveElements expression for sequential engine-managed sub-processes.',
   },
 
   // Naming Quality

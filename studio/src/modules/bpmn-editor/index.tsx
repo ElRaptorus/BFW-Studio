@@ -289,6 +289,7 @@ export function onLoad(bifrost: Bifrost): void {
     'bpmn/search-result/types/Task': 'bpmn-icon-task-none',
     'bpmn/search-result/types/TextAnnotation': 'bpmn-icon-text-annotation',
     'bpmn/search-result/types/Transaction': 'bpmn-icon-transaction',
+    'bpmn/search-result/types/AdHocSubprocess': 'bpmn-icon-ad-hoc-marker',
     'bpmn/search-result/types/UserTask': 'bpmn-icon-user-task',
     'bpmn/element/UserTask/DynamicForm': 'ph ph-magic-wand icon-dynamic-form',
     'bpmn/element/UserTask/ConfirmForm': 'ph ph-check icon-confirm-form',

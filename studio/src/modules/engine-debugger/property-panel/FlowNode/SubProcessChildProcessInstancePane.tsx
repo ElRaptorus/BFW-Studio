@@ -6,7 +6,7 @@ import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@
 import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getChildProcessInstanceId } from '../../libs/BpmnProcessHelpers';
+import { getChildProcessInstanceId, isAdHocSubprocessFni } from '../../libs/BpmnProcessHelpers';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { shouldDisplaySubProcessInstancePane } from '../ShouldBeDisplayedConditions';
 import { ChildProcessInstanceLink } from './CallActivityChildProcessInstancePane';
@@ -46,6 +46,7 @@ function SubProcessChildProcessInstancePane(props: SubProcessChildProcessInstanc
   const childProcessInstanceId = getChildProcessInstanceId(subProcessInstance);
   const isEventSubprocess =
     (subProcessInstance.typeProperties as Record<string, unknown> | null)?.isEventSubprocess === true;
+  const isAdHoc = isAdHocSubprocessFni(subProcessInstance);
 
   if (!childProcessInstanceId) {
     return <PaneBody>Child Process Instance has not yet started.</PaneBody>;
@@ -54,6 +55,7 @@ function SubProcessChildProcessInstancePane(props: SubProcessChildProcessInstanc
   return (
     <PaneBody>
       {isEventSubprocess && <span className="badge bg-info text-dark mb-2 d-inline-block">Event Sub-Process</span>}
+      {isAdHoc && <span className="badge bg-info text-dark mb-2 d-inline-block">Ad-hoc Sub-Process</span>}
       <ChildProcessInstanceLink
         model={props.model}
         processModelId={flowNode.flowNodeModel?.id}

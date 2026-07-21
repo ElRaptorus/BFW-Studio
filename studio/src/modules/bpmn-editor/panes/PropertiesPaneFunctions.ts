@@ -31,6 +31,7 @@ export function isActivityType(editorDocument: EditorDocument, editorDocumentMod
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.ServiceTask) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.Subprocess) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.Transaction) ||
+    shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.AdHocSubprocess) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.UntypedTask) ||
     shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.UserTask)
   );
@@ -160,6 +161,7 @@ const DATA_PIPELINE_BASE_TYPES: string[] = [
   BpmnElementType.ScriptTask,
   BpmnElementType.BusinessRuleTask,
   BpmnElementType.CallActivity,
+  BpmnElementType.AdHocSubprocess,
 ];
 
 const DATA_PIPELINE_PAYLOAD_CONTRACT_TYPES: string[] = [

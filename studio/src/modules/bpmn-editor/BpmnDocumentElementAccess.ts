@@ -88,6 +88,7 @@ const MODDLE_BPMN_SERVICE_TASK_TYPE = 'bpmn:ServiceTask';
 const MODDLE_BPMN_TEXT_ANNOTATION_TYPE = 'bpmn:TextAnnotation';
 const MODDLE_BPMN_GROUP_TYPE = 'bpmn:Group';
 const MODDLE_BPMN_TRANSACTION_TYPE = 'bpmn:Transaction';
+const MODDLE_BPMN_ADHOC_SUBPROCESS_TYPE = 'bpmn:AdHocSubProcess';
 const MODDLE_BPMN_BUSINESS_RULE_TASK_TYPE = 'bpmn:BusinessRuleTask';
 const MODDLE_BPMN_SUBPROCESS = 'bpmn:SubProcess';
 const MODDLE_BPMN_CONDITION_EXPRESSION_SELECTOR = 'conditionExpression';
@@ -120,7 +121,12 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
   isInsideSubprocessPlane(): boolean {
     const canvas = this.bpmnModelerProxy.getCanvas();
     const rootElement = canvas.getRootElement();
-    return rootElement?.businessObject?.$type === 'bpmn:SubProcess';
+    const rootType = rootElement?.businessObject?.$type;
+    return (
+      rootType === MODDLE_BPMN_SUBPROCESS ||
+      rootType === MODDLE_BPMN_TRANSACTION_TYPE ||
+      rootType === MODDLE_BPMN_ADHOC_SUBPROCESS_TYPE
+    );
   }
 
   getCurrentRootElement(): any {
@@ -777,6 +783,11 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         const commandToExecute = CmdHelper.updateLoopCharacteristics(element, propertyValue);
         commandStack.execute(commandToExecute.cmd, commandToExecute.context);
       },
+      adHocSubprocess: (element: any, propertyName: string, propertyValue: any) => {
+        const commandStack = this.bpmnModelerProxy.getCommandStack();
+        const commandToExecute = CmdHelper.updateAdHocSubprocess(element, propertyValue);
+        commandStack.execute(commandToExecute.cmd, commandToExecute.context);
+      },
       userTaskResources: (element: any, propertyName: string, propertyValue: any) => {
         const commandStack = this.bpmnModelerProxy.getCommandStack();
         const commandToExecute = CmdHelper.updateUserTaskResources(element, propertyValue);
@@ -1206,6 +1217,21 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       subProcess: (element: any, propertyName: string) => {
         return {
           childrenIds: element.children?.map((e) => e.id) ?? [],
+        };
+      },
+      adHocSubprocess: (element: any, propertyName: string) => {
+        const businessObject = element.businessObject;
+
+        return {
+          childrenIds: element.children?.map((e) => e.id) ?? [],
+          ordering: businessObject.ordering ?? undefined,
+          cancelRemainingInstances:
+            businessObject.cancelRemainingInstances != null
+              ? businessObject.cancelRemainingInstances === true
+              : undefined,
+          completionCondition: businessObject.completionCondition?.body ?? undefined,
+          implementation: businessObject.implementation ?? undefined,
+          activeElementsExpression: getEvilBodyValue(businessObject, 'evil:ActiveElements'),
         };
       },
       /**
@@ -1867,6 +1893,19 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
           ...genericProperties,
         };
 
+      case BpmnElementType.AdHocSubprocess: {
+        const adHocPipelineData = this.getElementPropertyValue(elementId, 'dataPipeline');
+        return {
+          type: BpmnElementType.AdHocSubprocess,
+          ...genericProperties,
+          ...this.getElementPropertyValue(elementId, 'adHocSubprocess'),
+          inputMappings: adHocPipelineData?.inputMappings ?? [],
+          outputMappings: adHocPipelineData?.outputMappings ?? [],
+          payloadContract: adHocPipelineData?.payloadContract,
+          resultContract: adHocPipelineData?.resultContract,
+        };
+      }
+
       case BpmnElementType.BusinessRuleTask: {
         const brtPipelineData = this.getElementPropertyValue(elementId, 'dataPipeline');
         return {
@@ -2259,6 +2298,9 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
 
       case MODDLE_BPMN_TRANSACTION_TYPE:
         return BpmnElementType.Transaction;
+
+      case MODDLE_BPMN_ADHOC_SUBPROCESS_TYPE:
+        return BpmnElementType.AdHocSubprocess;
 
       case MODDLE_BPMN_BUSINESS_RULE_TASK_TYPE:
         return BpmnElementType.BusinessRuleTask;

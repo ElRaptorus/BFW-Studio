@@ -1,5 +1,6 @@
 import { CustomPropertyHandler } from './CustomPropertyHandler';
 import { MultiCommandHandler } from './MultiCommandHandler';
+import { UpdateAdHocSubprocessHandler } from './UpdateAdHocSubprocessHandler';
 import { UpdateBusinessObjectHandler } from './UpdateBusinessObject';
 import { UpdateBusinessObjectListHandler } from './UpdateBusinessObjectList';
 import { UpdateBusinessRuleTaskHandler } from './UpdateBusinessRuleTaskHandler';
@@ -28,6 +29,7 @@ import { UpdateUserTaskResourcesHandler } from './UpdateUserTaskResourcesHandler
 
 export const CommandHandler = {
   [BFR_LINTER_RULESET_SCORE_COMMAND]: UpdateEvilLinterRulesetScoreHandler,
+  UpdateAdHocSubprocessHandler: UpdateAdHocSubprocessHandler,
   CustomPropertyHandler: CustomPropertyHandler,
   MultiCommandHandler: MultiCommandHandler,
   UpdateBusinessObjectHandler: UpdateBusinessObjectHandler,

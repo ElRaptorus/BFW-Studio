@@ -319,7 +319,7 @@ export default class BpmnDocumentRenderer extends React.Component<EditorDocument
       const name = businessObject.name || businessObject.id;
       const type = businessObject.$type;
 
-      if (type === 'bpmn:SubProcess') {
+      if (typeof businessObject.$instanceOf === 'function' && businessObject.$instanceOf('bpmn:SubProcess')) {
         chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: businessObject.id });
       } else if (type === 'bpmn:Process') {
         chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: null });

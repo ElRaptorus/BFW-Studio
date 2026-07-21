@@ -9,6 +9,7 @@ import type {
   EventDefinition,
   FlowNode,
   SequenceFlow,
+  SubProcessTypeData,
 } from '@elraptorus/daemonengine_sdk';
 
 export type { BpmnDefinitions, BpmnProcess, FlowNode, SequenceFlow, DataObjectReference, DataStoreReference };
@@ -77,6 +78,42 @@ function collectSubprocessDataObjectReferences(flowNodes: FlowNode[], collected:
 
 export function getAllEmbeddedSubProcesses(process: BpmnProcess): FlowNode[] {
   return getAllFlowNodes(process).filter((flowNode) => flowNode.type === FlowNodeType.SubProcess);
+}
+
+/**
+ * True when `flowNode` is a `<bpmn:adHocSubProcess>`. Ad-hoc subprocesses
+ * are parsed as ordinary `sub_process` type data with `isAdHoc: true` —
+ * there is no dedicated `FlowNodeType` enum value.
+ */
+export function isAdHocSubprocess(flowNode: FlowNode | undefined): boolean {
+  return flowNode?.type === FlowNodeType.SubProcess && (flowNode.typeData as SubProcessTypeData).isAdHoc === true;
+}
+
+/**
+ * Returns the inner activities of an ad-hoc (or embedded) subprocess,
+ * excluding Start/End/Boundary events which are not activatable.
+ */
+export function getAdHocInnerActivities(flowNode: FlowNode): FlowNode[] {
+  if (flowNode.typeData.type !== 'sub_process') {
+    return [];
+  }
+  return flowNode.typeData.flowNodes.filter(
+    (node) =>
+      node.type !== FlowNodeType.StartEvent &&
+      node.type !== FlowNodeType.EndEvent &&
+      node.type !== FlowNodeType.BoundaryEvent,
+  );
+}
+
+/**
+ * True when the given FlowNodeInstance is the shell FNI of an ad-hoc
+ * subprocess. Checks both the persisted `is_ad_hoc` key (present after a
+ * fresh GraphQL load) and the `isAdHocSubprocess` key (merged in live from
+ * the `SubProcessChildStarted` event).
+ */
+export function isAdHocSubprocessFni(flowNodeInstance: FlowNodeInstance | null | undefined): boolean {
+  const typeProperties = flowNodeInstance?.typeProperties as Record<string, unknown> | null;
+  return typeProperties?.['is_ad_hoc'] === true || typeProperties?.['isAdHocSubprocess'] === true;
 }
 
 export function getEventDefinition(flowNode: FlowNode): EventDefinition | null {

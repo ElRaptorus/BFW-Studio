@@ -23,10 +23,12 @@ import {
   getEventDefinition,
   getTriggererFlowNodeInstance,
   hasLoopCharacteristics,
+  isAdHocSubprocess,
   isFlowNodeInParallelRunningBranch,
   resolveMessageName,
   resolveSignalName,
 } from '../libs/BpmnProcessHelpers';
+import { createAdHocActivationCountBadge } from './AdHocActivationCountBadge';
 import { createHasUnfinishedInstancesInfoBadge } from './HasUnfinishedInstancesInfoBadge';
 import { createParentProcessInstanceLink } from './ParentProcessInstanceLink';
 import { createReviewCompletedTaskLink } from './ReviewCompletedTaskLink';
@@ -147,7 +149,9 @@ export function createFlowNodeInstanceCover(
   if (flowNodeIsAnEvent) {
     flowNodeCover = `bpmn-element-overlay-backdrop--rounded ${baseCoverStyle}`;
   } else if (flowNode.flowNodeModel?.type === FlowNodeType.SubProcess) {
-    flowNodeCover = `${baseCoverStyle} bpmn-element-overlay-backdrop--subprocess`;
+    flowNodeCover = isAdHocSubprocess(flowNode.flowNodeModel)
+      ? `${baseCoverStyle} bpmn-element-overlay-backdrop--subprocess bpmn-element-overlay-backdrop--adhoc-subprocess`
+      : `${baseCoverStyle} bpmn-element-overlay-backdrop--subprocess`;
   } else {
     flowNodeCover = baseCoverStyle;
   }
@@ -213,6 +217,14 @@ export async function createFlowNodeInstanceOverlays(
     overlays.push(
       createFlowNodeExecutionCountBadge(flowNode.id, executionCycle, model, flowNode.flowNodeInstances.length),
     );
+  }
+
+  if (flowNodeModel && isAdHocSubprocess(flowNodeModel)) {
+    const typeProperties = selectedFlowNodeInstance.typeProperties as Record<string, unknown> | null;
+    const activationCount = Number(typeProperties?.['totalActivations'] ?? typeProperties?.['activationCount'] ?? 0);
+    if (activationCount > 0) {
+      overlays.push(createAdHocActivationCountBadge(flowNode.id, activationCount, studio));
+    }
   }
 
   const childProcessInstanceId = getChildProcessInstanceId(selectedFlowNodeInstance);

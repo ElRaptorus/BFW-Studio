@@ -435,6 +435,15 @@ export class EngineAdapter {
         }
         this.debouncedFlushPendingFniDetails();
         break;
+
+      case 'adhoc-activity-activated':
+      case 'adhoc-subprocess-completed':
+        this.applyFniSnapshotUpdates(snapshot);
+        for (const id of affectedFniIds) {
+          this.pendingFniDetailIds.add(id);
+        }
+        this.debouncedFlushPendingFniDetails();
+        break;
     }
   }
 

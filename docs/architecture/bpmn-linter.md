@@ -244,6 +244,21 @@ These `bpmn-spec` rules backstop the modeler's replace-menu gating for BPMN file
 | `cancel-event-transaction-scope` | `bpmn-spec/cancel-event-transaction-scope.ts` | A Cancel End Event whose parent is not a `bpmn:Transaction` (BSC-017), and a Cancel Boundary Event whose host is not a `bpmn:Transaction` (BSC-018). Because transaction sub-processes are not yet supported by the engine (and `bpmn:Transaction` was removed from the modeler whitelist), this effectively forbids all cancel events today; the transaction check keeps the rule forward-compatible so cancel events become valid automatically once transaction support lands. |
 | `top-level-start-event-type` | `bpmn-spec/top-level-start-event-type.ts` | A Start Event directly under a `bpmn:Process` whose trigger type is Error, Escalation, or Compensation (BSC-019). These require a surrounding scope instance and are only valid inside an Event Sub-Process. Conditional is intentionally **not** flagged (its top-level semantics are left unchanged for now). Defense-in-depth: redundant with the engine validator and the stock replace menu, useful mainly for imports. |
 
+### Ad-hoc Sub-Process rules
+
+These rules mirror the engine's Ad-hoc Sub-Process deploy-time validator (AH-D7, AH-D15, AH-D18) plus advisory execution-readiness checks. Both are registered in `customRuleFactories`.
+
+| Rule | Path | Category | `bpmn-development` | `bpmn-production-ready` | Reports |
+|------|------|----------|---------------------|--------------------------|---------|
+| `adhoc-subprocess-structure` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | Start Events inside an ad-hoc sub-process (BSC-021); End Events inside (BSC-021); zero inner activities (BSC-021); nested `bpmn:AdHocSubProcess` (BSC-021, mirrors the `is_transaction` nesting restriction); an ad-hoc sub-process inside an Event Sub-Process (BSC-021, AH-D15 — a platform decision, not a spec violation) |
+| `adhoc-subprocess-config` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | No `completionCondition` and no `implementation` (EXR-014 — informational: the subprocess auto-completes per AH-D9); an empty `implementation` attribute (EXR-014); `ordering="Sequential"` with no `implementation` and no `evil:ActiveElements` (EXR-014, mirrors the engine's AH-D18 deploy-time rejection); no explicit `ordering` (EXR-014 — advisory, defaults to Parallel per AH-D5) |
+
+`adhoc-subprocess-structure` uses `is(node, 'bpmn:AdHocSubProcess')` from `bpmnlint-utils`, so it fires on the ad-hoc element itself (not its children) and inspects `node.flowElements` directly — the same pattern as the Event Subprocess structure rules above. `isInsideEventSubprocess` walks `$parent` looking for a `bpmn:SubProcess` with `triggeredByEvent === true`, so a nested ad-hoc-inside-embedded-inside-ESP diagram is still caught regardless of nesting depth.
+
+`adhoc-subprocess-config` reads `evil:ActiveElements` via the shared `extensionElements.values` lookup pattern (same as `evil:LoopInterval`, `evil:CorrelationKey`, etc.) and mirrors the engine's `AdHocMode` deploy-time validation exactly, so a diagram that passes `bpmn-production-ready` linting will also pass the engine's deploy-time validator for these specific checks.
+
+Unit tests: `studio/test/unit/bpmn-linter/adhoc-subprocess-rules.test.ts` (15 assertions across both rules). Integration test: `studio/test/integration/bpmn-linter/adhoc-rules.test.ts` opens `test-solution-bpmn/adhoc-subprocess.bpmn` (config violation) and `adhoc-subprocess-invalid.bpmn` (structure violation) with the linter enabled and `bpmn-production-ready` active, asserting the Findings pane reports both.
+
 ### Profiles and Custom Rulesets
 
 Two built-in profiles are immutable and defined in `rules/config.ts`:
