@@ -123,6 +123,21 @@ const messageDisposers = new Map<string, { dispose: () => void }>();
 let sidebarVisible = true;
 
 module.exports.activate = async (api: PluginApi): Promise<void> => {
+  // Fail-loud guard: the iframes load `webview/dist/*.html`, which are produced by esbuild
+  // (`node webview/build.mjs`), NOT by `tsc`. If the webview was built with `tsc` or not built
+  // at all, those HTML files are missing and every iframe renders a blank "Not found" page.
+  // Surface that here instead of failing silently.
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const editorEntryHtml = path.join(api.env.pluginPath, 'webview', 'dist', 'index.html');
+  if (!fs.existsSync(editorEntryHtml)) {
+    console.warn(
+      `[webview-showcase] Webview build missing — '${editorEntryHtml}' not found. ` +
+        `Build the webview with esbuild ("node webview/build.mjs"); do NOT run "tsc" in webview/, ` +
+        `which only type-checks. Until it is built, the editor tab and sidebar pane show a blank "Not found" page.`,
+    );
+  }
+
   await api.editors.registerWebviewDocumentType({
     id: 'showcase',
     displayName: 'Webview Showcase',

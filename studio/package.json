@@ -136,13 +136,14 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.64.0",
     "vitest": "^4.1.10",
-    "webdriverio": "9.29.1"
+    "webdriverio": "9.30.0"
   },
   "overrides": {
     "esbuild": ">=0.28.1",
     "js-yaml": "^4.2.0",
     "monaco-editor": {
       "dompurify": "$dompurify"
-    }
+    },
+    "@wdio/native-utils": "^2.5.0"
   }
 }
