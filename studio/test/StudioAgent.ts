@@ -506,6 +506,36 @@ export class StudioAgent {
     await this.clickOn(`[data-test--menubar--button-for-command="${commandName}"]`);
   }
 
+  /**
+   * Double clicks on the element identified by the given CSS `selector`.
+   *
+   * **IMPORTANT:** If the query results in more than one element, the first element is clicked.
+   */
+  async doubleClickOn(selector: string): Promise<void> {
+    await this.scrollIntoViewIfNeeded(selector);
+    await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
+
+    await this.testDriver
+      .client!.$(selector)
+      .getElement()
+      .then((element) => element.doubleClick());
+  }
+
+  /**
+   * Moves the mouse over the element identified by the given CSS `selector`, triggering hover.
+   *
+   * **IMPORTANT:** If the query results in more than one element, the first element is targeted.
+   */
+  async hoverOn(selector: string): Promise<void> {
+    await this.scrollIntoViewIfNeeded(selector);
+    await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
+
+    await this.testDriver
+      .client!.$(selector)
+      .getElement()
+      .then((element) => element.moveTo());
+  }
+
   async getAttribute(selector: string, attributeName: string): Promise<any> {
     return this.testDriver
       .client!.$(selector)

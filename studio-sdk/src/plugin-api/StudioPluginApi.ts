@@ -2,6 +2,7 @@ import type { BpmnApi } from './BpmnApi';
 import type { CommandsApi } from './CommandsApi';
 import type { DiagnosticsApi } from './DiagnosticsApi';
 import type { DialogsApi } from './DialogsApi';
+import type { DmnApi } from './DmnApi';
 import type { EditorsApi } from './EditorsApi';
 import type { EventsApi } from './EventsApi';
 import type { MenuBarApi } from './MenuBarApi';
@@ -45,6 +46,8 @@ export interface StudioPluginApi {
   readonly diagnostics: DiagnosticsApi;
   /** Modal dialog and native file picker API. */
   readonly dialogs: DialogsApi;
+  /** DMN DRD editor interaction: overlays, element events, queries. Requires 'dmn' permission. */
+  readonly dmn: DmnApi;
   /** Toast notification management. */
   readonly notifications: NotificationsApi;
   /** Settings read/write and change observation. */

@@ -24,6 +24,7 @@ import type { WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
 import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { EVENT_SETTINGS_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/SettingsEvents';
 import { BpmnApiBridge } from './BpmnApiBridge';
+import { DmnApiBridge } from './DmnApiBridge';
 import { createIframeDocumentRendererConstructor } from './IframeDocumentRenderer';
 import { createIframePaneProvider } from './IframePaneProvider';
 import type { PluginHost } from './PluginHost';
@@ -116,12 +117,14 @@ export class PluginHostBridge {
   private contributionRegistrar: ContributionRegistrar | null = null;
 
   private bpmnBridge: BpmnApiBridge;
+  private dmnBridge: DmnApiBridge;
 
   constructor(bifrost: Bifrost, pluginHost: PluginHost, pluginIframeManager: PluginIframeManager) {
     this.bifrost = bifrost;
     this.pluginHost = pluginHost;
     this.pluginIframeManager = pluginIframeManager;
     this.bpmnBridge = new BpmnApiBridge(bifrost, pluginHost);
+    this.dmnBridge = new DmnApiBridge(bifrost, pluginHost);
   }
 
   setContributionRegistrar(registrar: ContributionRegistrar): void {
@@ -199,6 +202,22 @@ export class PluginHostBridge {
           this.permissionGate.assert(callerName, 'bpmn.renderer', `bpmn.${method}`);
         }
         return this.bpmnBridge.handleApiRequest(method, args, callerName);
+      case 'dmn':
+        this.permissionGate.assert(callerName, 'dmn', `dmn.${method}`);
+        if (
+          method === 'registerPaletteEntry' ||
+          method === 'unregisterPaletteEntry' ||
+          method === 'registerContextPadEntry' ||
+          method === 'unregisterContextPadEntry' ||
+          method === 'updateContextPadEntry' ||
+          method.startsWith('modeling.')
+        ) {
+          this.permissionGate.assert(callerName, 'dmn.modelling', `dmn.${method}`);
+        }
+        if (method === 'postToRendererModule') {
+          this.permissionGate.assert(callerName, 'dmn.renderer', `dmn.${method}`);
+        }
+        return this.dmnBridge.handleApiRequest(method, args, callerName);
       default:
         throw new Error(`Unknown API namespace: ${namespace}`);
     }
@@ -544,6 +563,16 @@ export class PluginHostBridge {
       return;
     }
 
+    if (namespace === 'dmn') {
+      const pluginName = callerName ?? '_unknown';
+      this.permissionGate.assert(pluginName, 'dmn', `dmn.${method}`);
+      if (method === 'onRendererModuleMessage') {
+        this.permissionGate.assert(pluginName, 'dmn.renderer', `dmn.${method}`);
+      }
+      this.dmnBridge.registerCallback(payload, (name) => this.getOrCreatePluginGroup(name));
+      return;
+    }
+
     console.warn(
       `[PluginHostBridge] Unhandled callback registration: ${namespace}.${method} (plugin: ${callerName ?? 'unknown'}, callbackId: ${callbackId})`,
     );
@@ -562,6 +591,7 @@ export class PluginHostBridge {
 
   deliverRendererModuleMessage(pluginName: string, data: unknown): void {
     this.bpmnBridge.deliverRendererModuleMessage(pluginName, data);
+    this.dmnBridge.deliverRendererModuleMessage(pluginName, data);
   }
 
   disposePlugin(pluginName: string): void {
@@ -575,6 +605,7 @@ export class PluginHostBridge {
     }
 
     this.bpmnBridge.disposePlugin(pluginName);
+    this.dmnBridge.disposePlugin(pluginName);
     this.bifrost.diagnostics.clearDiagnostics(`plugin.${pluginName}`);
 
     const panePrefix = `plugin.${pluginName}.`;
@@ -639,6 +670,7 @@ export class PluginHostBridge {
     }
 
     this.bpmnBridge.dispose();
+    this.dmnBridge.dispose();
   }
 
   private getOrCreatePluginGroup(pluginName: string): Map<string, { disposer: () => void }> {

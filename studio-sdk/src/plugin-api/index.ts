@@ -28,6 +28,34 @@ export type {
   PluginBpmnPaletteEntry,
 } from './BpmnApi';
 export { PluginBpmnOverlayPosition, PluginBpmnOverlayStyle } from './BpmnApi';
+export type {
+  AppendElementDescriptor as DmnAppendElementDescriptor,
+  ContextPadEntryUpdate as DmnContextPadEntryUpdate,
+  CreateConnectionResult as DmnCreateConnectionResult,
+  CreateElementDescriptor,
+  CreateElementResult,
+  Disposable as DmnDisposable,
+  DmnApi,
+  DmnElementEvent,
+  DmnElementDetailSnapshot,
+  DmnElementSnapshot,
+  DmnModelingApi,
+  DmnOverlayDescriptor,
+  DmnOverlayFactoryContext,
+  DmnOverlayFactoryOptions,
+  DmnViewChangedEvent,
+  DmnViewType,
+  MoveDelta as DmnMoveDelta,
+  OverlayContextEvent as DmnOverlayContextEvent,
+  PluginDmnContextPadEntry,
+  PluginDmnOverlay,
+  PluginDmnOverlayAction,
+  PluginDmnOverlayBadge,
+  PluginDmnOverlayIcon,
+  PluginDmnOverlayStatus,
+  PluginDmnPaletteEntry,
+} from './DmnApi';
+export { PluginDmnOverlayPosition, PluginDmnOverlayStyle } from './DmnApi';
 export type { CommandsApi } from './CommandsApi';
 export type { DiagnosticsApi } from './DiagnosticsApi';
 export type { DialogsApi } from './DialogsApi';
@@ -92,6 +120,9 @@ export type {
   ManifestBpmnPaletteEntry,
   ManifestCommand,
   ManifestContributions,
+  ManifestDmnContextPadEntry,
+  ManifestDmnModule,
+  ManifestDmnPaletteEntry,
   ManifestKeybinding,
   ManifestMenuItem,
   ManifestPaneContribution,

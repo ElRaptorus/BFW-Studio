@@ -4,7 +4,9 @@ export type StudioEventName =
   | 'solutionChanged'
   | 'gitStatusChanged'
   | 'pluginOverlayFactoriesChanged'
+  | 'pluginDmnOverlayFactoriesChanged'
   | 'unspecifiedGlobalUpdate';
 
 export type StudioSolutionChangedEvent = 'solutionChanged';
-export type StudioEmittableEventName = 'unspecifiedGlobalUpdate' | 'pluginOverlayFactoriesChanged';
+export type StudioEmittableEventName =
+  'unspecifiedGlobalUpdate' | 'pluginOverlayFactoriesChanged' | 'pluginDmnOverlayFactoriesChanged';

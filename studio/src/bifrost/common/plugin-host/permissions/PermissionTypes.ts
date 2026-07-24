@@ -7,6 +7,8 @@
  *
  * BPMN permissions form a hierarchy: 'bpmn.renderer' implies 'bpmn.modelling'
  * implies 'bpmn'. A plugin only needs to declare the highest tier it requires.
+ * DMN permissions mirror the same hierarchy: 'dmn.renderer' implies
+ * 'dmn.modelling' implies 'dmn'.
  */
 export type PluginPermission =
   | 'filesystem'
@@ -46,6 +48,8 @@ export const ALL_PERMISSIONS: readonly PluginPermission[] = [
 export const PERMISSION_HIERARCHY: Partial<Record<PluginPermission, PluginPermission[]>> = {
   'bpmn.renderer': ['bpmn.modelling', 'bpmn'],
   'bpmn.modelling': ['bpmn'],
+  'dmn.renderer': ['dmn.modelling', 'dmn'],
+  'dmn.modelling': ['dmn'],
 };
 
 export interface PluginPermissionSet {

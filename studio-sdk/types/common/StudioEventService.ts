@@ -50,6 +50,13 @@ export declare abstract class StudioEventService {
   on(eventName: 'pluginOverlayFactoriesChanged', listener: () => void): StudioEventSubscription;
 
   /**
+   * Fired when the set of registered plugin DMN overlay factories changes
+   * (factory registered or unregistered). DMN-aware views subscribe
+   * to this event to trigger an overlay refresh cycle.
+   */
+  on(eventName: 'pluginDmnOverlayFactoriesChanged', listener: () => void): StudioEventSubscription;
+
+  /**
    * Registers an event listener for a Studio Event, which is only executed once.
    */
   once(eventName: 'ready', listener: () => void): StudioEventSubscription;
@@ -57,6 +64,7 @@ export declare abstract class StudioEventService {
   once(eventName: 'solutionChanged', listener: (solutionName: string) => void): StudioEventSubscription;
   once(eventName: 'settingsUpdate', listener: (settingName: string, value: any) => void): StudioEventSubscription;
   once(eventName: 'pluginOverlayFactoriesChanged', listener: () => void): StudioEventSubscription;
+  once(eventName: 'pluginDmnOverlayFactoriesChanged', listener: () => void): StudioEventSubscription;
 
   /**
    * Emits an unspecified global update to trigger re-rendering of all UI components.
@@ -67,4 +75,5 @@ export declare abstract class StudioEventService {
    */
   emit(eventName: 'unspecifiedGlobalUpdate'): void;
   emit(eventName: 'pluginOverlayFactoriesChanged'): void;
+  emit(eventName: 'pluginDmnOverlayFactoriesChanged'): void;
 }

@@ -1,0 +1,15 @@
+{
+  "name": "dmn-overlay-demo",
+  "version": "1.0.0",
+  "displayName": "DMN Overlay Demo",
+  "description": "Fixture plugin for testing DMN overlay API, element events, and view awareness.",
+  "main": "index.js",
+  "readme": "README.md",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "DMN Overlay Demo",
+    "permissions": [
+      "dmn"
+    ]
+  }
+}

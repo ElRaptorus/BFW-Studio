@@ -1,0 +1,12 @@
+{
+  "name": "dmn-no-perm",
+  "version": "1.0.0",
+  "displayName": "DMN No Permission",
+  "description": "Fixture plugin for testing DMN API permission denial (no dmn permission declared).",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "DMN No Permission",
+    "permissions": []
+  }
+}

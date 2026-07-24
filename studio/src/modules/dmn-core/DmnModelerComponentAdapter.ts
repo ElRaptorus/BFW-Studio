@@ -14,6 +14,8 @@ import type { Studio } from '@evil/bifrost_fw_sdk';
 import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import { DmnCommandHandler } from './dmn-js/CommandHandler/index';
+import { PluginDmnContextPadProvider } from './dmn-js/Provider/PluginDmnContextPadProvider';
+import { PluginDmnPaletteProvider } from './dmn-js/Provider/PluginDmnPaletteProvider';
 import { type DmnSanitizerBridgeApi, createDmnSanitizerModule } from './sanitizer/SanitizerBridge';
 
 export const EVENT_DMN_ADAPTER_READY_FOR_INTERACTION = 'EVENT_DMN_ADAPTER_READY_FOR_INTERACTION';
@@ -49,6 +51,9 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
   ) {
     super();
     this.log = Debug(`dmn/${this.constructor.name}(${uri})`);
+
+    PluginDmnPaletteProvider.setStudio(studio);
+    PluginDmnContextPadProvider.setStudio(studio);
 
     // dmn-js is ESM; Rspack handles the import at bundle time
 
@@ -434,6 +439,58 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
   getDrdCommandStack(): CommandStack {
     const viewer = this.getDrdViewer();
     return viewer.get('commandStack') as CommandStack;
+  }
+
+  getDrdModeling(): any | null {
+    const viewer = this.getDrdViewer();
+    if (!viewer) {
+      return null;
+    }
+    return viewer.get('modeling');
+  }
+
+  getDrdEventBus(): any | null {
+    const viewer = this.getDrdViewer();
+    if (!viewer) {
+      return null;
+    }
+    return viewer.get('eventBus');
+  }
+
+  getDrdPalette(): any | null {
+    const viewer = this.getDrdViewer();
+    if (!viewer) {
+      return null;
+    }
+    try {
+      return viewer.get('palette');
+    } catch {
+      return null;
+    }
+  }
+
+  getDrdContextPad(): any | null {
+    const viewer = this.getDrdViewer();
+    if (!viewer) {
+      return null;
+    }
+    try {
+      return viewer.get('contextPad');
+    } catch {
+      return null;
+    }
+  }
+
+  getModelerComponentByName<T = any>(name: string): T | null {
+    const viewer = this.getDrdViewer();
+    if (!viewer) {
+      return null;
+    }
+    try {
+      return viewer.get(name) as T;
+    } catch {
+      return null;
+    }
   }
 
   getGrid(): any {

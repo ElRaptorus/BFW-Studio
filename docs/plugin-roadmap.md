@@ -1,8 +1,8 @@
 # Bifrost Forge World — Extension Mechanism Roadmap
 
-> **Status**: ACTIVE — Phase 8 complete, Phase 9 next
+> **Status**: ACTIVE — Phase 9 complete, Phase 10 next
 > **Created**: 2026-05-12
-> **Last updated**: 2026-06-24
+> **Last updated**: 2026-07-24
 
 ---
 
@@ -27,7 +27,7 @@ The roadmap is organized into **phases** (numbered 0 through 11), each broken in
 - [Phase 6 (**DONE**) — Advanced Plugin Capabilities](#phase-6--advanced-plugin-capabilities)
 - [Phase 7 (**DONE**) — Per-Plugin Sandboxing](#phase-7--per-plugin-sandboxing)
 - [Phase 8 (**DONE**) — Editor Document Enrichment (BPMN)](#phase-8--editor-document-enrichment)
-- [Phase 9 — DMN Editor Enrichment](#phase-9--dmn-editor-enrichment)
+- [Phase 9 (**DONE**) — DMN Editor Enrichment](#phase-9--dmn-editor-enrichment)
 - [Phase 10 — SDK Audit & Refactoring](#phase-10--sdk-audit--refactoring)
 - [Phase 11 — Marketplace](#phase-11--marketplace)
 - [Appendix A — Architecture Principles](#appendix-a--architecture-principles)
@@ -1436,7 +1436,7 @@ MyRendererModule.$inject = ['eventBus', 'pluginChannel'];
 
 ---
 
-### Batch 8.5 — Editor Document type enrichment (generic, beyond BPMN)
+### Batch 8.5 [CANCELED] — Editor Document type enrichment (generic, beyond BPMN)
 
 **What it introduces**:
 - Generalizes the overlay and event APIs from Batch 8.1 to work with **any editor document type**, not just BPMN:
@@ -1483,15 +1483,17 @@ api.editors.onElementSelected(uri, callback);
 
 ---
 
-## Phase 9 — DMN Editor Enrichment
+## [DONE] Phase 9 — DMN Editor Enrichment
 
 **Goal**: Extend the plugin enrichment capabilities from Phase 8 to the DMN editor. Plugins should be able to enrich the DMN Decision Requirements Diagram (DRD) with custom overlays, event listeners, palette/context pad entries, modeling operations, and renderer module injection — mirroring the BPMN enrichment API. Phase 8's `BpmnApiBridge` establishes the patterns; this phase implements a parallel `DmnApiBridge` (no shared generic bridge — per Phase 8 Decision #2).
 
 **Prerequisite**: Phase 8 (BPMN Editor Enrichment) must be complete.
 
-**Permission model**: `dmn` → `dmn.modelling` → `dmn.renderer` (mirrors the BPMN tiered model).
+**Permission model (implemented)**: `dmn` → `dmn.modelling` → `dmn.renderer` (mirrors the BPMN tiered model).
 
 **Scope**: The DMN editor has four views: **DRD** (Decision Requirements Diagram), **Decision Table**, **Literal Expression**, and **Boxed Expression**. Plugin enrichment targets the **DRD view only** — it is the diagrammatic view with positioned elements, a palette, and a context pad. The expression editors (table, literal, boxed) are data-entry views without the spatial element model that overlays and palette entries require.
+
+**Completed**: 2026-07-24. All batches (9.1–9.5 below) delivered. Detailed plan and checklist: `.cursor/plans/phase9_dmn_plugin_api_c4e19a7b.plan.md`. Architecture reference: `docs/architecture/plugin-dmn-enrichment.md` and `docs/architecture/dmn-editor.md`. Note: the pre-Phase-7 internal `api/DmnApi.ts` / `api/StudioPluginApi.ts` class hierarchy referenced in the original batch descriptions below was removed on 2026-07-24 (see `docs/decisions.md`) — the actual plugin-facing API is built inline by `createPluginApi()` in `studio/src/bifrost/common/plugin-host/sandbox/sandbox-worker.ts`, with public types defined in `studio-sdk/src/plugin-api/DmnApi.ts` and `studio-sdk/src/plugin-api/StudioPluginApi.ts`.
 
 ### DMN editor infrastructure (current state)
 
@@ -1514,7 +1516,7 @@ Key differences:
 
 ---
 
-### Batch 9.1 — DMN Enrichment Bridge (`DmnEnrichmentBridge`)
+### [DONE] Batch 9.1 — DMN Enrichment Bridge (`DmnEnrichmentBridge`)
 
 **What it introduces**:
 - A `DmnApiBridge` class parallel to `BpmnApiBridge` (no shared generic bridge — each diagram type gets its own explicit API per Phase 8 Decision #2).
@@ -1541,17 +1543,18 @@ Key differences:
 - `getActiveView(uri)` returns the current view type.
 - Plugins should subscribe to `onViewChanged` to know when DRD-specific features (overlays, palette) are available.
 
-**Files to create/modify**:
+**Files created/modified** (actual, post-legacy-loader-removal architecture):
 - `studio/src/bifrost/electron-renderer/plugin-host/DmnApiBridge.ts` — DMN-specific `EditorEnrichmentBridge` implementation
-- `studio/src/bifrost/common/plugin-host/api/DmnApi.ts` — Plugin Host child process side (plugin-facing DMN API)
-- `studio/src/bifrost/common/plugin-host/api/StudioPluginApi.ts` — add `readonly dmn: DmnApi`
+- `studio-sdk/src/plugin-api/DmnApi.ts` — plugin-facing DMN API type definitions
+- `studio-sdk/src/plugin-api/StudioPluginApi.ts` — `readonly dmn: DmnApi`
+- `studio/src/bifrost/common/plugin-host/sandbox/sandbox-worker.ts` — inline `createPluginApi()` wires the `dmn` namespace
 - `studio/src/bifrost/electron-renderer/plugin-host/PluginHostBridge.ts` — register DMN bridge, add `dmn` namespace dispatch
 
 **Verification**: A test plugin places overlays on DMN DRD elements, subscribes to selection events, and queries the DMN model. Overlays appear only when the DRD view is active.
 
 ---
 
-### Batch 9.2 — Declarative DRD palette & context pad contributions
+### [DONE] Batch 9.2 — Declarative DRD palette & context pad contributions
 
 **What it introduces**:
 - Manifest keys `contributes.dmnPalette` and `contributes.dmnContextPad` — same schema as the BPMN equivalents, but targeting the DRD viewer.
@@ -1561,10 +1564,10 @@ Key differences:
 
 **Architecture note**: Phase 8 introduces a `PluginBpmnContributionStore` for BPMN. This phase introduces a parallel `PluginDmnContributionStore`. If the two are structurally identical, they can share a generic `PluginDiagramContributionStore<T>` base class.
 
-**Files to create/modify**:
-- `studio/src/modules/dmn-core/modules/PluginDmnPaletteProvider.ts`
-- `studio/src/modules/dmn-core/modules/PluginDmnContextPadProvider.ts`
-- `studio/src/modules/dmn-core/modules/PluginDmnContributionStore.ts`
+**Files created/modified** (actual paths):
+- `studio/src/modules/dmn-core/dmn-js/Provider/PluginDmnPaletteProvider.ts`
+- `studio/src/modules/dmn-core/dmn-js/Provider/PluginDmnContextPadProvider.ts`
+- `studio/src/modules/dmn-core/PluginDmnContributionStore.ts`
 - `studio/src/modules/dmn-core/index.ts` — register the palette/context pad modules
 - `studio/src/modules/dmn-core/DmnModelerComponentAdapter.ts` — wire `setBifrost()` on providers
 - `studio/src/bifrost/common/plugin-host/manifest/ManifestTypes.ts` — add `dmnPalette`, `dmnContextPad`
@@ -1575,7 +1578,7 @@ Key differences:
 
 ---
 
-### Batch 9.3 — DMN modeling API
+### [DONE] Batch 9.3 — DMN modeling API
 
 **What it introduces**:
 - `api.dmn.modeling.*` — a safe, serializable modeling API for DMN documents:
@@ -1594,15 +1597,15 @@ api.dmn.modeling.moveElement(uri, 'Decision_1', { x: 50, y: 0 });
 
 **Architecture**: The `DmnApiBridge` resolves the DRD viewer from `DmnModelerComponentAdapter` and calls the diagram-js `modeling` service directly. Only works when the DRD view is active — modeling operations on expression views are not supported via the plugin API.
 
-**Files to create/modify**:
-- `studio/src/bifrost/common/plugin-host/api/DmnApi.ts` — extend with modeling sub-namespace
+**Files created/modified** (actual paths):
+- `studio-sdk/src/plugin-api/DmnApi.ts` — modeling sub-namespace types
 - `studio/src/bifrost/electron-renderer/plugin-host/DmnApiBridge.ts` — modeling execution + validation
 
 **Verification**: A test plugin modifies DMN element properties, creates decisions, connects requirements. Operations are undoable. Invalid operations return clear error messages.
 
 ---
 
-### Batch 9.4 — DMN renderer module injection
+### [DONE] Batch 9.4 — DMN renderer module injection
 
 **What it introduces**:
 - Plugins can declare `contributes.dmnModules` in the manifest (parallel to `bpmnModules`):
@@ -1626,8 +1629,8 @@ api.dmn.modeling.moveElement(uri, 'Decision_1', { x: 50, y: 0 });
 
 **Reuse from Phase 8**: The `PluginModuleLoader` from Batch 8.4 can be generalized to handle both BPMN and DMN module loading. Alternatively, a `DmnPluginModuleLoader` can parallel the BPMN one if the adapter differences warrant it (DMN modules go into `drd.additionalModules`, not top-level `additionalModules`).
 
-**Files to create/modify**:
-- `studio/src/modules/dmn-core/modules/PluginDmnModuleLoader.ts` (or extend the BPMN loader)
+**Files created/modified** (actual paths):
+- `studio/src/modules/dmn-core/plugin-modules/PluginDmnModuleLoader.ts`
 - `studio/src/modules/dmn-core/DmnModelerModuleRegistry.ts` — extend with per-plugin module tracking (parallel to BPMN registry changes)
 - `studio/src/bifrost/common/plugin-host/manifest/ManifestTypes.ts` — add `dmnModules`
 - `studio/src/bifrost/common/plugin-host/manifest/ManifestReader.ts` — validation
@@ -1637,14 +1640,14 @@ api.dmn.modeling.moveElement(uri, 'Decision_1', { x: 50, y: 0 });
 
 ---
 
-### Batch 9.5 — Documentation
+### [DONE] Batch 9.5 — Documentation
 
-**What changes**:
-- **Update** `docs/architecture/plugin-editor-enrichment.md` — add DMN enrichment section alongside BPMN; document `DmnEnrichmentBridge`, DRD-only scope, view awareness API.
-- **Update** `docs/plugin-development-guide.md` — new chapter "DMN Integration" covering overlays, palette, modeling, renderer modules, and multi-view awareness.
-- **Update** `docs/architecture/plugin-host.md` — add `api.dmn` namespace to the API surface table; document `dmnModules` in the manifest section.
-- **Create** `docs/architecture/dmn-editor.md` — architecture reference for the DMN editor (adapter, module registry, document model, element access, validation overlay manager, property panes). This document is overdue regardless of the plugin phase.
-- **Add entry** to `docs/decisions.md` — rationale for DRD-only enrichment scope.
+**What changed** (actual):
+- **Created** `docs/architecture/plugin-dmn-enrichment.md` — DMN enrichment architecture reference (parallels `plugin-bpmn-enrichment.md`); documents `DmnApiBridge`, DRD-only scope, deferred-overlay re-application, and the view awareness API.
+- **Updated** `docs/plugin-development-guide.md` — new chapter "DMN Integration" covering overlays, palette, modeling, renderer modules, and multi-view awareness.
+- **Updated** `docs/architecture/plugin-host.md` — added the `api.dmn` namespace to the API surface table; documented `dmnModules` in the manifest section.
+- **Created** `docs/architecture/dmn-editor.md` — architecture reference for the DMN editor (adapter, module registry, document model, element access, validation overlay manager, property panes).
+- **Added entry** to `docs/decisions.md` — rationale for DRD-only enrichment scope.
 
 ---
 

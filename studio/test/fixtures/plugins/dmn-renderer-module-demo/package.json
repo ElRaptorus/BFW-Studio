@@ -1,0 +1,44 @@
+{
+  "name": "dmn-renderer-module-demo",
+  "version": "1.0.0",
+  "displayName": "DMN Requirement Tracer (Renderer Module Demo)",
+  "description": "Demonstrates renderer module injection: real-time downstream requirement highlighting on hover, with bidirectional channel communication.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "DMN Requirement Tracer (Renderer Module Demo)",
+    "permissions": [
+      "dmn",
+      "dmn.renderer"
+    ],
+    "activationEvents": [
+      "onDocumentType:dmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "toggleRequirementTracer",
+          "title": "Toggle Requirement Tracer"
+        },
+        {
+          "id": "setTracerColor",
+          "title": "Set Requirement Tracer Color"
+        }
+      ],
+      "dmnPalette": [
+        {
+          "id": "toggle-requirement-tracer",
+          "icon": "ph-light ph-path",
+          "title": "Toggle Requirement Tracer",
+          "command": "toggleRequirementTracer"
+        }
+      ],
+      "dmnModules": [
+        {
+          "entry": "renderer/requirement-tracer-module.js",
+          "description": "Real-time hover-based downstream requirement highlighter."
+        }
+      ]
+    }
+  }
+}

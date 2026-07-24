@@ -26,9 +26,17 @@ export interface ManifestContributions {
   bpmnPalette?: ManifestBpmnPaletteEntry[];
   bpmnContextPad?: ManifestBpmnContextPadEntry[];
   bpmnModules?: ManifestBpmnModule[];
+  dmnPalette?: ManifestDmnPaletteEntry[];
+  dmnContextPad?: ManifestDmnContextPadEntry[];
+  dmnModules?: ManifestDmnModule[];
 }
 
 export interface ManifestBpmnModule {
+  entry: string;
+  description?: string;
+}
+
+export interface ManifestDmnModule {
   entry: string;
   description?: string;
 }
@@ -89,6 +97,22 @@ export interface ManifestBpmnPaletteEntry {
 }
 
 export interface ManifestBpmnContextPadEntry {
+  id: string;
+  icon: string;
+  title: string;
+  command: string;
+  elementTypes?: string[];
+}
+
+export interface ManifestDmnPaletteEntry {
+  id: string;
+  group?: string;
+  icon: string;
+  title: string;
+  command: string;
+}
+
+export interface ManifestDmnContextPadEntry {
   id: string;
   icon: string;
   title: string;

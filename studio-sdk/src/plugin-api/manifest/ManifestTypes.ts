@@ -73,6 +73,17 @@ export interface ManifestContributions {
    * with the plugin host via a `pluginChannel` DI value.
    */
   bpmnModules?: ManifestBpmnModule[];
+  /** DMN palette entries (left toolbar, DRD view only). Requires `'dmn.modelling'` permission. */
+  dmnPalette?: ManifestDmnPaletteEntry[];
+  /** DMN context pad entries (element-level actions, DRD view only). Requires `'dmn.modelling'` permission. */
+  dmnContextPad?: ManifestDmnContextPadEntry[];
+  /**
+   * Diagram-js modules injected into the DMN renderer process (DRD view only).
+   * Requires the `'dmn.renderer'` permission (high risk).
+   * Each module bundle has full access to diagram-js services and communicates
+   * with the plugin host via a `pluginChannel` DI value.
+   */
+  dmnModules?: ManifestDmnModule[];
 }
 
 // ─── Individual contribution types ──────────────────────────────────
@@ -223,6 +234,48 @@ export interface ManifestBpmnContextPadEntry {
  * the plugin host.
  */
 export interface ManifestBpmnModule {
+  /** Relative path to the JS bundle (e.g. `'dist/renderer/my-module.js'`). */
+  entry: string;
+  /** Human-readable description of what the module does. */
+  description?: string;
+}
+
+/** A DMN palette entry contributed by a plugin. Only shown while the DRD view is active. */
+export interface ManifestDmnPaletteEntry {
+  /** Entry identifier (unique within this plugin). */
+  id: string;
+  /** Palette group name. Defaults to `'plugins'`. */
+  group?: string;
+  /** Phosphor icon class or plugin-provided icon key. */
+  icon: string;
+  /** Tooltip / label shown on hover. */
+  title: string;
+  /** Command ID to execute (auto-prefixed with `plugin.<name>.`). */
+  command: string;
+}
+
+/** A DMN context pad entry contributed by a plugin. Only shown while the DRD view is active. */
+export interface ManifestDmnContextPadEntry {
+  /** Entry identifier (unique within this plugin). */
+  id: string;
+  /** Phosphor icon class or plugin-provided icon key. */
+  icon: string;
+  /** Tooltip / label shown on hover. */
+  title: string;
+  /** Command ID to execute (auto-prefixed with `plugin.<name>.`). */
+  command: string;
+  /** Static element type filter. When present, only show on elements of these types. */
+  elementTypes?: string[];
+}
+
+/**
+ * A diagram-js module injected into the DMN modeler's renderer process (DRD view only).
+ * The module bundle is loaded via `require()` and must export a diagram-js
+ * module object (with `__init__`, service declarations). A `pluginChannel`
+ * value module is injected alongside for bidirectional communication with
+ * the plugin host.
+ */
+export interface ManifestDmnModule {
   /** Relative path to the JS bundle (e.g. `'dist/renderer/my-module.js'`). */
   entry: string;
   /** Human-readable description of what the module does. */

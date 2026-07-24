@@ -44,7 +44,7 @@ The adapter wraps the `dmn-js` `Manager` (v17.8.1) and provides a unified API fo
 - **Selection:** emits `EVENT_DMN_ADAPTER_SELECTION_CHANGED` when DRD selection changes
 - **View changes:** emits `EVENT_DMN_ADAPTER_VIEW_CHANGED` with `{ views, activeView }`
 - **XML changes:** emits `EVENT_DMN_ADAPTER_XML_CHANGED` when the command stack fires `commandStack.changed`
-- **DRD access:** `getDrdModeling()`, `getDrdSelection()`, `getDrdElementRegistry()`, `getModdle()`, `getModeler()`
+- **DRD access:** `getDrdModeling()`, `getDrdSelection()`, `getDrdElementRegistry()`, `getDrdOverlays()`, `getDrdEventBus()`, `getDrdPalette()`, `getDrdContextPad()`, `getModelerComponentByName<T>(name)`, `getModdle()`, `getModeler()`
 - **Element operations:** `deleteSelectedElements()` via DRD `editorActions.trigger('removeSelection')`
 
 ### Multi-View Architecture (AD-3)
@@ -101,9 +101,11 @@ Read/write API for DMN element properties. Uses `CmdHelper` + `DmnModelerCompone
 - `setElementProperty(id, prop, value)` — routed through custom command handlers
 - `getElementPropertyValue(id, prop)`
 - `getDecisionExpression(decisionId)` → `DmnExpressionType`
-- `getAllElements()` — all DRG elements
+- `getAllIds()` — all DRG element IDs; `countElementsByType()` — element counts grouped by `dmn:*` type
 - Item definition CRUD: `getItemDefinitions()`, `addItemDefinition()`, `updateItemDefinition()`, `removeItemDefinition()`
 - Import CRUD: `getImports()`, `addImport()`, `removeImport()`
+
+There is no `getAllElements()` method returning full element objects — callers that need the full DRG element list (e.g. `DmnApiBridge.handleGetElements()`) iterate `DmnModelerComponentAdapter.getDrdElementRegistry().getAll()` directly and build snapshots via `castElement()` / `getById()`, rather than going through a single aggregate accessor.
 
 ### DmnDocumentSelection
 
@@ -423,6 +425,18 @@ DMN merge is element-level (one conflict key per DRG element) without custom-pro
 ## Engine Alignment
 
 The DMN editor's type system (`DmnElementTypes.ts`) uses moddle-prefixed values (`'dmn:Decision'`, etc.) and camelCase expression types (`'decisionTable'`, `'literalExpression'`). These correspond to the engine's DMN parser output but use different naming conventions: the engine uses atoms (`:decision_table`, `:literal_expression`) while the Studio uses JavaScript-style camelCase. Hit policies use the same string values as the engine's `EvilEngine.DMN.Types.HitPolicy`.
+
+---
+
+## Plugin Integration
+
+Plugins can enrich the DRD view (overlays, palette/context pad entries, modeling operations, renderer module injection) through the `api.dmn` namespace, gated by the `dmn` / `dmn.modelling` / `dmn.renderer` permission tiers. This is documented in full in [`plugin-dmn-enrichment.md`](plugin-dmn-enrichment.md) — the summary below only covers the touch points inside this module.
+
+- `DmnModelerComponentAdapter` exposes the DRD service accessors plugins need indirectly: `getDrdModeling()`, `getDrdOverlays()`, `getDrdElementRegistry()`, `getDrdEventBus()`, `getDrdPalette()`, `getDrdContextPad()`, and the generic `getModelerComponentByName<T>(name)` escape hatch. None of these are called directly by plugins — they are called by `DmnApiBridge` (renderer process) on the plugin's behalf, gated by `PermissionGate`.
+- `DmnDocumentModel` refreshes plugin overlays (via `DmnPluginOverlayManager`) whenever `EVENT_DMN_ADAPTER_XML_CHANGED`, `EVENT_DMN_ADAPTER_SELECTION_CHANGED`, or `EVENT_DMN_ADAPTER_VIEW_CHANGED` fires, and clears the document's overlay manager state `onEditorDocumentWillClose()`.
+- `DmnModelerModuleRegistry` tracks plugin-injected diagram-js modules (`registerPluginModule` / `unregisterPluginModules` / `hasPluginModules`) alongside the core modules registered by this module — `getAll()` returns the flattened union, mirroring `BpmnModelerModuleRegistry`.
+- `PluginDmnPaletteProvider` and `PluginDmnContextPadProvider` (`dmn-core/dmn-js/Provider/`) are pre-registered as DI modules in `modules/dmn-core/index.ts`, so every DRD modeler instance always has them available — they render as no-ops until a plugin actually contributes an entry.
+- All of the above is DRD-only: the decision table / literal expression / boxed expression views have no plugin surface, matching the "DRD access" scope of `DmnModelerComponentAdapter` itself.
 
 ---
 

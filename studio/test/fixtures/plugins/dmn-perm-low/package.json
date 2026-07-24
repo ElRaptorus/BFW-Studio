@@ -1,0 +1,62 @@
+{
+  "name": "dmn-perm-low",
+  "version": "1.0.0",
+  "displayName": "DMN Permission Low",
+  "description": "Fixture plugin with 'dmn' but NOT 'dmn.modelling' — tests permission gate for palette/context pad and modeling.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "DMN Permission Low",
+    "permissions": [
+      "dmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "tryRegisterPaletteEntry",
+          "title": "Try Register Palette Entry"
+        },
+        {
+          "id": "tryUnregisterPaletteEntry",
+          "title": "Try Unregister Palette Entry"
+        },
+        {
+          "id": "tryRegisterContextPadEntry",
+          "title": "Try Register Context Pad Entry"
+        },
+        {
+          "id": "tryUnregisterContextPadEntry",
+          "title": "Try Unregister Context Pad Entry"
+        },
+        {
+          "id": "tryUpdateContextPadEntry",
+          "title": "Try Update Context Pad Entry"
+        },
+        {
+          "id": "tryModelingUpdateProperties",
+          "title": "Try modeling.updateProperties"
+        },
+        {
+          "id": "tryModelingRemoveElement",
+          "title": "Try modeling.removeElement"
+        },
+        {
+          "id": "tryModelingCreateElement",
+          "title": "Try modeling.createElement"
+        },
+        {
+          "id": "tryModelingAppendElement",
+          "title": "Try modeling.appendElement"
+        },
+        {
+          "id": "tryModelingCreateConnection",
+          "title": "Try modeling.createConnection"
+        },
+        {
+          "id": "tryModelingMoveElement",
+          "title": "Try modeling.moveElement"
+        }
+      ]
+    }
+  }
+}

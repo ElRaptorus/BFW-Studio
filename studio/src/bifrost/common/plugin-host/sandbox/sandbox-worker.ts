@@ -280,6 +280,7 @@ function createPluginApi(): Record<string, unknown> {
   const workspaceCallbackApi = createCallbackApi('workspace');
   const diagnosticsCallbackApi = createCallbackApi('diagnostics');
   const bpmnCallbackApi = createCallbackApi('bpmn');
+  const dmnCallbackApi = createCallbackApi('dmn');
 
   return {
     commands: {
@@ -556,6 +557,100 @@ function createPluginApi(): Record<string, unknown> {
         },
         moveElement(uri: string, elementId: string, delta: unknown): Promise<unknown> {
           return sendApiRequest('bpmn', 'modeling.moveElement', [uri, elementId, delta]);
+        },
+      },
+      disposeCallbacks() {
+        /* no-op in sandbox — cleanup handled by SandboxManager */
+      },
+    },
+    dmn: {
+      setOverlays(uri: string, overlays: unknown[]): Promise<unknown> {
+        return sendApiRequest('dmn', 'setOverlays', [uri, overlays]);
+      },
+      clearOverlays(uri: string, filter?: unknown): Promise<unknown> {
+        return sendApiRequest('dmn', 'clearOverlays', [uri, filter]);
+      },
+      getActiveView(uri: string): Promise<unknown> {
+        return sendApiRequest('dmn', 'getActiveView', [uri]);
+      },
+      getElements(uri: string): Promise<unknown> {
+        return sendApiRequest('dmn', 'getElements', [uri]);
+      },
+      getElement(uri: string, elementId: string): Promise<unknown> {
+        return sendApiRequest('dmn', 'getElement', [uri, elementId]);
+      },
+      getXml(uri: string): Promise<unknown> {
+        return sendApiRequest('dmn', 'getXml', [uri]);
+      },
+      onElementSelected(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('onElementSelected', [uri], callback);
+      },
+      onElementHover(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('onElementHover', [uri], callback);
+      },
+      onElementDoubleClick(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('onElementDoubleClick', [uri], callback);
+      },
+      onElementContextMenu(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('onElementContextMenu', [uri], callback);
+      },
+      onOverlayContextChanged(
+        uri: string,
+        callback: (...cbArgs: unknown[]) => unknown,
+      ): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('onOverlayContextChanged', [uri], callback);
+      },
+      onViewChanged(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('onViewChanged', [uri], callback);
+      },
+      registerOverlayFactory(
+        factory: (...cbArgs: unknown[]) => unknown,
+        options?: { priority?: number },
+      ): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('registerOverlayFactory', [options], factory);
+      },
+      requestOverlayRefresh(): Promise<unknown> {
+        return sendApiRequest('dmn', 'requestOverlayRefresh', []);
+      },
+      registerPaletteEntry(entry: unknown): Promise<unknown> {
+        return sendApiRequest('dmn', 'registerPaletteEntry', [entry]);
+      },
+      unregisterPaletteEntry(entryId: string): Promise<unknown> {
+        return sendApiRequest('dmn', 'unregisterPaletteEntry', [entryId]);
+      },
+      registerContextPadEntry(entry: unknown): Promise<unknown> {
+        return sendApiRequest('dmn', 'registerContextPadEntry', [entry]);
+      },
+      unregisterContextPadEntry(entryId: string): Promise<unknown> {
+        return sendApiRequest('dmn', 'unregisterContextPadEntry', [entryId]);
+      },
+      updateContextPadEntry(entryId: string, update: unknown): Promise<unknown> {
+        return sendApiRequest('dmn', 'updateContextPadEntry', [entryId, update]);
+      },
+      onRendererModuleMessage(callback: (data: unknown) => void): Promise<{ dispose: () => void }> {
+        return dmnCallbackApi.register('onRendererModuleMessage', [], callback);
+      },
+      postToRendererModule(data: unknown): Promise<unknown> {
+        return sendApiRequest('dmn', 'postToRendererModule', [data]);
+      },
+      modeling: {
+        updateProperties(uri: string, elementId: string, properties: unknown): Promise<unknown> {
+          return sendApiRequest('dmn', 'modeling.updateProperties', [uri, elementId, properties]);
+        },
+        removeElement(uri: string, elementId: string): Promise<unknown> {
+          return sendApiRequest('dmn', 'modeling.removeElement', [uri, elementId]);
+        },
+        createElement(uri: string, newElement: unknown): Promise<unknown> {
+          return sendApiRequest('dmn', 'modeling.createElement', [uri, newElement]);
+        },
+        appendElement(uri: string, sourceElementId: string, newElement: unknown): Promise<unknown> {
+          return sendApiRequest('dmn', 'modeling.appendElement', [uri, sourceElementId, newElement]);
+        },
+        createConnection(uri: string, sourceId: string, targetId: string, type?: string): Promise<unknown> {
+          return sendApiRequest('dmn', 'modeling.createConnection', [uri, sourceId, targetId, type]);
+        },
+        moveElement(uri: string, elementId: string, delta: unknown): Promise<unknown> {
+          return sendApiRequest('dmn', 'modeling.moveElement', [uri, elementId, delta]);
         },
       },
       disposeCallbacks() {

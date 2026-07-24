@@ -943,6 +943,204 @@ await api.bpmn.postToRendererModule({ type: 'configure', color: 'red' });
 
 ---
 
+## DMN Integration
+
+Plugins can read, modify, and enrich DMN DRD (Decision Requirements Diagram) diagrams through the `api.dmn` namespace. Capabilities are gated by the same tiered permission model as BPMN. **All `api.dmn` operations are scoped to the DRD view** — DMN's decision table, literal expression, and boxed expression views have no plugin surface; modeling operations reject and query operations return empty results while a non-DRD view is active.
+
+### Permission requirements
+
+| API surface | Required permission |
+|-------------|---------------------|
+| `api.dmn.getElements()`, `api.dmn.getElement()`, `api.dmn.getXml()`, `api.dmn.onElementSelected()`, `api.dmn.onElementHover()`, `api.dmn.onElementDoubleClick()`, `api.dmn.onElementContextMenu()`, `api.dmn.onOverlayContextChanged()`, `api.dmn.onViewChanged()`, `api.dmn.getActiveView()`, `api.dmn.setOverlays()`, `api.dmn.clearOverlays()`, `api.dmn.registerOverlayFactory()`, `api.dmn.requestOverlayRefresh()` | `dmn` |
+| `api.dmn.modeling.*`, `api.dmn.registerPaletteEntry()`, `api.dmn.registerContextPadEntry()`, `api.dmn.updateContextPadEntry()` | `dmn.modelling` |
+| `api.dmn.postToRendererModule()`, `api.dmn.onRendererModuleMessage()`, manifest `dmnModules` | `dmn.renderer` |
+
+### Getting the active document
+
+Unlike `api.bpmn`, `api.dmn` has no `getFocusedDocumentUri()` of its own — use the shared editors API:
+
+```javascript
+const uri = await api.editors.getFocusedDocumentUri();
+if (!uri) return; // no DMN editor is focused
+
+const elements = await api.dmn.getElements(uri); // [] if the DRD view is not active
+```
+
+### View awareness
+
+Because a DMN document can show the DRD or a per-decision expression editor, subscribe to view changes to know when your plugin's DRD-only features are actionable:
+
+```javascript
+await api.dmn.onViewChanged(uri, (event) => {
+  // event: { uri, viewType, isDrd }
+  if (!event.isDrd) {
+    // overlays are auto-cleared by the editor; palette/context pad entries
+    // simply stop rendering because the DRD canvas isn't shown
+  }
+});
+
+const activeView = await api.dmn.getActiveView(uri); // { uri, viewType, isDrd } | null
+```
+
+### Overlays
+
+DMN overlays are always factory-produced or set directly via `setOverlays` — there is no separate built-in overlay layer to compose with (unlike BPMN, where `originalDefaultOverlays` can carry Studio-owned markers; for DMN it is always empty).
+
+```javascript
+// Direct overlay (requires 'dmn' permission)
+await api.dmn.setOverlays('file:///my.dmn', [
+  { elementId: 'Decision_1', type: 'badge', position: 'top-right', text: '!', tooltip: 'Warning', style: 'warning' }
+]);
+
+await api.dmn.clearOverlays('file:///my.dmn', { elementId: 'Decision_1' });
+```
+
+For dynamic overlays driven by DRD state, register an overlay factory:
+
+```javascript
+await api.dmn.registerOverlayFactory(
+  (context) => {
+    // context: { elements, uri, currentOverlays, originalDefaultOverlays }
+    const flagged = context.elements.filter((el) => el.type === 'dmn:Decision' && isFlagged(el.id));
+    const overlays = flagged.map((el) => ({
+      elementId: el.id,
+      position: 'top-right',
+      type: 'status',
+      icon: 'ph-light ph-flag',
+      tooltip: 'Flagged',
+      style: 'warning',
+    }));
+    return [...context.currentOverlays, ...overlays];
+  },
+  { priority: 1 },
+);
+```
+
+Only one factory per plugin is allowed — re-registering replaces the previous one. Call `api.dmn.requestOverlayRefresh()` when your plugin's internal state changes to force re-evaluation.
+
+### Palette & context pad contributions
+
+**Manifest (static):**
+
+```json
+{
+  "contributes": {
+    "dmnPalette": [{ "id": "my-tool", "icon": "ph-light ph-wrench", "title": "My Tool", "command": "myCmd" }],
+    "dmnContextPad": [{ "id": "my-action", "icon": "ph-light ph-info", "title": "Inspect", "command": "inspectCmd", "elementTypes": ["dmn:Decision"] }]
+  }
+}
+```
+
+**Runtime (dynamic):**
+
+```javascript
+await api.dmn.registerContextPadEntry({
+  id: 'conditional-action', icon: 'ph-light ph-flag', title: 'Flag',
+  command: 'myPlugin.flagElement', elementTypes: ['dmn:Decision'], elementIds: []
+});
+```
+
+### Context pad command arguments
+
+Identical to BPMN — the handler receives a single argument object, not a bare string:
+
+```javascript
+// The command is invoked with { elementId, elementType }
+api.commands.register('myPlugin.inspect', async (info) => {
+  const elementId = info?.elementId;   // e.g. "Decision_1"
+  const elementType = info?.elementType; // e.g. "dmn:Decision"
+  // ... do something with the element
+});
+```
+
+### Context pad dynamic filtering
+
+Use the same `elementIds` allowlist pattern as BPMN, driven by `onElementSelected` or your own element-change tracking (there is no `onElementsChanged` on `api.dmn` — use `getElements(uri)` after an overlay-context or selection event to recompute qualifying IDs):
+
+```javascript
+// Start hidden (elementIds: [])
+await api.dmn.registerContextPadEntry({
+  id: 'my-entry', elementTypes: ['dmn:Decision'], elementIds: [], /* ... */
+});
+
+await api.dmn.onOverlayContextChanged(uri, async (event) => {
+  const elements = await api.dmn.getElements(event.uri);
+  const qualifying = elements.filter((el) => shouldShow(el)).map((el) => el.id);
+  api.dmn.updateContextPadEntry('my-entry', { elementIds: qualifying });
+});
+
+// Show on ALL matching types: set elementIds to null
+await api.dmn.updateContextPadEntry('my-entry', { elementIds: null });
+```
+
+### Modeling API
+
+All operations are undoable (Ctrl+Z) and require `dmn.modelling`:
+
+```javascript
+const uri = 'file:///my.dmn';
+await api.dmn.modeling.updateProperties(uri, 'Decision_1', { name: 'New Name' });
+
+// Absolute positioning — places the new element at an exact canvas position
+await api.dmn.modeling.createElement(uri, { type: 'dmn:Decision', name: 'New Decision', position: { x: 300, y: 200 } });
+
+// Relative append (BPMN-style) — places the new element next to the source and connects it
+await api.dmn.modeling.appendElement(uri, 'InputData_1', { type: 'dmn:Decision', name: 'Downstream Decision' });
+
+await api.dmn.modeling.removeElement(uri, 'Decision_1');
+await api.dmn.modeling.createConnection(uri, 'InputData_1', 'Decision_1'); // defaults to 'dmn:InformationRequirement'
+await api.dmn.modeling.moveElement(uri, 'Decision_1', { x: 50, y: 0 });
+```
+
+DMN's DRD is a loosely-coupled graph rather than a strictly sequential flow, so both an absolute-position primitive (`createElement`) and a relative "insert near an existing element" primitive (`appendElement`) are provided — pick whichever matches your use case (bulk layout vs. incremental insertion).
+
+### Renderer module injection (advanced)
+
+For full diagram-js access on the DRD (custom highlighting, requirement tracing), declare `dmnModules` and request `dmn.renderer`:
+
+```json
+{
+  "permissions": ["dmn.renderer"],
+  "contributes": {
+    "dmnModules": [{ "entry": "renderer/my-module.js", "description": "Custom behavior" }]
+  }
+}
+```
+
+The renderer module is a standard diagram-js module with `pluginChannel` DI, identical in shape to the BPMN case:
+
+```javascript
+function MyService(eventBus, canvas, pluginChannel) {
+  eventBus.on('element.hover', function(event) {
+    pluginChannel.postMessage({ type: 'hovered', elementId: event.element.id });
+  });
+  pluginChannel.onMessage(function(data) { /* handle host messages */ });
+}
+MyService.$inject = ['eventBus', 'canvas', 'pluginChannel'];
+module.exports = { __init__: ['myService'], myService: ['type', MyService] };
+```
+
+**Multi-plugin coexistence**: Multiple plugins can each declare `dmnModules` and all run simultaneously. The Studio automatically namespaces each plugin's `pluginChannel` in the DI container so they never interfere with each other. Always use `'pluginChannel'` in your `$inject` array — never use internal prefixed names.
+
+**Module reloading**: When a plugin with renderer modules is disabled or re-enabled, all open DMN editors are automatically closed and reopened so the DRD modeler picks up the updated module set. The `require` cache is evicted before loading, so code changes take effect immediately on re-enable.
+
+Host-side communication:
+
+```javascript
+await api.dmn.onRendererModuleMessage((data) => { /* handle renderer messages */ });
+await api.dmn.postToRendererModule({ type: 'configure', color: 'red' });
+```
+
+### Security considerations
+
+- Renderer modules run in the same V8 isolate as the Studio — do NOT access `window.bifrost`
+- `onClickCommand` must reference your own plugin's commands (cross-plugin triggers rejected)
+- Overlay types are limited to `badge`, `icon`, `action`, `status` — no arbitrary HTML injection
+- Module crashes are caught; the plugin is deactivated with an error notification
+- All modeling and renderer operations are DRD-gated — they throw (modeling) or are denied (renderer) if the document is showing an expression editor instead of the DRD
+
+---
+
 ## Webview Development
 
 Webview content runs inside a sandboxed iframe with no Node.js or Electron access. Communication with the Plugin Host goes through a message bridge.

@@ -12,7 +12,10 @@ const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 const PLUGINS_EMPTY_DIR = path.resolve(__dirname, '../../fixtures/plugins-empty');
 
 const PLUGIN_LOAD_TIMEOUT = 30_000;
-const FIXTURE_PLUGIN_COUNT = 22;
+// Total number of discoverable plugin directories under fixtures/plugins/, including the
+// scoped `@test-scope/scoped-plugin` entry. Keep this in sync when adding/removing fixtures —
+// `waitForPluginList` uses `>=`, so a stale (too-low) value fails silently rather than erroring.
+const FIXTURE_PLUGIN_COUNT = 37;
 
 async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string): Promise<void> {
   await studioAgent.getTestDriver().client!.waitUntil(
@@ -1588,6 +1591,7 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
     it('onStartup/warnings-loaded: manifest-warnings with onStartup is loaded despite warnings', async () => {
       await waitForPluginCommand(studioAgent, 'plugin.manifest-warnings.manifestWarnings.hello');
+      await waitForPluginStatus(studioAgent, 'manifest-warnings', 'loaded');
       const plugin = await getPluginByName(studioAgent, 'manifest-warnings');
       assert.strictEqual(plugin.status, 'loaded');
       assert.strictEqual(plugin.enabled, true);

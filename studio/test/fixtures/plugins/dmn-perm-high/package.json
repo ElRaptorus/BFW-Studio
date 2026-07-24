@@ -1,0 +1,43 @@
+{
+  "name": "dmn-perm-high",
+  "version": "1.0.0",
+  "displayName": "DMN Permission High",
+  "description": "Fixture plugin with 'dmn.renderer' — tests full hierarchy (implies dmn.modelling implies dmn).",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "DMN Permission High",
+    "permissions": [
+      "dmn.renderer"
+    ],
+    "activationEvents": [
+      "onDocumentType:dmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "tryModelingUpdateProperties",
+          "title": "Try modeling.updateProperties"
+        },
+        {
+          "id": "tryPostToRendererModule",
+          "title": "Try postToRendererModule"
+        },
+        {
+          "id": "tryOnRendererModuleMessage",
+          "title": "Try onRendererModuleMessage"
+        },
+        {
+          "id": "test.isActivated",
+          "title": "Test: Is Activated"
+        }
+      ],
+      "dmnModules": [
+        {
+          "entry": "renderer/noop-module.js",
+          "description": "Minimal no-op module for permission gate testing."
+        }
+      ]
+    }
+  }
+}

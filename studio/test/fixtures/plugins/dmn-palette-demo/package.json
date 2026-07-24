@@ -1,0 +1,173 @@
+{
+  "name": "dmn-palette-demo",
+  "version": "1.0.0",
+  "displayName": "DMN Palette & Modeling Demo",
+  "description": "Fixture plugin demonstrating DMN palette, context pad, and modeling API usage.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "DMN Palette & Modeling Demo",
+    "permissions": [
+      "dmn.modelling"
+    ],
+    "activationEvents": [
+      "onDocumentType:dmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "runAnalysis",
+          "title": "Run Analysis"
+        },
+        {
+          "id": "inspectElement",
+          "title": "Inspect Element"
+        },
+        {
+          "id": "insertDecisionTemplate",
+          "title": "Insert Decision Template"
+        },
+        {
+          "id": "renameElement",
+          "title": "Rename Element"
+        },
+        {
+          "id": "deleteElement",
+          "title": "Delete Element"
+        },
+        {
+          "id": "nudgeRight",
+          "title": "Nudge Right"
+        },
+        {
+          "id": "toggleFlag",
+          "title": "Toggle Flag"
+        },
+        {
+          "id": "viewRequirements",
+          "title": "View Requirements"
+        },
+        {
+          "id": "updateViewRequirementsFilter",
+          "title": "Update View Requirements Filter"
+        },
+        {
+          "id": "test.isActivated",
+          "title": "Test: Is Activated"
+        },
+        {
+          "id": "test.tryUnregisterContextPadEntry",
+          "title": "Test: Unregister Context Pad"
+        },
+        {
+          "id": "test.tryUnregisterPaletteEntry",
+          "title": "Test: Unregister Palette"
+        },
+        {
+          "id": "test.updateContextPadEntry",
+          "title": "Test: Update Context Pad"
+        },
+        {
+          "id": "test.modeling.updateProperties",
+          "title": "Test: updateProperties"
+        },
+        {
+          "id": "test.modeling.removeElement",
+          "title": "Test: removeElement"
+        },
+        {
+          "id": "test.modeling.createElement",
+          "title": "Test: createElement"
+        },
+        {
+          "id": "test.modeling.appendElement",
+          "title": "Test: appendElement"
+        },
+        {
+          "id": "test.modeling.createConnection",
+          "title": "Test: createConnection"
+        },
+        {
+          "id": "test.modeling.moveElement",
+          "title": "Test: moveElement"
+        },
+        {
+          "id": "test.getElement",
+          "title": "Test: getElement"
+        },
+        {
+          "id": "test.getElements",
+          "title": "Test: getElements"
+        }
+      ],
+      "dmnPalette": [
+        {
+          "id": "run-analysis",
+          "icon": "ph-light ph-magnifying-glass",
+          "title": "Run Analysis",
+          "command": "runAnalysis"
+        },
+        {
+          "id": "insert-decision-template",
+          "icon": "ph-light ph-plus-circle",
+          "title": "Insert Decision",
+          "command": "insertDecisionTemplate",
+          "group": "modeling"
+        }
+      ],
+      "dmnContextPad": [
+        {
+          "id": "inspect-element",
+          "icon": "ph-light ph-info",
+          "title": "Inspect Element",
+          "command": "inspectElement",
+          "elementTypes": [
+            "dmn:Decision",
+            "dmn:InputData",
+            "dmn:BusinessKnowledgeModel",
+            "dmn:KnowledgeSource"
+          ]
+        },
+        {
+          "id": "rename-element",
+          "icon": "ph-light ph-pencil-simple",
+          "title": "Rename Element",
+          "command": "renameElement",
+          "elementTypes": [
+            "dmn:Decision",
+            "dmn:InputData",
+            "dmn:BusinessKnowledgeModel",
+            "dmn:KnowledgeSource"
+          ]
+        },
+        {
+          "id": "delete-element",
+          "icon": "ph-light ph-trash",
+          "title": "Delete Element",
+          "command": "deleteElement"
+        },
+        {
+          "id": "nudge-right",
+          "icon": "ph-light ph-arrow-right",
+          "title": "Nudge Right (+50px)",
+          "command": "nudgeRight"
+        },
+        {
+          "id": "toggle-flag",
+          "icon": "ph-light ph-flag",
+          "title": "Toggle Flag",
+          "command": "toggleFlag"
+        },
+        {
+          "id": "view-requirements",
+          "icon": "ph-light ph-git-branch",
+          "title": "View Requirements (2+ incoming)",
+          "command": "viewRequirements",
+          "elementTypes": [
+            "dmn:Decision"
+          ]
+        }
+      ]
+    }
+  }
+}

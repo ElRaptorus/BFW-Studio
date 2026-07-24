@@ -8,6 +8,9 @@ import type {
   ManifestBpmnPaletteEntry,
   ManifestCommand,
   ManifestContributions,
+  ManifestDmnContextPadEntry,
+  ManifestDmnModule,
+  ManifestDmnPaletteEntry,
   ManifestError,
   ManifestKeybinding,
   ManifestMenuItem,
@@ -236,6 +239,40 @@ export function readManifest(pkg: Record<string, unknown>): ManifestReadResult {
     }
   }
 
+  // Cross-validate: dmnPalette/dmnContextPad require 'dmn.modelling' permission
+  const hasDmnModellingPermission =
+    permissions?.includes('dmn.modelling') === true || permissions?.includes('dmn.renderer') === true;
+  if (!hasDmnModellingPermission) {
+    if (contributes?.dmnPalette != null && contributes.dmnPalette.length > 0) {
+      warnings.push({
+        path: 'bifrostStudio.contributes.dmnPalette',
+        message:
+          'dmnPalette contributions require the "dmn.modelling" permission. ' +
+          'These entries will be ignored at runtime until the permission is declared.',
+      });
+    }
+    if (contributes?.dmnContextPad != null && contributes.dmnContextPad.length > 0) {
+      warnings.push({
+        path: 'bifrostStudio.contributes.dmnContextPad',
+        message:
+          'dmnContextPad contributions require the "dmn.modelling" permission. ' +
+          'These entries will be ignored at runtime until the permission is declared.',
+      });
+    }
+  }
+
+  // Cross-validate: dmnModules require 'dmn.renderer' permission
+  if (contributes?.dmnModules != null && contributes.dmnModules.length > 0) {
+    if (permissions?.includes('dmn.renderer') !== true) {
+      errors.push({
+        path: 'bifrostStudio.contributes.dmnModules',
+        message:
+          'dmnModules contributions require the "dmn.renderer" permission. ' +
+          'Renderer modules will not be loaded without this permission.',
+      });
+    }
+  }
+
   return { manifest, errors, warnings };
 }
 
@@ -284,6 +321,15 @@ function validateContributes(
   if (raw.bpmnModules != null) {
     result.bpmnModules = validateBpmnModules(raw.bpmnModules, errors);
   }
+  if (raw.dmnPalette != null) {
+    result.dmnPalette = validateDmnPalette(raw.dmnPalette, errors);
+  }
+  if (raw.dmnContextPad != null) {
+    result.dmnContextPad = validateDmnContextPad(raw.dmnContextPad, errors);
+  }
+  if (raw.dmnModules != null) {
+    result.dmnModules = validateDmnModules(raw.dmnModules, errors);
+  }
 
   const knownContributes = new Set([
     'commands',
@@ -298,6 +344,9 @@ function validateContributes(
     'bpmnPalette',
     'bpmnContextPad',
     'bpmnModules',
+    'dmnPalette',
+    'dmnContextPad',
+    'dmnModules',
   ]);
   for (const key of Object.keys(raw)) {
     if (!knownContributes.has(key)) {
@@ -864,6 +913,152 @@ function validateBpmnModules(raw: unknown, errors: ManifestError[]): ManifestBpm
   }
 
   const result: ManifestBpmnModule[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i];
+    const entryPath = `${basePath}[${i}]`;
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      errors.push({ path: entryPath, message: 'Must be an object' });
+      continue;
+    }
+
+    const obj = entry as Record<string, unknown>;
+    if (typeof obj.entry !== 'string' || obj.entry.trim().length === 0) {
+      errors.push({
+        path: `${entryPath}.entry`,
+        message: 'Required field "entry" is missing or not a non-empty string',
+      });
+      continue;
+    }
+
+    result.push({
+      entry: obj.entry,
+      description: typeof obj.description === 'string' ? obj.description : undefined,
+    });
+  }
+  return result;
+}
+
+// ─── DMN Palette ─────────────────────────────────────────────
+
+function validateDmnPalette(raw: unknown, errors: ManifestError[]): ManifestDmnPaletteEntry[] {
+  const basePath = 'bifrostStudio.contributes.dmnPalette';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestDmnPaletteEntry[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i];
+    const entryPath = `${basePath}[${i}]`;
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      errors.push({ path: entryPath, message: 'Must be an object' });
+      continue;
+    }
+
+    const obj = entry as Record<string, unknown>;
+    let valid = true;
+
+    for (const field of ['id', 'icon', 'title', 'command'] as const) {
+      if (typeof obj[field] !== 'string' || (obj[field] as string).trim().length === 0) {
+        errors.push({
+          path: `${entryPath}.${field}`,
+          message: `Required field "${field}" is missing or not a non-empty string`,
+        });
+        valid = false;
+      }
+    }
+    if (!valid) {
+      continue;
+    }
+
+    result.push({
+      id: obj.id as string,
+      group: typeof obj.group === 'string' ? obj.group : undefined,
+      icon: obj.icon as string,
+      title: obj.title as string,
+      command: obj.command as string,
+    });
+  }
+  return result;
+}
+
+// ─── DMN Context Pad ─────────────────────────────────────────
+
+function validateDmnContextPad(raw: unknown, errors: ManifestError[]): ManifestDmnContextPadEntry[] {
+  const basePath = 'bifrostStudio.contributes.dmnContextPad';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestDmnContextPadEntry[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i];
+    const entryPath = `${basePath}[${i}]`;
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      errors.push({ path: entryPath, message: 'Must be an object' });
+      continue;
+    }
+
+    const obj = entry as Record<string, unknown>;
+    let valid = true;
+
+    for (const field of ['id', 'icon', 'title', 'command'] as const) {
+      if (typeof obj[field] !== 'string' || (obj[field] as string).trim().length === 0) {
+        errors.push({
+          path: `${entryPath}.${field}`,
+          message: `Required field "${field}" is missing or not a non-empty string`,
+        });
+        valid = false;
+      }
+    }
+    if (!valid) {
+      continue;
+    }
+
+    if (obj.elementTypes != null) {
+      if (!Array.isArray(obj.elementTypes) || obj.elementTypes.length === 0) {
+        errors.push({
+          path: `${entryPath}.elementTypes`,
+          message: '"elementTypes" must be a non-empty array of strings when present',
+        });
+        continue;
+      }
+      const allStrings = obj.elementTypes.every((item: unknown) => typeof item === 'string');
+      if (!allStrings) {
+        errors.push({
+          path: `${entryPath}.elementTypes`,
+          message: 'All items in "elementTypes" must be strings',
+        });
+        continue;
+      }
+    }
+
+    result.push({
+      id: obj.id as string,
+      icon: obj.icon as string,
+      title: obj.title as string,
+      command: obj.command as string,
+      elementTypes: obj.elementTypes as string[] | undefined,
+    });
+  }
+  return result;
+}
+
+// ─── DMN Modules ──────────────────────────────────────────────
+
+function validateDmnModules(raw: unknown, errors: ManifestError[]): ManifestDmnModule[] {
+  const basePath = 'bifrostStudio.contributes.dmnModules';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestDmnModule[] = [];
   for (let i = 0; i < raw.length; i++) {
     const entry = raw[i];
     const entryPath = `${basePath}[${i}]`;

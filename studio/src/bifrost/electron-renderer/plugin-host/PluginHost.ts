@@ -36,6 +36,7 @@ import { AbstractEmitter, type PluginInfo } from '@evil/bifrost_fw_sdk';
 
 import { EVENT_THEME_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/ThemeEvents';
 import { pluginModuleLoader } from '../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
+import { pluginDmnModuleLoader } from '../../../modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
 import { checkApiVersionCompatibility } from '../../common/plugin-host/manifest/ApiVersionCheck';
 import { readManifest } from '../../common/plugin-host/manifest/ManifestReader';
 import type {
@@ -323,6 +324,10 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
     });
 
     pluginModuleLoader.setSendFunction((pluginName, data) => {
+      this.bridge.deliverRendererModuleMessage(pluginName, data);
+    });
+
+    pluginDmnModuleLoader.setSendFunction((pluginName, data) => {
       this.bridge.deliverRendererModuleMessage(pluginName, data);
     });
 

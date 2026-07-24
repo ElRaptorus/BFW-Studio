@@ -1,0 +1,72 @@
+{
+  "name": "dmn-kitchen-sink",
+  "version": "1.0.0",
+  "displayName": "DMN Kitchen Sink",
+  "description": "End-to-end fixture exercising all DMN editor enrichment features in combination.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "DMN Kitchen Sink",
+    "permissions": [
+      "dmn.renderer"
+    ],
+    "activationEvents": [
+      "onDocumentType:dmn"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "id": "ks.highlightAll",
+          "title": "KS: Highlight All Decisions"
+        },
+        {
+          "id": "ks.renameSelected",
+          "title": "KS: Rename Selected"
+        },
+        {
+          "id": "ks.appendDecision",
+          "title": "KS: Append Decision"
+        },
+        {
+          "id": "ks.sendToRenderer",
+          "title": "KS: Send To Renderer"
+        },
+        {
+          "id": "ks.overlayClick",
+          "title": "KS: Overlay Click"
+        },
+        {
+          "id": "test.isActivated",
+          "title": "Test: Is Activated"
+        }
+      ],
+      "dmnPalette": [
+        {
+          "id": "ks-highlight",
+          "icon": "ph-light ph-highlighter-circle",
+          "title": "Highlight All Decisions",
+          "command": "ks.highlightAll"
+        }
+      ],
+      "dmnContextPad": [
+        {
+          "id": "ks-rename",
+          "icon": "ph-light ph-pencil-simple",
+          "title": "Rename (KS)",
+          "command": "ks.renameSelected",
+          "elementTypes": [
+            "dmn:Decision",
+            "dmn:InputData",
+            "dmn:BusinessKnowledgeModel"
+          ]
+        }
+      ],
+      "dmnModules": [
+        {
+          "entry": "renderer/highlight-module.js",
+          "description": "Highlights elements on pluginChannel command."
+        }
+      ]
+    }
+  }
+}

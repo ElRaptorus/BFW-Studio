@@ -149,7 +149,7 @@ When a single plugin is unloaded or reloaded (via `bifrost.plugins.togglePlugin(
 
 1. **Re-discover from disk** — `discoverSinglePlugin(pluginPath)` re-reads `package.json`, re-validates the manifest, and refreshes all metadata fields on the `PluginInfo` entry. This picks up user edits to the manifest.
 2. **Re-validate** — Manifest errors and API version checks are re-run. If validation fails, the plugin stays in `status: 'error'` with a refreshed `errorMessage` and a toast notification. No IPC is sent to the child process.
-3. **Re-register contributions** — If validation passes, manifest contributions (commands, menus, keybindings, settings, panes, icons, bpmnPalette, bpmnContextPad, bpmnModules) are re-registered via the `ContributionRegistrar`.
+3. **Re-register contributions** — If validation passes, manifest contributions (commands, menus, keybindings, settings, panes, icons, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules) are re-registered via the `ContributionRegistrar`.
 4. **Load or defer** — Plugins with `activationEvents` go to `status: 'pending'` (lazy). Others attempt an IPC `PH_RELOAD_PLUGIN`. IPC failures are caught and preserve the `error` state.
 
 `togglePlugin` cooperates by routing errored plugins (not in `plugins.disabledPlugins`) to `reloadPlugin` instead of the disable branch. Plugins in `status: 'quarantined'` are not retried via toggle alone — use `bifrost.plugins.trustAndReEnablePlugin(name)` (see _Per-plugin crash recovery and quarantine_).
@@ -208,7 +208,7 @@ export async function activate(api: StudioPluginApi): Promise<void> {
   // api.commands, api.diagnostics, api.dialogs, api.notifications,
   // api.settings, api.events, api.webviews, api.editors, api.panes,
   // api.statusBar, api.menuBar, api.menus, api.workspace,
-  // api.views, api.themes, api.bpmn, api.env
+  // api.views, api.themes, api.bpmn, api.dmn, api.env
 }
 ```
 
@@ -602,6 +602,85 @@ Files:
 
 See [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) for the full architecture.
 
+#### `dmn` — DMN Editor API (DRD-only)
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `setOverlays` | `(uri, overlays[]) → void` | Imperative overlay placement on the DRD — replaces all overlays for this plugin on the given URI |
+| `clearOverlays` | `(uri, filter?) → void` | Remove overlays for this plugin on the given URI (optionally filtered by elementId) |
+| `getElements` | `(uri) → DmnElementSnapshot[]` | All elements on the DRD plane; `[]` while a non-DRD view is active |
+| `getElement` | `(uri, elementId) → DmnElementDetailSnapshot \| null` | Detail snapshot with properties, incoming, outgoing; `null` while a non-DRD view is active |
+| `getXml` | `(uri) → string` | Current DMN XML content |
+| `onElementSelected` | `(uri, callback) → Disposable` | Subscribe to DRD selection changes |
+| `onElementHover` | `(uri, callback) → Disposable` | Subscribe to DRD hover events |
+| `onElementDoubleClick` | `(uri, callback) → Disposable` | Subscribe to DRD double-click events |
+| `onElementContextMenu` | `(uri, callback) → Disposable` | Subscribe to DRD context menu events |
+| `onOverlayContextChanged` | `(uri, callback) → Disposable` | Subscribe to overlay context changes (data-updated, selection-changed, document-opened, **view-changed**) |
+| `onViewChanged` | `(uri, callback) → Disposable` | Subscribe to active-view changes (DRD ↔ decision table / literal / boxed expression) |
+| `getActiveView` | `(uri) → DmnViewChangedEvent \| null` | Current active view for the document, or `null` if not open |
+| `registerOverlayFactory` | `(factory, options?) → Disposable` | Register a factory callback for auto-rendered DRD overlays (see below) |
+| `requestOverlayRefresh` | `() → void` | Force re-evaluation of all overlay factories on all open DMN documents' DRD views |
+
+Unlike `bpmn`, `dmn` has no `getFocusedDocumentUri` convenience method — plugins use the shared `api.editors.getFocusedDocumentUri()`.
+
+**Overlay Factory (auto-render model)**:
+
+`registerOverlayFactory` registers a callback the Studio invokes on every DRD overlay refresh cycle (document open, XML change, selection change, **view change**). The factory receives a `DmnOverlayFactoryContext` containing the current DRD element list, document URI, and the overlay chain from previous factories. It returns a `DmnOverlayDescriptor[]` representing the final overlay set for the next factory in the chain. `originalDefaultOverlays` is always empty for DMN — there is no Studio-owned built-in overlay layer, kept only for structural parity with the BPMN context shape.
+
+Key design decisions (shared with BPMN, plus one DMN-specific addition):
+- **One factory per plugin** — re-registration replaces the previous factory.
+- **Priority-ordered chain** — factories are called in ascending priority order (lowest first, highest last). Default priority: 100.
+- **View-aware clearing** — when the DRD view is not active, `DmnPluginOverlayManager` clears all rendered overlays without invoking factories, and re-resolves them from scratch when the DRD becomes active again. This is the DMN-specific addition over BPMN's model (BPMN has only one view).
+- **Error isolation** — one factory throwing doesn't break the chain; its input is passed unchanged to the next factory.
+
+Files:
+- `studio/src/modules/dmn-editor/DmnPluginOverlayManager.ts` — factory registry, invocation, direct DRD overlay rendering, view-aware clearing
+- `studio/src/bifrost/electron-renderer/plugin-host/DmnApiBridge.ts` — callback registration, IPC bridge
+- `studio/src/modules/dmn-editor/DmnDocumentModel.ts` — `refreshPluginOverlays()` integration point
+- `studio-sdk/src/plugin-api/DmnApi.ts` — SDK type definitions
+
+**Modeling sub-namespace** (requires `dmn.modelling`):
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `modeling.updateProperties` | `(uri, elementId, properties) → void` | Update element properties (undoable) |
+| `modeling.removeElement` | `(uri, elementId) → void` | Remove element (undoable) |
+| `modeling.createElement` | `(uri, descriptor) → { elementId }` | Create element at an **absolute** canvas position (undoable) |
+| `modeling.appendElement` | `(uri, sourceId, descriptor) → { elementId }` | Create element next to `sourceId` and connect it (undoable; BPMN-style relative append) |
+| `modeling.createConnection` | `(uri, sourceId, targetId, type?) → { connectionId }` | Create a requirement connection; `type` defaults to `dmn:InformationRequirement` (undoable) |
+| `modeling.moveElement` | `(uri, elementId, delta) → void` | Move element by delta (undoable) |
+
+DMN exposes both `createElement` (absolute position) and `appendElement` (relative to a source, BPMN-style) — see `docs/decisions.md` for the rationale.
+
+**Palette/Context Pad contributions** (requires `dmn.modelling`):
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `registerPaletteEntry` | `(entry) → void` | Runtime DRD palette entry registration |
+| `unregisterPaletteEntry` | `(id) → void` | Remove a palette entry |
+| `registerContextPadEntry` | `(entry) → void` | Runtime DRD context pad entry registration |
+| `unregisterContextPadEntry` | `(id) → void` | Remove a context pad entry |
+| `updateContextPadEntry` | `(id, update) → void` | Update elementIds/elementTypes dynamically |
+
+Manifest equivalents: `contributes.dmnPalette` and `contributes.dmnContextPad` in `package.json`.
+
+**Renderer module messaging** (requires `dmn.renderer`):
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `postToRendererModule` | `(data) → void` | Send message to renderer-injected module |
+| `onRendererModuleMessage` | `(callback) → Disposable` | Subscribe to messages from renderer module |
+
+Manifest: `contributes.dmnModules` declares JS bundles injected into the DRD renderer.
+
+Files:
+- `studio/src/modules/dmn-core/plugin-modules/PluginDmnModuleLoader.ts` — loads plugin renderer modules for the DRD
+- `studio/src/modules/dmn-core/PluginDmnContributionStore.ts` — palette/context pad registry
+- `studio/src/modules/dmn-core/dmn-js/Provider/PluginDmnPaletteProvider.ts` — diagram-js palette multiplexer
+- `studio/src/modules/dmn-core/dmn-js/Provider/PluginDmnContextPadProvider.ts` — diagram-js context pad multiplexer
+
+See [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md) for the full architecture.
+
 ### Command namespacing
 
 Commands registered by plugins are automatically prefixed with `plugin.<pluginName>.` to prevent collisions with module commands.
@@ -619,7 +698,7 @@ Commands registered by plugins are automatically prefixed with `plugin.<pluginNa
 | Rule | Commands |
 |------|----------|
 | **Hard-denied** (no permission can grant) | `git.*`, `engine.*`, `plugins.*`, `dev.*`, plus `std.solution.*`, `std.window.*`, `std.internal.*`, `std.test.*` |
-| **Permission-gated** | `std.*` → `commands.std`; `bpmn.*` (except modeler register) → `commands.bpmn`; `dmn.*` → `commands.dmn`; `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` → `bpmn.renderer` (legacy alias: `renderer-modules`); `api.bpmn.modeling.*` → `bpmn.modelling`; `api.bpmn.postToRendererModule` / `api.bpmn.onRendererModuleMessage` → `bpmn.renderer` |
+| **Permission-gated** | `std.*` → `commands.std`; `bpmn.*` (except modeler register) → `commands.bpmn`; `dmn.*` (except modeler register) → `commands.dmn`; `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` → `bpmn.renderer` (legacy alias: `renderer-modules`); `api.bpmn.modeling.*` → `bpmn.modelling`; `api.bpmn.postToRendererModule` / `api.bpmn.onRendererModuleMessage` → `bpmn.renderer`; `api.dmn.modeling.*` → `dmn.modelling`; `api.dmn.postToRendererModule` / `api.dmn.onRendererModuleMessage` → `dmn.renderer` |
 | **Always allowed** | `plugin.<pluginName>.*` (own commands) |
 
 Failures throw `CommandBlockedError` or `PermissionDeniedError`, serialized back to the worker as API errors.
@@ -651,6 +730,9 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 | `bpmn` | Read BPMN elements, subscribe to events, place overlays |
 | `bpmn.modelling` | All of `bpmn` + model modification + palette/context pad contributions |
 | `bpmn.renderer` | All of `bpmn.modelling` + inject diagram-js modules into renderer |
+| `dmn` | Read DMN DRD elements, subscribe to events, place overlays |
+| `dmn.modelling` | All of `dmn` + model modification + DRD palette/context pad contributions |
+| `dmn.renderer` | All of `dmn.modelling` + inject diagram-js modules into the DRD renderer |
 | `native` | Load `.node` native addons via `require()` |
 | `system-info` | `require('os')` (safe subset only, via `ModuleGate`) |
 
@@ -662,7 +744,7 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 - **Read**: Unrestricted (user preferences, not secrets)
 - **Register**: Descriptor keys must start with `plugin.<name>.`
 
-- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workspace, views, themes, bpmn). The `bpmn` namespace is handled by `BpmnApiBridge` and enforces tiered permissions (`bpmn` → `bpmn.modelling` → `bpmn.renderer`).
+- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workspace, views, themes, bpmn, dmn). The `bpmn` namespace is handled by `BpmnApiBridge` and enforces tiered permissions (`bpmn` → `bpmn.modelling` → `bpmn.renderer`). The `dmn` namespace is handled by `DmnApiBridge` and enforces the parallel tiered permissions (`dmn` → `dmn.modelling` → `dmn.renderer`), with every modeling/renderer operation additionally gated on the DRD view being active.
 - **Command registration**: Handled via `PH_REGISTER_CALLBACK` with `namespace: 'commands'` and `method: 'register'`. The bridge creates a proxy handler in `bifrost.commands` that forwards invocations to the plugin Worker via `PH_CALLBACK_INVOCATION`. Manifest stub commands are unregistered and replaced when the real handler registers.
 - **Settings change listeners**: Subscribes to `EVENT_SETTINGS_CHANGED` with key filtering, invokes callbacks via the connection.
 - **Webview messaging**: `postMessage` forwards data to `PluginIframeManager.postMessageToIframe()`. `onMessage` sets a `messageHandler` on the iframe entry which routes incoming iframe messages back to the child process via `PH_CALLBACK_INVOCATION`. `createPanel` returns a deterministic `iframeId`.
@@ -1002,7 +1084,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the SDK `Tree` component |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Renderer | Event-driven lazy activation: subscribes to activation events, defers `PH_LOAD_PLUGIN` until trigger fires. Stores a `pendingActivations` promise so concurrent callers (e.g. stub callbacks) join an in-flight activation instead of returning early |
-| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, service task types, pane toggles, themes, bpmnPalette, bpmnContextPad, bpmnModules |
+| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, service task types, pane toggles, themes, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Renderer | Pane UI showing "Activating plugin…" while the plugin is pending activation |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestTypes.ts` | Shared | TypeScript interfaces for the `bifrostStudio` manifest section |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestReader.ts` | Shared | Parser + validator for `bifrostStudio` in `package.json` |

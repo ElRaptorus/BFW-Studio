@@ -7,15 +7,18 @@ import { EditorDocumentModel, waitForAcceptance } from '@evil/bifrost_fw_sdk';
 import type { FileEventType, WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
 
 import { EVENT_METADATA_UPDATED } from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
+import { PLUGIN_DMN_OVERLAY_MANAGER_KEY } from '../../bifrost/electron-renderer/plugin-host/DmnApiBridge';
 import DmnModelerComponentAdapter, {
   type DmnView,
   type DmnViewType,
   EVENT_DMN_ADAPTER_LOCATION_CHANGED,
+  EVENT_DMN_ADAPTER_SELECTION_CHANGED,
   EVENT_DMN_ADAPTER_VIEW_CHANGED,
   EVENT_DMN_ADAPTER_XML_CHANGED,
 } from '../dmn-core/DmnModelerComponentAdapter';
 import DmnDocumentElementAccess, { EVENT_DMN_ELEMENT_PROPERTY_UPDATED } from './DmnDocumentElementAccess';
 import DmnDocumentSelection, { EVENT_DMN_SELECTION_ELEMENTS_UPDATED } from './DmnDocumentSelection';
+import type { DmnPluginOverlayManager } from './DmnPluginOverlayManager';
 import DmnValidationOverlayManager from './DmnValidationOverlayManager';
 
 const MERGE_CONFLICT_MARKER_REGEX = /^<{7}\s/m;
@@ -87,6 +90,10 @@ export default class DmnDocumentModel extends EditorDocumentModel {
         this.xml = xml;
         this.updateCurrentData(xml);
         this.validationManager.requestValidation();
+        this.refreshPluginOverlays();
+      }),
+      this.dmnComponentAdapter.on(EVENT_DMN_ADAPTER_SELECTION_CHANGED, () => {
+        this.refreshPluginOverlays();
       }),
       this.elements.on(EVENT_DMN_ELEMENT_PROPERTY_UPDATED, () => {
         this.validationManager.requestValidation();
@@ -96,11 +103,13 @@ export default class DmnDocumentModel extends EditorDocumentModel {
       ),
       this.dmnComponentAdapter.on(
         EVENT_DMN_ADAPTER_VIEW_CHANGED,
-        (viewData: { views: DmnView[]; activeView: DmnView | null }) =>
+        (viewData: { views: DmnView[]; activeView: DmnView | null }) => {
           this.updateMetadata({
             activeViewType: viewData.activeView?.type ?? null,
             views: viewData.views,
-          }),
+          });
+          this.refreshPluginOverlays();
+        },
       ),
       studio.events.on('settingsUpdate', (settingName: string) => {
         if (settingName === 'dmn.editor.showGrid') {
@@ -109,11 +118,15 @@ export default class DmnDocumentModel extends EditorDocumentModel {
           this.toggleMinimap();
         }
       }),
+      studio.events.on('pluginDmnOverlayFactoriesChanged', () => {
+        this.refreshPluginOverlays();
+      }),
     );
 
     this.onceInteractive(() => {
       this.toggleGrid();
       this.toggleMinimap();
+      this.refreshPluginOverlays();
     });
 
     this.startFileWatcher();
@@ -219,6 +232,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
     this.eventEmitter.removeAllListeners();
     this.watcherDisposable?.dispose();
     this.validationManager?.dispose();
+    this.getPluginOverlayManager()?.clearForUri(this.uri);
     this.dmnComponentAdapter?.dispose();
     (this.dmnComponentAdapter as any) = undefined;
   }
@@ -328,6 +342,46 @@ export default class DmnDocumentModel extends EditorDocumentModel {
       } else {
         minimap.close();
       }
+    }
+  }
+
+  private refreshPluginOverlays(): void {
+    const overlayManager = this.getPluginOverlayManager();
+    if (overlayManager == null) {
+      return;
+    }
+
+    if (!this.dmnComponentAdapter.isDrdActive()) {
+      overlayManager.refresh(this.dmnComponentAdapter, [], this.uri).catch((error) => {
+        console.warn('[DmnDocumentModel] Plugin overlay refresh failed:', error);
+      });
+      return;
+    }
+
+    const elementRegistry = this.dmnComponentAdapter.getDrdElementRegistry();
+    const elements = (elementRegistry.filter(() => true) as any[]).map((element) => {
+      const businessObject = element.businessObject;
+      return {
+        id: element.id,
+        type: element.type,
+        name: businessObject?.name ?? null,
+        parentId: element.parent?.id ?? null,
+        properties: {},
+        incoming: [] as string[],
+        outgoing: [] as string[],
+      };
+    });
+
+    overlayManager.refresh(this.dmnComponentAdapter, elements, this.uri).catch((error) => {
+      console.warn('[DmnDocumentModel] Plugin overlay refresh failed:', error);
+    });
+  }
+
+  private getPluginOverlayManager(): DmnPluginOverlayManager | null {
+    try {
+      return this.studio.getSharedRessource<DmnPluginOverlayManager>(PLUGIN_DMN_OVERLAY_MANAGER_KEY);
+    } catch {
+      return null;
     }
   }
 
