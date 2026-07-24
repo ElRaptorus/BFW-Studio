@@ -8,9 +8,9 @@
 
 ## Vision
 
-Bifrost Forge World's extension mechanism must provide **maximum stability and isolation** for third-party extensions while offering **full feature richness and modability**. Internal ("packaged") extensions remain trusted, first-class citizens compiled into the bundle. External extensions — referred to as **Plugins** in all user-facing surfaces — run in isolated processes, communicate through a stable versioned API, declare their contributions through a manifest, and render custom UI in sandboxed webviews.
+Bifrost Forge World's Plugin mechanism must provide **maximum stability and isolation** for third-party Plugins while offering **full feature richness and modability**. Internal ("packaged") Plugins remain trusted, first-class citizens compiled into the bundle. External Plugins — referred to as **Plugins** in all user-facing surfaces — run in isolated processes, communicate through a stable versioned API, declare their contributions through a manifest, and render custom UI in sandboxed webviews.
 
-> **Naming convention**: The term "Plugin" is used for all user-installed external extensions — in UI labels, command names, documentation, **and** in code (class names, type names, file names, interfaces). This mirrors the Daemon Engine's naming and provides a strict linguistic separation between pre-modules (internal, compiled into the bundle, using "Extension" terminology like `ModuleManager`) and user-managed plugins (external, loaded from disk at runtime, using "Plugin" terminology like `PluginHost`, `PluginLoader`, `StudioPluginApi`). The codebase enforces this split: if a class serves the plugin infrastructure, it uses "Plugin" in its name.
+> **Naming convention**: The term "Plugin" is used for all user-installed external extensions — in UI labels, command names, documentation, **and** in code (class names, type names, file names, interfaces). This mirrors the Daemon Engine's naming and provides a strict linguistic separation between pre-modules (internal, compiled into the bundle, using "Extension" terminology like `ModuleManager`) and user-managed plugins (external, loaded from disk at runtime, using "Plugin" terminology like `PluginHost`, `PluginService`, `StudioPluginApi`). The codebase enforces this split: if a class serves the plugin infrastructure, it uses "Plugin" in its name.
 
 The roadmap is organized into **phases** (numbered 0 through 11), each broken into **small iterative batches**. Every batch is a self-contained deliverable that can be reviewed, tested, and merged independently.
 
@@ -132,7 +132,7 @@ The roadmap is organized into **phases** (numbered 0 through 11), each broken in
 > | Location | Role |
 > |----------|------|
 > | `studio/src/bifrost/electron-renderer/plugin-host/` | Renderer-side lifecycle (`PluginHost`), bridge (`PluginHostBridge`), logger (`PluginHostLogger`) — **internal, not exposed** |
-> | `studio/src/bifrost/common/plugin-host/` | `PluginService` (public facade at `bifrost.plugins`), `NullPluginHost` (non-Electron fallback), child process bundle: `plugin-host-main.ts`, `PluginLoader`, `callbackRegistry`, `api/*` |
+> | `studio/src/bifrost/common/plugin-host/` | `PluginService` (public facade at `bifrost.plugins`), `NullPluginHost` (non-Electron fallback), child process bundle: `plugin-host-main.ts`, `sandbox/` (Worker Thread + SES sandbox, inline `createPluginApi()`), `callbackRegistry` |
 > | `studio/src/bifrost/contracts/` | Shared protocol: `PluginHostProtocol.ts`, `PluginHostConnection.ts`, `PluginHostTypes.ts` |
 
 ### [DONE] Batch 1.1 — Plugin Host process lifecycle

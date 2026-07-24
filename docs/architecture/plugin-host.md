@@ -78,7 +78,7 @@ The plugin subsystem is a **first-class Bifrost service**, available at `bifrost
 │  Plugin Host child process (plugin-host.js)          │
 │  - SandboxManager → PluginSandbox (per plugin)       │
 │  - Worker Thread + SES Compartment (sandbox-worker)  │
-│  - QuarantineManager, StudioPluginApi in worker      │
+│  - QuarantineManager; inline api via createPluginApi  │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -139,7 +139,7 @@ When a single plugin is unloaded or reloaded (via `bifrost.plugins.togglePlugin(
 
 1. **PluginService** — Updates the `plugins.disabledPlugins` setting, then delegates to `pluginHost.unloadPlugin(name)` or `pluginHost.reloadPlugin(name)`. On disable, also closes the plugin's README tab and clears its logo cache entry.
 2. **PluginHost (renderer)** — `PluginHostBridge.disposePlugin(name)` removes only that plugin's registered callbacks (commands, settings listeners, diagnostics subscriptions, workspace file watchers, solution-change listeners) from the renderer, clears plugin diagnostics, and force-closes any active dialog owned by the plugin. `pluginIframeManager?.disposePlugin(name)` cleans up any webview iframes. Sends IPC to child process.
-3. **Plugin Host (child process)** — `SandboxManager.unloadPlugin(name)` stops the plugin's Worker Thread (`PluginSandbox.stop()`), which runs `deactivate()` inside the compartment and disposes `StudioPluginApi` callbacks. The renderer receives `PH_UNREGISTER_CALLBACK` for each disposed callback. The Worker is terminated so a reload starts a fresh compartment (no shared `require.cache` across plugins).
+3. **Plugin Host (child process)** — `SandboxManager.unloadPlugin(name)` stops the plugin's Worker Thread (`PluginSandbox.stop()`), which runs `deactivate()` inside the compartment and disposes the plugin's registered API callbacks. The renderer receives `PH_UNREGISTER_CALLBACK` for each disposed callback. The Worker is terminated so a reload starts a fresh compartment (no shared `require.cache` across plugins).
 4. **Renderer permissions** — `PluginHostBridge.permissionGate.unregister(pluginName)` clears the plugin's granted permission set.
 5. **Plugin list** — The `PluginHost`'s `pluginList` entry is updated in-place (`status: 'disabled'` for unload, `status: 'loaded'` for reload). `PluginHost` emits `EVENT_PLUGIN_LIST_CHANGED`. `PluginService` syncs and re-emits. UI consumers re-render.
 
@@ -688,7 +688,7 @@ When the renderer sends `PH_LOAD_PLUGIN` / `PH_RELOAD_PLUGIN`:
 2. `plugin-host-main` delegates to `SandboxManager.loadPlugin({ pluginName, pluginPath, permissions })`.
 3. `PluginSandbox` spawns a Worker Thread running `sandbox-worker.ts` with `workerData` (paths + permission list).
 4. Worker runs SES `lockdown()`, builds `ModuleGate`-wrapped `require`, creates a `Compartment` with a frozen `process` subset and no `fetch` / `XMLHttpRequest` / `WebSocket`.
-5. Worker `require(mainPath)` and calls `activate(api)` (or `default.activate(api)`); `StudioPluginApi` proxies API calls as `PH_API_REQUEST` messages.
+5. Worker `require(mainPath)` and calls `activate(api)` (or `default.activate(api)`); the inline `createPluginApi()` (in `sandbox-worker.ts`) proxies API calls as `PH_API_REQUEST` messages via `sendApiRequest()`.
 6. On success, renderer sets `PluginInfo.status` to `'loaded'` (or `'pending'` for lazy activation).
 
 Unload/reload terminates the Worker; there is no shared activation state between plugins.
@@ -705,10 +705,6 @@ During discovery, the following additional metadata is extracted from each plugi
 | `deprecated` | `pkg.deprecated` | `undefined` (`false` and empty strings are normalized to `undefined`) |
 
 The `author` field supports both npm formats: string (`"Name <email> (url)"`) and object (`{ name, email, url }`). A `parseAuthorString` helper extracts the name and URL from the string format.
-
-### Legacy `PluginLoader`
-
-`PluginLoader.ts` remains in the tree as the pre–Phase 7 single-process loader (`require` in the child process main thread). **`plugin-host-main.ts` no longer uses it** — all loads go through `SandboxManager` / `sandbox-worker.ts`.
 
 ### Storage
 
@@ -985,11 +981,10 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/contracts/PluginHostConnection.ts` | Shared | Promise-based request/response wrapper |
 | `studio/src/bifrost/contracts/PluginHostProtocol.ts` | Shared | Message type definitions and constants |
 | `studio/src/bifrost/contracts/IpcEvents.ts` | Shared | `IPC_INVOKE_UNINSTALL_PLUGIN`, `IPC_MESSAGE_PLUGIN_STATE_CHANGED` constants |
-| `studio/src/bifrost/common/plugin-host/PluginLoader.ts` | Host | Legacy loader (pre–Phase 7); superseded by `SandboxManager` / `sandbox-worker.ts` |
 | `studio/src/bifrost/common/plugin-host/plugin-host-main.ts` | Host | Child process entry point; owns `SandboxManager`, IPC dispatch |
 | `studio/src/bifrost/common/plugin-host/sandbox/SandboxManager.ts` | Host | Per-plugin Worker orchestration, API attestation, quarantine integration |
 | `studio/src/bifrost/common/plugin-host/sandbox/PluginSandbox.ts` | Host | Single Worker Thread wrapper (`start` / `stop` / `terminate`) |
-| `studio/src/bifrost/common/plugin-host/sandbox/sandbox-worker.ts` | Worker | SES lockdown, Compartment, `ModuleGate`, `activate()`. Message handler registered **before** `activate()` so API responses can be processed during activation. |
+| `studio/src/bifrost/common/plugin-host/sandbox/sandbox-worker.ts` | Worker | SES lockdown, Compartment, `ModuleGate`, `activate()`. Builds the plugin-facing API inline via `createPluginApi()` (namespaces: `commands`, `bpmn`, `editors`, `workspace`, `settings`, `notifications`, `dialogs`, `panes`, `statusBar`, `menuBar`, `menus`, `views`, `themes`, `webviews`, `events`, `diagnostics`, `env`), proxying calls as `PH_API_REQUEST` via `sendApiRequest()`. Message handler registered **before** `activate()` so API responses can be processed during activation. |
 | `studio/src/bifrost/common/plugin-host/sandbox/ModuleGate.ts` | Worker | Permission-gated `require()` factory |
 | `studio/src/bifrost/common/plugin-host/sandbox/QuarantineManager.ts` | Host | Crash counting, `quarantine.json` persistence, `trustAndReEnable` |
 | `studio/src/bifrost/common/plugin-host/sandbox/PluginHealthReport.ts` | Host | Health metric types for sandbox state |
@@ -1003,23 +998,6 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/electron-renderer/plugin-host/PluginPermissionDialog.ts` | Renderer | Permission review dialog on enable/reload |
 | `studio/src/bifrost/common/plugin-host/PluginPermissionStore.ts` | Shared | Local-storage-backed permission trust records (per plugin) |
 | `studio/src/bifrost/common/plugin-host/callbackRegistry.ts` | Worker | Per-worker O(1) callback lookup inside `sandbox-worker.ts` |
-| `studio/src/bifrost/common/plugin-host/api/StudioPluginApi.ts` | Host | Plugin-facing API aggregate, `dispose()` delegates to sub-API `disposeCallbacks()` |
-| `studio/src/bifrost/common/plugin-host/api/CommandsApi.ts` | Host | Command registration, execution, introspection, command search |
-| `studio/src/bifrost/common/plugin-host/api/DiagnosticsApi.ts` | Host | Diagnostics: `set`, `clear`, `get`, `getCount`, `onDidChange` |
-| `studio/src/bifrost/common/plugin-host/api/DialogsApi.ts` | Host | Dialogs: `open`, `prompt`, `showOpenFile`, `showOpenDirectory`, `showSaveFile` |
-| `studio/src/bifrost/common/plugin-host/api/NotificationsApi.ts` | Host | Notification open/close/update, `onResponse` for action callbacks |
-| `studio/src/bifrost/common/plugin-host/api/SettingsApi.ts` | Host | Full settings access: register, CRUD, introspection, change observation |
-| `studio/src/bifrost/common/plugin-host/api/EventsApi.ts` | Host | Event subscription |
-| `studio/src/bifrost/common/plugin-host/api/WebviewApi.ts` | Host | Webview messaging: `createPanel`, `postMessage`, `onMessage`, `dispose` |
-| `studio/src/bifrost/common/plugin-host/api/EditorsApi.ts` | Host | Editor document registration: `registerWebviewDocumentType`, `openDocument`, `setDirty`, `onSaveRequest` |
-| `studio/src/bifrost/common/plugin-host/api/PanesApi.ts` | Host | Pane registration: `registerWebviewPane` |
-| `studio/src/bifrost/common/plugin-host/api/StatusBarApi.ts` | Host | Status bar: `registerStatusBarItem`, `updateStatusBarItem`, `unregisterStatusBarItem`, `showProgress`, `isVisible` |
-| `studio/src/bifrost/common/plugin-host/api/MenuBarApi.ts` | Host | Menu bar: `registerMenuBarItem`, `registerMenuBarItemModifier`, `isVisible` |
-| `studio/src/bifrost/common/plugin-host/api/MenusApi.ts` | Host | Menus: `registerMenuModifier` |
-| `studio/src/bifrost/common/plugin-host/api/WorkspaceApi.ts` | Host | Workspace: `readFile`, `writeFile`, `listDirectory`, `stat`, file watchers |
-| `studio/src/bifrost/common/plugin-host/api/ViewsApi.ts` | Host | Views: `registerTreeView`, `updateTreeData` |
-| `studio/src/bifrost/common/plugin-host/api/ThemesApi.ts` | Host | Themes: `register`, `unregister`, `getActiveTheme` |
-| `studio/src/bifrost/common/plugin-host/api/BpmnApi.ts` | Host | BPMN API: overlays, elements, modeling, palette/context pad, renderer module messaging |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframeDocumentRenderer.tsx` | Renderer | Factory creating iframe-backed editor document renderers (`createIframeDocumentRendererConstructor`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the SDK `Tree` component |

@@ -1175,3 +1175,20 @@ Additionally, `{ ...createNamespaceProxy('editors') }` produced `{}` because Jav
 4. **Persistence via the standard `transformation` handler pattern.** `activationCondition` get/set handlers in `BpmnDocumentElementAccess.ts` create/clear a `bpmn:FormalExpression` child exactly like `transformation`/`conditionExpression`, rather than an `evil:*` extension — because the engine parses the standard `<bpmn:activationCondition>` element as trimmed body text.
 
 **Rationale**: Reuse of the proven `transformation`/`conditionExpression` moddle-child pattern keeps serialization identical to what the engine already consumes. Reading the moddle in the debugger is a small, deliberate deviation from the debugger's usual `flowNodeModel.typeData` convention that avoids a cross-repo release. Verify-only scope on supported elements avoids adding a redundant palette entry.
+
+---
+
+### 2026-07-24 — Remove pre–Phase 7 in-process `PluginLoader` + in-process `StudioPluginApi` hierarchy
+
+**Context**: Before Phase 7 (2026-06-05, "Per Plugin Sandboxing & Permissions"), plugins were loaded in the plugin-host child process's main thread by `PluginLoader.ts`, which `require`d the plugin module and handed it a single aggregate `StudioPluginApi` instance composed of 16 per-namespace API classes (`api/BpmnApi.ts`, `api/CommandsApi.ts`, `api/EditorsApi.ts`, …). Phase 7 replaced this with `SandboxManager` + `PluginSandbox` running each plugin in its own Worker Thread under an SES `Compartment`, where `sandbox-worker.ts` builds the plugin-facing API **inline** via `createPluginApi()`. Since then `PluginLoader` and the entire `api/*` class hierarchy have been dead code — `plugin-host-main.ts` instantiates only `SandboxManager`, and no runtime path or test imports the internal classes.
+
+**Decision**: Delete the 18 dead files (`PluginLoader.ts`, `api/StudioPluginApi.ts` incl. its `PluginEnvironment` interface, and the 16 `api/*Api.ts` classes) and the now-empty `api/` directory.
+
+**What is NOT affected**:
+
+- The **SDK type** `StudioPluginApi` (`studio-sdk/src/plugin-api/StudioPluginApi.ts`) — the developer-facing contract plugins import from `@evil/bifrost_fw_sdk` — is untouched.
+- The live runtime API surface (`createPluginApi()` in `sandbox-worker.ts`) is untouched.
+- Shared contracts imported by the deleted files (`PluginHostConnection`, `PluginApiVersion`/`STUDIO_PLUGIN_API_VERSION`, `PluginHostProtocol`) remain in use by `plugin-host-main.ts`, `SandboxManager`, `PluginHost`, and `ActivationManager`, so none became orphaned.
+- `scaffold-generator.test.ts` asserts the generated plugin template string contains `StudioPluginApi` (the SDK type) — not the removed internal class — so it is unaffected.
+
+**Rationale**: Removing the superseded loader eliminates a confusing dead-code island that duplicated API-surface definitions (SDK types vs. internal classes vs. the inline worker API) and repeatedly misled architecture readers into thinking the worker still used a `StudioPluginApi` class. This is a pure cleanup with zero behavior change for real plugins. It also reinforces the Phase 9 DMN plugin API decision to add DMN capabilities to the inline `createPluginApi()` rather than resurrecting an internal per-namespace class hierarchy.
