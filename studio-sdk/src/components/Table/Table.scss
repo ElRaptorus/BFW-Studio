@@ -85,13 +85,13 @@
   align-items: center;
 }
 
-.studio-table__cell--pinned-left,
-.studio-table__cell--pinned-right {
+.studio-table__cell--pinned-start,
+.studio-table__cell--pinned-end {
   background: var(--theme-table-bg);
 }
 
-.studio-table__header-row .studio-table__cell--pinned-left,
-.studio-table__header-row .studio-table__cell--pinned-right {
+.studio-table__header-row .studio-table__cell--pinned-start,
+.studio-table__header-row .studio-table__cell--pinned-end {
   background: var(--theme-table-header-bg);
 }
 

@@ -12,7 +12,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
 import {
-  type ColumnDef,
   Editor,
   EditorContent,
   EditorLoadingErrorHint,
@@ -32,6 +31,7 @@ import {
   type RowSelectionState,
   type SortingState,
   Table,
+  type TableColumnDef,
   showContextMenu,
 } from '@evil/bifrost_fw_sdk';
 
@@ -199,7 +199,7 @@ export default function DecisionCatalogRenderer(props: EditorDocumentRendererPro
     showContextMenu(event, 'engine-workspace/decision-catalog/contextmenu', [metadata, bifrost]);
   };
 
-  const columns: ColumnDef<DecisionDefinition, any>[] = [
+  const columns: TableColumnDef<DecisionDefinition, any>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -431,7 +431,7 @@ export default function DecisionCatalogRenderer(props: EditorDocumentRendererPro
                 rowSelection={rowSelection}
                 onRowSelectionChange={handleRowSelectionChange}
                 enableRowSelection
-                columnPinning={{ left: ['select'], right: ['actions'] }}
+                columnPinning={{ start: ['select'], end: ['actions'] }}
                 enableFilters
                 columnFilters={columnFilters}
                 onColumnFilterChange={handleColumnFilterChange}

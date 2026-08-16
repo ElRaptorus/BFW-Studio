@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 
 import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
 import {
-  type ColumnDef,
   Editor,
   EditorContent,
   EditorLoadingErrorHint,
@@ -31,6 +30,7 @@ import {
   type RowSelectionState,
   type SortingState,
   Table,
+  type TableColumnDef,
   showContextMenu,
 } from '@evil/bifrost_fw_sdk';
 
@@ -117,7 +117,7 @@ export default function TimerSchedulesRenderer(props: EditorDocumentRendererProp
     showContextMenu(event, 'engine-workspace/timer-schedules/contextmenu', [metadata, bifrost]);
   };
 
-  const columns: ColumnDef<TimerSchedule, any>[] = [
+  const columns: TableColumnDef<TimerSchedule, any>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -335,7 +335,7 @@ export default function TimerSchedulesRenderer(props: EditorDocumentRendererProp
                 rowSelection={rowSelection}
                 onRowSelectionChange={handleRowSelectionChange}
                 enableRowSelection
-                columnPinning={{ left: ['select'], right: ['actions'] }}
+                columnPinning={{ start: ['select'], end: ['actions'] }}
                 enableFilters
                 columnFilters={columnFilters}
                 onColumnFilterChange={handleColumnFilterChange}

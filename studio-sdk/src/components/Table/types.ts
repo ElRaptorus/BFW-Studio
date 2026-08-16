@@ -1,13 +1,24 @@
 import type {
   ColumnDef,
   ColumnPinningState,
+  ColumnVisibilityState,
   PaginationState,
+  RowData,
   RowSelectionState,
   SortingState,
-  VisibilityState,
 } from '@tanstack/react-table';
 
-export type { ColumnDef, SortingState, PaginationState, RowSelectionState, VisibilityState, ColumnPinningState };
+import type { StudioTableFeatures } from './tableFeatures';
+
+export type { SortingState, PaginationState, RowSelectionState, ColumnPinningState };
+export type { ColumnVisibilityState as VisibilityState };
+export type { StudioTableFeatures };
+
+/**
+ * Column definition type for the shared `Table` component, pre-bound to the
+ * fixed feature set it registers (see `./tableFeatures`).
+ */
+export type TableColumnDef<TData extends RowData, TValue = unknown> = ColumnDef<StudioTableFeatures, TData, TValue>;
 
 export type TableColumnSizing = Record<string, number>;
 

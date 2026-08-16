@@ -1,11 +1,10 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { Notification } from '#bifrost/contracts/NotificationTypes';
-import type { ColumnDef } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 
 import React, { useCallback, useMemo, useState } from 'react';
 
-import type { PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
+import type { PaneComponentProps, PaneProvider, TableColumnDef } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, Table } from '@evil/bifrost_fw_sdk';
 
 export const paneProvider: PaneProvider = {
@@ -69,7 +68,7 @@ function NotificationInspector(props: { notifications: Notification[] }): React.
     setExpandedNotificationIds((prev) => ({ ...prev, [notificationId]: !prev[notificationId] }));
   }, []);
 
-  const columns = useMemo<ColumnDef<Notification, unknown>[]>(
+  const columns = useMemo<TableColumnDef<Notification>[]>(
     () => [
       {
         id: 'time',

@@ -274,7 +274,7 @@ function enableAutocompletion(editor: monaco.editor.IStandaloneCodeEditor): void
     acceptSuggestionOnEnter: 'on',
     tabCompletion: 'on',
     wordBasedSuggestions: 'currentDocument',
-    hover: { enabled: true },
+    hover: { enabled: 'on' },
   });
 }
 
@@ -286,7 +286,7 @@ function disableAutocompletion(editor: monaco.editor.IStandaloneCodeEditor): voi
     acceptSuggestionOnEnter: 'off',
     tabCompletion: 'off',
     wordBasedSuggestions: 'off',
-    hover: { enabled: false },
+    hover: { enabled: 'off' },
   });
 }
 

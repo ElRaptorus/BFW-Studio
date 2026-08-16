@@ -1,20 +1,22 @@
-import type { Table } from '@tanstack/react-table';
+import type { ReactTable, RowData } from '@tanstack/react-table';
 
 import React from 'react';
 
+import type { StudioTableFeatures } from './types';
+
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-type TablePaginationProps<TData> = {
-  table: Table<TData>;
+type TablePaginationProps<TData extends RowData> = {
+  table: ReactTable<StudioTableFeatures, TData>;
   pageSizeOptions?: number[];
 };
 
-export function TablePagination<TData>(props: TablePaginationProps<TData>): React.JSX.Element {
+export function TablePagination<TData extends RowData>(props: TablePaginationProps<TData>): React.JSX.Element {
   const { table, pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS } = props;
 
-  const currentPage = table.getState().pagination.pageIndex;
+  const currentPage = table.state.pagination.pageIndex;
   const totalPages = table.getPageCount();
-  const pageSize = table.getState().pagination.pageSize;
+  const pageSize = table.state.pagination.pageSize;
 
   return (
     <div className="studio-table-pagination" data-test--table-pagination="">

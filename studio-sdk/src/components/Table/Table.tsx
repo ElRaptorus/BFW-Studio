@@ -1,35 +1,34 @@
-import {
-  flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import { flexRender, useTable } from '@tanstack/react-table';
 import type {
-  ColumnDef,
   ColumnFiltersState,
   ColumnPinningState,
   ColumnSizingState,
+  ColumnVisibilityState,
   ExpandedState,
   OnChangeFn,
   PaginationState,
   Row,
+  RowData,
   RowSelectionState,
   SortingState,
-  VisibilityState,
 } from '@tanstack/react-table';
 
 import React, { useCallback, useState } from 'react';
 
 import { TableColumnFilter } from './TableColumnFilter';
 import { TablePagination } from './TablePagination';
-import type { DateRangeFilterValue, DurationRangeFilterValue, TableColumnMeta } from './types';
+import { tableFeatureSet } from './tableFeatures';
+import type {
+  DateRangeFilterValue,
+  DurationRangeFilterValue,
+  StudioTableFeatures,
+  TableColumnDef,
+  TableColumnMeta,
+} from './types';
 
-export type TableProps<TData> = {
+export type TableProps<TData extends RowData> = {
   data: TData[];
-  columns: ColumnDef<TData, any>[];
+  columns: TableColumnDef<TData>[];
   getRowId?: (row: TData, index: number) => string;
 
   sorting?: SortingState;
@@ -44,7 +43,7 @@ export type TableProps<TData> = {
   pageCount?: number;
   pageSizeOptions?: number[];
 
-  enableRowSelection?: boolean | ((row: Row<TData>) => boolean);
+  enableRowSelection?: boolean | ((row: Row<StudioTableFeatures, TData>) => boolean);
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 
@@ -54,8 +53,8 @@ export type TableProps<TData> = {
 
   columnPinning?: ColumnPinningState;
 
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
 
   columnSizing?: ColumnSizingState;
   onColumnSizingChange?: OnChangeFn<ColumnSizingState>;
@@ -78,7 +77,7 @@ export type TableProps<TData> = {
   className?: string;
 };
 
-export function Table<TData>(props: TableProps<TData>): React.JSX.Element {
+export function Table<TData extends RowData>(props: TableProps<TData>): React.JSX.Element {
   const {
     data,
     columns,
@@ -136,16 +135,11 @@ export function Table<TData>(props: TableProps<TData>): React.JSX.Element {
   const resolvedColumnSizing = columnSizing ?? internalColumnSizing;
   const resolvedOnColumnSizingChange: OnChangeFn<ColumnSizingState> = onColumnSizingChange ?? setInternalColumnSizing;
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features: tableFeatureSet,
     data,
     columns,
     getRowId,
-    getCoreRowModel: getCoreRowModel(),
-    getExpandedRowModel: getSubRows != null ? getExpandedRowModel() : undefined,
-    getSortedRowModel: resolvedManualSorting ? undefined : getSortedRowModel(),
-    getFilteredRowModel: resolvedManualFiltering ? undefined : getFilteredRowModel(),
-    getPaginationRowModel: resolvedManualPagination ? undefined : getPaginationRowModel(),
     manualFiltering: resolvedManualFiltering,
     getSubRows,
 
@@ -158,7 +152,7 @@ export function Table<TData>(props: TableProps<TData>): React.JSX.Element {
       columnSizing: resolvedColumnSizing,
       ...(hasGlobalFilter && { globalFilter }),
       ...(tanstackColumnFilters != null && { columnFilters: tanstackColumnFilters }),
-      columnPinning: columnPinning ?? { left: [], right: [] },
+      columnPinning: columnPinning ?? { start: [], end: [] },
     },
 
     onSortingChange,
@@ -170,7 +164,7 @@ export function Table<TData>(props: TableProps<TData>): React.JSX.Element {
     manualPagination: resolvedManualPagination,
     pageCount: pageCount ?? -1,
 
-    ...(initialPageSize != null && { initialState: { pagination: { pageSize: initialPageSize } } }),
+    ...(initialPageSize != null && { initialState: { pagination: { pageIndex: 0, pageSize: initialPageSize } } }),
 
     enableRowSelection: enableRowSelection ?? false,
     onRowSelectionChange,
@@ -194,10 +188,10 @@ export function Table<TData>(props: TableProps<TData>): React.JSX.Element {
       }
       return {
         position: 'sticky',
-        left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
-        right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
+        left: isPinned === 'start' ? `${column.getStart('start')}px` : undefined,
+        right: isPinned === 'end' ? `${column.getAfter('end')}px` : undefined,
         width: size,
-        zIndex: isPinned === 'left' ? 10 : 20,
+        zIndex: isPinned === 'start' ? 10 : 20,
       };
     },
     [table],

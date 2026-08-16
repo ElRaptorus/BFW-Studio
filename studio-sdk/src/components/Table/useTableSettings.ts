@@ -1,4 +1,4 @@
-import type { ColumnSizingState, OnChangeFn, PaginationState, VisibilityState } from '@tanstack/react-table';
+import type { ColumnSizingState, ColumnVisibilityState, OnChangeFn, PaginationState } from '@tanstack/react-table';
 
 import { useCallback, useMemo } from 'react';
 
@@ -13,8 +13,8 @@ type TableSettingsConfig = {
 };
 
 type TableSettingsResult = {
-  columnVisibility: VisibilityState;
-  onColumnVisibilityChange: OnChangeFn<VisibilityState>;
+  columnVisibility: ColumnVisibilityState;
+  onColumnVisibilityChange: OnChangeFn<ColumnVisibilityState>;
   columnSizing: ColumnSizingState;
   onColumnSizingChange: OnChangeFn<ColumnSizingState>;
   pageSize: number;
@@ -44,14 +44,14 @@ function writeScopedSetting(settings: SettingsMediator, key: string, scopeKey: s
 export function useTableSettings(config: TableSettingsConfig): TableSettingsResult {
   const { settings, columnVisibilityKey, columnWidthsKey, pageSizeKey, scopeKey = '*' } = config;
 
-  const columnVisibility = useMemo<VisibilityState>(() => {
+  const columnVisibility = useMemo<ColumnVisibilityState>(() => {
     if (columnVisibilityKey == null) {
       return {};
     }
-    return readMergedSetting(settings, columnVisibilityKey, scopeKey) as VisibilityState;
+    return readMergedSetting(settings, columnVisibilityKey, scopeKey) as ColumnVisibilityState;
   }, [settings, columnVisibilityKey, scopeKey]);
 
-  const onColumnVisibilityChange = useCallback<OnChangeFn<VisibilityState>>(
+  const onColumnVisibilityChange = useCallback<OnChangeFn<ColumnVisibilityState>>(
     (updater) => {
       if (columnVisibilityKey == null) {
         return;

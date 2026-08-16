@@ -29,5 +29,5 @@ export function configureMonacoJsonValidation(studio: Studio): void {
     return;
   }
 
-  import('monaco-editor/esm/vs/language/json/monaco.contribution').then(apply);
+  import('monaco-editor/language/json/monaco.contribution').then(apply);
 }

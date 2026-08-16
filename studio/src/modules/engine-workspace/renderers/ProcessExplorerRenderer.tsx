@@ -12,7 +12,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
 import {
-  type ColumnDef,
   Editor,
   EditorContent,
   EditorLoadingErrorHint,
@@ -32,6 +31,7 @@ import {
   type RowSelectionState,
   type SortingState,
   Table,
+  type TableColumnDef,
   showContextMenu,
 } from '@evil/bifrost_fw_sdk';
 
@@ -219,7 +219,7 @@ export default function ProcessExplorerRenderer(props: EditorDocumentRendererPro
     showContextMenu(event, 'engine-workspace/process-explorer/contextmenu', [metadata, bifrost]);
   };
 
-  const columns: ColumnDef<ProcessModel, any>[] = [
+  const columns: TableColumnDef<ProcessModel, any>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -475,7 +475,7 @@ export default function ProcessExplorerRenderer(props: EditorDocumentRendererPro
                 rowSelection={rowSelection}
                 onRowSelectionChange={handleRowSelectionChange}
                 enableRowSelection
-                columnPinning={{ left: ['select'], right: ['actions'] }}
+                columnPinning={{ start: ['select'], end: ['actions'] }}
                 enableFilters
                 columnFilters={columnFilters}
                 onColumnFilterChange={handleColumnFilterChange}

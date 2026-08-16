@@ -1,5 +1,4 @@
 import type { RelativePerformanceEntry } from '#bifrost/common/Performance';
-import type { ColumnDef } from '@tanstack/react-table';
 
 import React, { useMemo } from 'react';
 
@@ -9,6 +8,7 @@ import type {
   PaneComponentProps,
   PaneProvider,
   Studio,
+  TableColumnDef,
 } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, Table } from '@evil/bifrost_fw_sdk';
 
@@ -68,7 +68,7 @@ function PaneTabOptions(props: any): React.JSX.Element {
   );
 }
 
-const performanceColumns: ColumnDef<RelativePerformanceEntry, unknown>[] = [
+const performanceColumns: TableColumnDef<RelativePerformanceEntry>[] = [
   {
     id: 'label',
     accessorKey: 'label',

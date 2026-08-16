@@ -15,7 +15,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
 import {
-  type ColumnDef,
   Editor,
   EditorContent,
   EditorLoadingErrorHint,
@@ -35,6 +34,7 @@ import {
   type RowSelectionState,
   type SortingState,
   Table,
+  type TableColumnDef,
   showContextMenu,
 } from '@evil/bifrost_fw_sdk';
 
@@ -222,7 +222,7 @@ export default function InstanceSearchRenderer(props: EditorDocumentRendererProp
     showContextMenu(event, 'engine-workspace/instance-search/contextmenu', [metadata, bifrost]);
   };
 
-  const columns: ColumnDef<TreeRow, any>[] = [
+  const columns: TableColumnDef<TreeRow, any>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -480,7 +480,7 @@ export default function InstanceSearchRenderer(props: EditorDocumentRendererProp
                 rowSelection={rowSelection}
                 onRowSelectionChange={handleRowSelectionChange}
                 enableRowSelection
-                columnPinning={{ left: ['select'], right: ['actions'] }}
+                columnPinning={{ start: ['select'], end: ['actions'] }}
                 enableFilters
                 columnFilters={columnFilters}
                 onColumnFilterChange={handleColumnFilterChange}

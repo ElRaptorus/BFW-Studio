@@ -14,7 +14,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
 import {
-  type ColumnDef,
   Editor,
   EditorContent,
   EditorLoadingErrorHint,
@@ -35,6 +34,7 @@ import {
   type RowSelectionState,
   type SortingState,
   Table,
+  type TableColumnDef,
   showContextMenu,
 } from '@evil/bifrost_fw_sdk';
 
@@ -178,7 +178,7 @@ export default function TaskInboxRenderer(props: EditorDocumentRendererProps): R
     showContextMenu(event, 'engine-workspace/task-inbox/contextmenu', [metadata, bifrost]);
   };
 
-  const columns: ColumnDef<FlowNodeInstance, any>[] = [
+  const columns: TableColumnDef<FlowNodeInstance, any>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -385,7 +385,7 @@ export default function TaskInboxRenderer(props: EditorDocumentRendererProps): R
                 rowSelection={rowSelection}
                 onRowSelectionChange={handleRowSelectionChange}
                 enableRowSelection
-                columnPinning={{ left: ['select'], right: ['actions'] }}
+                columnPinning={{ start: ['select'], end: ['actions'] }}
                 enableFilters
                 columnFilters={columnFilters}
                 onColumnFilterChange={handleColumnFilterChange}
