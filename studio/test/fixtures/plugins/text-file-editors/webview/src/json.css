@@ -1,0 +1,88 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-fg, #cdcdcd);
+  background: var(--theme-editor-bg, #2f2f2f);
+}
+
+.json-editor-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.json-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--theme-border, #454545);
+  background: var(--theme-surface-primary, #363636);
+}
+
+.json-editor-toolbar button {
+  font: inherit;
+  color: var(--theme-fg, #cdcdcd);
+  background: var(--theme-button-bg, #454545);
+  border: 1px solid var(--theme-border, #5a5a5a);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.json-editor-toolbar button:hover {
+  background: var(--theme-button-hover-bg, #565656);
+}
+
+.json-error-banner {
+  color: var(--theme-error, #e06c75);
+  font-size: 12px;
+}
+
+.json-editor-pane {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.json-editor-pane .cm-editor {
+  height: 100%;
+  background: var(--theme-editor-bg, #2f2f2f);
+  color: var(--theme-fg, #cdcdcd);
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-scrollbar-track, transparent);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-scrollbar-thumb, rgba(255, 255, 255, 0.2));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-scrollbar-thumb-hover, rgba(255, 255, 255, 0.35));
+}

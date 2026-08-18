@@ -245,10 +245,6 @@ A dynamic status bar at the bottom of the application:
 
 See [architecture](./docs/architecture/status-bar.md).
 
-### Integrated Fallback Editors
-
-Built-in Markdown and Monaco-based text editors for non-BPMN/DMN files — a convenient fallback when browsing project files with "Show hidden files" enabled.
-
 ---
 
 ## Plugin System
@@ -262,9 +258,9 @@ A process-isolated, permission-gated plugin architecture.
 - Declarative feature manifest for commands, panes, webview-based documents, menus, settings, themes, and more
 - Full API bridge for runtime interaction with the Studio
 
-**Current status:** Phase 9 of 11 finished — see the [full roadmap](./docs/extensions-v2/extension-v2-roadmap.md), [example plugins](./studio/test/fixtures/plugins), and the [plugin template generator](./tools/create-evil-plugin/).
+**Plugin Templates:** The [plugin template generator](./tools/create-evil-plugin/) provides users with a way to quickly generate Plugin Scaffolds.
 
-See [architecture](./docs/architecture/plugin-host.md) and [manifest reference](./docs/architecture/plugin-manifest.md).
+See [architecture](./docs/architecture/plugin-host.md) and [manifest reference](./docs/architecture/plugin-manifest.md) for more information.
 
 ---
 

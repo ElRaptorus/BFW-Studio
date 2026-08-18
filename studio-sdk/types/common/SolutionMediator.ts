@@ -71,6 +71,11 @@ export declare class SolutionMediator {
   registerDefaultIncludedFiles(filePatterns: string[]): void;
 
   /**
+   * Removes `filePatterns` previously added via `registerDefaultIncludedFiles`.
+   */
+  unregisterDefaultIncludedFiles(filePatterns: string[]): void;
+
+  /**
    * Gets all filePatterns which are excluded from the File Explorer by default.
    */
   getDefaultExcludedFiles(): string[];

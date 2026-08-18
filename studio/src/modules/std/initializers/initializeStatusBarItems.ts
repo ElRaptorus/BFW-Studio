@@ -4,7 +4,7 @@ import { EVENT_DIAGNOSTICS_CHANGED } from '#bifrost/common/DiagnosticsManager';
 import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { EVENT_THEME_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/ThemeEvents';
 
-const FILE_BACKED_DOCUMENT_TYPES = new Set(['bpmn', 'editor-document-markdown-editor']);
+const FILE_BACKED_DOCUMENT_TYPES = new Set(['bpmn']);
 
 export function initializeStatusBarItems(bifrost: Bifrost): void {
   registerStatusBarItems(bifrost);

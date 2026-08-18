@@ -26,6 +26,58 @@ Agents should add entries here when a meaningful design choice is made during th
 
 ## Decisions
 
+### 2026-08-18 — `discoverAndLoadPlugins` checks `bifrost.isInitialized` before subscribing to the one-shot `'ready'` event
+
+**Context**: While validating the `text-file-editors` fixture plugin (an `onStartup` plugin with a non-empty `permissions` array — a combination no prior fixture exercised), plugins discovered by a *post-boot* call to `PluginHost.discoverAndLoadPlugins()` (i.e. via `refresh()`, which backs the "Reload Plugins" command and cross-window resync) never activated. `'ready'` is emitted exactly once, at the end of the window's initial `Bifrost.initialize()`; `discoverAndLoadPlugins()` unconditionally registered a new `on('ready', ...)` subscription to defer `onStartup`/permission-gated activation, so any plugin discovered after that one-time emission waited on an event that would never fire again — permanently stuck in `pending` status with no permission dialog and no activation.
+
+**Options considered**:
+- A) Leave plugin authors to work around it by always fully restarting the Studio after adding an `onStartup` + permissions plugin.
+- B) Have `discoverAndLoadPlugins()` check `bifrost.isInitialized` (`true` once the window has completed its first boot) and, if already initialized, run the deferred-plugin-loading path immediately instead of subscribing to `'ready'`.
+
+**Decision**: Option B.
+
+**Rationale**: Restart-only workarounds are surprising and undocumented; "Reload Plugins" is expected to fully activate any newly-added plugin, matching what a fresh app launch would do. See [common-pitfalls.md](architecture/common-pitfalls.md#onstartupeager-plugins-discovered-after-boot-never-activate-ready-is-a-one-shot-event) for the full mechanism and the regression test that guards it.
+
+### 2026-08-18 — `registerWebviewDocumentType` gained `includedFilePatterns` (plugin-facing equivalent of `registerDefaultIncludedFiles`)
+
+**Context**: After fixing the `onStartup` activation-timing bug above, the `text-file-editors` fixture plugin's `.md` files still stayed hidden in the File Explorer behind "Show hidden files". The removed built-in Markdown editor had called the internal-module-only `studio.solution.registerDefaultIncludedFiles(['**/*.md', '**/*.mdx', '**/*.mdc'])`, but the Plugin API's `EditorsApi` had no equivalent — plugins could register a document type but had no way to make the File Explorer show its files by default. Fixing this also surfaced a second, independent bug: `Project.files.included` is a one-time snapshot of `SolutionManager.defaultIncludedFiles` taken when a project is added to the solution, so even an internal call to `registerDefaultIncludedFiles()` made *after* a solution is already open (as any plugin's necessarily is, since `onStartup` activation runs after solution restore) would have had no visible effect. See [common-pitfalls.md](architecture/common-pitfalls.md#registerdefaultincludedfiles-called-after-a-solution-is-already-open-has-no-visible-effect).
+
+**Options considered**:
+- A) Leave File Explorer visibility as a known limitation of plugin-registered document types (documented workaround: open via Quick Open / command palette).
+- B) Add `includedFilePatterns?: string[]` to `RegisterWebviewDocumentTypeOptions`, forward it to `bifrost.solution.registerDefaultIncludedFiles()`/`unregisterDefaultIncludedFiles()` in `PluginHostBridge`, and fix `SolutionManager` to republish pattern changes into already-open projects instead of only affecting projects created afterward.
+
+**Decision**: Option B.
+
+**Rationale**: A plugin that explicitly registers an editor for a file type has every reason to expect that type to be discoverable in the File Explorer without extra user configuration — this is exactly what the built-in editors did before removal, and Option A would make the plugin-based replacement strictly worse than what it replaces. `unregisterDefaultIncludedFiles` was added as the symmetric counterpart (removes one occurrence per pattern) so patterns don't leak past plugin disable/reload/uninstall — unlike built-in modules, which register patterns once for the process lifetime and never need to remove them.
+
+### 2026-08-18 — `text-file-editors` fixture switched from `onStartup` to plain eager loading
+
+**Context**: With the `bifrost.isInitialized` fix above, `onStartup` and permission-gated eager plugins are activated through the exact same deferred-to-`'ready'` code path in `PluginHost.discoverAndLoadPlugins()` (`hasDeferredWork` covers both `pendingEagerPlugins` and `onStartupPlugins`, both drained by `loadDeferredPlugins`). Since the two activation strategies are now functionally identical for a plugin that only needs to register its document types once at boot, the extra `"activationEvents": ["onStartup"]` manifest entry on `text-file-editors` was redundant complexity — the fixture only needs `"permissions": ["filesystem"]` to get the same deferred, permission-gated boot-time activation.
+
+**Decision**: Remove `activationEvents` from `text-file-editors`'s manifest, relying on plain eager loading (no declared activation events, non-empty `permissions`).
+
+**Rationale**: Fewer manifest fields to reason about for a fixture meant to demonstrate the plugin API's editor-document-type surface, not activation-event semantics. This is an interim simplification — see the still-open plan for a declarative `contributes.editorDocumentTypes` manifest contribution, which will eventually let a plugin register document types (and their `includedFilePatterns`) without running any `activate()` code until a matching document is actually opened.
+
+### 2026-08-18 — Webview `'load'` transactions must be tagged to avoid a spurious dirty state on open
+
+**Context**: The `text-file-editors` fixture's Markdown and JSON editors were marked dirty (unsaved-changes indicator) immediately upon opening a file, before any user edit. Both `webview/src/markdown.ts` and `webview/src/json.ts` dispatch a CodeMirror transaction to set the initial document content on receiving the backend's `{ type: 'load' }` message. `EditorView.updateListener` cannot distinguish this programmatic dispatch from a real keystroke — `update.docChanged` is `true` in both cases — so the listener always sent a `{ type: 'change' }` message to the backend, which called `api.editors.setDirty(uri, true)` regardless of whether the user had touched anything.
+
+**Decision**: Tag the initial-load dispatch with a CodeMirror `Annotation.define<boolean>()` (`programmaticLoad`) and have the update listener skip the dirty-signaling `change` message when `update.transactions.some((tr) => tr.annotation(programmaticLoad))` is true. The JSON editor's "Format" button dispatch is intentionally left untagged, since reformatting is a real, dirtying edit.
+
+**Rationale**: This is the standard CodeMirror 6 pattern for distinguishing transaction provenance and requires no change to the plugin backend's `wireUpDocument`/`setDirty` contract — the fix is entirely local to the two webview scripts. Any future webview-backed editor built on CodeMirror should apply the same annotation to its initial-load dispatch.
+
+### 2026-08-18 — Removed built-in Markdown/Default editors; scope-of-focus enforced via Plugin API
+
+**Context**: The Studio shipped built-in `editor-document-markdown-editor` (`.md`/`.mdx`/`.mdc`) and `editor-document-default-editor` (generic JSON fallback for `editor:default`) document types in `studio/src/modules/std/default-editors/`. The Studio's purpose is BPMN/DMN process modelling, not general-purpose text editing. Supporting arbitrary file types by default blurs that scope and invites scope-creep requests ("why not CSV? Excalidraw? YAML?").
+
+**Options considered**:
+- A) Keep the built-in editors as a convenience fallback for any file type.
+- B) Remove them entirely; any URI without a registered document type now hits a uniform "could not open" error with an "Open in external program" action (already the existing `focusOrOpenEditorDocument` try/catch behavior — no new UX code needed). Equivalent functionality is offered as an opt-in example plugin.
+
+**Decision**: Option B. Deleted `studio/src/modules/std/default-editors/` and `initializeEditorDocuments.tsx`, removed `EditorDocumentTypeManager.getDefaultDocumentType()` and its fallback branch in `EditorMediator.doFocusOrOpenEditorDocument`, and removed the associated status-bar/theme tokens, tests, and fixtures.
+
+**Rationale**: The Plugin API already provides `registerWebviewDocumentType` with full read/write file access, so anyone who wants Markdown or JSON editing back can install (or fork) a plugin instead of relying on Studio-core code. To make that transition low-friction, a new TypeScript fixture plugin, `studio/test/fixtures/plugins/text-file-editors/`, reproduces the removed Markdown and JSON editors verbatim (same file-extension matching) using CodeMirror 6 in a webview, and doubles as a reference implementation for plugin authors building their own webview-backed editors — including the `onSaveRequest` / in-iframe `save-requested` dual save path documented in [common-pitfalls.md](architecture/common-pitfalls.md#ctrl-s-does-not-reach-the-host-from-inside-a-plugin-webview-iframe).
+
 ### D1 — Merged command registration API (2026-06-14)
 
 Merged the four command registration methods (`register`, `registerInCommandSearch`, `registerWithContext`, `registerInCommandSearchWithContext`) into a single `register(name, callback, options?)` method with a `CommandRegistrationOptions` object. The plugin API was similarly merged from `registerCommand` + `registerInCommandSearch` into `register(id, callback, options?)` with `PluginCommandOptions`. The old methods were removed without deprecation — no external consumers exist. This eliminates fragile variadic argument parsing and provides a cleaner, extensible API surface.

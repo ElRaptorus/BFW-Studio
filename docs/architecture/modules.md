@@ -59,7 +59,6 @@ The cornerstone module. Provides commands, menus, panes, keybindings, editor man
 | help | `loadHelp()` | `studio/src/modules/std/help/index.ts` | Help text document type and rendering |
 | aboutpage | `loadAboutPage()` | `studio/src/modules/std/aboutpage/index.ts` | About page |
 | startpage | `loadStartPage()` | `studio/src/modules/std/startpage/index.ts` | Welcome / start page |
-| default-editors | (inline in `initializeEditorDocuments`) | `studio/src/modules/std/default-editors/` | Markdown editor and default text editor |
 
 - **Entry:** `studio/src/modules/std/index.ts`
 - **Dependencies:** None

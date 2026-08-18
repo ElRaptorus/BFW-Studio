@@ -310,7 +310,7 @@ Plugin iframe code: acquireStudioApi().postMessage(data)
 
 | Method | Signature | Notes |
 |--------|-----------|-------|
-| `registerWebviewDocumentType` | `(options) → void` | Registers an iframe-backed editor document type. Options include `id`, `displayName`, `icon`, `uriPattern` (serialized regex), `webviewOptions` (`entryPoint`, optional `localResourceRoots`), and optional `onDidOpen` callback. The document type is namespaced as `plugin.<pluginName>.<id>`. |
+| `registerWebviewDocumentType` | `(options) → void` | Registers an iframe-backed editor document type. Options include `id`, `displayName`, `icon`, `uriPattern` (serialized regex), `webviewOptions` (`entryPoint`, optional `localResourceRoots`), optional `onDidOpen` callback, and optional `includedFilePatterns` (glob patterns forwarded to `bifrost.solution.registerDefaultIncludedFiles`/`unregisterDefaultIncludedFiles`, so matching files aren't hidden in the File Explorer by default). The document type is namespaced as `plugin.<pluginName>.<id>`. |
 | `openDocument` | `(uri) → void` | Opens a document by URI. Delegates to `bifrost.editors.focusOrOpenEditorDocument()`. |
 
 **Document type registration flow (plugin → renderer)**:
@@ -748,7 +748,7 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 - **Command registration**: Handled via `PH_REGISTER_CALLBACK` with `namespace: 'commands'` and `method: 'register'`. The bridge creates a proxy handler in `bifrost.commands` that forwards invocations to the plugin Worker via `PH_CALLBACK_INVOCATION`. Manifest stub commands are unregistered and replaced when the real handler registers.
 - **Settings change listeners**: Subscribes to `EVENT_SETTINGS_CHANGED` with key filtering, invokes callbacks via the connection.
 - **Webview messaging**: `postMessage` forwards data to `PluginIframeManager.postMessageToIframe()`. `onMessage` sets a `messageHandler` on the iframe entry which routes incoming iframe messages back to the child process via `PH_CALLBACK_INVOCATION`. `createPanel` returns a deterministic `iframeId`.
-- **Editor document registration**: `registerWebviewDocumentType` creates a `IframeDocumentRenderer` constructor pre-bound with the plugin context and registers it via `bifrost.editors.registerDocumentType()`. `openDocument` delegates to `bifrost.editors.focusOrOpenEditorDocument()`. `onDidOpen` callbacks are stored in a map and fired when the renderer mounts.
+- **Editor document registration**: `registerWebviewDocumentType` creates a `IframeDocumentRenderer` constructor pre-bound with the plugin context and registers it via `bifrost.editors.registerDocumentType()`. If `includedFilePatterns` is given, it also calls `bifrost.solution.registerDefaultIncludedFiles()`; both the document type and the include patterns are reverted together by the same `doctype:<documentTypeId>` disposer on plugin disable/reload/uninstall. `openDocument` delegates to `bifrost.editors.focusOrOpenEditorDocument()`. `onDidOpen` callbacks are stored in a map and fired when the renderer mounts.
 - **Status bar ID namespacing**: Registration IDs are prefixed with `plugin.<pluginName>.` at the bridge level to prevent cross-plugin collisions within `StatusBarManager`.
 - **Menu update triggers**: After registering or disposing menu modifiers, the bridge calls `updateMenus()` / `updateMenuBarItems()` / `updateStatusBarItems()` to ensure the UI reflects changes immediately.
 

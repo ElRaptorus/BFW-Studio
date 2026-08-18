@@ -5,7 +5,6 @@ import { loadAboutPage } from './aboutpage/index';
 import { loadHelp } from './help/index';
 import { initializeClickModifierKeys } from './initializers/initializeClickModifierKeys';
 import { initializeCommands } from './initializers/initializeCommands';
-import { initializeEditorDocuments } from './initializers/initializeEditorDocuments';
 import { initializeFileExplorerAutoReveal } from './initializers/initializeFileExplorerAutoReveal';
 import { initializeIcons } from './initializers/initializeIcons';
 import { initializeKeyBindings } from './initializers/initializeKeyBindings';
@@ -106,8 +105,6 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
 
   initializePanes(bifrost);
   initializeFileExplorerAutoReveal(bifrost);
-
-  initializeEditorDocuments(bifrost);
 
   loadSettings(bifrost);
   loadHelp(bifrost);

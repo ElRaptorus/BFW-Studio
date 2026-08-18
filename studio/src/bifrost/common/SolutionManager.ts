@@ -243,6 +243,53 @@ export class SolutionManager extends AbstractEmitter implements ISerializable {
 
   registerDefaultIncludedFiles(filePatterns: string[]): void {
     this.defaultIncludedFiles = this.defaultIncludedFiles.concat(filePatterns);
+    this.reapplyIncludedFilesToOpenProjects();
+  }
+
+  /**
+   * Removes previously-registered default-included file patterns.
+   *
+   * Removes at most one occurrence per pattern (mirroring `filePatterns`), so callers that
+   * register the same pattern multiple times (e.g. multiple plugin instances) don't
+   * inadvertently remove each other's entries. Intended for plugins, which — unlike built-in
+   * modules — can be disabled, reloaded, or uninstalled at runtime.
+   */
+  unregisterDefaultIncludedFiles(filePatterns: string[]): void {
+    const remaining = [...this.defaultIncludedFiles];
+    for (const pattern of filePatterns) {
+      const index = remaining.indexOf(pattern);
+      if (index !== -1) {
+        remaining.splice(index, 1);
+      }
+    }
+    this.defaultIncludedFiles = remaining;
+    this.reapplyIncludedFilesToOpenProjects();
+  }
+
+  /**
+   * `Project.files.included` is a snapshot of `defaultIncludedFiles` taken once, when the
+   * project is added to the solution (see `addProjectToSolution`). Built-in modules only ever
+   * call `registerDefaultIncludedFiles` during their synchronous `onLoad`, before any solution
+   * exists, so the snapshot was always accurate. Plugins can register document types — and
+   * their default-included patterns — lazily, well after a solution has already been restored
+   * and its projects created. Without republishing the current pattern list into every already-
+   * open project (and notifying listeners), newly-registered patterns would silently have no
+   * effect on the File Explorer until the solution was closed and reopened.
+   */
+  private reapplyIncludedFilesToOpenProjects(): void {
+    if (this.solution == null) {
+      return;
+    }
+
+    this.solution = {
+      ...this.solution,
+      projects: this.solution.projects.map((project) => ({
+        ...project,
+        files: { ...project.files, included: [...this.defaultIncludedFiles] },
+      })),
+    };
+
+    this.emit(EVENT_SOLUTION_CHANGED, [this.solution]);
   }
 
   getDefaultExcludedFiles(): string[] {

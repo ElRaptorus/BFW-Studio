@@ -780,6 +780,7 @@ export class PluginHostBridge {
             icon: string;
             uriPattern: string;
             webviewOptions: { entryPoint: string; localResourceRoots?: string[] };
+            includedFilePatterns?: string[];
           },
         ];
 
@@ -826,12 +827,20 @@ export class PluginHostBridge {
           ipcRenderer.send('plugin:set-resource-roots', pluginName, options.webviewOptions.localResourceRoots);
         }
 
+        const includedFilePatterns = options.includedFilePatterns ?? [];
+        if (includedFilePatterns.length > 0) {
+          this.bifrost.solution.registerDefaultIncludedFiles(includedFilePatterns);
+        }
+
         this.getOrCreatePluginGroup(pluginName).set(`doctype:${documentTypeId}`, {
           disposer: () => {
             this.documentTypeLabels.delete(documentTypeId);
             this.bifrost.editors.unregisterDocumentType(documentTypeId).catch((err) => {
               console.warn(`[PluginHostBridge] Failed to unregister document type '${documentTypeId}':`, err);
             });
+            if (includedFilePatterns.length > 0) {
+              this.bifrost.solution.unregisterDefaultIncludedFiles(includedFilePatterns);
+            }
           },
         });
 

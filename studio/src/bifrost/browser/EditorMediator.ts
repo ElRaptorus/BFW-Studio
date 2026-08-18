@@ -384,15 +384,10 @@ export class EditorMediator extends AbstractEmitter {
       }
 
       const hasDocumentTypeDefinition = this.editorDocumentTypeManager.hasTypeForUri(uri);
-
-      let editorDocumentTypeDefinition: EditorDocumentTypeDefinition;
-      if (hasDocumentTypeDefinition) {
-        editorDocumentTypeDefinition = this.editorDocumentTypeManager.getByUri(uri);
-      } else if (this.bifrost.files.isLocalFilename(uri)) {
-        editorDocumentTypeDefinition = this.editorDocumentTypeManager.getDefaultDocumentType();
-      } else {
+      if (!hasDocumentTypeDefinition) {
         throw new Error(`Could not find an editor document type for uri: ${uri}`);
       }
+      const editorDocumentTypeDefinition = this.editorDocumentTypeManager.getByUri(uri);
 
       if (typeof editorDocumentTypeDefinition.canOpen === 'function') {
         const canOpenResult = editorDocumentTypeDefinition.canOpen(uri);

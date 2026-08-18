@@ -273,11 +273,6 @@ export class StudioAgentBpmnExtension extends StudioAgent {
     assert.strictEqual(count, elementIds.length);
   }
 
-  async waitForInteractiveMarkdownDocument(timeout: number = ASSERT_VISIBLE_TIMEOUT): Promise<true> {
-    const element = await this.testDriver.client!.$('[data-test--mdx-document-editor-visible="true"]');
-    return element.waitForExist({ timeout: timeout });
-  }
-
   async waitForInteractiveBpmnDocument(timeout: number = ASSERT_VISIBLE_TIMEOUT): Promise<true> {
     const element = await this.testDriver.client!.$('[data-test--bpmn-document-is-interactive="true"]');
     return element.waitForExist({ timeout: timeout });

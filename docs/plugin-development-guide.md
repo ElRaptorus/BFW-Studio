@@ -518,8 +518,11 @@ api.notifications.onResponse(id, (response) => {
     localResourceRoots?: string[];
   };
   onDidOpen?: (iframeId: string, uri: string) => void;
+  includedFilePatterns?: string[]; // Glob patterns shown by default in the File Explorer
 }
 ```
+
+`includedFilePatterns` is the plugin-API equivalent of the internal-module-only `bifrost.solution.registerDefaultIncludedFiles()`. The File Explorer's default view only shows files matching *some* registered include pattern (the Studio is scoped to BPMN/DMN by default) — without this, files your document type handles would stay hidden unless the user enables "Show hidden files". Patterns are unregistered automatically when the plugin is disabled, reloaded, or uninstalled.
 
 ### `api.panes`
 

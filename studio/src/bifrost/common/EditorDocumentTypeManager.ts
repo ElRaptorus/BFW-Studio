@@ -104,10 +104,6 @@ export class EditorDocumentTypeManager {
     return type;
   }
 
-  getDefaultDocumentType(): EditorDocumentTypeDefinition {
-    return this.documentTypeMap['editor-document-default-editor'];
-  }
-
   /**
    * Internal: Returns true if there is an `EditorDocumentTypeDefinition` for the given `uri`.
    */

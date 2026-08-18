@@ -83,7 +83,7 @@ Document types that manage state (undo/redo, event subscriptions, data manipulat
 
 | Module | Document Type | uriMatch | Has Model | Has Inspector |
 |-----------|---------------|----------|-----------|---------------|
-| **std** | `Default.Document.Inspector.Item`, `editor-document-markdown-editor`, `editor-document-default-editor` | `/^fragment\+default\.…/`, `/\.mdx?$/`, `/^editor:default$/` | yes | yes |
+| **std** | `Default.Document.Inspector.Item` | `/^fragment\+default\.…/` | no | no |
 | **std/aboutpage** | `aboutpage` | `/^about:about$/` | no | no |
 | **std/startpage** | `startpage` | `/^about:start$/` | no | no |
 | **std/help** | `help` | `/^help:\/\/(.+)$/` | yes | no |
@@ -107,7 +107,7 @@ Documents are identified by URIs. The scheme determines which document type hand
 
 | Scheme | Pattern | Used by |
 |--------|---------|---------|
-| file path | `/path/to/file.[ext]` | bpmn-editor, mdx-editor, default-editor (matched by file extension) |
+| file path | `/path/to/file.[ext]` | bpmn-editor (matched by file extension; `dmn-editor` also matches by extension) |
 | `about:` | `about:settings`, `about:start` | std/settings, std/startpage, std/aboutpage, machine-sanctum |
 | `help://` | `help://home` | std/help |
 | `engine://` | `engine://dashboard/{engineId}` | engine-workspace |

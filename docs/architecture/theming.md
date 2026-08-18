@@ -138,7 +138,6 @@ Themed CSS overrides for third-party library elements (e.g., bpmn-js `.djs-palet
 | `std` (startpage) | `--color-startpage-*`, `--theme-startpage-*` | `modules/std/startpage/styles/startpage.scss` |
 | `std` (aboutpage) | `--color-about-*` | `modules/std/aboutpage/styles/aboutpage.scss` |
 | `std` (settings) | `--color-settings-editor-*` | `modules/std/settings/styles/settings.scss` |
-| `std` (default-editors) | `--color-markdown-editor-*`, `--color-default-editor-*` | `modules/std/default-editors/styles/editor-documents.styles.scss` |
 | `std` (help) | `--color-help-*` | `modules/std/help/styles/component.help.scss` |
 | FEEL editor (SDK) | `--theme-feel-*` | `components/feel-editor/component.feel-editor.scss` |
 
@@ -240,7 +239,7 @@ Users can switch themes through:
 | `zed-light` | Zed Light | `light` | `themes` module — Zed's "One Light" palette with clean near-white and indigo-blue (#5C78E2) accent |
 | `zed-dark` | Zed Dark | `dark` | `themes` module — Zed's "One Dark" palette with warm-tinted dark grays and soft blue (#74ADE8) accent |
 
-All `themes` module SCSS files are fully self-contained: they include all core `--theme-*` tokens plus all module-specific token overrides merged into a single file each. This covers every token group: diff view, token simulator, engine debugger, engine browser, engine BPMN viewer, BPMN element overlays, merge editor, machine sanctum, inspector, std module icons, linter, git cruiser, FEEL editor, and MDX editor. This is appropriate because the `themes` module is itself a module, not core functionality.
+All `themes` module SCSS files are fully self-contained: they include all core `--theme-*` tokens plus all module-specific token overrides merged into a single file each. This covers every token group: diff view, token simulator, engine debugger, engine browser, engine BPMN viewer, BPMN element overlays, merge editor, machine sanctum, inspector, std module icons, linter, git cruiser, and FEEL editor. This is appropriate because the `themes` module is itself a module, not core functionality.
 
 When a new module defines theme tokens, those tokens must also be added to every extra theme SCSS file in the `themes` module. Otherwise, those tokens will be undefined when the user selects an extra theme.
 

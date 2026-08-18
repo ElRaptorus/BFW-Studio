@@ -118,6 +118,18 @@ export interface RegisterWebviewDocumentTypeOptions {
   webviewOptions: WebviewDocumentTypeWebviewOptions;
   /** Called when a document of this type is opened. Receives the iframe ID and document URI. */
   onDidOpen?: (iframeId: string, uri: string) => void;
+  /**
+   * Glob patterns (e.g. `["**\/*.md"]`) for files this document type handles that should be
+   * shown in the File Explorer by default, without the user having to enable "Show hidden files".
+   *
+   * Equivalent to the internal-module-only `studio.solution.registerDefaultIncludedFiles()` API.
+   * The File Explorer's default view only shows files matching *some* registered include pattern
+   * (from any module or plugin) — an editor document type with no matching include pattern here
+   * means files it handles stay hidden by default even though they can be opened.
+   *
+   * Automatically unregistered when the plugin is disabled, reloaded, or uninstalled.
+   */
+  includedFilePatterns?: string[];
 }
 
 /**

@@ -266,6 +266,16 @@ export class SolutionMediator extends AbstractEmitter {
   }
 
   /**
+   * Removes `filePatterns` previously added via {@link registerDefaultIncludedFiles}.
+   *
+   * Intended for plugins, which can be disabled, reloaded, or uninstalled at runtime — unlike
+   * built-in modules, which register their patterns once for the lifetime of the process.
+   */
+  unregisterDefaultIncludedFiles(filePatterns: string[]): void {
+    this.solutionManager.unregisterDefaultIncludedFiles(filePatterns);
+  }
+
+  /**
    * Gets all filePatterns which are excluded from the File Explorer by default.
    */
   getDefaultExcludedFiles(): string[] {

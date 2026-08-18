@@ -13,8 +13,10 @@ const PLUGINS_EMPTY_DIR = path.resolve(__dirname, '../../fixtures/plugins-empty'
 
 const PLUGIN_LOAD_TIMEOUT = 30_000;
 // Total number of discoverable plugin directories under fixtures/plugins/, including the
-// scoped `@test-scope/scoped-plugin` entry. Keep this in sync when adding/removing fixtures —
-// `waitForPluginList` uses `>=`, so a stale (too-low) value fails silently rather than erroring.
+// scoped `@test-scope/scoped-plugin` entry, but excluding `no-package-json` (which has no
+// package.json and is therefore never returned by plugin discovery). Keep this in sync when
+// adding/removing fixtures — `waitForPluginList` uses `>=`, so a stale (too-low) value fails
+// silently rather than erroring, while a too-high value causes every consumer to time out.
 const FIXTURE_PLUGIN_COUNT = 37;
 
 async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string): Promise<void> {
@@ -449,6 +451,82 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
       const reloadedResult = await executePluginCommand(studioAgent, 'plugin.happy-plugin.greet', 'World');
       assert.strictEqual(reloadedResult, 'Hola, World!', 'Reloaded plugin should use the modified source code');
+    });
+  });
+
+  describe('onStartup activation discovered after boot', () => {
+    let studioAgent: StudioAgent;
+    let tempPluginsDir: string;
+
+    beforeEach(async ({ task }) => {
+      tempPluginsDir = path.join(PLUGINS_FIXTURE_DIR, '..', `plugins-late-onstartup-${Date.now()}`);
+      await fs.mkdir(tempPluginsDir, { recursive: true });
+
+      process.env.BFR_PLUGINS_DIR = tempPluginsDir;
+      studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+
+    afterEach(async ({ task }) => {
+      if (studioAgent != null) {
+        studioAgent.updateTestContext({
+          testName: task.name,
+          testFile: __filename,
+          state: task.result?.state === 'fail' ? 'failed' : 'passed',
+        });
+        await studioAgent.stopAndRecordErrors(false);
+      }
+      delete process.env.BFR_PLUGINS_DIR;
+
+      try {
+        await fs.rm(tempPluginsDir, { recursive: true, force: true });
+      } catch {
+        // best-effort cleanup
+      }
+    });
+
+    // Regression test for a bug where onStartup (and permission-gated eager) plugins
+    // discovered by a *later* discoverAndLoadPlugins() call — e.g. via the "Reload
+    // Plugins" command, which drives bifrost.plugins.refreshFromHost() — would never
+    // activate. discoverAndLoadPlugins() deferred activation until the app's 'ready'
+    // event, but 'ready' is emitted exactly once during the window's initial
+    // Bifrost.initialize() call. Any onStartup plugin added to the plugins directory
+    // after that point (without a full app restart) would wait forever for an event
+    // that had already fired, leaving it stuck in 'pending' status indefinitely.
+    it('onStartup plugin added after boot activates once discovered via refresh', async () => {
+      const pluginDir = path.join(tempPluginsDir, 'late-onstartup-plugin');
+      await fs.mkdir(pluginDir, { recursive: true });
+      await fs.writeFile(
+        path.join(pluginDir, 'package.json'),
+        JSON.stringify({
+          name: 'late-onstartup-plugin',
+          version: '1.0.0',
+          main: 'index.js',
+          bifrostStudio: {
+            apiVersion: '1.0.0',
+            permissions: ['filesystem'],
+            activationEvents: ['onStartup'],
+          },
+        }),
+        'utf-8',
+      );
+      await fs.writeFile(
+        path.join(pluginDir, 'index.js'),
+        `module.exports = {
+          async activate(api) {
+            await api.commands.register('ping', () => 'pong');
+          },
+        };`,
+        'utf-8',
+      );
+
+      await executePluginCommand(studioAgent, 'plugins.refreshPluginList');
+
+      await waitForPluginStatus(studioAgent, 'late-onstartup-plugin', 'loaded');
+
+      await waitForPluginCommand(studioAgent, 'plugin.late-onstartup-plugin.ping');
+      const pingResult = await executePluginCommand(studioAgent, 'plugin.late-onstartup-plugin.ping');
+      assert.strictEqual(pingResult, 'pong', 'plugin should be fully activated and its command callable');
     });
   });
 
@@ -3305,10 +3383,11 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
     it('denies hard-blocked commands (git.commit)', async () => {
       const result = await executePluginCommand(studioAgent, 'plugin.sandbox-no-perms.tryBlockedCommand');
-      assert.ok(
-        typeof result === 'string' && result.includes('not registered'),
-        `Expected 'not registered', got: ${result}`,
-      );
+      // `git.commit` matches the top-level `HARD_DENIED` patterns in CommandDenylist.ts, which
+      // intentionally throw a `CommandBlockedError` ("is blocked"). Only the more specific
+      // `HARD_DENIED_SUBPATTERNS` (e.g. `std.solution.*`) are disguised as "not registered" to
+      // avoid revealing their existence to malicious plugins.
+      assert.ok(typeof result === 'string' && result.includes('blocked'), `Expected 'blocked', got: ${result}`);
     });
 
     it('denies std.* commands without commands.std permission', async () => {

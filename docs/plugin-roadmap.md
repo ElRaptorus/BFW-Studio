@@ -29,7 +29,6 @@ The roadmap is organized into **phases** (numbered 0 through 11), each broken in
 - [Phase 8 (**DONE**) — Editor Document Enrichment (BPMN)](#phase-8--editor-document-enrichment)
 - [Phase 9 (**DONE**) — DMN Editor Enrichment](#phase-9--dmn-editor-enrichment)
 - [Phase 10 — SDK Audit & Refactoring](#phase-10--sdk-audit--refactoring)
-- [Phase 11 — Marketplace](#phase-11--marketplace)
 - [Appendix A — Architecture Principles](#appendix-a--architecture-principles)
 - [Appendix B — Glossary](#appendix-b--glossary)
 - [Appendix C — Current State Reference](#appendix-c--current-state-reference)
@@ -309,7 +308,7 @@ The roadmap is organized into **phases** (numbered 0 through 11), each broken in
 
 ## [DONE] Phase 2 — Plugin Management UI
 
-**Goal**: Give users a dedicated, always-available interface for viewing and managing their installed plugins, long before the full Marketplace (Phase 11) ships. Without this, users who install plugins via the filesystem have no Studio-native way to see what is loaded, toggle plugins on or off, or remove them.
+**Goal**: Give users a dedicated, always-available interface for viewing and managing their installed plugins. Without this, users who install plugins via the filesystem have no Studio-native way to see what is loaded, toggle plugins on or off, or remove them.
 
 > **Naming**: This phase establishes the "Plugin" term across the full stack — UI labels, commands, settings keys, and internal code. All classes and file names introduced here use "Plugin".
 
@@ -380,27 +379,6 @@ The roadmap is organized into **phases** (numbered 0 through 11), each broken in
 - IPC handler in main process for filesystem deletion (plugins directory lives outside the renderer's reach)
 
 **Verification**: Uninstalling a plugin removes its directory and refreshes the list. The plugin is no longer loaded on the next restart.
-
----
-
-### [DEFERRED] Batch 2.4 — Install from folder
-
-> **Deferred until Phase 11 (Marketplace)**. Installing plugins from arbitrary folders is premature before the packaging format (Batch 11.2) and permission system (Batch 11.5) are in place. Until then, developers install plugins by placing folders directly in `~/.evil/<channel>/plugins/`.
-
-**What it introduces**:
-- An "Install from folder..." button at the top of the Plugins pane.
-- Opens a native directory picker dialog.
-- Validates the selected folder (must contain a `package.json` with a `name` field).
-- Copies (not moves) the folder into `~/.evil/<channel>/plugins/<pluginName>/`.
-- Refreshes the Plugins pane to show the newly installed plugin.
-- Shows a notification: "Plugin '<name>' installed. Restart the Studio to activate."
-
-**Files to create/modify**:
-- `studio/src/modules/plugins/PluginsPaneRenderer.tsx` — add install button
-- `studio/src/modules/plugins/PluginService.ts` — copy folder, validate manifest
-- IPC handler in main process for filesystem copy
-
-**Verification**: A valid plugin folder can be installed via the UI. Invalid folders are rejected with an error message.
 
 ---
 
@@ -1417,7 +1395,6 @@ MyRendererModule.$inject = ['eventBus', 'pluginChannel'];
 **Security model**:
 - Renderer module injection is a **privileged capability**.
 - The manifest must declare the `renderer` permission.
-- The Marketplace (Phase 11) flags plugins with renderer modules prominently.
 - Users must explicitly approve the `renderer` permission on install.
 - A renderer module crash is caught and reported — the plugin is deactivated, but the BPMN editor recovers.
 
@@ -1720,85 +1697,6 @@ api.dmn.modeling.moveElement(uri, 'Decision_1', { x: 50, y: 0 });
 - Update `docs/architecture/extensions.md` to reflect the SDK's new purpose.
 - Add entry to `docs/decisions.md`: rationale for repurposing the SDK as the plugin developer toolkit and internalizing extension-only types.
 - Update the SDK's `README.md` and `package.json` description to clearly state its audience: "The Bifrost Forge World SDK for plugin developers. Provides type definitions, reusable UI components, and design tokens for building Bifrost Forge World plugins."
-
----
-
-## Phase 11 — Marketplace
-
-**Goal**: Provide a way for users to discover, install, update, and remove plugins. This is the most complex phase due to legal, logistical, and infrastructure requirements.
-
-### Batch 11.1 — Extend Plugins pane for Marketplace integration
-
-**What it introduces**:
-- Phase 2 already provides the core Plugins pane with list, enable/disable, uninstall, and install-from-folder. This batch extends it with Marketplace-specific features:
-  - A "Marketplace" tab alongside the existing "Installed" tab.
-  - Visual indicators for plugins that have updates available.
-  - "Update" button per plugin when a newer version exists in the registry.
-  - Auto-update check on Studio startup (configurable via `plugins.autoCheckUpdates` setting).
-
-**Verification**: The Plugins pane shows both installed plugins and Marketplace search results. Update indicators appear when newer versions are available.
-
----
-
-### Batch 11.2 — Plugin packaging format
-
-**What it introduces**:
-- A `.espk` file format (Bifrost Forge World Plugin Package) — a ZIP archive containing:
-  - `package.json` with manifest
-  - Compiled plugin code
-  - Webview assets
-  - `LICENSE` and `README.md`
-- A CLI command: `evil-plugin pack` that produces a `.espk` from the plugin project.
-- The Studio can install `.espk` files (drag-and-drop or "Install from file..." button).
-
----
-
-### Batch 11.3 — Plugin registry backend
-
-**What it introduces**:
-- A web service (API) for the marketplace:
-  - `POST /publish` — upload a `.espk` package
-  - `GET /search?q=...` — search for plugins
-  - `GET /plugin/:name` — get plugin metadata
-  - `GET /plugin/:name/download` — download the `.espk` package
-- Authentication for publishers (API key or OAuth).
-- Basic metadata storage: name, version, description, download count, publisher.
-
-**Note**: The backend infrastructure, hosting, and legal framework (terms of service, content policy, licensing requirements) are out of scope for this technical roadmap and must be planned separately.
-
----
-
-### Batch 11.4 — Marketplace UI in the Studio
-
-**What it introduces**:
-- The Plugins pane gains a "Marketplace" tab:
-  - Search field
-  - Plugin cards with name, publisher, description, rating, install count
-  - Install/update buttons
-  - Plugin detail view with README, changelog, screenshots
-- Auto-update checks on Studio startup (configurable in settings).
-
----
-
-### Batch 11.5 — Plugin permissions & trust
-
-**What it introduces**:
-- A permission system for plugins:
-  - `workspace.readFiles` — can read solution files
-  - `workspace.writeFiles` — can write solution files
-  - `native` — ~~has a native module (main process code)~~ removed from v1
-  - `network` — can make HTTP requests
-- Permissions are declared in the manifest and shown to the user on install.
-- Users can revoke permissions after install.
-- The Plugin Host enforces permissions — API calls that exceed a plugin's granted permissions are rejected.
-
----
-
-### Batch 11.6 — Documentation: Marketplace & publishing
-
-**What changes**:
-- New doc: `docs/plugin-publishing-guide.md`
-- Covers: packaging, publishing, versioning, permissions, content policy, update flow
 
 ---
 

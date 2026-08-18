@@ -69,7 +69,6 @@ The `std/solution-name` item in the left area displays the current solution's na
 Two right-area items (`std/encoding`, `std/line-ending`) show the file encoding and line ending style of the focused editor document. They only appear for file-backed document types:
 
 - `bpmn` — `*.bpmn` files
-- `editor-document-markdown-editor` — `*.md` / `*.mdx` files
 
 Encoding is hardcoded to `UTF-8` (reflecting current file I/O). Line ending is detected by checking `data.current` for `\r\n`.
 

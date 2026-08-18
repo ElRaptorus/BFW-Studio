@@ -1,0 +1,29 @@
+{
+  "name": "text-file-editors",
+  "displayName": "Text File Editors",
+  "description": "Markdown and JSON editors backed by CodeMirror 6, replacing the Studio's removed built-in default/markdown editors via the public webview document type API.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "homepage": "https://example.com/text-file-editors",
+  "keywords": [
+    "webview",
+    "iframe",
+    "markdown",
+    "json",
+    "codemirror",
+    "editor",
+    "test"
+  ],
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@types/node": "^25.9.1"
+  },
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Text File Editors",
+    "description": "Markdown and JSON editors backed by CodeMirror 6, replacing the Studio's removed built-in default/markdown editors via the public webview document type API.",
+    "permissions": [
+      "filesystem"
+    ]
+  }
+}

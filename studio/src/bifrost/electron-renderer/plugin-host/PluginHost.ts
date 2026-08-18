@@ -632,19 +632,23 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
 
     if (hasDeferredWork) {
       this.onStartupDisposer?.dispose();
-      this.onStartupDisposer = this.bifrost.events.on('ready', () => {
-        void this.loadDeferredPlugins(pendingEagerPlugins, onStartupPlugins);
-      });
-    }
-  }
 
-  /**
-   * Activates plugins one at a time so permission dialogs don't compete.
-   * Errors are handled per-plugin inside {@link ActivationManager.activatePlugin}.
-   */
-  private async activatePluginsSequentially(plugins: { name: string }[]): Promise<void> {
-    for (const plugin of plugins) {
-      await this.activationManager.activatePlugin(plugin.name);
+      // 'ready' is a one-shot event emitted once during the window's initial
+      // Bifrost.initialize() call. discoverAndLoadPlugins() also runs later —
+      // e.g. via refresh() (the "Reload Plugins" command, cross-window resync) —
+      // at which point 'ready' has already fired and will never fire again. If we
+      // always awaited a fresh 'on(ready', ...)' subscription, any onStartup or
+      // permission-gated plugin discovered after initial boot would be stuck in
+      // 'pending' status forever, since its permission dialog would never appear
+      // and its activate() would never run. Detect the already-ready case and
+      // proceed immediately instead of waiting for an event that already passed.
+      if (this.bifrost.isInitialized) {
+        void this.loadDeferredPlugins(pendingEagerPlugins, onStartupPlugins);
+      } else {
+        this.onStartupDisposer = this.bifrost.events.on('ready', () => {
+          void this.loadDeferredPlugins(pendingEagerPlugins, onStartupPlugins);
+        });
+      }
     }
   }
 
