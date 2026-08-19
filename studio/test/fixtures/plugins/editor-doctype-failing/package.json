@@ -1,0 +1,25 @@
+{
+  "name": "editor-doctype-failing",
+  "displayName": "Editor Document Type Failing Plugin",
+  "description": "Test fixture: declares contributes.editorDocumentTypes but throws from activate(), used to exercise the placeholder trampoline's activation-failure terminal state.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Editor Document Type Failing Plugin",
+    "contributes": {
+      "editorDocumentTypes": [
+        {
+          "id": "failing",
+          "displayName": "Failing Editor",
+          "icon": "ph ph-warning",
+          "uriPattern": "\\.failtest$",
+          "includedFilePatterns": [
+            "**/*.failtest"
+          ]
+        }
+      ]
+    }
+  }
+}

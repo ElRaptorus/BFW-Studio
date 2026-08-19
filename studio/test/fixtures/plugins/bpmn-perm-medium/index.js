@@ -7,7 +7,7 @@
  */
 
 async function activate(api) {
-  api.commands.register('tryModelingUpdateProperties', async (uri, elementId) => {
+  await api.commands.register('tryModelingUpdateProperties', async (uri, elementId) => {
     try {
       await api.bpmn.modeling.updateProperties(uri, elementId, { name: 'Renamed' });
       return { success: true };
@@ -16,7 +16,7 @@ async function activate(api) {
     }
   });
 
-  api.commands.register('tryModelingAppendElement', async (uri, sourceElementId) => {
+  await api.commands.register('tryModelingAppendElement', async (uri, sourceElementId) => {
     try {
       const result = await api.bpmn.modeling.appendElement(uri, sourceElementId, {
         type: 'bpmn:Task',
@@ -28,7 +28,7 @@ async function activate(api) {
     }
   });
 
-  api.commands.register('tryPostToRendererModule', async () => {
+  await api.commands.register('tryPostToRendererModule', async () => {
     try {
       await api.bpmn.postToRendererModule({ type: 'ping' });
       return { success: true };
@@ -37,7 +37,7 @@ async function activate(api) {
     }
   });
 
-  api.commands.register('tryOnRendererModuleMessage', async () => {
+  await api.commands.register('tryOnRendererModuleMessage', async () => {
     try {
       await api.bpmn.onRendererModuleMessage(() => {});
       return { success: true };
@@ -46,7 +46,7 @@ async function activate(api) {
     }
   });
 
-  api.commands.register('test.isActivated', async () => {
+  await api.commands.register('test.isActivated', async () => {
     return { activated: true };
   });
 }

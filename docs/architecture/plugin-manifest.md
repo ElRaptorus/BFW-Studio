@@ -85,6 +85,8 @@ The `permissions` array declares which sandbox capabilities the plugin needs. Pl
 | `onUri:<scheme>` | When a URI matching the scheme prefix is opened |
 | `onSetting:<key>` | When the specified setting changes |
 
+A plugin that declares `contributes.editorDocumentTypes` is lazily activated even with an empty (or absent) `activationEvents` list: the placeholder document type registered for each entry doubles as the activation trigger. See §`contributes.editorDocumentTypes`.
+
 ### Contribution Types
 
 #### `contributes.commands`
@@ -160,6 +162,22 @@ Array of pane placeholder declarations.
 | `groupId` | `string` | No |
 | `icon` | `string` | No |
 | `visibleWhen` | `{ documentType?: string; setting?: string }` | No |
+
+#### `contributes.editorDocumentTypes`
+
+Array of editor document type declarations. Processed at discovery time by `ContributionRegistrar.registerEditorDocumentTypePlaceholder()`, before plugin activation — the URI pattern and the File Explorer file visibility are therefore effective while the plugin is still `pending`.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | `string` | Yes | Document type identifier (namespaced as `plugin.<name>.<id>`); must match the `id` passed to `registerWebviewDocumentType()` |
+| `displayName` | `string` | Yes | Human-readable name of the document type |
+| `icon` | `string` | Yes | Icon ID or Phosphor class |
+| `uriPattern` | `string` | Yes | Regex source string matched against document URIs (e.g. `"\\.md$"`) |
+| `includedFilePatterns` | `string[]` | No | File globs registered as known (non-hidden) files in the File Explorer via `SolutionMediator.registerDefaultIncludedFiles()` |
+
+Each entry registers a **placeholder** document type whose renderer (`PlaceholderEditorDocumentRenderer`) triggers activation of the owning plugin when a matching file is opened, then closes and reopens the tab so it re-resolves to the real editor the plugin registered. Declaring `editorDocumentTypes` therefore makes the plugin lazily activated even without any `activationEvents` entry. Validation rejects non-object entries, missing/blank required fields, `uriPattern` values that are not valid regular expressions, duplicate `id`s within a plugin, and `includedFilePatterns` that is not an array of strings.
+
+Full state machine (replacement, permission denial, activation failure, missing registration): see [plugin-host.md](plugin-host.md) §Static editor document type contributions.
 
 #### `contributes.paneToggles`
 
@@ -254,8 +272,10 @@ discoverAndLoadPlugins()
     4. If manifest present → checkApiVersionCompatibility()
        → If incompatible → reject (status: 'error', show notification)
     5. ContributionRegistrar.registerContributions(manifest)
-       → Register stub commands, icons, keybindings, menus, settings, panes, service task types
-    6. If activationEvents present → ActivationManager.registerActivationEvents()
+       → Register stub commands, icons, keybindings, menus, settings, panes,
+         editor document type placeholders, pane toggles, service task types, themes
+    6. If activationEvents OR contributes.editorDocumentTypes present
+       → ActivationManager.registerActivationEvents()
        → Plugin status: 'pending' (lazy)
     7. Else → PH_LOAD_PLUGIN immediately (eager, backward-compat)
        → Plugin status: 'loaded'
@@ -271,6 +291,7 @@ discoverAndLoadPlugins()
 | Menus | Menu modifier disposer (returns `{ dispose }` since Phase 4) |
 | Settings | `SettingsMediator.unregisterSettings()` (added in Phase 4). Values preserved, schema removed. |
 | Panes | `PaneMediator.unregisterPane()` + `unregisterPaneProvider()` |
+| Editor Document Types | `SolutionMediator.unregisterDefaultIncludedFiles()`; the placeholder document type is unregistered via `EditorMediator.unregisterDocumentType()` only if it has not already been replaced by the plugin's real `registerWebviewDocumentType()` registration (which owns its own disposer in `PluginHostBridge`) |
 | Pane Toggles | Menu bar item/modifier disposer + `updateMenuBarItems()` |
 | Service Task Types | `bpmn.serviceTasks.removeCustomType` command |
 | Themes | `ThemeManager.unregisterTheme()` + injected `<style>` removal + type-aware fallback if active |
@@ -295,5 +316,6 @@ discoverAndLoadPlugins()
 | `studio/src/bifrost/contracts/PluginApiVersion.ts` | `STUDIO_PLUGIN_API_VERSION` constant |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Registers manifest contributions |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Placeholder pane UI shown while plugin is pending activation |
+| `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderEditorDocumentRenderer.tsx` | Placeholder editor UI for `contributes.editorDocumentTypes`; triggers activation and swaps in the real editor |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Event-driven lazy activation |
 | `studio-sdk/src/contracts/PluginTypes.ts` | `PluginInfo` with `manifest?`, `manifestErrors?`, `manifestWarnings?` |

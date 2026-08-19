@@ -65,6 +65,14 @@ export async function showPermissionReviewDialog(
   permissions: PluginPermission[],
   permissionStore: PluginPermissionStore,
 ): Promise<boolean> {
+  // Test-only escape hatch: lets integration tests simulate a user denying the permission
+  // dialog for a specific plugin, since APP_TEST otherwise always auto-approves below (the
+  // real dialog is never shown in the test harness, so a denial can't be driven through the UI).
+  const forceDenyList = (process.env.BFR_FORCE_DENY_PLUGIN_PERMISSIONS ?? '').split(',').filter(Boolean);
+  if (forceDenyList.includes(pluginName)) {
+    return false;
+  }
+
   if (process.env.APP_TEST === 'true' || process.env.BFR_SKIP_PERMISSION_DIALOG === '1') {
     permissionStore.set(pluginName, permissions, true);
     return true;

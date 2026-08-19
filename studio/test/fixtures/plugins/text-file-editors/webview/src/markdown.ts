@@ -6,12 +6,12 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
 import type { HostToWebviewMessage, WebviewToHostMessage } from './types';
-import { installSaveShortcut, requireElement } from './types';
+import { acquireStudioApi, installSaveShortcut, requireElement } from './types';
 
 const editorContainer = requireElement('editor');
 const previewContainer = requireElement('preview');
 
-const studioApi = window.acquireStudioApi?.();
+const studioApi = acquireStudioApi();
 if (studioApi == null) {
   console.error('[text-file-editors] acquireStudioApi not available');
 } else {

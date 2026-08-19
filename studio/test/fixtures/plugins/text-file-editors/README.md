@@ -13,14 +13,26 @@ It registers two iframe-backed **Editor Document Types**:
 
 It exercises the following APIs:
 
-| API                                          | Namespace   | Purpose                                                    |
-| -------------------------------------------- | ----------- | ---------------------------------------------------------- |
-| `api.editors.registerWebviewDocumentType()`  | `editors`   | Registers each iframe-backed editor document type          |
-| `api.editors.onDidOpen()`                    | `editors`   | Wires up per-document messaging when a tab opens           |
-| `api.editors.onSaveRequest()`                | `editors`   | Handles host-triggered saves (Save menu, command palette)  |
-| `api.editors.setDirty()`                     | `editors`   | Marks/clears the unsaved-changes indicator                 |
-| `api.workspace.readFile()` / `writeFile()`   | `workspace` | Reads file content on open, writes it back on save         |
-| `api.webviews.postMessage()` / `onMessage()` | `webviews`  | Bidirectional messaging between the plugin and each iframe |
+| API                                                        | Namespace   | Purpose                                                                                   |
+| ---------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
+| `bifrostStudio.contributes.editorDocumentTypes` (manifest) | —           | Declares both document types statically, before activation — see "Lazy activation" below  |
+| `api.editors.registerWebviewDocumentType()`                | `editors`   | Replaces the manifest placeholder with the real iframe-backed editor, inside `activate()` |
+| `api.editors.onDidOpen()`                                  | `editors`   | Wires up per-document messaging when a tab opens                                          |
+| `api.editors.onSaveRequest()`                              | `editors`   | Handles host-triggered saves (Save menu, command palette)                                 |
+| `api.editors.setDirty()`                                   | `editors`   | Marks/clears the unsaved-changes indicator                                                |
+| `api.workspace.readFile()` / `writeFile()`                 | `workspace` | Reads file content on open, writes it back on save                                        |
+| `api.webviews.postMessage()` / `onMessage()`               | `webviews`  | Bidirectional messaging between the plugin and each iframe                                |
+
+## Lazy activation via `contributes.editorDocumentTypes`
+
+This plugin does **not** declare `activationEvents` and is not loaded at Studio boot. Instead, `package.json`'s `bifrostStudio.contributes.editorDocumentTypes` declares both document types (`id`, `displayName`, `icon`, `uriPattern`, `includedFilePatterns`) statically. The Studio registers a lightweight **placeholder** editor document type for each entry at plugin-discovery time — before this plugin's code has ever run — which is enough to:
+
+- make `.md`/`.mdx`/`.mdc`/`.markdown`/`.mdown`/`.mkd`/`.mkdn`/`.json` files visible in the File Explorer immediately (no "Show hidden files" needed), and
+- let a user open one of those files, which shows a brief "Activating plugin…" tab, triggers this plugin's real activation (including the permission dialog, since it declares `filesystem`), and then automatically swaps in the real CodeMirror editor once `activate()` calls `api.editors.registerWebviewDocumentType()`.
+
+See [docs/architecture/plugin-host.md](../../../../docs/architecture/plugin-host.md) §"Static editor document type contributions" for the full placeholder-and-swap mechanism, and [docs/architecture/common-pitfalls.md](../../../../docs/architecture/common-pitfalls.md#declaring-contributeseditordocumenttypes-does-not-by-itself-register-a-webview) for what goes wrong if the manifest declaration and the real `registerWebviewDocumentType()` call ever drift out of sync (e.g. a typo in `id`).
+
+**Important**: `includedFilePatterns` is declared **only once**, in the manifest's `contributes.editorDocumentTypes` entry — it is intentionally **not** repeated in the `activate()`-time `registerWebviewDocumentType()` call (see `src/index.ts`'s `registerDocumentType` helper), since that call's only job is to replace the placeholder's renderer, not to re-declare File Explorer visibility.
 
 ## Opening a file
 
@@ -43,7 +55,7 @@ Edits are relayed to the backend as undebounced `change` messages on every keyst
 
 ## File Explorer visibility
 
-Each `registerWebviewDocumentType()` call passes `includedFilePatterns` (e.g. `['**/*.md', '**/*.mdx', ...]`), the plugin-API equivalent of the internal-module-only `bifrost.solution.registerDefaultIncludedFiles()`. Without it, `.md`/`.json` files would stay hidden in the File Explorer unless "Show hidden files" is enabled — the Studio's file tree only shows files matching _some_ registered include pattern by default, since the Studio is scoped to BPMN/DMN file types. The patterns are automatically unregistered when the plugin is disabled, reloaded, or uninstalled.
+Each manifest `contributes.editorDocumentTypes` entry carries `includedFilePatterns` (e.g. `['**/*.md', '**/*.mdx', ...]`), the declarative counterpart to the internal-module-only `bifrost.solution.registerDefaultIncludedFiles()`. `ContributionRegistrar` forwards these patterns to `registerDefaultIncludedFiles()` at discovery time — before this plugin ever activates — so `.md`/`.json` files are visible in the File Explorer immediately, rather than only after the plugin has run. Without it, these files would stay hidden unless "Show hidden files" is enabled, since the Studio's file tree only shows files matching _some_ registered include pattern by default (the Studio is scoped to BPMN/DMN file types). The patterns are automatically unregistered when the plugin is disabled, reloaded, or uninstalled.
 
 ## Project structure
 
@@ -92,4 +104,4 @@ The backend compiles `src/index.ts` → `dist/index.js` (CommonJS). The frontend
 
 ## Using this as a starting point
 
-Copy this directory, rename the plugin in `package.json`, adjust `uriPattern` in `src/index.ts` to match your target file type(s), and swap the CodeMirror language extension (`@codemirror/lang-*`) for the one you need. The `onSaveRequest` + `save-requested` dual save path and the undebounced `change` message pattern are reusable as-is for any text-based webview editor.
+Copy this directory, rename the plugin in `package.json`, adjust `uriPattern`/`includedFilePatterns` in `package.json`'s `contributes.editorDocumentTypes` (keeping the matching `uriPattern` string in sync in `src/index.ts`'s `registerDocumentType` call) to match your target file type(s), and swap the CodeMirror language extension (`@codemirror/lang-*`) for the one you need. The `onSaveRequest` + `save-requested` dual save path and the undebounced `change` message pattern are reusable as-is for any text-based webview editor.

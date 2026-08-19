@@ -52,6 +52,22 @@ import { PluginHostLogger } from './PluginHostLogger';
 import { showPermissionReviewDialog } from './PluginPermissionDialog';
 import { type ContributionDisposer, ContributionRegistrar } from './manifest/ContributionRegistrar';
 
+/**
+ * Returns `true` if the plugin has a way to be activated lazily, on-demand, rather than
+ * needing to load at Studio boot. This is true either via an explicit `activationEvents`
+ * declaration, or implicitly via `contributes.editorDocumentTypes`: the placeholder document
+ * type ContributionRegistrar registers for each entry is itself sufficient to trigger
+ * activation when a matching file is opened (see `PlaceholderEditorDocumentRenderer`) —
+ * no redundant `onDocumentType:`/`onUri:` activation event is required.
+ */
+function hasLazyActivationTrigger(manifest: BifrostStudioManifest | null | undefined): boolean {
+  if (manifest?.activationEvents != null && manifest.activationEvents.length > 0) {
+    return true;
+  }
+  const editorDocumentTypes = manifest?.contributes?.editorDocumentTypes;
+  return editorDocumentTypes != null && editorDocumentTypes.length > 0;
+}
+
 interface DiscoveredPlugin {
   name: string;
   packageName?: string;
@@ -567,15 +583,14 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
         this.contributionDisposers.set(plugin.name, disposer);
       }
 
-      const hasActivationEvents =
-        plugin.manifest?.activationEvents != null && plugin.manifest.activationEvents.length > 0;
+      const activatesLazily = hasLazyActivationTrigger(plugin.manifest);
 
-      if (hasActivationEvents) {
+      if (activatesLazily) {
         // Lazy activation: register events, don't load code yet
         this.activationManager.registerActivationEvents(
           plugin.name,
           plugin.path,
-          plugin.manifest!.activationEvents!,
+          plugin.manifest?.activationEvents ?? [],
           plugin.manifest?.permissions ?? [],
         );
 
@@ -924,14 +939,13 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
       this.contributionDisposers.set(name, disposer);
     }
 
-    const hasActivationEvents =
-      freshPlugin.manifest?.activationEvents != null && freshPlugin.manifest.activationEvents.length > 0;
+    const activatesLazily = hasLazyActivationTrigger(freshPlugin.manifest);
 
-    if (hasActivationEvents) {
+    if (activatesLazily) {
       this.activationManager.registerActivationEvents(
         name,
         freshPlugin.path,
-        freshPlugin.manifest!.activationEvents!,
+        freshPlugin.manifest?.activationEvents ?? [],
         reloadPermissions,
       );
       pluginInfo.status = 'pending';

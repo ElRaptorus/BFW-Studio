@@ -150,7 +150,7 @@ When a single plugin is unloaded or reloaded (via `bifrost.plugins.togglePlugin(
 1. **Re-discover from disk** — `discoverSinglePlugin(pluginPath)` re-reads `package.json`, re-validates the manifest, and refreshes all metadata fields on the `PluginInfo` entry. This picks up user edits to the manifest.
 2. **Re-validate** — Manifest errors and API version checks are re-run. If validation fails, the plugin stays in `status: 'error'` with a refreshed `errorMessage` and a toast notification. No IPC is sent to the child process.
 3. **Re-register contributions** — If validation passes, manifest contributions (commands, menus, keybindings, settings, panes, icons, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules) are re-registered via the `ContributionRegistrar`.
-4. **Load or defer** — Plugins with `activationEvents` go to `status: 'pending'` (lazy). Others attempt an IPC `PH_RELOAD_PLUGIN`. IPC failures are caught and preserve the `error` state.
+4. **Load or defer** — Plugins with `activationEvents`, or with a non-empty `contributes.editorDocumentTypes` (an implicit lazy trigger — see `hasLazyActivationTrigger` in `PluginHost.ts`), go to `status: 'pending'` (lazy). Others attempt an IPC `PH_RELOAD_PLUGIN`. IPC failures are caught and preserve the `error` state.
 
 `togglePlugin` cooperates by routing errored plugins (not in `plugins.disabledPlugins`) to `reloadPlugin` instead of the disable branch. Plugins in `status: 'quarantined'` are not retried via toggle alone — use `bifrost.plugins.trustAndReEnablePlugin(name)` (see _Per-plugin crash recovery and quarantine_).
 
@@ -321,14 +321,57 @@ Plugin code (child process)
   → PH_API_REQUEST { namespace: 'editors', method: 'registerWebviewDocumentType' }
   → PluginHostBridge.handleEditorsApi
   → createIframeDocumentRendererConstructor(context) → rendererConstructor
-  → bifrost.editors.registerDocumentType('plugin.<name>.<id>', { uriMatch, rendererConstructor, ... })
+  → bifrost.editors.registerOrReplaceDocumentType('plugin.<name>.<id>', { uriMatch, rendererConstructor, ... })
 ```
 
 When a matching document is opened, `EditorWrapper` resolves the renderer constructor and mounts `IframeDocumentRenderer`, which renders a `PluginIframe` with `iframeId = 'editor:<uri>'`.
 
+**`registerOrReplaceDocumentType`** (`EditorMediator`, backed by `EditorDocumentTypeManager.registerOrReplace`) is used here instead of the throwing `registerDocumentType`, so this call transparently overwrites a manifest-declared placeholder for the same id (see "Static editor document type contributions" below) without an "already registered" error. If no placeholder preceded it, it behaves identically to a fresh registration.
+
 **`onDidOpen` callback**: When provided, the callback is registered via `PH_REGISTER_CALLBACK` and stored by the bridge. `IframeDocumentRenderer` fires the notification on mount via a `useEffect`, which triggers `PH_CALLBACK_INVOCATION` back to the child process with `(iframeId, uri)`. This lets plugins wire up per-document `onMessage` handlers.
 
 **Cleanup on plugin unload**: The disposer calls `bifrost.editors.unregisterDocumentType(id)`, which force-closes all open tabs of that type and removes all sub-manager entries (renderer, model, inspector, merge resolver).
+
+#### Static editor document type contributions (`contributes.editorDocumentTypes`)
+
+`registerWebviewDocumentType` above only ever runs from inside `activate()` — so a document type that only *this* plugin provides could never be opened before the plugin activated (opening an unregistered document type throws immediately in `EditorMediator.focusOrOpenEditorDocument`, before any `onDocumentType:`/`onUri:` focus event could fire to trigger lazy activation reactively). `contributes.editorDocumentTypes` closes this gap with a placeholder-and-swap mechanism, the editor-document analogue of `contributes.panes`' `PlaceholderPaneProvider`:
+
+```json
+{
+  "contributes": {
+    "editorDocumentTypes": [
+      { "id": "markdown", "displayName": "Markdown Editor", "icon": "ph ph-markdown-logo",
+        "uriPattern": "\\.(mdx?|markdown)$", "includedFilePatterns": ["**/*.md", "**/*.mdx"] }
+    ]
+  }
+}
+```
+
+**At discovery time** (`ContributionRegistrar.registerEditorDocumentTypePlaceholder`, before any plugin code runs):
+
+1. If `includedFilePatterns` is set, calls `bifrost.solution.registerDefaultIncludedFiles(...)` immediately — matching files are visible in the File Explorer even though the plugin hasn't activated yet.
+2. Registers a placeholder `EditorDocumentTypeDefinition` for `uriMatch: new RegExp(uriPattern)` under the same namespaced id (`plugin.<pluginName>.<id>`) as the real registration would use, with `rendererConstructor` set to `createPlaceholderEditorDocumentRenderer(...)`.
+3. Tracks the id in `ContributionRegistrar.placeholderEditorDocumentTypeIds` (a `Set<string>`), used to tell whether the placeholder is still active.
+
+**When a matching file is opened** (`PlaceholderEditorDocumentRenderer.tsx`, mounted like any other editor document renderer):
+
+1. On mount, calls the `activatePlugin` closure passed in from `ContributionRegistrar` — this reuses `ActivationManager.activatePlugin()` verbatim, including its `pendingActivations` dedupe (so two placeholder tabs opened before activation completes don't double-activate) and its permission-dialog gate.
+2. Once the awaited promise settles, checks `placeholderEditorDocumentTypeIds.has(documentTypeId)`:
+   - **Not in the set** (replaced) — the plugin's `activate()` called `registerWebviewDocumentType()` with the matching id, which used `registerOrReplaceDocumentType` to overwrite the placeholder and (in `PluginHostBridge`) delete the id from `placeholderEditorDocumentTypeIds`. The placeholder closes its own tab and reopens the same uri via `focusOrOpenEditorDocument`, so it re-resolves against the now-real registration (same "force reopen" idiom as `forceReopenBpmnEditors`/`forceReopenDmnEditors`).
+   - **Still in the set** — the placeholder was not replaced, and a terminal state is rendered based on the owning plugin's `PluginInfo.status`. Every branch is terminal by design: without them a broken plugin would leave the tab stuck on "Activating plugin…" forever.
+
+| `PluginInfo.status` | `data-test--editor-doctype-placeholder` | Message |
+|---|---|---|
+| — (activation in flight) | `activating` | "Activating plugin …" |
+| `disabled` | `denied` | Permission dialog was denied; re-enable in the Plugins pane |
+| `error` / `quarantined`, or the activation call itself threw | `failed` | Plugin failed to activate; see the Plugins pane |
+| anything else (e.g. `loaded`) | `mismatch` | Plugin activated but registered no editor for this file — a bug in the plugin |
+
+The plugin's manifest `displayName` (falling back to its package name) is used in all four messages; the entry's own `displayName` labels the document type, not the plugin.
+
+**Disposer** (plugin disabled/reloaded/uninstalled before ever being opened): unregisters `includedFilePatterns` (if set) and, only if the placeholder was never replaced, unregisters the placeholder document type itself. If it *was* replaced, the real registration's own disposer (registered by `PluginHostBridge`) now owns that document type's lifecycle — the manifest disposer is a no-op in that case.
+
+No new `ActivationEvent` variant was needed — a non-empty `contributes.editorDocumentTypes` implies lazy activation on its own (see `hasLazyActivationTrigger` in `PluginHost.ts`), without requiring a redundant `activationEvents` entry.
 
 #### `panes`
 
@@ -1084,8 +1127,9 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the SDK `Tree` component |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Renderer | Event-driven lazy activation: subscribes to activation events, defers `PH_LOAD_PLUGIN` until trigger fires. Stores a `pendingActivations` promise so concurrent callers (e.g. stub callbacks) join an in-flight activation instead of returning early |
-| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, service task types, pane toggles, themes, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules |
+| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, editor document type placeholders, service task types, pane toggles, themes, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Renderer | Pane UI showing "Activating plugin…" while the plugin is pending activation |
+| `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderEditorDocumentRenderer.tsx` | Renderer | Editor tab UI shown for a `contributes.editorDocumentTypes` placeholder: triggers activation on mount, force-reopens the tab once replaced by the real registration, or renders a terminal "denied"/"failed"/"mismatch" error state |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestTypes.ts` | Shared | TypeScript interfaces for the `bifrostStudio` manifest section |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestReader.ts` | Shared | Parser + validator for `bifrostStudio` in `package.json` |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestSchema.json` | Reference | JSON Schema (draft-07) for documentation and external tooling |

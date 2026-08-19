@@ -24,6 +24,34 @@
     "description": "Markdown and JSON editors backed by CodeMirror 6, replacing the Studio's removed built-in default/markdown editors via the public webview document type API.",
     "permissions": [
       "filesystem"
-    ]
+    ],
+    "contributes": {
+      "editorDocumentTypes": [
+        {
+          "id": "markdown",
+          "displayName": "Markdown Editor",
+          "icon": "ph ph-markdown-logo",
+          "uriPattern": "\\.(mdx?|mdc|markdown|mdown|mkd|mkdn)$",
+          "includedFilePatterns": [
+            "**/*.md",
+            "**/*.mdx",
+            "**/*.mdc",
+            "**/*.markdown",
+            "**/*.mdown",
+            "**/*.mkd",
+            "**/*.mkdn"
+          ]
+        },
+        {
+          "id": "json",
+          "displayName": "JSON Editor",
+          "icon": "ph ph-brackets-curly",
+          "uriPattern": "\\.json$",
+          "includedFilePatterns": [
+            "**/*.json"
+          ]
+        }
+      ]
+    }
   }
 }

@@ -1,0 +1,28 @@
+{
+  "name": "editor-doctype-broken",
+  "displayName": "Editor Document Type Broken Plugin",
+  "description": "Test fixture: declares contributes.editorDocumentTypes but never calls registerWebviewDocumentType from activate(), used to exercise the placeholder trampoline's mismatch and permission-denial terminal states.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "1.0.0",
+    "displayName": "Editor Document Type Broken Plugin",
+    "permissions": [
+      "filesystem"
+    ],
+    "contributes": {
+      "editorDocumentTypes": [
+        {
+          "id": "broken",
+          "displayName": "Broken Editor",
+          "icon": "ph ph-warning",
+          "uriPattern": "\\.brokentest$",
+          "includedFilePatterns": [
+            "**/*.brokentest"
+          ]
+        }
+      ]
+    }
+  }
+}

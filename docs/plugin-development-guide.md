@@ -237,6 +237,7 @@ The `bifrostStudio` field in `package.json` declares the plugin's metadata and c
       "keybindings": [...],
       "icons": {...},
       "panes": [...],
+      "editorDocumentTypes": [...],
       "serviceTaskTypes": [...]
     }
   }
@@ -259,6 +260,8 @@ Array of events that trigger plugin activation:
 | `"onDocumentType:<typeId>"` | Activate when a document of the specified type is opened |
 | `"onUri:<pattern>"` | Activate when a document matching the URI pattern is opened |
 | `"onSetting:<key>"` | Activate when the specified setting is accessed |
+
+`contributes.editorDocumentTypes` (see below) is a lazy-activation trigger *by itself* and doesn't need a redundant `activationEvents` entry — a plugin declaring only `editorDocumentTypes` contributions can omit `activationEvents` entirely and still load lazily, activating when a matching file is opened. `contributes.commands` always creates its stub commands regardless of `activationEvents`, but still requires an explicit `"onCommand:<id>"` entry for the plugin itself to load lazily — the stub only knows how to trigger activation, not to defer loading on its own.
 
 ### `contributes.commands`
 
@@ -317,6 +320,33 @@ Command IDs are auto-namespaced to `plugin.<pluginName>.<id>`. The manifest crea
 ```
 
 The manifest creates a placeholder pane. The actual webview is initialized in `activate()` via `api.panes.registerWebviewPane()`.
+
+### `contributes.editorDocumentTypes`
+
+```json
+{
+  "editorDocumentTypes": [
+    {
+      "id": "markdown",
+      "displayName": "Markdown Editor",
+      "icon": "ph ph-markdown-logo",
+      "uriPattern": "\\.(mdx?|markdown)$",
+      "includedFilePatterns": ["**/*.md", "**/*.mdx", "**/*.markdown"]
+    }
+  ]
+}
+```
+
+Declares that this plugin will provide an editor for files matching `uriPattern`, **before** the plugin has activated. This is what makes lazy activation possible for file-type editors — without it, a document type your plugin alone provides can never trigger its own lazy activation, since opening an unregistered document type fails immediately instead of firing a focus event `onDocumentType`/`onUri` could react to.
+
+Declaring a non-empty `contributes.editorDocumentTypes` makes the plugin lazy by itself — no `activationEvents` entry is needed. (This is unlike `contributes.commands`, whose stub commands always work but still need an explicit `"onCommand:<id>"` activation event for the plugin's *loading* to actually defer — see `activationEvents` above.) At discovery time, before any plugin code runs, the Studio:
+
+1. Registers `includedFilePatterns` (if given) via `bifrost.solution.registerDefaultIncludedFiles()`, so matching files are visible in the File Explorer immediately — without this, the gap from `registerWebviewDocumentType`'s `includedFilePatterns` (see below) would resurface for the pre-activation window.
+2. Registers a **placeholder** editor document type for `uriPattern`, rendering an "Activating plugin…" tab.
+
+When a matching file is opened, the placeholder triggers real activation (the same permission-dialog gate as any other lazy trigger). Once `activate()` calls the real `api.editors.registerWebviewDocumentType()` with the **same `id`**, the placeholder is replaced and the tab is automatically closed and reopened to show the real editor. If `activate()` never calls it — a bug in the plugin — the tab instead shows a terminal "Plugin activated but did not register an editor for this file" error, so a broken plugin fails loudly instead of leaving the tab stuck on "Activating plugin…" forever. If the user denies the plugin's permission dialog, the tab shows a terminal "Activation was denied" message; if `activate()` throws, it shows a terminal "failed to activate" message. All four states carry a `data-test--editor-doctype-placeholder` attribute (`activating`, `denied`, `failed`, `mismatch`) for test selectors.
+
+**`id` must match exactly** between `contributes.editorDocumentTypes` and the corresponding `registerWebviewDocumentType({ id, ... })` call in `activate()` — both are namespaced identically to `plugin.<pluginName>.<id>`. See [`docs/architecture/common-pitfalls.md`](architecture/common-pitfalls.md) for the consequences of a mismatch.
 
 ### `contributes.paneToggles`
 
@@ -523,6 +553,8 @@ api.notifications.onResponse(id, (response) => {
 ```
 
 `includedFilePatterns` is the plugin-API equivalent of the internal-module-only `bifrost.solution.registerDefaultIncludedFiles()`. The File Explorer's default view only shows files matching *some* registered include pattern (the Studio is scoped to BPMN/DMN by default) — without this, files your document type handles would stay hidden unless the user enables "Show hidden files". Patterns are unregistered automatically when the plugin is disabled, reloaded, or uninstalled.
+
+If a manifest `contributes.editorDocumentTypes` entry with the same `id` was already registered as a placeholder (see above), this call transparently **replaces** it instead of throwing an "already registered" error — the id is namespaced identically (`plugin.<pluginName>.<id>`) whether it comes from the manifest placeholder or this call. `includedFilePatterns` only needs to be declared once, in whichever of the two you use — repeating it here when the manifest already declared it is unnecessary but harmless.
 
 ### `api.panes`
 

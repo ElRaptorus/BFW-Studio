@@ -29,6 +29,15 @@ export interface ManifestContributions {
   dmnPalette?: ManifestDmnPaletteEntry[];
   dmnContextPad?: ManifestDmnContextPadEntry[];
   dmnModules?: ManifestDmnModule[];
+  editorDocumentTypes?: ManifestEditorDocumentType[];
+}
+
+export interface ManifestEditorDocumentType {
+  id: string;
+  displayName: string;
+  icon: string;
+  uriPattern: string;
+  includedFilePatterns?: string[];
 }
 
 export interface ManifestBpmnModule {

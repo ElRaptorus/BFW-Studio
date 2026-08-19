@@ -68,9 +68,11 @@ function registerDocumentType(
     icon: string;
     uriPattern: string;
     entryPoint: string;
-    includedFilePatterns: string[];
   },
 ): Promise<void> {
+  // includedFilePatterns is declared once via contributes.editorDocumentTypes in package.json
+  // (registered as a placeholder at discovery time, before activation) — it is intentionally
+  // NOT repeated here, since this call only replaces the placeholder with the real iframe editor.
   return api.editors
     .registerWebviewDocumentType({
       id: options.id,
@@ -78,7 +80,6 @@ function registerDocumentType(
       icon: options.icon,
       uriPattern: options.uriPattern,
       webviewOptions: { entryPoint: options.entryPoint },
-      includedFilePatterns: options.includedFilePatterns,
     })
     .then(() =>
       api.editors.onDidOpen(options.id, (iframeId: string, uri: string) => {
@@ -156,7 +157,6 @@ module.exports.activate = async (api: PluginApi): Promise<void> => {
     icon: 'ph ph-markdown-logo',
     uriPattern: '\\.(mdx?|mdc|markdown|mdown|mkd|mkdn)$',
     entryPoint: 'webview/dist/markdown.html',
-    includedFilePatterns: ['**/*.md', '**/*.mdx', '**/*.mdc', '**/*.markdown', '**/*.mdown', '**/*.mkd', '**/*.mkdn'],
   });
 
   await registerDocumentType(api, {
@@ -165,7 +165,6 @@ module.exports.activate = async (api: PluginApi): Promise<void> => {
     icon: 'ph ph-brackets-curly',
     uriPattern: '\\.json$',
     entryPoint: 'webview/dist/json.html',
-    includedFilePatterns: ['**/*.json'],
   });
 };
 

@@ -21,6 +21,26 @@ async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string)
   );
 }
 
+async function waitForPluginStatus(
+  studioAgent: StudioAgent,
+  pluginName: string,
+  expectedStatus: string,
+): Promise<void> {
+  await studioAgent.getTestDriver().client!.waitUntil(
+    async () => {
+      const plugins = await studioAgent
+        .getTestDriver()
+        .client!.execute(() => (window as any).bifrost.plugins.getPluginList());
+      const plugin = plugins.find((entry: any) => entry.name === pluginName);
+      return plugin?.status === expectedStatus;
+    },
+    {
+      timeout: PLUGIN_LOAD_TIMEOUT,
+      timeoutMsg: `Plugin '${pluginName}' did not reach status '${expectedStatus}' in time`,
+    },
+  );
+}
+
 async function executePluginCommand(studioAgent: StudioAgent, commandId: string, ...args: unknown[]): Promise<any> {
   return studioAgent
     .getTestDriver()
@@ -50,6 +70,7 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
         testFile: __filename,
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingUpdateProperties');
+      await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
     });
 
     afterAll(async () => {
@@ -72,7 +93,7 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     });
 
     it('denies modeling.updateProperties', async () => {
-      await studioAgent.jumpToFileInSolution('simple.bpmn', 'bpmn');
+      await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
       await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
 
       const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingUpdateProperties');
@@ -130,6 +151,10 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
         testFile: __filename,
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-perm-medium.test.isActivated');
+      await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
+      await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
+      await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
+      await waitForPluginStatus(studioAgent, 'bpmn-perm-medium', 'loaded');
     });
 
     afterAll(async () => {
@@ -152,9 +177,6 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     });
 
     it('allows modeling.updateProperties (implied by bpmn.modelling)', async () => {
-      await studioAgent.jumpToFileInSolution('simple.bpmn', 'bpmn');
-      await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
-
       const result = await executePluginCommand(
         studioAgent,
         'plugin.bpmn-perm-medium.tryModelingUpdateProperties',
@@ -201,6 +223,10 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
         testFile: __filename,
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-perm-high.test.isActivated');
+      await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
+      await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
+      await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
+      await waitForPluginStatus(studioAgent, 'bpmn-perm-high', 'loaded');
     });
 
     afterAll(async () => {
@@ -223,9 +249,6 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     });
 
     it('allows all bpmn.* methods (full hierarchy)', async () => {
-      await studioAgent.jumpToFileInSolution('simple.bpmn', 'bpmn');
-      await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
-
       const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-high.test.isActivated');
       assert.strictEqual(result?.activated, true);
     });

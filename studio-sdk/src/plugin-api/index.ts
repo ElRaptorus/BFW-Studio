@@ -123,6 +123,7 @@ export type {
   ManifestDmnContextPadEntry,
   ManifestDmnModule,
   ManifestDmnPaletteEntry,
+  ManifestEditorDocumentType,
   ManifestKeybinding,
   ManifestMenuItem,
   ManifestPaneContribution,

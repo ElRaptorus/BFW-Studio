@@ -43,6 +43,7 @@ describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
         testFile: __filename,
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-renderer-module-demo.togglePathTracer');
+      await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
     });
 
     afterAll(async () => {
@@ -65,7 +66,7 @@ describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
     });
 
     it('plugin with bpmnModules + bpmn.renderer loads successfully', async () => {
-      await studioAgent.jumpToFileInSolution('simple.bpmn', 'bpmn');
+      await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
       await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
 
       const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-high.test.isActivated');
@@ -137,6 +138,7 @@ describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
         testFile: __filename,
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-kitchen-sink.test.isActivated');
+      await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
     });
 
     afterAll(async () => {
@@ -159,7 +161,7 @@ describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
     });
 
     it('bpmn-kitchen-sink plugin activates with all features', async () => {
-      await studioAgent.jumpToFileInSolution('simple.bpmn', 'bpmn');
+      await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
       await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
 
       const result = await executePluginCommand(studioAgent, 'plugin.bpmn-kitchen-sink.test.isActivated');

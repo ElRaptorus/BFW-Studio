@@ -6,10 +6,15 @@ export interface StudioWebviewApi {
   getThemeType(): string;
 }
 
-declare global {
-  interface Window {
-    acquireStudioApi?: () => StudioWebviewApi;
-  }
+/**
+ * Reads the `acquireStudioApi` bridge function injected into the iframe by the Studio's
+ * webview bridge script. Deliberately *not* a `declare global` augmentation of `Window`:
+ * every fixture webview would then declare the same global in one TypeScript program,
+ * which collides (TS2717) when the Studio type-checks all fixtures at once.
+ */
+export function acquireStudioApi(): StudioWebviewApi | undefined {
+  const acquire = (window as unknown as { acquireStudioApi?: () => StudioWebviewApi }).acquireStudioApi;
+  return acquire?.();
 }
 
 export type HostToWebviewMessage = { type: 'load'; payload: string };

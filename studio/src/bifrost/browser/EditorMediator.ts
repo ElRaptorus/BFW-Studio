@@ -980,6 +980,30 @@ export class EditorMediator extends AbstractEmitter {
   }
 
   /**
+   * Registers the given `editorDocumentTypeDefinition` with the given `id`, replacing any
+   * prior registration for the same `id` instead of throwing. Used to let a plugin's real
+   * `registerWebviewDocumentType()` call (in `activate()`) replace a manifest-declared
+   * placeholder type registered by `ContributionRegistrar` at discovery time (see
+   * `contributes.editorDocumentTypes`).
+   */
+  registerOrReplaceDocumentType(id: string, typeDefinition: EditorDocumentTypeDefinitionWithoutName): void {
+    this.editorDocumentTypeManager.registerOrReplace(id, typeDefinition);
+    this.editorDocumentRenderer.register(typeDefinition.rendererKey, typeDefinition.rendererConstructor);
+    if (typeDefinition.modelKey != null) {
+      this.editorDocumentModelManager.registerConstructor(typeDefinition.modelKey, typeDefinition.modelConstructor);
+    }
+    if (typeDefinition.inspectorKey != null) {
+      this.editorDocumentInspectorManager.register(typeDefinition.inspectorKey, typeDefinition.inspectorConstructor);
+    }
+    if (typeDefinition.mergeResolverKey != null) {
+      this.editorDocumentMergeResolverManager.register(
+        typeDefinition.mergeResolverKey,
+        typeDefinition.mergeResolverConstructor,
+      );
+    }
+  }
+
+  /**
    * Removes a previously registered document type, along with its renderer, model constructor,
    * inspector, and merge resolver entries. Force-closes all open editor tabs of that type first.
    */

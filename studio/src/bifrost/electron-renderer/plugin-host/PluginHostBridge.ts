@@ -810,13 +810,17 @@ export class PluginHostBridge {
 
         const uriRegex = new RegExp(options.uriPattern);
 
-        this.bifrost.editors.registerDocumentType(documentTypeId, {
+        // registerOrReplace transparently overwrites a manifest-declared placeholder type
+        // (from contributes.editorDocumentTypes) registered by ContributionRegistrar at
+        // discovery time, or simply registers fresh if no placeholder preceded it.
+        this.bifrost.editors.registerOrReplaceDocumentType(documentTypeId, {
           uriMatch: uriRegex,
           icon: options.icon,
           rendererKey,
           rendererConstructor,
           modelKey: null,
         });
+        this.contributionRegistrar?.placeholderEditorDocumentTypeIds.delete(documentTypeId);
 
         this.documentTypeLabels.set(documentTypeId, {
           uriPattern: uriRegex,

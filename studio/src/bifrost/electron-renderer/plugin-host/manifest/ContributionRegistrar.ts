@@ -4,6 +4,7 @@ import { insertAfterMenuBarItem, insertBeforeMenuBarItem } from '#bifrost/common
 import type {
   BifrostStudioManifest,
   ManifestCommand,
+  ManifestEditorDocumentType,
   ManifestKeybinding,
   ManifestPaneContribution,
   ManifestPaneToggle,
@@ -18,6 +19,7 @@ import { pluginBpmnContributionStore } from '../../../../modules/bpmn-core/Plugi
 import { pluginModuleLoader } from '../../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
 import { pluginDmnContributionStore } from '../../../../modules/dmn-core/PluginDmnContributionStore';
 import { pluginDmnModuleLoader } from '../../../../modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
+import { createPlaceholderEditorDocumentRenderer } from './PlaceholderEditorDocumentRenderer';
 import { createPlaceholderPaneProvider } from './PlaceholderPaneProvider';
 
 export interface ContributionDisposer {
@@ -33,6 +35,13 @@ export class ContributionRegistrar {
 
   /** Stub command IDs → description. Cleared when the real callback replaces the stub. */
   readonly stubCommandIds = new Map<string, string>();
+
+  /**
+   * Namespaced document type ids currently backed by a manifest placeholder (from
+   * `contributes.editorDocumentTypes`). Removed when the plugin's real
+   * `registerWebviewDocumentType()` call replaces the placeholder — see `PluginHostBridge`.
+   */
+  readonly placeholderEditorDocumentTypeIds = new Set<string>();
 
   constructor(bifrost: Bifrost) {
     this.bifrost = bifrost;
@@ -94,6 +103,21 @@ export class ContributionRegistrar {
     if (contributes.panes != null) {
       for (const pane of contributes.panes) {
         const disposer = this.registerPanePlaceholder(pluginName, pane);
+        if (disposer != null) {
+          disposers.push(disposer);
+        }
+      }
+    }
+
+    // ── Editor Document Types (placeholder trampoline) ────────
+    if (contributes.editorDocumentTypes != null) {
+      for (const entry of contributes.editorDocumentTypes) {
+        const disposer = this.registerEditorDocumentTypePlaceholder(
+          pluginName,
+          manifest.displayName ?? pluginName,
+          entry,
+          activatePlugin,
+        );
         if (disposer != null) {
           disposers.push(disposer);
         }
@@ -501,6 +525,83 @@ export class ContributionRegistrar {
         this.bifrost.panes.unregisterPaneProvider(`plugin/${pluginName}/panes/${pane.id}`);
       } catch {
         /* already unregistered */
+      }
+    };
+  }
+
+  // ── Editor Document Types (placeholder trampoline) ─────────
+
+  private registerEditorDocumentTypePlaceholder(
+    pluginName: string,
+    pluginDisplayName: string,
+    entry: ManifestEditorDocumentType,
+    activatePlugin: () => Promise<void>,
+  ): (() => void) | null {
+    const documentTypeId = `plugin.${pluginName}.${entry.id}`;
+    const includedFilePatterns = entry.includedFilePatterns ?? [];
+
+    let uriRegex: RegExp;
+    try {
+      uriRegex = new RegExp(entry.uriPattern);
+    } catch (err) {
+      console.warn(
+        `[ContributionRegistrar] Plugin '${pluginName}' contributes.editorDocumentTypes['${entry.id}'] has an invalid uriPattern:`,
+        err,
+      );
+      return null;
+    }
+
+    if (includedFilePatterns.length > 0) {
+      this.bifrost.solution.registerDefaultIncludedFiles(includedFilePatterns);
+    }
+
+    const rendererKey = `plugin-editor-placeholder-${documentTypeId}`;
+    const rendererConstructor = createPlaceholderEditorDocumentRenderer({
+      pluginName,
+      pluginDisplayName,
+      activatePlugin,
+      isStillPlaceholder: () => this.placeholderEditorDocumentTypeIds.has(documentTypeId),
+    });
+
+    try {
+      this.bifrost.editors.registerDocumentType(documentTypeId, {
+        uriMatch: uriRegex,
+        icon: entry.icon,
+        rendererKey,
+        rendererConstructor,
+        modelKey: null,
+      });
+    } catch (err) {
+      console.warn(
+        `[ContributionRegistrar] Failed to register editor document type placeholder '${documentTypeId}':`,
+        err,
+      );
+      if (includedFilePatterns.length > 0) {
+        this.bifrost.solution.unregisterDefaultIncludedFiles(includedFilePatterns);
+      }
+      return null;
+    }
+
+    this.placeholderEditorDocumentTypeIds.add(documentTypeId);
+
+    return () => {
+      if (includedFilePatterns.length > 0) {
+        this.bifrost.solution.unregisterDefaultIncludedFiles(includedFilePatterns);
+      }
+
+      if (!this.placeholderEditorDocumentTypeIds.has(documentTypeId)) {
+        // Already replaced by the plugin's real registerWebviewDocumentType() call —
+        // that registration's own lifecycle (in PluginHostBridge) now owns the document type.
+        return;
+      }
+
+      this.placeholderEditorDocumentTypeIds.delete(documentTypeId);
+      try {
+        this.bifrost.editors.unregisterDocumentType(documentTypeId).catch((err) => {
+          console.warn(`[ContributionRegistrar] Failed to unregister placeholder '${documentTypeId}':`, err);
+        });
+      } catch (err) {
+        console.warn(`[ContributionRegistrar] Failed to unregister placeholder '${documentTypeId}':`, err);
       }
     };
   }

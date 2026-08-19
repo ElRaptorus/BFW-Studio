@@ -84,6 +84,13 @@ export interface ManifestContributions {
    * with the plugin host via a `pluginChannel` DI value.
    */
   dmnModules?: ManifestDmnModule[];
+  /**
+   * Editor document types the plugin's `activate()` will register via `registerWebviewDocumentType()`.
+   * The Studio pre-registers a placeholder editor for each entry's `uriPattern` at discovery time
+   * (before the plugin activates), so matching files can be opened — and, if `includedFilePatterns`
+   * is set, appear in the File Explorer — before the plugin has loaded any code.
+   */
+  editorDocumentTypes?: ManifestEditorDocumentType[];
 }
 
 // ─── Individual contribution types ──────────────────────────────────
@@ -295,6 +302,45 @@ export interface ManifestTheme {
    * `--` prefix is auto-prepended if missing. Values must be valid CSS values.
    */
   tokens: Record<string, string>;
+}
+
+/**
+ * Declares that this plugin's `activate()` will register a webview-backed editor document
+ * type for files matching `uriPattern`, via `bifrost.editors.registerWebviewDocumentType()`.
+ *
+ * The Studio pre-registers a placeholder editor document type for `uriPattern` as soon as the
+ * manifest is read — before the plugin has been activated. Opening a matching file triggers
+ * plugin activation (including any permission dialog); once `activate()` calls
+ * `registerWebviewDocumentType()` with the same `id`, the placeholder tab is replaced with the
+ * real editor. If `activate()` never registers a matching `id`, the placeholder shows a
+ * permanent "did not register an editor" error instead of hanging.
+ *
+ * There is deliberately no `webviewOptions` field here — the manifest only promises that
+ * *something* will register this id; the actual iframe wiring (entry point, resource roots)
+ * still happens imperatively in `activate()` via `registerWebviewDocumentType()`, keeping one
+ * source of truth for webview configuration.
+ */
+export interface ManifestEditorDocumentType {
+  /**
+   * Document type identifier. Namespaced automatically to `plugin.<name>.<id>`. Must exactly
+   * match the `id` passed to `registerWebviewDocumentType()` in `activate()` for the placeholder
+   * to be replaced.
+   */
+  id: string;
+  /**
+   * Human-readable name of the document type (e.g. `"Markdown Editor"`). Should match the
+   * `displayName` passed to `registerWebviewDocumentType()`.
+   */
+  displayName: string;
+  /** Icon identifier for the placeholder tab. */
+  icon: string;
+  /** Regex source string (e.g. `"\\.md$"`) matched against document URIs to determine applicability. */
+  uriPattern: string;
+  /**
+   * File glob patterns to register as "known" (non-hidden) files in the File Explorer,
+   * effective immediately at discovery time — before the plugin has activated.
+   */
+  includedFilePatterns?: string[];
 }
 
 // ─── Activation events ──────────────────────────────────────────────

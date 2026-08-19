@@ -11,6 +11,7 @@ import type {
   ManifestDmnContextPadEntry,
   ManifestDmnModule,
   ManifestDmnPaletteEntry,
+  ManifestEditorDocumentType,
   ManifestError,
   ManifestKeybinding,
   ManifestMenuItem,
@@ -330,6 +331,9 @@ function validateContributes(
   if (raw.dmnModules != null) {
     result.dmnModules = validateDmnModules(raw.dmnModules, errors);
   }
+  if (raw.editorDocumentTypes != null) {
+    result.editorDocumentTypes = validateEditorDocumentTypes(raw.editorDocumentTypes, errors);
+  }
 
   const knownContributes = new Set([
     'commands',
@@ -347,6 +351,7 @@ function validateContributes(
     'dmnPalette',
     'dmnContextPad',
     'dmnModules',
+    'editorDocumentTypes',
   ]);
   for (const key of Object.keys(raw)) {
     if (!knownContributes.has(key)) {
@@ -1044,6 +1049,90 @@ function validateDmnContextPad(raw: unknown, errors: ManifestError[]): ManifestD
       title: obj.title as string,
       command: obj.command as string,
       elementTypes: obj.elementTypes as string[] | undefined,
+    });
+  }
+  return result;
+}
+
+// ─── Editor Document Types ────────────────────────────────────
+
+function validateEditorDocumentTypes(raw: unknown, errors: ManifestError[]): ManifestEditorDocumentType[] {
+  const basePath = 'bifrostStudio.contributes.editorDocumentTypes';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestEditorDocumentType[] = [];
+  const seenIds = new Set<string>();
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i];
+    const entryPath = `${basePath}[${i}]`;
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      errors.push({ path: entryPath, message: 'Must be an object' });
+      continue;
+    }
+
+    const obj = entry as Record<string, unknown>;
+    let valid = true;
+
+    for (const field of ['id', 'displayName', 'icon', 'uriPattern'] as const) {
+      if (typeof obj[field] !== 'string' || (obj[field] as string).trim().length === 0) {
+        errors.push({
+          path: `${entryPath}.${field}`,
+          message: `Required field "${field}" is missing or not a non-empty string`,
+        });
+        valid = false;
+      }
+    }
+    if (!valid) {
+      continue;
+    }
+
+    const id = obj.id as string;
+    if (seenIds.has(id)) {
+      errors.push({
+        path: `${entryPath}.id`,
+        message: `Duplicate editorDocumentTypes id within this plugin: "${id}"`,
+      });
+      continue;
+    }
+
+    const uriPattern = obj.uriPattern as string;
+    try {
+      new RegExp(uriPattern);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      errors.push({
+        path: `${entryPath}.uriPattern`,
+        message: `"uriPattern" is not a valid regular expression: ${reason}`,
+      });
+      continue;
+    }
+
+    let includedFilePatterns: string[] | undefined;
+    if (obj.includedFilePatterns != null) {
+      if (
+        !Array.isArray(obj.includedFilePatterns) ||
+        obj.includedFilePatterns.some((pattern) => typeof pattern !== 'string')
+      ) {
+        errors.push({
+          path: `${entryPath}.includedFilePatterns`,
+          message: '"includedFilePatterns" must be an array of strings when present',
+        });
+        continue;
+      }
+      includedFilePatterns = obj.includedFilePatterns as string[];
+    }
+
+    seenIds.add(id);
+    result.push({
+      id,
+      displayName: obj.displayName as string,
+      icon: obj.icon as string,
+      uriPattern,
+      includedFilePatterns,
     });
   }
   return result;

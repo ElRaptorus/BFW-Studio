@@ -21,6 +21,32 @@ async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string)
   );
 }
 
+// Manifest-declared commands are registered as stubs at plugin discovery time,
+// before `activate()` runs — `isRegistered` is true for a stub immediately, so
+// waiting on any particular command name does not guarantee `activate()` has
+// finished replacing every stub with its real handler. Waiting for the plugin
+// status to reach 'loaded' is the only reliable signal (see the DMN permission
+// test suites, which already use this pattern for the same reason).
+async function waitForPluginStatus(
+  studioAgent: StudioAgent,
+  pluginName: string,
+  expectedStatus: string,
+): Promise<void> {
+  await studioAgent.getTestDriver().client!.waitUntil(
+    async () => {
+      const plugins = await studioAgent
+        .getTestDriver()
+        .client!.execute(() => (window as any).bifrost.plugins.getPluginList());
+      const plugin = plugins.find((entry: any) => entry.name === pluginName);
+      return plugin?.status === expectedStatus;
+    },
+    {
+      timeout: PLUGIN_LOAD_TIMEOUT,
+      timeoutMsg: `Plugin '${pluginName}' did not reach status '${expectedStatus}' in time`,
+    },
+  );
+}
+
 async function executePluginCommand(studioAgent: StudioAgent, commandId: string, ...args: unknown[]): Promise<any> {
   return studioAgent
     .getTestDriver()
@@ -42,6 +68,29 @@ async function openBpmnFileAndGetUri(studioAgent: StudioAgent, filename: string)
   return fileUri;
 }
 
+/**
+ * Installs a test-only global that resolves the BPMN modeler adapter for a given document URI.
+ *
+ * There is no `bpmn:modeler-adapter` shared resource in the product — `Bifrost.getSharedRessource`
+ * throws on unknown keys. The correct, public way to reach the modeler is via the editor document
+ * model's `modelerAdapter` getter (see `BpmnApiBridge.resolveAdapter`). WebdriverIO `execute`
+ * callbacks cannot close over test-module helpers, so this resolver is installed once per suite as
+ * a `window` global and referenced by URI from every `execute` call site.
+ */
+async function installBpmnAdapterResolver(studioAgent: StudioAgent): Promise<void> {
+  await studioAgent.getTestDriver().client!.execute(() => {
+    (window as any).__bfwResolveBpmnAdapter = (uri: string) => {
+      const bifrost = (window as any).bifrost;
+      const doc = bifrost?.editors?.getEditorDocumentByUri?.(uri);
+      if (doc == null) {
+        return null;
+      }
+      const model = bifrost.editors.getEditorDocumentModelIfPresent(doc);
+      return model?.modelerAdapter ?? null;
+    };
+  });
+}
+
 describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
   describe('permission gating — bpmn.modelling required for modeling.*', () => {
     let studioAgent: StudioAgent;
@@ -53,7 +102,7 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
         testName: 'bpmn-modeling-perm',
         testFile: __filename,
       });
-      await waitForPluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingUpdateProperties');
+      await waitForPluginStatus(studioAgent, 'bpmn-perm-low', 'loaded');
     });
 
     afterAll(async () => {
@@ -142,8 +191,9 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
         testFile: __filename,
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-palette-demo.test.modeling.updateProperties');
+      await installBpmnAdapterResolver(studioAgent);
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
-      bpmnUri = await openBpmnFileAndGetUri(studioAgent, 'definition.bpmn');
+      bpmnUri = await openBpmnFileAndGetUri(studioAgent, 'untyped-task.bpmn');
     });
 
     afterAll(async () => {
@@ -167,7 +217,7 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
 
     it('updateProperties changes element name', async () => {
       const elements = await studioAgent.getTestDriver().client!.execute((uri: string) => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
+        const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
         if (adapter == null) {
           return [];
         }
@@ -193,25 +243,29 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
       );
       assert.strictEqual(result, 'ok', `Expected 'ok', got: ${result}`);
 
-      const updatedName = await studioAgent.getTestDriver().client!.execute((elementId: string) => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
-        if (adapter == null) {
-          return null;
-        }
-        const modeler = adapter.getModeler?.();
-        if (modeler == null) {
-          return null;
-        }
-        const registry = modeler.get('elementRegistry');
-        const el = registry.get(elementId);
-        return el?.businessObject?.name ?? null;
-      }, targetId);
+      const updatedName = await studioAgent.getTestDriver().client!.execute(
+        (uri: string, elementId: string) => {
+          const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
+          if (adapter == null) {
+            return null;
+          }
+          const modeler = adapter.getModeler?.();
+          if (modeler == null) {
+            return null;
+          }
+          const registry = modeler.get('elementRegistry');
+          const el = registry.get(elementId);
+          return el?.businessObject?.name ?? null;
+        },
+        bpmnUri,
+        targetId,
+      );
       assert.strictEqual(updatedName, 'Updated by Plugin');
     });
 
     it('updateProperties rejects blocked properties ($type, $parent, di)', async () => {
-      const elements = await studioAgent.getTestDriver().client!.execute(() => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
+      const elements = await studioAgent.getTestDriver().client!.execute((uri: string) => {
+        const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
         if (adapter == null) {
           return [];
         }
@@ -221,7 +275,7 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
         }
         const registry = modeler.get('elementRegistry');
         return registry.filter((el: any) => el.type.includes('Task')).map((el: any) => ({ id: el.id }));
-      });
+      }, bpmnUri);
       assert.ok(elements.length > 0);
 
       const result = await executePluginCommand(
@@ -247,8 +301,8 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
     });
 
     it('appendElement creates a new connected element', async () => {
-      const sourceId = await studioAgent.getTestDriver().client!.execute(() => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
+      const sourceId = await studioAgent.getTestDriver().client!.execute((uri: string) => {
+        const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
         if (adapter == null) {
           return null;
         }
@@ -259,7 +313,7 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
         const registry = modeler.get('elementRegistry');
         const tasks = registry.filter((el: any) => el.type === 'bpmn:Task' || el.type === 'bpmn:ServiceTask');
         return tasks.length > 0 ? tasks[0].id : null;
-      });
+      }, bpmnUri);
       assert.ok(sourceId != null, 'Expected a task element');
 
       const result = await executePluginCommand(
@@ -273,18 +327,22 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
       assert.ok('elementId' in result, 'Result should have elementId');
       assert.ok(typeof result.elementId === 'string' && result.elementId.length > 0, 'elementId should be a string');
 
-      const exists = await studioAgent.getTestDriver().client!.execute((elementId: string) => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
-        if (adapter == null) {
-          return false;
-        }
-        const modeler = adapter.getModeler?.();
-        if (modeler == null) {
-          return false;
-        }
-        const registry = modeler.get('elementRegistry');
-        return registry.get(elementId) != null;
-      }, result.elementId);
+      const exists = await studioAgent.getTestDriver().client!.execute(
+        (uri: string, elementId: string) => {
+          const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
+          if (adapter == null) {
+            return false;
+          }
+          const modeler = adapter.getModeler?.();
+          if (modeler == null) {
+            return false;
+          }
+          const registry = modeler.get('elementRegistry');
+          return registry.get(elementId) != null;
+        },
+        bpmnUri,
+        result.elementId,
+      );
       assert.strictEqual(exists, true, 'Appended element should exist in the registry');
     });
 
@@ -303,8 +361,8 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
     });
 
     it('moveElement changes element position', async () => {
-      const elementData = await studioAgent.getTestDriver().client!.execute(() => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
+      const elementData = await studioAgent.getTestDriver().client!.execute((uri: string) => {
+        const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
         if (adapter == null) {
           return null;
         }
@@ -318,7 +376,7 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
           return null;
         }
         return { id: tasks[0].id, x: tasks[0].x, y: tasks[0].y };
-      });
+      }, bpmnUri);
       assert.ok(elementData != null, 'Expected a task element with position');
 
       const result = await executePluginCommand(
@@ -330,30 +388,34 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
       );
       assert.strictEqual(result, 'ok', `Expected 'ok', got: ${result}`);
 
-      const newPosition = await studioAgent.getTestDriver().client!.execute((elementId: string) => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
-        if (adapter == null) {
-          return null;
-        }
-        const modeler = adapter.getModeler?.();
-        if (modeler == null) {
-          return null;
-        }
-        const registry = modeler.get('elementRegistry');
-        const el = registry.get(elementId);
-        if (el == null) {
-          return null;
-        }
-        return { x: el.x, y: el.y };
-      }, elementData.id);
+      const newPosition = await studioAgent.getTestDriver().client!.execute(
+        (uri: string, elementId: string) => {
+          const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
+          if (adapter == null) {
+            return null;
+          }
+          const modeler = adapter.getModeler?.();
+          if (modeler == null) {
+            return null;
+          }
+          const registry = modeler.get('elementRegistry');
+          const el = registry.get(elementId);
+          if (el == null) {
+            return null;
+          }
+          return { x: el.x, y: el.y };
+        },
+        bpmnUri,
+        elementData.id,
+      );
       assert.ok(newPosition != null, 'Expected element to still exist');
       assert.strictEqual(newPosition.x, elementData.x + 30, 'X should be moved +30');
       assert.strictEqual(newPosition.y, elementData.y - 20, 'Y should be moved -20');
     });
 
     it('moveElement returns error for non-finite delta', async () => {
-      const taskId = await studioAgent.getTestDriver().client!.execute(() => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
+      const taskId = await studioAgent.getTestDriver().client!.execute((uri: string) => {
+        const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
         if (adapter == null) {
           return null;
         }
@@ -364,7 +426,7 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
         const registry = modeler.get('elementRegistry');
         const tasks = registry.filter((el: any) => el.type.includes('Task'));
         return tasks.length > 0 ? tasks[0].id : null;
-      });
+      }, bpmnUri);
       assert.ok(taskId != null);
 
       const result = await executePluginCommand(
@@ -382,8 +444,8 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
 
     it('removeElement removes the element from canvas', async () => {
       // First append a disposable element to remove
-      const sourceId = await studioAgent.getTestDriver().client!.execute(() => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
+      const sourceId = await studioAgent.getTestDriver().client!.execute((uri: string) => {
+        const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
         if (adapter == null) {
           return null;
         }
@@ -394,7 +456,7 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
         const registry = modeler.get('elementRegistry');
         const tasks = registry.filter((el: any) => el.type.includes('Task'));
         return tasks.length > 0 ? tasks[0].id : null;
-      });
+      }, bpmnUri);
       assert.ok(sourceId != null);
 
       const appendResult = await executePluginCommand(
@@ -415,18 +477,22 @@ describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
       );
       assert.strictEqual(removeResult, 'ok', `Expected 'ok', got: ${removeResult}`);
 
-      const stillExists = await studioAgent.getTestDriver().client!.execute((elementId: string) => {
-        const adapter = (window as any).bifrost?.getSharedRessource?.('bpmn:modeler-adapter');
-        if (adapter == null) {
-          return true;
-        }
-        const modeler = adapter.getModeler?.();
-        if (modeler == null) {
-          return true;
-        }
-        const registry = modeler.get('elementRegistry');
-        return registry.get(elementId) != null;
-      }, toDeleteId);
+      const stillExists = await studioAgent.getTestDriver().client!.execute(
+        (uri: string, elementId: string) => {
+          const adapter = (window as any).__bfwResolveBpmnAdapter(uri);
+          if (adapter == null) {
+            return true;
+          }
+          const modeler = adapter.getModeler?.();
+          if (modeler == null) {
+            return true;
+          }
+          const registry = modeler.get('elementRegistry');
+          return registry.get(elementId) != null;
+        },
+        bpmnUri,
+        toDeleteId,
+      );
       assert.strictEqual(stillExists, false, 'Element should no longer exist after removal');
     });
 

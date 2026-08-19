@@ -157,6 +157,32 @@
             "additionalProperties": false
           }
         },
+        "editorDocumentTypes": {
+          "type": "array",
+          "description": "Editor document types registered as placeholders at discovery time; replaced by the plugin's registerWebviewDocumentType() call on activation. Their presence makes the plugin lazily activated.",
+          "items": {
+            "type": "object",
+            "required": ["id", "displayName", "icon", "uriPattern"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Document type identifier (namespaced as plugin.<name>.<id>); must match the id passed to registerWebviewDocumentType()."
+              },
+              "displayName": { "type": "string", "description": "Human-readable name of the document type." },
+              "icon": { "type": "string", "description": "Icon identifier." },
+              "uriPattern": {
+                "type": "string",
+                "description": "Regex source string matched against document URIs (e.g. \\.md$)."
+              },
+              "includedFilePatterns": {
+                "type": "array",
+                "description": "File globs registered as known (non-hidden) files in the File Explorer.",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
         "paneToggles": {
           "type": "array",
           "description": "Menu bar toggle buttons for pane visibility.",

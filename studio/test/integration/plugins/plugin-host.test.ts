@@ -17,7 +17,7 @@ const PLUGIN_LOAD_TIMEOUT = 30_000;
 // package.json and is therefore never returned by plugin discovery). Keep this in sync when
 // adding/removing fixtures — `waitForPluginList` uses `>=`, so a stale (too-low) value fails
 // silently rather than erroring, while a too-high value causes every consumer to time out.
-const FIXTURE_PLUGIN_COUNT = 37;
+const FIXTURE_PLUGIN_COUNT = 39;
 
 async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string): Promise<void> {
   await studioAgent.getTestDriver().client!.waitUntil(
@@ -1858,6 +1858,195 @@ describe('plugin-host/integration', { timeout: 60_000 }, () => {
 
       const happyPlugin = await getPluginByName(studioAgent, 'happy-plugin');
       assert.strictEqual(happyPlugin.status, 'loaded', 'eager plugins should remain loaded');
+    });
+  });
+
+  // ─── Editor Document Type Placeholder Trampoline ──────────
+  // (contributes.editorDocumentTypes — see docs/architecture/plugin-host.md)
+  describe('declarative manifest: editor document type placeholder trampoline', () => {
+    let studioAgent: StudioAgent;
+    let tempWorkspaceDir: string;
+
+    beforeEach(async ({ task }) => {
+      tempWorkspaceDir = path.join(
+        os.tmpdir(),
+        `bfw-editor-doctype-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      );
+      await fs.mkdir(tempWorkspaceDir, { recursive: true });
+
+      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
+      studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
+      await waitForPluginList(studioAgent, FIXTURE_PLUGIN_COUNT);
+    });
+
+    afterEach(async ({ task }) => {
+      if (studioAgent != null) {
+        studioAgent.updateTestContext({
+          testName: task.name,
+          testFile: __filename,
+          state: task.result?.state === 'fail' ? 'failed' : 'passed',
+        });
+        await studioAgent.stopAndRecordErrors(false);
+      }
+      delete process.env.BFR_PLUGINS_DIR;
+      try {
+        await fs.rm(tempWorkspaceDir, { recursive: true, force: true });
+      } catch {
+        // best-effort cleanup
+      }
+    });
+
+    it('lazy-open/activation: opening a .md file activates the pending plugin and swaps in the real editor', async () => {
+      const pluginBefore = await getPluginByName(studioAgent, 'text-file-editors');
+      assert.strictEqual(
+        pluginBefore.status,
+        'pending',
+        'text-file-editors should not be loaded before any matching file is opened',
+      );
+
+      const mdFile = path.join(tempWorkspaceDir, 'placeholder-swap.md');
+      await fs.writeFile(mdFile, '# Hello', 'utf-8');
+      const mdUri = `file://${mdFile}`;
+
+      await studioAgent.openUriAsDocument(mdUri);
+
+      // The placeholder tab briefly shows "Activating plugin..." then closes/reopens itself once
+      // text-file-editors' activate() replaces the placeholder via registerWebviewDocumentType().
+      await studioAgent.getTestDriver().client!.waitUntil(
+        async () => {
+          const placeholderStillShown = await studioAgent
+            .getTestDriver()
+            .client!.execute(() => document.querySelector('[data-test--editor-doctype-placeholder]') != null);
+          return !placeholderStillShown;
+        },
+        { timeout: PLUGIN_LOAD_TIMEOUT, timeoutMsg: 'Placeholder never swapped for the real markdown editor' },
+      );
+
+      await waitForPluginStatus(studioAgent, 'text-file-editors', 'loaded');
+
+      const documentType = await studioAgent.getTestDriver().client!.execute((uri: string) => {
+        return (window as any).bifrost.editors.getEditorDocumentByUri(uri)?.documentType ?? null;
+      }, mdUri);
+      assert.strictEqual(
+        documentType,
+        'plugin.text-file-editors.markdown',
+        'the real registerWebviewDocumentType() call should have replaced the placeholder type',
+      );
+    });
+
+    it('lazy-open/file-explorer-visibility: .md/.json files are visible without "Show hidden files" before activation', async () => {
+      await fs.writeFile(path.join(tempWorkspaceDir, 'discoverable.md'), '# Discoverable', 'utf-8');
+      await fs.writeFile(path.join(tempWorkspaceDir, 'discoverable.json'), '{}', 'utf-8');
+
+      await studioAgent.openDirectoryAsSolution(tempWorkspaceDir);
+
+      const plugin = await getPluginByName(studioAgent, 'text-file-editors');
+      assert.strictEqual(
+        plugin.status,
+        'pending',
+        'File Explorer visibility comes from the manifest placeholder, not activation',
+      );
+
+      await studioAgent.assertVisible('.treeview__label=discoverable.md', ASSERT_VISIBLE_TIMEOUT);
+      await studioAgent.assertVisible('.treeview__label=discoverable.json', ASSERT_VISIBLE_TIMEOUT);
+    });
+  });
+
+  describe('declarative manifest: editor document type mismatch & permission denial', () => {
+    let studioAgent: StudioAgent | undefined;
+    let tempWorkspaceDir: string;
+
+    beforeEach(async () => {
+      tempWorkspaceDir = path.join(
+        os.tmpdir(),
+        `bfw-editor-doctype-broken-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      );
+      await fs.mkdir(tempWorkspaceDir, { recursive: true });
+      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
+    });
+
+    afterEach(async ({ task }) => {
+      if (studioAgent != null) {
+        studioAgent.updateTestContext({
+          testName: task.name,
+          testFile: __filename,
+          state: task.result?.state === 'fail' ? 'failed' : 'passed',
+        });
+        await studioAgent.stopAndRecordErrors(false);
+        studioAgent = undefined;
+      }
+      delete process.env.BFR_PLUGINS_DIR;
+      delete process.env.BFR_FORCE_DENY_PLUGIN_PERMISSIONS;
+      try {
+        await fs.rm(tempWorkspaceDir, { recursive: true, force: true });
+      } catch {
+        // best-effort cleanup
+      }
+    });
+
+    it('mismatch: activate() that never registers a matching editor shows a terminal error instead of hanging', async ({
+      task,
+    }) => {
+      // BFR_SKIP_PERMISSION_DIALOG is set for the whole file by the outer beforeAll,
+      // so editor-doctype-broken's `filesystem` permission is auto-approved here.
+      studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
+      await waitForPluginList(studioAgent, FIXTURE_PLUGIN_COUNT);
+
+      const brokenFile = path.join(tempWorkspaceDir, 'test.brokentest');
+      await fs.writeFile(brokenFile, 'content', 'utf-8');
+      const brokenUri = `file://${brokenFile}`;
+
+      await studioAgent.openUriAsDocument(brokenUri);
+
+      await studioAgent.assertVisible('[data-test--editor-doctype-placeholder="mismatch"]', PLUGIN_LOAD_TIMEOUT);
+
+      // The plugin itself activated successfully — it simply has a bug (never registered the
+      // editor it declared). Activation must not hang or loop because of that bug.
+      await waitForPluginStatus(studioAgent, 'editor-doctype-broken', 'loaded');
+    });
+
+    it('failed: a plugin that throws from activate() shows the terminal "failed" state', async ({ task }) => {
+      studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
+      await waitForPluginList(studioAgent, FIXTURE_PLUGIN_COUNT);
+
+      const failingFile = path.join(tempWorkspaceDir, 'boom.failtest');
+      await fs.writeFile(failingFile, 'content', 'utf-8');
+
+      await studioAgent.openUriAsDocument(`file://${failingFile}`);
+
+      await studioAgent.assertVisible('[data-test--editor-doctype-placeholder="failed"]', PLUGIN_LOAD_TIMEOUT);
+
+      await waitForPluginStatus(studioAgent, 'editor-doctype-failing', 'error');
+    });
+
+    it('denied: a permission-gated lazy plugin denied by the user shows the terminal "denied" state instead of looping', async ({
+      task,
+    }) => {
+      process.env.BFR_FORCE_DENY_PLUGIN_PERMISSIONS = 'editor-doctype-broken';
+      studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
+      await waitForPluginList(studioAgent, FIXTURE_PLUGIN_COUNT);
+
+      const brokenFile = path.join(tempWorkspaceDir, 'denied.brokentest');
+      await fs.writeFile(brokenFile, 'content', 'utf-8');
+      const brokenUri = `file://${brokenFile}`;
+
+      await studioAgent.openUriAsDocument(brokenUri);
+
+      await studioAgent.assertVisible('[data-test--editor-doctype-placeholder="denied"]', PLUGIN_LOAD_TIMEOUT);
+
+      await waitForPluginStatus(studioAgent, 'editor-doctype-broken', 'disabled');
+
+      // Denial persists the plugin into `plugins.disabledPlugins`. Reset it so a shared
+      // settings store (should Electron ever be launched with a stable user data dir)
+      // cannot leak a disabled fixture into subsequent tests.
+      await studioAgent.getTestDriver().client!.execute(() => {
+        const bifrost = (window as any).bifrost;
+        const disabled: string[] = bifrost.settings.get('plugins.disabledPlugins') ?? [];
+        bifrost.settings.set(
+          'plugins.disabledPlugins',
+          disabled.filter((name: string) => name !== 'editor-doctype-broken'),
+        );
+      });
     });
   });
 

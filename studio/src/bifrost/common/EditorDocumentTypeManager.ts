@@ -74,6 +74,16 @@ export class EditorDocumentTypeManager {
   }
 
   /**
+   * Internal: Registers an `editorDocumentTypeDefinition` with the given `id`, overwriting
+   * any prior registration for the same `documentType` instead of throwing. Used to let a
+   * plugin's real `registerWebviewDocumentType()` call replace a manifest-declared placeholder
+   * type registered by `ContributionRegistrar` at discovery time.
+   */
+  registerOrReplace(documentType: string, editorDocumentTypeDefinition: EditorDocumentTypeDefinitionWithoutName): void {
+    this.documentTypeMap[documentType] = { documentType, ...editorDocumentTypeDefinition };
+  }
+
+  /**
    * Internal: Removes the document type with the given `documentType` key.
    */
   unregister(documentType: string): void {

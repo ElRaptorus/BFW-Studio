@@ -12,7 +12,7 @@ async function activate(api) {
     rendererMessageReceived = true;
   });
 
-  api.commands.register('tryModelingUpdateProperties', async (uri, elementId) => {
+  await api.commands.register('tryModelingUpdateProperties', async (uri, elementId) => {
     try {
       await api.bpmn.modeling.updateProperties(uri, elementId, { name: 'Renamed by perm-high' });
       return { success: true };
@@ -21,7 +21,7 @@ async function activate(api) {
     }
   });
 
-  api.commands.register('tryPostToRendererModule', async () => {
+  await api.commands.register('tryPostToRendererModule', async () => {
     try {
       await api.bpmn.postToRendererModule({ type: 'ping' });
       return { success: true };
@@ -30,11 +30,11 @@ async function activate(api) {
     }
   });
 
-  api.commands.register('tryOnRendererModuleMessage', async () => {
+  await api.commands.register('tryOnRendererModuleMessage', async () => {
     return { success: true, received: rendererMessageReceived };
   });
 
-  api.commands.register('test.isActivated', async () => {
+  await api.commands.register('test.isActivated', async () => {
     return { activated: true };
   });
 }

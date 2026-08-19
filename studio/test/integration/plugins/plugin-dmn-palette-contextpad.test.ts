@@ -162,7 +162,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
   });
 
-  describe('palette and context pad lifecycle', () => {
+  describe('palette and context pad lifecycle', { shuffle: false }, () => {
     let studioAgent: StudioAgentDmnExtension;
 
     beforeAll(async () => {
