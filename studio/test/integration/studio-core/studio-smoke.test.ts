@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import { OsSpecificKeystroke } from '../../OsSpecificKeystroke';
@@ -98,6 +99,18 @@ describe('studio/smoke', { timeout: 120_000 }, () => {
     await (testDriver.client as any).windowByIndex(0);
 
     await studioAgent.assertVisible('[data-test--workbench--theme=light]', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  // Guards the envelope in StudioAgent.executeCommand. Without it, WebdriverIO reads the
+  // returned object's `error` property as a WebDriver protocol error and throws instead of
+  // handing the value back, which silently breaks every test that inspects a command's
+  // failure result. See docs/architecture/common-pitfalls.md.
+  it('smoke/harness: executeCommand returns a result carrying a top-level error property', async () => {
+    const result = await studioAgent.executeCommand('std.test.returnObjectWithErrorProperty');
+
+    assert.deepStrictEqual(result, { success: false, error: 'sentinel-error-value' });
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

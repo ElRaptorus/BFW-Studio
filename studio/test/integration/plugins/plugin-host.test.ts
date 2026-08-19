@@ -53,13 +53,7 @@ async function isCommandRegistered(studioAgent: StudioAgent, commandId: string):
 }
 
 async function executePluginCommand(studioAgent: StudioAgent, commandId: string, ...args: unknown[]): Promise<any> {
-  return studioAgent
-    .getTestDriver()
-    .client!.execute(
-      (cmd: string, cmdArgs: unknown[]) => (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
-      commandId,
-      args,
-    );
+  return studioAgent.executeCommand(commandId, args);
 }
 
 async function waitForPluginStatus(

@@ -40,13 +40,7 @@ async function executePluginCommand(
   commandId: string,
   ...args: unknown[]
 ): Promise<any> {
-  return studioAgent
-    .getTestDriver()
-    .client!.execute(
-      (cmd: string, cmdArgs: unknown[]) => (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
-      commandId,
-      args,
-    );
+  return studioAgent.executeCommand(commandId, args);
 }
 
 describe('plugin/dmn-permissions', { timeout: 120_000 }, () => {

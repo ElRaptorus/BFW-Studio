@@ -1295,3 +1295,42 @@ Additionally, `{ ...createNamespaceProxy('editors') }` produced `{}` because Jav
 6. **C3a (10–11 tests) — unresolved, deliberately deferred.** Denial results from lazily-activated **medium**-permission-tier plugin commands (`bpmn-perm-medium`, `dmn-perm-medium`) escape the fixture's own `try/catch` and surface as raw `WebDriverError`s at the `bifrost.commands.executeCommand` boundary, reproduced symmetrically on both BPMN and DMN. Both remedies anticipated by the plan (`await` on `api.commands.register`, `waitForPluginStatus('loaded')`) were tried and disproved the race-condition hypothesis. Root cause not found within the session's investigation budget; it looks like a genuine unhandled-rejection leak somewhere in the `PH_CALLBACK_INVOCATION` round-trip, not a test bug. **Decision (user, 2026-08-19): leave these tests known-failing for now, documented in the plan (checklist item 16) and in `docs/architecture/common-pitfalls.md`, rather than force a product fix under time pressure or weaken the assertions.**
 
 **Net result**: `npm run test:integration:plugins`-equivalent run (full directory, `--no-file-parallelism`, `--retry 1`, no `--bail`) goes from 62 failures (baseline, full-directory run) / 34 failures (isolated, real) down to 337 passed / 11 failed — all 11 remaining failures are the single documented C3a issue (plus its one cascading symptom in `plugin-bpmn-renderer-module.test.ts`). No product code was changed by this effort; every fix landed in test files (`test/integration/plugins/*.test.ts`) or their fixtures.
+
+---
+
+### 2026-08-19 — C3a resolved: it was a WebdriverIO response-parsing artefact, not a plugin-host bug
+
+**Context**: The preceding entry closed the plugin API test repair with 11 failures deliberately left open ("C3a"), described as a rejection escaping a lazily-activated plugin command's own `try/catch` and surfacing as a raw `WebDriverError`. That description was wrong. A follow-up investigation determined the true cause empirically.
+
+**Finding**: WebdriverIO treats a value returned from `client.execute` that carries a top-level `error` property as a WebDriver protocol error response and re-throws it as `WebDriverError(<error>)`, in the response-parsing layer (`FetchRequest._request`). The decisive experiment involved no plugin, no IPC and no Bifrost:
+
+```typescript
+await client.execute(() => ({ success: false, error: 'sentinel-abc' }));
+// → WebDriverError: sentinel-abc
+```
+
+Two corroborating observations: the same commands invoked *inside* the renderer with an in-page `try/catch` all resolved correctly (the product honours its contract), and the low-permission-tier fixtures — which return a bare string rather than `{ success, error }` — always passed. The entire apparent BPMN/DMN symmetry was just "which fixtures return objects".
+
+**Decisions**:
+
+1. **Envelope, don't rename.** `StudioAgent.executeCommand` now wraps the command result in `{ value }` inside the page and unwraps it on the Node side. The alternative — renaming the `error` field across six-plus fixtures and every assertion — would have left the trap armed for the next fixture author.
+2. **All eleven per-file `executePluginCommand` helpers now delegate** to the shared method instead of duplicating the raw `client.execute` body, so there is exactly one place where this contract is enforced.
+3. **Guarded by a regression test, not just a comment.** A test-only command `std.test.returnObjectWithErrorProperty` (registered alongside the other `std.test.*` commands behind `APP_TEST`) returns a sentinel `{ success: false, error }`; `studio-smoke.test.ts` asserts it survives the round trip. Removing the envelope fails that test.
+4. **Two further order-dependency test bugs fixed while verifying**, both previously masked by the C3a noise: `plugin-bpmn-renderer-module.test.ts` relied on its *first* test opening the BPMN document, without which the lazily-activated fixtures' commands are still activation stubs returning `undefined` (fixed by opening the document and polling `test.isActivated` in `beforeAll`); and `plugin-dmn-api.test.ts`'s interaction-event block shares pointer/view state, where the double-click test's drill-down re-creates the DRD viewer and orphans the other tests' subscriptions (fixed by pinning the order with `{ shuffle: false }` and moving the double-click test last).
+5. **The incorrect `common-pitfalls.md` entry was replaced, not amended.** Leaving a plausible-but-false root cause in the pitfalls list is worse than having no entry: it invites the next agent to build on it.
+
+**Net result**: the full plugin integration directory (`--no-file-parallelism`, no `--bail`, no `--retry`) passes 348/348. No product behaviour changed; the only product-side addition is the `APP_TEST`-gated sentinel command.
+
+**Still open (separate follow-up, not part of this change)**: two genuine product defects surfaced during the trace and are recorded in `~/.cursor/plans/plugin_host_error_propagation_followup_5c41d7e2.plan.md` — eight floating cross-process promises in `PluginHostBridge.registerCallback`, and `ContributionRegistrar.registerStubCommand` letting an activation failure impersonate a command result.
+
+---
+
+### 2026-08-19 — Monaco JavaScript diagnostics setup centralised after the 0.56 namespace move
+
+**Context**: The `smoke/editor: should split editors` test failed with `Cannot read properties of undefined (reading 'javascriptDefaults')`. The failure was neither a test bug nor related to the default-editor removal: monaco-editor 0.53 moved the language-feature namespaces from `monaco.languages.<feature>` to the module root, and `monaco.d.ts` still declares the old properties as deprecated stubs, so `MultiLineCodeEditor` and `OneLineCodeEditor` kept compiling while reading `undefined` at runtime. Every Monaco-backed editor in the Studio — Settings (JSON), FEEL inputs, Machine Sanctum examples — was broken.
+
+**Decisions**:
+
+1. **One shared helper instead of two fixed callsites.** `relaxJavaScriptDiagnostics` (`studio-sdk/src/components/internal/monacoJavaScriptDiagnostics.ts`) resolves the namespace from the module root, falls back to the legacy `languages.typescript` location for older hosts, and applies the diagnostics and compiler options. The duplicated inline blocks in both editor components are gone.
+2. **Degrade instead of throwing.** If neither location resolves, the helper warns and returns. Relaxed JS diagnostics are a nicety; a hard failure in `onMount` costs the user the entire editor, which is exactly the outcome this bug produced.
+3. **Documented as a pitfall.** The deprecated-but-typed stubs make this class of breakage invisible to `tsc`, so it is recorded in `docs/architecture/common-pitfalls.md` alongside the note that `@monaco-editor/react` types its mount argument without any feature namespaces.

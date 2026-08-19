@@ -25,13 +25,7 @@ async function executePluginCommand(
   commandId: string,
   ...args: unknown[]
 ): Promise<any> {
-  return studioAgent
-    .getTestDriver()
-    .client!.execute(
-      (cmd: string, cmdArgs: unknown[]) => (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
-      commandId,
-      args,
-    );
+  return studioAgent.executeCommand(commandId, args);
 }
 
 async function openDmnFileAndGetUri(studioAgent: StudioAgentDmnExtension, filename: string): Promise<string> {
@@ -391,7 +385,11 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
   });
 
-  describe('element interaction events', () => {
+  // Order is pinned: these tests share the modeler's view, the pointer position and the
+  // context-menu overlay. Hovering an element the pointer already rests on emits no new
+  // mouseover, and a left-open context menu swallows the next interaction, so a shuffled
+  // order makes every test but the first one fail.
+  describe('element interaction events', { shuffle: false }, () => {
     let studioAgent: StudioAgentDmnExtension;
     let dmnUri: string;
 
@@ -441,6 +439,27 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
       );
     });
 
+    it('onElementContextMenu fires when right-clicking a DRD element', async () => {
+      const subscribeResult = await executePluginCommand(
+        studioAgent,
+        'plugin.dmn-overlay-demo.subscribeContextMenu',
+        dmnUri,
+      );
+      assert.strictEqual(subscribeResult, 'ok');
+
+      await studioAgent.rightClickOn('[data-element-id=Decision_Discount]');
+
+      await studioAgent.getTestDriver().client!.waitUntil(
+        async () => {
+          const lastContextMenu = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getLastContextMenu');
+          return lastContextMenu?.elementId === 'Decision_Discount';
+        },
+        { timeout: 10_000, timeoutMsg: 'onElementContextMenu never fired for Decision_Discount' },
+      );
+    });
+
+    // Runs last on purpose: the double click drills into the decision-table view, and returning
+    // to the DRD re-creates its viewer, which drops subscriptions the other tests rely on.
     it('onElementDoubleClick fires when double-clicking a DRD element', async () => {
       const subscribeResult = await executePluginCommand(
         studioAgent,
@@ -462,30 +481,12 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
         { timeout: 10_000, timeoutMsg: 'onElementDoubleClick never fired for Decision_Discount' },
       );
 
-      // dmn-js opens the decision-table drill-down view on double click; return to DRD for subsequent tests.
+      // dmn-js opens the decision-table drill-down view on double click; return to the DRD so the
+      // suite leaves the editor in its initial view.
       const activeView = await studioAgent.getActiveViewType();
       if (activeView != null && activeView !== 'drd') {
         await studioAgent.navigateBackToDrd();
       }
-    });
-
-    it('onElementContextMenu fires when right-clicking a DRD element', async () => {
-      const subscribeResult = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-overlay-demo.subscribeContextMenu',
-        dmnUri,
-      );
-      assert.strictEqual(subscribeResult, 'ok');
-
-      await studioAgent.rightClickOn('[data-element-id=Decision_Discount]');
-
-      await studioAgent.getTestDriver().client!.waitUntil(
-        async () => {
-          const lastContextMenu = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getLastContextMenu');
-          return lastContextMenu?.elementId === 'Decision_Discount';
-        },
-        { timeout: 10_000, timeoutMsg: 'onElementContextMenu never fired for Decision_Discount' },
-      );
     });
   });
 });

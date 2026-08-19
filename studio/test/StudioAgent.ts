@@ -299,16 +299,41 @@ export class StudioAgent {
     );
   }
 
+  /**
+   * Evaluates an arbitrary script in the renderer and returns its result.
+   *
+   * Caution: the script must not return an object with a top-level `error` property —
+   * WebdriverIO's response parser would misread it as a WebDriver protocol error and throw
+   * `WebDriverError(<error>)` instead of returning the value. Wrap such results in an
+   * envelope (e.g. `{ value: ... }`) and unwrap on this side, as `executeCommand` does.
+   */
   async executeInRenderer(script: string): Promise<unknown> {
     return this.testDriver.client!.execute(script);
   }
 
+  /**
+   * Executes a Bifrost command in the renderer and returns its result.
+   *
+   * The result is wrapped in a `{ value }` envelope inside the page and unwrapped here.
+   * This is NOT cosmetic: WebdriverIO's response parser treats a returned object that has
+   * a top-level `error` property as a WebDriver protocol error and re-throws it as
+   * `WebDriverError(<error>)`. Plugin commands commonly return `{ success: false, error }`,
+   * which would otherwise be swallowed and resurface as an opaque `WebDriverError` whose
+   * message is the caller's own data. Do not remove the envelope.
+   *
+   * See `docs/architecture/common-pitfalls.md` §`client.execute` cannot return an object
+   * with a top-level `error` property.
+   */
   async executeCommand(commandId: string, args: unknown[] = []): Promise<unknown> {
-    return this.testDriver.client!.execute(
-      (cmd: string, cmdArgs: unknown[]) => (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
+    const envelope = (await this.testDriver.client!.execute(
+      async (cmd: string, cmdArgs: unknown[]) => ({
+        value: await (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
+      }),
       commandId,
       args,
-    );
+    )) as { value: unknown };
+
+    return envelope.value;
   }
 
   async renameSolutionProjectViaApi(projectBaseUri: string, newName: string): Promise<void> {
@@ -701,11 +726,20 @@ export class StudioAgent {
   }
 
   async assertNoReactErrorBoundariesVisible(): Promise<void> {
-    await this.assertNotVisible('[data-test--react-error-boundary]', async (selectionPromise: any): Promise<string> => {
-      const html = await selectionPromise.getAttribute('data-test--react-error-boundary');
+    await this.assertNotVisible(
+      '[data-test--react-error-boundary]',
+      async (selectionPromise: Promise<WebdriverIO.Element[]>): Promise<string> => {
+        // `assertNotVisible` hands over a multi-element selection, so the attribute has to be read
+        // per element — calling `getAttribute` on the selection itself throws and hides the very
+        // error message this function exists to produce.
+        const elements = await selectionPromise;
+        const attributes = await Promise.all(
+          Array.from(elements).map(async (element) => element.getAttribute('data-test--react-error-boundary')),
+        );
 
-      return `Shown error boundary:\n\n${html}`;
-    });
+        return `Shown error boundary:\n\n${attributes.join(',\n\n')}`;
+      },
+    );
   }
 
   async waitForSolutionEntryCountChanged(previousCount: number): Promise<void> {

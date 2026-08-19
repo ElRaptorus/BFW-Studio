@@ -189,6 +189,14 @@ export function initializeCommands(bifrost: Bifrost): void {
       { visibleInSearch: true },
     );
 
+    // Guards the test harness against a WebdriverIO trap: a value returned from
+    // `client.execute` that carries a top-level `error` property is parsed as a WebDriver
+    // protocol error. StudioAgent.executeCommand therefore envelopes results.
+    commands.register('std.test.returnObjectWithErrorProperty', () => ({
+      success: false,
+      error: 'sentinel-error-value',
+    }));
+
     commands.register(
       'std.test.throwErrorInSettimeout',
       () => {

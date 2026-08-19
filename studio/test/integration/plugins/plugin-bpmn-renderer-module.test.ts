@@ -22,13 +22,28 @@ async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string)
 }
 
 async function executePluginCommand(studioAgent: StudioAgent, commandId: string, ...args: unknown[]): Promise<any> {
-  return studioAgent
-    .getTestDriver()
-    .client!.execute(
-      (cmd: string, cmdArgs: unknown[]) => (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
-      commandId,
-      args,
-    );
+  return studioAgent.executeCommand(commandId, args);
+}
+
+/**
+ * Waits until a plugin's real `test.isActivated` handler answers.
+ *
+ * A manifest-declared command is registered as an activation stub before the plugin runs, so
+ * `isRegistered` alone does not prove the plugin is active — the stub returns `undefined`.
+ */
+async function waitForPluginActivation(studioAgent: StudioAgent, isActivatedCommandId: string): Promise<void> {
+  await studioAgent.getTestDriver().client!.waitUntil(
+    async () => {
+      const result = (await executePluginCommand(studioAgent, isActivatedCommandId)) as
+        { activated?: boolean } | undefined;
+
+      return result?.activated === true;
+    },
+    {
+      timeout: PLUGIN_LOAD_TIMEOUT,
+      timeoutMsg: `Plugin behind '${isActivatedCommandId}' did not activate in time`,
+    },
+  );
 }
 
 describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
@@ -44,6 +59,13 @@ describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-renderer-module-demo.togglePathTracer');
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
+
+      // The demo plugins activate on `onDocumentType:bpmn`. Opening the document here rather
+      // than in the first test keeps every test in this block independent of execution order.
+      await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
+      await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
+      await waitForPluginActivation(studioAgent, 'plugin.bpmn-perm-high.test.isActivated');
+      await waitForPluginActivation(studioAgent, 'plugin.bpmn-perm-medium.test.isActivated');
     });
 
     afterAll(async () => {
@@ -139,6 +161,12 @@ describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
       });
       await waitForPluginCommand(studioAgent, 'plugin.bpmn-kitchen-sink.test.isActivated');
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
+
+      // bpmn-kitchen-sink activates on `onDocumentType:bpmn`; without an open document its
+      // commands are still activation stubs that return `undefined`.
+      await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
+      await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
+      await waitForPluginActivation(studioAgent, 'plugin.bpmn-kitchen-sink.test.isActivated');
     });
 
     afterAll(async () => {

@@ -258,8 +258,8 @@ export function onLoad(bifrost: Bifrost): void {
   });
 
   bifrost.icons.registerIcons({
-    'bpmn/editor-tab/bpmn': 'ph-fill ph-git-branch ph-rotate-90 bpmn__editor--tab-icon',
-    'bpmn/editor-tab/docs': 'ph-fill ph-git-branch ph-rotate-90 bpmn__editor--tab-icon',
+    'bpmn/editor-tab/bpmn': 'ph-fill ph-file-text bpmn__editor--tab-icon',
+    'bpmn/editor-tab/docs': 'ph-fill ph-file-text bpmn__editor--tab-icon',
     'bpmn/search-result/types/BusinessRuleTask': 'bpmn-icon-business-rule-task',
     'bpmn/search-result/types/CallActivity': 'bpmn-icon-call-activity',
     'bpmn/search-result/types/ComplexGateway': 'bpmn-icon-gateway-complex',

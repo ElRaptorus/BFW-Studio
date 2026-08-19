@@ -1476,12 +1476,67 @@ Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the mod
 
 ---
 
-## Lazily-activated plugin commands can leak a raw rejection past their own `try/catch` (open issue)
+## `client.execute` cannot return an object with a top-level `error` property
 
-**Symptom**: A plugin command handler wraps a bridge API call in `try { ... } catch (err) { return { success: false, error: err.message }; }`, expecting a denied/failed call to resolve to that object. Instead, `bifrost.commands.executeCommand(...)` itself rejects with the raw underlying error (e.g. `PermissionDeniedError`'s message, or a bridge-side error like "No BPMN/DMN document open"), surfacing as an unhandled `WebDriverError` in WebdriverIO — the handler's own `catch` block never runs.
+**Symptom**: An integration test invokes a plugin command whose handler returns `{ success: false, error: 'permission ... denied' }`. Instead of receiving that object, the test fails with a `WebDriverError` whose message is *byte-for-byte the handler's own `error` string*. It looks exactly like the handler's `try/catch` was bypassed and the underlying rejection escaped — it was not.
 
-**Observed scope (2026-08-19)**: reproduced symmetrically on both BPMN and DMN medium-permission-tier fixtures (`bpmn-perm-medium`, `dmn-perm-medium`) across `plugin-bpmn-permissions.test.ts`, `plugin-dmn-permissions.test.ts`, and `plugin-dmn-renderer-module.test.ts` — but *not* on the structurally-identical low- or high-tier fixtures, and not on eagerly-activated plugins. Neither `await`ing `api.commands.register(...)` in the fixture's `activate()` nor waiting for `waitForPluginStatus(..., 'loaded')` before invoking the command changes the outcome, ruling out a simple activation race. A test in the same `describe`/`studioAgent` scope that runs immediately after an affected test can also fail/time out, suggesting the leaked rejection leaves the shared plugin-host/Electron instance in a degraded state for whatever runs next.
+**Why it happens**: WebdriverIO parses the WebDriver response before the value ever reaches the test. A returned object carrying a top-level `error` property is indistinguishable from a WebDriver protocol error response, so the parser (in `FetchRequest._request`) re-throws it as `WebDriverError(<error>)`. Nothing in the product is involved; the trap fires with no plugin, no IPC and no Bifrost in the picture:
 
-**Status**: root cause not yet identified; suspected somewhere in the `PH_CALLBACK_INVOCATION` round-trip (`sandbox-worker.ts` ↔ `SandboxManager` ↔ `PluginHostConnection` ↔ `PluginHostBridge.registerCallback`). See the "Repair pre-existing BPMN/DMN plugin API integration test failures" plan, checklist item 16, for full investigation notes. Documented here so future agents don't re-diagnose it as a race condition from scratch.
+```typescript
+await client.execute(() => ({ success: false, error: 'sentinel-abc' }));
+// → WebDriverError: sentinel-abc when running "execute/sync" with method "POST"
+```
 
-**Also note**: disabling or reloading a plugin that already replaced its placeholder does **not** re-register the placeholder — the document type is fully unregistered (via the real registration's own disposer) until the plugin is re-enabled. A file that was openable while the plugin was active becomes unopenable (not "lazily openable again") while it's disabled. This matches the existing behavior of `registerWebviewDocumentType` without a manifest placeholder.
+This is why fixtures that return a bare string (`return err.message`) always worked while structurally identical fixtures returning `{ success, error }` appeared to have a deep plugin-host bug. It cost a full investigation of the `PH_CALLBACK_INVOCATION` round trip before the sentinel experiment above isolated it.
+
+**Correct approach**: Never return a caller-controlled object at the top level from `client.execute`. Wrap it in an envelope inside the page and unwrap it on the Node side, as `StudioAgent.executeCommand` does:
+
+```typescript
+const envelope = (await client.execute(
+  async (cmd: string, cmdArgs: unknown[]) => ({
+    value: await (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
+  }),
+  commandId,
+  args,
+)) as { value: unknown };
+
+return envelope.value;
+```
+
+The `async`/`await` inside the page matters for a second reason: `bifrost.commands.executeCommand` is synchronous and hands back the handler's promise, so the promise must settle before the envelope is built. Genuine rejections are unaffected — an in-page throw still rejects `client.execute`; only *return values* change. `studio-smoke.test.ts` guards the envelope with a regression test against the test-only command `std.test.returnObjectWithErrorProperty`; if the envelope is removed, that test fails.
+
+---
+
+## A manifest-declared plugin command is an activation stub until the plugin actually activates
+
+**Symptom**: A test waits for `bifrost.commands.isRegistered('plugin.<name>.<command>')` to become `true`, then executes the command — and gets `undefined` back instead of the handler's result, so assertions like `result?.activated === true` or `result?.rendererHighlightCount >= 0` fail. The same test passes when a different test in the block happens to run first.
+
+**Why it happens**: `ContributionRegistrar` registers every `contributes.commands` entry as a stub whose only job is to trigger activation, so `isRegistered` returns `true` long before the plugin's real handler exists. For a plugin activated by `onDocumentType:bpmn` (or any other lazy trigger), the real handler only appears once the trigger has fired — typically once a matching document has been opened. Under Vitest's shuffled order, the test that happens to open the document may run *after* the test that needs the handler.
+
+**Correct approach**: Open whatever the plugin's activation trigger needs in `beforeAll`, and wait for the plugin's real handler to answer rather than for the command to be registered — for example poll a `test.isActivated` command until it returns `{ activated: true }` (see `waitForPluginActivation` in `plugin-bpmn-renderer-module.test.ts`). Do not rely on `isRegistered` or on `waitForPluginCommand` alone to prove activation.
+
+---
+
+## Drilling into a DMN decision-table view drops DRD event subscriptions
+
+**Symptom**: `onElementHover` / `onElementContextMenu` subscriptions registered by a plugin stop firing for DRD elements, even though `subscribe*` returned `ok` and the DRD is visibly back on screen.
+
+**Why it happens**: A double click on a DRD element makes dmn-js open the decision-table view. Returning to the DRD re-creates its viewer — and with it a fresh event bus — so subscriptions wired to the previous viewer are silently orphaned. Nothing errors; the events simply never arrive.
+
+**Correct approach**: In tests, keep view-changing interactions last within their block and pin the order (`describe(..., { shuffle: false }, ...)`); see `element interaction events` in `plugin-dmn-api.test.ts`. In plugin code, re-subscribe after a view change rather than assuming a subscription survives one (`api.dmn.onViewChanged` is the hook for this).
+
+---
+
+## Monaco language features live on the module root, not under `monaco.languages`
+
+**Symptom**: Opening any editor backed by `MultiLineCodeEditor` / `OneLineCodeEditor` (Settings (JSON), FEEL inputs, Machine Sanctum examples) throws `TypeError: Cannot read properties of undefined (reading 'javascriptDefaults')` from the `onMount` handler and the editor surfaces a React error boundary instead of a code editor.
+
+**Why it happens**: monaco-editor 0.53 moved the language-feature namespaces from `monaco.languages.<feature>` to the module root — `monaco.typescript`, `monaco.json`, `monaco.css`, `monaco.html`. The old properties still appear in `monaco.d.ts` as `{ deprecated: true }` declarations, so TypeScript keeps compiling code that reads them, but nothing assigns them at runtime: `monaco.languages.typescript` is plain `undefined`. The mistake is easy to keep alive because the callsites need a cast anyway — `@monaco-editor/react` types its mount argument as the bare editor API (`monaco-editor/esm/vs/editor/editor.api`), which carries no feature namespaces at all even though the configured instance does.
+
+**Correct approach**: Read the feature namespace off the module root and go through `relaxJavaScriptDiagnostics` in `studio-sdk/src/components/internal/monacoJavaScriptDiagnostics.ts` rather than re-deriving it per component. For JSON validation, import the contribution module directly and use its exports (`configureMonacoJsonValidation` does this) instead of reaching through the editor instance.
+
+---
+
+## Disabling a plugin does not restore its manifest editor-document-type placeholder
+
+Disabling or reloading a plugin that already replaced its placeholder does **not** re-register the placeholder — the document type is fully unregistered (via the real registration's own disposer) until the plugin is re-enabled. A file that was openable while the plugin was active becomes unopenable (not "lazily openable again") while it's disabled. This matches the existing behavior of `registerWebviewDocumentType` without a manifest placeholder.

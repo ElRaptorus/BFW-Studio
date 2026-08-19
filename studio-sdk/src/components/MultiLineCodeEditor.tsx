@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Studio } from '../../index';
 import { EVENT_THEME_CHANGED } from '../contracts/internal/ThemeEvents';
+import { relaxJavaScriptDiagnostics } from './internal/monacoJavaScriptDiagnostics';
 
 type MultiLineCodeEditorProps = {
   name?: string;
@@ -105,17 +106,7 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
     editorRef.current = editor;
     latestPropsRef.current.onEditorReady(editor);
 
-    const tsLanguage = (monacoObj.languages as any).typescript;
-    tsLanguage.javascriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: true,
-      noSyntaxValidation: true,
-    });
-
-    tsLanguage.javascriptDefaults.setCompilerOptions({
-      target: tsLanguage.ScriptTarget.ES5,
-      allowNonTsExtensions: true,
-      lib: ['es2019'],
-    });
+    relaxJavaScriptDiagnostics(monacoObj);
 
     editor.onDidChangeModelContent(() => {
       currentValueRef.current = editor.getValue();
