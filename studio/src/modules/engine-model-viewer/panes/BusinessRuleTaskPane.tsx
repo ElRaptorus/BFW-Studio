@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getSelection, isModelViewerDocument, matchesType, readFlowNodeString } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,21 +33,31 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const businessObject = selection.businessObject;
-  const implementation = String(businessObject.implementation ?? '—');
+  const implementation =
+    readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+      flowNode.typeData.type === 'business_rule_task' ? flowNode.typeData.implementation : undefined,
+    ) ?? '—';
   const isDmn = implementation === 'dmn';
   const isFeel = implementation === 'feel';
-  const script = businessObject.script as string | undefined;
+  const script = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'business_rule_task' ? flowNode.typeData.script : undefined,
+  );
 
-  const decisionRef = getExtensionValue(businessObject, ':decisionRef');
-  const decisionElementId = getExtensionValue(businessObject, ':decisionElementId');
-  const resultVariable = getExtensionValue(businessObject, ':resultVariable');
-  const traceUnmatchedRules = getExtensionValue(businessObject, ':traceUnmatchedRules');
+  const decisionRef = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'business_rule_task' ? flowNode.typeData.decisionRef : undefined,
+  );
+  const decisionElementId = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'business_rule_task' ? flowNode.typeData.decisionElementId : undefined,
+  );
+  const resultVariable = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'business_rule_task' ? flowNode.typeData.resultVariable : undefined,
+  );
+  const traceUnmatchedRules = readFlowNodeString(props.editorDocumentModel, (flowNode) => {
+    if (flowNode.typeData.type !== 'business_rule_task') {
+      return undefined;
+    }
+    return flowNode.typeData.traceUnmatchedRules ? 'true' : 'false';
+  });
 
   return (
     <div className="engine-pane-process-info">

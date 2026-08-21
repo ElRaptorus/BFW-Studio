@@ -7,7 +7,7 @@ import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@
 import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getServiceTaskConfigValue, getTypePropertyString } from '../../libs/BpmnFlowNodeAccessors';
+import { getHttpServiceTaskValue, getTypePropertyString } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { shouldDisplayHttpServiceTaskInstancePane } from '../ShouldBeDisplayedConditions';
 
@@ -44,7 +44,7 @@ function HttpServiceTaskAuthorizationPane(props: HttpServiceTaskAuthorizationPan
   const flowNodeModel = flowNode.flowNodeModel as BpmnFlowNode | undefined;
   const serviceTaskInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode) as FlowNodeInstance;
 
-  const authorization = getServiceTaskConfigValue(flowNodeModel, 'httpAuthHeader');
+  const authorization = getHttpServiceTaskValue(flowNodeModel, 'httpAuthHeader');
   const evaluatedAuthorization = getTypePropertyString(serviceTaskInstance.typeProperties, 'http_auth_header');
 
   return (

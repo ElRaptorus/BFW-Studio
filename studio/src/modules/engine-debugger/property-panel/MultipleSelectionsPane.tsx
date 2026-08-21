@@ -4,7 +4,7 @@ import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 import React, { useRef } from 'react';
 
 import type { IconComponent, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader } from '@evil/bifrost_fw_sdk';
+import { Icon, Pane, PaneBody, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import { getEventDefinition } from '../libs/BpmnProcessHelpers';
@@ -33,12 +33,10 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function MultipleSelectionsPane(props: PaneComponentProps): React.JSX.Element | null {
+function MultipleSelectionsPane(props: PaneComponentProps): React.JSX.Element {
   const model = props.editorDocumentModel as EngineBpmnDebuggerEditorDocumentModel;
   const selectedElements = model.selectedElements;
-  if (selectedElements == null || selectedElements.length <= 1) {
-    return null;
-  }
+  assertNotNull(selectedElements, 'selectedElements');
 
   return (
     <PaneBody>

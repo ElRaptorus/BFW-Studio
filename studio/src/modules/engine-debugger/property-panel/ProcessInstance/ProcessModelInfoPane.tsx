@@ -69,7 +69,7 @@ function ProcessModelInfoPane(props: ProcessModelInfoPaneProps): React.JSX.Eleme
         type="text"
         label="Version"
         disabled={true}
-        value={model.processInstance.version ?? model.processModel?.version ?? ''}
+        value={model.processInstance?.version ?? model.processModel?.version ?? ''}
       />
       {model.processModel?.correlationKey && (
         <PaneProperty type="text" label="Correlation Key" disabled={true} value={model.processModel.correlationKey} />

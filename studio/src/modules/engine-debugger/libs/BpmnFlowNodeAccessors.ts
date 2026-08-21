@@ -11,12 +11,17 @@ export function getConditionalExpression(flowNode: BpmnFlowNode | undefined): st
   return '';
 }
 
-export function getServiceTaskConfigValue(flowNode: BpmnFlowNode | undefined, key: string): string {
+/**
+ * Fields the engine's built-in HTTP Service Task handler understands. The
+ * engine has no vocabulary beyond these five, so the union is exhaustive.
+ */
+export type HttpServiceTaskField = 'httpUrl' | 'httpMethod' | 'httpBody' | 'httpAuthHeader' | 'httpResponseHeaders';
+
+export function getHttpServiceTaskValue(flowNode: BpmnFlowNode | undefined, field: HttpServiceTaskField): string {
   if (!flowNode || flowNode.typeData.type !== 'service_task') {
     return '';
   }
-  const value = flowNode.typeData.serviceTaskTypeConfig[key];
-  return typeof value === 'string' ? value : '';
+  return flowNode.typeData[field] ?? '';
 }
 
 export function getScriptBody(flowNode: BpmnFlowNode | undefined): string {
@@ -37,7 +42,7 @@ export function getBusinessRuleReference(flowNode: BpmnFlowNode | undefined): st
   if (!flowNode || flowNode.typeData.type !== 'business_rule_task') {
     return '';
   }
-  return flowNode.typeData.ruleRef ?? '';
+  return flowNode.typeData.decisionRef ?? '';
 }
 
 export function getCallActivityCalledElement(flowNode: BpmnFlowNode | undefined): string {
@@ -72,6 +77,14 @@ export function getMessagePayloadExpression(flowNode: BpmnFlowNode | undefined):
   const eventDefinition = flowNode ? getEventDefinition(flowNode) : null;
   if (eventDefinition?.type === 'message') {
     return eventDefinition.payloadExpression ?? '';
+  }
+  return '';
+}
+
+export function getCorrelationRetrievalExpression(flowNode: BpmnFlowNode | undefined): string {
+  const eventDefinition = flowNode ? getEventDefinition(flowNode) : null;
+  if (eventDefinition?.type === 'message') {
+    return eventDefinition.correlationRetrievalExpression ?? '';
   }
   return '';
 }
@@ -158,11 +171,29 @@ export function getFlowNodeInstanceTypeProperty(flowNodeInstance: FlowNodeInstan
 
 export type DataMapping = { source: string; target: string };
 
-const DATA_PIPELINE_TYPES = new Set([
-  'start_event',
+/**
+ * Types that carry `inMappings` on the Engine GraphQL / SDK model.
+ * Start events do not — they only carry `resultContract`.
+ */
+const INPUT_MAPPING_TYPES = new Set([
   'end_event',
-  'intermediate_catch_event',
   'intermediate_throw_event',
+  'user_task',
+  'service_task',
+  'script_task',
+  'business_rule_task',
+  'send_task',
+  'receive_task',
+  'call_activity',
+  'sub_process',
+]);
+
+/**
+ * Types that carry `outMappings` on the Engine GraphQL / SDK model.
+ * Start events do not — Message Start uses `resultContract` only.
+ */
+const OUTPUT_MAPPING_TYPES = new Set([
+  'intermediate_catch_event',
   'boundary_event',
   'user_task',
   'service_task',
@@ -174,8 +205,16 @@ const DATA_PIPELINE_TYPES = new Set([
   'sub_process',
 ]);
 
+export function hasInputMappings(flowNode: BpmnFlowNode | undefined): boolean {
+  return flowNode != null && INPUT_MAPPING_TYPES.has(flowNode.typeData.type);
+}
+
+export function hasOutputMappings(flowNode: BpmnFlowNode | undefined): boolean {
+  return flowNode != null && OUTPUT_MAPPING_TYPES.has(flowNode.typeData.type);
+}
+
 export function hasDataPipeline(flowNode: BpmnFlowNode | undefined): boolean {
-  return flowNode != null && DATA_PIPELINE_TYPES.has(flowNode.typeData.type);
+  return hasInputMappings(flowNode) || hasOutputMappings(flowNode);
 }
 
 export function getInputMappings(flowNode: BpmnFlowNode | undefined): DataMapping[] {

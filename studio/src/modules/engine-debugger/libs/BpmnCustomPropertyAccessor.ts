@@ -38,28 +38,3 @@ export function getCustomPropertyFromViewer(
 
   return null;
 }
-
-/**
- * Reads the `<bpmn:activationCondition>` body of a Complex Gateway from the raw
- * moddle business object in the viewer. This bypasses the SDK-parsed model,
- * whose parser currently does not populate `activationCondition`, and reads the
- * underlying bpmn-moddle data directly.
- */
-export function getActivationConditionFromViewer(
-  adapter: BpmnViewerComponentAdapter | null,
-  elementId: string,
-): string | null {
-  if (!adapter) {
-    return null;
-  }
-
-  const element = adapter.getElementRegistry().get(elementId);
-  if (!element) {
-    return null;
-  }
-
-  const businessObject = (element as any).businessObject;
-  const activationCondition = businessObject?.activationCondition;
-  const body = activationCondition?.body ?? activationCondition?.text;
-  return typeof body === 'string' ? body : null;
-}

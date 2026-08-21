@@ -4,11 +4,11 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import {
-  type MappingEntry,
-  getExtensionMappings,
+  SUBPROCESS_SHELL_TYPES,
   getSelection,
   isModelViewerDocument,
   matchesType,
+  readFlowNodeMappings,
 } from './paneHelpers';
 
 const OUTBOUND_PIPELINE_TYPES = [
@@ -17,10 +17,11 @@ const OUTBOUND_PIPELINE_TYPES = [
   ':ScriptTask',
   ':BusinessRuleTask',
   ':CallActivity',
+  ':SendTask',
   ':ReceiveTask',
   ':IntermediateCatchEvent',
   ':BoundaryEvent',
-  ':StartEvent',
+  ...SUBPROCESS_SHELL_TYPES,
 ];
 
 export const paneProvider: PaneProvider = {
@@ -52,12 +53,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const mappings: MappingEntry[] = getExtensionMappings(selection.businessObject, ':outputMapping');
+  const mappings = readFlowNodeMappings(props.editorDocumentModel, 'out');
 
   if (mappings.length === 0) {
     return (

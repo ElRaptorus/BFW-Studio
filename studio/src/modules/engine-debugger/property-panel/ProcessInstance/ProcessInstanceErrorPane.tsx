@@ -5,6 +5,7 @@ import {
   MultiLineCodeEditor,
   OpenInNewTabButton,
   PaneBody,
+  assertNotNull,
   buildSimplePropertyPaneProvider,
 } from '@evil/bifrost_fw_sdk';
 
@@ -24,9 +25,7 @@ export const paneProvider = buildSimplePropertyPaneProvider(
     const fatalErrors = collectFatalFlowNodeErrors(model);
     const piError = model.processInstance?.errorInfo ?? null;
 
-    if (!model.processInstance || (fatalErrors.length === 0 && piError == null)) {
-      return null;
-    }
+    assertNotNull(model.processInstance, 'processInstance');
 
     const combinedErrors: Record<string, unknown> = {};
     if (piError != null) {
@@ -76,9 +75,7 @@ function collectFatalFlowNodeErrors(model: EngineBpmnDebuggerEditorDocumentModel
 function ProcessInstanceErrorPane(props: ProcessInstanceErrorPaneProps): React.JSX.Element | null {
   const model = props.editorDocumentModel as EngineBpmnDebuggerEditorDocumentModel;
 
-  if (!model.processInstance) {
-    return null;
-  }
+  assertNotNull(model.processInstance, 'processInstance');
 
   const piError = model.processInstance.errorInfo ?? null;
 
@@ -94,10 +91,6 @@ function ProcessInstanceErrorPane(props: ProcessInstanceErrorPaneProps): React.J
   }
   if (fatalErrors.length > 0) {
     combinedOutput.flowNodeErrors = fatalErrors;
-  }
-
-  if (Object.keys(combinedOutput).length === 0) {
-    return null;
   }
 
   return (

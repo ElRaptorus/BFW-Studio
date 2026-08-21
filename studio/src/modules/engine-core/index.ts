@@ -43,6 +43,8 @@ export { useAsyncAction } from './hooks/useAsyncAction';
 
 export * from './Formatters';
 export { resolveFlowNodeIconName } from './FlowNodeIconResolver';
+export { convertGraphqlProcessModel } from './bpmn/graphqlProcessModelToSdk';
+export type { GraphqlProcessModelConversion } from './bpmn/graphqlProcessModelToSdk';
 
 export { ENGINE_COMMANDS } from './commands/CommandContract';
 export type { EngineCommandId } from './commands/CommandContract';

@@ -6,7 +6,7 @@ import type { EditorDocument } from '@evil/bifrost_fw_sdk';
 
 import { ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
-import { hasDataPipeline } from '../libs/BpmnFlowNodeAccessors';
+import { hasInputMappings, hasOutputMappings } from '../libs/BpmnFlowNodeAccessors';
 import {
   getHttpMethod,
   isAdHocSubprocess,
@@ -525,6 +525,13 @@ export function shouldDisplayMessagePayloadPane(
   );
 }
 
+export function shouldDisplayCorrelationRetrievalExpressionPane(
+  document: EditorDocument,
+  model: EngineBpmnDebuggerEditorDocumentModel,
+): boolean {
+  return shouldDisplayMessagePayloadPane(document, model);
+}
+
 export function shouldDisplayNextFlowNodeInstancesPane(
   document: EditorDocument,
   model: EngineBpmnDebuggerEditorDocumentModel,
@@ -873,7 +880,7 @@ function getSelectedFlowNodeInstance(model: EngineBpmnDebuggerEditorDocumentMode
   return model.getSelectedFlowNodeInstanceByFlowNode(getSelectedFlowNode(model));
 }
 
-export function shouldDisplayDataPipelinePane(
+export function shouldDisplayInputMappingsPane(
   document: EditorDocument,
   model: EngineBpmnDebuggerEditorDocumentModel,
 ): boolean {
@@ -882,7 +889,19 @@ export function shouldDisplayDataPipelinePane(
   }
 
   const selectedFlowNode = getSelectedFlowNode(model).flowNodeModel as BpmnFlowNode | undefined;
-  return hasDataPipeline(selectedFlowNode);
+  return hasInputMappings(selectedFlowNode);
+}
+
+export function shouldDisplayOutputMappingsPane(
+  document: EditorDocument,
+  model: EngineBpmnDebuggerEditorDocumentModel,
+): boolean {
+  if (!isDebuggerDocumentWithSingleSelectedExecutedFlowNode(document, model)) {
+    return false;
+  }
+
+  const selectedFlowNode = getSelectedFlowNode(model).flowNodeModel as BpmnFlowNode | undefined;
+  return hasOutputMappings(selectedFlowNode);
 }
 
 const PAYLOAD_CONTRACT_TASK_TYPES = new Set([
@@ -890,7 +909,7 @@ const PAYLOAD_CONTRACT_TASK_TYPES = new Set([
   FlowNodeType.ServiceTask,
   FlowNodeType.ScriptTask,
   FlowNodeType.BusinessRuleTask,
-  FlowNodeType.CallActivity,
+  FlowNodeType.SubProcess,
   FlowNodeType.SendTask,
 ]);
 
@@ -919,7 +938,7 @@ const RESULT_CONTRACT_TASK_TYPES = new Set([
   FlowNodeType.ServiceTask,
   FlowNodeType.ScriptTask,
   FlowNodeType.BusinessRuleTask,
-  FlowNodeType.CallActivity,
+  FlowNodeType.SubProcess,
   FlowNodeType.ReceiveTask,
 ]);
 

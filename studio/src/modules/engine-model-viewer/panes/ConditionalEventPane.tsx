@@ -4,7 +4,8 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import {
-  getEventDefinition,
+  assertEventDefinitionType,
+  getSelectedEventDefinition,
   getSelection,
   hasEventDefinition,
   isModelViewerDocument,
@@ -47,28 +48,13 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-  const conditionalDef = getEventDefinition(selection.businessObject, 'ConditionalEventDefinition');
-  if (!conditionalDef) {
-    return null;
-  }
-
-  const condition = conditionalDef.condition as Record<string, unknown> | undefined;
-  const conditionBody = condition?.body ?? condition?.text;
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const modeled = getSelectedEventDefinition(props.editorDocumentModel);
+  assertEventDefinitionType(modeled, 'conditional');
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty
-        type="textarea"
-        label="Condition"
-        value={conditionBody != null ? String(conditionBody) : '—'}
-        disabled
-        rows={4}
-      />
+      <PaneProperty type="textarea" label="Condition" value={modeled.conditionExpression ?? '—'} disabled rows={4} />
     </div>
   );
 }

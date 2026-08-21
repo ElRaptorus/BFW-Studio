@@ -64,12 +64,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
-  if (selection == null || selection.length !== 1) {
+  if (selection == null) {
     return null;
-  } else {
-    return <PropertiesBasic key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesBasic key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesBasic(props: PaneComponentProps): React.JSX.Element | null {

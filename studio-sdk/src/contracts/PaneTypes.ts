@@ -18,7 +18,10 @@ export type PaneProvider = {
   getPaneTitle(editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Studio): string;
 
   /**
-   * Returns whether or  not the pane should be shown for the described Editor context.
+   * Visibility gate. `PaneWrapper` evaluates this before mounting `Pane` /
+   * `PaneContent`. Do not restate this predicate inside the renderer. A renderer
+   * may still `return null` for conditions the gate does not cover (for example
+   * modeler readiness or missing payload) so the header stays visible.
    */
   shouldBeDisplayed?(editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Studio): boolean;
 

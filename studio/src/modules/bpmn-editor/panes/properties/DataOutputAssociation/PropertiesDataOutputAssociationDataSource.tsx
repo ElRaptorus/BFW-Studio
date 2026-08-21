@@ -10,6 +10,7 @@ import {
   PaneBody,
   PaneHeader,
   PaneHeaderHelpIcon,
+  assertNotNull,
 } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
@@ -35,7 +36,6 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element | null {
   const editorDocument = props.editorDocument;
 
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
   }
@@ -89,9 +89,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       .then(setFeelVariables);
   }, [editorDocument, commands]);
 
-  if (bpmnDocumentModel == null || element == null) {
-    return null;
-  }
+  assertNotNull(bpmnDocumentModel, 'bpmnDocumentModel');
+  assertNotNull(element, 'element');
 
   const transformationValue = (element as any).transformation ?? '';
 

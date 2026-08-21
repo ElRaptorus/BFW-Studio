@@ -6,7 +6,7 @@ import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@
 import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getServiceTaskConfigValue } from '../../libs/BpmnFlowNodeAccessors';
+import { getHttpServiceTaskValue } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { shouldDisplayHttpServiceTaskInstancePane } from '../ShouldBeDisplayedConditions';
 
@@ -41,7 +41,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 function HttpServiceTaskMethodPane(props: HttpServiceTaskMethodPaneProps): React.JSX.Element {
   const flowNode = props.model.selectedElements[0] as FlowNode;
   const flowNodeModel = flowNode.flowNodeModel as BpmnFlowNode | undefined;
-  const method = getServiceTaskConfigValue(flowNodeModel, 'httpMethod') || 'GET';
+  const method = getHttpServiceTaskValue(flowNodeModel, 'httpMethod') || 'GET';
 
   return (
     <PaneBody>

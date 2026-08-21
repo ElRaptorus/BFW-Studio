@@ -336,7 +336,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('bpmn/elements/property-panel/MessageStartEvent: should show output mappings and result contract panes but not correlation retrieval expression', async () => {
+  it('bpmn/elements/property-panel/MessageStartEvent: should show result contract but not output mappings or correlation retrieval expression', async () => {
     const startEvent = 'StartEvent_1';
 
     await studioAgent.jumpToFileInSolution('message-autocomplete.bpmn');
@@ -345,8 +345,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.switchToPaneGroup('scripting');
 
-    await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesOutputMappings');
     await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesResultContract');
+    await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesOutputMappings');
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesInputMappings');
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesPayloadContract');
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesThrowEventPayload');
@@ -723,7 +723,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('bpmn/elements/property-panel/SignalStartEvent: should show output mappings but not payload, example payload, or input mappings', async () => {
+  it('bpmn/elements/property-panel/SignalStartEvent: should not show output mappings, payload, example payload, or input mappings', async () => {
     const startEvent = 'SignalStartEvent_1';
 
     await studioAgent.jumpToFileInSolution('signal-autocomplete.bpmn');
@@ -734,9 +734,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       SIGNAL_START_EVENT_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
-    await studioAgent.switchToPaneGroup('scripting');
 
-    await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesOutputMappings');
+    await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesOutputMappings');
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesThrowEventPayload');
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesExamplePayload');
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesInputMappings');

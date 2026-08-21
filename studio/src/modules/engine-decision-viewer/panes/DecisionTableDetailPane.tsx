@@ -1,10 +1,10 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import { DecisionTableViewer } from '../components/DecisionTableViewer';
-import { describeExpressionBody, isDecisionTable } from '../helpers/dmnExpressionHelpers';
+import { isDecisionTable } from '../helpers/dmnExpressionHelpers';
 import type { DrgSelection } from '../types/dmnModelTypes';
 import { getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
 
@@ -41,30 +41,15 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const selection = getSelection(props.editorDocumentModel);
-  if (!selection || selection.type !== 'decision') {
-    return null;
-  }
+  assertNotNull(selection, 'selection');
 
   const parsedModel = getParsedModel(props.editorDocumentModel);
-  if (!parsedModel) {
-    return null;
-  }
+  assertNotNull(parsedModel, 'parsedModel');
 
   const decision = parsedModel.decisions.find((entry) => entry.id === selection.elementId);
-  if (!decision) {
-    return null;
-  }
-
-  if (!isDecisionTable(decision.expression)) {
-    const expressionLabel = describeExpressionBody(decision.expression);
-    return (
-      <div className="engine-decision-table-viewer engine-decision-table-viewer--no-table">
-        This decision uses a {expressionLabel.toLowerCase()} — not a decision table.
-      </div>
-    );
-  }
+  assertNotNull(decision, 'decision');
 
   return <DecisionTableViewer decision={decision} />;
 }

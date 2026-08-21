@@ -21,6 +21,11 @@ export function findProcessInDefinitions(
   return definitions.processes.find((process) => process.id === processModelId);
 }
 
+const flowNodesCache = new WeakMap<BpmnProcess, FlowNode[]>();
+const flowNodesByIdCache = new WeakMap<BpmnProcess, Map<string, FlowNode>>();
+const sequenceFlowsCache = new WeakMap<BpmnProcess, SequenceFlow[]>();
+const sequenceFlowsByIdCache = new WeakMap<BpmnProcess, Map<string, SequenceFlow>>();
+
 export function collectFlowNodes(flowNodes: FlowNode[]): FlowNode[] {
   const collected: FlowNode[] = [];
   for (const flowNode of flowNodes) {
@@ -33,11 +38,22 @@ export function collectFlowNodes(flowNodes: FlowNode[]): FlowNode[] {
 }
 
 export function getAllFlowNodes(process: BpmnProcess): FlowNode[] {
-  return collectFlowNodes(process.flowNodes);
+  const cached = flowNodesCache.get(process);
+  if (cached) {
+    return cached;
+  }
+  const collected = collectFlowNodes(process.flowNodes);
+  flowNodesCache.set(process, collected);
+  return collected;
 }
 
 export function getFlowNodeById(process: BpmnProcess, flowNodeId: string): FlowNode | undefined {
-  return getAllFlowNodes(process).find((flowNode) => flowNode.id === flowNodeId);
+  let index = flowNodesByIdCache.get(process);
+  if (!index) {
+    index = new Map(getAllFlowNodes(process).map((flowNode) => [flowNode.id, flowNode]));
+    flowNodesByIdCache.set(process, index);
+  }
+  return index.get(flowNodeId);
 }
 
 export function collectSequenceFlows(flowNodes: FlowNode[], sequenceFlows: SequenceFlow[]): SequenceFlow[] {
@@ -51,11 +67,22 @@ export function collectSequenceFlows(flowNodes: FlowNode[], sequenceFlows: Seque
 }
 
 export function getAllSequenceFlows(process: BpmnProcess): SequenceFlow[] {
-  return collectSequenceFlows(process.flowNodes, process.sequenceFlows);
+  const cached = sequenceFlowsCache.get(process);
+  if (cached) {
+    return cached;
+  }
+  const collected = collectSequenceFlows(process.flowNodes, process.sequenceFlows);
+  sequenceFlowsCache.set(process, collected);
+  return collected;
 }
 
 export function getSequenceFlowById(process: BpmnProcess, sequenceFlowId: string): SequenceFlow | undefined {
-  return getAllSequenceFlows(process).find((sequenceFlow) => sequenceFlow.id === sequenceFlowId);
+  let index = sequenceFlowsByIdCache.get(process);
+  if (!index) {
+    index = new Map(getAllSequenceFlows(process).map((sequenceFlow) => [sequenceFlow.id, sequenceFlow]));
+    sequenceFlowsByIdCache.set(process, index);
+  }
+  return index.get(sequenceFlowId);
 }
 
 export function getAllDataObjectReferences(process: BpmnProcess): DataObjectReference[] {
@@ -156,9 +183,7 @@ export function getHttpMethod(flowNode: FlowNode): string {
   if (flowNode.typeData.type !== 'service_task') {
     return 'get';
   }
-  const configuration = flowNode.typeData.serviceTaskTypeConfig;
-  const method = configuration['httpMethod'];
-  return typeof method === 'string' ? method.toLowerCase() : 'get';
+  return flowNode.typeData.httpMethod?.toLowerCase() ?? 'get';
 }
 
 export function resolveMessageName(definitions: BpmnDefinitions, messageRef: string | null): string | null {
@@ -212,10 +237,8 @@ export function getPreviousFlowNodeInstances(
 }
 
 export function getPreviousFlowNodes(process: BpmnProcess, flowNode: FlowNode): FlowNode[] {
-  const allSequenceFlows = getAllSequenceFlows(process);
-  const incomingFlowIds = flowNode.incoming;
-  const sourceIds = incomingFlowIds
-    .map((flowId) => allSequenceFlows.find((sequenceFlow) => sequenceFlow.id === flowId)?.sourceRef)
+  const sourceIds = flowNode.incoming
+    .map((flowId) => getSequenceFlowById(process, flowId)?.sourceRef)
     .filter((sourceId): sourceId is string => sourceId != null);
   return sourceIds
     .map((sourceId) => getFlowNodeById(process, sourceId))
@@ -264,9 +287,8 @@ function findJoinGatewayAfterSplit(process: BpmnProcess, splitGateway: FlowNode)
 }
 
 function getNextFlowNodes(process: BpmnProcess, flowNode: FlowNode): FlowNode[] {
-  const allSequenceFlows = getAllSequenceFlows(process);
   return flowNode.outgoing
-    .map((flowId) => allSequenceFlows.find((sequenceFlow) => sequenceFlow.id === flowId)?.targetRef)
+    .map((flowId) => getSequenceFlowById(process, flowId)?.targetRef)
     .filter((targetId): targetId is string => targetId != null)
     .map((targetId) => getFlowNodeById(process, targetId))
     .filter((node): node is FlowNode => node != null);

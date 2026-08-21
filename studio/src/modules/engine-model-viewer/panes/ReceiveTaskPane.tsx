@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getSelection, isModelViewerDocument, matchesType, moddleRefName } from './paneHelpers';
+import { getSelection, isModelViewerDocument, matchesType, readFlowNodeString } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,14 +33,16 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
+  const messageRef = readFlowNodeString(props.editorDocumentModel, (flowNode) => {
+    if (flowNode.typeData.type !== 'receive_task') {
+      return undefined;
+    }
+    return flowNode.typeData.messageRef;
+  });
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Message" value={moddleRefName(selection.businessObject.messageRef)} disabled />
+      <PaneProperty type="text" label="Message" value={messageRef || '—'} disabled />
     </div>
   );
 }

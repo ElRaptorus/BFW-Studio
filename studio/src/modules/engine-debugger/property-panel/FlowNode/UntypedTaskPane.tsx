@@ -3,7 +3,7 @@ import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 import React from 'react';
 
 import type { PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/SelectableElement';
@@ -31,11 +31,9 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function UntypedTaskPane(props: PaneComponentProps): React.JSX.Element | null {
+function UntypedTaskPane(props: PaneComponentProps): React.JSX.Element {
   const model: EngineBpmnDebuggerEditorDocumentModel | null = props.editorDocumentModel;
-  if (model == null) {
-    return null;
-  }
+  assertNotNull(model, 'model');
 
   const untypedTask = model.selectedElements[0] as FlowNode;
 

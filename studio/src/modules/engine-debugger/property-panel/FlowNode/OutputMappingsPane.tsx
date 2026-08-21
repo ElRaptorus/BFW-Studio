@@ -8,11 +8,11 @@ import { Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getOutputMappings } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
-import { shouldDisplayDataPipelinePane } from '../ShouldBeDisplayedConditions';
+import { shouldDisplayOutputMappingsPane } from '../ShouldBeDisplayedConditions';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
-  shouldBeDisplayed: shouldDisplayDataPipelinePane,
+  shouldBeDisplayed: shouldDisplayOutputMappingsPane,
   Pane: PaneFull,
   PaneContent: OutputMappingsPane,
 };

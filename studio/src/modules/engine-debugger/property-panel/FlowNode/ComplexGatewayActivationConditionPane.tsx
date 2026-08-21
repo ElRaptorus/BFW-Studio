@@ -9,7 +9,6 @@ import {
 } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getActivationConditionFromViewer } from '../../libs/BpmnCustomPropertyAccessor';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { shouldDisplayComplexGatewayActivationConditionPane } from '../ShouldBeDisplayedConditions';
 
@@ -26,7 +25,7 @@ export const paneProvider = buildSimplePropertyPaneProvider(
   (props: PaneComponentProps) => {
     const model = props.editorDocumentModel as EngineBpmnDebuggerEditorDocumentModel;
     const flowNode = model.selectedElements[0] as FlowNode;
-    const activationCondition = getActivationConditionFromViewer(model.bpmnViewerComponentAdapter, flowNode.id) ?? '';
+    const activationCondition = readActivationCondition(flowNode);
 
     return (
       <>
@@ -58,7 +57,7 @@ export const paneProvider = buildSimplePropertyPaneProvider(
 function ComplexGatewayActivationConditionPane(props: PaneComponentProps): React.JSX.Element {
   const model = props.editorDocumentModel as EngineBpmnDebuggerEditorDocumentModel;
   const flowNode = model.selectedElements[0] as FlowNode;
-  const activationCondition = getActivationConditionFromViewer(model.bpmnViewerComponentAdapter, flowNode.id) ?? '';
+  const activationCondition = readActivationCondition(flowNode);
 
   return (
     <PaneBody>
@@ -73,4 +72,12 @@ function ComplexGatewayActivationConditionPane(props: PaneComponentProps): React
       />
     </PaneBody>
   );
+}
+
+function readActivationCondition(flowNode: FlowNode): string {
+  const typeData = flowNode.flowNodeModel?.typeData;
+  if (typeData?.type !== 'complex_gateway') {
+    return '';
+  }
+  return typeData.activationCondition ?? '';
 }

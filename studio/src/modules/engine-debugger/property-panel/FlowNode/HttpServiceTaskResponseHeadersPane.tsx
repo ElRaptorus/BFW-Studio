@@ -7,11 +7,11 @@ import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@
 import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getServiceTaskConfigValue } from '../../libs/BpmnFlowNodeAccessors';
+import { getHttpServiceTaskValue, getTypePropertyString } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { shouldDisplayHttpServiceTaskInstancePane } from '../ShouldBeDisplayedConditions';
 
-export type HttpServiceTaskContentTypePaneProps = {
+export type HttpServiceTaskResponseHeadersPaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
   studio: Studio;
@@ -21,11 +21,11 @@ export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,
   shouldBeDisplayed: shouldDisplayHttpServiceTaskInstancePane,
   Pane: PaneFull,
-  PaneContent: HttpServiceTaskContentTypePane,
+  PaneContent: HttpServiceTaskResponseHeadersPane,
 };
 
 function getPaneTitle(): string {
-  return 'Http Service Task Content Type';
+  return 'Http Service Task Response Headers';
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
@@ -34,40 +34,33 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
       <PaneHeader studio={props.studio} title={getPaneTitle()} paneId={props.paneId} collapsed={props.collapsed}>
         <PaneHeaderHelpIcon studio={props.studio} id="bpmn/properties/http_service_task" />
       </PaneHeader>
-      {props.collapsed !== true && <HttpServiceTaskContentTypePane {...props} model={props.editorDocumentModel} />}
+      {props.collapsed !== true && <HttpServiceTaskResponseHeadersPane {...props} model={props.editorDocumentModel} />}
     </Pane>
   );
 }
 
-function HttpServiceTaskContentTypePane(props: HttpServiceTaskContentTypePaneProps): React.JSX.Element {
+function HttpServiceTaskResponseHeadersPane(props: HttpServiceTaskResponseHeadersPaneProps): React.JSX.Element {
   const flowNode = props.model.selectedElements[0] as FlowNode;
-  const flowNodeModel = flowNode.flowNodeModel as BpmnFlowNode;
-
+  const flowNodeModel = flowNode.flowNodeModel as BpmnFlowNode | undefined;
   const serviceTaskInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode) as FlowNodeInstance;
 
-  const contentTypeDefinition = getServiceTaskConfigValue(flowNodeModel, 'httpContentType');
-  const responseHeaders = serviceTaskInstance.typeProperties?.['response_headers'];
-  const evaluatedContentType =
-    responseHeaders != null &&
-    typeof responseHeaders === 'object' &&
-    'Content-Type' in (responseHeaders as Record<string, unknown>)
-      ? String((responseHeaders as Record<string, unknown>)['Content-Type'])
-      : '';
+  const responseHeaders = getHttpServiceTaskValue(flowNodeModel, 'httpResponseHeaders');
+  const evaluatedResponseHeaders = getTypePropertyString(serviceTaskInstance.typeProperties, 'http_response_headers');
 
   return (
     <PaneBody>
       <PaneProperty
-        htmlId="http-task-content-type-property"
-        label="Content Type (Evaluated)"
+        htmlId="http-task-response-headers-evaluated"
+        label="Response Headers (Evaluated)"
         type="text"
-        value={evaluatedContentType}
+        value={evaluatedResponseHeaders}
         disabled={true}
       />
       <PaneProperty
-        htmlId="http-task-content-type-definition-property"
-        label="Content Type (Definition)"
+        htmlId="http-task-response-headers-definition"
+        label="Response Headers (Definition)"
         type="text"
-        value={contentTypeDefinition}
+        value={responseHeaders}
         disabled={true}
       />
     </PaneBody>

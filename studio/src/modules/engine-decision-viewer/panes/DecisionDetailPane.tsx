@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import { describeExpressionBody } from '../helpers/dmnExpressionHelpers';
 import type { DmnExpressionBody } from '../types/dmnModelTypes';
@@ -34,21 +34,15 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const selection = getSelection(props.editorDocumentModel);
-  if (!selection || selection.type !== 'decision') {
-    return null;
-  }
+  assertNotNull(selection, 'selection');
 
   const parsedModel = getParsedModel(props.editorDocumentModel);
-  if (!parsedModel) {
-    return null;
-  }
+  assertNotNull(parsedModel, 'parsedModel');
 
   const decision = parsedModel.decisions.find((entry) => entry.id === selection.elementId);
-  if (!decision) {
-    return null;
-  }
+  assertNotNull(decision, 'decision');
 
   return (
     <div className="engine-pane-decision-detail">

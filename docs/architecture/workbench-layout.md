@@ -132,6 +132,8 @@ Shared tab bar component for switching between pane groups. Two rendering varian
 
 The `getDisplayableGroups()` helper iterates each group's panes and checks the registered provider's `shouldBeDisplayed`. Only groups with at least one displayable pane are rendered as tabs.
 
+`PaneWrapper` (`studio/src/components/panes/PaneWrapper.tsx`) is the per-pane mount gate: if `shouldBeDisplayed` returns `false`, it returns `null` and never calls `Pane` / `PaneContent`. See **[panes.md](panes.md)** for the full PaneProvider contract.
+
 ## Pane Group Data Model
 
 `PaneGroupObject` (defined in `studio-sdk/src/contracts/PaneTypes.ts`):
@@ -196,6 +198,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `studio/src/components/panes/PaneAreaRight.tsx` | Right pane area renderer (multi-group with icon tab bar) |
 | `studio/src/components/panes/PaneAreaBottom.tsx` | Bottom pane area renderer (multi-group with text tab bar) |
 | `studio/src/components/panes/PaneGroupTabBar.tsx` | Group-level tab bar component (icon and text variants) |
+| `studio/src/components/panes/PaneWrapper.tsx` | Per-pane mount gate: evaluates `shouldBeDisplayed`, then renders `Pane` |
 | `studio/src/components/panes/PanesList.tsx` | Renders a group's panes as stacked PaneWrappers |
 | `studio/src/components/panes/component.pane-group-tab-bar.scss` | Styles for group tab bar, context menu, severity utility classes |
 | `studio/src/components/menu_bar/MenuBarSection.tsx` | Per-column menu bar component, dispatches to type-specific renderers |

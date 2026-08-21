@@ -7,7 +7,7 @@ import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@
 import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getServiceTaskConfigValue, getTypePropertyString } from '../../libs/BpmnFlowNodeAccessors';
+import { getHttpServiceTaskValue, getTypePropertyString } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { CopyableJsonDataRenderer } from '../CopyableJsonDataRenderer';
 import { shouldDisplayHttpServiceTaskInstanceBodyPane } from '../ShouldBeDisplayedConditions';
@@ -46,7 +46,7 @@ function HttpServiceTaskBodyPane(props: HttpServiceTaskBodyPaneProps): React.JSX
 
   const serviceTaskInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode) as FlowNodeInstance;
 
-  const body = getServiceTaskConfigValue(flowNodeModel, 'httpBody');
+  const body = getHttpServiceTaskValue(flowNodeModel, 'httpBody');
   const evaluatedBody = getTypePropertyString(serviceTaskInstance.typeProperties, 'http_body');
 
   return (

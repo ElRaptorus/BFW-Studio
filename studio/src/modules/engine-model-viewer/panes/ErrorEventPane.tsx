@@ -4,13 +4,12 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import {
-  getEventDefinition,
-  getExtensionValue,
+  assertEventDefinitionType,
+  getSelectedEventDefinition,
   getSelection,
   hasEventDefinition,
   isModelViewerDocument,
   matchesType,
-  moddleRefName,
 } from './paneHelpers';
 
 const ERROR_EVENT_POSITION_TYPES = [':EndEvent', ':BoundaryEvent', ':StartEvent'];
@@ -46,25 +45,17 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-  const errorDef = getEventDefinition(selection.businessObject, 'ErrorEventDefinition');
-  if (!errorDef) {
-    return null;
-  }
-
-  const errorRef = moddleRefName(errorDef.errorRef);
-  const errorCode = getExtensionValue(errorDef, ':errorCode');
-  const errorMessage = getExtensionValue(errorDef, ':errorMessage');
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const modeled = getSelectedEventDefinition(props.editorDocumentModel);
+  assertEventDefinitionType(modeled, 'error');
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Error" value={errorRef} disabled />
-      {errorCode != null && <PaneProperty type="text" label="Error Code" value={errorCode} disabled />}
-      {errorMessage != null && <PaneProperty type="text" label="Error Message" value={errorMessage} disabled />}
+      <PaneProperty type="text" label="Error" value={modeled.errorRef ?? '—'} disabled />
+      {modeled.errorCode != null && <PaneProperty type="text" label="Error Code" value={modeled.errorCode} disabled />}
+      {modeled.errorMessage != null && (
+        <PaneProperty type="text" label="Error Message" value={modeled.errorMessage} disabled />
+      )}
     </div>
   );
 }

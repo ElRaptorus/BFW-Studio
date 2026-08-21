@@ -4,7 +4,7 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
-import { shouldBeDisplayedForDmnDrdNoSelection } from '../../PropertiesPaneFunctions';
+import { getDmnModel, shouldBeDisplayedForDmnDrdNoSelection } from '../../PropertiesPaneFunctions';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,7 +33,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const model = props.editorDocumentModel as DmnDocumentModel;
+  const model = getDmnModel(props.editorDocumentModel);
   if (!model || !model.isReadyForInteraction()) {
     return null;
   }

@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getSelection, isModelViewerDocument, matchesType, readFlowNodeString } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,14 +33,13 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const businessObject = selection.businessObject;
-  const calledElement = String(businessObject.calledElement ?? '—');
-  const startEventId = getExtensionValue(businessObject, ':startEventId');
+  const calledElement =
+    readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+      flowNode.typeData.type === 'call_activity' ? flowNode.typeData.calledElement : undefined,
+    ) ?? '—';
+  const startEventId = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'call_activity' ? flowNode.typeData.startEventId : undefined,
+  );
 
   return (
     <div className="engine-pane-process-info">

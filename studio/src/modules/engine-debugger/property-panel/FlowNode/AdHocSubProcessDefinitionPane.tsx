@@ -89,12 +89,12 @@ function AdHocSubProcessDefinitionPane(props: AdHocSubProcessDefinitionPaneProps
 
   return (
     <PaneBody>
-      <PaneProperty type="text" label="Ordering" disabled={true} value={typeData?.adHocOrdering ?? 'Parallel'} />
+      <PaneProperty type="text" label="Ordering" disabled={true} value={typeData?.adhocOrdering ?? 'Parallel'} />
       <PaneProperty
         type="text"
         label="Completion Condition"
         disabled={true}
-        value={typeData?.adHocCompletionCondition ?? '(all activities performed)'}
+        value={typeData?.adhocCompletionCondition ?? '(all activities performed)'}
       />
       <PaneProperty
         type="text"

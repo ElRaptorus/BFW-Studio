@@ -69,11 +69,9 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
   }
-
   return <PropertiesBusinessRuleTask key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 

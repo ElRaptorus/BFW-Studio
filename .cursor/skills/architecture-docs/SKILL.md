@@ -170,6 +170,7 @@ Use this table to determine **which file to update** based on what you changed o
 | BPMN modeler modules, `registerModule`, diagram-js services | `bpmn-modeler-modules.md` |
 | Token simulator, simulation behaviors, overlays | `bpmn-token-simulator.md` |
 | Workbench layout, split bars, pane areas, menu bar | `workbench-layout.md` |
+| PaneProvider contract, `shouldBeDisplayed` vs renderer, pane registration | `panes.md` |
 | Import aliases, tsconfig, module resolution | `imports-and-modules.md` |
 | Git integration, GitService, IPC, BPMN diff, protected diagrams | `git-cruiser.md` |
 | ESLint/Prettier config, React Compiler rules, lint suppression | `code-quality.md` |

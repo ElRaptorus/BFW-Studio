@@ -1394,15 +1394,39 @@ Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the mod
 
 **Plugin authors:** Always use `'pluginChannel'` in `$inject` arrays. Never use `pluginChannel__*` directly — the prefixed names are internal and may change.
 
+### P-Studio-11 — GraphQL `__typename` becomes `_Typename` after `camelizeKeys`
+
+**Symptom:** Discriminating a GraphQL union/interface by `__typename` always falls through to the default branch, even though the engine sent the field.
+
+**Why it happens:** `@elraptorus/daemonengine_client` camelizes response keys. The converter treats a leading `_` plus a lowercase letter as snake_case (`_t` → `_T`), so `__typename` becomes `_Typename`.
+
+**Correct approach:** Do not rely on `__typename` as the sole discriminant. Prefer payload fields (`messageRef`, `errorCode`, `type` enum). If a typename is required, read `_Typename` — that is the field the client actually delivers. See `convertGraphqlProcessModel` in `studio/src/modules/engine-core/bpmn/graphqlProcessModelToSdk.ts`.
+
+### P-Studio-12 — Debugger / model-viewer Model graph is required
+
+**Symptom:** Opening a process instance or deployed model fails with "has no GraphQL processModel".
+
+**Why it happens:** `getProcessInstanceWithModel` / `getProcessVersionWithModel` returned no `processModel`, or conversion failed.
+
+**Correct approach:** The Model graph is the only runtime read path. There is no `parseBpmn` or moddle fallback for deployed semantics. Fix the engine response or the converter. Canvas rendering still uses `bpmnXml`. `parseBpmn()` remains the authoring-path parser (linter, modeler).
+
+### P-Studio-13 — Start events have no input/output mappings
+
+**Symptom:** Debugger Input Mappings / Output Mappings panes appear on a Message Start Event and are always empty.
+
+**Why it happens:** `hasDataPipeline` historically treated every event position as a mapping carrier. Engine `StartEventNode` exposes `eventDefinition`, `resultContract`, and `isInterrupting` only — catch-side start data is validated by `resultContract`, not `outMappings`.
+
+**Correct approach:** Gate Input Mappings on `hasInputMappings` and Output Mappings on `hasOutputMappings` (Engine GraphQL field table). Message Start Events show the Result Contract pane, not mapping panes.
+
 ---
 
-## Complex Gateway `activationCondition` is not in the parsed SDK model
+## Complex Gateway `activationCondition` on the runtime path comes from the Model graph
 
-**Mistake**: Reading a Complex Gateway's activation condition in the Engine Debugger from the parsed SDK model — `flowNode.flowNodeModel.typeData.activationCondition` (`@elraptorus/daemonengine_sdk`).
+**Mistake**: Reading a Complex Gateway's activation condition in the Debugger or model viewer from the live bpmn-js moddle (`getActivationConditionFromViewer`) or from `parseBpmn()` output.
 
-**Why it fails**: The SDK BPMN parser hardcodes `activationCondition: null` for Complex Gateways (`packages/js/sdk/src/bpmn/parser.ts`), even though the `ComplexGatewayTypeData.activationCondition` type field exists. The Studio depends on this SDK via npm, so a pane relying on the parsed value shows empty until the SDK is fixed **and** re-published/bumped.
+**Why it fails**: The SDK BPMN parser (`parseBpmn`) still hardcodes `activationCondition: null`. That parser is the authoring path only. Deployed semantics come from GraphQL `ComplexGatewayNode.activationCondition`, converted onto SDK `typeData`.
 
-**Correct approach**: Read the value directly from the live bpmn-js moddle instead of the parsed model. The debugger's `EngineBpmnDebuggerEditorDocumentModel` exposes `bpmnViewerComponentAdapter`; `getActivationConditionFromViewer(adapter, elementId)` in `engine-debugger/libs/BpmnCustomPropertyAccessor.ts` resolves the element from the registry and returns `businessObject.activationCondition?.body`. This is the same moddle-read pattern already used for studio-internal `evil:Property` values (`getCustomPropertyFromViewer`). The Engine BPMN Viewer panes already read the moddle directly (`getSelection(model).businessObject.activationCondition?.body`), so they are unaffected.
+**Correct approach**: Debugger and model-viewer panes read `flowNode.flowNodeModel.typeData.activationCondition` / `getSelectedBpmnFlowNode().typeData.activationCondition`. Authoring still uses the bpmn-js moddle via `BpmnDocumentElementAccess`.
 
 ---
 
@@ -1534,6 +1558,16 @@ The `async`/`await` inside the page matters for a second reason: `bifrost.comman
 **Why it happens**: monaco-editor 0.53 moved the language-feature namespaces from `monaco.languages.<feature>` to the module root — `monaco.typescript`, `monaco.json`, `monaco.css`, `monaco.html`. The old properties still appear in `monaco.d.ts` as `{ deprecated: true }` declarations, so TypeScript keeps compiling code that reads them, but nothing assigns them at runtime: `monaco.languages.typescript` is plain `undefined`. The mistake is easy to keep alive because the callsites need a cast anyway — `@monaco-editor/react` types its mount argument as the bare editor API (`monaco-editor/esm/vs/editor/editor.api`), which carries no feature namespaces at all even though the configured instance does.
 
 **Correct approach**: Read the feature namespace off the module root and go through `relaxJavaScriptDiagnostics` in `studio-sdk/src/components/internal/monacoJavaScriptDiagnostics.ts` rather than re-deriving it per component. For JSON validation, import the contribution module directly and use its exports (`configureMonacoJsonValidation` does this) instead of reaching through the editor instance.
+
+---
+
+## Restating `shouldBeDisplayed` inside pane renderers
+
+**Mistake**: `PaneContent` (or `Pane`) returns `null` after re-checking document type, selection length, element type, or event-definition kind — the same predicate already in `shouldBeDisplayed`.
+
+**Why it fails**: `PaneWrapper` (`studio/src/components/panes/PaneWrapper.tsx`) evaluates `shouldBeDisplayed` and never mounts `Pane` when it is false. Restating that gate in the renderer is unreachable clutter. Folding a *stricter* renderer `return null` (readiness, missing payload) into the gate is the opposite mistake: the header and group tab disappear.
+
+**Correct approach**: Put document type, selection shape, and element/view type in `shouldBeDisplayed`. In the renderer, do not restate those checks. Keep renderer `return null` for conditions the gate does **not** cover (modeler readiness, missing payload while loading) — do not fold them into the gate, or the header disappears. `assertNotNull` only data the gate proved. Keep `?? '—'` and optional rows for missing *values*. See `docs/architecture/panes.md` and the `studio-panes` skill.
 
 ---
 

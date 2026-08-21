@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getSelection, isModelViewerDocument, matchesType, readFlowNodeString } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,20 +33,27 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const businessObject = selection.businessObject;
-  const implementation = String(businessObject.implementation ?? '—');
+  const implementation =
+    readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+      flowNode.typeData.type === 'service_task' ? flowNode.typeData.implementation : undefined,
+    ) ?? '—';
   const isHttp = implementation === 'http';
 
-  const httpUrl = getExtensionValue(businessObject, ':httpUrl');
-  const httpMethod = getExtensionValue(businessObject, ':httpMethod');
-  const httpBody = getExtensionValue(businessObject, ':httpBody');
-  const httpAuthHeader = getExtensionValue(businessObject, ':httpAuthHeader');
-  const httpResponseHeaders = getExtensionValue(businessObject, ':httpResponseHeaders');
+  const httpUrl = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'service_task' ? flowNode.typeData.httpUrl : undefined,
+  );
+  const httpMethod = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'service_task' ? flowNode.typeData.httpMethod : undefined,
+  );
+  const httpBody = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'service_task' ? flowNode.typeData.httpBody : undefined,
+  );
+  const httpAuthHeader = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'service_task' ? flowNode.typeData.httpAuthHeader : undefined,
+  );
+  const httpResponseHeaders = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'service_task' ? flowNode.typeData.httpResponseHeaders : undefined,
+  );
 
   return (
     <div className="engine-pane-process-info">

@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getSelection, isModelViewerDocument, matchesType, readFlowNodeString } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,12 +33,12 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const requireConfirmation = getExtensionValue(selection.businessObject, ':requireConfirmation');
+  const requireConfirmation = readFlowNodeString(props.editorDocumentModel, (flowNode) => {
+    if (flowNode.typeData.type !== 'manual_task') {
+      return undefined;
+    }
+    return flowNode.typeData.requireConfirmation ? 'true' : 'false';
+  });
 
   return (
     <div className="engine-pane-process-info">

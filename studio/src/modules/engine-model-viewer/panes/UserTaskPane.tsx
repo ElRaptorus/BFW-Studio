@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getSelection, isModelViewerDocument, matchesType, readFlowNodeString } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,16 +33,24 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const businessObject = selection.businessObject;
-  const assignees = getExtensionValue(businessObject, ':assignees');
-  const dueDate = getExtensionValue(businessObject, ':dueDate');
-  const priority = getExtensionValue(businessObject, ':priority');
-  const formFields = getExtensionValue(businessObject, ':formFields');
+  const assignees = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'user_task' ? flowNode.typeData.assigneesExpression : undefined,
+  );
+  const dueDate = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'user_task' ? flowNode.typeData.dueDate : undefined,
+  );
+  const priority = readFlowNodeString(props.editorDocumentModel, (flowNode) => {
+    if (flowNode.typeData.type !== 'user_task') {
+      return undefined;
+    }
+    return flowNode.typeData.priority != null ? String(flowNode.typeData.priority) : null;
+  });
+  const formFields = readFlowNodeString(props.editorDocumentModel, (flowNode) => {
+    if (flowNode.typeData.type !== 'user_task') {
+      return undefined;
+    }
+    return flowNode.typeData.formSchema != null ? JSON.stringify(flowNode.typeData.formSchema) : null;
+  });
 
   return (
     <div className="engine-pane-process-info">

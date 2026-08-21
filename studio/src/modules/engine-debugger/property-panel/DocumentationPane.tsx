@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { MarkdownEditor, OpenInNewTabButton, Pane, PaneHeader } from '@evil/bifrost_fw_sdk';
+import { MarkdownEditor, OpenInNewTabButton, Pane, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import { ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
@@ -48,13 +48,10 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const model = props.editorDocumentModel as EngineBpmnDebuggerEditorDocumentModel;
   const element = model.selectedElements[0];
-
-  if (element == null) {
-    return null;
-  }
+  assertNotNull(element, 'element');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>

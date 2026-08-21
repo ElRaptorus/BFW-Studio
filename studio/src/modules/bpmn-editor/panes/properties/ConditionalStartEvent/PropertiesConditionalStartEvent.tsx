@@ -68,12 +68,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesConditionalStartEvent key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesConditionalStartEvent key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesConditionalStartEvent(props: PaneComponentProps): React.JSX.Element {

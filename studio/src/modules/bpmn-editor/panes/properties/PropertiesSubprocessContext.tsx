@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { BpmnElementType, Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { BpmnElementType, Pane, PaneBody, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 import type { LoopCharacteristics } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
@@ -52,21 +52,14 @@ function getLoopCharacteristicsLabel(loopCharacteristics: LoopCharacteristics | 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const bpmnDocumentModel: BpmnDocumentModel | null = props.editorDocumentModel;
-
-  if (bpmnDocumentModel == null) {
-    return null;
-  }
+  assertNotNull(bpmnDocumentModel, 'bpmnDocumentModel');
 
   const rootElement = bpmnDocumentModel.elements.getCurrentRootElement();
   const subprocessId = rootElement?.businessObject?.id;
-  if (subprocessId == null) {
-    return null;
-  }
+  assertNotNull(subprocessId, 'subprocessId');
 
   const subprocessElement = bpmnDocumentModel.elements.getById(subprocessId);
-  if (subprocessElement == null) {
-    return null;
-  }
+  assertNotNull(subprocessElement, 'subprocessElement');
 
   const isAdHoc = subprocessElement.type === BpmnElementType.AdHocSubprocess;
   const adHocElement = isAdHoc ? (subprocessElement as any) : null;

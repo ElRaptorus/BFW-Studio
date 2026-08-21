@@ -495,6 +495,48 @@ All four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProc
 
 ---
 
+## BPMN Model graph (runtime read path)
+
+Deployed-process semantics come from the Engine GraphQL Model graph, not from re-parsing XML in the debugger or model viewer. `parseBpmn()` remains the authoring-path parser (linter, modeler, sanitizer).
+
+#### Converter
+
+**Path:** `studio/src/modules/engine-core/bpmn/graphqlProcessModelToSdk.ts`
+
+GraphQL `*Node` types flatten type-specific fields (`httpUrl` on the node). SDK `FlowNode` uses a `typeData` discriminant. `convertGraphqlProcessModel` is the boundary so existing debugger accessors keep working.
+
+The client's `camelizeKeys` rewrites `__typename` to `_Typename` (`_t` matches the snake_case converter). The converter discriminates event definitions by payload fields first, then `_Typename`.
+
+#### Debugger load
+
+**Path:** `studio/src/modules/engine-debugger/libs/EngineAdapter.ts`
+
+`loadProcessWithXml` calls `getProcessInstanceWithModel` (PI + `bpmnXml` + `processModel` + FNIs) plus a parallel `queryDataObjectValues`. Missing `processModel` is a hard error. Canvas rendering still uses `bpmnXml`. `parseBpmn()` is not used on this path.
+
+Flow-node and sequence-flow lookups in `BpmnProcessHelpers.ts` are O(1) via per-process `WeakMap` indexes.
+
+#### Model viewer load
+
+**Path:** `studio/src/modules/engine-model-viewer/models/ModelViewerDocumentModel.ts`
+
+`hydrateProcessModel` calls `getProcessVersionWithModel` and stores the converted `BpmnProcess` on a private field (`getBpmnProcess()`). Missing `processModel` is a hard error. Panes in `engine-model-viewer/panes/` read SDK `typeData` only.
+
+The general PaneProvider contract (`shouldBeDisplayed` vs renderer, `PaneWrapper` gating) is documented in **[panes.md](panes.md)**. Debugger and model-viewer **mapping / contract pane visibility** follows the Engine GraphQL field table, not the authoring `allowedIn` lists:
+
+- Input mappings: throw-side events, tasks that declare `inMappings` (including ReceiveTask, CallActivity, SubProcess). **Not** StartEvent.
+- Output mappings: catch-side events, tasks that declare `outMappings` (including SendTask, SubProcess). **Not** StartEvent.
+- Payload / result contracts: SubProcess shells are included; CallActivity is **not** (the Engine `CallActivityNode` has mappings only).
+- HTTP Service Task debugger panes include `httpResponseHeaders` (definition + evaluated `typeProperties`).
+- Throw-side message events show `correlationRetrievalExpression` in the debugger. SendTask correlation at runtime is the process-level `correlationKey`; GraphQL `SendTaskNode` has no retrieval-expression field.
+
+#### Moddle ↔ manifest conformance
+
+**Path:** `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts`
+
+`evil-platform.json` stays Studio-owned. `verifyModdleConformance` asserts bidirectional vocabulary match against `extensionManifest` from `@elraptorus/daemonengine_sdk`, including `allowedIn ⊆ applicableTo` (the Studio may be stricter, never more permissive). Invoked from `studio/test/unit/bpmn-core/moddleManifestConformance.test.ts`.
+
+---
+
 ## Multi-Instance & Standard Loop (Debugger)
 
 The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop execution at runtime. The implementation spans three layers: data model, canvas overlays, and property panes.
@@ -550,6 +592,11 @@ The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop e
 | engine-model-viewer entry | `studio/src/modules/engine-model-viewer/index.ts` |
 | engine-decision-viewer entry | `studio/src/modules/engine-decision-viewer/index.ts` |
 | engine-debugger entry | `studio/src/modules/engine-debugger/index.tsx` |
+| GraphQL → SDK converter | `studio/src/modules/engine-core/bpmn/graphqlProcessModelToSdk.ts` |
+| EngineAdapter | `studio/src/modules/engine-debugger/libs/EngineAdapter.ts` |
+| BpmnProcessHelpers | `studio/src/modules/engine-debugger/libs/BpmnProcessHelpers.ts` |
+| Model viewer document model | `studio/src/modules/engine-model-viewer/models/ModelViewerDocumentModel.ts` |
+| Moddle conformance | `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts` |
 | Engine ID extraction | `studio/src/modules/engine-core/helpers/checkEngineConnectivity.ts` |
 | Version utilities | `studio/src/modules/engine-workspace/helpers/versionUtils.ts` |
 | AutoVersionOnPoolBehavior | `studio/src/modules/bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts` |

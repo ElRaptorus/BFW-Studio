@@ -4,7 +4,7 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type { ModelViewerSelection } from '../types';
-import { getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getSelectedBpmnFlowNode, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -17,8 +17,6 @@ function getPaneTitle(): string {
   return 'Activation Condition';
 }
 
-// The activation condition only governs a Complex Join (or the join side of a mixed gateway),
-// which the engine classifies by having more than one incoming sequence flow.
 function isComplexJoin(selection: ModelViewerSelection): boolean {
   const incoming = selection.businessObject.incoming as unknown[] | undefined;
   const outgoing = selection.businessObject.outgoing as unknown[] | undefined;
@@ -50,20 +48,17 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
+  const modeled = getSelectedBpmnFlowNode(props.editorDocumentModel);
+  if (!modeled || modeled.typeData.type !== 'complex_gateway') {
     return null;
   }
-
-  const activationCondition = selection.businessObject.activationCondition as Record<string, unknown> | undefined;
-  const conditionBody = activationCondition?.body ?? activationCondition?.text;
 
   return (
     <div className="engine-pane-process-info">
       <PaneProperty
         type="textarea"
         label="Activation Condition"
-        value={conditionBody != null ? String(conditionBody) : '—'}
+        value={modeled.typeData.activationCondition ?? '—'}
         disabled
         rows={4}
       />

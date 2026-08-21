@@ -1,9 +1,9 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
-import { getSelection, isModelViewerDocument, matchesType, moddleRefId } from './paneHelpers';
+import { getSelectedSequenceFlow, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -32,18 +32,17 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-  const condition = (selection.businessObject.conditionExpression as { body?: string } | undefined)?.body;
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const sequenceFlow = getSelectedSequenceFlow(props.editorDocumentModel);
+  assertNotNull(sequenceFlow, 'sequenceFlow');
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Source" value={moddleRefId(selection.businessObject.sourceRef)} disabled />
-      <PaneProperty type="text" label="Target" value={moddleRefId(selection.businessObject.targetRef)} disabled />
-      {condition && <PaneProperty type="text" label="Condition" value={condition} disabled />}
+      <PaneProperty type="text" label="Source" value={sequenceFlow.sourceRef ?? '—'} disabled />
+      <PaneProperty type="text" label="Target" value={sequenceFlow.targetRef ?? '—'} disabled />
+      {sequenceFlow.conditionExpression != null && sequenceFlow.conditionExpression !== '' && (
+        <PaneProperty type="text" label="Condition" value={sequenceFlow.conditionExpression} disabled />
+      )}
     </div>
   );
 }

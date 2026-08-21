@@ -56,11 +56,9 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
   }
-
   return <PropertiesUserTask key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 

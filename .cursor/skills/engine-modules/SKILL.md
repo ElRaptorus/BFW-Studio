@@ -147,6 +147,10 @@ bifrost.engines.notifyMyOperationCompleted(engineUrl, result);
 
 Note: `AbstractEmitter.emit()` is `protected`. Always add a public method on `EngineManager` rather than calling `emit` directly.
 
+## Property panes
+
+When adding or editing a `PaneProvider` (debugger, model viewer, decision viewer), follow the `studio-panes` skill and `docs/architecture/panes.md`. `shouldBeDisplayed` is the only visibility gate; do not restate it in `Pane` / `PaneContent`.
+
 ## Pane Data Access Pattern (Debugger Pattern)
 
 Panes in engine modules access data from the `EditorDocumentModel`, never from `studio.getSharedRessource()` or by reading `editorDocument.data.current` for working data. The canonical pattern — established by the Debugger and adopted by all engine views — is:

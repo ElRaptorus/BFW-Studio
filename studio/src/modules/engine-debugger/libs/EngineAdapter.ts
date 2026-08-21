@@ -1,5 +1,5 @@
 import type { EngineConnectionManager } from '#modules/engine-core';
-import { SubscribeThenSnapshot } from '#modules/engine-core';
+import { SubscribeThenSnapshot, convertGraphqlProcessModel } from '#modules/engine-core';
 import type { SnapshotUpdate } from '#modules/engine-core';
 import type {
   CompensatedActivitySnapshot,
@@ -8,18 +8,17 @@ import type {
   ProcessInstanceSnapshot,
 } from '#modules/engine-core';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import { FlowNodeType, parseBpmn } from '@elraptorus/daemonengine_sdk';
+import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
 import type {
   DataObjectValue,
   FlowNodeInstance,
-  ProcessInstance,
+  FlowNodeInstanceField,
   ProcessInstanceField,
 } from '@elraptorus/daemonengine_sdk';
 import type { BpmnDefinitions, BpmnProcess } from '@elraptorus/daemonengine_sdk';
 import debounce from 'lodash.debounce';
 
 import type { DebuggerBaseError, DebuggerProcessInstance } from '../types/DebuggerTypes';
-import { findProcessInDefinitions } from './BpmnProcessHelpers';
 
 const ALL_FNI_FIELDS = [
   'id',
@@ -39,7 +38,7 @@ const ALL_FNI_FIELDS = [
   'errorInfo',
   'multiInstanceId',
   'iterationIndex',
-] as const;
+] as const satisfies readonly FlowNodeInstanceField[];
 
 type ProcessUpdatedHandler = (
   processInstance: DebuggerProcessInstance,
@@ -54,24 +53,19 @@ type FlowNodeInstancesUpdatedHandler = (
   newFlowNodeInstances?: FlowNodeInstance[],
 ) => void;
 
-function createEmptyProcess(processModelId: string): BpmnProcess {
-  return {
-    id: processModelId,
-    name: null,
-    version: null,
-    isExecutable: false,
-    correlationKey: null,
-    flowNodes: [],
-    sequenceFlows: [],
-    lanes: [],
-    dataObjects: [],
-    dataObjectReferences: [],
-    dataStores: [],
-    dataStoreReferences: [],
-    extensions: [],
-    linterScores: [],
-  };
-}
+const PROCESS_INSTANCE_MODEL_FIELDS = [
+  'id',
+  'state',
+  'processVersionId',
+  'businessKey',
+  'parentProcessInstanceId',
+  'triggererFlowNodeInstanceId',
+  'startedAt',
+  'finishedAt',
+  'startedBy',
+  'startedWithContext',
+  'errorInfo',
+] as const satisfies readonly ProcessInstanceField[];
 
 function fniSnapshotToFlowNodeInstance(snapshot: FniSnapshot): FlowNodeInstance {
   return {
@@ -263,47 +257,53 @@ export class EngineAdapter {
   }
 
   private async loadProcessWithXml(client: DaemonEngineClient): Promise<void> {
-    const processInstanceRecord = (await client.graphql.getProcessInstance(this.processInstanceId, {
-      fields: [
-        'id',
-        'state',
-        'processVersionId',
-        'businessKey',
-        'parentProcessInstanceId',
-        'triggererFlowNodeInstanceId',
-        'startedAt',
-        'finishedAt',
-        'startedBy',
-        'startedWithContext',
-        'errorInfo' as ProcessInstanceField,
-      ],
-      include: {
-        flowNodeInstances: {
-          fields: [...ALL_FNI_FIELDS],
-        },
-        dataObjectValues: {
-          fields: ['id', 'dataObjectId', 'flowNodeInstanceId', 'value', 'createdAt', 'processInstanceId'],
-        },
-      },
-    })) as ProcessInstance | null;
+    await this.loadProcessWithModelGraph(client);
+    await this.loadEmbeddedSubprocessChildFnis(client);
 
-    if (!processInstanceRecord) {
+    if (this.processInstanceData && this.processDefinitionData && this.processModelData) {
+      await this.updateProcessHandler?.(this.processInstanceData, this.processDefinitionData, this.processModelData);
+    }
+    this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
+      ...this.compensatedActivities,
+    ]);
+  }
+
+  /**
+   * One GraphQL query returns the PI, `bpmnXml`, the parsed Model graph, and
+   * every FNI. Missing `processModel` is a hard error — there is no XML-parse
+   * path. Canvas rendering still uses `bpmnXml`.
+   */
+  private async loadProcessWithModelGraph(client: DaemonEngineClient): Promise<void> {
+    const [record, dataObjectPage] = await Promise.all([
+      client.graphql.getProcessInstanceWithModel(this.processInstanceId, {
+        fields: [...PROCESS_INSTANCE_MODEL_FIELDS],
+        flowNodeInstanceFields: [...ALL_FNI_FIELDS],
+        processVersionFields: ['id', 'version', 'bpmnXml'],
+      }),
+      client.graphql.queryDataObjectValues({
+        fields: ['id', 'dataObjectId', 'flowNodeInstanceId', 'value', 'createdAt', 'processInstanceId'],
+        filter: { processInstanceId: { eq: this.processInstanceId } },
+        pagination: { mode: 'offset', limit: 500, offset: 0 },
+      }),
+    ]);
+
+    if (!record) {
       throw new Error(`Process instance ${this.processInstanceId} not found on the engine.`);
     }
 
-    const processVersionId = processInstanceRecord.processVersionId ?? '';
-    const { bpmnXml, processModelId, version } = await this.resolveBpmnXmlForProcessVersion(client, processVersionId);
+    const processVersion = isRecord(record.processVersion) ? record.processVersion : null;
+    const bpmnXml = typeof processVersion?.bpmnXml === 'string' ? processVersion.bpmnXml : '';
+    const converted = convertGraphqlProcessModel(processVersion?.processModel, bpmnXml);
+    if (!converted) {
+      throw new Error(
+        `Process instance ${this.processInstanceId} has no GraphQL processModel. The Model graph is required.`,
+      );
+    }
 
-    const parsed = parseBpmn(bpmnXml);
-    const parsedProcess = findProcessInDefinitions(parsed, processModelId) ?? createEmptyProcess(processModelId);
-
-    this.processDefinitionData = parsed;
-    this.processModelData = parsedProcess;
-
-    const fniList = processInstanceRecord.flowNodeInstances ?? [];
-    this.flowNodeInstances = fniList;
-
-    this.dataObjectValues = (processInstanceRecord.dataObjectValues ?? []).map((entry) => ({
+    this.processDefinitionData = converted.definitions;
+    this.processModelData = converted.process;
+    this.flowNodeInstances = asRecordArray(record.flowNodeInstances).map(toFlowNodeInstance);
+    this.dataObjectValues = dataObjectPage.data.map((entry) => ({
       id: entry.id,
       processInstanceId: entry.processInstanceId ?? this.processInstanceId,
       dataObjectId: entry.dataObjectId,
@@ -313,29 +313,29 @@ export class EngineAdapter {
     }));
 
     this.processInstanceData = {
-      id: processInstanceRecord.id,
-      state: processInstanceRecord.state,
-      processVersionId: processInstanceRecord.processVersionId,
-      businessKey: processInstanceRecord.businessKey,
-      parentProcessInstanceId: processInstanceRecord.parentProcessInstanceId,
-      triggererFlowNodeInstanceId: processInstanceRecord.triggererFlowNodeInstanceId,
-      startedAt: processInstanceRecord.startedAt,
-      finishedAt: processInstanceRecord.finishedAt,
-      startedBy: processInstanceRecord.startedBy,
-      startedWithContext: processInstanceRecord.startedWithContext,
-      finalTokens: processInstanceRecord.finalTokens ?? null,
-      errorInfo: processInstanceRecord.errorInfo ?? null,
-      processModelId,
-      version,
+      id: String(record.id ?? this.processInstanceId),
+      state: record.state as DebuggerProcessInstance['state'],
+      processVersionId: typeof record.processVersionId === 'string' ? record.processVersionId : undefined,
+      businessKey: typeof record.businessKey === 'string' ? record.businessKey : null,
+      parentProcessInstanceId:
+        typeof record.parentProcessInstanceId === 'string' ? record.parentProcessInstanceId : null,
+      triggererFlowNodeInstanceId:
+        typeof record.triggererFlowNodeInstanceId === 'string' ? record.triggererFlowNodeInstanceId : null,
+      startedAt: typeof record.startedAt === 'string' ? record.startedAt : '',
+      finishedAt: typeof record.finishedAt === 'string' ? record.finishedAt : null,
+      startedBy: isRecord(record.startedBy) ? record.startedBy : null,
+      startedWithContext: isRecord(record.startedWithContext) ? record.startedWithContext : null,
+      finalTokens: Array.isArray(record.finalTokens)
+        ? (record.finalTokens as DebuggerProcessInstance['finalTokens'])
+        : null,
+      errorInfo: isRecord(record.errorInfo)
+        ? (record.errorInfo as unknown as DebuggerProcessInstance['errorInfo'])
+        : null,
+      processModelId: converted.process.id,
+      version:
+        typeof processVersion?.version === 'string' ? processVersion.version : (converted.process.version ?? undefined),
       xml: bpmnXml,
     };
-
-    await this.loadEmbeddedSubprocessChildFnis(client);
-
-    await this.updateProcessHandler?.(this.processInstanceData, this.processDefinitionData, this.processModelData);
-    this.updateFlowNodeInstancesHandler?.(this.flowNodeInstances, this.dataObjectValues, [
-      ...this.compensatedActivities,
-    ]);
   }
 
   private buildSnapshotFromCurrentData(): ProcessInstanceSnapshot {
@@ -634,36 +634,40 @@ export class EngineAdapter {
       })
       .filter((id): id is string => typeof id === 'string');
   }
+}
 
-  private async resolveBpmnXmlForProcessVersion(
-    client: DaemonEngineClient,
-    processVersionId: string,
-  ): Promise<{ bpmnXml: string; processModelId: string; version?: string }> {
-    if (!processVersionId) {
-      return { bpmnXml: '', processModelId: '' };
-    }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
 
-    try {
-      const result = await client.graphql.queryProcessVersions({
-        fields: ['id', 'version', 'bpmnXml'],
-        filter: { id: { eq: processVersionId } },
-        pagination: { mode: 'offset', limit: 1, offset: 0 },
-      });
-
-      const match = result.data[0];
-      if (match?.bpmnXml) {
-        const parsed = parseBpmn(match.bpmnXml);
-        const executableProcess = parsed.processes.find((process) => process.isExecutable);
-        return {
-          bpmnXml: match.bpmnXml,
-          processModelId: executableProcess?.id ?? parsed.processes[0]?.id ?? '',
-          version: match.version,
-        };
-      }
-    } catch {
-      return { bpmnXml: '', processModelId: '' };
-    }
-
-    return { bpmnXml: '', processModelId: '' };
+function asRecordArray(value: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(value)) {
+    return [];
   }
+  return value.filter(isRecord);
+}
+
+function toFlowNodeInstance(raw: Record<string, unknown>): FlowNodeInstance {
+  return {
+    id: String(raw.id ?? ''),
+    processInstanceId: String(raw.processInstanceId ?? ''),
+    flowNodeId: String(raw.flowNodeId ?? ''),
+    flowNodeType: raw.flowNodeType as FlowNodeInstance['flowNodeType'],
+    eventType: (raw.eventType as FlowNodeInstance['eventType']) ?? null,
+    laneName: typeof raw.laneName === 'string' ? raw.laneName : null,
+    state: raw.state as FlowNodeInstance['state'],
+    startedAt: typeof raw.startedAt === 'string' ? raw.startedAt : '',
+    finishedAt: typeof raw.finishedAt === 'string' ? raw.finishedAt : null,
+    previousFlowNodeInstanceIds: Array.isArray(raw.previousFlowNodeInstanceIds)
+      ? raw.previousFlowNodeInstanceIds.filter((id): id is string => typeof id === 'string')
+      : [],
+    triggererFlowNodeInstanceId:
+      typeof raw.triggererFlowNodeInstanceId === 'string' ? raw.triggererFlowNodeInstanceId : null,
+    inputToken: isRecord(raw.inputToken) ? raw.inputToken : null,
+    outputToken: isRecord(raw.outputToken) ? raw.outputToken : null,
+    typeProperties: isRecord(raw.typeProperties) ? raw.typeProperties : null,
+    errorInfo: isRecord(raw.errorInfo) ? (raw.errorInfo as unknown as FlowNodeInstance['errorInfo']) : null,
+    multiInstanceId: typeof raw.multiInstanceId === 'string' ? raw.multiInstanceId : null,
+    iterationIndex: typeof raw.iterationIndex === 'number' ? raw.iterationIndex : null,
+  };
 }

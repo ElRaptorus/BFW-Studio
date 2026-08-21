@@ -35,7 +35,6 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element | null {
   const editorDocument = props.editorDocument;
 
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
   }
@@ -69,12 +68,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesTextAnnotation key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesTextAnnotation key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 export function PropertiesTextAnnotation(props: PaneComponentProps): React.JSX.Element {

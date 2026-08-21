@@ -4,8 +4,7 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import {
-  getEventDefinition,
-  getExtensionValue,
+  getSelectedEventDefinition,
   getSelection,
   hasEventDefinition,
   isModelViewerDocument,
@@ -48,12 +47,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const expression = getCorrelationExpression(selection.businessObject);
+  const expression = getCorrelationExpression(props.editorDocumentModel);
 
   return (
     <div className="engine-pane-process-info">
@@ -62,10 +56,10 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   );
 }
 
-function getCorrelationExpression(businessObject: Record<string, unknown>): string | null {
-  const messageDef = getEventDefinition(businessObject, 'MessageEventDefinition');
-  if (messageDef) {
-    return getExtensionValue(messageDef, ':correlationRetrievalExpression');
+function getCorrelationExpression(model: EditorDocumentModel): string | null {
+  const modeled = getSelectedEventDefinition(model);
+  if (modeled?.type === 'message') {
+    return modeled.correlationRetrievalExpression ?? null;
   }
-  return getExtensionValue(businessObject, ':correlationRetrievalExpression');
+  return null;
 }

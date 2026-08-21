@@ -165,7 +165,11 @@ const DATA_PIPELINE_BASE_TYPES: string[] = [
 ];
 
 const DATA_PIPELINE_PAYLOAD_CONTRACT_TYPES: string[] = [
-  ...DATA_PIPELINE_BASE_TYPES,
+  BpmnElementType.ServiceTask,
+  BpmnElementType.HttpServiceTask,
+  BpmnElementType.ScriptTask,
+  BpmnElementType.BusinessRuleTask,
+  BpmnElementType.AdHocSubprocess,
   BpmnElementType.SendTask,
   BpmnElementType.MessageEndEvent,
   BpmnElementType.MessageIntermediateThrowEvent,
@@ -183,14 +187,17 @@ const DATA_PIPELINE_OUTBOUND_TYPES: string[] = [
   BpmnElementType.ReceiveTask,
   BpmnElementType.MessageIntermediateCatchEvent,
   BpmnElementType.MessageBoundaryEvent,
-  BpmnElementType.MessageStartEvent,
   BpmnElementType.SignalIntermediateCatchEvent,
   BpmnElementType.SignalBoundaryEvent,
-  BpmnElementType.SignalStartEvent,
 ];
 
 const DATA_PIPELINE_RESULT_CONTRACT_TYPES: string[] = [
-  ...DATA_PIPELINE_BASE_TYPES,
+  BpmnElementType.UserTask,
+  BpmnElementType.ServiceTask,
+  BpmnElementType.HttpServiceTask,
+  BpmnElementType.ScriptTask,
+  BpmnElementType.BusinessRuleTask,
+  BpmnElementType.AdHocSubprocess,
   BpmnElementType.ReceiveTask,
   BpmnElementType.MessageIntermediateCatchEvent,
   BpmnElementType.MessageBoundaryEvent,

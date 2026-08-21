@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader } from '@evil/bifrost_fw_sdk';
+import { Icon, Pane, PaneBody, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { resolveFlowNodeIconForDebugger } from '../../libs/flowNodeDisplay';
@@ -34,9 +34,7 @@ function PaneFull(props: ProcessInstanceTriggeredByPaneProps): React.JSX.Element
 function ProcessInstanceTriggeredByPane(props: ProcessInstanceTriggeredByPaneProps): React.JSX.Element | null {
   const model = props.editorDocumentModel as EngineBpmnDebuggerEditorDocumentModel;
   const triggererId = model.processInstance?.triggererFlowNodeInstanceId;
-  if (!triggererId) {
-    return null;
-  }
+  assertNotNull(triggererId, 'triggererFlowNodeInstanceId');
 
   const targetFlowNodeInstance = model.flowNodeInstances.find((instance) => instance.id === triggererId);
   if (!targetFlowNodeInstance) {

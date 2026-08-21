@@ -4,12 +4,12 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import {
-  getEventDefinition,
+  assertEventDefinitionType,
+  getSelectedEventDefinition,
   getSelection,
   hasEventDefinition,
   isModelViewerDocument,
   matchesType,
-  moddleRefName,
 } from './paneHelpers';
 
 const ESCALATION_EVENT_POSITION_TYPES = [':BoundaryEvent', ':StartEvent', ':IntermediateThrowEvent', ':EndEvent'];
@@ -48,24 +48,16 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-  const escalationDef = getEventDefinition(selection.businessObject, 'EscalationEventDefinition');
-  if (!escalationDef) {
-    return null;
-  }
-
-  const escalationRef = moddleRefName(escalationDef.escalationRef);
-  const escalation = escalationDef.escalationRef as Record<string, unknown> | undefined;
-  const escalationCode = escalation?.escalationCode as string | undefined;
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const modeled = getSelectedEventDefinition(props.editorDocumentModel);
+  assertEventDefinitionType(modeled, 'escalation');
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Escalation" value={escalationRef} disabled />
-      {escalationCode != null && <PaneProperty type="text" label="Escalation Code" value={escalationCode} disabled />}
+      <PaneProperty type="text" label="Escalation" value={modeled.escalationRef ?? '—'} disabled />
+      {modeled.escalationCode != null && (
+        <PaneProperty type="text" label="Escalation Code" value={modeled.escalationCode} disabled />
+      )}
     </div>
   );
 }

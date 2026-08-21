@@ -91,12 +91,10 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesComplexGatewayActivationCondition key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesComplexGatewayActivationCondition key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesComplexGatewayActivationCondition(props: PaneComponentProps): React.JSX.Element {

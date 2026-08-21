@@ -76,7 +76,7 @@ function BusinessRuleTaskTopicPane(props: BusinessRuleTaskTopicPaneProps): React
 
 function getDefinitionDecisionRef(businessRuleTaskModel: BpmnFlowNode): string {
   if (businessRuleTaskModel.typeData.type === 'business_rule_task') {
-    return businessRuleTaskModel.typeData.ruleRef ?? businessRuleTaskModel.typeData.implementation ?? '';
+    return businessRuleTaskModel.typeData.decisionRef ?? '';
   }
   return '';
 }

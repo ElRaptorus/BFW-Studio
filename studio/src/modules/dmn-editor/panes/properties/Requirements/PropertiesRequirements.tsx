@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
 import { DmnElementType } from '../../../DmnElementTypes';
@@ -41,7 +41,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getDmnSelectionForPropertiesPane(props);
-  if (selection == null || selection.length !== 1) {
+  if (selection == null) {
     return null;
   }
   return <RequirementsProperties key={getKeyForDmnPropertiesPane(selection)} {...props} />;
@@ -62,10 +62,8 @@ function resolveRequirementTarget(requirement: any, targetProperty: string): str
 
 function RequirementsProperties(props: PaneComponentProps): React.JSX.Element | null {
   const model = props.editorDocumentModel as DmnDocumentModel;
-  const element = model?.selection.getOnlyElementOrNull();
-  if (!element) {
-    return null;
-  }
+  const element = model.selection.getOnlyElementOrNull();
+  assertNotNull(element, 'element');
 
   const informationRequirements: any[] = model.elements.getInformationRequirements(element.id);
   const knowledgeRequirements: any[] = model.elements.getKnowledgeRequirements(element.id);

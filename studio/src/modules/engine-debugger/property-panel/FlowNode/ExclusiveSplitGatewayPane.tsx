@@ -44,7 +44,6 @@ function ExclusiveSplitGatewayPane(props: ExclusiveSplitGatewayPaneProps): React
   const flowNode = props.model.selectedElements[0] as FlowNode;
   const gatewayModel = flowNode.flowNodeModel as BpmnFlowNode;
   const processModel = props.model.processModel;
-
   if (!processModel) {
     return null;
   }

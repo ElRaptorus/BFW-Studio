@@ -40,7 +40,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   if (!data?.definition) {
     return null;
   }
-
   const definition = data.definition;
   const parsedModel = getParsedModel(props.editorDocumentModel);
 

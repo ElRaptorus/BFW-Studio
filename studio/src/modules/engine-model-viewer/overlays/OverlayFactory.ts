@@ -4,11 +4,12 @@ import {
   createProcessNotExecutableOverlay,
 } from '#modules/bpmn-core/overlays';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
+import type { BpmnProcess } from '@elraptorus/daemonengine_sdk';
 
 import type { Studio } from '@evil/bifrost_fw_sdk';
 
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
-import { getExtensionValue } from '../panes/paneHelpers';
+import { findFlowNodeById } from '../panes/paneHelpers';
 import { createStartProcessOverlay } from './StartProcessOverlay';
 
 export function createModelViewerFlowNodeOverlays(
@@ -16,6 +17,7 @@ export function createModelViewerFlowNodeOverlays(
   studio: Studio,
   engineId: string,
   processModelId: string,
+  bpmnProcess: BpmnProcess | null = null,
 ): Overlay[] {
   const overlays: Overlay[] = [];
 
@@ -28,7 +30,8 @@ export function createModelViewerFlowNodeOverlays(
   }
 
   if (flowNode.type === 'bpmn:CallActivity') {
-    const calledElement = flowNode.businessObject?.calledElement;
+    const modeled = bpmnProcess ? findFlowNodeById(bpmnProcess, flowNode.id) : undefined;
+    const calledElement = modeled?.typeData.type === 'call_activity' ? modeled.typeData.calledElement : undefined;
     if (calledElement) {
       overlays.push(
         createCallActivityTargetLink(
@@ -43,11 +46,10 @@ export function createModelViewerFlowNodeOverlays(
   }
 
   if (flowNode.type === 'bpmn:BusinessRuleTask') {
-    const businessObject = flowNode.businessObject;
-    const implementation = businessObject?.implementation;
-    if (implementation === 'dmn') {
-      const decisionRef = getExtensionValue(businessObject, ':decisionRef');
-      if (decisionRef) {
+    const modeled = bpmnProcess ? findFlowNodeById(bpmnProcess, flowNode.id) : undefined;
+    if (modeled?.typeData.type === 'business_rule_task' && modeled.typeData.implementation === 'dmn') {
+      const decisionRef = modeled.typeData.decisionRef;
+      if (typeof decisionRef === 'string' && decisionRef.length > 0) {
         overlays.push(
           createCallActivityTargetLink(
             studio,

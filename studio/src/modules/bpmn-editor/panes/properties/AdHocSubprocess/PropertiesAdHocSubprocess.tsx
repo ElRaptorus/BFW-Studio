@@ -73,12 +73,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesAdHocSubprocess key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesAdHocSubprocess key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesAdHocSubprocess(props: PaneComponentProps): React.JSX.Element {

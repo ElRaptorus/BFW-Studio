@@ -25,6 +25,7 @@ The Studio is designed around extensibility. Following the "eat your own dogfood
 - **Commands** — The primary mechanism for user interaction and cross-extension communication. All interactions flow through `bifrost.commands.executeCommand()`. See [architecture/commands.md](architecture/commands.md).
 - **Modules** — Self-contained units that register document types, menus, icons, panes, and commands via the Bifrost API. Foundation modules (`engine-core`, `bpmn-core`) provide shared infrastructure; consumer modules build on top. See [architecture/modules.md](architecture/modules.md).
 - **Editor Documents** — The system by which modules provide editors for different content types. Each document type binds a URI pattern to a model, renderer, and inspector. See [architecture/editor-documents.md](architecture/editor-documents.md).
+- **Panes** — Side-panel inspectors and module views registered through `PaneProvider`. Visibility is `shouldBeDisplayed`; renderers must not restate that gate. See [architecture/panes.md](architecture/panes.md).
 - **Engine Connectivity** — The Studio communicates with external Engines via `EngineConnectionManager` (a shared resource registered by `engine-core`). See [architecture/engine.md](architecture/engine.md).
 
 ## Documentation Map

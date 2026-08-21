@@ -13,6 +13,7 @@ import {
   PaneHeader,
   PaneHeaderHelpIcon,
   PaneProperty,
+  assertNotNull,
   validatePropertyNotEmpty,
 } from '@evil/bifrost_fw_sdk';
 
@@ -56,7 +57,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getDmnSelectionForPropertiesPane(props);
-  if (selection == null || selection.length !== 1) {
+  if (selection == null) {
     return null;
   }
   return <BkmProperties key={getKeyForDmnPropertiesPane(selection)} {...props} />;
@@ -64,10 +65,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 
 function BkmProperties(props: PaneComponentProps): React.JSX.Element | null {
   const model = props.editorDocumentModel as DmnDocumentModel;
-  const element = model?.selection.getOnlyElementOrNull();
-  if (!element) {
-    return null;
-  }
+  const element = model.selection.getOnlyElementOrNull();
+  assertNotNull(element, 'element');
 
   const businessObject = element.businessObject;
   const variable = businessObject?.variable;

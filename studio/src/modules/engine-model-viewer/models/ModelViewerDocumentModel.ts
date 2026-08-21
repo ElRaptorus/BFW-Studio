@@ -3,8 +3,9 @@ import { EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED } from '#modules/bpmn-core/BpmnV
 import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { EngineConnectionManager } from '#modules/engine-core';
+import { convertGraphqlProcessModel } from '#modules/engine-core';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import type { ProcessModel } from '@elraptorus/daemonengine_sdk';
+import type { BpmnProcess, ProcessModel, ProcessVersion } from '@elraptorus/daemonengine_sdk';
 
 import type { Studio } from '@evil/bifrost_fw_sdk';
 import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
@@ -40,6 +41,7 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
   private selectionRevision = 0;
   private viewerAdapter: BpmnViewerComponentAdapter | null = null;
   private overlayManager: BpmnElementOverlayManager | null = null;
+  private bpmnProcess: BpmnProcess | null = null;
   private rootChangedSubscription: { dispose: () => void } | null = null;
   private engineEventSubscription: { dispose: () => void } | null = null;
   private authTokenSubscription: { dispose: () => void } | null = null;
@@ -222,6 +224,10 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
     return this.selectedElement;
   }
 
+  getBpmnProcess(): BpmnProcess | null {
+    return this.bpmnProcess;
+  }
+
   async refresh(): Promise<void> {
     this.client = this.connectionManager.getClient(this.engineId);
     const current = this.getCurrentData() as ModelViewerModelData | null;
@@ -250,10 +256,13 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
     });
 
     try {
+      this.bpmnProcess = null;
       const [model, versionList] = await Promise.all([
         this.loadModelForVersion(this.activeVersion),
         this.client.processes.getVersions(this.processModelId),
       ]);
+
+      const xml = await this.hydrateProcessModel(model, versionList);
 
       this.updateCurrentData({
         processModelId: this.processModelId,
@@ -261,7 +270,7 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
         version: model.version ?? null,
         enabled: model.enabled ?? true,
         deployedAt: model.deployedAt ?? null,
-        xml: model.bpmnXml ?? null,
+        xml,
         versions: versionList.map((entry) => ({
           version: entry.version ?? null,
           deployedAt: entry.deployedAt ?? null,
@@ -349,7 +358,13 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
         element.businessObject != null
       ) {
         allOverlays.push(
-          ...createModelViewerFlowNodeOverlays(element, this.studio, this.engineId, this.processModelId),
+          ...createModelViewerFlowNodeOverlays(
+            element,
+            this.studio,
+            this.engineId,
+            this.processModelId,
+            this.bpmnProcess,
+          ),
         );
       }
     }
@@ -436,13 +451,57 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
       throw new Error('Not connected');
     }
     if (version) {
-      const versions = await this.client.processes.getVersions(this.processModelId, { includeXml: true });
+      const versions = await this.client.processes.getVersions(this.processModelId);
       const match = versions.find((entry) => entry.version === version);
       if (match) {
         return match;
       }
     }
-    return this.client.processes.get(this.processModelId, { includeXml: true });
+    return this.client.processes.get(this.processModelId);
+  }
+
+  private async hydrateProcessModel(
+    model: ProcessModel,
+    versionList: (ProcessModel | ProcessVersion)[],
+  ): Promise<string> {
+    const versionId = this.resolveProcessVersionId(model, versionList);
+    if (!versionId) {
+      throw new Error(`No process version id for ${this.processModelId}.`);
+    }
+    if (!this.client) {
+      throw new Error('Not connected');
+    }
+
+    const record = await this.client.graphql.getProcessVersionWithModel(versionId, {
+      fields: ['id', 'version', 'bpmnXml'],
+    });
+    const xml = typeof record?.bpmnXml === 'string' ? record.bpmnXml : '';
+    const converted = convertGraphqlProcessModel(record?.processModel, xml);
+    if (!converted) {
+      throw new Error(`Process version ${versionId} has no GraphQL processModel. The Model graph is required.`);
+    }
+    this.bpmnProcess = converted.process;
+    return xml;
+  }
+
+  private resolveProcessVersionId(
+    model: ProcessModel,
+    versionList: (ProcessModel | ProcessVersion)[],
+  ): string | undefined {
+    if (this.activeVersion == null) {
+      return model.versionId;
+    }
+    const match = versionList.find((entry) => entry.version === this.activeVersion);
+    if (!match) {
+      return undefined;
+    }
+    if ('processId' in match && typeof match.id === 'string') {
+      return match.id;
+    }
+    if ('versionId' in match && typeof match.versionId === 'string') {
+      return match.versionId;
+    }
+    return undefined;
   }
 }
 

@@ -117,6 +117,8 @@ Selection abstraction that works across DRD and expression views. Listens to `EV
 
 ## Pane System
 
+The general pane contract (`PaneProvider`, `shouldBeDisplayed` vs renderer, `PaneWrapper` gating) is documented in **[panes.md](panes.md)**. DMN-specific helpers live in `studio/src/modules/dmn-editor/panes/PropertiesPaneFunctions.ts`. Those helpers check document type, view, and selection only. Modeler `isReadyForInteraction()` is handled in `getDmnSelectionForPropertiesPane` / renderer `return null` so the pane header can still show while the body is empty.
+
 ### Property Panes (right / property group)
 
 All registered in `initializeDmnPanes.ts`:

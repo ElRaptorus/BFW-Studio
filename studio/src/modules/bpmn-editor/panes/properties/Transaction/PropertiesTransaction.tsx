@@ -38,12 +38,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesTransaction key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesTransaction key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesTransaction(props: PaneComponentProps): React.JSX.Element {

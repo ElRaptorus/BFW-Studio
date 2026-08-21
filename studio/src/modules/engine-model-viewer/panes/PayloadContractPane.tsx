@@ -3,15 +3,22 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, hasEventDefinition, isModelViewerDocument, matchesType } from './paneHelpers';
+import {
+  SUBPROCESS_SHELL_TYPES,
+  getSelection,
+  hasEventDefinition,
+  isModelViewerDocument,
+  matchesType,
+  readFlowNodeString,
+} from './paneHelpers';
 
 const PAYLOAD_CONTRACT_TASK_TYPES = [
   ':UserTask',
   ':ServiceTask',
   ':ScriptTask',
   ':BusinessRuleTask',
-  ':CallActivity',
   ':SendTask',
+  ...SUBPROCESS_SHELL_TYPES,
 ];
 
 export const paneProvider: PaneProvider = {
@@ -50,12 +57,13 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const contract = getExtensionValue(selection.businessObject, ':payloadContract');
+  const contract = readFlowNodeString(props.editorDocumentModel, (flowNode) => {
+    const typeData = flowNode.typeData as { payloadContract?: Record<string, unknown> | null };
+    if (!('payloadContract' in typeData)) {
+      return undefined;
+    }
+    return typeData.payloadContract != null ? JSON.stringify(typeData.payloadContract, null, 2) : null;
+  });
 
   return (
     <div className="engine-pane-process-info">

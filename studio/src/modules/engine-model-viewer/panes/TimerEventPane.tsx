@@ -3,7 +3,14 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getSelection, hasEventDefinition, isModelViewerDocument, matchesType } from './paneHelpers';
+import {
+  assertEventDefinitionType,
+  getSelectedEventDefinition,
+  getSelection,
+  hasEventDefinition,
+  isModelViewerDocument,
+  matchesType,
+} from './paneHelpers';
 
 const TIMER_EVENT_POSITION_TYPES = [':StartEvent', ':IntermediateCatchEvent', ':BoundaryEvent'];
 
@@ -38,27 +45,15 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-  const eventDefinitions = selection.businessObject.eventDefinitions as Record<string, unknown>[] | undefined;
-  const timerDef = eventDefinitions?.find((def) => String(def.$type).includes('TimerEventDefinition'));
-  if (!timerDef) {
-    return null;
-  }
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const modeled = getSelectedEventDefinition(props.editorDocumentModel);
+  assertEventDefinitionType(modeled, 'timer');
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="timeDate" value={String((timerDef.timeDate as any)?.body ?? '—')} disabled />
-      <PaneProperty
-        type="text"
-        label="timeDuration"
-        value={String((timerDef.timeDuration as any)?.body ?? '—')}
-        disabled
-      />
-      <PaneProperty type="text" label="timeCycle" value={String((timerDef.timeCycle as any)?.body ?? '—')} disabled />
+      <PaneProperty type="text" label="timeDate" value={modeled.timeDate ?? '—'} disabled />
+      <PaneProperty type="text" label="timeDuration" value={modeled.timeDuration ?? '—'} disabled />
+      <PaneProperty type="text" label="timeCycle" value={modeled.timeCycle ?? '—'} disabled />
     </div>
   );
 }

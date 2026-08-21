@@ -1,9 +1,16 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, isModelViewerDocument, matchesType, moddleRefId } from './paneHelpers';
+import type { ModelViewerDocumentModel } from '../models/ModelViewerDocumentModel';
+import {
+  findDataObjectReferenceId,
+  getSelection,
+  isModelViewerDocument,
+  matchesType,
+  readDataObjectValueContract,
+} from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -34,17 +41,15 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
+  assertNotNull(selection, 'selection');
 
-  const businessObject = selection.businessObject;
-  const dataObjectRef = moddleRefId(businessObject.dataObjectRef);
-  const valueContract = getExtensionValue(businessObject, ':valueContract');
+  const process = (props.editorDocumentModel as ModelViewerDocumentModel | null)?.getBpmnProcess();
+  const dataObjectRef = process ? findDataObjectReferenceId(process, selection.elementId) : null;
+  const valueContract = readDataObjectValueContract(props.editorDocumentModel);
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Data Object Ref" value={dataObjectRef} disabled />
+      <PaneProperty type="text" label="Data Object Ref" value={dataObjectRef ?? '—'} disabled />
       {valueContract != null && (
         <PaneProperty type="textarea" label="Value Contract" value={valueContract} disabled rows={5} />
       )}

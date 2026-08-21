@@ -249,7 +249,7 @@ The Engine creates a child Process Instance for each embedded subprocess activat
 ```
 Initial load:
   EngineAdapter.loadProcessWithXml()
-    → Load root PI + FNIs via GraphQL
+    → loadProcessWithModelGraph() — getProcessInstanceWithModel + queryDataObjectValues
     → loadEmbeddedSubprocessChildFnis() — recursive
       → Find subprocess FNIs with childProcessInstanceId in typeProperties
       → Batch-load child PI FNIs via queryFlowNodeInstances

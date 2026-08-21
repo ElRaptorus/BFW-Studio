@@ -7,7 +7,7 @@ import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@
 import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getServiceTaskConfigValue, getTypePropertyString } from '../../libs/BpmnFlowNodeAccessors';
+import { getHttpServiceTaskValue, getTypePropertyString } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { shouldDisplayHttpServiceTaskInstancePane } from '../ShouldBeDisplayedConditions';
 
@@ -45,7 +45,7 @@ function HttpServiceTaskUrlPane(props: HttpServiceTaskUrlPaneProps): React.JSX.E
 
   const serviceTaskInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode) as FlowNodeInstance;
 
-  const url = getServiceTaskConfigValue(flowNodeModel, 'httpUrl');
+  const url = getHttpServiceTaskValue(flowNodeModel, 'httpUrl');
   const evaluatedUrl = getTypePropertyString(serviceTaskInstance.typeProperties, 'http_url');
 
   return (

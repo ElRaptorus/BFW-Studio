@@ -178,14 +178,14 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       require('../property-panel/FlowNode/HttpServiceTaskAuthorizationPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'EngineDebugger/panes/HttpServiceTaskContentType',
-      'EngineDebugger/pane-providers/HttpServiceTaskContentType',
-      require('../property-panel/FlowNode/HttpServiceTaskContentTypePane'),
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/HttpServiceTaskBody',
       'EngineDebugger/pane-providers/HttpServiceTaskBody',
       require('../property-panel/FlowNode/HttpServiceTaskBodyPane'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'EngineDebugger/panes/HttpServiceTaskResponseHeaders',
+      'EngineDebugger/pane-providers/HttpServiceTaskResponseHeaders',
+      require('../property-panel/FlowNode/HttpServiceTaskResponseHeadersPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/BusinessRuleTaskPayload',
@@ -201,6 +201,11 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       'EngineDebugger/panes/MessageEventPayload',
       'EngineDebugger/pane-providers/MessageEventPayload',
       require('../property-panel/FlowNode/MessageEventPayloadPane'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'EngineDebugger/panes/CorrelationRetrievalExpression',
+      'EngineDebugger/pane-providers/CorrelationRetrievalExpression',
+      require('../property-panel/FlowNode/CorrelationRetrievalExpressionPane'),
     ),
   ]);
 

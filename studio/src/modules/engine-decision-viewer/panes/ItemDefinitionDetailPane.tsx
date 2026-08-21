@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type { DmnItemDefinition } from '../types/dmnModelTypes';
 import { getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
@@ -33,21 +33,15 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const selection = getSelection(props.editorDocumentModel);
-  if (!selection || selection.type !== 'itemDefinition') {
-    return null;
-  }
+  assertNotNull(selection, 'selection');
 
   const parsedModel = getParsedModel(props.editorDocumentModel);
-  if (!parsedModel) {
-    return null;
-  }
+  assertNotNull(parsedModel, 'parsedModel');
 
   const itemDefinition = parsedModel.itemDefinitions.find((entry) => entry.id === selection.elementId);
-  if (!itemDefinition) {
-    return null;
-  }
+  assertNotNull(itemDefinition, 'itemDefinition');
 
   return <ItemDefinitionContent itemDefinition={itemDefinition} depth={0} />;
 }

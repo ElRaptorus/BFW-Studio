@@ -53,12 +53,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesMessageBoundaryEvent key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesMessageBoundaryEvent key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesMessageBoundaryEvent(props: PaneComponentProps): React.JSX.Element {

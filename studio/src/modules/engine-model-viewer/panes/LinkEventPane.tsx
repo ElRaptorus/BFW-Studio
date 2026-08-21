@@ -4,7 +4,8 @@ import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvi
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import {
-  getEventDefinition,
+  assertEventDefinitionType,
+  getSelectedEventDefinition,
   getSelection,
   hasEventDefinition,
   isModelViewerDocument,
@@ -44,19 +45,13 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-  const linkDef = getEventDefinition(selection.businessObject, 'LinkEventDefinition');
-  if (!linkDef) {
-    return null;
-  }
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const modeled = getSelectedEventDefinition(props.editorDocumentModel);
+  assertEventDefinitionType(modeled, 'link');
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Link Name" value={String(linkDef.name ?? '—')} disabled />
+      <PaneProperty type="text" label="Link Name" value={modeled.linkName ?? '—'} disabled />
     </div>
   );
 }

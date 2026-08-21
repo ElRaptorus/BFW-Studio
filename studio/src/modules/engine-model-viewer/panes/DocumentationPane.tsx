@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type { ModelViewerSelection } from '../types';
 import { getSelection, isModelViewerDocument } from './paneHelpers';
@@ -34,15 +34,11 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
+  assertNotNull(selection, 'selection');
   const documentation = (selection.businessObject.documentation as { text?: string }[])?.[0]?.text;
-  if (!documentation) {
-    return null;
-  }
+  assertNotNull(documentation, 'documentation');
 
   return (
     <div className="engine-pane-process-info">

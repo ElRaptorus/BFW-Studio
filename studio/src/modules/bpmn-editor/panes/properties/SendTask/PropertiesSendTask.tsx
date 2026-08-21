@@ -49,12 +49,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesSendTask key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesSendTask key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesSendTask(props: PaneComponentProps): React.JSX.Element {

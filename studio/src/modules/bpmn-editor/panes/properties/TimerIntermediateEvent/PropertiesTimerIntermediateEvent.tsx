@@ -89,12 +89,10 @@ function shouldBeDisplayed(
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesTimerIntermediateEvent key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesTimerIntermediateEvent key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 const selectOptions: SelectOption[] = [

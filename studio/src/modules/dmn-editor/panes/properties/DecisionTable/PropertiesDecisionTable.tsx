@@ -41,7 +41,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const model = getDmnModel(props.editorDocumentModel);
-  if (!model) {
+  if (!model || !model.isReadyForInteraction()) {
     return null;
   }
 

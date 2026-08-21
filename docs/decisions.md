@@ -26,6 +26,18 @@ Agents should add entries here when a meaningful design choice is made during th
 
 ## Decisions
 
+### 2026-08-21 — Model graph is the only runtime read path
+
+**Context**: The Studio adoption pass initially kept `parseBpmn` and moddle `getExtensionValue` as fallbacks when GraphQL `processModel` was missing, so an older engine or client could still open the debugger and model viewer. There is no live production engine or Studio.
+
+**Options considered**:
+- A) Keep dual paths until a later cutover.
+- B) Require the GraphQL Model graph on every debugger and model-viewer load; fail if `processModel` is absent.
+
+**Decision**: Option B.
+
+**Rationale**: Early-access products do not need compatibility shims. Dual paths hide converter bugs and re-introduce the `parseBpmn` drift the Model graph exists to remove. `parseBpmn()` remains the authoring-path parser (linter, modeler). Canvas rendering still uses `bpmnXml`. Complex Gateway activation conditions on the runtime path are read from converted `typeData`, not from the bpmn-js moddle.
+
 ### 2026-08-19 — Static editor document type contributions via a placeholder-and-swap mechanism (Option A)
 
 **Context**: Migrating `text-file-editors` off `onStartup` to genuine lazy activation (previous entries below) exposed a structural gap: `contributes.editorDocumentTypes` did not exist, so a document type provided *only* by a not-yet-activated plugin could never be opened. `onDocumentType:`/`onUri:` activation events only fire on `EVENT_EDITOR_AREA_FOCUS_UPDATED`, which requires a document to already be open and focused — but `EditorMediator.focusOrOpenEditorDocument` throws immediately for an unregistered URI (a consequence of removing the default-editor fallback), so the focus event needed to trigger lazy activation could never occur in the first place. This is VS Code `contributes.customEditors` parity, and the gap was confirmed real (not a doc nitpick) by tracing the code path.
@@ -1322,6 +1334,20 @@ Two corroborating observations: the same commands invoked *inside* the renderer 
 **Net result**: the full plugin integration directory (`--no-file-parallelism`, no `--bail`, no `--retry`) passes 348/348. No product behaviour changed; the only product-side addition is the `APP_TEST`-gated sentinel command.
 
 **Still open (separate follow-up, not part of this change)**: two genuine product defects surfaced during the trace and are recorded in `~/.cursor/plans/plugin_host_error_propagation_followup_5c41d7e2.plan.md` — eight floating cross-process promises in `PluginHostBridge.registerCallback`, and `ContributionRegistrar.registerStubCommand` letting an activation failure impersonate a command result.
+
+---
+
+### 2026-08-21 — GraphQL Model graph converted to SDK `BpmnProcess` instead of rewriting debugger panes
+
+**Context**: The Engine now exposes a parsed BPMN Model graph on GraphQL (`ProcessVersion.processModel`, `getProcessInstanceWithModel`). Debugger panes already read SDK `FlowNode.typeData` via `BpmnFlowNodeAccessors`. GraphQL `*Node` types flatten those fields, and the client returns `Record<string, unknown>`.
+
+**Options considered**:
+- A) Convert GraphQL JSON onto the existing SDK `BpmnProcess` / `FlowNode` shapes and keep the accessors.
+- B) Rewrite ~50 debugger panes to read flattened GraphQL fields (and delete `BpmnFlowNodeAccessors.ts` in the same pass).
+
+**Decision**: Option A.
+
+**Rationale**: The smallest change that retires `parseBpmn` on the debugger read path without a simultaneous pane rewrite. Canvas rendering still needs `bpmnXml`. `parseBpmn()` stays for authoring (linter, modeler). Deleting the accessors is a later mechanical pass once GraphQL TypeScript types exist in the SDK. Conformance of `evil-platform.json` against `extensionManifest` is a unit test only (`verifyModdleConformance`); rspack/postinstall hooks stay deferred.
 
 ---
 

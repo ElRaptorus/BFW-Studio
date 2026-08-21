@@ -3,7 +3,7 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getExtensionValue, getSelection, isModelViewerDocument, matchesType } from './paneHelpers';
+import { getSelection, isModelViewerDocument, matchesType, readFlowNodeString } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -33,15 +33,15 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-
-  const businessObject = selection.businessObject;
-  const scriptRef = getExtensionValue(businessObject, ':scriptRef');
-  const scriptFormat = businessObject.scriptFormat as string | undefined;
-  const script = businessObject.script as string | undefined;
+  const scriptRef = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'script_task' ? flowNode.typeData.scriptRef : undefined,
+  );
+  const scriptFormat = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'script_task' ? flowNode.typeData.scriptFormat : undefined,
+  );
+  const script = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+    flowNode.typeData.type === 'script_task' ? flowNode.typeData.script : undefined,
+  );
 
   return (
     <div className="engine-pane-process-info">

@@ -328,9 +328,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   assertNotNull(element, 'element');
 
   const info = getInfoForElement(props.editorDocumentModel, element.type);
-  if (info == null) {
-    return null;
-  }
+  assertNotNull(info, 'info');
 
   return (
     <PaneBody>

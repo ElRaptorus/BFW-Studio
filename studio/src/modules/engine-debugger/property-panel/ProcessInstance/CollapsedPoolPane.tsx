@@ -36,7 +36,6 @@ function CollapsedPoolPane(props: CollapsedPoolProps): React.JSX.Element | null 
   if (!model.processInstance) {
     return null;
   }
-
   const selectedElements = model.selectedElements;
   const selectedParticipant = selectedElements[0];
 

@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader } from '@evil/bifrost_fw_sdk';
+import { Icon, Pane, PaneBody, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/SelectableElement';
@@ -49,9 +49,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 function EventTriggerSourcePane(props: EventTriggerSourcePaneProps): React.JSX.Element | null {
   const selectedFlowNodeInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(props.flowNode);
   const triggererId = selectedFlowNodeInstance.triggererFlowNodeInstanceId;
-  if (!triggererId) {
-    return null;
-  }
+  assertNotNull(triggererId, 'triggererFlowNodeInstanceId');
 
   const targetFlowNodeInstance = props.model.flowNodeInstances.find((instance) => instance.id === triggererId);
   if (!targetFlowNodeInstance) {

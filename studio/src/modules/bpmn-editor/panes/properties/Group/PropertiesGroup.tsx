@@ -36,7 +36,6 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const bpmnDocumentModel: BpmnDocumentModel | null = props.editorDocumentModel;
   const element = bpmnDocumentModel?.selection.getOnlyElementOrNull();
-
   if (bpmnDocumentModel == null || element == null) {
     return null;
   }

@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneBody, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
 import type { ModelViewerDocumentModel } from '../models/ModelViewerDocumentModel';
@@ -38,22 +38,13 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const model = props.editorDocumentModel as ModelViewerDocumentModel | null;
-  if (!model) {
-    return null;
-  }
+  assertNotNull(model, 'model');
 
   const rootElement = model.getCurrentRootElement();
   const businessObject = rootElement?.businessObject;
-  const isSubProcess =
-    businessObject != null &&
-    (typeof businessObject.$instanceOf === 'function'
-      ? businessObject.$instanceOf('bpmn:SubProcess')
-      : businessObject.$type === 'bpmn:SubProcess');
-  if (!isSubProcess) {
-    return null;
-  }
+  assertNotNull(businessObject, 'businessObject');
 
   const subprocessId: string = businessObject.id ?? '';
   const subprocessName: string = businessObject.name ?? '(unnamed)';

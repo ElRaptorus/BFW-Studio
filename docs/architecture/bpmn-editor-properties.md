@@ -25,6 +25,8 @@ When a BPMN element is selected:
 - If 2+ groups have displayable panes, an icon-based tab bar appears above the panes
 - Each pane's `shouldBeDisplayed(editorDocument, editorDocumentModel)` determines visibility
 
+The general pane contract (`shouldBeDisplayed` vs renderer, `PaneWrapper` gating, data access) is documented in **[panes.md](panes.md)**. BPMN-specific helpers live in `PropertiesPaneFunctions.ts` (`shouldBeDisplayedForBpmnElementOfType` and related type lists). Those helpers check document type and selection only. Modeler `isReadyForInteraction()` is handled in `getBpmnSelectionForPropertiesPane`, which returns `null` so the pane header can still show while the body is empty.
+
 ### PaneProvider Contract
 
 Every property pane exports a `paneProvider: PaneProvider` object:
@@ -34,9 +36,11 @@ export const paneProvider: PaneProvider = {
   getPaneTitle: () => string,
   shouldBeDisplayed: (editorDocument, editorDocumentModel) => boolean,
   Pane: (props: PaneComponentProps) => JSX.Element,      // Full pane (header + body)
-  PaneContent: (props: PaneComponentProps) => JSX.Element, // Body only (reused in collapsed state)
+  PaneContent: (props: PaneComponentProps) => JSX.Element, // Body only
 };
 ```
+
+`shouldBeDisplayed` is the only wrapper visibility gate. `PaneWrapper` does not mount `Pane` / `PaneContent` when it returns `false`. Renderers must not restate type, selection, or document-URI checks that the gate already proved. A renderer may still `return null` for conditions the gate does not cover (modeler readiness, missing payload). Use `assertNotNull` only for data the gate proved.
 
 ### PropertiesElementInfo — Consolidated Help Pane
 
@@ -199,24 +203,26 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 ### scripting group
 
 - Data pipeline: `PropertiesInputMappings`, `PropertiesOutputMappings`, `PropertiesPayloadContract`, `PropertiesResultContract`
-- `PropertiesCorrelationRetrievalExpression` — FEEL editor for catch-side message events (`MessageIntermediateCatchEvent`, `MessageBoundaryEvent`, `ReceiveTask`)
+- `PropertiesCorrelationRetrievalExpression` — FEEL editor for **throw-side** message events (`MessageIntermediateThrowEvent`, `MessageEndEvent`, `SendTask`). Catch-side correlation uses the process-level `evil:correlationKey`, not this extension.
 - `PropertiesDataOutputAssociationDataSource`, `PropertiesThrowEventPayload`
 - `DefaultCustomStartToken`, `PropertiesExamplePayload`, `PropertiesExampleResult`
 - `PropertiesCustomAttributes`
 
 #### Message Event Data Pipeline (D-MSG-1)
 
-Per architectural decision D-MSG-1, message events use generic input/output mappings instead of message-specific `evil:payload` and `evil:eventMapping`:
+Per architectural decision D-MSG-1, message events use generic input/output mappings instead of message-specific `evil:payload` and `evil:eventMapping`. Authoring pane visibility is **Studio-stricter** than the Engine GraphQL model in a few places (embedded SubProcess mappings are authorable only on Ad-hoc shells; SendTask output mappings exist on the Engine struct but are not offered in the editor). Runtime debugger / model-viewer panes follow the Engine GraphQL field table.
 
 | Element type | Input Mappings | Output Mappings | Payload Contract | Result Contract | Correlation Retrieval |
 |--------------|:-:|:-:|:-:|:-:|:-:|
-| MessageEndEvent | yes | — | yes | — | — |
-| MessageIntermediateThrowEvent | yes | — | yes | — | — |
-| SendTask | yes | — | yes | — | — |
-| MessageIntermediateCatchEvent | — | yes | — | yes | yes |
-| MessageBoundaryEvent | — | yes | — | yes | yes |
-| ReceiveTask | — | yes | — | yes | yes |
-| MessageStartEvent | — | yes | — | yes | — |
+| MessageEndEvent | yes | — | yes | — | yes |
+| MessageIntermediateThrowEvent | yes | — | yes | — | yes |
+| SendTask | yes | — | yes | — | yes (authoring; Engine SendTask publishes via process-level `correlationKey`) |
+| MessageIntermediateCatchEvent | — | yes | — | yes | — |
+| MessageBoundaryEvent | — | yes | — | yes | — |
+| ReceiveTask | — | yes | — | yes | — |
+| MessageStartEvent | — | — | — | yes | — |
+
+`MessageStartEvent` has **no** output mappings on the Engine model (`StartEventNode` exposes `eventDefinition`, `resultContract`, `isInterrupting` only). Catch-side nodes do not author `evil:correlationRetrievalExpression`.
 
 Per D-MSG-3, contracts on message events are direction-aware: throw-side events (MessageEndEvent, MessageIntermediateThrowEvent, SendTask) show the **Payload Contract** pane, and catch-side events (MessageIntermediateCatchEvent, MessageBoundaryEvent, MessageStartEvent, ReceiveTask) show the **Result Contract** pane. This aligns with task contract semantics where `payloadContract` validates outgoing data and `resultContract` validates incoming data.
 
@@ -402,6 +408,24 @@ Available on `BpmnElementCommonProperties.loopConfig`.
 
 ---
 
+## Moddle descriptor conformance
+
+`studio/src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json` is the Studio-owned authoring contract. It is not generated from the Engine.
+
+`verifyModdleConformance` (`studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts`) compares it to `extensionManifest` from `@elraptorus/daemonengine_sdk`:
+
+| Direction | Rule |
+|-----------|------|
+| manifest → descriptor | every Engine `evil:*` element has a matching moddle type and compatible value type |
+| descriptor → manifest | every non-abstract, non-BPMN-overlay, non-`extensible` moddle type appears in the manifest |
+| `allowedIn` ⊆ `applicableTo` | the Studio may refuse to author an extension the Engine would read; it must not author one the Engine ignores |
+
+The check runs as a unit test (`studio/test/unit/bpmn-core/moddleManifestConformance.test.ts`). A missing `extensionManifest` is a failure.
+
+Event-definition carriers (`bpmn:ErrorEventDefinition`, `bpmn:MessageEventDefinition`) map to the parent event positions listed in the Engine manifest (`EndEvent`, `BoundaryEvent`, …).
+
+---
+
 ## File Path Reference
 
 | Component | Path |
@@ -434,6 +458,8 @@ Available on `BpmnElementCommonProperties.loopConfig`.
 | PropertiesCorrelationRetrievalExpression | `studio/src/modules/bpmn-editor/panes/properties/MessageCorrelation/PropertiesCorrelationRetrievalExpression.tsx` |
 | UpdateCorrelationRetrievalExpressionHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateCorrelationRetrievalExpressionHandler.ts` |
 | PropertiesPaneFunctions | `studio/src/modules/bpmn-editor/panes/PropertiesPaneFunctions.ts` |
+| evil-platform.json | `studio/src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json` |
+| verifyModdleConformance | `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts` |
 | BpmnElementCustomPropertiesFunctions | `studio/src/modules/bpmn-editor/panes/BpmnElementCustomPropertiesFunctions.ts` |
 | KeyValueBuilder | `studio/src/components/key-value-builder/KeyValueBuilder.tsx` |
 | KeyValueJsonEditor | `studio/src/components/key-value-builder/KeyValueJsonEditor.tsx` |

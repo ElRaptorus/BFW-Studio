@@ -3,7 +3,14 @@ import React from 'react';
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
 import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
-import { getSelection, hasEventDefinition, isModelViewerDocument, matchesType } from './paneHelpers';
+import {
+  assertEventDefinitionType,
+  getSelectedEventDefinition,
+  getSelection,
+  hasEventDefinition,
+  isModelViewerDocument,
+  matchesType,
+} from './paneHelpers';
 
 const SIGNAL_EVENT_POSITION_TYPES = [
   ':StartEvent',
@@ -44,20 +51,13 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
-  }
-  const eventDefinitions = selection.businessObject.eventDefinitions as Record<string, unknown>[] | undefined;
-  const signalDef = eventDefinitions?.find((def) => String(def.$type).includes('SignalEventDefinition'));
-  if (!signalDef) {
-    return null;
-  }
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const modeled = getSelectedEventDefinition(props.editorDocumentModel);
+  assertEventDefinitionType(modeled, 'signal');
 
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Signal ref" value={String(signalDef.signalRef ?? '—')} disabled />
+      <PaneProperty type="text" label="Signal ref" value={modeled.signalRef ?? '—'} disabled />
     </div>
   );
 }

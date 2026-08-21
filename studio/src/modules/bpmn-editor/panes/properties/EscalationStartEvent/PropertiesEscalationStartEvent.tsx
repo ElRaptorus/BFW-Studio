@@ -66,12 +66,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesEscalationStartEvent key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesEscalationStartEvent key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesEscalationStartEvent(props: PaneComponentProps): React.JSX.Element {

@@ -100,7 +100,6 @@
           "bpmn:BusinessRuleTask",
           "bpmn:CallActivity",
           "bpmn:IntermediateCatchEvent",
-          "bpmn:StartEvent",
           "bpmn:BoundaryEvent",
           "bpmn:ReceiveTask",
           "bpmn:AdHocSubProcess"
@@ -112,11 +111,9 @@
       "superClass": ["Element"],
       "meta": {
         "allowedIn": [
-          "bpmn:UserTask",
           "bpmn:ServiceTask",
           "bpmn:ScriptTask",
           "bpmn:BusinessRuleTask",
-          "bpmn:CallActivity",
           "bpmn:SendTask",
           "bpmn:IntermediateThrowEvent",
           "bpmn:EndEvent",
@@ -134,7 +131,6 @@
           "bpmn:ServiceTask",
           "bpmn:ScriptTask",
           "bpmn:BusinessRuleTask",
-          "bpmn:CallActivity",
           "bpmn:ReceiveTask",
           "bpmn:IntermediateCatchEvent",
           "bpmn:BoundaryEvent",
@@ -272,6 +268,12 @@
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
     },
     {
+      "name": "RuleRef",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+    {
       "name": "DecisionElementId",
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
@@ -306,7 +308,7 @@
     {
       "name": "CorrelationRetrievalExpression",
       "superClass": ["Element"],
-      "meta": { "allowedIn": ["bpmn:MessageEventDefinition", "bpmn:ReceiveTask"] },
+      "meta": { "allowedIn": ["bpmn:MessageEventDefinition"] },
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
     },
     {

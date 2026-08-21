@@ -39,7 +39,6 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element | null {
   const editorDocument = props.editorDocument;
 
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
   }
@@ -77,12 +76,10 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const selection = getBpmnSelectionForPropertiesPane(props);
-
   if (selection == null) {
     return null;
-  } else {
-    return <PropertiesScriptTask key={getKeyForPropertiesPane(selection)} {...props} />;
   }
+  return <PropertiesScriptTask key={getKeyForPropertiesPane(selection)} {...props} />;
 }
 
 function PropertiesScriptTask(props: PaneComponentProps): React.JSX.Element {

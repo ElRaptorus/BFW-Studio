@@ -1,10 +1,11 @@
+import type { MultiInstance, StandardLoop } from '@elraptorus/daemonengine_sdk';
+
 import React from 'react';
 
 import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { Pane, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
 
-import type { ModelViewerSelection } from '../types';
-import { getExtensionValue, getSelection, isModelViewerDocument } from './paneHelpers';
+import { getSelectedBpmnFlowNode, getSelection, isModelViewerDocument } from './paneHelpers';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -22,12 +23,11 @@ function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: 
     return false;
   }
   const selection = getSelection(editorDocumentModel);
-  return selection != null && hasLoopCharacteristics(selection);
+  return selection != null && hasLoopCharacteristics(editorDocumentModel);
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
-  const selection = getSelection(props.editorDocumentModel);
-  const title = getLoopTitle(selection);
+  const title = getLoopTitle(props.editorDocumentModel);
 
   return (
     <Pane>
@@ -37,115 +37,86 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
-  const selection = getSelection(props.editorDocumentModel);
-  if (!selection) {
-    return null;
+function PaneContent(props: PaneComponentProps): React.JSX.Element {
+  const modeled = getSelectedBpmnFlowNode(props.editorDocumentModel);
+  assertNotNull(modeled, 'flowNode');
+  if (modeled.standardLoop) {
+    return <StandardLoopFromSdk loop={modeled.standardLoop} />;
   }
-  const loop = selection.businessObject.loopCharacteristics as Record<string, unknown> | undefined;
-  if (!loop) {
-    return null;
+  if (modeled.multiInstance) {
+    return <MultiInstanceFromSdk loop={modeled.multiInstance} />;
   }
-
-  const loopType = String(loop.$type ?? '');
-  if (loopType.includes('StandardLoopCharacteristics')) {
-    return <StandardLoopContent loop={loop} />;
-  }
-  return <MultiInstanceContent loop={loop} />;
+  throw new Error('Unexpected value: loop characteristics should be present here.');
 }
 
-function StandardLoopContent(props: { loop: Record<string, unknown> }): React.JSX.Element {
+function StandardLoopFromSdk(props: { loop: StandardLoop }): React.JSX.Element {
   const { loop } = props;
-  const loopCondition = loop.loopCondition as Record<string, unknown> | undefined;
-  const testBefore = loop.testBefore === true;
-  const loopMaximum = loop.loopMaximum;
-  const loopInterval = getExtensionValue(loop, ':loopInterval');
-
   return (
     <div className="engine-pane-process-info">
       <PaneProperty
         type="text"
         label="Evaluation Mode"
-        value={testBefore ? 'While-Do (test before)' : 'Do-While (test after)'}
+        value={loop.testBefore ? 'While-Do (test before)' : 'Do-While (test after)'}
         disabled
       />
-      {loopCondition != null && (
-        <PaneProperty
-          type="text"
-          label="Loop Condition"
-          value={String(loopCondition.body ?? loopCondition.text ?? '—')}
-          disabled
-        />
+      {loop.loopCondition != null && (
+        <PaneProperty type="text" label="Loop Condition" value={loop.loopCondition} disabled />
       )}
-      {loopMaximum != null && <PaneProperty type="text" label="Max Iterations" value={String(loopMaximum)} disabled />}
-      {loopInterval != null && <PaneProperty type="text" label="Loop Interval" value={loopInterval} disabled />}
+      {loop.loopMaximum != null && (
+        <PaneProperty type="text" label="Max Iterations" value={String(loop.loopMaximum)} disabled />
+      )}
+      {loop.loopInterval != null && (
+        <PaneProperty type="text" label="Loop Interval" value={loop.loopInterval} disabled />
+      )}
     </div>
   );
 }
 
-function MultiInstanceContent(props: { loop: Record<string, unknown> }): React.JSX.Element {
+function MultiInstanceFromSdk(props: { loop: MultiInstance }): React.JSX.Element {
   const { loop } = props;
-  const isSequential = loop.isSequential === true;
-  const completionCondition = loop.completionCondition as Record<string, unknown> | undefined;
-
-  const inputCollection = getExtensionValue(loop, ':inputCollection');
-  const outputCollection = getExtensionValue(loop, ':outputCollection');
-  const elementVariable = getExtensionValue(loop, ':elementVariable');
-  const outputElementVariable = getExtensionValue(loop, ':outputElementVariable');
-  const loopBreakCondition = getExtensionValue(loop, ':loopBreakCondition');
-  const loopInterval = getExtensionValue(loop, ':loopInterval');
-  const maxIterations = getExtensionValue(loop, ':maxIterations');
-
   return (
     <div className="engine-pane-process-info">
-      <PaneProperty type="text" label="Sequential" value={isSequential ? 'Yes' : 'No'} disabled />
-      {inputCollection != null && (
-        <PaneProperty type="text" label="Input Collection" value={inputCollection} disabled />
+      <PaneProperty type="text" label="Sequential" value={loop.isSequential ? 'Yes' : 'No'} disabled />
+      {loop.collectionExpression != null && (
+        <PaneProperty type="text" label="Input Collection" value={loop.collectionExpression} disabled />
       )}
-      {elementVariable != null && (
-        <PaneProperty type="text" label="Element Variable" value={elementVariable} disabled />
+      {loop.elementVariable != null && (
+        <PaneProperty type="text" label="Element Variable" value={loop.elementVariable} disabled />
       )}
-      {outputCollection != null && (
-        <PaneProperty type="text" label="Output Collection" value={outputCollection} disabled />
+      {loop.outputCollection != null && (
+        <PaneProperty type="text" label="Output Collection" value={loop.outputCollection} disabled />
       )}
-      {outputElementVariable != null && (
-        <PaneProperty type="text" label="Output Element Variable" value={outputElementVariable} disabled />
+      {loop.outputElementVariable != null && (
+        <PaneProperty type="text" label="Output Element Variable" value={loop.outputElementVariable} disabled />
       )}
-      {completionCondition != null && (
-        <PaneProperty
-          type="text"
-          label="Completion Condition"
-          value={String(completionCondition.body ?? completionCondition.text ?? '—')}
-          disabled
-        />
+      {loop.completionCondition != null && (
+        <PaneProperty type="text" label="Completion Condition" value={loop.completionCondition} disabled />
       )}
-      {isSequential && loopBreakCondition != null && (
-        <PaneProperty type="text" label="Loop Break Condition" value={loopBreakCondition} disabled />
+      {loop.isSequential && loop.loopBreakCondition != null && (
+        <PaneProperty type="text" label="Loop Break Condition" value={loop.loopBreakCondition} disabled />
       )}
-      {isSequential && loopInterval != null && (
-        <PaneProperty type="text" label="Loop Interval" value={loopInterval} disabled />
+      {loop.isSequential && loop.loopInterval != null && (
+        <PaneProperty type="text" label="Loop Interval" value={loop.loopInterval} disabled />
       )}
-      {maxIterations != null && <PaneProperty type="text" label="Max Iterations" value={maxIterations} disabled />}
+      {loop.maxIterations != null && (
+        <PaneProperty type="text" label="Max Iterations" value={String(loop.maxIterations)} disabled />
+      )}
     </div>
   );
 }
 
-function hasLoopCharacteristics(selection: ModelViewerSelection): boolean {
-  return Boolean(selection.businessObject.loopCharacteristics);
+function hasLoopCharacteristics(model: EditorDocumentModel): boolean {
+  const modeled = getSelectedBpmnFlowNode(model);
+  return modeled?.multiInstance != null || modeled?.standardLoop != null;
 }
 
-function getLoopTitle(selection: ModelViewerSelection | null): string {
-  if (!selection) {
-    return getPaneTitle();
-  }
-  const loop = selection.businessObject.loopCharacteristics as Record<string, unknown> | undefined;
-  if (!loop) {
-    return getPaneTitle();
-  }
-  const loopType = String(loop.$type ?? '');
-  if (loopType.includes('StandardLoopCharacteristics')) {
+function getLoopTitle(model: EditorDocumentModel): string {
+  const modeled = getSelectedBpmnFlowNode(model);
+  if (modeled?.standardLoop) {
     return 'Standard Loop';
   }
-  const isSequential = loop.isSequential === true;
-  return isSequential ? 'Multi-Instance (Sequential)' : 'Multi-Instance (Parallel)';
+  if (modeled?.multiInstance) {
+    return modeled.multiInstance.isSequential ? 'Multi-Instance (Sequential)' : 'Multi-Instance (Parallel)';
+  }
+  return getPaneTitle();
 }
