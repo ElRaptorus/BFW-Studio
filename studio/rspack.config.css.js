@@ -37,7 +37,10 @@ module.exports = {
           },
           {
             loader: 'sass-loader',
-            options: { sourceMap: true },
+            options: {
+              sourceMap: true,
+              sassOptions: { charset: false },
+            },
           },
         ],
         type: 'javascript/auto',

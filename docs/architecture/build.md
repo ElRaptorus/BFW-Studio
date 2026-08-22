@@ -63,7 +63,7 @@ Bootstrap 5 CSS is loaded via `import 'bootstrap/dist/css/bootstrap.min.css'` in
 |--------|---------|
 | `builtin:swc-loader` | TypeScript/JSX transpilation (Rust-native, no JS↔Rust IPC overhead) |
 | `css-loader` | CSS module resolution |
-| `sass-loader` | SCSS compilation (renderer config) |
+| `sass-loader` | SCSS compilation (CSS config). `sassOptions.charset` is `false` so Dart Sass does not emit a UTF-8 BOM per entry — see [common-pitfalls.md](common-pitfalls.md) §Sass BOM |
 | `node-loader` | Native `.node` addon loading (macOS fsevents) |
 | `null-loader` | Prevents processing of `.scss`, `.d.ts`, and `.test.ts` files in the renderer config (SCSS is compiled separately by the CSS config) |
 | `markdown-image-loader` | Markdown file processing |
