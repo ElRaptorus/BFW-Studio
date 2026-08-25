@@ -115,6 +115,12 @@ describe('convertGraphqlProcessModel', () => {
       expect(start.typeData.eventDefinition.type).toBe('message');
       if (start.typeData.eventDefinition.type === 'message') {
         expect(start.typeData.eventDefinition.messageRef).toBe('Message_payment');
+        expect(start.typeData.eventDefinition.correlationRetrievalExpression).toBeNull();
+        expect(start.typeData.eventDefinition).toEqual({
+          type: 'message',
+          messageRef: 'Message_payment',
+          correlationRetrievalExpression: null,
+        });
       }
     }
 

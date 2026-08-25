@@ -1422,9 +1422,9 @@ Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the mod
 
 ## Complex Gateway `activationCondition` on the runtime path comes from the Model graph
 
-**Mistake**: Reading a Complex Gateway's activation condition in the Debugger or model viewer from the live bpmn-js moddle (`getActivationConditionFromViewer`) or from `parseBpmn()` output.
+**Mistake**: Reading a Complex Gateway's activation condition in the Debugger or model viewer from the live bpmn-js moddle instead of the converted Model graph.
 
-**Why it fails**: The SDK BPMN parser (`parseBpmn`) still hardcodes `activationCondition: null`. That parser is the authoring path only. Deployed semantics come from GraphQL `ComplexGatewayNode.activationCondition`, converted onto SDK `typeData`.
+**Why it fails**: Deployed semantics come from GraphQL `ComplexGatewayNode.activationCondition`, converted onto SDK `typeData`. The canvas XML is for rendering. A historical SDK gap (`parseBpmn` returning `activationCondition: null`) is closed — the published parser reads `<bpmn:activationCondition>` — but the debugger/model-viewer path still must not fall back to the authoring parser or the viewer moddle.
 
 **Correct approach**: Debugger and model-viewer panes read `flowNode.flowNodeModel.typeData.activationCondition` / `getSelectedBpmnFlowNode().typeData.activationCondition`. Authoring still uses the bpmn-js moddle via `BpmnDocumentElementAccess`.
 

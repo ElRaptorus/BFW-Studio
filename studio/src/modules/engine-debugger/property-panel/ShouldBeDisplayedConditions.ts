@@ -508,7 +508,7 @@ export function shouldDisplayMessageEventPane(
   return selectedFlowNodeInstance.eventType === EventDefinitionType.Message;
 }
 
-export function shouldDisplayMessagePayloadPane(
+export function shouldDisplayCorrelationRetrievalExpressionPane(
   document: EditorDocument,
   model: EngineBpmnDebuggerEditorDocumentModel,
 ): boolean {
@@ -523,13 +523,6 @@ export function shouldDisplayMessagePayloadPane(
     (selectedFlowNodeInstance.flowNodeType === FlowNodeType.EndEvent ||
       selectedFlowNodeInstance.flowNodeType === FlowNodeType.IntermediateThrowEvent)
   );
-}
-
-export function shouldDisplayCorrelationRetrievalExpressionPane(
-  document: EditorDocument,
-  model: EngineBpmnDebuggerEditorDocumentModel,
-): boolean {
-  return shouldDisplayMessagePayloadPane(document, model);
 }
 
 export function shouldDisplayNextFlowNodeInstancesPane(
@@ -613,23 +606,6 @@ export function shouldDisplaySignalEventPane(
   const selectedFlowNodeInstance = getSelectedFlowNodeInstance(model);
 
   return selectedFlowNodeInstance.eventType === EventDefinitionType.Signal;
-}
-
-export function shouldDisplaySignalPayloadPane(
-  document: EditorDocument,
-  model: EngineBpmnDebuggerEditorDocumentModel,
-): boolean {
-  if (!isDebuggerDocumentWithSingleSelectedExecutedFlowNode(document, model)) {
-    return false;
-  }
-
-  const selectedFlowNodeInstance = getSelectedFlowNodeInstance(model);
-
-  return (
-    selectedFlowNodeInstance.eventType === EventDefinitionType.Signal &&
-    (selectedFlowNodeInstance.flowNodeType === FlowNodeType.EndEvent ||
-      selectedFlowNodeInstance.flowNodeType === FlowNodeType.IntermediateThrowEvent)
-  );
 }
 
 export function shouldDisplayEscalationThrowEventPane(

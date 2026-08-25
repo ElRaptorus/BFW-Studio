@@ -25,7 +25,6 @@ import BpmnExamplePayloadFragmentRenderer from './open-in-new-tab-renderer/BpmnE
 import BpmnExampleResultFragmentRenderer from './open-in-new-tab-renderer/BpmnExampleResultFragmentRenderer';
 import BpmnHttpServiceTaskBodyFragmentRenderer from './open-in-new-tab-renderer/BpmnHttpServiceTaskBodyFragmentRenderer';
 import BpmnLoopBreakConditionFragmentRenderer from './open-in-new-tab-renderer/BpmnLoopBreakConditionFragmentRenderer';
-import BpmnMessageAndSignalEventPayloadFragmentRenderer from './open-in-new-tab-renderer/BpmnMessageAndSignalEventPayloadFragmentRenderer';
 import BpmnScriptFragmentRenderer from './open-in-new-tab-renderer/BpmnScriptFragmentRenderer';
 import BpmnSequenceFlowConditionFragmentRenderer from './open-in-new-tab-renderer/BpmnSequenceFlowConditionFragmentRenderer';
 import BpmnTextFragmentRenderer from './open-in-new-tab-renderer/BpmnTextFragmentRenderer';
@@ -109,13 +108,6 @@ export function onLoad(bifrost: Bifrost): void {
     modelKey: null,
     rendererKey: 'BpmnConditionalEventRenderer',
     rendererConstructor: BpmnConditionalEventFragmentRenderer,
-    icon: 'bpmn/editor-tab/docs',
-  });
-  bifrost.editors.registerDocumentType('bpmn.message-event.payload', {
-    uriMatch: /^fragment\+bpmn\.message-event\.payload:/,
-    modelKey: null,
-    rendererKey: 'BpmnMessageEventPayloadRenderer',
-    rendererConstructor: BpmnMessageAndSignalEventPayloadFragmentRenderer,
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.loop-break-condition.payload', {

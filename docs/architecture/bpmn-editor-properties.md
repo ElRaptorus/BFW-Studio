@@ -17,7 +17,7 @@ The BPMN editor registers panes into three groups on the `right` pane area:
 | Group | Purpose | Examples |
 |-------|---------|----------|
 | `property` | Static/structural element properties | Element info, element ID, name, message/signal references, HTTP task config, loop/MI config, user task form fields, business rule task, call activity |
-| `scripting` | Runtime-evaluated content | Data pipeline mappings and contracts, data output association transformations, event payloads, example payloads, custom tokens, custom attributes |
+| `scripting` | Runtime-evaluated content | Data pipeline mappings and contracts, data output association transformations, example payloads, custom tokens, custom attributes |
 | `documentation` | Documentation viewing/editing | Element documentation (MarkdownEditor) |
 
 When a BPMN element is selected:

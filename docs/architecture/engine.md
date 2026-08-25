@@ -508,7 +508,7 @@ Deployed-process semantics come from the Engine GraphQL Model graph, not from re
 
 GraphQL `*Node` types flatten type-specific fields (`httpUrl` on the node). SDK `FlowNode` uses a `typeData` discriminant. `convertGraphqlProcessModel` is the boundary so existing debugger accessors keep working.
 
-The client's `camelizeKeys` rewrites `__typename` to `_Typename` (`_t` matches the snake_case converter). The converter discriminates event definitions by payload fields first, then `_Typename`.
+The client's `camelizeKeys` rewrites `__typename` to `_Typename` (`_t` matches the snake_case converter). The converter discriminates event definitions by payload fields first, then `_Typename`. Message event definitions map only `messageRef` and `correlationRetrievalExpression` — there is no `payloadExpression` or `eventMapping` (MSG-D1).
 
 #### Debugger load
 
@@ -524,10 +524,10 @@ Flow-node and sequence-flow lookups in `BpmnProcessHelpers.ts` are O(1) via per-
 
 `hydrateProcessModel` calls `getProcessVersionWithModel` and stores the converted `BpmnProcess` on a private field (`getBpmnProcess()`). Missing `processModel` is a hard error. Panes in `engine-model-viewer/panes/` read SDK `typeData` only.
 
-The general PaneProvider contract (`shouldBeDisplayed` vs renderer, `PaneWrapper` gating) is documented in **[panes.md](panes.md)**. Debugger and model-viewer **mapping / contract pane visibility** follows the Engine GraphQL field table, not the authoring `allowedIn` lists:
+The general PaneProvider contract (`shouldBeDisplayed` vs renderer, `PaneWrapper` gating) is documented in **[panes.md](panes.md)**. Debugger and model-viewer **mapping / contract pane visibility** follows the consumed pipeline (`hasInputMappings` / `hasOutputMappings` in `BpmnFlowNodeAccessors.ts`), not the authoring `allowedIn` lists. GraphQL `SendTaskNode` / `ReceiveTaskNode` still expose both mapping arrays for XML fidelity; the unused side is ignored at Engine runtime and is not shown in Studio panes:
 
-- Input mappings: throw-side events, tasks that declare `inMappings` (including ReceiveTask, CallActivity, SubProcess). **Not** StartEvent.
-- Output mappings: catch-side events, tasks that declare `outMappings` (including SendTask, SubProcess). **Not** StartEvent.
+- Input mappings: throw-side events (`EndEvent`, `IntermediateThrowEvent`), `SendTask`, and two-sided tasks (`UserTask`, `ServiceTask`, `ScriptTask`, `BusinessRuleTask`, `CallActivity`, `SubProcess`). **Not** StartEvent or ReceiveTask.
+- Output mappings: catch-side events (`IntermediateCatchEvent`, `BoundaryEvent`), `ReceiveTask`, and the same two-sided tasks. **Not** StartEvent or SendTask.
 - Payload / result contracts: SubProcess shells are included; CallActivity is **not** (the Engine `CallActivityNode` has mappings only).
 - HTTP Service Task debugger panes include `httpResponseHeaders` (definition + evaluated `typeProperties`).
 - Throw-side message events show `correlationRetrievalExpression` in the debugger. SendTask correlation at runtime is the process-level `correlationKey`; GraphQL `SendTaskNode` has no retrieval-expression field.

@@ -311,18 +311,6 @@
       "meta": { "allowedIn": ["bpmn:MessageEventDefinition"] },
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
     },
-    {
-      "name": "Payload",
-      "superClass": ["Element"],
-      "meta": { "allowedIn": ["bpmn:MessageEventDefinition"] },
-      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
-    },
-    {
-      "name": "EventMapping",
-      "superClass": ["Element"],
-      "meta": { "allowedIn": ["bpmn:MessageEventDefinition"] },
-      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
-    },
 
     {
       "name": "ValueContract",

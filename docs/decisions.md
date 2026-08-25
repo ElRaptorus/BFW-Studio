@@ -1373,3 +1373,18 @@ Two corroborating observations: the same commands invoked *inside* the renderer 
 1. **One shared helper instead of two fixed callsites.** `relaxJavaScriptDiagnostics` (`studio-sdk/src/components/internal/monacoJavaScriptDiagnostics.ts`) resolves the namespace from the module root, falls back to the legacy `languages.typescript` location for older hosts, and applies the diagnostics and compiler options. The duplicated inline blocks in both editor components are gone.
 2. **Degrade instead of throwing.** If neither location resolves, the helper warns and returns. Relaxed JS diagnostics are a nicety; a hard failure in `onMount` costs the user the entire editor, which is exactly the outcome this bug produced.
 3. **Documented as a pitfall.** The deprecated-but-typed stubs make this class of breakage invisible to `tsc`, so it is recorded in `docs/architecture/common-pitfalls.md` alongside the note that `@monaco-editor/react` types its mount argument without any feature namespaces.
+
+---
+
+### 2026-08-25 — Republished Engine SDK/client: drop Studio compile bridges
+
+**Context**: Handler-spec remediation (MSG-D1, Complex Gateway parser) shipped in `@elraptorus/daemonengine_sdk` / `@elraptorus/daemonengine_client` `0.1.0`. Studio had kept an `as EventDefinition` cast because `MessageEventDefinition` previously required `payloadExpression` / `eventMapping`, and a 2026-07-02 decision recorded `parseBpmn` hardcoding `activationCondition: null`.
+
+**Decisions**:
+
+1. **Converter is a plain `MessageEventDefinition`.** `convertGraphqlProcessModel` maps `messageRef` and `correlationRetrievalExpression` only. No type assertion.
+2. **Dead `bpmn.message-event.payload` fragment type removed.** Authoring uses input/output mappings and contracts; leftover `evil:payload` fragment editor is gone.
+3. **Debugger activation condition stays on Model-graph `typeData`.** `parseBpmn` now reads `<bpmn:activationCondition>`. Do not revive `getActivationConditionFromViewer`. The 2026-07-02 moddle workaround is obsolete.
+4. **Moddle drops `evil:Payload` and `evil:EventMapping`.** `evil-platform.json` must not declare types the Engine `extensionManifest` no longer lists, or Studio would serialize extensions the Engine ignores.
+
+**Rationale**: Studio must compile against the published SDK without bridges. Runtime debugger/viewer semantics remain the GraphQL Model graph, not the authoring parser. Moddle vocabulary is a subset of the Engine manifest.

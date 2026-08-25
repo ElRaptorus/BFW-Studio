@@ -279,7 +279,7 @@ function convertEventDefinition(raw: unknown): EventDefinition {
       type: 'message',
       messageRef: asString(raw.messageRef),
       correlationRetrievalExpression: asString(raw.correlationRetrievalExpression),
-    } as EventDefinition;
+    };
   }
   if (typename.includes('signal') || raw.signalRef != null) {
     return { type: 'signal', signalRef: asString(raw.signalRef) };
