@@ -31,6 +31,19 @@ export default function registerEventCommands(bifrost: Bifrost, connectionManage
   );
 
   bifrost.commands.register(
+    'engine.triggerEscalation',
+    async (engineId: string, escalationCode: string) => {
+      const connection = connectionManager.getConnection(engineId);
+      if (!connection) {
+        throw new Error(`Engine ${engineId} not connected`);
+      }
+
+      return connection.client.events.triggerEscalation(escalationCode);
+    },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
+  bifrost.commands.register(
     'engine.triggerTimerEvent',
     async (engineId: string, flowNodeInstanceId: string) => {
       const connection = connectionManager.getConnection(engineId);

@@ -151,7 +151,7 @@ Foundation layer for all engine UI. Provides multi-engine connection management 
 - **Dependencies (npm):** `@elraptorus/daemonengine_client`, `@elraptorus/daemonengine_sdk`
 - **Shared resources registered:** `engineConnectionManager`, `engineWebSocketBridge`
 - **Depended on by:** `engine-workspace`, `engine-model-viewer`, `engine-decision-viewer`, `engine-debugger`
-- **Commands registered:** `engine.connect`, `engine.connectWithDialog`, `engine.disconnect`, `engine.removeFromHistory`, `engine.setAuthToken`, `engine.deploy`, `engine.deployBatch`, `engine.startProcess`, `engine.abortProcessInstance`, `engine.retryProcessInstance`, `engine.deleteProcessInstance`, `engine.configuredStartProcess`, `engine.startProcessAndOpenDebugger`, `engine.configuredStartProcessAndOpenDebugger`, `engine.triggerMessage`, `engine.triggerSignal`
+- **Commands registered:** `engine.connect`, `engine.connectWithDialog`, `engine.disconnect`, `engine.removeFromHistory`, `engine.setAuthToken`, `engine.deploy`, `engine.deployBatch`, `engine.startProcess`, `engine.abortProcessInstance`, `engine.retryProcessInstance`, `engine.deleteProcessInstance`, `engine.configuredStartProcess`, `engine.startProcessAndOpenDebugger`, `engine.configuredStartProcessAndOpenDebugger`, `engine.triggerMessage`, `engine.triggerSignal`, `engine.triggerEscalation`, `engine.triggerTimerEvent`
 
 #### engine-workspace
 

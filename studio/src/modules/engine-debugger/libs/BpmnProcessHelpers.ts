@@ -207,6 +207,13 @@ export function resolveEscalationName(definitions: BpmnDefinitions, escalationRe
   return definitions.escalations.find((escalation) => escalation.id === escalationRef)?.name ?? null;
 }
 
+export function resolveEscalationCode(definitions: BpmnDefinitions, escalationRef: string | null): string | null {
+  if (!escalationRef) {
+    return null;
+  }
+  return definitions.escalations.find((escalation) => escalation.id === escalationRef)?.escalationCode ?? null;
+}
+
 export function getChildProcessInstanceId(flowNodeInstance: FlowNodeInstance): string | null {
   const typeProperties = flowNodeInstance.typeProperties;
   if (!typeProperties) {

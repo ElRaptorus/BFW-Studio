@@ -434,6 +434,28 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   );
 
   bifrost.commands.register(
+    'engine.debugger.triggerEscalationEvent',
+    async (
+      model: EngineBpmnDebuggerEditorDocumentModel,
+      escalationCode: string,
+      _flowNodeInstance: FlowNodeInstance,
+    ) => {
+      assertNotNull(model.processInstance, 'model.processInstance');
+
+      const dialogResult = await askEscalationTriggerConfirmation(escalationCode);
+      if (!dialogResult) {
+        return;
+      }
+
+      bifrost.commands.executeCommand(ENGINE_COMMANDS.triggerEscalation, [model.engineId, escalationCode]);
+    },
+    {
+      enabledWhen: (model: EngineBpmnDebuggerEditorDocumentModel): boolean =>
+        isEngineOnline(connectionManager, model.engineId),
+    },
+  );
+
+  bifrost.commands.register(
     'engine.debugger.triggerTimerEvent',
     async (model: EngineBpmnDebuggerEditorDocumentModel, flowNodeInstance: FlowNodeInstance) => {
       const timerName = flowNodeInstance.flowNodeId ?? flowNodeInstance.flowNodeId;
@@ -517,6 +539,28 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       actions: [
         { label: 'Cancel', response: StandardDialogResponse.Cancel, cancel: true },
         { label: 'Trigger Signal', response: StandardDialogResponse.Submit, default: true },
+      ],
+    });
+
+    if (dialogResult.wasCancelled || dialogResult.response === 'cancel') {
+      return null;
+    }
+    return true;
+  }
+
+  async function askEscalationTriggerConfirmation(escalationCode: string): Promise<true | null> {
+    const dialogResult = await bifrost.dialog.open({
+      title: `Trigger Escalation Event "${escalationCode}"`,
+      content: [
+        {
+          type: 'markdown',
+          text: removeMultilineIndent(`**Caution:**
+            The Escalation will be delivered to **all** matching waiting Escalation Boundary Events and Event Subprocess starts across the entire engine. This is a debugger inject, not a modeled throw.`),
+        },
+      ],
+      actions: [
+        { label: 'Cancel', response: StandardDialogResponse.Cancel, cancel: true },
+        { label: 'Trigger Escalation', response: StandardDialogResponse.Submit, default: true },
       ],
     });
 

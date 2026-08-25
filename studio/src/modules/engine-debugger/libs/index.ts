@@ -23,6 +23,8 @@ export {
   isStandardLoop,
   resolveMessageName,
   resolveSignalName,
+  resolveEscalationName,
+  resolveEscalationCode,
 } from './BpmnProcessHelpers';
 export type { BpmnDefinitions, BpmnProcess } from './BpmnProcessHelpers';
 export {

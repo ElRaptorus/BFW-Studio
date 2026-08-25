@@ -68,7 +68,7 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 - **`EngineCommandArgs`** — maps each command ID to its typed argument tuple.
 - **File:** `studio/src/modules/engine-core/commands/CommandContract.ts`
 
-20 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerTimerEvent`.
+21 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerEscalation`, `triggerTimerEvent`.
 
 ### SDK Imports
 
@@ -148,6 +148,7 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 |---------|---------|
 | `engine.triggerMessage` | Triggers a message event on the engine |
 | `engine.triggerSignal` | Triggers a signal event on the engine |
+| `engine.triggerEscalation` | Triggers an escalation inject on the engine (engine-wide waiting catchers) |
 
 ### Configured Retry Architecture
 
@@ -255,6 +256,7 @@ These commands are registered by `engine-debugger`, not `engine-core`, but inter
 |---------|---------|
 | `engine.debugger.triggerMessageEvent` | Opens message trigger dialog (payload pre-filled from `studio.examplePayload` if set on the catch element), then triggers via `engine.triggerMessage` scoped to the current process instance |
 | `engine.debugger.triggerSignalEvent` | Opens signal trigger confirmation (no payload — signals are broadcast-only), then triggers via `engine.triggerSignal` |
+| `engine.debugger.triggerEscalationEvent` | Opens escalation trigger confirmation (engine-wide inject, not a modeled throw), then triggers via `engine.triggerEscalation` |
 | `engine.debugger.triggerTimerEvent` | Opens timer trigger confirmation, then triggers via `engine.triggerTimerEvent` |
 
 #### Event Trigger Dialog Architecture
@@ -263,6 +265,7 @@ Each event type has its own dedicated confirmation dialog, split from the former
 
 - **Message**: `askMessageTriggerConfirmation` → `getMessageEventDialogContent`. Shows a JSON payload field pre-filled with `studio.examplePayload` (read from the moddle via `BpmnCustomPropertyAccessor`). Always scoped to the current process instance.
 - **Signal**: `askSignalTriggerConfirmation`. Simple confirmation with a caution note. No payload field — the engine's signal API is broadcast-only with no payload.
+- **Escalation**: `askEscalationTriggerConfirmation`. Simple confirmation that the inject is engine-wide (waiting boundaries and Event Subprocess starts), not a modeled throw. No payload field. OverlayFactory resolves the path code from `processDefinition.escalations` via `escalationRef` (`resolveEscalationCode`); catch-all boundaries (no ref / blank code) send the non-blank sentinel `__catchall__`.
 - **Timer**: `askTimerTriggerConfirmation`. Simple confirmation stating the timer will be skipped.
 
 **File:** `studio/src/modules/engine-debugger/libs/BpmnCustomPropertyAccessor.ts` — reads `evil:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.

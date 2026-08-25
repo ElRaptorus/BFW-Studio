@@ -18,6 +18,7 @@ import {
 } from '../../bpmn-core/overlays';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import type { ExecutableFlowNode } from '../libs';
+import { getEscalationCode } from '../libs/BpmnFlowNodeAccessors';
 import {
   getChildProcessInstanceId,
   getEventDefinition,
@@ -25,6 +26,7 @@ import {
   hasLoopCharacteristics,
   isAdHocSubprocess,
   isFlowNodeInParallelRunningBranch,
+  resolveEscalationCode,
   resolveMessageName,
   resolveSignalName,
 } from '../libs/BpmnProcessHelpers';
@@ -39,6 +41,7 @@ import {
   createEventOverlayLink,
   createFlowNodeExecutionCountBadge,
   createRetryAtFlowNodeLink,
+  createTriggerEscalationEventLink,
   createTriggerMessageEventLink,
   createTriggerSignalEventLink,
 } from './index';
@@ -306,6 +309,20 @@ export async function createFlowNodeInstanceOverlays(
     const signalRef = eventDefinition?.type === 'signal' ? eventDefinition.signalRef : null;
     const eventName = resolveSignalName(processDefinition, signalRef);
     overlays.push(createTriggerSignalEventLink(selectedFlowNodeInstance, eventName ?? '', model, studio));
+  }
+
+  if (
+    isCatchEvent &&
+    selectedFlowNodeInstance.eventType === EventDefinitionType.Escalation &&
+    isActive &&
+    processDefinition &&
+    flowNodeModel
+  ) {
+    const escalationRef = eventDefinition?.type === 'escalation' ? eventDefinition.escalationRef : null;
+    const resolvedCode = resolveEscalationCode(processDefinition, escalationRef);
+    const inlineCode = getEscalationCode(flowNodeModel);
+    const escalationCode = resolvedCode || inlineCode || '__catchall__';
+    overlays.push(createTriggerEscalationEventLink(selectedFlowNodeInstance, escalationCode, model, studio));
   }
 
   if (isCatchEvent && selectedFlowNodeInstance.eventType === EventDefinitionType.Timer && isActive) {

@@ -7,7 +7,7 @@ import { Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getEscalationCode } from '../../libs/BpmnFlowNodeAccessors';
-import { getEventDefinition, resolveEscalationName } from '../../libs/BpmnProcessHelpers';
+import { getEventDefinition, resolveEscalationCode, resolveEscalationName } from '../../libs/BpmnProcessHelpers';
 import type { FlowNode } from '../../libs/index';
 import { shouldDisplayEscalationThrowEventPane } from '../ShouldBeDisplayedConditions';
 
@@ -51,8 +51,12 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function EscalationThrowEventPane(props: EscalationEventPaneProps): React.JSX.Element {
   const escalationEvent = props.flowNode.flowNodeModel as BpmnFlowNode;
-  const escalationCode = getEscalationCode(escalationEvent);
   const eventDefinition = getEventDefinition(escalationEvent);
+  const escalationRef = eventDefinition?.type === 'escalation' ? eventDefinition.escalationRef : null;
+  const resolvedCode = props.model.processDefinition
+    ? resolveEscalationCode(props.model.processDefinition, escalationRef)
+    : null;
+  const escalationCode = resolvedCode || getEscalationCode(escalationEvent);
   const escalationName =
     props.model.processDefinition && eventDefinition?.type === 'escalation'
       ? resolveEscalationName(props.model.processDefinition, eventDefinition.escalationRef)
