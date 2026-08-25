@@ -259,6 +259,17 @@ These rules mirror the engine's Ad-hoc Sub-Process deploy-time validator (AH-D7,
 
 Unit tests: `studio/test/unit/bpmn-linter/adhoc-subprocess-rules.test.ts` (15 assertions across both rules). Integration test: `studio/test/integration/bpmn-linter/adhoc-rules.test.ts` opens `test-solution-bpmn/adhoc-subprocess.bpmn` (config violation) and `adhoc-subprocess-invalid.bpmn` (structure violation) with the linter enabled and `bpmn-production-ready` active, asserting the Findings pane reports both.
 
+### Exclusive / Complex split-flow conditions
+
+These execution-readiness rules catch unmarked non-default outgoing flows on Exclusive and Complex **splits**. They do not block deploy by themselves; the engine fatals the FNI if a token enters such a gateway. A default flow does not excuse other unmarked outgoings. Inclusive splits are intentionally not covered (`conditional-flows` stays `off`).
+
+| Rule | Path | Category | `bpmn-development` | `bpmn-production-ready` | Reports |
+|------|------|----------|---------------------|--------------------------|---------|
+| `xor-gateway-conditions` | `execution-readiness/xor-gateway-conditions.ts` | execution-readiness | warn | error | Each non-default outgoing of an Exclusive Gateway with `outgoing.length > 1` that lacks `conditionExpression` (EXR-011) |
+| `complex-gateway-split-conditions` | `execution-readiness/complex-gateway-split-conditions.ts` | execution-readiness | warn | error | Same check on a Complex Gateway split (EXR-015). `no-complex-gateway` is `error` in both built-in profiles, so this rule mainly applies when a custom ruleset turns that restriction off |
+
+Unit tests: `studio/test/unit/bpmn-linter/gateway-split-conditions.test.ts`.
+
 ### Profiles and Custom Rulesets
 
 Two built-in profiles are immutable and defined in `rules/config.ts`:

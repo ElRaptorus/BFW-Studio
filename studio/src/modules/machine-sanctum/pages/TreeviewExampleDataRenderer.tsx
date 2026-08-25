@@ -69,7 +69,7 @@ function ExampleContent(props: any): React.JSX.Element | null {
 
   const contents = Array.isArray(props.content) ? props.content : [props.content];
 
-  return contents.map((content: string, index: number) => {
-    return <p key={index}>{content}</p>;
+  return contents.map((content: string) => {
+    return <p key={content}>{content}</p>;
   });
 }

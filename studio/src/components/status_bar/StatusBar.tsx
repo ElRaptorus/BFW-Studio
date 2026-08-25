@@ -45,8 +45,8 @@ export default function StatusBar(props: StatusBarProps): React.JSX.Element {
 }
 
 function renderStatusBarItemObjects(items: StatusBarItem[], bifrost: Bifrost): React.JSX.Element[] {
-  return items.map((item: StatusBarItem, index: number) => (
-    <ErrorBoundary key={index}>{renderStatusBarItemObject(item, bifrost)}</ErrorBoundary>
+  return items.map((item: StatusBarItem) => (
+    <ErrorBoundary key={item.id}>{renderStatusBarItemObject(item, bifrost)}</ErrorBoundary>
   ));
 }
 

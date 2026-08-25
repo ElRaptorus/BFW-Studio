@@ -26,6 +26,19 @@ Agents should add entries here when a meaningful design choice is made during th
 
 ## Decisions
 
+### 2026-08-25 — ESLint 10 + `@eslint-react`; keep official react-hooks
+
+**Context**: ESLint 9.39.x is end-of-life. jsx-eslint `eslint-plugin-react` 7.x does not support ESLint 10 (`context.getFilename` crashes; peer range stops at ESLint 9). PRs to that plugin have stalled. The replacement is `@eslint-react/eslint-plugin` (requires ESLint >= 10.3.0). That plugin also ships compiler-like twins (`@eslint-react/rules-of-hooks`, `exhaustive-deps`, `purity`, …) that overlap Meta's `eslint-plugin-react-hooks`, which already supports ESLint 10 and is what this repo documents and suppresses (`react-hooks/refs`, `immutability`, `gating`, existing `eslint-disable-next-line react-hooks/…` comments).
+
+**Options considered**:
+- A) Stay on ESLint 9 LTS / a commercial backport and keep `eslint-plugin-react`.
+- B) Upgrade to ESLint 10, replace `eslint-plugin-react` with `@eslint-react/eslint-plugin`, and enable `disable-conflict-eslint-plugin-react-hooks` so only `@eslint-react` owns hooks rules.
+- C) Upgrade to ESLint 10, replace `eslint-plugin-react` with `@eslint-react/eslint-plugin` (`recommended-typescript` + `disable-rsc`), keep `eslint-plugin-react-hooks` as the compiler / Rules-of-React source of truth, and turn off the `@eslint-react` compiler twins in `customRules`.
+
+**Decision**: Option C.
+
+**Rationale**: Dual-plugin gradual migration is impossible — the old plugin cannot load on ESLint 10. Option B would turn **off** `react-hooks/*`, which is the opposite of the documented compiler coverage. Option C keeps existing suppressions and docs on `react-hooks/*` names, drops the blocked jsx-eslint plugin, and uses `disable-rsc` because this is Electron, not Next.js RSC. Type-aware `@eslint-react` presets (`recommended-type-checked` / `projectService`) are out of scope.
+
 ### 2026-08-21 — Model graph is the only runtime read path
 
 **Context**: The Studio adoption pass initially kept `parseBpmn` and moddle `getExtensionValue` as fallbacks when GraphQL `processModel` was missing, so an older engine or client could still open the debugger and model viewer. There is no live production engine or Studio.

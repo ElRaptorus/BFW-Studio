@@ -30,8 +30,6 @@ export class RecentlyOpenedManager extends AbstractEmitter implements ISerializa
   }
 
   updateItem(type: string, findItemFn: (item: any) => boolean, partialNewItem: any): boolean {
-    let success = false;
-
     if (this.recentlyOpened[type] == null) {
       this.recentlyOpened[type] = [];
     }
@@ -48,11 +46,10 @@ export class RecentlyOpenedManager extends AbstractEmitter implements ISerializa
     };
 
     this.recentlyOpened[type].splice(recentlyOpenedItemIndex, 1, newItem);
-    success = true;
 
     this.emit(EVENT_RECENTLY_OPENED_CHANGED);
 
-    return success;
+    return true;
   }
 
   getListByType(wantedType: string): any[] {

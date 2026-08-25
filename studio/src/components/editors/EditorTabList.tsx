@@ -67,7 +67,7 @@ export default function EditorTabList(props: EditorTabListProps): React.JSX.Elem
               editorId={props.editorId}
               icon={icon}
               index={index}
-              key={`editor-${props.editorId}-${index}`}
+              key={editorDocument.uri}
               focusEditorDocument={props.focusEditorDocument}
               moveEditorDocument={props.moveEditorDocument}
               closeEditorDocument={props.closeEditorDocument}

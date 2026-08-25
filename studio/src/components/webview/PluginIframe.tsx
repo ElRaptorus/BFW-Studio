@@ -1,6 +1,6 @@
 import { pluginNameToHostname } from '#bifrost/common/plugin-host/permissions/ScopedPluginName';
 
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import type { PluginIframeManager } from './PluginIframeManager';
 import type { PluginIframeGuestMessage, PluginIframeHandle } from './types';
@@ -13,6 +13,7 @@ interface PluginIframeProps {
   webviewProtocol: string;
   pluginIframeManager: PluginIframeManager;
   className?: string;
+  ref?: React.Ref<PluginIframeHandle>;
 }
 
 /**
@@ -25,8 +26,15 @@ interface PluginIframeProps {
  * unregisters on unmount. Validates `event.origin` on every
  * incoming `message` event.
  */
-const PluginIframe = forwardRef<PluginIframeHandle, PluginIframeProps>(function PluginIframe(props, ref) {
-  const { iframeId, pluginName, entryPoint, webviewProtocol, pluginIframeManager, className } = props;
+function PluginIframe({
+  iframeId,
+  pluginName,
+  entryPoint,
+  webviewProtocol,
+  pluginIframeManager,
+  className,
+  ref,
+}: PluginIframeProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [crashed, setCrashed] = useState(false);
 
@@ -122,6 +130,7 @@ const PluginIframe = forwardRef<PluginIframeHandle, PluginIframeProps>(function 
     <iframe
       ref={iframeRef}
       src={iframeSrc}
+      // eslint-disable-next-line @eslint-react/dom-no-unsafe-iframe-sandbox -- unique custom-protocol origin per plugin; both flags required for script + origin-isolated storage
       sandbox="allow-scripts allow-same-origin"
       style={{ border: 'none', width: '100%', height: '100%' }}
       className={className}
@@ -129,6 +138,6 @@ const PluginIframe = forwardRef<PluginIframeHandle, PluginIframeProps>(function 
       onError={handleError}
     />
   );
-});
+}
 
 export default PluginIframe;

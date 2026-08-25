@@ -129,7 +129,7 @@ The `bpmn-editor` module registers 16+ fragment document types (script, text, da
 | File | Role |
 |------|------|
 | `studio/src/modules/bpmn-editor/open-in-new-tab-renderer/useBpmnFragmentRenderer.ts` | Shared hook: resolves parent document, loads `BpmnDocumentModel`, subscribes to data updates, provides fragment state |
-| `studio/src/modules/bpmn-editor/open-in-new-tab-renderer/BpmnFragmentRendererView.tsx` | Shared view component (`forwardRef`): renders the toolbar; for FEEL fragments renders `FeelSimulatorEditor` (from `studio/src/components/feel-simulator/`), for other languages renders `MultiLineCodeEditor` |
+| `studio/src/modules/bpmn-editor/open-in-new-tab-renderer/BpmnFragmentRendererView.tsx` | Shared view component (`ref` as a prop): renders the toolbar; for FEEL fragments renders `FeelSimulatorEditor` (from `studio/src/components/feel-simulator/`), for other languages renders `MultiLineCodeEditor` |
 | `studio/src/modules/bpmn-editor/open-in-new-tab-renderer/Bpmn*FragmentRenderer.tsx` | Individual renderers: define config, `getFragmentValue`, `setFragmentValue`, and wire hook + view together |
 
 **Hook signature:**

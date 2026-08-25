@@ -32,7 +32,11 @@ export class PropertyPanelExampleRenderer extends AbstractExampleRenderer<Proper
               Reset data
             </a>
           </div>
-          <div className="machine-sanctum-example col mx-4" dangerouslySetInnerHTML={{ __html: htmlAsString }}></div>
+          <div
+            className="machine-sanctum-example col mx-4"
+            // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- machine-sanctum live HTML playground
+            dangerouslySetInnerHTML={{ __html: htmlAsString }}
+          ></div>
         </div>
       </div>
     );

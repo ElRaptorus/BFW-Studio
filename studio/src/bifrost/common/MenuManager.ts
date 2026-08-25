@@ -47,7 +47,7 @@ export class MenuManager {
 
     const modifiedFactoryfn = (...menuFactoryFnArgs: any[]): Menu | Promise<Menu> => {
       const originalFactoryFnArgs = menuFactoryFnArgs ?? [];
-      let originalMenu: Menu | Promise<Menu> = [];
+      let originalMenu: Menu | Promise<Menu>;
 
       try {
         originalMenu = originalFactoryFn(...originalFactoryFnArgs);

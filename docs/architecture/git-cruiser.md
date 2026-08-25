@@ -173,9 +173,9 @@ Only the 1–2 tree items whose status actually changed re-render, instead of th
 
 - **`DecorationContext`** (`studio-sdk/src/components/Tree/DecorationContext.ts`): A React context providing the `TreeDecorationSource` to consumers
 - **`useDecoration(uri)`**: Hook that subscribes to the source's change events. Re-renders **only** when `changedUris.has(thisUri)` — O(1) per subscriber per event
-- **`Tree` component**: Accepts optional `decorationSource` prop, wraps items in `DecorationContext.Provider`
+- **`Tree` component**: Accepts optional `decorationSource` prop, wraps items in `DecorationContext`
 - **`HeadlessTreeItem`**: Calls `useDecoration(data.metadata?.uri)`, merges returned decoration with base `data.styles`/`data.badges`
-- **`EditorTabDraggable`**: Calls `useDecoration(editorDocument.uri)` and applies `labelColor` as an inline style on the tab label. The `DecorationContext.Provider` is set up by `EditorTabsAndOptions` in `EditorWrapper.tsx`, using the same decoration source as the tree views.
+- **`EditorTabDraggable`**: Calls `useDecoration(editorDocument.uri)` and applies `labelColor` as an inline style on the tab label. The `DecorationContext` is set up by `EditorTabsAndOptions` in `EditorWrapper.tsx`, using the same decoration source as the tree views.
 
 ### FileExplorerDecorationSource
 
@@ -187,7 +187,7 @@ Implements `TreeDecorationSource` within `FileExplorerView`:
 - `subscribe(listener)`: listeners receive `Set<string>` of changed URIs
 - Forwards each provider's `onDidChange` events to all subscribers
 
-Exposed via `bifrost.fileExplorerView.getDecorationSource()`, passed to the `Tree` in `SolutionPane.tsx` and `OpenEditorsPane.tsx`, and to the editor tab bar via `DecorationContext.Provider` in `EditorWrapper.tsx`.
+Exposed via `bifrost.fileExplorerView.getDecorationSource()`, passed to the `Tree` in `SolutionPane.tsx` and `OpenEditorsPane.tsx`, and to the editor tab bar via `DecorationContext` in `EditorWrapper.tsx`.
 
 ### Status Colors
 

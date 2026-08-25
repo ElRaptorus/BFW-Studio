@@ -82,7 +82,7 @@ export class EditorDocumentModelManager extends AbstractEmitter {
     }
 
     this.editorDocumentModelInstanceMap[uri] = new Promise(async (resolve, reject) => {
-      let model: EditorDocumentModel | null = null;
+      let model: EditorDocumentModel | null;
       try {
         model = await editorDocumentModelClassOrModule.create(
           uri,

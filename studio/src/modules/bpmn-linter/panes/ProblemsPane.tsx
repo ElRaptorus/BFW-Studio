@@ -234,7 +234,7 @@ function FindingGroup(props: FindingGroupProps): React.JSX.Element {
           .join(' ');
 
         return (
-          <div key={`${finding.ruleId}-${finding.elementId}-${itemIndex}`} className={itemClasses}>
+          <div key={`${finding.ruleId}-${finding.elementId}-${finding.message}`} className={itemClasses}>
             <button
               className="lint-problems-item__row"
               type="button"

@@ -8,6 +8,7 @@ import { Icon } from '@evil/bifrost_fw_sdk';
 import MenuBarButton from './MenuBarButton';
 import MenuBarMenu from './MenuBarMenu';
 import MenuBarSelect from './MenuBarSelect';
+import { menuBarItemKey } from './menuBarItemKey';
 
 type MenuBarProps = {
   leftItems: MenuBarItem[];
@@ -26,8 +27,8 @@ export default function MenuBar(props: MenuBarProps): React.JSX.Element {
 }
 
 function renderMenuBarItemObjects(items: MenuBarItem[], Icon: IconComponent): React.JSX.Element[] {
-  return items.map((item: MenuBarItem, index: number) => (
-    <Fragment key={index}>{renderMenuBarItemObject(item, Icon)}</Fragment>
+  return items.map((item: MenuBarItem) => (
+    <Fragment key={menuBarItemKey(item)}>{renderMenuBarItemObject(item, Icon)}</Fragment>
   ));
 }
 

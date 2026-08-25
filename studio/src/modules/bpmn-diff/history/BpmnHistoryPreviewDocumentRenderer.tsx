@@ -39,10 +39,10 @@ export default function BpmnHistoryPreviewDocumentRenderer(
   const [errorWhileLoading, setErrorWhileLoading] = useState<string | null>(null);
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
 
-  const refPreview = useRef<HTMLDivElement | null>(null);
-  const refBefore = useRef<HTMLDivElement | null>(null);
-  const refAfter = useRef<HTMLDivElement | null>(null);
-  const refLoadingIndicator = useRef<HTMLDivElement | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const beforeRef = useRef<HTMLDivElement | null>(null);
+  const afterRef = useRef<HTMLDivElement | null>(null);
+  const loadingIndicatorRef = useRef<HTMLDivElement | null>(null);
   const previewAttachedRef = useRef(false);
   const diffAttachedRef = useRef(false);
 
@@ -64,8 +64,8 @@ export default function BpmnHistoryPreviewDocumentRenderer(
             setErrorWhileLoading(null);
             previewAttachedRef.current = false;
             diffAttachedRef.current = false;
-            if (refLoadingIndicator.current) {
-              refLoadingIndicator.current.style.display = '';
+            if (loadingIndicatorRef.current) {
+              loadingIndicatorRef.current.style.display = '';
             }
             forceRender();
           }),
@@ -98,17 +98,17 @@ export default function BpmnHistoryPreviewDocumentRenderer(
       return;
     }
 
-    if (viewMode === 'preview' && !previewAttachedRef.current && refPreview.current) {
+    if (viewMode === 'preview' && !previewAttachedRef.current && previewRef.current) {
       previewAttachedRef.current = true;
-      model.attachPreview(refPreview.current);
-      if (refLoadingIndicator.current) {
-        refLoadingIndicator.current.style.display = 'none';
+      model.attachPreview(previewRef.current);
+      if (loadingIndicatorRef.current) {
+        loadingIndicatorRef.current.style.display = 'none';
       }
-    } else if (viewMode === 'diff' && !diffAttachedRef.current && refBefore.current && refAfter.current) {
+    } else if (viewMode === 'diff' && !diffAttachedRef.current && beforeRef.current && afterRef.current) {
       diffAttachedRef.current = true;
-      model.attachTo(refBefore.current, refAfter.current).then(() => {
-        if (refLoadingIndicator.current) {
-          refLoadingIndicator.current.style.display = 'none';
+      model.attachTo(beforeRef.current, afterRef.current).then(() => {
+        if (loadingIndicatorRef.current) {
+          loadingIndicatorRef.current.style.display = 'none';
         }
       });
     }
@@ -232,7 +232,7 @@ export default function BpmnHistoryPreviewDocumentRenderer(
       </EditorToolbar>
 
       <EditorContent>
-        {viewMode === 'preview' && <div style={{ flex: 1, position: 'relative' }} ref={refPreview} />}
+        {viewMode === 'preview' && <div style={{ flex: 1, position: 'relative' }} ref={previewRef} />}
         {viewMode === 'diff' && (
           <SplitterLayout
             customClassName="splitter-layout--bpmn-diff"
@@ -241,15 +241,15 @@ export default function BpmnHistoryPreviewDocumentRenderer(
             primaryMinSize={10}
             secondaryMinSize={10}
           >
-            <div className="bpmn-diff__before" ref={refBefore}>
+            <div className="bpmn-diff__before" ref={beforeRef}>
               <div className="diff-title diff-title--before">Current</div>
             </div>
-            <div className="bpmn-diff__after" ref={refAfter}>
+            <div className="bpmn-diff__after" ref={afterRef}>
               <div className="diff-title diff-title--after">Historical ({shortHash})</div>
             </div>
           </SplitterLayout>
         )}
-        <div className="editor-loading__backdrop" ref={refLoadingIndicator}>
+        <div className="editor-loading__backdrop" ref={loadingIndicatorRef}>
           <div className="editor-loading__content ph-3x">
             <Icon id="ph-light ph-gear ph-spin" />
           </div>

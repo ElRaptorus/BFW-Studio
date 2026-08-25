@@ -183,6 +183,7 @@ export default function PluginReadmeRenderer(props: EditorDocumentRendererProps)
               <div
                 className="plugin-readme-content"
                 data-test--plugin-readme-content
+                // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- plugin readme HTML
                 dangerouslySetInnerHTML={{ __html: readmeHtml }}
               />
             ) : (

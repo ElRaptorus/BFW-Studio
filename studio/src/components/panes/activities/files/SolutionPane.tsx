@@ -100,11 +100,11 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   const solution = bifrost.fileExplorerView.getViewData().solution;
   const decorationSource = useMemo(() => bifrost.fileExplorerView.getDecorationSource(), [bifrost]);
-  const lastDropEvent = useRef<DragEvent | null>(null);
+  const lastDropEventRef = useRef<DragEvent | null>(null);
 
   useEffect(() => {
     const captureDropEvent = (event: DragEvent) => {
-      lastDropEvent.current = event;
+      lastDropEventRef.current = event;
     };
     document.addEventListener('drop', captureDropEvent, true);
     return () => document.removeEventListener('drop', captureDropEvent, true);
@@ -186,7 +186,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   );
 
   const buildDropContext = useCallback(
-    () => ({ type: 'generic' as const, data: null, event: lastDropEvent.current }),
+    () => ({ type: 'generic' as const, data: null, event: lastDropEventRef.current }),
     [],
   );
 

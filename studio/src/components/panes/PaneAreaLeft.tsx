@@ -21,7 +21,7 @@ export default function PaneAreaLeft(props: PaneAreaLeftProps): React.JSX.Elemen
           panes={paneGroup.panes}
           paneArea="left"
           paneAreaIndex={index}
-          key={`pane-area-left-${index}`}
+          key={paneGroup.groupId}
           visible={paneGroup.visible}
         />
       ))}

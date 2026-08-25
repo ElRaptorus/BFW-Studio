@@ -1716,7 +1716,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
   bifrost.commands.register(
     'git.connectFolderToRemote',
     async (folderUri?: string) => {
-      let targetFolderPath: string | null = null;
+      let targetFolderPath: string | null;
 
       if (folderUri) {
         targetFolderPath = bifrost.files.getLocalFilenameForUri(folderUri);

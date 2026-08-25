@@ -9,6 +9,20 @@ export type KeyValueEntry = {
   value: string;
 };
 
+type KeyValueRow = {
+  id: string;
+  key: string;
+  value: string;
+};
+
+function toKeyValueRow(entry: KeyValueEntry): KeyValueRow {
+  return { id: crypto.randomUUID(), key: entry.key, value: entry.value };
+}
+
+function toKeyValueEntry(row: KeyValueRow): KeyValueEntry {
+  return { key: row.key, value: row.value };
+}
+
 export type KeyValueBuilderProps = {
   readonly initialEntries: readonly KeyValueEntry[];
   readonly onChange: (entries: readonly KeyValueEntry[]) => void;
@@ -23,18 +37,18 @@ export type KeyValueBuilderProps = {
 
 export function KeyValueBuilder(props: KeyValueBuilderProps): React.JSX.Element {
   const { onChange } = props;
-  const [entries, setEntries] = useState<KeyValueEntry[]>(() => [...props.initialEntries]);
+  const [entries, setEntries] = useState<KeyValueRow[]>(() => props.initialEntries.map(toKeyValueRow));
 
   const commit = useCallback(
-    (next: KeyValueEntry[]) => {
+    (next: KeyValueRow[]) => {
       setEntries(next);
-      onChange(next);
+      onChange(next.map(toKeyValueEntry));
     },
     [onChange],
   );
 
   const addEntry = useCallback(() => {
-    commit([...entries, { key: '', value: '' }]);
+    commit([...entries, toKeyValueRow({ key: '', value: '' })]);
   }, [entries, commit]);
 
   const removeEntry = useCallback(
@@ -63,7 +77,7 @@ export function KeyValueBuilder(props: KeyValueBuilderProps): React.JSX.Element 
       )}
 
       {entries.map((entry, index) => (
-        <div key={index} className="kv-builder__row">
+        <div key={entry.id} className="kv-builder__row">
           <input
             type="text"
             className="form-control kv-builder__input kv-builder__col-key"

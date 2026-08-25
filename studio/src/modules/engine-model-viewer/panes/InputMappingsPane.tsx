@@ -18,7 +18,6 @@ const INBOUND_PIPELINE_TYPES = [
   ':BusinessRuleTask',
   ':CallActivity',
   ':SendTask',
-  ':ReceiveTask',
   ':EndEvent',
   ':IntermediateThrowEvent',
   ...SUBPROCESS_SHELL_TYPES,
@@ -65,9 +64,9 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 
   return (
     <div className="engine-pane-process-info">
-      {mappings.map((mapping, index) => (
+      {mappings.map((mapping) => (
         <PaneProperty
-          key={`input-${index}`}
+          key={`${mapping.source}->${mapping.target}`}
           type="text"
           label={mapping.target || '?'}
           value={mapping.source}

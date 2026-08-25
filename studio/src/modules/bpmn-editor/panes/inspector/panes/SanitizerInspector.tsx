@@ -35,7 +35,7 @@ export function SanitizerInspector(props: SanitizerInspectorProps): React.JSX.El
   const { model, studio } = props;
   const [findings, setFindings] = useState<SanitizableIssue[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (!model?.modelerAdapter) {

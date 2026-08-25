@@ -11,7 +11,7 @@ export const sharedGlobals = {
 };
 
 export const reactSettings = {
-  react: { version: 'detect' },
+  'react-x': { version: '19.2.8', importSource: 'react' },
 };
 
 export const customRules = {
@@ -36,10 +36,24 @@ export const customRules = {
   '@typescript-eslint/no-require-imports': 'off',
   '@typescript-eslint/array-type': ['warn', { default: 'array' }],
 
-  // -- React --
-  'react/jsx-key': ['warn', { checkFragmentShorthand: false }],
-  'react/react-in-jsx-scope': 'off',
-  'react/prop-types': 'off',
+  // -- React (@eslint-react) --
+  // Keep missing-key at warn to match the previous react/jsx-key policy.
+  '@eslint-react/no-missing-key': 'warn',
+  // Official eslint-plugin-react-hooks owns compiler / Rules-of-React coverage.
+  // recommended-typescript ships overlapping twins; turn those off so suppressions
+  // and docs stay on the react-hooks/* names.
+  '@eslint-react/rules-of-hooks': 'off',
+  '@eslint-react/exhaustive-deps': 'off',
+  '@eslint-react/purity': 'off',
+  '@eslint-react/set-state-in-effect': 'off',
+  '@eslint-react/set-state-in-render': 'off',
+  '@eslint-react/static-components': 'off',
+  '@eslint-react/unsupported-syntax': 'off',
+  '@eslint-react/use-memo': 'off',
+  '@eslint-react/error-boundaries': 'off',
+  // Class editor methods (focus / getCurrentValue / resetValue) are called via refs,
+  // which this rule cannot see.
+  '@eslint-react/no-unused-class-component-members': 'off',
 
   // -- Console --
   'no-console': 'off',

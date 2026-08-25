@@ -17,7 +17,6 @@ const OUTBOUND_PIPELINE_TYPES = [
   ':ScriptTask',
   ':BusinessRuleTask',
   ':CallActivity',
-  ':SendTask',
   ':ReceiveTask',
   ':IntermediateCatchEvent',
   ':BoundaryEvent',
@@ -65,9 +64,9 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 
   return (
     <div className="engine-pane-process-info">
-      {mappings.map((mapping, index) => (
+      {mappings.map((mapping) => (
         <PaneProperty
-          key={`output-${index}`}
+          key={`${mapping.source}->${mapping.target}`}
           type="text"
           label={mapping.target || '?'}
           value={mapping.source}

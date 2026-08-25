@@ -65,7 +65,7 @@ function TableInputsProperties(props: PaneComponentProps): React.JSX.Element | n
         const inputValues = input.inputValues?.text ?? '';
 
         return (
-          <div key={input.id ?? index} data-test--dmn-dt-input={input.id}>
+          <div key={input.id} data-test--dmn-dt-input={input.id}>
             <PaneProperty
               label={`Input ${index + 1}: Expression`}
               type="text"

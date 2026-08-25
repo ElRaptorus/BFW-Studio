@@ -279,7 +279,7 @@ export function onLoad(bifrost: Bifrost): void {
       const { data } = parseOpenInNewTabUrl(editorDocument.uri);
       const beforeUri = data.beforeUri;
       const beforeData = data.beforeData;
-      let beforeXml = '';
+      let beforeXml: string;
       if (beforeData === 'original') {
         beforeXml = await bifrost.files.load(beforeUri);
       } else {

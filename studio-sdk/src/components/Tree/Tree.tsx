@@ -71,8 +71,8 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
 
   const dataAdapter = useMemo(() => new TreeDataAdapter(entries), [entries]);
 
-  const [expandedItems, setExpandedItemsRaw] = useState<string[]>(() => dataAdapter.getInitialExpandedIds());
-  const [selectedItems, setSelectedItemsRaw] = useState<string[]>(() => dataAdapter.getInitialSelectedIds());
+  const [expandedItems, setExpandedItems] = useState<string[]>(() => dataAdapter.getInitialExpandedIds());
+  const [selectedItems, setSelectedItems] = useState<string[]>(() => dataAdapter.getInitialSelectedIds());
 
   const [prevDataAdapter, setPrevDataAdapter] = useState(dataAdapter);
   const [dataAdapterChanged, setDataAdapterChanged] = useState(false);
@@ -84,12 +84,12 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
     const allIds = new Set(dataAdapter.getAllIds());
     const newExpanded = dataAdapter.getInitialExpandedIds();
 
-    setExpandedItemsRaw((prev) => {
+    setExpandedItems((prev) => {
       const preserved = prev.filter((id) => allIds.has(id));
       const newlyExpanded = newExpanded.filter((id) => !prev.includes(id));
       return [...new Set([...preserved, ...newlyExpanded])];
     });
-    setSelectedItemsRaw((prev) => prev.filter((id) => allIds.has(id)));
+    setSelectedItems((prev) => prev.filter((id) => allIds.has(id)));
   }
 
   const [mediator] = useState<TreeViewMediator>(() => {
@@ -128,8 +128,8 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
       expandedItems,
       selectedItems,
     },
-    setExpandedItems: setExpandedItemsRaw,
-    setSelectedItems: setSelectedItemsRaw,
+    setExpandedItems: setExpandedItems,
+    setSelectedItems: setSelectedItems,
     studioCallbacks,
     features: [
       syncDataLoaderFeature,
@@ -189,7 +189,7 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
     .join(' ');
 
   return (
-    <DecorationContext.Provider value={props.decorationSource ?? null}>
+    <DecorationContext value={props.decorationSource ?? null}>
       <div
         {...containerProps}
         className={outerClassName}
@@ -214,6 +214,6 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
           />
         ))}
       </div>
-    </DecorationContext.Provider>
+    </DecorationContext>
   );
 }, areHeadlessTreePropsEqual);

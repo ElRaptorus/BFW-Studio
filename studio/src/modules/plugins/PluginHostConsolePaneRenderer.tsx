@@ -115,15 +115,22 @@ function ConsolePaneTabOptions(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
+type PluginHostLogLine = {
+  id: string;
+  text: string;
+};
+
 function ConsolePaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost = Bifrost.cast(props.studio);
-  const [lines, setLines] = useState<string[]>(() => bifrost.plugins.getPluginHostLog());
+  const [lines, setLines] = useState<PluginHostLogLine[]>(() =>
+    bifrost.plugins.getPluginHostLog().map((text) => ({ id: crypto.randomUUID(), text })),
+  );
   const [pinToBottom, setPinToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const subscription = bifrost.plugins.onPluginHostLog((line: string) => {
-      setLines((prev) => [...prev, line]);
+      setLines((prev) => [...prev, { id: crypto.randomUUID(), text: line }]);
     });
     return () => subscription.dispose();
   }, [bifrost]);
@@ -153,12 +160,12 @@ function ConsolePaneContent(props: PaneComponentProps): React.JSX.Element {
     let result = lines;
     if (lowercasePluginNames.length > 0) {
       result = result.filter((line) => {
-        const lower = line.toLowerCase();
+        const lower = line.text.toLowerCase();
         return lowercasePluginNames.some((pluginName) => lower.includes(pluginName));
       });
     }
     if (lowercaseFilter) {
-      result = result.filter((line) => line.toLowerCase().includes(lowercaseFilter));
+      result = result.filter((line) => line.text.toLowerCase().includes(lowercaseFilter));
     }
     return result;
   }, [lines, lowercasePluginNames, lowercaseFilter]);
@@ -185,15 +192,15 @@ function ConsolePaneContent(props: PaneComponentProps): React.JSX.Element {
             {lines.length === 0 ? 'No plugin host output yet.' : 'No matching lines.'}
           </div>
         )}
-        {filteredLines.map((line, index) => (
+        {filteredLines.map((line) => (
           <div
-            key={index}
-            className={`plugin-host-console__line ${isStderrLine(line) ? 'plugin-host-console__line--error' : ''}`}
+            key={line.id}
+            className={`plugin-host-console__line ${isStderrLine(line.text) ? 'plugin-host-console__line--error' : ''}`}
             style={{
-              color: isStderrLine(line) ? 'var(--studio-color-error, #e06c75)' : undefined,
+              color: isStderrLine(line.text) ? 'var(--studio-color-error, #e06c75)' : undefined,
             }}
           >
-            {line}
+            {line.text}
           </div>
         ))}
       </div>

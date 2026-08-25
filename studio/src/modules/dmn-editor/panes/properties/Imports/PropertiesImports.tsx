@@ -91,9 +91,9 @@ function ImportsContent(props: PaneComponentProps): React.JSX.Element | null {
         </div>
       )}
 
-      {imports.map((importElement: any, index: number) => (
+      {imports.map((importElement: any) => (
         <ImportEntry
-          key={importElement.id ?? index}
+          key={importElement.id}
           importElement={importElement}
           onUpdate={updateImport}
           onRemove={removeImport}

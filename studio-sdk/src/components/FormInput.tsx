@@ -29,7 +29,7 @@ export function FormInput(props: FormInputProps): React.JSX.Element {
   const valueFromProps = props.value || '';
   const { valueRef } = props;
 
-  const [originalValue, _setOriginalValue] = useState(valueFromProps);
+  const [originalValue] = useState(valueFromProps);
   const [currentValue, setCurrentValue] = useState(valueFromProps);
   const lastSyncedToRef = useRef(valueFromProps);
 

@@ -126,7 +126,7 @@ function navigateToPlane(adapter: BpmnViewerComponentAdapter, targetSubprocessId
 
 function SubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAdapter }): React.JSX.Element | null {
   const { adapter } = props;
-  const [, setRootRevision] = useState(0);
+  const [rootRevision, setRootRevision] = useState(0);
 
   useEffect(() => {
     const subscription = adapter.on(EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED, () => {
@@ -143,7 +143,7 @@ function SubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAdapter })
   const chain = buildBreadcrumbChain(adapter);
 
   return (
-    <div className="bpmn-breadcrumb-bar">
+    <div className="bpmn-breadcrumb-bar" key={rootRevision}>
       {chain.map((entry, index) => {
         const isLast = index === chain.length - 1;
         return (

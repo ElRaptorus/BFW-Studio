@@ -202,7 +202,6 @@ describe('convertGraphqlProcessModel', () => {
           eventDefinition: {
             _Typename: 'MessageEventDefinition',
             messageRef: 'Message_payment',
-            payloadExpression: '{ orderId: token.orderId }',
             correlationRetrievalExpression: 'token.orderId',
           },
           inMappings: [],
@@ -271,7 +270,6 @@ describe('convertGraphqlProcessModel', () => {
     if (byId.Throw_1?.typeData.type === 'intermediate_throw_event') {
       expect(byId.Throw_1.typeData.eventDefinition.type).toBe('message');
       if (byId.Throw_1.typeData.eventDefinition.type === 'message') {
-        expect(byId.Throw_1.typeData.eventDefinition.payloadExpression).toBe('{ orderId: token.orderId }');
         expect(byId.Throw_1.typeData.eventDefinition.correlationRetrievalExpression).toBe('token.orderId');
       }
     }

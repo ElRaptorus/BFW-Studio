@@ -81,7 +81,7 @@ export default function NotificationContainer(props: NotificationContainerProps)
 
           return (
             <NotificationRenderer
-              key={`${index}-${isNewestNotification}-${notification.createdAt.getTime()}`}
+              key={notification.id}
               className={isNewestNotification ? 'notification--newest' : undefined}
               responseCallback={wrappedResponseCallback}
               options={options}

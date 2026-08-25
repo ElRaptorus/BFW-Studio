@@ -9,6 +9,7 @@ const SPEED_STEPS: number[] = [
 const DEFAULT_POSITION = 9;
 
 export interface SimulationLogEntry {
+  id: string;
   time: number;
   event: string;
   elementId: string;

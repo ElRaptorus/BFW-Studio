@@ -16,7 +16,7 @@ A Complex Gateway must be **either** a split (one incoming path, several outgoin
 
 The gateway checks the condition on every outgoing [Conditional Flow](help://bpmn/properties/conditional_flow) and follows every path whose condition is true.
 
-- Every outgoing path must either carry a condition or be the [Default Flow](help://bpmn/properties/default_flow).
+- Every **non-default** outgoing path must carry a condition. An unmarked non-default path is a modeling error: the linter warns in development and errors in production-ready, and the engine fatals the gateway at runtime if a token actually reaches it. The diagram still deploys (WIP is allowed); mixed gateways, a join without an Activation Condition, and overlapping SESE regions are still rejected before deployment.
 - If one or more conditions are true, all matching paths run at once.
 - If no condition is true, the Default Flow is taken.
 - If no condition is true and there is no Default Flow, the process stops with an error.
@@ -44,10 +44,10 @@ When the join continues, any paths that were still running (and were opened by t
 
 ## At a glance
 
-| Situation                                                | Result                      |
-| -------------------------------------------------------- | --------------------------- |
-| Both several incoming and several outgoing paths         | Rejected before deployment  |
-| A split path that is neither conditional nor the default | Rejected before deployment  |
-| A join without an `Activation Condition`                 | Rejected before deployment  |
-| A split where nothing matches and there is no default    | Process stops with an error |
-| A join whose condition can never be met                  | Process stops with an error |
+| Situation                                                | Result                                           |
+| -------------------------------------------------------- | ------------------------------------------------ |
+| Both several incoming and several outgoing paths         | Rejected before deployment                       |
+| A split path that is neither conditional nor the default | Linter warning/error; runtime fatal when entered |
+| A join without an `Activation Condition`                 | Rejected before deployment                       |
+| A split where nothing matches and there is no default    | Process stops with an error                      |
+| A join whose condition can never be met                  | Process stops with an error                      |

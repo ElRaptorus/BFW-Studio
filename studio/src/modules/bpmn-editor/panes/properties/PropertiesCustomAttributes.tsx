@@ -106,7 +106,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
         if (shownProperties.includes(property)) {
           return (
             <CustomProperty
-              key={`custom_property_${index}`}
+              key={property.name}
               index={index}
               property={property}
               showInternalCustomProperties={showInternalCustomProperties}

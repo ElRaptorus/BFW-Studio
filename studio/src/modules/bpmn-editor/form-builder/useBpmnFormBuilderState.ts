@@ -31,8 +31,8 @@ export type FormBuilderState = {
 export function useBpmnFormBuilderState(props: EditorDocumentRendererProps): FormBuilderState {
   const bifrost = props.studio as Bifrost;
   const [loading, setLoading] = useState(true);
-  const [fields, setFieldsInternal] = useState<FormFieldDefinition[]>([]);
-  const [actions, setActionsInternal] = useState<FormAction[]>([]);
+  const [fields, setFields] = useState<FormFieldDefinition[]>([]);
+  const [actions, setActions] = useState<FormAction[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<string | null>(null);
   const [fragmentName, setFragmentName] = useState<string>('');
@@ -72,8 +72,8 @@ export function useBpmnFormBuilderState(props: EditorDocumentRendererProps): For
           const currentActions = loadedModel.elements.getFormActions(fragmentId);
           const element = loadedModel.elements.getById(fragmentId);
           setFragmentName(element?.name ?? fragmentId);
-          setFieldsInternal(currentFields);
-          setActionsInternal(currentActions);
+          setFields(currentFields);
+          setActions(currentActions);
         };
 
         readFromModel();
@@ -94,23 +94,23 @@ export function useBpmnFormBuilderState(props: EditorDocumentRendererProps): For
     };
   }, [bifrost, parentUri, fragmentId]);
 
-  const setFields = useCallback(
+  const commitFields = useCallback(
     (newFields: FormFieldDefinition[]) => {
       if (model == null) {
         return;
       }
-      setFieldsInternal(newFields);
+      setFields(newFields);
       model.elements.setFormFieldDefinitions(fragmentId, newFields);
     },
     [model, fragmentId],
   );
 
-  const setActions = useCallback(
+  const commitActions = useCallback(
     (newActions: FormAction[]) => {
       if (model == null) {
         return;
       }
-      setActionsInternal(newActions);
+      setActions(newActions);
       model.elements.setFormActions(fragmentId, newActions);
     },
     [model, fragmentId],
@@ -149,8 +149,8 @@ export function useBpmnFormBuilderState(props: EditorDocumentRendererProps): For
       selection,
       fragmentId,
       fragmentName,
-      setFields,
-      setActions,
+      setFields: commitFields,
+      setActions: commitActions,
       selectField,
       selectAction,
     });
@@ -168,8 +168,8 @@ export function useBpmnFormBuilderState(props: EditorDocumentRendererProps): For
     selectedActionId,
     fragmentId,
     fragmentName,
-    setFields,
-    setActions,
+    commitFields,
+    commitActions,
     selectField,
     selectAction,
   ]);
@@ -184,8 +184,8 @@ export function useBpmnFormBuilderState(props: EditorDocumentRendererProps): For
     actions,
     selectedFieldId,
     selectedActionId,
-    setFields,
-    setActions,
+    setFields: commitFields,
+    setActions: commitActions,
     selectField,
     selectAction,
     navigateToParent,

@@ -63,29 +63,47 @@ export function getExpressionPreview(expression: DmnExpressionBody | null): stri
 
 /** Lightweight FEEL token highlighting for table cells. */
 export function highlightFeelExpression(text: string): React.ReactNode {
-  const parts = text.split(/(\b(?:if|then|else|not|and|or|true|false|null)\b|[+\-*/=<>!&|()[\],:{}"]|\d+(?:\.\d+)?)/g);
-  return parts.map((part, index) => {
+  const tokenizer = /(\b(?:if|then|else|not|and|or|true|false|null)\b|[+\-*/=<>!&|()[\],:{}"]|\d+(?:\.\d+)?)/g;
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null = tokenizer.exec(text);
+
+  while (match != null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    const part = match[0];
+    const offset = match.index;
     if (/^(if|then|else|not|and|or|true|false|null)$/.test(part)) {
-      return (
-        <span key={index} className="engine-decision-table-viewer__feel-keyword">
+      nodes.push(
+        <span key={`kw-${offset}`} className="engine-decision-table-viewer__feel-keyword">
           {part}
-        </span>
+        </span>,
       );
-    }
-    if (/^\d+(?:\.\d+)?$/.test(part)) {
-      return (
-        <span key={index} className="engine-decision-table-viewer__feel-number">
+    } else if (/^\d+(?:\.\d+)?$/.test(part)) {
+      nodes.push(
+        <span key={`num-${offset}`} className="engine-decision-table-viewer__feel-number">
           {part}
-        </span>
+        </span>,
       );
-    }
-    if (/^["']/.test(part)) {
-      return (
-        <span key={index} className="engine-decision-table-viewer__feel-string">
+    } else if (/^["']/.test(part)) {
+      nodes.push(
+        <span key={`str-${offset}`} className="engine-decision-table-viewer__feel-string">
           {part}
-        </span>
+        </span>,
       );
+    } else {
+      nodes.push(part);
     }
-    return part;
-  });
+
+    lastIndex = match.index + part.length;
+    match = tokenizer.exec(text);
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
 }

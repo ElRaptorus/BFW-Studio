@@ -29,8 +29,8 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
 
   const defaultValueFromProps = optionize(props.propertyValue);
 
-  const [defaultValue, _setDefaultValue] = useState(defaultValueFromProps);
-  const [defaultInputValue, _setDefaultInputValue] = useState(defaultValueFromProps?.value ?? defaultValueFromProps);
+  const [defaultValue] = useState(defaultValueFromProps);
+  const [defaultInputValue] = useState(defaultValueFromProps?.value ?? defaultValueFromProps);
 
   const isClearable = props.isClearable ?? false;
   const loadOptions = useCallback(async () => {
@@ -97,6 +97,8 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
   });
 
   const InputComponent = useMemo(() => {
+    // react-select requires a component type for Input; latest handlers live in refs.
+    // eslint-disable-next-line @eslint-react/no-nested-component-definitions -- react-select Input override
     return function Input(inputProps: any) {
       return (
         <components.Input

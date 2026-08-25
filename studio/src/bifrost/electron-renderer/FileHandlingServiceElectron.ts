@@ -202,7 +202,7 @@ export default class FileHandlingServiceElectron extends FileHandlingService {
       try {
         return ipcRenderer.invoke(IPC_INVOKE_READ_FILE, localPath, { encoding: 'utf-8' });
       } catch (error) {
-        throw new Error(`Error during loadFileContent: ${error}`);
+        throw new Error(`Error during loadFileContent: ${error}`, { cause: error });
       }
     }
 

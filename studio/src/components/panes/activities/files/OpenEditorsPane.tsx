@@ -1,7 +1,7 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import { useScrollPositionManager } from '#components/ScrollPositionManager';
 
-import React, { Fragment } from 'react';
+import React from 'react';
 
 import type {
   EditorAreaLayout_Editor,

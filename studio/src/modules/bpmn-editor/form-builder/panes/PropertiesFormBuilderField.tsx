@@ -217,7 +217,7 @@ function OptionsEditor(props: OptionsEditorProps): React.JSX.Element {
     <div className="form-group">
       <label className="d-block">Options</label>
       {options.map((option, index) => (
-        <div key={index} className="d-flex gap-1 mb-1">
+        <div key={`${option.value}:${option.label}`} className="d-flex gap-1 mb-1">
           <input
             className="form-control form-control-sm"
             type="text"

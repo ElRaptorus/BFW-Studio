@@ -51,9 +51,9 @@ export default function BpmnDiffDocumentRenderer(props: EditorDocumentRendererPr
   const [errorWhileLoading, setErrorWhileLoading] = useState<string | null>(null);
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
 
-  const refBefore = useRef<HTMLDivElement | null>(null);
-  const refAfter = useRef<HTMLDivElement | null>(null);
-  const refLoadingIndicator = useRef<HTMLDivElement | null>(null);
+  const beforeRef = useRef<HTMLDivElement | null>(null);
+  const afterRef = useRef<HTMLDivElement | null>(null);
+  const loadingIndicatorRef = useRef<HTMLDivElement | null>(null);
   const attachedRef = useRef(false);
 
   const parsedFragmentUri = parseOpenInNewTabUrl(editorDocument.uri);
@@ -106,8 +106,8 @@ export default function BpmnDiffDocumentRenderer(props: EditorDocumentRendererPr
           loadedModel.on(EVENT_RELOADING, () => {
             setErrorWhileLoading(null);
             attachedRef.current = false;
-            if (refLoadingIndicator.current) {
-              refLoadingIndicator.current.style.display = '';
+            if (loadingIndicatorRef.current) {
+              loadingIndicatorRef.current.style.display = '';
             }
             forceRender();
           }),
@@ -141,11 +141,11 @@ export default function BpmnDiffDocumentRenderer(props: EditorDocumentRendererPr
       return;
     }
 
-    if (refBefore.current && refAfter.current) {
+    if (beforeRef.current && afterRef.current) {
       attachedRef.current = true;
-      model.attachTo(refBefore.current, refAfter.current).then(() => {
-        if (refLoadingIndicator.current) {
-          refLoadingIndicator.current.style.display = 'none';
+      model.attachTo(beforeRef.current, afterRef.current).then(() => {
+        if (loadingIndicatorRef.current) {
+          loadingIndicatorRef.current.style.display = 'none';
         }
       });
     }
@@ -299,14 +299,14 @@ export default function BpmnDiffDocumentRenderer(props: EditorDocumentRendererPr
           primaryMinSize={10}
           secondaryMinSize={10}
         >
-          <div className="bpmn-diff__before" ref={refBefore}>
+          <div className="bpmn-diff__before" ref={beforeRef}>
             <div className="diff-title diff-title--before">Before</div>
           </div>
-          <div className="bpmn-diff__after" ref={refAfter}>
+          <div className="bpmn-diff__after" ref={afterRef}>
             <div className="diff-title diff-title--after">After</div>
           </div>
         </SplitterLayout>
-        <div className="editor-loading__backdrop" ref={refLoadingIndicator}>
+        <div className="editor-loading__backdrop" ref={loadingIndicatorRef}>
           <div className="editor-loading__content ph-3x">
             <Icon id="ph-light ph-gear ph-spin" />
           </div>

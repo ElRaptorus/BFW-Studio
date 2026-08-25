@@ -26,7 +26,7 @@ The project uses `eslint-plugin-react-hooks` with **React Compiler** rules enabl
 
 - **`react-hooks/exhaustive-deps`** — All reactive values must be in dependency arrays. Destructure props before `useCallback`/`useMemo` to reference individual values.
 - **`react-hooks/set-state-in-effect`** — Do not call `setState` synchronously inside an effect. Use lazy `useState` initializers or adjust-state-during-render instead.
-- **`react-hooks/refs`** — Do not read or write `ref.current` during render. Move ref assignments to `useEffect`. Use `forwardRef` instead of custom ref props.
+- **`react-hooks/refs`** — Do not read or write `ref.current` during render. Move ref assignments to `useEffect`. Accept `ref` as a prop (React 19); do not use `forwardRef` or a custom `htmlRef` prop.
 - **`react-hooks/rules-of-hooks`** — Hooks must be called unconditionally and in the same order every render. Never call hooks inside `if`/`else` blocks.
 - **`react-hooks/static-components`** — Components used in JSX must be stable references (module-level or memoized).
 - **`react-hooks/immutability`** — Do not mutate props, state, or values derived from them. Clone before modifying.
@@ -35,7 +35,7 @@ The project uses `eslint-plugin-react-hooks` with **React Compiler** rules enabl
 ### Key patterns
 
 - **Latest-ref pattern:** Assign `ref.current` in a `useEffect` (not during render): `useEffect(() => { ref.current = value; });`
-- **Ref forwarding:** Use `React.forwardRef` instead of custom `htmlRef` props.
+- **Ref as a prop:** Declare `ref?: React.Ref<…>` on the props type and destructure it (`{ ref, ...props }`). Do not use `React.forwardRef` or a custom `htmlRef` prop.
 - **Unconditional hooks:** When a feature is optional, call hooks unconditionally and disable via config (e.g., `canDrag: false`).
 
 ### Suppressing rules

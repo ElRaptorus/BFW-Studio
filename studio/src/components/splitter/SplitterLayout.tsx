@@ -28,6 +28,28 @@ type SplitterLayoutProps = {
 
 const DEFAULT_SPLITTER_SIZE = 4;
 
+function takeChildNodes(children: unknown, limit: number): React.ReactNode[] {
+  let list: unknown[];
+  if (Array.isArray(children)) {
+    list = children;
+  } else if (children == null) {
+    list = [];
+  } else {
+    list = [children];
+  }
+  const result: React.ReactNode[] = [];
+  for (const child of list) {
+    if (child == null || child === false || child === true) {
+      continue;
+    }
+    result.push(child as React.ReactNode);
+    if (result.length >= limit) {
+      break;
+    }
+  }
+  return result;
+}
+
 export class SplitterLayout extends React.Component<SplitterLayoutProps, any> {
   public static defaultProps = {
     customClassName: '',
@@ -295,7 +317,7 @@ export class SplitterLayout extends React.Component<SplitterLayoutProps, any> {
       containerClasses += ' layout-changing';
     }
 
-    const children = React.Children.toArray(this.props.children).slice(0, 2);
+    const children = takeChildNodes(this.props.children, 2);
     if (children.length === 0) {
       children.push(<div />);
     }

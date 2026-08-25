@@ -1,3 +1,5 @@
+import type { Ref } from 'react';
+
 import type { FeelEditorVariable, Studio } from '@evil/bifrost_fw_sdk';
 
 export type FeelWarning = {
@@ -13,6 +15,10 @@ export type EvalResult =
 
 export type FeelSimulatorLayout = 'SingleLine' | 'MultiLine' | 'Both';
 
+export type FeelSimulatorEditorRef = {
+  getCurrentValue(): string | undefined;
+};
+
 export type FeelSimulatorProps = {
   studio: Studio;
   initialExpression: string;
@@ -26,8 +32,5 @@ export type FeelSimulatorProps = {
   htmlAttributes?: Record<string, unknown>;
   className?: string;
   initialContext?: Record<string, unknown>;
-};
-
-export type FeelSimulatorEditorRef = {
-  getCurrentValue(): string | undefined;
+  ref?: Ref<FeelSimulatorEditorRef | null>;
 };

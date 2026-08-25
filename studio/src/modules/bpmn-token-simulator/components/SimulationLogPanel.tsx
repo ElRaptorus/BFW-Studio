@@ -26,8 +26,8 @@ export function SimulationLogPanel(props: SimulationLogPanelProps): React.ReactE
       {entries.length === 0 ? (
         <div className="token-sim-log-panel__empty">No events yet</div>
       ) : (
-        entries.map((entry, i) => (
-          <div key={i} className="token-sim-log-entry">
+        entries.map((entry) => (
+          <div key={entry.id} className="token-sim-log-entry">
             <span className="token-sim-log-entry__time">{entry.time}ms</span>
             <span className="token-sim-log-entry__event">{entry.event}</span>
             {' \u2014 '}

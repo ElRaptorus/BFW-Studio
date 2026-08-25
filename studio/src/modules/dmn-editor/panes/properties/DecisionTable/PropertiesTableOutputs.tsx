@@ -65,7 +65,7 @@ function TableOutputsProperties(props: PaneComponentProps): React.JSX.Element | 
         const defaultOutputEntry = output.defaultOutputEntry?.text ?? '';
 
         return (
-          <div key={output.id ?? index} data-test--dmn-dt-output={output.id}>
+          <div key={output.id} data-test--dmn-dt-output={output.id}>
             <PaneProperty
               label={`Output ${index + 1}: Name`}
               type="text"

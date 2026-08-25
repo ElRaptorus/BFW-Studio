@@ -126,8 +126,8 @@ function VersionBrowser(props: {
   return (
     <div className="engine-pane-version-browser">
       <div className="engine-pane-version-browser__header">Versions ({versions.length})</div>
-      {versions.map((version, index) => (
-        <div key={version.version ?? index} className="engine-pane-version-browser__item">
+      {versions.map((version) => (
+        <div key={String(version.version)} className="engine-pane-version-browser__item">
           <span className="engine-pane-version-browser__version">{version.version ?? '(no version)'}</span>
           <span className="engine-pane-version-browser__date">
             {version.deployedAt ? getHumanizedDateTime(version.deployedAt) : '—'}

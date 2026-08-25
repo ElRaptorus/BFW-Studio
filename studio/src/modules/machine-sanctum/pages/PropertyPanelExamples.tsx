@@ -252,7 +252,7 @@ export default function PropertyPanelExamples(props: any): React.JSX.Element {
         <h2>TODO: Implement design system</h2>
 
         {EXAMPLES.map((example, index) => (
-          <Fragment key={index}>
+          <Fragment key={`${example.title}:${example.jsx.trim().slice(0, 80)}`}>
             <PropertyPanelExampleRenderer
               bifrost={props.bifrost}
               editorDocument={props.editorDocument}

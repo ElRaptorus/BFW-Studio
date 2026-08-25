@@ -35,7 +35,7 @@ export function DmnSanitizerInspector(props: DmnSanitizerInspectorProps): React.
   const { model, studio } = props;
   const [findings, setFindings] = useState<DmnSanitizableIssue[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (!model?.modelerAdapter) {

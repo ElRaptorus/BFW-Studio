@@ -96,7 +96,7 @@ export default function QuickjumpExamples(props: any): React.JSX.Element {
         <h2>Quickjump Examples</h2>
 
         {quickjumpExamples.map((quickjumpExample: any, index: number) => (
-          <Fragment key={index}>
+          <Fragment key={quickjumpExample.title}>
             <QuickJumpExampleRenderer
               bifrost={props.bifrost}
               editorDocument={props.editorDocument}

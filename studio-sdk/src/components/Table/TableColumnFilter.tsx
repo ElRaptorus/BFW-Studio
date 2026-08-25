@@ -249,8 +249,8 @@ function formatDateRangeSummary(value: DateRangeFilterValue | undefined, labels:
 
 function DateRangeFilterPopover({ columnId, value, onChange, labels }: DateRangeFilterPopoverProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
-  const [localAfter, setLocalAfter] = useState(toDatetimeLocalValue(value?.after));
-  const [localBefore, setLocalBefore] = useState(toDatetimeLocalValue(value?.before));
+  const [localAfter, setLocalAfter] = useState(() => toDatetimeLocalValue(value?.after));
+  const [localBefore, setLocalBefore] = useState(() => toDatetimeLocalValue(value?.before));
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [lastSyncedValue, setLastSyncedValue] = useState(value);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 
 import { useBifrost } from '../../bifrostContext';
 
@@ -7,6 +7,9 @@ export function EditorAreaEmptyState(): React.JSX.Element {
   const cmd = bifrost.commands.getClickHandler();
   const keystroke = (command: string): string => bifrost.keybindings.getFormattedKeystrokeForCommand(command);
   const tip = bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText');
+  const extraActions = bifrost.commands.isRegistered('std.editorEmptyState.getExtraActions')
+    ? bifrost.commands.executeCommand<React.JSX.Element[]>('std.editorEmptyState.getExtraActions')
+    : undefined;
 
   return (
     <div className="editor-area-empty-state">
@@ -47,10 +50,9 @@ export function EditorAreaEmptyState(): React.JSX.Element {
         <button className="editor-area-empty-state__action" onClick={cmd('std.solution.createSolution')}>
           + New Solution
         </button>
-        {bifrost.commands.isRegistered('std.editorEmptyState.getExtraActions') &&
-          bifrost.commands
-            .executeCommand<React.JSX.Element[]>('std.editorEmptyState.getExtraActions')
-            ?.map((action, index) => React.cloneElement(action, { key: action.key ?? `extra-${index}` }))}
+        {extraActions?.map((action) => (
+          <Fragment key={extraActionKey(action)}>{action}</Fragment>
+        ))}
       </div>
 
       <p className="editor-area-empty-state__tip">
@@ -58,4 +60,18 @@ export function EditorAreaEmptyState(): React.JSX.Element {
       </p>
     </div>
   );
+}
+
+function extraActionKey(action: React.JSX.Element): React.Key {
+  if (action.key != null) {
+    return action.key;
+  }
+  const actionProps = action.props as { children?: unknown; className?: string };
+  if (typeof actionProps.children === 'string') {
+    return actionProps.children;
+  }
+  if (typeof actionProps.className === 'string') {
+    return actionProps.className;
+  }
+  return String(action.type);
 }

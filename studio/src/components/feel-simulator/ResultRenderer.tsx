@@ -54,8 +54,8 @@ export function ResultRenderer(props: ResultRendererProps): React.JSX.Element {
           <div className="feel-simulator__result-warnings">
             {result.warnings.length} warning{result.warnings.length !== 1 ? 's' : ''}:
             <ul className="feel-simulator__result-warnings-list">
-              {result.warnings.map((warning, idx) => (
-                <li key={idx}>{warning.message}</li>
+              {result.warnings.map((warning) => (
+                <li key={`${warning.type}:${warning.message}:${warning.position?.from}`}>{warning.message}</li>
               ))}
             </ul>
           </div>

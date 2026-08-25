@@ -79,9 +79,9 @@ function ItemDefinitionsContent(props: PaneComponentProps): React.JSX.Element | 
         </div>
       )}
 
-      {itemDefinitions.map((itemDef: any, index: number) => (
+      {itemDefinitions.map((itemDef: any) => (
         <ItemDefinitionEntry
-          key={itemDef.id ?? index}
+          key={itemDef.id}
           itemDefinition={itemDef}
           onUpdate={updateItemDefinition}
           onRemove={removeItemDefinition}
@@ -163,8 +163,8 @@ function ItemDefinitionEntry(props: ItemDefinitionEntryProps): React.JSX.Element
       {isComposite && (
         <div className="dmn-item-definitions__components" data-test--dmn-item-definition-components={true}>
           <div className="dmn-item-definitions__components-header">Components:</div>
-          {itemComponents.map((component: any, componentIndex: number) => (
-            <div key={component.id ?? componentIndex} className="dmn-item-definitions__component">
+          {itemComponents.map((component: any) => (
+            <div key={component.id} className="dmn-item-definitions__component">
               <span className="dmn-item-definitions__component-info">
                 {component.name ?? '(unnamed)'}: {component.typeRef ?? '(no type)'}
               </span>

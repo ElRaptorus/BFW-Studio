@@ -79,7 +79,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       {allParticipants.map((participant, index) => {
         return (
           <ProcessPaneItem
-            key={`process_participant_item_${participant.id}_${index}`}
+            key={participant.id}
             bifrost={props.studio}
             bpmnDocumentModel={bpmnDocumentModel}
             participant={participant}

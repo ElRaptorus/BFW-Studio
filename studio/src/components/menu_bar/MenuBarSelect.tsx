@@ -38,8 +38,8 @@ export default function MenuBarSelect(props: MenuBarSelectProps): React.JSX.Elem
         data-bs-title={props.tooltip}
         data-bs-toggle="tooltip"
       >
-        {entries.map((entry: any, index: number) => (
-          <option key={`${index}_${entry.value}_${entry.label}`} value={entry.value}>
+        {entries.map((entry: any) => (
+          <option key={`${entry.value}:${entry.label}`} value={entry.value}>
             {entry.label}
           </option>
         ))}

@@ -385,6 +385,7 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
     } catch (error) {
       throw new Error(
         `ERROR: failed to import xml\n\nError given:\n\n${JSON.stringify(error)}\n\nXML given:\n\n${currentXml}`,
+        { cause: error },
       );
     } finally {
       this.xmlImportInProgress = false;
@@ -399,7 +400,7 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
       const { xml } = await this.viewer.saveXML();
       return xml!;
     } catch (error) {
-      throw new Error(`ERROR: while saving XML\n\n${error}`);
+      throw new Error(`ERROR: while saving XML\n\n${error}`, { cause: error });
     }
   }
 

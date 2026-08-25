@@ -127,7 +127,9 @@ export function createModuleGate(pluginName: string, pluginPath: string, permiss
       if (err instanceof ModuleBlockedError || err instanceof PermissionDeniedModuleError) {
         throw err;
       }
-      throw new Error(`Plugin '${pluginName}': cannot resolve module '${specifier}' from '${pluginPath}'`);
+      throw new Error(`Plugin '${pluginName}': cannot resolve module '${specifier}' from '${pluginPath}'`, {
+        cause: err,
+      });
     }
   }
 

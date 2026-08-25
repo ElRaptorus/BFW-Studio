@@ -193,16 +193,6 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       require('../property-panel/FlowNode/BusinessRuleTaskPayloadPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'EngineDebugger/panes/SendTaskPayload',
-      'EngineDebugger/pane-providers/SendTaskPayload',
-      require('../property-panel/FlowNode/SendTaskPayloadPane'),
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
-      'EngineDebugger/panes/MessageEventPayload',
-      'EngineDebugger/pane-providers/MessageEventPayload',
-      require('../property-panel/FlowNode/MessageEventPayloadPane'),
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/CorrelationRetrievalExpression',
       'EngineDebugger/pane-providers/CorrelationRetrievalExpression',
       require('../property-panel/FlowNode/CorrelationRetrievalExpressionPane'),

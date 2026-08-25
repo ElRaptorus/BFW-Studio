@@ -204,13 +204,13 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 
 - Data pipeline: `PropertiesInputMappings`, `PropertiesOutputMappings`, `PropertiesPayloadContract`, `PropertiesResultContract`
 - `PropertiesCorrelationRetrievalExpression` — FEEL editor for **throw-side** message events (`MessageIntermediateThrowEvent`, `MessageEndEvent`, `SendTask`). Catch-side correlation uses the process-level `evil:correlationKey`, not this extension.
-- `PropertiesDataOutputAssociationDataSource`, `PropertiesThrowEventPayload`
+- `PropertiesDataOutputAssociationDataSource`
 - `DefaultCustomStartToken`, `PropertiesExamplePayload`, `PropertiesExampleResult`
 - `PropertiesCustomAttributes`
 
 #### Message Event Data Pipeline (D-MSG-1)
 
-Per architectural decision D-MSG-1, message events use generic input/output mappings instead of message-specific `evil:payload` and `evil:eventMapping`. Authoring pane visibility is **Studio-stricter** than the Engine GraphQL model in a few places (embedded SubProcess mappings are authorable only on Ad-hoc shells; SendTask output mappings exist on the Engine struct but are not offered in the editor). Runtime debugger / model-viewer panes follow the Engine GraphQL field table.
+Per architectural decision D-MSG-1 / MSG-D1, message events use generic input/output mappings. There is no `evil:payload` or `evil:eventMapping`. Authoring pane visibility matches the live pipeline: Send/throw show Input Mappings; Receive/catch show Output Mappings. Embedded SubProcess mappings are authorable only on Ad-hoc shells.
 
 | Element type | Input Mappings | Output Mappings | Payload Contract | Result Contract | Correlation Retrieval |
 |--------------|:-:|:-:|:-:|:-:|:-:|
@@ -434,7 +434,6 @@ Event-definition carriers (`bpmn:ErrorEventDefinition`, `bpmn:MessageEventDefini
 | BpmnDocumentElementAccess | `studio/src/modules/bpmn-editor/BpmnDocumentElementAccess.ts` |
 | PropertiesElementInfo | `studio/src/modules/bpmn-editor/panes/properties/PropertiesElementInfo.tsx` |
 | PropertiesElementDocumentation | `studio/src/modules/bpmn-editor/panes/properties/PropertiesElementDocumentation.tsx` |
-| PropertiesThrowEventPayload | `studio/src/modules/bpmn-editor/panes/properties/ThrowEventPayload/PropertiesThrowEventPayload.tsx` |
 | PropertiesInputMappings | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesInputMappings.tsx` |
 | PropertiesOutputMappings | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesOutputMappings.tsx` |
 | PropertiesPayloadContract | `studio/src/modules/bpmn-editor/panes/properties/DataPipeline/PropertiesPayloadContract.tsx` |

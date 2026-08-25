@@ -379,7 +379,7 @@ export class EditorMediator extends AbstractEmitter {
             return currentFocused;
           }
 
-          throw new Error(`Malformed fragment URI: ${message}`);
+          throw new Error(`Malformed fragment URI: ${message}`, { cause: error });
         }
       }
 

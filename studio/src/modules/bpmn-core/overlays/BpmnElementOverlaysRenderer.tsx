@@ -53,14 +53,14 @@ function OverlayRenderer(props: BpmnOverlayRendererProps): React.JSX.Element {
                 {toppingOverlays
                   .filter((overlay) => overlay.position === OverlayPosition.topLeft)
                   .map((overlay) => (
-                    <overlay.overlayElement {...overlay.overlayProps} key={`overlay-top-left-${crypto.randomUUID}`} />
+                    <overlay.overlayElement key={`overlay-top-left-${crypto.randomUUID}`} {...overlay.overlayProps} />
                   ))}
               </div>
               <div className="bpmn-element-overlay__indicator bpmn-element-overlay__right">
                 {toppingOverlays
                   .filter((overlay) => overlay.position === OverlayPosition.topRight)
                   .map((overlay) => (
-                    <overlay.overlayElement {...overlay.overlayProps} key={`overlay-top-right-${crypto.randomUUID}`} />
+                    <overlay.overlayElement key={`overlay-top-right-${crypto.randomUUID}`} {...overlay.overlayProps} />
                   ))}
               </div>
             </div>
@@ -70,8 +70,8 @@ function OverlayRenderer(props: BpmnOverlayRendererProps): React.JSX.Element {
                   .filter((overlay) => overlay.position === OverlayPosition.middleLeft)
                   .map((overlay) => (
                     <overlay.overlayElement
-                      {...overlay.overlayProps}
                       key={`overlay-middle-left-${crypto.randomUUID}`}
+                      {...overlay.overlayProps}
                     />
                   ))}
               </div>
@@ -80,8 +80,8 @@ function OverlayRenderer(props: BpmnOverlayRendererProps): React.JSX.Element {
                   .filter((overlay) => overlay.position === OverlayPosition.middleRight)
                   .map((overlay) => (
                     <overlay.overlayElement
-                      {...overlay.overlayProps}
                       key={`overlay-middle-right-${crypto.randomUUID}`}
+                      {...overlay.overlayProps}
                     />
                   ))}
               </div>
@@ -92,8 +92,8 @@ function OverlayRenderer(props: BpmnOverlayRendererProps): React.JSX.Element {
                   .filter((overlay) => overlay.position === OverlayPosition.bottomLeft)
                   .map((overlay) => (
                     <overlay.overlayElement
-                      {...overlay.overlayProps}
                       key={`overlay-bottom-left-${crypto.randomUUID}`}
+                      {...overlay.overlayProps}
                     />
                   ))}
               </div>
@@ -102,8 +102,8 @@ function OverlayRenderer(props: BpmnOverlayRendererProps): React.JSX.Element {
                   .filter((overlay) => overlay.position === OverlayPosition.bottomRight)
                   .map((overlay) => (
                     <overlay.overlayElement
-                      {...overlay.overlayProps}
                       key={`overlay-bottom-right-${crypto.randomUUID}`}
+                      {...overlay.overlayProps}
                     />
                   ))}
               </div>
@@ -121,7 +121,7 @@ function OverlayRenderer(props: BpmnOverlayRendererProps): React.JSX.Element {
         >
           <div className="bpmn-element-overlay__below">
             {belowOverlays.map((overlay) => (
-              <overlay.overlayElement {...overlay.overlayProps} key={`overlay-controls-${crypto.randomUUID}`} />
+              <overlay.overlayElement key={`overlay-controls-${crypto.randomUUID}`} {...overlay.overlayProps} />
             ))}
           </div>
         </div>

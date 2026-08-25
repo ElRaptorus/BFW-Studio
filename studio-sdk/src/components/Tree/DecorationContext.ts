@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useReducer } from 'react';
+import React, { use, useEffect, useReducer } from 'react';
 
 import type { TreeDecorationSource, TreeItemDecoration } from '../../contracts/TreeTypes';
 
 export const DecorationContext = React.createContext<TreeDecorationSource | null>(null);
 
 export function useDecoration(uri: string | undefined): TreeItemDecoration | null {
-  const source = useContext(DecorationContext);
+  const source = use(DecorationContext);
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
   useEffect(() => {

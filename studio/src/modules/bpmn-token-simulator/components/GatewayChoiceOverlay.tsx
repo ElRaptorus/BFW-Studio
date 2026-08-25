@@ -14,9 +14,9 @@ export function GatewayChoiceOverlay(props: GatewayChoiceOverlayProps): React.Re
   return (
     <div className="token-sim-gateway-choice">
       <div className="token-sim-gateway-choice__title">Choose path</div>
-      {outgoingFlows.map((flow, index) => (
+      {outgoingFlows.map((flow) => (
         <button
-          key={flow.id || index}
+          key={flow.id}
           className={`token-sim-gateway-choice__option ${flow.id === initialSelectedId ? 'token-sim-gateway-choice__option--selected' : ''}`}
           onClick={() => onChoose(flow)}
           title={getFlowLabel(flow)}

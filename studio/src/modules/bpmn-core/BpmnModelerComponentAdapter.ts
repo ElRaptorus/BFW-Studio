@@ -217,10 +217,12 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
       if (MERGE_CONFLICT_MARKER_REGEX.test(currentXml)) {
         throw new Error(
           `ERROR: failed to import xml because of unresolved merge conflicts.\n\nXML given:\n\n${currentXml}`,
+          { cause: error },
         );
       }
       throw new Error(
         `ERROR: failed to import xml\n\nError given:\n\n${JSON.stringify(error)}\n\nXML given:\n\n${currentXml}`,
+        { cause: error },
       );
     }
   }
@@ -253,7 +255,7 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
       const { xml } = await this.modeler.saveXML({ format: true });
       return xml!;
     } catch (error) {
-      throw new Error(`ERROR: while saving XML for BPMN\n\n${error}`);
+      throw new Error(`ERROR: while saving XML for BPMN\n\n${error}`, { cause: error });
     }
   }
 

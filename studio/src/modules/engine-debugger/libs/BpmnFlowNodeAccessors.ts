@@ -73,14 +73,6 @@ export function getUserTaskFormSchema(flowNode: BpmnFlowNode | undefined): unkno
   return flowNode.typeData.formSchema;
 }
 
-export function getMessagePayloadExpression(flowNode: BpmnFlowNode | undefined): string {
-  const eventDefinition = flowNode ? getEventDefinition(flowNode) : null;
-  if (eventDefinition?.type === 'message') {
-    return eventDefinition.payloadExpression ?? '';
-  }
-  return '';
-}
-
 export function getCorrelationRetrievalExpression(flowNode: BpmnFlowNode | undefined): string {
   const eventDefinition = flowNode ? getEventDefinition(flowNode) : null;
   if (eventDefinition?.type === 'message') {
@@ -183,7 +175,6 @@ const INPUT_MAPPING_TYPES = new Set([
   'script_task',
   'business_rule_task',
   'send_task',
-  'receive_task',
   'call_activity',
   'sub_process',
 ]);
@@ -199,7 +190,6 @@ const OUTPUT_MAPPING_TYPES = new Set([
   'service_task',
   'script_task',
   'business_rule_task',
-  'send_task',
   'receive_task',
   'call_activity',
   'sub_process',

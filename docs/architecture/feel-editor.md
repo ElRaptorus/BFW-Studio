@@ -197,7 +197,7 @@ type FeelSimulatorProps = {
 
 ### Imperative API
 
-The component exposes `FeelSimulatorEditorRef` via `forwardRef`:
+The component exposes `FeelSimulatorEditorRef` via a React 19 `ref` prop:
 
 ```typescript
 type FeelSimulatorEditorRef = {

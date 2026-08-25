@@ -142,7 +142,7 @@ function OutputMappingsContent(props: PaneComponentProps): React.JSX.Element {
     <div className="form-group">
       {mappings.map((mapping, index) => (
         <div
-          key={`output-mapping-${index}`}
+          key={`${mapping.source}->${mapping.target}`}
           className="form-group"
           style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           data-test--data-pipeline-mapping-row="output"

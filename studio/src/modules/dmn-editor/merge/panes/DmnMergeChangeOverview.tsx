@@ -48,7 +48,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const [resolutionProgress, setResolutionProgress] = useState<MergeResolutionProgress | null>(
     () => model?.getResolutionProgress() ?? null,
   );
-  const [, setRenderTick] = useState(0);
+  const [renderTick, setRenderTick] = useState(0);
   const [prevModel, setPrevModel] = useState(model);
 
   if (model !== prevModel) {
@@ -127,7 +127,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const hasPerElementResolution = resolverApi?.getResolutionStatus != null;
 
   return (
-    <div className="merge-overview">
+    <div className="merge-overview" key={renderTick}>
       {resolutionProgress != null && resolutionProgress.totalConflicts > 0 && (
         <div className="merge-overview__progress">
           <div className="merge-overview__progress-text">

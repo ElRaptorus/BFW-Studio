@@ -9,6 +9,7 @@ import MenuBarButton from './MenuBarButton';
 import MenuBarMenu from './MenuBarMenu';
 import MenuBarPaneContentToggle from './MenuBarPaneContentToggle';
 import MenuBarSelect from './MenuBarSelect';
+import { menuBarItemKey } from './menuBarItemKey';
 
 type MenuBarSectionProps = {
   items: MenuBarItem[];
@@ -23,8 +24,8 @@ export default function MenuBarSection(props: MenuBarSectionProps): React.JSX.El
 
   return (
     <div className={classNames.join(' ')}>
-      {props.items.map((item: MenuBarItem, index: number) => (
-        <Fragment key={index}>{renderMenuBarItemObject(item, Icon)}</Fragment>
+      {props.items.map((item: MenuBarItem) => (
+        <Fragment key={menuBarItemKey(item)}>{renderMenuBarItemObject(item, Icon)}</Fragment>
       ))}
     </div>
   );

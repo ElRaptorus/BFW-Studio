@@ -525,7 +525,7 @@ export class TaskInboxDocumentModel extends EditorDocumentModel {
   }
 
   private updatePendingCount(count: number): void {
-    let counts: Record<string, number> = {};
+    let counts: Record<string, number>;
     try {
       counts = this.studio.getSharedRessource<Record<string, number>>(TASK_INBOX_PENDING_COUNTS_KEY) ?? {};
     } catch (sharedResourceError) {

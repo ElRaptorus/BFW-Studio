@@ -98,7 +98,7 @@ function navigateToPlane(adapter: BpmnViewerComponentAdapter, targetSubprocessId
 
 function DebuggerSubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAdapter }): React.JSX.Element | null {
   const { adapter } = props;
-  const [, setRootRevision] = useState(0);
+  const [rootRevision, setRootRevision] = useState(0);
 
   useEffect(() => {
     const subscription = adapter.on(EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED, () => {
@@ -115,7 +115,7 @@ function DebuggerSubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAd
   const chain = buildBreadcrumbChain(adapter);
 
   return (
-    <div className="bpmn-breadcrumb-bar">
+    <div className="bpmn-breadcrumb-bar" key={rootRevision}>
       {chain.map((entry, index) => {
         const isLast = index === chain.length - 1;
         return (
@@ -140,8 +140,8 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
   const [model, setModel] = useState<EngineBpmnDebuggerEditorDocumentModel | null>(null);
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
 
-  const refBpmnViewer = useRef<HTMLDivElement | null>(null);
-  const refLoadingIndicator = useRef<HTMLDivElement | null>(null);
+  const bpmnViewerRef = useRef<HTMLDivElement | null>(null);
+  const loadingIndicatorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -169,15 +169,15 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
       editorDocument.metadata?.isInitialized !== true ||
       !model?.engineIsOnline ||
       model.processInstance == null ||
-      !refLoadingIndicator.current ||
-      refLoadingIndicator.current.style.display === 'none'
+      !loadingIndicatorRef.current ||
+      loadingIndicatorRef.current.style.display === 'none'
     ) {
       return;
     }
 
     updateEditorLabel(model, studio, editorDocument);
-    attachBpmnDocument(model, refBpmnViewer);
-    hideLoadingIndicatorIfPresent(model, refLoadingIndicator);
+    attachBpmnDocument(model, bpmnViewerRef);
+    hideLoadingIndicatorIfPresent(model, loadingIndicatorRef);
   });
 
   if (model == null) {
@@ -442,7 +442,7 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
     const showEngineIsOfflineHint = !model.engineIsOnline && model.connectionGracePeriodExpired;
 
     return (
-      <EditorContent ref={refBpmnViewer}>
+      <EditorContent ref={bpmnViewerRef}>
         {model.bpmnViewerComponentAdapter && (
           <DebuggerSubprocessBreadcrumbBar adapter={model.bpmnViewerComponentAdapter} />
         )}
@@ -461,7 +461,7 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
             <span />
           </EngineVersionGate>
         )}
-        <div className="editor-loading__backdrop" ref={refLoadingIndicator}>
+        <div className="editor-loading__backdrop" ref={loadingIndicatorRef}>
           {showEngineIsOfflineHint ? (
             <div className="editor-loading__content ph-5x">
               <Icon id="ph-bold ph-file-exclamation" />
@@ -509,23 +509,23 @@ async function updateEditorLabel(
 
 function attachBpmnDocument(
   model: EngineBpmnDebuggerEditorDocumentModel,
-  refBpmnViewer: React.RefObject<HTMLDivElement | null>,
+  bpmnViewerRef: React.RefObject<HTMLDivElement | null>,
 ): void {
-  if (refBpmnViewer.current == null) {
+  if (bpmnViewerRef.current == null) {
     return;
   }
   assertNotNull(model, 'model');
-  model.attachToHtmlElement(refBpmnViewer.current);
+  model.attachToHtmlElement(bpmnViewerRef.current);
 }
 
 function hideLoadingIndicatorIfPresent(
   model: EngineBpmnDebuggerEditorDocumentModel,
-  refLoadingIndicator: React.RefObject<HTMLDivElement | null>,
+  loadingIndicatorRef: React.RefObject<HTMLDivElement | null>,
 ): void {
   assertNotNull(model, 'model');
   model.onceInteractive(() => {
-    if (refLoadingIndicator.current != null) {
-      refLoadingIndicator.current.style.display = 'none';
+    if (loadingIndicatorRef.current != null) {
+      loadingIndicatorRef.current.style.display = 'none';
     }
   });
 }

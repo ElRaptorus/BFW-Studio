@@ -228,7 +228,7 @@ export default function DialogExamples(props: any): React.JSX.Element {
         </h3>
 
         {dialogOptionsArray.map((dialogExample: DialogExample, index: number) => (
-          <Fragment key={index}>
+          <Fragment key={dialogExampleListKey(dialogExample)}>
             <DialogExampleRenderer
               bifrost={props.bifrost}
               editorDocument={props.editorDocument}
@@ -310,4 +310,29 @@ function OpenTwoDialogsExperiment(props: any): React.JSX.Element {
       Launch 3 dialogs a second apart
     </button>
   );
+}
+
+function dialogExampleListKey(dialogExample: DialogExample): string {
+  const options = dialogExample.data;
+  const title = 'title' in options && typeof options.title === 'string' ? options.title : '';
+  const content = 'content' in options ? options.content : undefined;
+
+  let contentFingerprint = '';
+  if (typeof content === 'string') {
+    contentFingerprint = content;
+  } else if (Array.isArray(content)) {
+    contentFingerprint = content
+      .map((contentItem) => {
+        if (typeof contentItem === 'string') {
+          return contentItem;
+        }
+        if ('id' in contentItem && typeof contentItem.id === 'string') {
+          return `${contentItem.type}:${contentItem.id}`;
+        }
+        return contentItem.type;
+      })
+      .join('|');
+  }
+
+  return `${title}:${contentFingerprint}`;
 }

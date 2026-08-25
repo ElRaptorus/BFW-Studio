@@ -19,7 +19,7 @@ export default function PanesList(props: PanesListProps): React.JSX.Element | nu
     <>
       {props.visible &&
         props.panes.map((pane: PaneObject, index: number) => (
-          <ErrorBoundary key={`error_boundary_key_${index}_${pane.id}`} resetKeys={props.editorDocument?.uri}>
+          <ErrorBoundary key={pane.id} resetKeys={props.editorDocument?.uri}>
             <PaneWrapper
               editorDocument={props.editorDocument as EditorDocument}
               editorDocumentModel={props.editorDocumentModel as EditorDocumentModel}

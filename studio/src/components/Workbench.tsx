@@ -63,6 +63,7 @@ export default function Workbench(): React.JSX.Element {
   const deferredPaneArea = useDeferredValue(paneArea);
 
   useEffect(() => {
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
     const subscriptions: AbstractSubscription[] = [
       bifrost.dialog.on(EVENT_CLOSE_DIALOG, () => setDialog(null)),
       bifrost.dialog.on(EVENT_OPEN_DIALOG, (dialog: Dialog) => setDialog(dialog)),
@@ -99,12 +100,18 @@ export default function Workbench(): React.JSX.Element {
       bifrost.fileExplorerView.on(EVENT_FILE_EXPLORER_OPENED_SOLUTION, () => forceUpdate()),
       bifrost.recentlyOpened.on(EVENT_RECENTLY_OPENED_CHANGED, () => forceUpdate()),
       bifrost.settings.on(EVENT_SETTINGS_CHANGED, () => forceUpdate()),
-      bifrost.events.on('unspecifiedGlobalUpdate', () => setTimeout(() => forceUpdate(), 100)),
+      bifrost.events.on('unspecifiedGlobalUpdate', () => {
+        const timeoutId = setTimeout(() => forceUpdate(), 100);
+        timeoutIds.push(timeoutId);
+      }),
     ];
 
     return () => {
       for (const subscription of subscriptions) {
         subscription.dispose();
+      }
+      for (const timeoutId of timeoutIds) {
+        clearTimeout(timeoutId);
       }
     };
   }, [bifrost, forceUpdate]);

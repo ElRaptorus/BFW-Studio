@@ -92,7 +92,7 @@ export default function PanesTabList(props: PanesTabListProps): React.JSX.Elemen
           const isActive = pane === props.activePane;
 
           return (
-            <ErrorBoundary key={index}>
+            <ErrorBoundary key={pane.id}>
               <PaneTabDraggable
                 editorDocument={props.editorDocument}
                 editorDocumentModel={props.editorDocumentModel}

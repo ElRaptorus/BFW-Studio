@@ -31,8 +31,8 @@ export default function ContextMenuExamples(props: any): React.JSX.Element {
     <div className="machine-sanctum-subpage">
       <h2>ContextMenu examples</h2>
       <p>TODO: Add introduction to context menus.</p>
-      {contextMenuPropsArray.map((contextMenuExample: ContextMenuExample, index: number) => (
-        <Fragment key={index}>
+      {contextMenuPropsArray.map((contextMenuExample: ContextMenuExample) => (
+        <Fragment key={contextMenuExample.data.menuId}>
           <ContextMenuExample bifrost={props.bifrost} data={contextMenuExample.data} />
           <hr />
         </Fragment>

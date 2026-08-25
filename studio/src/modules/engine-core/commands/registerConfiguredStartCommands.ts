@@ -161,12 +161,11 @@ export default function registerConfiguredStartCommands(
         throw new Error(`Engine ${engineId} not connected`);
       }
 
-      let bpmnXml: string | null = null;
       let startEvents: BpmnStartEvent[] = [];
 
       try {
         const processModel = await connection.client.processes.get(processModelId, { includeXml: true });
-        bpmnXml = processModel.bpmnXml ?? null;
+        const bpmnXml = processModel.bpmnXml ?? null;
         if (bpmnXml) {
           startEvents = extractStartEventsFromXml(bpmnXml);
         }

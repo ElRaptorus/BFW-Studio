@@ -1,13 +1,13 @@
 import React from 'react';
 
-type EditorContentProps = React.PropsWithChildren;
+type EditorContentProps = React.PropsWithChildren<{
+  ref?: React.Ref<HTMLDivElement>;
+}>;
 
-export const EditorContent = React.forwardRef<HTMLDivElement, EditorContentProps>(
-  function EditorContent(props, ref): React.JSX.Element {
-    return (
-      <div className="editor__content" ref={ref}>
-        {props.children}
-      </div>
-    );
-  },
-);
+export function EditorContent({ ref, children }: EditorContentProps): React.JSX.Element {
+  return (
+    <div className="editor__content" ref={ref}>
+      {children}
+    </div>
+  );
+}

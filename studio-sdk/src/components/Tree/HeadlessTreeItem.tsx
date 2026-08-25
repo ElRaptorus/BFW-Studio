@@ -111,21 +111,14 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
 
   const label = (
     <span className="treeview__label-container" style={labelStyle}>
-      <span
-        className="treeview__label"
-        dangerouslySetInnerHTML={{ __html: highlight(data.label, data.labelHighlight) }}
-      ></span>
+      <span className="treeview__label">{highlight(data.label, data.labelHighlight)}</span>
     </span>
   );
 
   const sublabel = data.sublabel && (
-    <span
-      className="treeview__sublabel"
-      style={subLabelStyle}
-      dangerouslySetInnerHTML={{
-        __html: highlight(data.sublabel, data.sublabelHighlight),
-      }}
-    ></span>
+    <span className="treeview__sublabel" style={subLabelStyle}>
+      {highlight(data.sublabel, data.sublabelHighlight)}
+    </span>
   );
 
   const classNames = [
@@ -270,39 +263,37 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
   return entry;
 });
 
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 /**
- * Builds safe HTML from `text` with `phrase` matches wrapped in highlight spans.
- * Matching is done on the raw text so that HTML-special characters like `<` and `&`
- * don't interfere with the search. Each segment is then individually HTML-escaped.
+ * Wraps `phrase` matches in highlight spans. React text nodes handle escaping.
  */
-function highlight(text: string, phrase?: string): string {
+function highlight(text: string, phrase?: string): React.ReactNode {
   if (!phrase) {
-    return escapeHtml(text);
+    return text;
   }
   const pattern = escapeRegExp(phrase);
   const regex = new RegExp(pattern, 'gi');
 
-  const parts: string[] = [];
+  const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      parts.push(escapeHtml(text.slice(lastIndex, match.index)));
+      parts.push(<React.Fragment key={`t-${lastIndex}`}>{text.slice(lastIndex, match.index)}</React.Fragment>);
     }
-    parts.push(`<span class="treeview__highlight">${escapeHtml(match[0])}</span>`);
+    parts.push(
+      <span key={`h-${match.index}`} className="treeview__highlight">
+        {match[0]}
+      </span>,
+    );
     lastIndex = regex.lastIndex;
   }
 
   if (lastIndex < text.length) {
-    parts.push(escapeHtml(text.slice(lastIndex)));
+    parts.push(<React.Fragment key={`t-${lastIndex}`}>{text.slice(lastIndex)}</React.Fragment>);
   }
 
-  return parts.join('');
+  return parts;
 }
 
 function escapeRegExp(text: string): string {
@@ -328,20 +319,20 @@ function TreeItemBadges(props: TreeItemBadgesProps): React.JSX.Element | null {
 }
 
 function renderBadges(badges: TreeBadge[], iconComponent: IconComponent): React.JSX.Element[] {
-  const length = badges.length;
-  return badges.map((badge: TreeBadge, index: number) => {
-    const suffix = index < length - 1 ? <span className="treeview__badge-separator">{', '}</span> : null;
+  const lastBadgeIndex = badges.length - 1;
+  return badges.map((badge: TreeBadge, badgePosition: number) => {
+    const suffix = badgePosition < lastBadgeIndex ? <span className="treeview__badge-separator">{', '}</span> : null;
     switch (badge.type) {
       case 'character':
         return (
-          <span className="treeview__badge" key={index}>
+          <span className="treeview__badge" key={`character:${badge.character}`}>
             {badge.character}
             {suffix}
           </span>
         );
       case 'number':
         return (
-          <span className="treeview__badge" key={index}>
+          <span className="treeview__badge" key={`number:${badge.number}`}>
             {badge.number}
             {suffix}
           </span>
@@ -349,7 +340,7 @@ function renderBadges(badges: TreeBadge[], iconComponent: IconComponent): React.
       case 'icon': {
         const Icon = iconComponent;
         return (
-          <span className="treeview__badge" key={index}>
+          <span className="treeview__badge" key={`icon:${badge.icon}`}>
             <Icon id={badge.icon} />
             {suffix}
           </span>

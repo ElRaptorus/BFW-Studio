@@ -19,12 +19,12 @@ Exports plain JS objects (no npm imports) consumed by both packages:
 | Export | Content |
 |--------|---------|
 | `customRules` | All custom rule overrides (curly, id-length, TypeScript, React, etc.) |
-| `reactSettings` | `{ react: { version: 'detect' } }` |
+| `reactSettings` | `{ 'react-x': { version: '19.2.8', importSource: 'react' } }` |
 | `sharedGlobals` | `{ process: 'readonly' }` |
 
 ### Per-Package Configs
 
-Each package has its own `eslint.config.mjs` that imports the shared exports and composes them with package-local npm packages (`eslint`, `typescript-eslint`, `eslint-config-prettier`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `globals`) and file patterns.
+Each package has its own `eslint.config.mjs` that imports the shared exports and composes them with package-local npm packages (`eslint` 10, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier`, `@eslint-react/eslint-plugin`, `eslint-plugin-react-hooks`, `globals`) and file patterns.
 
 | Package | Config path | Files pattern |
 |---------|------------|---------------|
@@ -34,20 +34,26 @@ Each package has its own `eslint.config.mjs` that imports the shared exports and
 Flat config using `defineConfig()` from `eslint/config`. Config objects are applied in this order:
 
 ```
-┌──────────────────────────────┐
-│  1. Ignores (out/, dist/, …) │
-├──────────────────────────────┤
-│  2. js.configs.recommended   │
-├──────────────────────────────┤
-│  3. tseslint.configs.rec.    │
-├──────────────────────────────┤
-│  4. eslint-config-prettier   │  ← disables formatting rules
-├──────────────────────────────┤
-│  5. Custom rules block       │  ← re-enables curly, adds React
-└──────────────────────────────┘
+┌──────────────────────────────────────────┐
+│  1. Ignores (out/, dist/, …)             │
+├──────────────────────────────────────────┤
+│  2. js.configs.recommended               │
+├──────────────────────────────────────────┤
+│  3. tseslint.configs.recommended         │
+├──────────────────────────────────────────┤
+│  4. eslint-config-prettier               │  ← disables formatting rules
+├──────────────────────────────────────────┤
+│  5. @eslint-react recommended-typescript │
+│     + disable-rsc                        │  ← Electron, not Next.js RSC
+├──────────────────────────────────────────┤
+│  6. eslint-plugin-react-hooks            │  ← compiler / Rules of React
+│     + customRules                        │  ← re-enables curly, key warn
+└──────────────────────────────────────────┘
 ```
 
 The ordering is critical: `eslint-config-prettier` must come **before** the custom rules block. Prettier disables all formatting-conflicting rules (including `curly`). The custom rules block then re-enables the ones the project wants enforced. If `prettier` comes last, it silently overrides custom rules back to `off`.
+
+`@eslint-react/eslint-plugin` replaces jsx-eslint `eslint-plugin-react` (that plugin does not support ESLint 10). Meta's `eslint-plugin-react-hooks` stays as the source of truth for compiler / Rules-of-React coverage. The `@eslint-react` compiler twins (`rules-of-hooks`, `exhaustive-deps`, `purity`, `set-state-in-effect`, `set-state-in-render`, `static-components`, `unsupported-syntax`, `use-memo`, `error-boundaries`) are turned **off** in `customRules` so existing `eslint-disable-next-line react-hooks/…` comments remain valid. Do **not** enable `disable-conflict-eslint-plugin-react-hooks` — that preset turns **off** `react-hooks/*`.
 
 ### Prettier Configuration
 
@@ -80,6 +86,7 @@ The `format` script passes `--config ../.prettierrc.json` to reference the root 
 | `@typescript-eslint/array-type: 'array'` | warn | Use `T[]` not `Array<T>` |
 | `@typescript-eslint/no-unsafe-function-type` | error | Use specific signatures instead of `Function` |
 | `@typescript-eslint/consistent-type-imports` | error | Ban inline `import('...').Type` annotations; enforce `import type` for type-only imports |
+| `@eslint-react/no-missing-key` | warn | Same policy as the former `react/jsx-key` |
 
 ### React Compiler rules
 
@@ -135,8 +142,8 @@ The bpmn.io libraries (diagram-js, bpmn-js) now ship full TypeScript declaration
 | `@typescript-eslint/ban-ts-comment` | `@ts-ignore` sometimes needed for SDK interop |
 | `@typescript-eslint/no-require-imports` | Electron main process uses `require` |
 | `no-async-promise-executor` | Used in legacy patterns |
-| `react/react-in-jsx-scope` | Not needed with JSX transform |
-| `react/prop-types` | TypeScript provides type checking |
+| `@eslint-react/rules-of-hooks` (and other compiler twins) | Official `react-hooks/*` owns compiler / Rules-of-React coverage |
+| `@eslint-react/no-unused-class-component-members` | Class editor methods (`focus` / `getCurrentValue` / `resetValue`) are called via refs, which this rule cannot see |
 | `no-console` | Electron app logs to stdout |
 
 ---
@@ -178,19 +185,23 @@ useEffect(() => {
 
 Assigning `ref.current = value` during render triggers `react-hooks/refs`. The `useEffect` approach keeps the ref in sync after each render without violating the rule.
 
-### Ref forwarding with `forwardRef`
+### Ref as a prop (React 19)
 
-SDK components that accept an HTML element ref from consumers use `React.forwardRef` instead of a custom `htmlRef` prop. This satisfies `react-hooks/refs` and follows React's standard ref forwarding convention:
+SDK and Studio components that accept a ref from consumers declare `ref` on the props type and destructure it in the function signature. Do not use `React.forwardRef` (`@eslint-react/no-forward-ref`). Do not use a custom `htmlRef` prop (`react-hooks/refs`).
 
 ```typescript
-export const MyComponent = React.forwardRef<HTMLDivElement, MyProps>(
-  function MyComponent(props, ref) {
-    return <div ref={ref}>{props.children}</div>;
-  },
-);
+type MyProps = React.PropsWithChildren<{
+  ref?: React.Ref<HTMLDivElement>;
+}>;
+
+export function MyComponent({ ref, children }: MyProps): React.JSX.Element {
+  return <div ref={ref}>{children}</div>;
+}
 ```
 
-Components migrated to this pattern: `EditorContent`, `PaneBody`, `MarkdownEditor`.
+Destructure `ref` out of the props object (`{ ref, ...props }` or `{ ref: forwardedRef, ... }`). Reading `props.ref` during render trips `react-hooks/refs`.
+
+Components on this pattern: `EditorContent`, `PaneBody`, `MarkdownEditor`, `FeelSimulatorEditor`, `BpmnFragmentRendererView`, `PluginIframe`.
 
 ### Unconditional hook calls
 

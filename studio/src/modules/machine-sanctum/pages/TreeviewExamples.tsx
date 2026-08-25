@@ -136,7 +136,7 @@ export default function TreeviewExamples(props: any): React.JSX.Element {
         <h3>Treeview Examples</h3>
 
         {examples.map((treeviewExample: any, index: number) => (
-          <Fragment key={index}>
+          <Fragment key={treeviewExample.title}>
             <TreeviewExampleDataRenderer
               bifrost={props.bifrost}
               editorDocument={props.editorDocument}

@@ -47,14 +47,14 @@ function WrittenDataObjectValuesPane(props: WrittenDataObjectValuesPaneProps): R
 
   return (
     <PaneBody>
-      {writtenDataObjectValues.map((dataObjectInstance, index) => {
+      {writtenDataObjectValues.map((dataObjectInstance) => {
         const dataObjectModel = props.model.processModel?.dataObjectReferences.find(
           (dataObject) => dataObject.id === dataObjectInstance.dataObjectId,
         );
 
         return (
           <DataObjectInstanceLink
-            key={`data_object_instance_link__${index}-${dataObjectInstance.dataObjectId}_${selectedFlowNodeInstance.id}`}
+            key={`${dataObjectInstance.dataObjectId}_${selectedFlowNodeInstance.id}`}
             iconComponent={Icon}
             model={props.model}
             targetDataObjectName={dataObjectModel?.name}

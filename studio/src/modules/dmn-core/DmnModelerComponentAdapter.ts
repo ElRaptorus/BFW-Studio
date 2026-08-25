@@ -134,13 +134,16 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
       if (MERGE_CONFLICT_MARKER_REGEX.test(currentXml)) {
         throw new Error(
           `ERROR: failed to import DMN xml because of unresolved merge conflicts.\n\nXML given:\n\n${currentXml}`,
+          { cause: error },
         );
       }
 
       const message =
         error instanceof Error ? error.message : (error?.error?.message ?? error?.message ?? JSON.stringify(error));
 
-      throw new Error(`ERROR: failed to import DMN xml\n\nError given:\n\n${message}\n\nXML given:\n\n${currentXml}`);
+      throw new Error(`ERROR: failed to import DMN xml\n\nError given:\n\n${message}\n\nXML given:\n\n${currentXml}`, {
+        cause: error,
+      });
     }
   }
 
@@ -149,7 +152,7 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
       const { xml } = await this.modeler.saveXML({ format: true });
       return xml!;
     } catch (error) {
-      throw new Error(`ERROR: while saving XML for DMN\n\n${error}`);
+      throw new Error(`ERROR: while saving XML for DMN\n\n${error}`, { cause: error });
     }
   }
 

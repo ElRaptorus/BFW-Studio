@@ -270,8 +270,8 @@ function RuleTraceRow(props: { rule: RuleTrace; matched: boolean }): React.JSX.E
                 </tr>
               </thead>
               <tbody>
-                {rule.inputEvaluations.map((entry, index) => (
-                  <tr key={entry.inputId + '-' + index} className={entry.matched ? '' : 'entry-miss'}>
+                {rule.inputEvaluations.map((entry) => (
+                  <tr key={entry.inputId} className={entry.matched ? '' : 'entry-miss'}>
                     <td>{entry.inputId}</td>
                     <td>
                       <code>{entry.expression}</code>

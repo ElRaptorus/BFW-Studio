@@ -146,7 +146,7 @@ function RenderDocument({ editorDocument }: { editorDocument?: EditorDocument })
   };
 
   // eslint-disable-next-line react-hooks/static-components -- dynamic renderer lookup; stable per rendererKey via useMemo
-  return <EditorDocumentRenderer {...editorDocumentRendererProps} key={key} />;
+  return <EditorDocumentRenderer key={key} {...editorDocumentRendererProps} />;
 }
 
 function EditorTabsAndOptions(props: EditorTabsAndOptionsProps): React.JSX.Element {
@@ -187,7 +187,7 @@ function EditorTabsAndOptions(props: EditorTabsAndOptionsProps): React.JSX.Eleme
 
   return (
     <div className="editor__tabs clearfix">
-      <DecorationContext.Provider value={decorationSource}>
+      <DecorationContext value={decorationSource}>
         <EditorTabList
           editorDocuments={editorDocuments}
           activeEditorDocument={activeEditorDocument}
@@ -201,7 +201,7 @@ function EditorTabsAndOptions(props: EditorTabsAndOptionsProps): React.JSX.Eleme
           persistEditorDocument={persistEditorDocument}
           iconComponent={Icon}
         />
-      </DecorationContext.Provider>
+      </DecorationContext>
     </div>
   );
 }

@@ -55,8 +55,8 @@ function BkmTracePane(props: PaneComponentProps): React.JSX.Element | null {
 
   return (
     <PaneBody>
-      {decisionTrace.bkm_traces.map((bkmTrace, index) => (
-        <BkmTraceEntry key={`${bkmTrace.bkm_id}-${index}`} bkmTrace={bkmTrace} depth={0} />
+      {decisionTrace.bkm_traces.map((bkmTrace) => (
+        <BkmTraceEntry key={bkmTraceKey(bkmTrace)} bkmTrace={bkmTrace} depth={0} />
       ))}
     </PaneBody>
   );
@@ -93,8 +93,8 @@ function BkmTraceEntry(props: { bkmTrace: SnakeCaseBkmTrace; depth: number }): R
         </div>
       )}
       <PaneProperty type="text" label="Result" disabled={true} value={formatValue(bkmTrace.result)} />
-      {bkmTrace.dependent_bkm_traces.map((dependentTrace, index) => (
-        <BkmTraceEntry key={`${dependentTrace.bkm_id}-${index}`} bkmTrace={dependentTrace} depth={depth + 1} />
+      {bkmTrace.dependent_bkm_traces.map((dependentTrace) => (
+        <BkmTraceEntry key={bkmTraceKey(dependentTrace)} bkmTrace={dependentTrace} depth={depth + 1} />
       ))}
     </div>
   );
@@ -112,4 +112,8 @@ function formatValue(value: unknown): string {
     }
   }
   return String(value);
+}
+
+function bkmTraceKey(bkmTrace: SnakeCaseBkmTrace): string {
+  return `${bkmTrace.bkm_id}:${formatValue(bkmTrace.result)}:${bkmTrace.duration_microseconds}`;
 }

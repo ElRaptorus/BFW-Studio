@@ -36,9 +36,9 @@ export function InclusiveGatewayChoiceOverlay(props: InclusiveGatewayChoiceOverl
   return (
     <div className="token-sim-gateway-choice">
       <div className="token-sim-gateway-choice__title">Select paths</div>
-      {outgoingFlows.map((flow, index) => (
+      {outgoingFlows.map((flow) => (
         <label
-          key={flow.id || index}
+          key={flow.id}
           className={`token-sim-gateway-choice__option token-sim-gateway-choice__option--checkbox ${selected.has(flow.id) ? 'token-sim-gateway-choice__option--selected' : ''}`}
         >
           <input type="checkbox" checked={selected.has(flow.id)} onChange={() => toggle(flow.id)} />

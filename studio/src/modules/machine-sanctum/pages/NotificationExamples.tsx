@@ -127,7 +127,7 @@ export default function NotificationExamples(props: any): React.JSX.Element {
           <h3>Examples</h3>
 
           {NOTIFICATION_EXAMPLES.map((example: NotificationExample, index: number) => (
-            <Fragment key={`notification-example-${index}`}>
+            <Fragment key={example.title ?? example.data.content}>
               <NotificationExampleRenderer
                 bifrost={props.bifrost}
                 editorDocument={props.editorDocument}

@@ -87,7 +87,7 @@ export function registerGitHandlers(): void {
     const current = branchSummary.current;
     const detached = branchSummary.detached;
 
-    let tracking: string | null = null;
+    let tracking: string | null;
     let ahead = 0;
     let behind = 0;
 
@@ -109,7 +109,7 @@ export function registerGitHandlers(): void {
       }
     }
 
-    let hasStash = false;
+    let hasStash: boolean;
     try {
       const stashList = await git.stashList();
       hasStash = stashList.total > 0;

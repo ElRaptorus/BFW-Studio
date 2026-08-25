@@ -327,22 +327,22 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
 
   return (
     <>
-      {props.content.map((content: DialogContentObject, index: number) => {
+      {props.content.map((content: DialogContentObject) => {
         switch (content.type) {
           case 'checkbox':
-            return <DialogContentCheckbox key={index} {...content} />;
+            return <DialogContentCheckbox key={dialogContentObjectKey(content)} {...content} />;
           case 'markdown':
-            return <DialogContentMarkdown key={index} {...content} />;
+            return <DialogContentMarkdown key={dialogContentObjectKey(content)} {...content} />;
           case 'text':
-            return <DialogContentText key={index} {...content} />;
+            return <DialogContentText key={dialogContentObjectKey(content)} {...content} />;
           case 'divider':
-            return <DialogContentDivider key={index} {...content} />;
+            return <DialogContentDivider key={dialogContentObjectKey(content)} {...content} />;
           case 'section':
-            return <DialogContentSection key={index} {...content} />;
+            return <DialogContentSection key={dialogContentObjectKey(content)} {...content} />;
           case 'response_link':
             return (
               <DialogContentResponseLink
-                key={index}
+                key={dialogContentObjectKey(content)}
                 iconComponent={props.iconComponent}
                 responseCallback={props.responseCallback}
                 {...content}
@@ -351,7 +351,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'markdown_container':
             return (
               <DialogContentMarkdownEditor
-                key={index}
+                key={dialogContentObjectKey(content)}
                 noFocus={props.noFocus}
                 {...content}
                 dialogContent={props.content}
@@ -360,7 +360,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'json':
             return (
               <DialogContentJson
-                key={index}
+                key={dialogContentObjectKey(content)}
                 noFocus={props.noFocus}
                 validationErrors={getValidationErrorsForContent(props.validationResult, content.id)}
                 {...content}
@@ -373,7 +373,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'diff':
             return (
               <DialogContentDiff
-                key={index}
+                key={dialogContentObjectKey(content)}
                 noFocus={props.noFocus}
                 validationErrors={getValidationErrorsForContent(props.validationResult, content.id)}
                 {...content}
@@ -386,7 +386,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'select':
             return (
               <DialogContentSelect
-                key={index}
+                key={dialogContentObjectKey(content)}
                 validationErrors={getValidationErrorsForContent(props.validationResult, content.id)}
                 {...content}
                 onChange={props.onSelectChange}
@@ -395,7 +395,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'text_input':
             return (
               <DialogContentTextInput
-                key={index}
+                key={dialogContentObjectKey(content)}
                 noFocus={props.noFocus}
                 validationErrors={getValidationErrorsForContent(props.validationResult, content.id)}
                 {...content}
@@ -405,7 +405,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'path_list':
             return (
               <DialogContentPathList
-                key={index}
+                key={dialogContentObjectKey(content)}
                 validationErrors={getValidationErrorsForContent(props.validationResult, content.id)}
                 {...content}
               />
@@ -413,7 +413,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'path_picker':
             return (
               <DialogContentPathPicker
-                key={index}
+                key={dialogContentObjectKey(content)}
                 validationErrors={getValidationErrorsForContent(props.validationResult, content.id)}
                 {...content}
               />
@@ -421,7 +421,7 @@ function DialogContent(props: DialogContentProps): React.JSX.Element {
           case 'key_value_builder':
             return (
               <DialogContentKeyValueBuilder
-                key={index}
+                key={dialogContentObjectKey(content)}
                 validationErrors={getValidationErrorsForContent(props.validationResult, content.id)}
                 {...content}
               />
@@ -443,7 +443,10 @@ function DialogContentText(props: DialogContentObject_Text): React.JSX.Element {
 function DialogContentMarkdown(props: DialogContentObject_Markdown): React.JSX.Element {
   const html = marked(props.text, { async: false }) as string;
 
-  return <div className="dialog-markdown" dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- marked() renders trusted dialog markdown to HTML
+    <div className="dialog-markdown" dangerouslySetInnerHTML={{ __html: html }} />
+  );
 }
 
 function DialogContentDivider(props: DialogContentObject_Divider): React.JSX.Element {
@@ -490,8 +493,8 @@ function DialogContentSelect(props: DialogContentObject_SelectProps): React.JSX.
           defaultValue={props.value}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => props.onChange(props.id, event.target.value)}
         >
-          {props.entries.map((entry: any, index: number) => (
-            <option key={`${index}_${entry.value}_${entry.label}`} value={entry.value}>
+          {props.entries.map((entry: any) => (
+            <option key={`${entry.value}_${entry.label}`} value={entry.value}>
               {entry.label}
             </option>
           ))}
@@ -515,7 +518,7 @@ function DialogContentTextInput(props: DialogContentObject_TextInputProps): Reac
   const { dialogContent, value: valueProp, defaultSelection } = props;
   const [prevDialogContent, setPrevDialogContent] = useState<DialogContentStrict>(dialogContent);
   const htmlElementRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const [value, setValue] = useState(typeof valueProp === 'function' ? valueProp(dialogContent) : valueProp);
+  const [value, setValue] = useState(() => (typeof valueProp === 'function' ? valueProp(dialogContent) : valueProp));
 
   useEffect(() => {
     const selectionRange = defaultSelection;
@@ -605,7 +608,7 @@ function DialogContentJson(props: DialogContentObject_JsonProps): React.JSX.Elem
   const [prevDialogContent, setPrevDialogContent] = useState<DialogContentStrict>(dialogContent);
   const htmlElementRef = useRef<MultiLineCodeEditor>(null);
 
-  const [value, setValue] = useState(typeof valueProp === 'function' ? valueProp(dialogContent) : valueProp);
+  const [value, setValue] = useState(() => (typeof valueProp === 'function' ? valueProp(dialogContent) : valueProp));
 
   useEffect(() => {
     htmlRefRegistrator(htmlElementRef);
@@ -655,11 +658,11 @@ function DialogContentDiff(props: DialogContentObject_DiffProps): React.JSX.Elem
   const [prevDialogContent, setPrevDialogContent] = useState<DialogContentStrict>(dialogContent);
   const htmlElementRef = useRef<DiffEditor>(null);
 
-  const [beforeValue, setBeforeValue] = useState(
+  const [beforeValue, setBeforeValue] = useState(() =>
     typeof beforeValueProp === 'function' ? beforeValueProp(dialogContent) : beforeValueProp,
   );
 
-  const [afterValue, setAfterValue] = useState(
+  const [afterValue, setAfterValue] = useState(() =>
     typeof afterValueProp === 'function' ? afterValueProp(dialogContent) : afterValueProp,
   );
 
@@ -765,7 +768,7 @@ function DialogContentPathList(props: DialogContentObject_PathListProps): React.
           {paths.length > 0 && (
             <ul className="dialog-path-list__items">
               {paths.map((path, index) => (
-                <li key={`${index}_${path}`} className="dialog-path-list__item">
+                <li key={path} className="dialog-path-list__item">
                   <span className="dialog-path-list__path" title={path}>
                     {path}
                   </span>
@@ -867,15 +870,25 @@ type DialogContentObject_KeyValueBuilderProps = DialogContentObject_KeyValueBuil
   validationErrors?: DialogValidationError[];
 };
 
+type DialogKeyValueBuilderRow = {
+  id: string;
+  key: string;
+  value: string;
+};
+
 function DialogContentKeyValueBuilder(props: DialogContentObject_KeyValueBuilderProps): React.JSX.Element {
-  const [entries, setEntries] = useState<{ key: string; value: string }[]>(
-    props.initialEntries ? [...props.initialEntries] : [],
+  const [entries, setEntries] = useState<DialogKeyValueBuilderRow[]>(() =>
+    (props.initialEntries ?? []).map((entry) => ({
+      id: crypto.randomUUID(),
+      key: entry.key,
+      value: entry.value,
+    })),
   );
   const validationErrors = props.validationErrors ?? [];
   const hasErrors = validationErrors.length > 0;
 
   const addEntry = useCallback(() => {
-    setEntries((prev) => [...prev, { key: '', value: '' }]);
+    setEntries((prev) => [...prev, { id: crypto.randomUUID(), key: '', value: '' }]);
   }, []);
 
   const removeEntry = useCallback((index: number) => {
@@ -902,7 +915,7 @@ function DialogContentKeyValueBuilder(props: DialogContentObject_KeyValueBuilder
           )}
 
           {entries.map((entry, index) => (
-            <div key={index} className="dialog-kv-builder__row">
+            <div key={entry.id} className="dialog-kv-builder__row">
               <input
                 type="text"
                 className="form-control dialog-kv-builder__input dialog-kv-builder__col-key"
@@ -927,7 +940,11 @@ function DialogContentKeyValueBuilder(props: DialogContentObject_KeyValueBuilder
           </button>
         </div>
 
-        <input type="hidden" name={props.id} value={JSON.stringify(entries)} />
+        <input
+          type="hidden"
+          name={props.id}
+          value={JSON.stringify(entries.map(({ key, value }) => ({ key, value })))}
+        />
 
         {hasErrors
           ? validationErrors.map((validationError) => (
@@ -952,4 +969,25 @@ function getActionLabel(name: string): string {
     .replace(/-/g, ' ');
 
   return capitalize(first) + ' ' + title;
+}
+
+function dialogContentObjectKey(content: DialogContentObject): string {
+  if ('id' in content && typeof content.id === 'string' && content.id !== '') {
+    return content.id;
+  }
+
+  switch (content.type) {
+    case 'text':
+      return `text:${content.text}`;
+    case 'markdown':
+      return `markdown:${content.text}`;
+    case 'section':
+      return `section:${content.text}`;
+    case 'response_link':
+      return `response_link:${content.response}:${content.label}`;
+    case 'divider':
+      return 'divider';
+    default:
+      return content.type;
+  }
 }

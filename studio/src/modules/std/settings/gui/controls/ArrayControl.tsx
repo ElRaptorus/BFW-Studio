@@ -36,6 +36,9 @@ export function ArrayControl(props: ArrayControlProps): React.JSX.Element {
     }
     return '';
   });
+  const [itemIdentities, setItemIdentities] = useState<string[]>(() =>
+    (props.value as unknown[]).map(() => crypto.randomUUID()),
+  );
 
   if (props.itemsDescriptor?.type === 'object') {
     return (
@@ -65,6 +68,7 @@ export function ArrayControl(props: ArrayControlProps): React.JSX.Element {
     const updated = [...items];
     updated.splice(index, 1);
     props.onChange(updated);
+    setItemIdentities((current) => current.filter((_, identityIndex) => identityIndex !== index));
   };
 
   const addItem = (): void => {
@@ -74,6 +78,7 @@ export function ArrayControl(props: ArrayControlProps): React.JSX.Element {
     }
     props.onChange([...items, trimmed]);
     setNewItem(primitiveItemType === 'color' ? '#808080' : '');
+    setItemIdentities((current) => [...current, crypto.randomUUID()]);
   };
 
   function renderItemEditor(item: string, index: number): React.JSX.Element {
@@ -124,14 +129,17 @@ export function ArrayControl(props: ArrayControlProps): React.JSX.Element {
 
   return (
     <div style={{ maxWidth: 400 }}>
-      {items.map((item, index) => (
-        <div key={index} className="d-flex align-items-center mb-1">
-          <div className="flex-grow-1 mr-2">{renderItemEditor(item, index)}</div>
-          <button className="btn btn-sm btn-outline-danger ml-1" onClick={() => removeItem(index)} title="Remove">
-            &times;
-          </button>
-        </div>
-      ))}
+      {items.map((item, itemIndex) => {
+        const itemIdentity = itemIdentities[itemIndex] ?? item;
+        return (
+          <div key={itemIdentity} className="d-flex align-items-center mb-1">
+            <div className="flex-grow-1 mr-2">{renderItemEditor(item, itemIndex)}</div>
+            <button className="btn btn-sm btn-outline-danger ml-1" onClick={() => removeItem(itemIndex)} title="Remove">
+              &times;
+            </button>
+          </div>
+        );
+      })}
       <div className="d-flex align-items-center mt-1">
         <div className="flex-grow-1 mr-2">{renderNewItemEditor()}</div>
         <button className="btn btn-sm btn-outline-primary ml-1" onClick={addItem} title="Add" type="button">

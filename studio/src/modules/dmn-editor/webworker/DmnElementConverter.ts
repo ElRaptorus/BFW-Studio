@@ -1,6 +1,6 @@
 import { DmnModdle } from 'dmn-moddle';
 
-/* eslint-disable @typescript-eslint/no-unused-vars, no-var */
+/* eslint-disable @typescript-eslint/no-unused-vars, no-var, no-useless-assignment */
 const window: any = self;
 const global: any = self;
 var Buffer: any = Buffer || [];
@@ -8,7 +8,7 @@ var process: any = process || {
   env: { DEBUG: undefined },
   version: [],
 };
-/* eslint-enable @typescript-eslint/no-unused-vars, no-var */
+/* eslint-enable @typescript-eslint/no-unused-vars, no-var, no-useless-assignment */
 
 const moddle = new DmnModdle();
 

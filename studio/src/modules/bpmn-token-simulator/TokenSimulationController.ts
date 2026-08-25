@@ -1306,6 +1306,7 @@ export class TokenSimulationController {
 
   private appendLog(eventType: string, element?: any): void {
     this.simulationLog.push({
+      id: crypto.randomUUID(),
       time: this.logStartTime > 0 ? Date.now() - this.logStartTime : 0,
       event: eventType,
       elementId: element?.id ?? '',

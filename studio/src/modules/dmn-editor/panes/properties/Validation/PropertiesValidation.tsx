@@ -154,9 +154,9 @@ function ViolationGroup(props: ViolationGroupProps): React.JSX.Element {
         <span className="dmn-validation__group-type">{elementType}</span>
         <span className="dmn-validation__group-name">{elementLabel}</span>
       </div>
-      {violations.map((violation, index) => (
+      {violations.map((violation) => (
         <div
-          key={`${violation.elementId}_${violation.category}_${index}`}
+          key={`${violation.elementId}_${violation.category}_${violation.message}`}
           className={`dmn-validation__violation dmn-validation__violation--${violation.severity}`}
           data-test--dmn-validation-violation={true}
           onClick={() => navigateToElement(violation.elementId)}

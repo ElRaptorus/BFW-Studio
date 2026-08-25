@@ -77,7 +77,7 @@ export class DmnViewerComponentAdapter extends AbstractEmitter {
     } catch (error: any) {
       const message =
         error instanceof Error ? error.message : (error?.error?.message ?? error?.message ?? JSON.stringify(error));
-      throw new Error(`ERROR: failed to import DMN xml\n\nError given:\n\n${message}`);
+      throw new Error(`ERROR: failed to import DMN xml\n\nError given:\n\n${message}`, { cause: error });
     }
   }
 

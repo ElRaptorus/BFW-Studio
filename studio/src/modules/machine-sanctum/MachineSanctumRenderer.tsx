@@ -67,8 +67,8 @@ export default function MachineSanctumRenderer(props: EditorDocumentRendererProp
     <Editor>
       <EditorToolbar>
         <EditorToolbarLeft>
-          {TABS.map((tab: string, index: number) => (
-            <TabLink key={index} tab={tab} studio={bifrost} />
+          {TABS.map((tab: string) => (
+            <TabLink key={tab} tab={tab} studio={bifrost} />
           ))}
         </EditorToolbarLeft>
         <EditorToolbarRight>

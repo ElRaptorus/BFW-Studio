@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
 
@@ -15,6 +15,17 @@ type ObjectArrayItemsControlProps = {
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function objectArrayItemKey(raw: unknown): string {
+  if (isPlainObject(raw) && typeof raw.id === 'string' && raw.id !== '') {
+    return raw.id;
+  }
+  try {
+    return JSON.stringify(raw);
+  } catch {
+    return String(raw);
+  }
 }
 
 function defaultValueForField(descriptor: SettingDescriptor): unknown {
@@ -109,15 +120,18 @@ function renderFieldControl(
 export function ObjectArrayItemsControl(props: ObjectArrayItemsControlProps): React.JSX.Element {
   const { properties, value, onChange } = props;
   const propKeys = Object.keys(properties);
+  const [itemIdentities, setItemIdentities] = useState<string[]>(() => value.map(() => crypto.randomUUID()));
 
   const removeItem = (index: number): void => {
     const next = [...value];
     next.splice(index, 1);
     onChange(next);
+    setItemIdentities((current) => current.filter((_, identityIndex) => identityIndex !== index));
   };
 
   const addItem = (): void => {
     onChange([...value, buildDefaultItem(properties)]);
+    setItemIdentities((current) => [...current, crypto.randomUUID()]);
   };
 
   const updateItemField = (index: number, fieldKey: string, fieldValue: unknown): void => {
@@ -132,8 +146,9 @@ export function ObjectArrayItemsControl(props: ObjectArrayItemsControlProps): Re
     <div className="settings-gui__object-array">
       {value.map((raw, index) => {
         const merged = isPlainObject(raw) ? mergeItemWithDefaults(raw, properties) : null;
+        const itemIdentity = itemIdentities[index] ?? objectArrayItemKey(raw);
         return (
-          <div key={index} className="settings-gui__object-array-item">
+          <div key={itemIdentity} className="settings-gui__object-array-item">
             {!isPlainObject(raw) && (
               <div className="settings-gui__object-array-invalid">
                 Invalid entry (expected an object). Remove it or fix it in the JSON editor.

@@ -230,10 +230,8 @@ export default class BifrostAppManager extends AbstractEmitter implements ISeria
   }
 
   private async onCloseWindow(bifrostWindow: BifrostWindow, closedByUser?: boolean): Promise<void> {
-    let success = true;
-
     if (notInTestRun) {
-      success = await this.warnAboutUnsavedEditorDocuments(bifrostWindow.id);
+      const success = await this.warnAboutUnsavedEditorDocuments(bifrostWindow.id);
 
       if (!success) {
         bifrostWindow.finishClosing(false);

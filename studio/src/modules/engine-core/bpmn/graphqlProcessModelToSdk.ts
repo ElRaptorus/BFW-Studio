@@ -274,20 +274,12 @@ function convertEventDefinition(raw: unknown): EventDefinition {
   if (raw.isCancel === true || typename.includes('cancel')) {
     return { type: 'cancel' };
   }
-  if (
-    typename.includes('message') ||
-    raw.messageRef != null ||
-    raw.payloadExpression != null ||
-    raw.eventMapping != null ||
-    raw.correlationRetrievalExpression != null
-  ) {
+  if (typename.includes('message') || raw.messageRef != null || raw.correlationRetrievalExpression != null) {
     return {
       type: 'message',
       messageRef: asString(raw.messageRef),
       correlationRetrievalExpression: asString(raw.correlationRetrievalExpression),
-      payloadExpression: asString(raw.payloadExpression),
-      eventMapping: asString(raw.eventMapping),
-    };
+    } as EventDefinition;
   }
   if (typename.includes('signal') || raw.signalRef != null) {
     return { type: 'signal', signalRef: asString(raw.signalRef) };

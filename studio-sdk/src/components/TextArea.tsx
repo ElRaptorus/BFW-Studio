@@ -14,7 +14,7 @@ type TextAreaProps = {
 export function TextArea(props: TextAreaProps): React.JSX.Element {
   const valueFromProps = props.value || '';
 
-  const [originalValue, _setOriginalValue] = useState(valueFromProps);
+  const [originalValue] = useState(valueFromProps);
   const [currentValue, setCurrentValue] = useState(valueFromProps);
 
   const [prevValueFromProps, setPrevValueFromProps] = useState(valueFromProps);

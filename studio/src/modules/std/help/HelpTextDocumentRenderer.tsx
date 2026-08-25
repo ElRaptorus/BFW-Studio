@@ -63,5 +63,8 @@ function PromiseRenderer<T = any>(props: PromiseResolveRendererProps<T>): React.
 function MarkdownRenderer(props: MarkdownRendererProps): React.JSX.Element {
   const html = marked(props.markdown, { async: false }) as string;
 
-  return <div className={props.className} dangerouslySetInnerHTML={{ __html: html }}></div>;
+  return (
+    // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- marked() renders help markdown to HTML
+    <div className={props.className} dangerouslySetInnerHTML={{ __html: html }}></div>
+  );
 }

@@ -14,7 +14,7 @@ function isDefaultOutgoing(flow: ModdleNode, defaultFlow: ModdleNode | undefined
 
 export default function () {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
-    if (!is(node, 'bpmn:ExclusiveGateway')) {
+    if (!is(node, 'bpmn:ComplexGateway')) {
       return;
     }
     const outgoing = node.outgoing || [];
@@ -29,7 +29,7 @@ export default function () {
       if (!flow?.conditionExpression) {
         reporter.report(
           flow.id ?? node.id,
-          'Exclusive gateway outgoing flow must have a condition or be the default flow (EXR-011)',
+          'Complex gateway split outgoing flow must have a condition or be the default flow (EXR-015)',
         );
       }
     }

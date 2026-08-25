@@ -35,8 +35,6 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
         type: 'message',
         messageRef: 'M',
         correlationRetrievalExpression: null,
-        payloadExpression: null,
-        eventMapping: null,
       },
       isInterrupting: true,
       resultContract: { type: 'object' },
@@ -53,8 +51,6 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
         type: 'message',
         messageRef: 'M',
         correlationRetrievalExpression: 'token.orderId',
-        payloadExpression: '{ a: 1 }',
-        eventMapping: null,
       },
       inMappings: [],
       payloadContract: null,
@@ -65,8 +61,6 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
         type: 'message',
         messageRef: 'M',
         correlationRetrievalExpression: null,
-        payloadExpression: null,
-        eventMapping: null,
       },
       outMappings: [],
       resultContract: null,
@@ -121,10 +115,10 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
     expect(hasOutputMappings(catchEvent)).toBe(true);
 
     expect(hasInputMappings(sendTask)).toBe(true);
-    expect(hasOutputMappings(sendTask)).toBe(true);
+    expect(hasOutputMappings(sendTask)).toBe(false);
     expect(getCorrelationRetrievalExpression(sendTask)).toBe('');
 
-    expect(hasInputMappings(receiveTask)).toBe(true);
+    expect(hasInputMappings(receiveTask)).toBe(false);
     expect(hasOutputMappings(receiveTask)).toBe(true);
 
     expect(hasInputMappings(callActivity)).toBe(true);

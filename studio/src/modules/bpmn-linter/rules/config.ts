@@ -47,6 +47,7 @@ import transactionCancelNoCompensable from './bpmn-spec/transaction-cancel-no-co
 
 import adhocSubprocessConfig from './execution-readiness/adhoc-subprocess-config';
 import callActivityTarget from './execution-readiness/call-activity-target';
+import complexGatewaySplitConditions from './execution-readiness/complex-gateway-split-conditions';
 import errorEventConfig from './execution-readiness/error-event-config';
 import messageEventReference from './execution-readiness/message-event-reference';
 import multiInstanceConfig from './execution-readiness/multi-instance-config';
@@ -167,6 +168,7 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'multi-instance-config': multiInstanceConfig,
   'standard-loop-config': standardLoopConfig,
   'xor-gateway-conditions': xorGatewayConditions,
+  'complex-gateway-split-conditions': complexGatewaySplitConditions,
   'adhoc-subprocess-config': adhocSubprocessConfig,
   // Naming Quality
   'task-name-verb-pattern': taskNameVerbPattern,
@@ -285,7 +287,8 @@ export const profiles: Record<string, LintProfileConfig> = {
       'call-activity-target': 'off',
       'multi-instance-config': 'off',
       'standard-loop-config': 'off',
-      'xor-gateway-conditions': 'off',
+      'xor-gateway-conditions': 'warn',
+      'complex-gateway-split-conditions': 'warn',
       'adhoc-subprocess-config': 'off',
       // Naming Quality
       'task-name-verb-pattern': 'info',
@@ -381,6 +384,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'multi-instance-config': 'error',
       'standard-loop-config': 'error',
       'xor-gateway-conditions': 'error',
+      'complex-gateway-split-conditions': 'error',
       'adhoc-subprocess-config': 'error',
       // Naming Quality
       'task-name-verb-pattern': 'warn',
@@ -702,8 +706,15 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'xor-gateway-conditions': {
     category: 'execution-readiness',
-    why: 'An exclusive gateway without a default flow or complete conditions may fail at runtime.',
-    suggestion: 'Add conditions to all outgoing flows, or designate one as the default flow.',
+    why: 'An exclusive gateway split with an unmarked non-default outgoing flow fatals at runtime when the gateway is entered.',
+    suggestion:
+      'Add a FEEL condition to every non-default outgoing flow, or mark one unmarked flow as the default. A default does not excuse other unmarked flows.',
+  },
+  'complex-gateway-split-conditions': {
+    category: 'execution-readiness',
+    why: 'A complex gateway split with an unmarked non-default outgoing flow fatals at runtime when the gateway is entered.',
+    suggestion:
+      'Add a FEEL condition to every non-default outgoing flow, or mark one unmarked flow as the default. A default does not excuse other unmarked flows.',
   },
   'adhoc-subprocess-config': {
     category: 'execution-readiness',

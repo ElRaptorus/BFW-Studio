@@ -1183,7 +1183,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
       return;
     }
 
-    let elementsToFocusViewOn: string[] = [];
+    let elementsToFocusViewOn: string[];
 
     switch (this.processInstance.state) {
       case ProcessInstanceState.Finished:

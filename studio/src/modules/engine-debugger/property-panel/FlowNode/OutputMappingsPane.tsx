@@ -47,9 +47,9 @@ function OutputMappingsPane(props: PaneComponentProps): React.JSX.Element {
 
   return (
     <PaneBody>
-      {mappings.map((mapping, index) => (
+      {mappings.map((mapping) => (
         <PaneProperty
-          key={`output-${index}`}
+          key={`${mapping.source}->${mapping.target}`}
           type="text"
           label={mapping.target || '?'}
           value={mapping.source}

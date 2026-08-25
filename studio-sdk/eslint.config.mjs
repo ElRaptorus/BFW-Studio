@@ -1,5 +1,5 @@
+import eslintReact from '@eslint-react/eslint-plugin';
 import prettier from 'eslint-config-prettier';
-import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
@@ -19,8 +19,8 @@ export default defineConfig(
   prettier,
   {
     files: ['src/**/*.{ts,tsx}', 'types/**/*.ts'],
+    extends: [eslintReact.configs['recommended-typescript'], eslintReact.configs['disable-rsc']],
     plugins: {
-      react,
       'react-hooks': reactHooks,
     },
     languageOptions: {
@@ -32,7 +32,6 @@ export default defineConfig(
     },
     settings: reactSettings,
     rules: {
-      ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       ...customRules,
     },
