@@ -1,16 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { DocumentInspectorProps } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { Tree } from '#components/Tree/Tree';
+import { DocumentContentInspector } from '#components/panes/inspectors/DocumentContentInspector';
+import { DocumentTypeDefinitionInspector } from '#components/panes/inspectors/DocumentTypeDefinitionInspector';
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
 
 import React, { useState } from 'react';
-
-import type { DocumentInspectorProps, EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  DocumentContentInspector,
-  DocumentTypeDefinitionInspector,
-  Icon,
-  MultiLineCodeEditor,
-  Tree,
-} from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../DmnDocumentModel';
 import './DmnEditorInspector.scss';
@@ -122,7 +120,7 @@ type InspectorShowroomProps = {
   editorDocument: EditorDocument;
   model: DmnDocumentModel;
   selectedView: string;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 function resolveViewFromAction(action: string | undefined): string | null {
@@ -161,7 +159,7 @@ function InspectorShowroom(props: InspectorShowroomProps): React.JSX.Element {
 
 type DmnXmlInspectorProps = {
   model: DmnDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 function DmnXmlInspector(props: DmnXmlInspectorProps): React.JSX.Element {
@@ -184,7 +182,7 @@ function DmnXmlInspector(props: DmnXmlInspectorProps): React.JSX.Element {
 
 type DmnSelectionInspectorProps = {
   model: DmnDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 function DmnSelectionInspector(props: DmnSelectionInspectorProps): React.JSX.Element {

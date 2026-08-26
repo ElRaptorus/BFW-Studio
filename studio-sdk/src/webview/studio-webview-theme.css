@@ -4,124 +4,513 @@
  * These CSS custom properties are automatically injected into plugin iframes
  * by the Studio's theming bridge at runtime. You do NOT need to import this
  * file — it is a **documentation-only reference** so plugin developers can
- * see which tokens are available and what they look like.
+ * see which tokens are available. Fallback values below match Bifrost Night
+ * (`.bifrost.bifrost-theme--dark`).
  *
  * How it works
  * ────────────
- * 1. The Studio extracts all `--theme-*` custom properties from the active
- *    theme and sends them to every plugin iframe via `postMessage`.
- * 2. The bridge script (`studio-bridge.js`, included via `<script src="/studio-bridge.js"></script>`) injects
- *    them as `:root { --theme-*: value; }` inside the iframe's `<head>`.
+ * 1. The Studio extracts all `--theme-*` custom properties from stylesheet
+ *    rules whose selector contains `bifrost-theme--` (`PluginHost.extractThemeTokens`).
+ * 2. The bridge script (`studio-bridge.js`) injects them as
+ *    `:root { --theme-*: value; }` inside the iframe's `<head>`.
  * 3. The bridge also sets `data-theme="light"` or `data-theme="dark"` on the
- *    iframe's `<html>` element. You can use `[data-theme="light"]` selectors
- *    for theme-specific overrides.
+ *    iframe's `<html>` element.
  *
- * Usage in your plugin CSS
- * ────────────────────────
+ * Starter recipe
+ * ──────────────
  *   body {
- *     background: var(--theme-editor-bg);
- *     color: var(--theme-fg);
+ *     background: var(--theme-pane-bg, #0a0e18);
+ *     color: var(--theme-fg, #c0d8f0);
+ *     font-family: system-ui, sans-serif;
  *   }
- *
- * Every `var(--theme-*)` usage should include a sensible fallback value for
- * the brief moment before the bridge applies the tokens:
- *
- *   body {
- *     color: var(--theme-fg, #cdcdcd);
+ *   button {
+ *     background: var(--theme-btn-secondary-bg, #1a3050);
+ *     color: var(--theme-btn-secondary-fg, #c0d8f0);
+ *     border: 1px solid var(--theme-border, #162040);
+ *   }
+ *   input, textarea {
+ *     background: var(--theme-input-bg, #101828);
+ *     color: var(--theme-input-fg, #c0d8f0);
+ *     border: 1px solid var(--theme-input-border, #1a3050);
  *   }
  *
  * Detecting theme type from JavaScript
  * ─────────────────────────────────────
  *   const api = window.acquireStudioApi();
  *   const themeType = api.getThemeType();           // 'light' | 'dark'
- *   // or read the attribute directly:
- *   document.documentElement.getAttribute('data-theme');
  *
- * Observing live theme changes
- * ────────────────────────────
- *   const observer = new MutationObserver(() => {
- *     const theme = document.documentElement.getAttribute('data-theme');
- *     // re-render if needed
- *   });
- *   observer.observe(document.documentElement, {
- *     attributes: true,
- *     attributeFilter: ['data-theme'],
- *   });
+ * Phosphor icons
+ * ──────────────
+ * The host does not inject Phosphor CSS into iframes. Load it from the plugin
+ * if you use `<span className="ph-…">`. Manifest pane/tab icons are host-rendered.
  */
 
-/* ── Core palette ──────────────────────────────────────────────────
- * These are the most commonly used tokens. They cover foreground,
- * background, borders, and accent colors.
- */
 :root {
-  --theme-fg: #cdcdcd;
-  --theme-fg-muted: #999999;
-  --theme-fg-placeholder: #808080;
-  --theme-fg-on-accent: #e2e2e2;
+  /* ── Base ── */
+  --theme-accent: #2a5888;
+  --theme-bg: #060a10;
+  --theme-border: #162040;
+  --theme-border-subtle: #0e1520;
+  --theme-fg: #c0d8f0;
+  --theme-fg-muted: #6a8cac;
+  --theme-fg-on-accent: #d8e8f8;
+  --theme-fg-placeholder: #587aa0;
+  --theme-fg-secondary: #a0bcd8;
+  --theme-focus: #3880b8;
+  --theme-link: #5c9cd4;
+  --theme-shadow: rgba(0, 0, 0, 0.7);
 
-  --theme-editor-bg: #2f2f2f;
-  --theme-sidebar-bg: #252526;
+  /* ── Icon colors ── */
+  --theme-icon-blue: #58a8e8;
+  --theme-icon-brown: #b87838;
+  --theme-icon-gold: #d8b038;
+  --theme-icon-green: #48b868;
+  --theme-icon-grey: #90a0b0;
+  --theme-icon-olive: #b0c868;
+  --theme-icon-orange: #d48848;
+  --theme-icon-pink: #d878b8;
+  --theme-icon-purple: #b868d8;
+  --theme-icon-red: #e06868;
+  --theme-icon-teal: #58c8c8;
+  --theme-icon-violet: #9080e0;
+  --theme-icon-yellow: #d8c048;
 
-  --theme-border: #5d5d5d;
-  --theme-border-subtle: #2a2a2a;
+  /* ── Surfaces ── */
+  --theme-surface-backdrop: #080c15;
+  --theme-surface-canvas: #0a0e18;
+  --theme-surface-elevated: #101828;
+  --theme-surface-inset: #040810;
+  --theme-surface-primary: #0a0e18;
+  --theme-surface-secondary: #080c15;
 
-  --theme-accent: #33609a;
-  --theme-focus: #5d90c3;
-  --theme-link: #5388c1;
-
-  --theme-success: #4caf50;
-  --theme-warning: #fb8c00;
-  --theme-error: #f44336;
-  --theme-info: #2196f3;
-}
-
-/* ── Surfaces ──────────────────────────────────────────────────────
- * Layered surface tokens for cards, panels, inputs, and overlays.
- */
-:root {
-  --theme-surface-primary: #323232;
-  --theme-surface-elevated: #444444;
-  --theme-surface-inset: #1d1d1d;
-}
-
-/* ── Inputs ────────────────────────────────────────────────────────
- * For <input>, <textarea>, and other form controls.
- */
-:root {
-  --theme-input-bg: #3c3c3c;
-}
-
-/* ── Buttons ───────────────────────────────────────────────────────
- * Use these for custom buttons inside the iframe.
- */
-:root {
-  --theme-button-bg: rgba(255, 255, 255, 0.06);
-  --theme-button-hover-bg: rgba(255, 255, 255, 0.1);
-  --theme-button-active-bg: rgba(255, 255, 255, 0.14);
-}
-
-/* ── Lists & items ─────────────────────────────────────────────────
- * Hover and selection states for list-like UI.
- */
-:root {
-  --theme-list-hover-bg: rgba(255, 255, 255, 0.04);
-}
-
-/* ── Scrollbars ────────────────────────────────────────────────────
- * WebKit scrollbar theming tokens. Apply them like:
- *
- *   ::-webkit-scrollbar-track { background: var(--theme-scrollbar-track); }
- *   ::-webkit-scrollbar-thumb { background: var(--theme-scrollbar-thumb); }
- */
-:root {
+  /* ── Scrollbar ── */
+  --theme-scrollbar-thumb: rgba(100, 150, 200, 0.18);
   --theme-scrollbar-track: transparent;
-  --theme-scrollbar-thumb: rgba(255, 255, 255, 0.2);
-  --theme-scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
-}
 
-/* ── Text styling ──────────────────────────────────────────────────
- * Additional text-related tokens.
- */
-:root {
-  --theme-text-primary: #cdcdcd;
+  /* ── Splitter ── */
+  --theme-splitter: #060a10;
+  --theme-splitter-active: #3880b8;
+  --theme-splitter-hover: #a0bcd8;
+
+  /* ── Menu bar ── */
+  --theme-menu-bar-active-bg: rgba(100, 150, 200, 0.06);
+  --theme-menu-bar-bg: #0a0e18;
+  --theme-menu-bar-fg: #c0d8f0;
+  --theme-menu-bar-hover-bg: rgba(100, 150, 200, 0.1);
+
+  /* ── Status bar ── */
+  --theme-status-bar-bg: #142848;
+  --theme-status-bar-border: #060a10;
+  --theme-status-bar-fg: #d8e8f8;
+  --theme-status-bar-hover-bg: #204870;
+  --theme-status-bar-icon-duotone-primary: #a08020;
+  --theme-status-bar-icon-duotone-secondary: #b89818;
+  --theme-status-bar-solution-badge-bg: rgba(160, 200, 240, 0.1);
+  --theme-status-bar-solution-badge-hover-bg: rgba(160, 200, 240, 0.2);
+
+  /* ── Editor ── */
+  --theme-editor-bg: #0a0e18;
+  --theme-editor-canvas-bg: #060a10;
+  --theme-editor-content-border: #162040;
+  --theme-editor-loading-border: #1a3050;
+  --theme-editor-loading-error-bg: #180e14;
+  --theme-editor-loading-hint-bg: #181408;
+  --theme-editor-loading-warning-bg: #181408;
+  --theme-editor-loading-warning-fg: #d48848;
+  --theme-editor-tab-active-bg: #040810;
+  --theme-editor-tab-active-border: #2a5888;
+  --theme-editor-tab-active-fg: #c0d8f0;
+  --theme-editor-tab-bg: #0a0e18;
+  --theme-editor-tab-controls-fg: #6a8cac;
+  --theme-editor-tab-controls-hover-bg: #101828;
+  --theme-editor-tab-hover-bg: #101828;
+  --theme-editor-title-icon-bg: #1a3050;
+  --theme-editor-title-icon-warning-bg: var(--theme-icon-orange);
+  --theme-editor-title-icon-warning-fg: #0a0e18;
+  --theme-editor-toolbar-bg: #0e1520;
+  --theme-editor-toolbar-border: #060a10;
+  --theme-editor-toolbar-fg: #a0bcd8;
+  --theme-editor-toolbar-focused-bg: #080c15;
+  --theme-editor-toolbar-hover-bg: rgba(100, 150, 200, 0.08);
+  --theme-editor-toolbar-icon: #3880b8;
+  --theme-editor-toolbar-icon-duotone-primary: #705030;
+  --theme-editor-toolbar-icon-duotone-secondary: #3880b8;
+
+  /* ── Pane ── */
+  --theme-pane-bg: #0a0e18;
+  --theme-pane-divider: #060a10;
+  --theme-pane-group-tab-hover-bg: #1e2a3e;
+  --theme-pane-group-tab-selected-bg: #2a3f5c;
+  --theme-pane-header-bg: #0e1520;
+  --theme-pane-header-collapsed-bg: #040810;
+  --theme-pane-item-bg: #080c15;
+  --theme-pane-item-hover-bg: #040810;
+  --theme-pane-tab-active-bg: #040810;
+  --theme-pane-tab-active-fg: #c0d8f0;
+  --theme-pane-tab-bg: #0a0e18;
+  --theme-pane-tab-fg: #6a8cac;
+  --theme-pane-tab-hover-fg: #c0d8f0;
+  --theme-pane-toolbar-fg: #6a8cac;
+  --theme-pane-toolbar-focus-bg: #101828;
+  --theme-pane-toolbar-focus-fg: #c0d8f0;
+  --theme-pane-toolbar-focus-shadow: rgba(56, 128, 184, 0.25);
+  --theme-pane-toolbar-hover-fg: #c0d8f0;
+  --theme-pane-toolbar-label-fg: #587aa0;
+
+  /* ── Tree ── */
+  --theme-tree-bg: #0a0e18;
+  --theme-tree-fg: #a0bcd8;
+  --theme-tree-highlight-bg: rgba(42, 88, 136, 0.5);
+  --theme-tree-highlight-fg: #d8e8f8;
+  --theme-tree-hover-bg: #101828;
+  --theme-tree-icon-folder: #8a9870;
+  --theme-tree-section-bg: #060a10;
+  --theme-tree-section-fg: #c0d8f0;
+  --theme-tree-selected-bg: #142848;
+  --theme-tree-selected-fg: #d0e4f8;
+
+  /* ── Buttons ── */
+  --theme-btn-danger-bg: #581820;
+  --theme-btn-danger-border: #782838;
+  --theme-btn-danger-fg: #c8a8a8;
+  --theme-btn-fg: #6a8cac;
+  --theme-btn-hover-fg: #c0d8f0;
+  --theme-btn-info-bg: #184050;
+  --theme-btn-info-fg: #a8d8e8;
+  --theme-btn-primary-bg: #2a5888;
+  --theme-btn-primary-fg: #d8e8f8;
+  --theme-btn-secondary-bg: #1a3050;
+  --theme-btn-secondary-fg: #c0d8f0;
+  --theme-btn-secondary-hover-bg: #244060;
+
+  /* ── Dialog buttons ── */
+  --theme-dialog-btn-dangerous-bg: #642028;
+  --theme-dialog-btn-dangerous-fg: #d8c8c8;
+  --theme-dialog-btn-primary-bg: #2a5888;
+  --theme-dialog-btn-primary-fg: #d8e8f8;
+  --theme-dialog-btn-secondary-bg: #1a3050;
+  --theme-dialog-btn-secondary-border: #162040;
+  --theme-dialog-btn-secondary-fg: #c0d8f0;
+
+  /* ── Form controls ── */
+  --theme-input-bg: #101828;
+  --theme-input-border: #1a3050;
+  --theme-input-disabled-bg: #141e30;
+  --theme-input-disabled-fg: #6a8cac;
+  --theme-input-fg: #c0d8f0;
+  --theme-input-focus-shadow: rgba(56, 128, 184, 0.25);
+  --theme-input-placeholder: #587aa0;
+  --theme-select-bg: #101828;
+  --theme-select-border: #244060;
+  --theme-select-fg: #c0d8f0;
+
+  /* ── Table ── */
+  --theme-table-active-bg: #142848;
+  --theme-table-bg: #060a10;
+  --theme-table-border: #162040;
+  --theme-table-child-bg: #0a0e18;
+  --theme-table-fg: #c0d8f0;
+  --theme-table-header-bg: #060a10;
+  --theme-table-hover-bg: #040810;
+  --theme-table-options-fg: #6a8cac;
+  --theme-table-options-hover-fg: #c0d8f0;
+  --theme-table-row-highlight-bg: #040810;
+  --theme-table-row-highlight-fg: #a0bcd8;
+
+  /* ── FEEL editor (Keep component) ── */
+  --theme-feel-active-line-bg: var(--theme-surface-secondary);
+  --theme-feel-bg: var(--theme-input-bg);
+  --theme-feel-bool: #569cd6;
+  --theme-feel-border: var(--theme-input-border);
+  --theme-feel-comment: #768390;
+  --theme-feel-cursor: var(--theme-fg);
+  --theme-feel-fg: var(--theme-fg);
+  --theme-feel-focus-border: var(--theme-focus);
+  --theme-feel-function: #dcdcaa;
+  --theme-feel-gutter-bg: var(--theme-surface-secondary);
+  --theme-feel-keyword: #c586c0;
+  --theme-feel-number: #b5cea8;
+  --theme-feel-selection-bg: var(--theme-accent);
+  --theme-feel-string: #ce9178;
+  --theme-feel-tooltip-bg: var(--theme-surface-elevated);
+  --theme-feel-tooltip-border: var(--theme-border);
+  --theme-feel-tooltip-fg: var(--theme-fg);
+  --theme-feel-tooltip-selected-bg: var(--theme-focus);
+  --theme-feel-tooltip-selected-fg: #ffffff;
+  --theme-feel-variable: #9cdcfe;
+
+  /* ── Quick jump ── */
+  --theme-quick-jump-badge-fg: #3880b8;
+  --theme-quick-jump-bg: #040810;
+  --theme-quick-jump-border: #1a3050;
+  --theme-quick-jump-entry-fg: #a0bcd8;
+  --theme-quick-jump-focus-shadow: rgba(56, 128, 184, 0.25);
+  --theme-quick-jump-focused-bg: #082040;
+  --theme-quick-jump-focused-fg: #d8e8f8;
+  --theme-quick-jump-hover-bg: #0e1520;
+  --theme-quick-jump-hover-fg: #c0d8f0;
+  --theme-quick-jump-input-bg: #080c15;
+  --theme-quick-jump-input-border: #1a3050;
+  --theme-quick-jump-input-fg: #a0bcd8;
+  --theme-quick-jump-shadow: rgb(0, 0, 0);
+
+  /* ── Modal / dialog ── */
+  --theme-modal-bg: #0a0e18;
+  --theme-modal-border: #1a3050;
+  --theme-modal-close-fg: #6a8cac;
+  --theme-modal-fg: #a0bcd8;
+
+  /* ── Dropdown ── */
+  --theme-dropdown-bg: #101828;
+  --theme-dropdown-disabled-fg: #384860;
+  --theme-dropdown-divider: #162040;
+  --theme-dropdown-fg: #c0d8f0;
+  --theme-dropdown-hover-bg: #1a3050;
+  --theme-dropdown-item-fg: #a0bcd8;
+  --theme-dropdown-item-hover-fg: #c0d8f0;
+
+  /* ── Context menu ── */
+  --theme-context-menu-bg: #101828;
+  --theme-context-menu-border: rgba(40, 70, 110, 0.5);
+  --theme-context-menu-disabled-fg: #384860;
+  --theme-context-menu-fg: #c0d8f0;
+  --theme-context-menu-hover-bg: #2a5888;
+  --theme-context-menu-hover-fg: #d8e8f8;
+  --theme-context-menu-icon-fg: #587aa0;
+  --theme-context-menu-separator: #162040;
+
+  /* ── Notification ── */
+  --theme-notification-bg: #080c15;
+  --theme-notification-close-fg: #6a8cac;
+  --theme-notification-container-bg: #040810;
+  --theme-notification-header-bg: #0e1520;
+  --theme-notification-header-fg: #6a8cac;
+  --theme-notification-option-icon-fg: #d8e8f8;
+
+  /* ── Card ── */
+  --theme-card-bg: #0a0e18;
+  --theme-card-border: #162040;
+  --theme-card-footer-bg: #040810;
+
+  /* ── Start page ── */
+  --theme-startpage-flavor-fg: #3070a8;
+  --theme-startpage-hero-border: #1e3858;
+  --theme-startpage-hero-hover-bg: #0e1520;
+  --theme-startpage-hero-hover-border: #3880b8;
+  --theme-startpage-hero-icon-bg: #162040;
+  --theme-startpage-separator: #162040;
+
+  /* ── Keystroke ── */
+  --theme-keystroke-bg: #1a3050;
+  --theme-keystroke-fg: #a0bcd8;
+
+  /* ── Validation ── */
+  --theme-validation-error-bg: #200e14;
+  --theme-validation-error-border: #782838;
+  --theme-validation-error-fg: #c86878;
+  --theme-validation-error-shadow: rgba(120, 40, 56, 0.25);
+  --theme-validation-success-fg: #58a870;
+
+  /* ── React Select ── */
+  --theme-react-select-control-bg: #101828;
+  --theme-react-select-control-border: transparent;
+  --theme-react-select-menu-bg: #101828;
+  --theme-react-select-menu-border: #244060;
+  --theme-react-select-option-focused-bg: #1a3050;
+  --theme-react-select-option-selected-bg: #2a5888;
+  --theme-react-select-value-fg: #c0d8f0;
+
+  /* ── Editors / calendar ── */
+  --theme-calendar-color-scheme: dark;
+  --theme-calendar-picker-bg: #0a0e18;
+  --theme-calendar-picker-border: #1a3050;
+  --theme-calendar-picker-fg: #c0d8f0;
+  --theme-canvas-editing-bg: #101828;
+  --theme-one-line-editor-border: #1a3050;
+
+  /* ── Runtime hint ── */
+  --theme-runtime-hint-border: #384860;
+  --theme-runtime-hint-fg: #6a8cac;
+  --theme-runtime-hint-hover-border: #5c9cd4;
+  --theme-runtime-hint-hover-fg: #c0d8f0;
+
+  /* ── Open-in-new-tab ── */
+  --theme-open-tab-fg: #384860;
+  --theme-open-tab-hover-fg: #c0d8f0;
+
+  /* ── Icons ── */
+  --theme-squared-icon-bg: #0e1520;
+  --theme-stacked-icon-shadow: #060a10;
+
+  /* ── Inline search ── */
+  --theme-inline-search-bg: #1a3050;
+  --theme-inline-search-btn-active-bg: rgba(100, 150, 200, 0.2);
+  --theme-inline-search-btn-hover-bg: rgba(100, 150, 200, 0.1);
+  --theme-inline-search-input-bg: #0e1520;
+  --theme-inline-search-input-focus-shadow: rgba(255, 136, 0, 0.27);
+
+  /* ── Error boundary ── */
+  --theme-error-boundary-bg: #581820;
+  --theme-error-boundary-fg: #c8a8a8;
+
+  /* ── Dev indicator ── */
+  --theme-todo-gradient-end: #c0a018;
+  --theme-todo-gradient-start: #584028;
+  --theme-todo-overlay-bg: rgba(0, 0, 0, 0.9);
+  --theme-todo-overlay-fg: #c0d8f0;
+
+  /* ── Tabs overflow ── */
+  --theme-tabs-overflow-bg: #101828;
+
+  /* ── Search results ── */
+  --theme-search-result-bg: #040810;
+  --theme-search-result-highlight-bg: #382810;
+  --theme-search-result-highlight-border: #a88028;
+
+  /* ── Misc ── */
+  --theme-highlight-bg: var(--theme-icon-yellow);
+  --theme-layer-bg: #080c15;
+  --theme-list-group-bg: #0a0e18;
+  --theme-list-group-fg: #6a8cac;
+  --theme-pre-bg: #040810;
+  --theme-pre-fg: #c0d8f0;
+  --theme-recent-file-bg: #0a0e18;
+
+  /* ── BPMN diagram ── */
+  --theme-diagram-bendpoint-fill: rgba(56, 128, 184, 0.8);
+  --theme-diagram-bendpoint-hover-fill: #3880b8;
+  --theme-diagram-bendpoint-stroke: #080c15;
+  --theme-diagram-bg: #0c1220;
+  --theme-diagram-connect-ok-fill: #48b868;
+  --theme-diagram-context-pad-bg: #101828;
+  --theme-diagram-context-pad-hover-bg: #1a3050;
+  --theme-diagram-direct-editing-bg: #101828;
+  --theme-diagram-direct-editing-border: #384860;
+  --theme-diagram-fg: #a0bcd8;
+  --theme-diagram-hover-outline: #d08838;
+  --theme-diagram-input-bg: #101828;
+  --theme-diagram-input-fg: #c0d8f0;
+  --theme-diagram-minimap-bg: #0a0e18;
+  --theme-diagram-minimap-overlay-bg: rgba(10, 14, 24, 0.4);
+  --theme-diagram-palette-bg: #0a0e18;
+  --theme-diagram-palette-border: #162040;
+  --theme-diagram-popup-bg: #101828;
+  --theme-diagram-popup-selected-bg: rgba(160, 200, 240, 0.12);
+  --theme-diagram-popup-shadow: rgba(0, 0, 0, 0.6);
+  --theme-diagram-segment-dragger-fill: rgba(56, 128, 184, 0.2);
+  --theme-diagram-segment-dragger-stroke: rgba(56, 128, 184, 0.3);
+  --theme-diagram-selected-outline: #3880b8;
+
+  /* ── Color picker ── */
+  --theme-color-picker-bg: #101828;
+  --theme-color-picker-border: #a0bcd8;
+  --theme-color-picker-option-border: rgba(80, 100, 130, 0.5);
+  --theme-color-picker-option-hover-shadow: rgba(200, 220, 240, 0.4);
+  --theme-color-picker-shadow: rgba(0, 0, 0, 0.5);
+
+  /* ── DMN editor ── */
+  --theme-dmn-accent: #3880b8;
+  --theme-dmn-accent-30: rgba(56, 128, 184, 0.3);
+  --theme-dmn-accent-deep: #3880b8;
+  --theme-dmn-accent-glow: rgba(56, 128, 184, 0.4);
+  --theme-dmn-accent-hover: #4898d0;
+  --theme-dmn-accent-subtle: #0c1828;
+  --theme-dmn-bg: #101828;
+  --theme-dmn-black: #000;
+  --theme-dmn-border: #283c58;
+  --theme-dmn-border-subtle: #1a2840;
+  --theme-dmn-drilldown-active-bg: rgba(98, 135, 184, 0.2);
+  --theme-dmn-drilldown-active-fg: #6287b8;
+  --theme-dmn-drilldown-hover-bg: #444;
+  --theme-dmn-fg: #c0d8f0;
+  --theme-dmn-fg-faint: #4a6888;
+  --theme-dmn-fg-muted: #6a8cac;
+  --theme-dmn-green: hsl(150 86% 44%);
+  --theme-dmn-red: #e04848;
+  --theme-dmn-red-deep: #e06060;
+  --theme-dmn-red-glow: rgba(224, 72, 72, 0.3);
+  --theme-dmn-red-subtle: #281018;
+  --theme-dmn-shadow-light: rgba(0, 0, 0, 0.3);
+  --theme-dmn-shadow-medium: rgba(0, 0, 0, 0.5);
+  --theme-dmn-surface: #0c1220;
+  --theme-dmn-surface-alt: #162030;
+
+  /* ── Engine workspace ── */
+  --theme-engine-ws-badge-aborted-bg: #daa800;
+  --theme-engine-ws-badge-aborted-fg: #3d2e00;
+  --theme-engine-ws-badge-cancelled-bg: #8d3b3b;
+  --theme-engine-ws-badge-cancelled-fg: #ffd6d6;
+  --theme-engine-ws-badge-compensated-bg: #fb8c00;
+  --theme-engine-ws-badge-compensated-fg: #fff;
+  --theme-engine-ws-badge-error-bg: #dc5028;
+  --theme-engine-ws-badge-error-fg: #fff;
+  --theme-engine-ws-badge-escalated-bg: #f4511e;
+  --theme-engine-ws-badge-escalated-fg: #fff;
+  --theme-engine-ws-badge-fatal-bg: #ea4335;
+  --theme-engine-ws-badge-fatal-fg: #fff;
+  --theme-engine-ws-badge-finished-bg: #34a853;
+  --theme-engine-ws-badge-finished-fg: #fff;
+  --theme-engine-ws-badge-running-bg: #4285f4;
+  --theme-engine-ws-badge-running-fg: #fff;
+  --theme-engine-ws-health-critical-bg: #4a1616;
+  --theme-engine-ws-health-critical-fg: #f87171;
+  --theme-engine-ws-health-ok-bg: #1b3d24;
+  --theme-engine-ws-health-ok-fg: #6fd67e;
+  --theme-engine-ws-health-unknown-bg: var(--theme-surface-inset);
+  --theme-engine-ws-health-unknown-fg: var(--theme-fg-muted);
+  --theme-engine-ws-health-warn-bg: #3d3013;
+  --theme-engine-ws-health-warn-fg: #f5c842;
+  --theme-engine-ws-sidebar-add-hover-bg: var(--theme-pane-item-hover-bg);
+  --theme-engine-ws-status-disabled-bg: var(--theme-surface-inset);
+  --theme-engine-ws-status-disabled-fg: var(--theme-fg-muted);
+  --theme-engine-ws-status-enabled-bg: #1b3d24;
+  --theme-engine-ws-status-enabled-fg: #6fd67e;
+
+  /* ── Git status ── */
+  --theme-git-added: #73c991;
+  --theme-git-conflicted: #e5534b;
+  --theme-git-deleted: #c74e39;
+  --theme-git-ignored: #808080;
+  --theme-git-modified: #e2c08d;
+  --theme-git-renamed: #73c991;
+  --theme-git-untracked: #73c991;
+
+  /* ── Diff viewer ── */
+  --theme-diff-added-bg: #1d3b1d;
+  --theme-diff-added-highlight: #254e25;
+  --theme-diff-button-active-fg: #5d90c3;
+  --theme-diff-button-bg: #444;
+  --theme-diff-button-fg: #888;
+  --theme-diff-line-number-fg: #666;
+  --theme-diff-overlay-added-bg: rgba(46, 204, 64, 0.2);
+  --theme-diff-overlay-deleted-bg: rgba(219, 40, 40, 0.2);
+  --theme-diff-overlay-moved-bg: rgba(29, 161, 242, 0.2);
+  --theme-diff-overlay-updated-bg: rgba(251, 189, 8, 0.2);
+  --theme-diff-removed-bg: #3b1d1d;
+  --theme-diff-removed-highlight: #4e2525;
+  --theme-diff-splitter: #000;
+  --theme-diff-splitter-border: #666;
+  --theme-diff-svg-added: #2ecc40;
+  --theme-diff-svg-removed: #ff695e;
+  --theme-diff-title-bg: #2a2a2a;
+  --theme-diff-title-fg: #a5a5a5;
+
+  /* ── Merge ── */
+  --theme-merge-auto-foreground: #b86bff;
+  --theme-merge-conflict-background: rgba(241, 70, 104, 0.15);
+  --theme-merge-conflict-foreground: #f14668;
+  --theme-merge-ours-background: rgba(72, 199, 142, 0.15);
+  --theme-merge-ours-foreground: #48c78e;
+  --theme-merge-result-background: rgba(147, 112, 219, 0.15);
+  --theme-merge-result-foreground: #9370db;
+  --theme-merge-theirs-background: rgba(62, 142, 208, 0.15);
+  --theme-merge-theirs-foreground: #3e8ed0;
+
+  /* ── Markdown editor ── */
+  --theme-mdx-bg: #555;
+  --theme-mdx-dialog-bg: #272727;
+  --theme-mdx-listbox-hover-bg: #888;
+  --theme-mdx-listbox-selected-bg: #656565;
+  --theme-mdx-listbox-selected-fg: #cdcdcd;
+  --theme-mdx-text: #dadada;
 }

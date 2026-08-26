@@ -1,6 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { BpmnDocumentModel } from '@evil/bifrost_fw_sdk/types/BpmnDocumentModel';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
 import { buildSanitizerFixCommands } from '../../bpmn-core/sanitizer/BpmnSanitizerFixer';
 import type { SanitizerBridgeApi } from '../../bpmn-core/sanitizer/SanitizerBridge';

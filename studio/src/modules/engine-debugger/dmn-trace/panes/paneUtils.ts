@@ -1,4 +1,5 @@
-import type { EditorDocument, EditorDocumentModel } from '@evil/bifrost_fw_sdk';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 import type { DmnTraceFragmentModel } from '../DmnTraceFragmentModel';
 import type { DmnFlowNodeTypeProperties, DrgSelection } from '../DmnTraceTypes';

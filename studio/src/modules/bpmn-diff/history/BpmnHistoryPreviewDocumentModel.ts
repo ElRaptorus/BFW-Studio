@@ -1,7 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
-
-import { parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
 
 import { BpmnViewerComponentAdapter } from '../../bpmn-core/BpmnViewerComponentAdapter';
 import BpmnDiffDocumentModel, { type ElementLike } from '../BpmnDiffDocumentModel';

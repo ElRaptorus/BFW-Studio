@@ -1,3 +1,4 @@
+import type { Disposable } from './Disposable';
 import type { SettingDescriptorMap } from './types';
 
 /**
@@ -55,5 +56,5 @@ export interface SettingsApi {
    * @param key - Setting key to observe.
    * @param callback - Called with the new value on each change.
    */
-  onDidChange(key: string, callback: (newValue: unknown) => void): Promise<void>;
+  onDidChange(key: string, callback: (newValue: unknown) => void): Promise<Disposable>;
 }

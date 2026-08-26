@@ -1,15 +1,15 @@
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  OpenInNewTabButton,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-} from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import { assertBpmnElementIsTextAnnotation } from '../../BpmnElementTypeAssertionFunctions';
 import {

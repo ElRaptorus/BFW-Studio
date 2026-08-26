@@ -1,9 +1,9 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React, { useEffect, useState } from 'react';
 
 import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
-import { EditorContent } from '@evil/bifrost_fw_sdk';
 
 import { FeelSimulatorEditor } from '../../../components/feel-simulator';
 

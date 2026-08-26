@@ -1,3 +1,16 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { EVENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingErrorHint } from '#components/editor/EditorLoadingErrorHint';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 import {
   DmnViewerComponentAdapter,
   EVENT_DMN_VIEWER_SELECTION_CHANGED,
@@ -18,21 +31,6 @@ import 'dmn-js/dist/assets/dmn-js-shared.css';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorLoadingErrorHint,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  EditorToolbarText,
-  Icon,
-} from '@evil/bifrost_fw_sdk';
-
-import { EVENT_DATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import '../../dmn-editor/styles/dmn.scss';
 import './DmnTraceFragment.scss';
 import type { DmnTraceFragmentModel } from './DmnTraceFragmentModel';
@@ -371,7 +369,7 @@ function applyTraceOverlays(adapter: DmnViewerComponentAdapter, traceProperties:
 }
 
 function useModelAndData(
-  studio: Studio,
+  studio: Bifrost,
   editorDocument: any,
 ): { model: DmnTraceFragmentModel | null; data: DmnTraceFragmentData } {
   const [model, setModel] = useState<DmnTraceFragmentModel | null>(null);

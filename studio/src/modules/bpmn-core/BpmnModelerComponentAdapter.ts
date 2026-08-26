@@ -1,3 +1,5 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import AddExporter from '@bpmn-io/add-exporter';
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import type { Debugger } from 'debug';
@@ -17,9 +19,6 @@ import type Selection from 'diagram-js/lib/features/selection/Selection';
 import type { ElementLike, Shape } from 'diagram-js/lib/model/Types';
 import type { Rect } from 'diagram-js/lib/util/Types';
 import type { Injector } from 'didi';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import { CommandHandler } from './bpmn-js/CommandHandler/index';
 import ColorContextPadProvider from './bpmn-js/Provider/ColorContextPadProvider';
@@ -63,7 +62,7 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
 
   constructor(
     uri: string,
-    studio: Studio,
+    studio: Bifrost,
     bpmnComponentOptions: Record<string, unknown> = {},
     additionalModules: unknown[] = [],
   ) {

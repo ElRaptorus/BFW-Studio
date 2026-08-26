@@ -1,3 +1,5 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import {
   CATEGORY_LABELS,
   CATEGORY_SEVERITY_ORDER,
@@ -9,14 +11,12 @@ import type { DmnSanitizerBridgeApi } from '#modules/dmn-core/sanitizer/Sanitize
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-
 import type DmnDocumentModel from '../../../DmnDocumentModel';
 
 type DmnSanitizerInspectorProps = {
   editorDocument: EditorDocument;
   model: DmnDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 const SEVERITY_ICONS: Record<string, string> = {

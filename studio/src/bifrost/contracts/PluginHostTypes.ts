@@ -5,8 +5,7 @@
  * The full protocol with message constants and connection logic lives in
  * `contracts/PluginHostProtocol.ts`.
  */
-import type { AbstractSubscription, PluginInfo } from '@evil/bifrost_fw_sdk';
-
+import type { AbstractSubscription } from '../common/AbstractEmitter';
 import type { PluginPermissionStore } from '../common/plugin-host/PluginPermissionStore';
 
 // ─── Plugin Host events ─────────────────────────────────────────────
@@ -60,4 +59,40 @@ export interface RegisterCallbackPayload {
 export interface CallbackInvocationPayload {
   callbackId: string;
   args: unknown[];
+}
+
+export interface PluginManifestSummary {
+  apiVersion: string;
+  displayName?: string;
+  description?: string;
+  icon?: string;
+  activationEvents?: string[];
+  contributes?: Record<string, unknown>;
+  permissions?: string[];
+}
+
+export interface PluginManifestDiagnostic {
+  path: string;
+  message: string;
+}
+
+export interface PluginInfo {
+  name: string;
+  packageName?: string;
+  path: string;
+  displayName: string;
+  description: string;
+  version: string;
+  author: string;
+  enabled: boolean;
+  status: 'loaded' | 'pending' | 'disabled' | 'error' | 'quarantined';
+  errorMessage?: string;
+  readmePath?: string;
+  logoPath?: string;
+  homepage?: string;
+  keywords?: string[];
+  deprecated?: string | boolean;
+  manifest?: PluginManifestSummary;
+  manifestErrors?: PluginManifestDiagnostic[];
+  manifestWarnings?: PluginManifestDiagnostic[];
 }

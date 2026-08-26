@@ -1,14 +1,13 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
+import type { DmnDefinitions, DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
 import { parseDmn } from '@elraptorus/daemonengine_sdk';
 import type { EvaluationResult } from '@elraptorus/daemonengine_sdk';
 import type { DecisionDefinition } from '@elraptorus/daemonengine_sdk';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
-
 import type { DmnViewerComponentAdapter } from '../../dmn-core/DmnViewerComponentAdapter';
-import type { DmnDefinitions, DrgSelection } from '../types/dmnModelTypes';
 
 export interface DecisionViewerModelData {
   definition: DecisionDefinition | null;
@@ -49,7 +48,7 @@ const EMPTY_DATA: DecisionViewerModelData = {
 };
 
 export class DecisionViewerDocumentModel extends EditorDocumentModel {
-  private studio: Studio;
+  private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
   private client: DaemonEngineClient | null;
   private engineId: string;
@@ -63,7 +62,7 @@ export class DecisionViewerDocumentModel extends EditorDocumentModel {
   private connectionLifecycleSubscriptions: { dispose: () => void }[] = [];
   private connectionGracePeriodTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private constructor(uri: string, studio: Studio) {
+  private constructor(uri: string, studio: Bifrost) {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
@@ -78,7 +77,7 @@ export class DecisionViewerDocumentModel extends EditorDocumentModel {
     _restoredCurrentData: unknown,
     _restoredMetadata: unknown,
     _fileLoader: unknown,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<DecisionViewerDocumentModel> {
     return new DecisionViewerDocumentModel(uri, studio);
   }

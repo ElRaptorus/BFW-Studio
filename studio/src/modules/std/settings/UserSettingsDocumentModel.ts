@@ -1,12 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { SettingsMediator } from '#bifrost/common/SettingsMediator';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
 import * as jsonComment from 'comment-json';
 
-import type { AbstractSubscription, SettingsValidationResult } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_SETTINGS_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/SettingsEvents';
+import type { SettingsValidationResult } from '@evil/bifrost_fw_sdk';
 
 export const EVENT_SETTINGS_RECEIVED_UPDATE = 'EVENT_SETTINGS_RECEIVED_UPDATE';
 

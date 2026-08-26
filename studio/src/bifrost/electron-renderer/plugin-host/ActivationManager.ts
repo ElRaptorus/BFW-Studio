@@ -1,13 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import type { ActivationEvent } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
 import type { PluginPermission } from '#bifrost/common/plugin-host/permissions/PermissionTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { LoadPluginPayload } from '#bifrost/contracts/PluginHostProtocol';
 import { PH_LOAD_PLUGIN } from '#bifrost/contracts/PluginHostProtocol';
+import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
 
-import type { AbstractSubscription, EditorDocument } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import { EVENT_SETTINGS_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/SettingsEvents';
 import type { PluginHost } from './PluginHost';
 
 export type PermissionApprovalCallback = (pluginName: string, permissions: PluginPermission[]) => Promise<boolean>;

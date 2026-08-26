@@ -1,3 +1,4 @@
+import type { Disposable } from './Disposable';
 import type { RegisterWebviewDocumentTypeOptions } from './types';
 
 /**
@@ -50,5 +51,21 @@ export interface EditorsApi {
    * @param uri - The document URI to attach the save handler to.
    * @param callback - The async save handler.
    */
-  onSaveRequest(uri: string, callback: () => Promise<void>): Promise<{ dispose: () => void }>;
+  onSaveRequest(uri: string, callback: () => Promise<void>): Promise<Disposable>;
+
+  /**
+   * Subscribe to documents of a registered webview document type being opened.
+   *
+   * Prefer this over `RegisterWebviewDocumentTypeOptions.onDidOpen`, which the
+   * host bridge ignores.
+   *
+   * @param documentTypeLocalId - The local (un-namespaced) document type id passed to {@link registerWebviewDocumentType}.
+   * @param callback - Invoked with the iframe id and document URI.
+   */
+  onDidOpen(documentTypeLocalId: string, callback: (iframeId: string, uri: string) => void): Promise<Disposable>;
+
+  /**
+   * URI of the currently focused editor document, or `null` if none is focused.
+   */
+  getFocusedDocumentUri(): Promise<string | null>;
 }

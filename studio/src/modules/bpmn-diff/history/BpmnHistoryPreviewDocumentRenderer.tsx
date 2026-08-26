@@ -1,3 +1,18 @@
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingError } from '#components/editor/EditorLoadingError';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleRight } from '#components/editor/EditorTitleRight';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
@@ -5,24 +20,6 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'diagram-js-minimap/assets/diagram-js-minimap.css';
 
 import React, { useEffect, useReducer, useRef, useState } from 'react';
-
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorLoadingError,
-  EditorTitle,
-  EditorTitleHeroIcon,
-  EditorTitleLeft,
-  EditorTitleRight,
-  EditorTitleText,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  Icon,
-} from '@evil/bifrost_fw_sdk';
 
 import { EVENT_RELOADING, EVENT_RELOADING_DONE } from '../BpmnDiffDocumentModel';
 import type BpmnHistoryPreviewDocumentModel from './BpmnHistoryPreviewDocumentModel';

@@ -1,5 +1,5 @@
-import type { BpmnElement } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import type BpmnModelerComponentAdapter from '../bpmn-core/BpmnModelerComponentAdapter';
 import { EVENT_BPMN_MODELER_ADAPTER_SELECTION_CHANGED } from '../bpmn-core/BpmnModelerComponentAdapter';

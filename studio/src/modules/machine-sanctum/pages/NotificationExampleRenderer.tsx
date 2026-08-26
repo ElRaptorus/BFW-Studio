@@ -2,11 +2,10 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { NotificationManager } from '#bifrost/common/NotificationManager';
 import type { NotificationOptions } from '#bifrost/contracts/NotificationTypes';
 import { ErrorBoundary } from '#components/ErrorBoundary';
+import { Icon } from '#components/Icon';
 import NotificationRenderer from '#components/notifications/NotificationRenderer';
 
 import React from 'react';
-
-import { Icon } from '@evil/bifrost_fw_sdk';
 
 import { JsonExampleRenderer } from './JsonExampleRenderer';
 

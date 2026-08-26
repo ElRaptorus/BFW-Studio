@@ -1,11 +1,10 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import type Canvas from 'diagram-js/lib/core/Canvas';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type EventBus from 'diagram-js/lib/core/EventBus';
 import ReactDOM from 'react-dom/client';
 
 import React from 'react';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
 
 import { type ModdleParseWarning, analyzeDmnSanitizableIssues } from './DmnSanitizerAnalyzer';
 import { SanitizerBadge } from './SanitizerBadge';
@@ -51,7 +50,7 @@ export function DmnSanitizerBridge(
   eventBus: EventBus,
   canvas: Canvas,
   elementRegistry: ElementRegistry,
-  dmnSanitizerBridgeStudio: Studio,
+  dmnSanitizerBridgeStudio: Bifrost,
 ) {
   const studio = dmnSanitizerBridgeStudio;
   const diagnostics = (studio as any).diagnostics as {
@@ -215,7 +214,7 @@ export function DmnSanitizerBridge(
 
 (DmnSanitizerBridge as any).$inject = ['eventBus', 'canvas', 'elementRegistry', 'dmnSanitizerBridgeStudio'];
 
-export function createDmnSanitizerModule(studio: Studio) {
+export function createDmnSanitizerModule(studio: Bifrost) {
   return {
     __init__: ['dmnSanitizerBridge'],
     dmnSanitizerBridge: ['type', DmnSanitizerBridge],

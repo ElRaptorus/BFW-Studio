@@ -1,11 +1,17 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 import { FlowNodeInstanceState } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
-
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon, OpenInNewTabButton, Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getUserTaskFormSchema } from '../../libs/BpmnFlowNodeAccessors';
@@ -28,7 +34,7 @@ type FormActionSummary = {
 export type UserTaskFormFieldsPaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export const paneProvider: PaneProvider = {

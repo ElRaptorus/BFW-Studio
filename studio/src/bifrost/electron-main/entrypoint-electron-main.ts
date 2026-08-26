@@ -1,3 +1,10 @@
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import type {
+  DialogActionObject,
+  DialogOptionsStrict,
+  DialogOptionsStrict_MessageBox,
+  DialogResult,
+} from '#bifrost/contracts/DialogTypes';
 import { fork } from 'child_process';
 import type { MessageBoxOptions } from 'electron';
 import { BrowserWindow, Menu, app, dialog, ipcMain, net, protocol, shell } from 'electron';
@@ -8,14 +15,6 @@ import { Minimatch } from 'minimatch';
 import { parseArgs } from 'node:util';
 import * as path from 'path';
 import type sysinfo from 'systeminformation';
-
-import type {
-  AbstractSubscription,
-  DialogActionObject,
-  DialogOptionsStrict,
-  DialogOptionsStrict_MessageBox,
-  DialogResult,
-} from '@evil/bifrost_fw_sdk';
 
 import * as BuildInfo from '../../generatedBuildAndProductInfo';
 import { ReleaseChannelName } from '../common/Environment';

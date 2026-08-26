@@ -1,9 +1,17 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 import type { ProjectProcess } from '#modules/bpmn-core/BpmnSpecificSolutionAndProjectTypes';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio, Suggestion } from '@evil/bifrost_fw_sdk';
-import { BpmnElementType, Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { Suggestion } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import { assertBpmnElementIsCallActivity } from '../../BpmnElementTypeAssertionFunctions';
 import {
@@ -25,7 +33,7 @@ type CallActivityToUpdate_StartEventId = {
 
 type TargetProcessLinkWithLabelProps = {
   processModelId: string;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export const paneProvider: PaneProvider = {

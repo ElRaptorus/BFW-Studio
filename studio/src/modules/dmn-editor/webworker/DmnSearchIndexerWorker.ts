@@ -1,4 +1,5 @@
-import type { SearchResult } from '../../../../../studio-sdk/src/contracts/internal/SearchTypes';
+import type { SearchResult } from '#bifrost/contracts/internal/SearchTypes';
+
 import type { IndexedDmnElement } from './DmnElementConverter';
 import { getElementsFromXml } from './DmnElementConverter';
 

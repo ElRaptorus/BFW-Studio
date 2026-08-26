@@ -1,10 +1,5 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
-import type {
-  ISearchIndexerClient,
-  SearchQuery,
-  SearchResult,
-} from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { ISearchIndexerClient, SearchQuery, SearchResult } from '#bifrost/contracts/internal/SearchTypes';
 
 /**
  * We use this stub as the default, so that we can create a non-searchable Bifrost instance with `Bifrost.create()`

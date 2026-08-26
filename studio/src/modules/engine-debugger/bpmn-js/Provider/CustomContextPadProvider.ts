@@ -1,4 +1,4 @@
-import type { Studio } from '@evil/bifrost_fw_sdk';
+import type { Bifrost } from '#bifrost/Bifrost';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 
@@ -8,7 +8,7 @@ class CustomContextPadProvider {
   private contextPad: any;
   private popupMenu: any;
   private model!: EngineBpmnDebuggerEditorDocumentModel;
-  private studio!: Studio;
+  private studio!: Bifrost;
 
   private constructor(contextPad: any, popupMenu: any) {
     this.contextPad = contextPad;
@@ -16,7 +16,7 @@ class CustomContextPadProvider {
     contextPad.registerProvider(this);
   }
 
-  configure(model: EngineBpmnDebuggerEditorDocumentModel, studio: Studio): void {
+  configure(model: EngineBpmnDebuggerEditorDocumentModel, studio: Bifrost): void {
     this.model = model;
     this.studio = studio;
   }

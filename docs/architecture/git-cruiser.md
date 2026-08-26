@@ -62,7 +62,7 @@ React component registered as a left pane group. Uses SDK pane components extens
 - **Commit actions** — `PaneActionBar` with a `PaneActionSplitButton`. The main button triggers "Commit"; the dropdown caret opens the `git-cruiser/pane-commit-actions` menu with: Commit, Commit & Push, Commit & Sync, a divider, Commit to new Branch, Commit to new Branch & Sync. Each menu item is a `MenuItem_Command` with the title/body refs as `commandArgs`.
 - **File tree** — Staged / Unstaged / Untracked file groups inside a `PaneBody`, using the `Tree` component with per-file hover action icons (stage/unstage via `actionIconOnHover`).
 
-All icons are rendered via the SDK `Icon` component. Subscribes to `gitStatusChanged` events to refresh its state. When the event fires, the pane re-reads all repo states and resolves the selected repo (falling back to the first repo if the previously selected one no longer exists).
+All icons are rendered via the host `Icon` component (`#components/Icon`). Subscribes to `gitStatusChanged` events to refresh its state. When the event fires, the pane re-reads all repo states and resolves the selected repo (falling back to the first repo if the previously selected one no longer exists).
 
 ### Main Process Side
 
@@ -171,7 +171,7 @@ Only the 1–2 tree items whose status actually changed re-render, instead of th
 
 ### React Integration
 
-- **`DecorationContext`** (`studio-sdk/src/components/Tree/DecorationContext.ts`): A React context providing the `TreeDecorationSource` to consumers
+- **`DecorationContext`** (`studio/src/components/Tree/DecorationContext.ts`): A React context providing the `TreeDecorationSource` to consumers
 - **`useDecoration(uri)`**: Hook that subscribes to the source's change events. Re-renders **only** when `changedUris.has(thisUri)` — O(1) per subscriber per event
 - **`Tree` component**: Accepts optional `decorationSource` prop, wraps items in `DecorationContext`
 - **`HeadlessTreeItem`**: Calls `useDecoration(data.metadata?.uri)`, merges returned decoration with base `data.styles`/`data.badges`
@@ -382,7 +382,7 @@ The current branch is marked with a `current` text badge. When `branchName` is p
 
 ### Action Icons
 
-File entries in the Git Pane use the SDK's `actionIconsOnHover` array (added to `TreeItemBase` in `studio-sdk/src/contracts/TreeTypes.ts`) to render right-aligned action icons on hover. The icons are rendered by `HeadlessTreeItem` as a separate container positioned absolutely within the entry row.
+File entries in the Git Pane use the `actionIconsOnHover` array (on `TreeItemBase` in `studio/src/bifrost/contracts/TreeTypes.ts`) to render right-aligned action icons on hover. The icons are rendered by `HeadlessTreeItem` as a separate container positioned absolutely within the entry row.
 
 | Section | Icons Shown |
 |---------|-------------|
@@ -398,7 +398,7 @@ Clicking a file entry opens it in the editor via `bifrost.editors.focusOrOpenEdi
 
 ### Header
 
-The pane uses the SDK `PaneHeader` with a `PaneHeaderIcon` child for the refresh action. Below it, the internal header (`git-pane__header`) displays the branch name and contextual action icons:
+The pane uses the host `PaneHeader` (`#components/panes/PaneHeader`) with a `PaneHeaderIcon` child for the refresh action. Below it, the internal header (`git-pane__header`) displays the branch name and contextual action icons:
 
 | Element | Visibility | Action |
 |---------|-----------|--------|
@@ -551,7 +551,7 @@ The merge editor is opened as a singleton document type (`merge`) at the fixed U
 | `bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx` | BPMN-specific merge pane: classified elements, per-attribute conflict resolution, auto-applied tracking |
 | `bpmn-editor/merge/autoApplyEngine.ts` | Pure XML-level merge engine: applies non-conflicting changes from apply-side to starting-side DOM |
 | `bifrost/common/EditorDocumentMergeResolverManager.ts` | Registry for merge resolver components (key→component map) |
-| `studio-sdk/src/contracts/MergeTypes.ts` | `MergeResolverProps`, `ElementResolution`, `MergeResolutionProgress` contracts |
+| `studio/src/bifrost/contracts/MergeTypes.ts` | `MergeResolverProps`, `ElementResolution`, `MergeResolutionProgress` contracts |
 
 ### Types
 
@@ -563,11 +563,11 @@ The merge editor is opened as a singleton document type (`merge`) at the fixed U
 | `MergeConflictKind` | `MergeDocumentModel.ts` | `'content' \| 'ours-deleted' \| 'theirs-deleted'` |
 | `MergeFileType` | `GitTypes.ts` | `'bpmn' \| 'dmn' \| 'text' \| 'binary'` — determines rendering strategy |
 | `MergeFileEntry` | `MergeDocumentModel.ts` | Per-file tracking: path, URI, resolved flag, fileType |
-| `MergeResolverProps` | `studio-sdk/contracts/MergeTypes.ts` | Props contract for resolver components (blobs, conflictKind, operationKind, entry, resolverRef, callbacks) |
-| `MergeOperationKind` | `studio-sdk/contracts/MergeTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
-| `ElementResolutionStatus` | `studio-sdk/contracts/MergeTypes.ts` | `'auto-applied' \| 'pending' \| 'accepted-ours' \| 'accepted-theirs' \| 'custom'` |
-| `ElementResolution` | `studio-sdk/contracts/MergeTypes.ts` | `{ elementId, status }` |
-| `MergeResolutionProgress` | `studio-sdk/contracts/MergeTypes.ts` | `{ totalConflicts, resolvedConflicts, isComplete }` |
+| `MergeResolverProps` | `studio/src/bifrost/contracts/MergeTypes.ts` | Props contract for resolver components (blobs, conflictKind, operationKind, entry, resolverRef, callbacks) |
+| `MergeOperationKind` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
+| `ElementResolutionStatus` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'auto-applied' \| 'pending' \| 'accepted-ours' \| 'accepted-theirs' \| 'custom'` |
+| `ElementResolution` | `studio/src/bifrost/contracts/MergeTypes.ts` | `{ elementId, status }` |
+| `MergeResolutionProgress` | `studio/src/bifrost/contracts/MergeTypes.ts` | `{ totalConflicts, resolvedConflicts, isComplete }` |
 | `ClassifiedElement` | `BpmnMergeResolver.tsx` | Per-element diff classification (BPMN-specific) |
 | `MergeSideDetail` | `BpmnMergeResolver.tsx` | Per-side change detail (BPMN-specific) |
 
@@ -786,7 +786,7 @@ By default, the merge resolver only walks `.bpmn` files. The setting `git.merge.
 
 To add merge conflict visualization for a new file type:
 
-1. Create a React component implementing `MergeResolverProps` (from `studio-sdk/contracts/MergeTypes`).
+1. Create a React component implementing `MergeResolverProps` (from `studio/src/bifrost/contracts/MergeTypes.ts`).
 2. Register it on the document type definition with `mergeResolverKey` / `mergeResolverConstructor`.
 3. Optionally register type-specific merge commands (`git.merge.zoomToViewport.{docType}`, etc.) for toolbar/title bar actions.
 4. Expose an imperative API via `props.resolverRef.current` for commands to reach the resolver.

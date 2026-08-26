@@ -1,10 +1,13 @@
-import React, { useCallback, useState } from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneGroupObject } from '#bifrost/contracts/PaneTypes';
 
-import type { EditorDocument, EditorDocumentModel, PaneGroupObject } from '@evil/bifrost_fw_sdk';
-import { Icon, assertNotNull } from '@evil/bifrost_fw_sdk';
+import React, { useCallback, useState } from 'react';
 
 import { useBifrost } from '../../bifrostContext';
 import { ErrorBoundary } from '../ErrorBoundary';
+import { Icon } from '../Icon';
 import type { SplitterLayoutMediator } from '../splitter/SplitterLayoutMediator';
 import PaneGroupTabBar, { getDisplayableGroups } from './PaneGroupTabBar';
 import PaneTabContent from './PaneTabContent';

@@ -1,9 +1,10 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { TreeItem } from '#bifrost/contracts/TreeTypes';
 import { ErrorBoundary } from '#components/ErrorBoundary';
+import { Icon } from '#components/Icon';
+import { Tree } from '#components/Tree/Tree';
 
 import React from 'react';
-
-import type { Studio, TreeItem } from '@evil/bifrost_fw_sdk';
-import { Icon, Tree } from '@evil/bifrost_fw_sdk';
 
 import { JsonExampleRenderer } from './JsonExampleRenderer';
 
@@ -12,7 +13,7 @@ export type TreeviewExampleData = {
 };
 
 export type TreeviewExampleDataRendererProps = {
-  bifrost: Studio;
+  bifrost: Bifrost;
   title: string;
   content?: string | string[];
   viewMediatorId: string;

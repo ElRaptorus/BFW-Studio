@@ -1,8 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { DaemonEngineClient } from '@elraptorus/daemonengine_client';
 import type { EngineInfoResponse } from '@elraptorus/daemonengine_sdk';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import { JwtIdentityManager } from './JwtIdentityManager';
 import { SETTINGS_KEYS } from './settings/registerSettings';

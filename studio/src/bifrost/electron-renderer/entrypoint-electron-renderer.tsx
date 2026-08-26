@@ -1,12 +1,11 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
 import { ipcRenderer, webUtils } from 'electron';
 import log from 'electron-log/renderer';
 import { createRoot } from 'react-dom/client';
 
 import React from 'react';
 
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_SETTINGS_CHANGED } from '../../../../studio-sdk/src/contracts/internal/SettingsEvents';
 import App from '../../App';
 import { BifrostProvider } from '../../bifrostContext';
 import { createAndInitializeBifrost } from '../../createAndInitializeBifrost';

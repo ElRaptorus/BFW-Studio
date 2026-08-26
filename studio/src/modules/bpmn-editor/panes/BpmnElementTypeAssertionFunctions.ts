@@ -43,8 +43,8 @@ import type {
   BpmnElement_TimerStartEvent,
   BpmnElement_UntypedTask,
   BpmnElement_UserTask,
-} from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { BpmnElementType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+} from '#modules/bpmn-editor/BpmnElementTypes';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 export function assertBpmnElementIsBusinessRuleTask(
   element: BpmnElement | null,

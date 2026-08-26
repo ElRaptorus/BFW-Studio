@@ -1,25 +1,20 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Checkbox } from '#components/Checkbox';
+import { LabelWithFeelExpressionHint } from '#components/FeelExpressionHint';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElement_TimerStartEvent } from '#modules/bpmn-editor/BpmnElementTypes';
+import { BpmnTimerType } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React from 'react';
 
-import type {
-  EditorDocument,
-  EditorDocumentModel,
-  PaneComponentProps,
-  PaneProvider,
-  SelectOption,
-  Studio,
-} from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  Checkbox,
-  LabelWithFeelExpressionHint,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-} from '@evil/bifrost_fw_sdk';
-import type { BpmnElement_TimerStartEvent } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { BpmnTimerType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import { PaneProperty, type SelectOption } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsTimerStartEvent } from '../../BpmnElementTypeAssertionFunctions';
@@ -43,7 +38,7 @@ type TimerStartEventDefinitionProps = {
   element: BpmnElement_TimerStartEvent;
   onChange: (value: string) => void;
   cmd: (commandName: string, commandArgs?: any[]) => (event: any) => void;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 type DefinitionPropertyProps = TimerStartEventDefinitionProps & {
@@ -80,7 +75,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 function shouldBeDisplayed(
   editorDocument: EditorDocument,
   editorDocumentModel: EditorDocumentModel,
-  studio: Studio,
+  studio: Bifrost,
 ): boolean {
   return shouldBeDisplayedForBpmnElementOfType(editorDocument, editorDocumentModel, BpmnElementType.TimerStartEvent);
 }

@@ -1,9 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { EditorDocument, TreeViewMediator } from '@evil/bifrost_fw_sdk';
-import { isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
+import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
+import { isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 
 const DEBOUNCE_MS = 150;
 

@@ -1,15 +1,14 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { Icon } from '#components/Icon';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import { OverlayPosition } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 
 import React from 'react';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
-
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
 
 export function createStartProcessOverlay(
-  studio: Studio,
+  studio: Bifrost,
   startEventId: string,
   engineId: string,
   processModelId: string,

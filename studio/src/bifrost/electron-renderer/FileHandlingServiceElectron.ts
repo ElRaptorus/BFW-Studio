@@ -1,13 +1,12 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { WatcherDisposable } from '#bifrost/common/FileHandlingService';
+import type { Project } from '#bifrost/contracts/SolutionTypes';
 import * as chokidar from 'chokidar';
 import type { EventName } from 'chokidar/handler.js';
 import { ipcRenderer } from 'electron';
 import type * as fs from 'fs';
 import { Minimatch } from 'minimatch';
 import * as path from 'path';
-
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
-import type { WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
-import type { Project } from '@evil/bifrost_fw_sdk/types/contracts';
 
 import { FileHandlingService } from '../common/FileHandlingService';
 import { FilePatternMatcher, computeRelativeUri } from '../common/FilePatternMatcher';

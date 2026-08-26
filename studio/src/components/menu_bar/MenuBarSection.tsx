@@ -1,10 +1,9 @@
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type { MenuBarItem } from '#bifrost/contracts/MenuBarTypes';
 
 import React, { Fragment } from 'react';
 
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
-
+import { Icon } from '../Icon';
 import MenuBarButton from './MenuBarButton';
 import MenuBarMenu from './MenuBarMenu';
 import MenuBarPaneContentToggle from './MenuBarPaneContentToggle';

@@ -1,8 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { DialogOptions, DialogResult, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
 import { IPC_MESSAGE_CLEAR_WINDOW_SOLUTION } from '#bifrost/contracts/IpcEvents';
-
-import type { DialogOptions, DialogResult, DialogValidationResult, TreeViewMediator } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
 
 export function initializeSolutionCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;

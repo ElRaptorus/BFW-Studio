@@ -1,9 +1,8 @@
+import { Icon } from '#components/Icon';
 import { getHumanizedDuration } from '#modules/engine-core';
 import type { BkmTrace, DecisionTrace, EvaluationResult, ImportTrace, RuleTrace } from '@elraptorus/daemonengine_sdk';
 
 import React, { useState } from 'react';
-
-import { Icon } from '@evil/bifrost_fw_sdk';
 
 import './EvaluationPanel.scss';
 

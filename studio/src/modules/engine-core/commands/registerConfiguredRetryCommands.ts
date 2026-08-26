@@ -1,9 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogContent } from '#bifrost/contracts/DialogTypes';
+import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
 import type { RetryRequest } from '@elraptorus/daemonengine_sdk';
 import { IncompatibleVersionMigrationError, ProcessInstanceNotRetriableError } from '@elraptorus/daemonengine_sdk';
-
-import type { DialogContent } from '@evil/bifrost_fw_sdk';
-import { StandardDialogResponse } from '@evil/bifrost_fw_sdk';
 
 import type { EngineConnectionManager } from '../EngineConnectionManager';
 import { ENGINE_COMMANDS } from './CommandContract';

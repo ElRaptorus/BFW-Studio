@@ -1,9 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
+import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 
-import { EditorDocumentModel, assertNotNull, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_METADATA_UPDATED } from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { DmnDiff, type DmnDiffChangesByAction, DmnViewerWithSync, buildDmnChangeSummary } from '../dmn-core/diff';
 import type { DmnChangeSummary } from '../dmn-core/diff';
 

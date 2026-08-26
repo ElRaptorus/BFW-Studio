@@ -1,6 +1,5 @@
+import type { BpmnElementCustomProperty } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
-
-import type { BpmnElementCustomProperty } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 /** Descriptor passed to `commandStack.execute(cmd, context)`. */
 export type CmdHelperDescriptor = { cmd: string; context: any };

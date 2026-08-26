@@ -1,17 +1,18 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { LabelWithFeelExpressionHint } from '#components/FeelExpressionHint';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React, { useEffect, useState } from 'react';
 
-import type { EditorDocument, FeelEditorVariable, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  FeelEditor,
-  LabelWithFeelExpressionHint,
-  OpenInNewTabButton,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import { FeelEditor } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsUserTask } from '../../BpmnElementTypeAssertionFunctions';
@@ -96,7 +97,6 @@ function PropertiesUserTaskAssignees(props: PaneComponentProps): React.JSX.Eleme
           <LabelWithFeelExpressionHint studio={props.studio} label="Assignees" />
         </label>
         <FeelEditor
-          studio={props.studio}
           initialValue={element.assignees ?? ''}
           size="medium"
           fontSize={12}

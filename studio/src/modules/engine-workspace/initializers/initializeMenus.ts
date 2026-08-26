@@ -11,7 +11,7 @@ import type { AutoRefreshInterval } from '#modules/engine-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Menu, Studio } from '@evil/bifrost_fw_sdk';
+import type { Menu } from '@evil/bifrost_fw_sdk';
 
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
 import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';
@@ -429,35 +429,35 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
 
   bifrost.menus.registerMenu(
     'engine-workspace/process-explorer/contextmenu',
-    (metadata: ProcessExplorerContextMetadata, studio: Studio): Menu => {
+    (metadata: ProcessExplorerContextMetadata, studio: Bifrost): Menu => {
       return buildProcessExplorerContextMenu(studio, metadata);
     },
   );
 
   bifrost.menus.registerMenu(
     'engine-workspace/decision-catalog/contextmenu',
-    (metadata: DecisionCatalogContextMetadata, studio: Studio): Menu => {
+    (metadata: DecisionCatalogContextMetadata, studio: Bifrost): Menu => {
       return buildDecisionCatalogContextMenu(studio, metadata);
     },
   );
 
   bifrost.menus.registerMenu(
     'engine-workspace/instance-search/contextmenu',
-    (metadata: InstanceSearchContextMetadata, studio: Studio): Menu => {
+    (metadata: InstanceSearchContextMetadata, studio: Bifrost): Menu => {
       return buildInstanceSearchContextMenu(studio, metadata);
     },
   );
 
   bifrost.menus.registerMenu(
     'engine-workspace/timer-schedules/contextmenu',
-    (metadata: TimerSchedulesContextMetadata, studio: Studio): Menu => {
+    (metadata: TimerSchedulesContextMetadata, studio: Bifrost): Menu => {
       return buildTimerSchedulesContextMenu(studio, metadata);
     },
   );
 
   bifrost.menus.registerMenu(
     'engine-workspace/task-inbox/contextmenu',
-    (metadata: TaskInboxContextMetadata, studio: Studio): Menu => {
+    (metadata: TaskInboxContextMetadata, studio: Bifrost): Menu => {
       return buildTaskInboxContextMenu(studio, metadata);
     },
   );

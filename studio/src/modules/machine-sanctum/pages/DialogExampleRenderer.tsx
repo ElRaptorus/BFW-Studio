@@ -1,11 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogOptions, DialogResult } from '#bifrost/contracts/DialogTypes';
 import { ErrorBoundary } from '#components/ErrorBoundary';
+import { Icon } from '#components/Icon';
 import DialogRenderer from '#components/dialog/DialogRenderer';
 
 import React from 'react';
-
-import type { DialogOptions, DialogResult } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
 
 import { JsonExampleRenderer } from './JsonExampleRenderer';
 

@@ -1,8 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { QuickJumpViewMediator } from '#bifrost/browser/QuickJumpViewMediator';
-
-import type { CommandContext } from '@evil/bifrost_fw_sdk';
-import { assertKeybindingCommandContext } from '@evil/bifrost_fw_sdk';
+import { assertKeybindingCommandContext } from '#bifrost/common/AssertionFunctions';
+import type { CommandContext } from '#bifrost/contracts/CommandTypes';
 
 export function initializeQuickJumpCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;

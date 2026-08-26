@@ -1,16 +1,16 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import { Icon } from '#components/Icon';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type { Overlay } from '../BpmnElementOverlayManager';
 import { OverlayPosition } from '../BpmnElementOverlayManager';
 
 export type ProcessNotExecutableOverlayProps = {
-  studio: Studio;
+  studio: Bifrost;
 };
 
-export function createProcessNotExecutableOverlay(elementId: string, studio: Studio): Overlay {
+export function createProcessNotExecutableOverlay(elementId: string, studio: Bifrost): Overlay {
   return {
     type: 'positioned',
     elementId: elementId,

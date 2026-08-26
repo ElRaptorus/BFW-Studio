@@ -1,10 +1,16 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 import type { SubProcessTypeData } from '@elraptorus/daemonengine_sdk';
 import { FlowNodeInstanceState } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getAdHocInnerActivities, getChildProcessInstanceId } from '../../libs/BpmnProcessHelpers';
@@ -14,7 +20,7 @@ import { shouldDisplayAdHocSubProcessInstancePane } from '../ShouldBeDisplayedCo
 export type AdHocSubProcessDefinitionPaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export const paneProvider: PaneProvider = {

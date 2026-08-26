@@ -1,3 +1,4 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 import type Canvas from 'diagram-js/lib/core/Canvas';
@@ -7,8 +8,6 @@ import type Overlays from 'diagram-js/lib/features/overlays/Overlays';
 import type Selection from 'diagram-js/lib/features/selection/Selection';
 import DrdOutlineModule from 'dmn-js-drd/lib/features/outline';
 import DmnNavigatedViewer from 'dmn-js/lib/NavigatedViewer';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import type { DmnView, DmnViewType } from './DmnModelerComponentAdapter';
 

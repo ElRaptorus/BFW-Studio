@@ -1,3 +1,6 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import { FeelSimulatorEditor } from '#components/feel-simulator';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
@@ -5,8 +8,6 @@ import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 import React, { useMemo } from 'react';
 
 import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
-import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/SelectableElement';
@@ -14,7 +15,7 @@ import type { FlowNode } from '../../libs/SelectableElement';
 export type RuntimeExpressionRunnerProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function RuntimeExpressionRunner(props: RuntimeExpressionRunnerProps): React.JSX.Element {
@@ -98,7 +99,7 @@ function buildFeelVariableDefinitions(feelContext: Record<string, unknown>): Fee
 
 type RuntimeFeelExpressionRunnerProps = {
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
   flowNode: FlowNode;
   selectedFlowNodeInstance: FlowNodeInstance;
 };

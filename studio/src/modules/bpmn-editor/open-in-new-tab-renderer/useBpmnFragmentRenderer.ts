@@ -1,15 +1,14 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument, EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { EVENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+
 import { useEffect, useRef, useState } from 'react';
 
-import type {
-  AbstractSubscription,
-  EditorDocument,
-  EditorDocumentRendererProps,
-  FeelEditorVariable,
-  Studio,
-} from '@evil/bifrost_fw_sdk';
-import { assertNotNull, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
 
-import { EVENT_DATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import BpmnDocumentModel from '../BpmnDocumentModel';
 
 export type FragmentEditorRef = {
@@ -43,7 +42,7 @@ export function useBpmnFragmentRenderer(
   getFragmentValue: GetFragmentValueFn,
   setFragmentValue: SetFragmentValueFn,
 ): BpmnFragmentRendererState & {
-  bifrost: Studio;
+  bifrost: Bifrost;
   handleChange: (value: string) => void;
 } {
   const bifrost = props.studio;

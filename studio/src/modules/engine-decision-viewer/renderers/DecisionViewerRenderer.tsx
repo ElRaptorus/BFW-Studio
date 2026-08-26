@@ -1,3 +1,19 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingErrorHint } from '#components/editor/EditorLoadingErrorHint';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleCenter } from '#components/editor/EditorTitleCenter';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import {
   DmnViewerComponentAdapter,
   EVENT_DMN_VIEWER_SELECTION_CHANGED,
@@ -5,6 +21,7 @@ import {
 } from '#modules/dmn-core/DmnViewerComponentAdapter';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { ENGINE_COMMANDS, getHumanizedDateTime, resolveHealthState } from '#modules/engine-core';
+import type { DrgElementType, DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 import 'dmn-js/dist/assets/diagram-js.css';
 import 'dmn-js/dist/assets/dmn-font/css/dmn-embedded.css';
 import 'dmn-js/dist/assets/dmn-js-boxed-expression-controls.css';
@@ -17,24 +34,6 @@ import 'dmn-js/dist/assets/dmn-js-shared.css';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorLoadingErrorHint,
-  EditorTitle,
-  EditorTitleCenter,
-  EditorTitleHeroIcon,
-  EditorTitleLeft,
-  EditorTitleText,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  Icon,
-} from '@evil/bifrost_fw_sdk';
-
 import '../../dmn-editor/styles/dmn.scss';
 import { DECISION_VIEWER_COMMANDS } from '../commands/DecisionViewerCommands';
 import { DecisionViewerBreadcrumb } from '../components/DecisionViewerBreadcrumb';
@@ -43,7 +42,6 @@ import { ImportChainPanel } from '../components/ImportChainPanel';
 import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { DecisionViewerDocumentModel, DecisionViewerModelData } from '../models/DecisionViewerDocumentModel';
-import type { DrgElementType, DrgSelection } from '../types/dmnModelTypes';
 import './DecisionViewerRenderer.scss';
 
 const DMN_TYPE_MAP: Record<string, DrgElementType> = {
@@ -56,7 +54,7 @@ const DMN_TYPE_MAP: Record<string, DrgElementType> = {
 
 export default function DecisionViewerRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
-  const bifrost: Studio = studio;
+  const bifrost: Bifrost = studio;
   const model = useEditorModel<DecisionViewerDocumentModel>(bifrost, editorDocument);
   const viewerContainerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<DmnViewerComponentAdapter | null>(null);

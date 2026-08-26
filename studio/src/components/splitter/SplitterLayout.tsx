@@ -1,6 +1,6 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 type SplitterPaneProps = {
   vertical: boolean;

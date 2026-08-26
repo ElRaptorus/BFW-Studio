@@ -1,5 +1,6 @@
-import type { Command, CommandContext, EditorDocument } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { Command, CommandContext } from '#bifrost/contracts/CommandTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 import type { Bifrost } from '../Bifrost';
 import { orderedUnify } from '../common/ArrayFunctions';

@@ -118,10 +118,10 @@ bifrost.icons.registerIcons({ 'my-plugin/highfive/button': 'ph-fill ph-star' });
 
 The recommended naming convention follows the pattern `plugin-name/context/element`.
 
-Import the `Icon` component from the SDK to render registered icons:
+Import the host `Icon` component to render registered icons:
 
 ```typescript
-import { Icon } from '@evil/bifrost_fw_sdk';
+import { Icon } from '#components/Icon';
 
 function HighFiveButton(props: any) {
   return <button>

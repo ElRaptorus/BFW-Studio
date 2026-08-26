@@ -1,7 +1,13 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/index';
@@ -11,7 +17,7 @@ import { shouldDisplayWritenDataObjectValuesPane } from '../ShouldBeDisplayedCon
 type WrittenDataObjectValuesPaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export const paneProvider: PaneProvider = {

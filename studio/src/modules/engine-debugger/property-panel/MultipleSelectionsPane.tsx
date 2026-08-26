@@ -1,10 +1,14 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import { EventDefinitionType } from '@elraptorus/daemonengine_sdk';
 import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 
 import React, { useRef } from 'react';
-
-import type { IconComponent, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import { getEventDefinition } from '../libs/BpmnProcessHelpers';

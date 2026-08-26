@@ -1,8 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader, PaneHeaderIcon } from '@evil/bifrost_fw_sdk';
-import type { BpmnDocumentModel } from '@evil/bifrost_fw_sdk/types/BpmnDocumentModel';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { LintBridgeApi, LintFinding, LintSeverity } from '../types';
 
@@ -17,7 +23,7 @@ function getPaneTitle(): string {
   return 'Findings';
 }
 
-function shouldBeDisplayed(editorDocument: EditorDocument, _editorDocumentModel: unknown, studio: Studio): boolean {
+function shouldBeDisplayed(editorDocument: EditorDocument, _editorDocumentModel: unknown, studio: Bifrost): boolean {
   if (!editorDocument || editorDocument.documentType !== 'bpmn') {
     return false;
   }

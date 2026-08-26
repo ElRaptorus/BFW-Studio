@@ -1,8 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { showContextMenu } from '#components/ContextMenuFunctions';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React from 'react';
-
-import { EditorContent, showContextMenu } from '@evil/bifrost_fw_sdk';
 
 export default function ErrorHandlingExamples(props: any): React.JSX.Element {
   const bifrost: Bifrost = props.bifrost;

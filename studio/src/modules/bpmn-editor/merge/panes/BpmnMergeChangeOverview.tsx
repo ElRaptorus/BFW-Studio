@@ -1,17 +1,14 @@
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { ConflictKey, ElementResolutionStatus, MergeResolutionProgress } from '#bifrost/contracts/MergeTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED } from '#modules/git-cruiser/GitTypes';
 import type BpmnMergeResultModeler from '#modules/git-cruiser/merge/MergeDocumentModel';
 
 import React, { useEffect, useState } from 'react';
-
-import type {
-  ConflictKey,
-  EditorDocument,
-  ElementResolutionStatus,
-  MergeResolutionProgress,
-  PaneComponentProps,
-  PaneProvider,
-} from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader } from '@evil/bifrost_fw_sdk';
 
 import {
   CustomPropertyChangeOverviewGroup,

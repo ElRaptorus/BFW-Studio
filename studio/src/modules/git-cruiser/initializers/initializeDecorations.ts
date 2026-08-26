@@ -1,6 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { TreeBadge, TreeDecorationProvider, TreeItemDecoration, TreeItemStyles } from '@evil/bifrost_fw_sdk';
+import type {
+  TreeBadge,
+  TreeDecorationProvider,
+  TreeItemDecoration,
+  TreeItemStyles,
+} from '#bifrost/contracts/TreeTypes';
 
 import type { GitFileStatus, GitFileStatusCode, GitRepoState } from '../GitTypes';
 import { STATUS_BADGE_MAP, STATUS_COLOR_TOKEN_MAP, STATUS_SEVERITY } from '../GitTypes';

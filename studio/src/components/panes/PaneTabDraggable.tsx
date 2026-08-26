@@ -1,8 +1,9 @@
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneAreaName, PaneObject } from '#bifrost/contracts/PaneTypes';
 import { useDrag, useDrop } from 'react-dnd';
 
 import React from 'react';
-
-import type { EditorDocument, EditorDocumentModel, PaneAreaName, PaneObject } from '@evil/bifrost_fw_sdk';
 
 import { useBifrost } from '../../bifrostContext';
 

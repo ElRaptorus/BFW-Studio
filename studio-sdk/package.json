@@ -1,13 +1,13 @@
 {
   "name": "@evil/bifrost_fw_sdk",
   "version": "1.0.0",
-  "description": "Made 100% out of organic, renewable and sustainable malevolence, hatred and putrified corpses.",
+  "description": "The Bifrost Forge World SDK for plugin developers. Provides type definitions, reusable UI components, and design tokens for building Bifrost Forge World plugins.",
   "main": "./out/index.js",
   "typings": "./out/index.d.ts",
   "private": true,
   "sideEffects": false,
   "files": [
-    "out/**/*.{ts,js}"
+    "out/**/*.{ts,js,css,scss}"
   ],
   "author": "ElRaptorus",
   "license": "MIT",
@@ -22,14 +22,11 @@
   },
   "scripts": {
     "clean": "node ./clean.js",
-    "build": "npm run clean && tsc",
-    "format": "prettier --write --config ../.prettierrc.json ./src ./types",
-    "lint": "eslint src/ types/",
-    "lint:fix": "eslint --fix src/ types/",
+    "build": "npm run clean && tsc && node ./copy-assets.js",
+    "format": "prettier --write --config ../.prettierrc.json ./src",
+    "lint": "eslint src/",
+    "lint:fix": "eslint --fix src/",
     "watch": "tsc -w"
-  },
-  "dependencies": {
-    "jaro-winkler": "^0.2.8"
   },
   "devDependencies": {
     "@codemirror/language": "^6.12.4",
@@ -38,7 +35,6 @@
     "@eslint-react/eslint-plugin": "^5.18.6",
     "@eslint/js": "^10.0.1",
     "@lezer/highlight": "^1.2.3",
-    "@tanstack/react-table": "^9.1.2",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/node": "^26.3.0",
     "@types/react": "^19.2.18",
@@ -52,23 +48,12 @@
   },
   "peerDependencies": {
     "@bpmn-io/feel-editor": "^2.7.1",
-    "@headless-tree/core": "^1.7.0",
-    "@headless-tree/react": "^1.7.0",
-    "@mdxeditor/editor": "^4.2.1",
-    "@monaco-editor/react": "^4.7.0",
-    "@tanstack/react-table": "^9.1.2",
-    "monaco-editor": "^0.56.0",
     "react": "^19.2.8",
-    "react-dnd": "^16.0.1",
     "react-dom": "^19.2.8",
-    "react-select": "^5.10.2"
-  },
-  "overrides": {
-    "@mdxeditor/editor": {
-      "js-yaml": ">=4.3.0"
-    },
-    "monaco-editor": {
-      "dompurify": "^3.4.12"
-    }
+    "react-select": "^5.10.2",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.9",
+    "@lezer/highlight": "^1.2.3"
   }
 }

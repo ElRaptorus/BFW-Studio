@@ -1,6 +1,6 @@
-import React from 'react';
+import { ColorPicker } from '#components/ColorPicker';
 
-import { ColorPicker } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 type ColorControlProps = {
   value: string;

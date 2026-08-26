@@ -1,4 +1,4 @@
-import type { PaneProvider, PaneProviderModule } from '@evil/bifrost_fw_sdk';
+import type { PaneProvider, PaneProviderModule } from '#bifrost/contracts/PaneTypes';
 
 type PaneProviderMap = { [id: string]: PaneProvider };
 

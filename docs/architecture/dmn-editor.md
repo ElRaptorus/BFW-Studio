@@ -151,7 +151,7 @@ Edits the `description` attribute on the DMN business object (not `documentation
 
 ### Inspector (bottom)
 
-`DmnEditorDocumentInspector` registered on the `dmn` document type definition. Uses the generic `DocumentContentInspector` + `DocumentTypeDefinitionInspector` pattern from the SDK.
+`DmnEditorDocumentInspector` registered on the `dmn` document type definition. Uses the generic host `DocumentContentInspector` + `DocumentTypeDefinitionInspector` pattern (`studio/src/components/panes/inspectors/`).
 
 ---
 
@@ -295,20 +295,21 @@ This feeds the `FeelEditor` / `OneLineFeelEditor` autocompletion in decision tab
 
 ---
 
-## SDK Type Declarations
+## Plugin identification types
 
-Public types for plugin authors in `studio-sdk/types/dmn/`:
+Plugin authors do **not** import `DmnDocumentModel` or the full `DmnElement` union. Those live in `studio/src/modules/dmn-editor/` for the host editor.
 
-| File | Key Exports |
+Plugin-facing identification is `PluginDmnElementType` and `DmnViewType` on `studio-sdk/src/plugin-api/DmnApi.ts` (moddle-prefixed strings such as `'dmn:Decision'`, matching the host `DmnElementType` enum). Snapshots returned by `api.dmn.getElement` / `getElements` use that vocabulary. See [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md).
+
+Host typed model:
+
+| File | Key exports |
 |------|-------------|
-| `DmnElementTypes.ts` | `DmnElementType` enum (moddle-prefixed values: `'dmn:Decision'`, etc.), `DmnElement` type, `DmnExpressionType` (camelCase: `'decisionTable'`, `'literalExpression'`, etc.), `DmnHitPolicy`, `DmnAggregation` |
-| `DmnDocumentSelection.ts` | `declare class DmnDocumentSelection` — `getElements`, `selectElement`, `selectElements`, `isCurrentlySelected`, `onlyElementIsType` |
-| `DmnDocumentElementAccess.ts` | `declare class DmnDocumentElementAccess` — `castElement`, `getById`, `getElementType`, `getBusinessObject`, `getDefinitions`, `getDecisionExpression`, `getAllIds`, `countElementsByType`, `setElementProperty`, `setDefinitionsProperty` |
-| `DmnModelerComponentAdapter.ts` | `DmnViewType`, `DmnView` (with `id`, `name`, `type`, `element` fields), `declare class DmnModelerComponentAdapter` |
-
-Barrel: `studio-sdk/types/DmnDocumentModel.ts` — re-exports types (including `DmnDocumentElementAccess`, `DmnDocumentSelection`, `DmnAggregation`) + `declare class DmnDocumentModel extends EditorDocumentModel`.
-
-Exported from `studio-sdk/index.ts` via `export * from './types/DmnDocumentModel'`.
+| `studio/src/modules/dmn-editor/DmnElementTypes.ts` | `DmnElementType`, `DmnElement`, expression/hit-policy unions |
+| `studio/src/modules/dmn-editor/DmnDocumentModel.ts` | Document model (extends `EditorDocumentModel`) |
+| `studio/src/modules/dmn-editor/DmnDocumentSelection.ts` | Selection helpers |
+| `studio/src/modules/dmn-editor/DmnDocumentElementAccess.ts` | Element access helpers |
+| `studio/src/modules/dmn-core/DmnModelerComponentAdapter.ts` | Adapter + `DmnView` |
 
 ---
 

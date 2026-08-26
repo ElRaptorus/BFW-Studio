@@ -18,7 +18,7 @@ export default defineConfig(
   ...tseslint.configs.recommended,
   prettier,
   {
-    files: ['src/**/*.{ts,tsx}', 'types/**/*.ts'],
+    files: ['src/**/*.{ts,tsx}'],
     extends: [eslintReact.configs['recommended-typescript'], eslintReact.configs['disable-rsc']],
     plugins: {
       'react-hooks': reactHooks,

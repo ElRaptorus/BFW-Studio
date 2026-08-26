@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import type { FormFieldDefinition, FormFieldOption } from '#modules/bpmn-editor/BpmnElementTypes';
+import { FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
-import type { FormFieldDefinition, FormFieldOption } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { FormFieldType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import React, { useEffect, useState } from 'react';
 
 import type { FormBuilderEditorSnapshot } from '../FormBuilderEditorMediator';
 import { FormBuilderEditorMediator } from '../FormBuilderEditorMediator';

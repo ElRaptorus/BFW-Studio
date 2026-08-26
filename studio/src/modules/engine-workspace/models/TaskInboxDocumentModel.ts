@@ -1,3 +1,5 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
@@ -9,9 +11,6 @@ import type {
   OffsetPageInfo,
   SortClause,
 } from '@elraptorus/daemonengine_sdk';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
 
 import { TASK_INBOX_PENDING_COUNTS_KEY } from '../constants/sharedResourceKeys';
 
@@ -45,7 +44,7 @@ const CONNECTION_GRACE_PERIOD_MS = 60_000;
 const PAGE_SIZE = 50;
 
 export class TaskInboxDocumentModel extends EditorDocumentModel {
-  private studio: Studio;
+  private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
   private client: DaemonEngineClient | null;
   private engineId: string;
@@ -78,7 +77,7 @@ export class TaskInboxDocumentModel extends EditorDocumentModel {
   private connectionGracePeriodExpired = false;
   private dataRevision = 0;
 
-  private constructor(uri: string, studio: Studio) {
+  private constructor(uri: string, studio: Bifrost) {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
@@ -91,7 +90,7 @@ export class TaskInboxDocumentModel extends EditorDocumentModel {
     _restoredCurrentData: any,
     _restoredMetadata: any,
     _fileLoader: any,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<TaskInboxDocumentModel> {
     return new TaskInboxDocumentModel(uri, studio);
   }

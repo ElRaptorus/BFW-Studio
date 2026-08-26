@@ -1,9 +1,7 @@
-import type { BpmnElement, Studio } from '@evil/bifrost_fw_sdk';
-import { BpmnElementType } from '@evil/bifrost_fw_sdk';
-import type {
-  BpmnElement_BusinessRuleTask,
-  BpmnElement_Participant,
-} from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElement_BusinessRuleTask, BpmnElement_Participant } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import type { Overlay } from '../bpmn-core/overlays';
 import {
@@ -14,7 +12,7 @@ import {
 } from '../bpmn-core/overlays';
 import type BpmnDocumentModel from './BpmnDocumentModel';
 
-export function createFlowNodeOverlays(element: BpmnElement, studio: Studio, model: BpmnDocumentModel): Overlay[] {
+export function createFlowNodeOverlays(element: BpmnElement, studio: Bifrost, model: BpmnDocumentModel): Overlay[] {
   const overlays: Overlay[] = [];
 
   if (element.type === BpmnElementType.CallActivity && (element as any).processModelId) {
@@ -74,7 +72,7 @@ export function createFlowNodeOverlays(element: BpmnElement, studio: Studio, mod
   return overlays;
 }
 
-function openDocumentationPane(studio: Studio): void {
+function openDocumentationPane(studio: Bifrost): void {
   studio.panes.setActiveGroupInArea('right', 'documentation');
   studio.panes.showPaneArea('right');
 }

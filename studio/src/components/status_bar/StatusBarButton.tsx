@@ -1,10 +1,11 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { StatusBarItem_Button } from '#bifrost/contracts/StatusBarTypes';
+import { showContextMenu } from '#components/ContextMenuFunctions';
 
 import React from 'react';
 
-import { Icon, assertNotNull, showContextMenu } from '@evil/bifrost_fw_sdk';
-
+import { Icon } from '../Icon';
 import StatusBarContentRenderer from './StatusBarContentRenderer';
 
 type StatusBarButtonProps = {

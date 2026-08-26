@@ -1,7 +1,12 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { MarkdownEditor } from '#components/MarkdownEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { MarkdownEditor, OpenInNewTabButton, Pane, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import { ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';

@@ -1,4 +1,5 @@
-import { AbstractEmitter, type PluginInfo } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { type PluginInfo } from '#bifrost/contracts/PluginHostTypes';
 
 import type { IPluginHost } from '../../contracts/PluginHostTypes';
 import { PluginPermissionStore } from './PluginPermissionStore';

@@ -1,9 +1,8 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { BrowserWindow, shell } from 'electron';
 import { pathToFileURL } from 'node:url';
 import os from 'os';
 import path from 'path';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import * as BuildInfo from '../../generatedBuildAndProductInfo';
 import type { BifrostWindowSerialized } from '../contracts/BifrostTypes';

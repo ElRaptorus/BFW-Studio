@@ -1,12 +1,14 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { FileEventType, WatcherDisposable } from '#bifrost/common/FileHandlingService';
+import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
+import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
+import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { dmnModelerModuleRegistry } from '#modules/dmn-core/DmnModelerModuleRegistry';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 
-import type { AbstractSubscription, ILoadable, Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel, waitForAcceptance } from '@evil/bifrost_fw_sdk';
-import type { FileEventType, WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
-
-import { EVENT_METADATA_UPDATED } from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { PLUGIN_DMN_OVERLAY_MANAGER_KEY } from '../../bifrost/electron-renderer/plugin-host/DmnApiBridge';
 import DmnModelerComponentAdapter, {
   type DmnView,
@@ -48,7 +50,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
 
   private log: Debugger;
   private dmnComponentAdapter: DmnModelerComponentAdapter;
-  private studio: Studio;
+  private studio: Bifrost;
   private watcherDisposable?: WatcherDisposable;
 
   private subscriptions: AbstractSubscription[] = [];
@@ -60,7 +62,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
     xmlOnFile: string,
     currentXmlFromPreviousSession: string | null = null,
     restoredMetadataFromPreviousSession: any | null = null,
-    studio: Studio,
+    studio: Bifrost,
   ) {
     super(uri);
 
@@ -149,7 +151,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
     restoredCurrentData: any,
     restoredMetadata: any,
     fileLoader: ILoadable,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<DmnDocumentModel> {
     const isUnsavedBuffer = uri.startsWith('buffer:');
     let contentOnFile: string;
@@ -359,13 +361,13 @@ export default class DmnDocumentModel extends EditorDocumentModel {
     }
 
     const elementRegistry = this.dmnComponentAdapter.getDrdElementRegistry();
-    const elements = (elementRegistry.filter(() => true) as any[]).map((element) => {
-      const businessObject = element.businessObject;
+    const elements = this.elements.getAllElements().map((typed) => {
+      const registryElement = elementRegistry.get(typed.id) as { parent?: { id?: string } } | undefined;
       return {
-        id: element.id,
-        type: element.type,
-        name: businessObject?.name ?? null,
-        parentId: element.parent?.id ?? null,
+        id: typed.id,
+        type: typed.type,
+        name: typed.name || null,
+        parentId: registryElement?.parent?.id ?? null,
         properties: {},
         incoming: [] as string[],
         outgoing: [] as string[],

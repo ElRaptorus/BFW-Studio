@@ -1,14 +1,15 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
 import { marked } from 'marked';
 
 import React, { useEffect, useState } from 'react';
 
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import { Editor, EditorContent } from '@evil/bifrost_fw_sdk';
-
 import type { HelpTextDocumentModel } from './HelpTextDocumentModel';
 
 type MarkdownRendererProps = {
-  readonly bifrost: Studio;
+  readonly bifrost: Bifrost;
   readonly className?: string;
   readonly markdown: string;
 };

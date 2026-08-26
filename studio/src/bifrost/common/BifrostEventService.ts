@@ -1,4 +1,4 @@
-import type { StudioEmittableEventName, StudioEventName } from '@evil/bifrost_fw_sdk';
+import type { StudioEmittableEventName, StudioEventName } from '#bifrost/contracts/StudioEvents';
 
 import type { BifrostEventListener, BifrostEventSubscription } from '../contracts/BifrostTypes';
 import { BifrostEventEmitter } from './BifrostEventEmitter';

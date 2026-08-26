@@ -1,11 +1,11 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type {
   TreeBadge,
   TreeDecorationProvider,
   TreeDecorationSource,
   TreeItemDecoration,
   TreeItemStyles,
-} from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/TreeTypes';
 
 import type { Bifrost } from '../../Bifrost';
 import type { FileOrDirectory } from '../../contracts/FileSystemTypes';

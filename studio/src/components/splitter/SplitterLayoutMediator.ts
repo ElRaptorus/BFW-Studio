@@ -1,4 +1,4 @@
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 import type { SplitterLayout } from './SplitterLayout';
 

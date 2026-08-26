@@ -1,3 +1,5 @@
+import type { PluginPermission } from '../PluginPermission';
+
 /**
  * Type definitions for the `bifrostStudio` section in a plugin's `package.json`.
  *
@@ -38,6 +40,11 @@ export interface BifrostStudioManifest {
   activationEvents?: ActivationEvent[];
   /** Declarative contributions the plugin registers on load (before `activate()` runs). */
   contributes?: ManifestContributions;
+  /**
+   * Capabilities this plugin needs. Undeclared permissions are denied at runtime.
+   * Studio remains canonical for hierarchy helpers (`PERMISSION_HIERARCHY`).
+   */
+  permissions?: PluginPermission[];
 }
 
 // ─── Contributions ──────────────────────────────────────────────────

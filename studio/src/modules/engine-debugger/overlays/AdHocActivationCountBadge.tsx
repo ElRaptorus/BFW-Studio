@@ -1,12 +1,12 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
+import { Icon } from '#components/Icon';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import { OverlayPosition } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 
 import React from 'react';
 
-import type { IconComponent, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
-
-export function createAdHocActivationCountBadge(flowNodeId: string, activationCount: number, studio: Studio): Overlay {
+export function createAdHocActivationCountBadge(flowNodeId: string, activationCount: number, studio: Bifrost): Overlay {
   return {
     type: 'positioned',
     elementId: flowNodeId,

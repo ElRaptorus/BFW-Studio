@@ -2,9 +2,8 @@ import Select, { components } from 'react-select';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { SearchQuery } from '../../contracts/internal/SearchTypes';
+import { type PropertySearchQuery, valueMatchesSearchQuery } from '../../contracts/PropertySearch';
 import { FormInput } from '../FormInput';
-import { valueMatchesSearchQuery } from './PaneFunctions';
 import type { PropertyValidationFn } from './PropertyValidation';
 import { combinePropertyValidators } from './PropertyValidation';
 import type { Suggestion } from './PropertyValueWithSuggestions';
@@ -29,7 +28,7 @@ type PanePropertyProps_Text = {
 
   disabled?: boolean;
   className?: string;
-  searchQuery?: SearchQuery;
+  searchQuery?: PropertySearchQuery;
   valueRef?: { current: string };
   htmlAttributes?: object;
 };
@@ -63,7 +62,7 @@ type PanePropertyProps_TextWithSuggestions = {
 
   htmlId?: string;
   className?: string;
-  searchQuery?: SearchQuery;
+  searchQuery?: PropertySearchQuery;
   isClearable?: boolean;
 };
 

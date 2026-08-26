@@ -1,9 +1,10 @@
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { showContextMenu } from '#components/ContextMenuFunctions';
+
 import React, { useCallback } from 'react';
 
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
-import { Icon, showContextMenu } from '@evil/bifrost_fw_sdk';
-
 import { useBifrost } from '../../bifrostContext';
+import { Icon } from '../Icon';
 
 type EditorTabListControlsProps = {
   editorDocuments: EditorDocument[];

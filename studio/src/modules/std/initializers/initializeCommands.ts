@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { CommandContext, DialogOptions, DialogResult, DialogValidationResult } from '@evil/bifrost_fw_sdk';
-import { assertGenericCommandContext } from '@evil/bifrost_fw_sdk';
+import { assertGenericCommandContext } from '#bifrost/common/AssertionFunctions';
+import type { CommandContext } from '#bifrost/contracts/CommandTypes';
+import type { DialogOptions, DialogResult, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
 
 import { initializeEditorCommands } from './commands/initializeEditorCommands';
 import { initializeFileExplorerCommands } from './commands/initializeFileExplorerCommands';

@@ -1,3 +1,5 @@
+import type { ThemeType } from '#bifrost/contracts/ThemeTypes';
+
 import type React from 'react';
 
 import type { PluginIframeGuestMessage, PluginIframeHandle, PluginIframeHostMessage } from './types';
@@ -25,7 +27,7 @@ export class PluginIframeManager {
   /** Handlers registered before the iframe mounts. Drained by {@link register}. */
   private pendingHandlers = new Map<string, (data: unknown) => void>();
   private currentThemeTokens: Record<string, string> = {};
-  private currentThemeType: string = 'dark';
+  private currentThemeType: ThemeType = 'dark';
 
   register(iframeId: string, pluginName: string, panelRef: React.RefObject<PluginIframeHandle | null>): void {
     const existing = this.iframes.get(iframeId);
@@ -103,7 +105,7 @@ export class PluginIframeManager {
    * Sends theme tokens to all active iframes and stores them
    * so newly-opened iframes receive the current theme on load.
    */
-  broadcastThemeTokens(tokens: Record<string, string>, themeType: string): void {
+  broadcastThemeTokens(tokens: Record<string, string>, themeType: ThemeType): void {
     this.currentThemeTokens = tokens;
     this.currentThemeType = themeType;
 

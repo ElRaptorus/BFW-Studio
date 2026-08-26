@@ -1,11 +1,11 @@
+import type { PaneComponentProps, PaneProvider, PaneProviderModule } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import PluginIframe from '#components/webview/PluginIframe';
 import type { PluginIframeManager } from '#components/webview/PluginIframeManager';
 import type { PluginIframeHandle } from '#components/webview/types';
 
 import React, { useRef } from 'react';
-
-import type { PaneComponentProps, PaneProvider, PaneProviderModule } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader } from '@evil/bifrost_fw_sdk';
 
 interface IframePaneProviderContext {
   pluginName: string;

@@ -1,10 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { DocumentInspectorProps } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Tree } from '#components/Tree/Tree';
+import { DocumentContentInspector } from '#components/panes/inspectors/DocumentContentInspector';
+import { DocumentTypeDefinitionInspector } from '#components/panes/inspectors/DocumentTypeDefinitionInspector';
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
 
 import React, { useState } from 'react';
-
-import type { DocumentInspectorProps, EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import { DocumentContentInspector, DocumentTypeDefinitionInspector, Icon, Tree } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 import './EditorInspector.scss';
@@ -117,7 +120,7 @@ type InspectorShowroomProps = {
   editorDocument: EditorDocument;
   model: BpmnDocumentModel;
   selectedView: string;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 function resolveViewFromAction(action: string | undefined): string | null {

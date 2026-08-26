@@ -1,17 +1,17 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { FeelExpressionHint } from '#components/FeelExpressionHint';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { LoopCharacteristics } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React, { useEffect, useState } from 'react';
 
-import type { EditorDocument, FeelEditorVariable, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import {
-  FeelExpressionHint,
-  OneLineFeelEditor,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
-import { LoopCharacteristics } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import { OneLineFeelEditor, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { getLoopCharacteristicType, isActivityType } from '../../PropertiesPaneFunctions';
@@ -87,7 +87,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           <FeelExpressionHint className="float-right" studio={props.studio} />
         </label>
         <OneLineFeelEditor
-          studio={props.studio}
           initialValue={loopBreakCondition}
           onChange={(value: string) => changeLoopBreakCondition(value)}
           variables={feelVariables}

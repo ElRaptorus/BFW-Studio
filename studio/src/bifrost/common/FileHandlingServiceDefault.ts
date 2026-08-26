@@ -1,5 +1,5 @@
-import type { WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
-import type { Project } from '@evil/bifrost_fw_sdk/types/contracts';
+import type { WatcherDisposable } from '#bifrost/common/FileHandlingService';
+import type { Project } from '#bifrost/contracts/SolutionTypes';
 
 import type { FileOrDirectory } from '../contracts/FileSystemTypes';
 import type { FileWatcherCallback } from './FileHandlingService';

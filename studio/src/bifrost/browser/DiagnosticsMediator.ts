@@ -1,4 +1,4 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 import type { Diagnostic, DiagnosticCounts, DiagnosticsManager } from '../common/DiagnosticsManager';
 import { EVENT_DIAGNOSTICS_CHANGED } from '../common/DiagnosticsManager';

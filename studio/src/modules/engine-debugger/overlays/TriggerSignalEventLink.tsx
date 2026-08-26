@@ -1,11 +1,11 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
+import { Icon } from '#components/Icon';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import { OverlayPosition } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
-
-import type { IconComponent, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 
@@ -13,7 +13,7 @@ export function createTriggerSignalEventLink(
   flowNodeInstance: FlowNodeInstance,
   signalName: string,
   model: EngineBpmnDebuggerEditorDocumentModel,
-  studio: Studio,
+  studio: Bifrost,
 ): Overlay {
   const cmd = studio.commands.getClickHandler();
   return {

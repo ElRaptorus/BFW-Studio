@@ -1,13 +1,14 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { StudioModule } from '#bifrost/common/ModuleManager';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
+import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
 import ProductNameHeadline from '#components/ProductNameHeadline';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
 import log from 'electron-log';
 
 import React, { useEffect, useState } from 'react';
-
-import type { EditorDocumentRendererProps, PluginInfo } from '@evil/bifrost_fw_sdk';
-import { Editor, EditorContent } from '@evil/bifrost_fw_sdk';
 
 import * as BuildInfo from '../../../../generatedBuildAndProductInfo';
 

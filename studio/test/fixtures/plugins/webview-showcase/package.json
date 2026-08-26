@@ -14,6 +14,9 @@
     "test"
   ],
   "main": "dist/index.js",
+  "scripts": {
+    "build": "npx tsc --project tsconfig.json && npm run build --prefix webview"
+  },
   "devDependencies": {
     "@types/node": "^25.9.1"
   },

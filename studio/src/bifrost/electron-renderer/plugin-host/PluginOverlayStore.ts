@@ -1,13 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { type CallbackInvocationPayload, PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
+import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 
 import type {
-  BpmnElement,
   BpmnElementDetailSnapshot,
   BpmnOverlayDescriptor,
   OverlayFactoryContext,
+  PluginBpmnElementType,
 } from '@evil/bifrost_fw_sdk';
 import { PluginBpmnOverlayPosition } from '@evil/bifrost_fw_sdk';
 
@@ -19,6 +20,51 @@ import {
 import type { PluginHost } from './PluginHost';
 
 const FACTORY_TIMEOUT_MS = 500;
+
+const SNAPSHOT_EXCLUDED_KEYS = new Set([
+  'id',
+  'type',
+  'name',
+  '__internalModdleId',
+  'incomingFlows',
+  'outgoingFlows',
+  'attachedElements',
+  'documentation',
+  'loopCharacteristics',
+  'loopConfig',
+  'customProperties',
+]);
+
+/**
+ * Map typed document-model elements to plugin-facing snapshots.
+ * `type` is the Studio-semantic vocabulary (`UserTask`), never a diagram-js QName.
+ */
+export function toBpmnElementDetailSnapshots(elements: BpmnElement[]): BpmnElementDetailSnapshot[] {
+  return elements.map((element) => {
+    const incoming = (element.incomingFlows ?? []).map((flow) => flow.id);
+    const outgoing = (element.outgoingFlows ?? []).map((flow) => flow.id);
+
+    const properties: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(element)) {
+      if (SNAPSHOT_EXCLUDED_KEYS.has(key)) {
+        continue;
+      }
+      if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        properties[key] = value;
+      }
+    }
+
+    return {
+      id: element.id,
+      type: element.type as PluginBpmnElementType,
+      name: element.name || null,
+      parentId: null,
+      properties,
+      incoming,
+      outgoing,
+    };
+  });
+}
 
 interface RegisteredFactory {
   callbackId: string;
@@ -223,43 +269,16 @@ export class PluginOverlayStore {
 
   // ─── Element Snapshot Building ────────────────────────────────────────
 
+  /**
+   * Map typed document-model elements to plugin-facing snapshots.
+   * `type` is the Studio-semantic vocabulary (`UserTask`), never a diagram-js QName.
+   */
+  toElementSnapshots(elements: BpmnElement[]): BpmnElementDetailSnapshot[] {
+    return toBpmnElementDetailSnapshots(elements);
+  }
+
   private buildElementSnapshots(elements: BpmnElement[]): BpmnElementDetailSnapshot[] {
-    return elements.map((element) => {
-      const incoming = (element.incomingFlows ?? []).map((flow) => flow.id);
-      const outgoing = (element.outgoingFlows ?? []).map((flow) => flow.id);
-
-      const properties: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(element)) {
-        if (
-          key === 'id' ||
-          key === 'type' ||
-          key === 'name' ||
-          key === '__internalModdleId' ||
-          key === 'incomingFlows' ||
-          key === 'outgoingFlows' ||
-          key === 'attachedElements' ||
-          key === 'documentation' ||
-          key === 'loopCharacteristics' ||
-          key === 'loopConfig' ||
-          key === 'customProperties'
-        ) {
-          continue;
-        }
-        if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-          properties[key] = value;
-        }
-      }
-
-      return {
-        id: element.id,
-        type: element.type,
-        name: element.name || null,
-        parentId: null,
-        properties,
-        incoming,
-        outgoing,
-      };
-    });
+    return toBpmnElementDetailSnapshots(elements);
   }
 
   // ─── Overlay ↔ Descriptor Conversion ─────────────────────────────────

@@ -1,10 +1,14 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React, { useEffect, useState } from 'react';
-
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { resolveFlowNodeIconForDebugger } from '../../libs/flowNodeDisplay';
@@ -52,7 +56,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 type ContinuedEventsPaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
   flowNode: FlowNode;
   selectedFlowNodeInstance: FlowNodeInstance;
 };

@@ -1,3 +1,4 @@
+import type { Disposable } from './Disposable';
 import type {
   PluginNotificationOpenOptions,
   PluginNotificationResponse,
@@ -31,5 +32,21 @@ export interface NotificationsApi {
    * @param notificationId - The ID returned by {@link open}.
    * @param callback - Called with the clicked action's details.
    */
-  onResponse(notificationId: string, callback: (response: PluginNotificationResponse) => void): Promise<void>;
+  onResponse(notificationId: string, callback: (response: PluginNotificationResponse) => void): Promise<Disposable>;
+
+  /**
+   * Show an info notification with action buttons and a response callback.
+   *
+   * Convenience over {@link open} + {@link onResponse}. The callback receives the
+   * clicked action. Dispose the handle to stop listening (the toast is not closed).
+   *
+   * @param content - Notification body text.
+   * @param actions - Button labels. Each label is used as both `action` and `label`.
+   * @param callback - Invoked when the user clicks an action.
+   */
+  showWithActions(
+    content: string,
+    actions: string[],
+    callback: (response: PluginNotificationResponse) => void,
+  ): Promise<Disposable>;
 }

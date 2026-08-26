@@ -1,18 +1,17 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorAreaLayout_Editor, EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import type { TreeItem } from '#bifrost/contracts/TreeTypes';
 import { useScrollPositionManager } from '#components/ScrollPositionManager';
+import { Tree } from '#components/Tree/Tree';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
 
 import React from 'react';
 
-import type {
-  EditorAreaLayout_Editor,
-  EditorDocument,
-  EditorDocumentModel,
-  PaneComponentProps,
-  PaneProvider,
-  Studio,
-  TreeItem,
-} from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneHeader, PaneHeaderIcon, Tree } from '@evil/bifrost_fw_sdk';
+import { Icon } from '../../../Icon';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,
@@ -41,7 +40,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 export function getPaneTitle(
   editorDocument: EditorDocument,
   editorDocumentModel: EditorDocumentModel,
-  studio: Studio,
+  studio: Bifrost,
 ): string {
   const editors = Bifrost.cast(studio).editors.getOpenEditors();
 

@@ -1,3 +1,5 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 import gridModule from 'diagram-js-grid';
@@ -9,9 +11,6 @@ import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type Overlays from 'diagram-js/lib/features/overlays/Overlays';
 import type Selection from 'diagram-js/lib/features/selection/Selection';
 import type { Rect } from 'diagram-js/lib/util/Types';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import { DmnCommandHandler } from './dmn-js/CommandHandler/index';
 import { PluginDmnContextPadProvider } from './dmn-js/Provider/PluginDmnContextPadProvider';
@@ -46,7 +45,7 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
 
   constructor(
     uri: string,
-    private studio: Studio,
+    private studio: Bifrost,
     additionalModules: unknown[] = [],
   ) {
     super();

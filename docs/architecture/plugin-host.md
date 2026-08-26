@@ -16,6 +16,8 @@ The Plugin Host is a process-isolated runtime for external plugins. Each rendere
 
 Plugins never execute in the renderer process. They communicate with Bifrost through a typed message protocol. Plugins have **no access** to the DOM, Electron APIs, or shared memory with the renderer — all interaction flows through serializable IPC messages. Caller identity on API requests is **attested** by `SandboxManager` (see _IPC caller attestation_ below); plugin code cannot forge `pluginName`.
 
+**Host vs plugin types:** Internal Studio modules type `import type { Bifrost } from '#bifrost/Bifrost'`. Plugin authors type `StudioPluginApi` from `@evil/bifrost_fw_sdk`. The SDK is the plugin toolkit (API contract, POJO contracts, `ThemeToken` + documentation CSS, content controls). It is not a chrome kit — tab strips, pane shells, Tree, and Monaco stay in the host. Plugins fill a hole in host chrome via `registerWebviewPane`, `registerWebviewDocumentType`, and `views.registerTreeView`.
+
 ```
 Renderer (PluginHost + PluginHostBridge + PermissionGate)
     │  Node IPC (PH_* messages)
@@ -538,12 +540,12 @@ The bridge registers event subscriptions through `PH_REGISTER_CALLBACK` with `na
 
 | Method | Signature | Notes |
 |--------|-----------|-------|
-| `registerTreeView` | `(options: TreeViewOptions) → void` | Register a tree view pane hosted by the SDK `Tree` component. |
+| `registerTreeView` | `(options: TreeViewOptions) → void` | Register a tree view pane hosted by the Studio `Tree` component (`studio/src/components/Tree/`). |
 | `updateTreeData` | `(viewId, items: PluginTreeItem[]) → void` | Push new tree data — replaces previous items and triggers re-render. |
 
-**Architecture**: The bridge stores `PluginTreeItem[]` data in a `treeViewData` map keyed by namespaced view ID. A `TreeViewPaneProvider` hosts the SDK `Tree` component, receiving data via a getter function and subscribing to change notifications. When `updateTreeData` is called, all registered listeners for that view ID are notified, causing the React component to re-render with the new data.
+**Architecture**: The bridge stores `PluginTreeItem[]` data in a `treeViewData` map keyed by namespaced view ID. A `TreeViewPaneProvider` hosts the Studio `Tree` component, receiving data via a getter function and subscribing to change notifications. When `updateTreeData` is called, all registered listeners for that view ID are notified, causing the React component to re-render with the new data.
 
-**Item mapping**: `PluginTreeItem` is mapped to the SDK `TreeItem` at render time. `children` → `entries`, `command` → `metadata.command` (resolved and executed via `bifrost.commands` on click), `contextMenuId` → `menuId`, `badges` → `TreeBadge[]`. The `id` field maps to `pathId` for stable reconciliation.
+**Item mapping**: `PluginTreeItem` is mapped to the host `TreeItem` at render time. `children` → `entries`, `command` → `metadata.command` (resolved and executed via `bifrost.commands` on click), `contextMenuId` → `menuId`, `badges` → `TreeBadge[]`. The `id` field maps to `pathId` for stable reconciliation.
 
 **Click handling**: When a user clicks a tree item with a `command` field, the bridge executes `plugin.<pluginName>.<command>` via `bifrost.commands.executeCommand`, passing the item's `metadata` as the first argument.
 
@@ -818,6 +820,17 @@ When the renderer sends `PH_LOAD_PLUGIN` / `PH_RELOAD_PLUGIN`:
 
 Unload/reload terminates the Worker; there is no shared activation state between plugins.
 
+### TypeScript test fixtures
+
+`studio/test/fixtures/plugins/` is the integration-test plugin directory (`BFR_PLUGINS_DIR`). Most fixtures are plain `index.js`. Two fixtures ship TypeScript source only (`dist/` is gitignored via `**/dist`):
+
+| Fixture | Backend | Webview |
+|---------|---------|---------|
+| `text-file-editors` | `src/index.ts` → `dist/index.js` | CodeMirror markdown/JSON (`webview/build.mjs`) |
+| `webview-showcase` | `src/index.ts` → `dist/index.js` | React editor + sidebar (`webview/build.mjs`) |
+
+The sandbox loads `package.json` `"main"` (`dist/index.js`), not `src/`. Without a compile step, `text-file-editors` cannot replace its `contributes.editorDocumentTypes` placeholder, and `webview-showcase` never registers `plugin.webview-showcase.getState`. `npm run build:plugin-fixtures` (from `studio/`) compiles both; `npm run test:integration:plugins` and `npm run test:integration:all` run it first.
+
 ### Metadata enrichment
 
 During discovery, the following additional metadata is extracted from each plugin's `package.json` and stored in `PluginInfo`:
@@ -1016,7 +1029,7 @@ The Plugins pane appears in the left sidebar after Git. It shows a card for each
 
 The pane subscribes to `bifrost.plugins.on(EVENT_PLUGIN_LIST_CHANGED, ...)` to re-render when the plugin list changes (enable/disable/uninstall/refresh/quarantine).
 
-`PluginInfo.status` includes `'loaded' | 'pending' | 'disabled' | 'error' | 'quarantined'` (see `studio-sdk/src/contracts/PluginTypes.ts`). Quarantined plugins show a **Quarantined** badge and a **Trust & Re-enable** action that calls `bifrost.plugins.trustAndReEnablePlugin(name)`.
+`PluginInfo.status` includes `'loaded' | 'pending' | 'disabled' | 'error' | 'quarantined'` (see `studio/src/bifrost/contracts/PluginHostTypes.ts`). Quarantined plugins show a **Quarantined** badge and a **Trust & Re-enable** action that calls `bifrost.plugins.trustAndReEnablePlugin(name)`.
 
 Clicking a plugin card opens its README as an editor tab (`about:plugin-readme/<pluginName>`). The README detail view shows a header with the plugin logo, name, version, description, deprecation status, and a metadata sidebar (author, website link, keyword tags), followed by the rendered README content.
 
@@ -1125,7 +1138,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/common/plugin-host/callbackRegistry.ts` | Worker | Per-worker O(1) callback lookup inside `sandbox-worker.ts` |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframeDocumentRenderer.tsx` | Renderer | Factory creating iframe-backed editor document renderers (`createIframeDocumentRendererConstructor`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
-| `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the SDK `Tree` component |
+| `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the Studio `Tree` component |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Renderer | Event-driven lazy activation: subscribes to activation events, defers `PH_LOAD_PLUGIN` until trigger fires. Stores a `pendingActivations` promise so concurrent callers (e.g. stub callbacks) join an in-flight activation instead of returning early |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, editor document type placeholders, service task types, pane toggles, themes, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Renderer | Pane UI showing "Activating plugin…" while the plugin is pending activation |
@@ -1136,6 +1149,8 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/common/plugin-host/manifest/ApiVersionCheck.ts` | Shared | Semver compatibility check between plugin and Studio API versions |
 | `studio/src/bifrost/contracts/PluginApiVersion.ts` | Shared | `STUDIO_PLUGIN_API_VERSION` constant |
 | `studio-sdk/src/webview/studio-webview-theme.css` | Reference | Documentation-only CSS listing available `--theme-*` tokens |
+| `studio/test/fixtures/plugins/` | Tests | Integration-test plugin directory (`BFR_PLUGINS_DIR`); 39 discoverable packages |
+| `studio/test/fixtures/plugins/build-ts-fixtures.mjs` | Tests | Compiles `text-file-editors` and `webview-showcase` (`tsc` + webview esbuild); invoked by `npm run build:plugin-fixtures` |
 | `studio/src/modules/plugins/index.ts` | Renderer | Plugins module entry, registers pane/commands/settings/document type |
 | `studio/src/modules/plugins/PluginsPaneRenderer.tsx` | Renderer | Pane UI with refresh header icon, subscribes to `bifrost.plugins.on(EVENT_PLUGIN_LIST_CHANGED)` |
 | `studio/src/modules/plugins/PluginHostConsolePaneRenderer.tsx` | Renderer | Plugin Host Console pane: shows real-time stdout/stderr from the Plugin Host child process via `PluginService.onPluginHostLog()` |

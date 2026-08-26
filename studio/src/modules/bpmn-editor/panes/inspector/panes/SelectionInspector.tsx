@@ -1,14 +1,17 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
 
-import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import { MultiLineCodeEditor, OpenInNewTabButton, assertNotNull } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 
 export type EditorSelectionInspectorProps = {
   editorDocument: EditorDocument;
   model: BpmnDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function EditorSelectionInspector(props: EditorSelectionInspectorProps): React.JSX.Element {

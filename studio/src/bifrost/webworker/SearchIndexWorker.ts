@@ -1,7 +1,6 @@
+import type { SearchQuery, SearchResult } from '#bifrost/contracts/internal/SearchTypes';
 import Fuse from 'fuse.js';
 import { Minimatch } from 'minimatch';
-
-import type { SearchQuery, SearchResult } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
 
 self.onmessage = (event: any) => {
   const message = event.data.__message;

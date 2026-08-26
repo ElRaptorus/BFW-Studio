@@ -1,13 +1,12 @@
+import { getClosestMatch } from '#bifrost/common/StringMatchFunctions';
 import type {
   Command,
   CommandCallbackFn,
   CommandContext,
   CommandRegistrationOptions,
   CommandResult,
-} from '@evil/bifrost_fw_sdk';
-import { getClosestMatch } from '@evil/bifrost_fw_sdk';
-
-import type { CommandEnabledPredicateFn } from '../../../../studio-sdk/src/contracts/CommandTypes';
+} from '#bifrost/contracts/CommandTypes';
+import type { CommandEnabledPredicateFn } from '#bifrost/contracts/CommandTypes';
 
 const NAME_VALID_CHARACTERS = ['a-z', '0-9', '-', '_', '.', 'A-Z'];
 const NAME_VALID_CHARATERS_AS_SENTENCE = NAME_VALID_CHARACTERS.map((char) => `"${char}"`).join(', ');

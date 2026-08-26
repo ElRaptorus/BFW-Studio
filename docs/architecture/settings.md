@@ -303,7 +303,7 @@ Settings marked with `hidden: true` are validated but not shown in the GUI. Thes
 | File | Purpose |
 |------|---------|
 | `studio-sdk/src/contracts/SettingTypes.ts` | `SettingDescriptor` discriminated union, `SettingsValidationResult` |
-| `studio-sdk/src/contracts/internal/SettingsEvents.ts` | Internal event constants |
+| `studio/src/bifrost/contracts/internal/SettingsEvents.ts` | Internal event constants |
 | `studio/src/bifrost/common/SettingsManager.ts` | In-memory settings model (config + schemaRegistry) |
 | `studio/src/bifrost/common/SettingsMediator.ts` | Public API layer, persistence wiring |
 | `studio/src/bifrost/common/SettingsValidator.ts` | Runtime validation engine |

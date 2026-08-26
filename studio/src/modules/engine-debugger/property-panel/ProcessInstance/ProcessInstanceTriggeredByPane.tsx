@@ -1,7 +1,11 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 
-import type { PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { resolveFlowNodeIconForDebugger } from '../../libs/flowNodeDisplay';

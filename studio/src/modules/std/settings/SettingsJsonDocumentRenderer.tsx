@@ -1,20 +1,18 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { EVENT_SETTINGS_SCHEMA_REGISTERED } from '#bifrost/contracts/internal/SettingsEvents';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 
 import React, { useEffect, useRef, useState } from 'react';
 
-import type { AbstractSubscription, EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  EditorToolbarText,
-  MultiLineCodeEditor,
-} from '@evil/bifrost_fw_sdk';
-
-import { EVENT_SETTINGS_SCHEMA_REGISTERED } from '../../../../../studio-sdk/src/contracts/internal/SettingsEvents';
 import type UserSettingsDocumentModel from './UserSettingsDocumentModel';
 import { EVENT_SETTINGS_RECEIVED_UPDATE } from './UserSettingsDocumentModel';
 import { configureMonacoJsonValidation } from './configureMonacoJsonValidation';

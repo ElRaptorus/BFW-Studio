@@ -1,7 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
 import { ProcessInstanceAlreadyTerminalError } from '@elraptorus/daemonengine_sdk';
-
-import { StandardDialogResponse } from '@evil/bifrost_fw_sdk';
 
 import type { EngineConnectionManager } from '../EngineConnectionManager';
 import { ENGINE_COMMANDS } from './CommandContract';

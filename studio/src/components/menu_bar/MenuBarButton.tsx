@@ -2,9 +2,8 @@ import type { Bifrost } from '#bifrost/Bifrost';
 
 import React from 'react';
 
-import { Icon } from '@evil/bifrost_fw_sdk';
-
 import { useBifrost } from '../../bifrostContext';
+import { Icon } from '../Icon';
 
 type MenuBarButtonProps = {
   icon: string;

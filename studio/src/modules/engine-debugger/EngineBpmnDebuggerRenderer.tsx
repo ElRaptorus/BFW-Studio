@@ -1,3 +1,23 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingError } from '#components/editor/EditorLoadingError';
+import { EditorLoadingErrorHint } from '#components/editor/EditorLoadingErrorHint';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleCenter } from '#components/editor/EditorTitleCenter';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleRight } from '#components/editor/EditorTitleRight';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorTitleTextSimple } from '#components/editor/EditorTitleTextSimple';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import type { BpmnViewerComponentAdapter } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
 import { EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
 import '#modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss';
@@ -12,28 +32,6 @@ import {
 import type { EngineConnectionManager } from '#modules/engine-core';
 
 import React, { useEffect, useReducer, useRef, useState } from 'react';
-
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorLoadingError,
-  EditorLoadingErrorHint,
-  EditorTitle,
-  EditorTitleCenter,
-  EditorTitleHeroIcon,
-  EditorTitleLeft,
-  EditorTitleRight,
-  EditorTitleText,
-  EditorTitleTextSimple,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  Icon,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
 
 import {
   getHumanReadableTextForDataObjectSetting,
@@ -401,7 +399,7 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
     </Editor>
   );
 
-  function renderEditorContent(model: EngineBpmnDebuggerEditorDocumentModel, studio: Studio): React.JSX.Element {
+  function renderEditorContent(model: EngineBpmnDebuggerEditorDocumentModel, studio: Bifrost): React.JSX.Element {
     const error = model.lastError;
     const errorStatus = error?.statusCode ?? Number(error?.code);
     const isTimeoutError = error && (errorStatus === 408 || errorStatus === 503 || errorStatus === 504);
@@ -490,7 +488,7 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
 
 async function updateEditorLabel(
   model: EngineBpmnDebuggerEditorDocumentModel,
-  studio: Studio,
+  studio: Bifrost,
   editorDocument: EditorDocumentRendererProps['editorDocument'],
 ): Promise<void> {
   assertNotNull(model, 'model');

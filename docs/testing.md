@@ -20,7 +20,7 @@ Tests run via npm scripts defined in `studio/package.json`:
 | `test:integration:plugins` | Integration | Plugin host tests (`test/integration/plugins/`) |
 | `test:integration:smoke` | Integration | Minimal smoke test only |
 
-**Important:** Integration tests require a built Electron application. Run `npm run build` before running integration tests.
+**Important:** Integration tests require a built Electron application. Run `npm run build` before running integration tests. Plugin host tests also compile the TypeScript fixture plugins (`text-file-editors`, `webview-showcase`) first — `npm run test:integration:plugins` and `npm run test:integration:all` invoke `npm run build:plugin-fixtures` automatically because those plugins' `dist/` output is gitignored.
 
 ### TypeScript Configuration
 
@@ -360,4 +360,4 @@ When adding new functionality:
 | DMN test agent extension | `studio/test/StudioAgentDmnExtension.ts` |
 | Static fixtures | `studio/test/fixtures/` |
 | Test commands registration | `studio/src/modules/std/initializers/initializeCommands.ts` |
-| Tree entry data-test attrs | `studio-sdk/src/components/Tree/HeadlessTreeItem.tsx` |
+| Tree entry data-test attrs | `studio/src/components/Tree/HeadlessTreeItem.tsx` |

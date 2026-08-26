@@ -1,8 +1,7 @@
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type { StatusBarContent } from '#bifrost/contracts/StatusBarTypes';
 
 import React, { Fragment } from 'react';
-
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
 
 type StatusBarContentProps = {
   content: StatusBarContent;

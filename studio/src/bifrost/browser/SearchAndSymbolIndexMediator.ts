@@ -1,11 +1,11 @@
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
-
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import {
   EVENT_EDITOR_AREA_DOCUMENT_CLOSED,
   EVENT_EDITOR_DOCUMENT_DATA_UPDATED,
   EVENT_EDITOR_DOCUMENT_URI_UPDATED,
-} from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import type { ISearchIndex } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
+} from '#bifrost/contracts/internal/EditorEvents';
+import type { ISearchIndex } from '#bifrost/contracts/internal/SearchTypes';
+
 import type { FileHandlingService } from '../common/FileHandlingService';
 import type { Performance } from '../common/Performance';
 import { isUriIncludedInSolution } from '../common/SolutionFunctions';

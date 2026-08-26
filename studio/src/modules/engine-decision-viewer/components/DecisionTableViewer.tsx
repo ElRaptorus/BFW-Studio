@@ -1,7 +1,8 @@
+import type { DmnDecision } from '#modules/engine-decision-viewer/types/dmnModelTypes';
+
 import React from 'react';
 
 import { highlightFeelExpression, isDecisionTable } from '../helpers/dmnExpressionHelpers';
-import type { DmnDecision } from '../types/dmnModelTypes';
 import './DecisionTableViewer.scss';
 
 interface DecisionTableViewerProps {

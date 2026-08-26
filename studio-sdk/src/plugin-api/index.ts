@@ -1,3 +1,5 @@
+export type { Disposable } from './Disposable';
+export type { PluginPermission } from './PluginPermission';
 export type { StudioPluginApi, PluginEnvironment } from './StudioPluginApi';
 export type {
   AppendElementDescriptor,
@@ -14,7 +16,6 @@ export type {
   BpmnOverlayNotExecutableMarker,
   ContextPadEntryUpdate,
   CreateConnectionResult,
-  Disposable,
   MoveDelta,
   OverlayContextEvent,
   OverlayFactoryContext,
@@ -27,7 +28,7 @@ export type {
   PluginBpmnOverlayStatus,
   PluginBpmnPaletteEntry,
 } from './BpmnApi';
-export { PluginBpmnOverlayPosition, PluginBpmnOverlayStyle } from './BpmnApi';
+export { PluginBpmnElementType, PluginBpmnOverlayPosition, PluginBpmnOverlayStyle } from './BpmnApi';
 export type {
   AppendElementDescriptor as DmnAppendElementDescriptor,
   ContextPadEntryUpdate as DmnContextPadEntryUpdate,
@@ -55,13 +56,14 @@ export type {
   PluginDmnOverlayStatus,
   PluginDmnPaletteEntry,
 } from './DmnApi';
-export { PluginDmnOverlayPosition, PluginDmnOverlayStyle } from './DmnApi';
+export { PluginDmnElementType, PluginDmnOverlayPosition, PluginDmnOverlayStyle } from './DmnApi';
 export type { CommandsApi } from './CommandsApi';
 export type { DiagnosticsApi } from './DiagnosticsApi';
 export type { DialogsApi } from './DialogsApi';
 export type { NotificationsApi } from './NotificationsApi';
 export type { SettingsApi } from './SettingsApi';
-export type { EventsApi } from './EventsApi';
+export type { EditorFocusChangedPayload, EventsApi, PluginStudioEventName } from './EventsApi';
+export { PluginStudioEvent } from './EventsApi';
 export type { WebviewApi } from './WebviewApi';
 export type { EditorsApi } from './EditorsApi';
 export type { PanesApi } from './PanesApi';
@@ -71,6 +73,8 @@ export type { MenusApi } from './MenusApi';
 export type { WorkspaceApi } from './WorkspaceApi';
 export type { ViewsApi } from './ViewsApi';
 export type { ThemesApi } from './ThemesApi';
+export { ThemeToken } from './theme/ThemeTokens';
+export type { ThemeTokenName } from './theme/ThemeTokens';
 
 export type {
   PluginCommandOptions,
@@ -133,4 +137,4 @@ export type {
   ManifestTheme,
 } from './manifest';
 
-export type { StudioWebviewApi, WebviewMessageEvent } from './webview';
+export type { StudioThemeType, StudioWebviewApi, WebviewMessageEvent } from './webview';

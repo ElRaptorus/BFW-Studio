@@ -1,29 +1,26 @@
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument, EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { EVENT_DATA_UPDATED, EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingError } from '#components/editor/EditorLoadingError';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleRight } from '#components/editor/EditorTitleRight';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
 import 'dmn-js/dist/assets/diagram-js.css';
 import 'dmn-js/dist/assets/dmn-js-drd.css';
 
 import React, { useEffect, useReducer, useRef, useState } from 'react';
 
-import type { EditorDocument, EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorLoadingError,
-  EditorTitle,
-  EditorTitleHeroIcon,
-  EditorTitleLeft,
-  EditorTitleRight,
-  EditorTitleText,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  Icon,
-  parseOpenInNewTabUrl,
-} from '@evil/bifrost_fw_sdk';
-
-import { EVENT_DATA_UPDATED, EVENT_METADATA_UPDATED } from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import type DmnDiffDocumentModel from './DmnDiffDocumentModel';
 import { EVENT_RELOADING, EVENT_RELOADING_DONE } from './DmnDiffDocumentModel';
 

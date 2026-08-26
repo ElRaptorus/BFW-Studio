@@ -1,14 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import evilPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import { BpmnModdle } from 'bpmn-moddle';
-
 import type {
   DialogContentObject,
   DialogFormData,
   DialogValidationError,
   DialogValidationResult,
-} from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/DialogTypes';
+import evilPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
+import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
+import { BpmnModdle } from 'bpmn-moddle';
 
 const SEMVER_REGEX = /^(v?)(\d+)\.(\d+)\.(\d+)(.*)$/;
 const PREFIXED_INTEGER_REGEX = /^(v?)(\d+)$/;

@@ -1,3 +1,20 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Checkbox } from '#components/Checkbox';
+import { showContextMenu } from '#components/ContextMenuFunctions';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingError } from '#components/editor/EditorLoadingError';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarMenu } from '#components/editor/EditorToolbarMenu';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -5,25 +22,6 @@ import 'diagram-js-minimap/assets/diagram-js-minimap.css';
 
 import React from 'react';
 
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Checkbox,
-  Editor,
-  EditorContent,
-  EditorLoadingError,
-  EditorTitle,
-  EditorTitleText,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarLeft,
-  EditorToolbarMenu,
-  EditorToolbarRight,
-  Icon,
-  assertNotNull,
-  showContextMenu,
-} from '@evil/bifrost_fw_sdk';
-
-import type { AbstractSubscription } from '../../../../studio-sdk/src/common/AbstractEmitter';
 import { EVENT_BPMN_MODELER_ADAPTER_ROOT_CHANGED } from '../bpmn-core/BpmnModelerComponentAdapter';
 import {
   getHumanReadableTextForDataObjectSetting,
@@ -214,7 +212,6 @@ export default class BpmnDocumentRenderer extends React.Component<EditorDocument
           </EditorToolbarLeft>
           <EditorToolbarRight>
             <Checkbox
-              studio={this.props.studio}
               checked={this.bpmnEditorDocumentModel?.showGrid}
               onChange={cmd('bpmn.editor.toggleShowGrid')}
               label="Show Grid"
@@ -355,7 +352,7 @@ export default class BpmnDocumentRenderer extends React.Component<EditorDocument
     }
   }
 
-  private renderUnresolvedMergeConflitsError(studio: Studio): React.JSX.Element {
+  private renderUnresolvedMergeConflitsError(studio: Bifrost): React.JSX.Element {
     return (
       <Editor>
         <EditorToolbar>

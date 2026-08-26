@@ -1,4 +1,4 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 import type DmnModelerComponentAdapter from '../dmn-core/DmnModelerComponentAdapter';
 import { DmnValidator, type DmnViolation } from '../dmn-core/validation/DmnValidator';

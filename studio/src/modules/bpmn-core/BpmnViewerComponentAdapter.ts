@@ -1,3 +1,4 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import BpmnViewer from 'bpmn-js/lib/Viewer';
 import OutlineModule from 'bpmn-js/lib/features/outline';
 import type { Debugger } from 'debug';
@@ -18,8 +19,6 @@ import type { ElementLike, Shape } from 'diagram-js/lib/model/Types';
 import MoveCanvasModule from 'diagram-js/lib/navigation/movecanvas';
 import ZoomScrollModule from 'diagram-js/lib/navigation/zoomscroll';
 import type { Rect } from 'diagram-js/lib/util/Types';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import evilPlatformModdleDescriptor from './bpmn-js/moddle/evil-platform.json';
 

@@ -1,9 +1,8 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
 
 import React from 'react';
-
-import type { PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane } from '@evil/bifrost_fw_sdk';
 
 import { DefaultDocumentInspector } from './DefaultDocumentInspector/DefaultDocumentInspector';
 

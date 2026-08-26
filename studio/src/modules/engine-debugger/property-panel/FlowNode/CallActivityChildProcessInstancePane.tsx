@@ -1,10 +1,15 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
-
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getCallActivityCalledElement } from '../../libs/BpmnFlowNodeAccessors';
@@ -15,7 +20,7 @@ import { shouldDisplayCallActivityInstancePane } from '../ShouldBeDisplayedCondi
 export type CallActivityChildProcessInstancePaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export const paneProvider: PaneProvider = {
@@ -71,7 +76,7 @@ type ChildProcessInstanceLinkProps = {
   processModelId?: string;
   processInstanceId: string;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function ChildProcessInstanceLink(props: ChildProcessInstanceLinkProps): React.JSX.Element {

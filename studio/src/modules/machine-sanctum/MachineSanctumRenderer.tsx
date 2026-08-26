@@ -1,17 +1,15 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { ErrorBoundary } from '#components/ErrorBoundary';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarMenu } from '#components/editor/EditorToolbarMenu';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 
 import React, { useEffect } from 'react';
-
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarLeft,
-  EditorToolbarMenu,
-  EditorToolbarRight,
-  Icon,
-} from '@evil/bifrost_fw_sdk';
 
 import ContextMenuExamples from './pages/ContextMenuExamples';
 import DialogExamples from './pages/DialogExamples';
@@ -84,7 +82,7 @@ export default function MachineSanctumRenderer(props: EditorDocumentRendererProp
 
 type TabLinkProps = {
   tab: string;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 function TabLink(props: TabLinkProps): React.JSX.Element {

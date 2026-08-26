@@ -1,6 +1,6 @@
-import { waitForAcceptance } from '@evil/bifrost_fw_sdk';
+import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
+import { EVENT_SYMBOL_INDEX_UPDATED } from '#bifrost/contracts/internal/SymbolEvents';
 
-import { EVENT_SYMBOL_INDEX_UPDATED } from '../../../../studio-sdk/src/contracts/internal/SymbolEvents';
 import { SymbolIndexStub } from '../common/SymbolIndexStub';
 import type { ISymbolIndexerClient, SymbolQuery, SymbolResult } from '../contracts/SymbolTypes';
 import { SymbolIndexWorkerClient } from './SymbolIndexWorkerClient';

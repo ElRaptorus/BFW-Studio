@@ -1,8 +1,4 @@
-import { marked } from 'marked';
-
-import type { ChangeEvent } from 'react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type {
   DialogActionObject,
   DialogContentObject,
@@ -29,19 +25,20 @@ import type {
   DialogResult,
   DialogValidationError,
   DialogValidationResult,
-  IconComponent,
-} from '@evil/bifrost_fw_sdk';
-import {
-  Checkbox,
-  DiffEditor,
-  MarkdownEditor,
-  MultiLineCodeEditor,
-  assertNotNull,
-  showContextMenu,
-} from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/DialogTypes';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
+import { DIALOG_RESPONSE_CANCEL } from '#bifrost/contracts/internal/DialogEvents';
+import { showContextMenu } from '#components/ContextMenuFunctions';
+import { DiffEditor } from '#components/DiffEditor';
+import { MarkdownEditor } from '#components/MarkdownEditor';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { marked } from 'marked';
 
-import { DIALOG_RESPONSE_CANCEL } from '../../../../studio-sdk/src/contracts/internal/DialogEvents';
+import type { ChangeEvent } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import { useBifrost } from '../../bifrostContext';
+import { Checkbox } from '../Checkbox';
 
 type DialogRendererProps = {
   options: DialogOptionsStrict;

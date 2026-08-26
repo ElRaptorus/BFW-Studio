@@ -1,13 +1,15 @@
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+
 import React, { useCallback, useState } from 'react';
 
-import type {
-  EditorDocument,
-  EditorDocumentModel,
-  PaneComponentProps,
-  PaneProvider,
-  SelectOption,
-} from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { SelectOption } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
 import { DMN_AGGREGATIONS, DMN_HIT_POLICIES, type DmnAggregation, type DmnHitPolicy } from '../../../DmnElementTypes';

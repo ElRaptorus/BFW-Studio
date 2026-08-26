@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { SymbolResult } from '#bifrost/contracts/SymbolTypes';
+import { EVENT_SYMBOL_INDEX_UPDATED } from '#bifrost/contracts/internal/SymbolEvents';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EVENT_SYMBOL_INDEX_UPDATED } from '@evil/bifrost_fw_sdk/src/contracts/internal/SymbolEvents';
-import type { SymbolResult } from '@evil/bifrost_fw_sdk/types/contracts';
+import React, { useCallback, useEffect, useState } from 'react';
 
 type JumpLinkProps = {
   definitionId: string;
   elementId: string;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function JumpToSymbolInSolutionLink(props: JumpLinkProps) {

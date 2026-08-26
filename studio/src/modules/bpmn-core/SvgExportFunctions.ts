@@ -1,4 +1,4 @@
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 export async function convertSvgToImageBuffer(svg: string, mimeType: string): Promise<Buffer> {
   const canvas = createCanvasForSvg(svg);

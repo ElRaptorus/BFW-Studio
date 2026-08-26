@@ -1,6 +1,6 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 
-import { EVENT_THEME_CHANGED } from '../../../../studio-sdk/src/contracts/internal/ThemeEvents';
 import type { ThemeDefinition } from '../contracts/ThemeTypes';
 
 export class ThemeManager extends AbstractEmitter {

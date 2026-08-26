@@ -1,10 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DocumentInspectorProps } from '#bifrost/contracts/PaneTypes';
+import { Tree } from '#components/Tree/Tree';
+import { DocumentContentInspector } from '#components/panes/inspectors/DocumentContentInspector';
+import { DocumentTypeDefinitionInspector } from '#components/panes/inspectors/DocumentTypeDefinitionInspector';
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
 
 import React, { useState } from 'react';
 
-import type { DocumentInspectorProps } from '@evil/bifrost_fw_sdk';
-import { DocumentContentInspector, DocumentTypeDefinitionInspector, Icon, Tree } from '@evil/bifrost_fw_sdk';
+import { Icon } from '../../../Icon';
 
 export function DefaultDocumentInspector(props: DocumentInspectorProps): React.JSX.Element {
   const viewMediatorId = 'default-document-inspector';

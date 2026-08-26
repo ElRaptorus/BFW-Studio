@@ -1,12 +1,9 @@
-import type {
-  DialogOptions,
-  EditorAreaLayout_Editor,
-  EditorAreaViewData,
-  EditorDocument,
-  EditorDocumentModel,
-} from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter, assertNotNull, isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
-
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import { isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
+import type { EditorAreaLayout_Editor, EditorAreaViewData, EditorDocument } from '#bifrost/contracts/EditorTypes';
 import {
   EVENT_EDITOR_AREA_DOCUMENT_CLOSED,
   EVENT_EDITOR_AREA_FOCUS_UPDATED,
@@ -17,8 +14,9 @@ import {
   EVENT_EDITOR_DOCUMENT_METADATA_UPDATED,
   EVENT_EDITOR_DOCUMENT_TITLE_UPDATED,
   EVENT_EDITOR_DOCUMENT_URI_UPDATED,
-} from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import type { SearchQuery } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
+} from '#bifrost/contracts/internal/EditorEvents';
+import type { SearchQuery } from '#bifrost/contracts/internal/SearchTypes';
+
 import type { Bifrost } from '../Bifrost';
 import { EditorAreaManager } from '../common/EditorAreaManager';
 import { EditorDocumentInspectorManager } from '../common/EditorDocumentInspectorManager';
@@ -901,7 +899,7 @@ export class EditorMediator extends AbstractEmitter {
    */
   async getEditorDocumentModel<T = EditorDocumentModel>(
     editorDocument: EditorDocument,
-    verifyInstanceOf?: abstract new (...args: any[]) => any,
+    verifyInstanceOf?: { prototype: object },
   ): Promise<T> {
     return this.editorDocumentModelManager.getEditorDocumentModelInstance<T>(editorDocument, verifyInstanceOf);
   }

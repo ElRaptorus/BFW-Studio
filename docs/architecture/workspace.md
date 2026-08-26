@@ -13,7 +13,7 @@ File handling in the Studio consists of three layers:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  SolutionPane (React component)                              │
-│    └─ Tree (studio-sdk)                                      │
+│    └─ Tree (`studio/src/components/Tree/`)                   │
 ├──────────────────────────────────────────────────────────────┤
 │  FileExplorerView (view data for the file tree)              │
 ├──────────────────────────────────────────────────────────────┤
@@ -32,7 +32,6 @@ File handling in the Studio consists of three layers:
 **Paths:**
 - Abstract class: `studio/src/bifrost/common/FileHandlingService.ts`
 - Electron implementation: `studio/src/bifrost/electron-renderer/FileHandlingServiceElectron.ts`
-- SDK type declaration: `studio-sdk/types/common/FileHandlingService.ts`
 
 ### URI Scheme
 
@@ -449,7 +448,6 @@ Settings are app-global (not per Solution or window). Relevant settings:
 | Component | Path |
 |-----------|------|
 | Solution/Project types | `studio/src/bifrost/contracts/SolutionTypes.ts` |
-| SDK type declarations | `studio-sdk/types/contracts/SolutionTypes.ts` |
 | SolutionManager (+ .essln I/O) | `studio/src/bifrost/common/SolutionManager.ts` |
 | SolutionMediator | `studio/src/bifrost/common/SolutionMediator.ts` |
 | SolutionFunctions | `studio/src/bifrost/common/SolutionFunctions.ts` |
@@ -459,9 +457,9 @@ Settings are app-global (not per Solution or window). Relevant settings:
 | FileExplorerView | `studio/src/bifrost/common/activities/FileExplorerView.ts` |
 | SolutionPane | `studio/src/components/panes/activities/files/SolutionPane.tsx` |
 | OpenEditorsPane | `studio/src/components/panes/activities/files/OpenEditorsPane.tsx` |
-| TreeViewMediator | `studio-sdk/src/browser/internal/TreeViewMediator.ts` |
-| Tree (React) | `studio-sdk/src/components/Tree/Tree.tsx` |
-| TreeTypes | `studio-sdk/src/contracts/TreeTypes.ts` |
+| TreeViewMediator | `studio/src/bifrost/browser/TreeViewMediator.ts` |
+| Tree (React) | `studio/src/components/Tree/Tree.tsx` |
+| TreeTypes | `studio/src/bifrost/contracts/TreeTypes.ts` |
 | FileSystemTypes | `studio/src/bifrost/contracts/FileSystemTypes.ts` |
 | IPC events | `studio/src/bifrost/contracts/IpcEvents.ts` |
 | Main process handlers | `studio/src/bifrost/electron-main/entrypoint-electron-main.ts` |

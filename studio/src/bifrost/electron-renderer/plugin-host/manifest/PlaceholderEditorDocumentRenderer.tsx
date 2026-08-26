@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface PlaceholderEditorDocumentRendererContext {
   pluginName: string;

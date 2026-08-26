@@ -37,7 +37,7 @@ State mutations always flow through `SolutionManager`. The `SolutionMediator` or
 
 1. Add the state mutation method to `SolutionManager` (emits `EVENT_SOLUTION_CHANGED`)
 2. Add the orchestration method to `SolutionMediator` (manages watchers, auto-saves `.essln`)
-3. Add the SDK type declaration to `studio-sdk/types/common/SolutionMediator.ts`
+3. Types live on `SolutionMediator` / `SolutionTypes` in Studio (`studio/src/bifrost/common/SolutionMediator.ts`, `studio/src/bifrost/contracts/SolutionTypes.ts`)
 4. Register the command in `initializeSolutionFileCommands.ts` (or `initializeSolutionCommands.ts` for non-multi-root commands, or a dedicated file like `initializeCreateSolutionCommand.ts` for self-contained features)
 5. Add the command to the **File menu** and relevant **context menus** in `initializeMenus.ts` (see `gui-command-design` skill)
 

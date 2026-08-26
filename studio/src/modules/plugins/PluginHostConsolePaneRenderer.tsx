@@ -1,10 +1,10 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
+import { Pane } from '#components/panes/Pane';
 import Select from 'react-select';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-import type { PaneComponentProps, PaneProvider, PluginInfo } from '@evil/bifrost_fw_sdk';
-import { Pane } from '@evil/bifrost_fw_sdk';
 
 const STDERR_MARKER = '[stderr]';
 

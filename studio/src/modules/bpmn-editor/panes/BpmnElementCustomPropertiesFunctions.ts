@@ -1,4 +1,4 @@
-import { BpmnElementType } from '@evil/bifrost_fw_sdk';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 const internalCustomProperties = {};
 

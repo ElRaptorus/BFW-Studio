@@ -1,3 +1,4 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import {
   EventDefinitionType,
   FlowNodeInstanceState,
@@ -7,8 +8,6 @@ import {
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import type { FlowNode as BpmnFlowNode, DataObjectReference, DataStoreReference } from '@elraptorus/daemonengine_sdk';
 import type { Shape } from 'diagram-js/lib/model/Types';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
 
 import type { Overlay } from '../../bpmn-core/overlays';
 import {
@@ -46,7 +45,7 @@ import {
   createTriggerSignalEventLink,
 } from './index';
 
-export function createProcessModelOverlays(studio: Studio, model: EngineBpmnDebuggerEditorDocumentModel): Overlay[] {
+export function createProcessModelOverlays(studio: Bifrost, model: EngineBpmnDebuggerEditorDocumentModel): Overlay[] {
   const overlays: Overlay[] = [];
 
   const participant = model.bpmnViewerComponentAdapter
@@ -72,7 +71,7 @@ export function createProcessModelOverlays(studio: Studio, model: EngineBpmnDebu
 
 export function createDataStoreOverlays(
   _dataStoreReference: DataStoreReference,
-  _studio: Studio,
+  _studio: Bifrost,
   _model: EngineBpmnDebuggerEditorDocumentModel,
 ): Overlay[] {
   return [];
@@ -80,7 +79,7 @@ export function createDataStoreOverlays(
 
 export function createDataObjectModelOverlays(
   _dataObjectReference: DataObjectReference,
-  _studio: Studio,
+  _studio: Bifrost,
   _model: EngineBpmnDebuggerEditorDocumentModel,
 ): Overlay[] {
   return [];
@@ -88,7 +87,7 @@ export function createDataObjectModelOverlays(
 
 export function createFlowNodeModelOverlays(
   flowNode: BpmnFlowNode,
-  studio: Studio,
+  studio: Bifrost,
   model: EngineBpmnDebuggerEditorDocumentModel,
 ): Overlay[] {
   const overlays: Overlay[] = [];
@@ -116,7 +115,7 @@ export function createFlowNodeModelOverlays(
   return overlays;
 }
 
-function openDocumentationPane(studio: Studio): void {
+function openDocumentationPane(studio: Bifrost): void {
   studio.panes.setActiveGroupInArea('right', 'documentation');
   studio.panes.showPaneArea('right');
 }
@@ -180,7 +179,7 @@ export function createFlowNodeInstanceCover(
 
 export async function createFlowNodeInstanceOverlays(
   flowNode: ExecutableFlowNode,
-  studio: Studio,
+  studio: Bifrost,
   model: EngineBpmnDebuggerEditorDocumentModel,
 ): Promise<Overlay[]> {
   const overlays: Overlay[] = [];

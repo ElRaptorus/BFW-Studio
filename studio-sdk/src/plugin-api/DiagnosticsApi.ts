@@ -1,3 +1,4 @@
+import type { Disposable } from './Disposable';
 import type { PluginDiagnostic, PluginDiagnosticCounts } from './types';
 
 /**
@@ -44,5 +45,5 @@ export interface DiagnosticsApi {
    *
    * @param callback - Invoked on every diagnostic change event.
    */
-  onDidChange(callback: () => void): Promise<void>;
+  onDidChange(callback: () => void): Promise<Disposable>;
 }

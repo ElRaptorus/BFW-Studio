@@ -24,7 +24,7 @@ The module must export `paneProvider: PaneProvider`. Panes are then placed into 
 
 ### PaneProvider Contract
 
-**Path:** `studio-sdk/src/contracts/PaneTypes.ts`
+**Path:** `studio/src/bifrost/contracts/PaneTypes.ts`
 
 | Field | Role |
 |-------|------|
@@ -124,11 +124,12 @@ Plugin panes use the same `PaneProvider` contract via `IframePaneProvider` / `Tr
 
 | Component | Path |
 |-----------|------|
-| `PaneProvider` type | `studio-sdk/src/contracts/PaneTypes.ts` |
+| `PaneProvider` type | `studio/src/bifrost/contracts/PaneTypes.ts` |
 | `PaneWrapper` | `studio/src/components/panes/PaneWrapper.tsx` |
 | `PanesList` | `studio/src/components/panes/PanesList.tsx` |
 | `PaneManager` / `PaneMediator` | `studio/src/bifrost/common/PaneManager.ts`, `PaneMediator.ts` |
+| Host pane chrome | `studio/src/components/panes/` (`Pane`, `PaneHeader`, `PaneFunctions` / `buildSimplePropertyPaneProvider`) |
+| SDK `PaneProperty` | `studio-sdk/src/components/panes/PaneProperty.tsx` |
 | BPMN property helpers | `studio/src/modules/bpmn-editor/panes/PropertiesPaneFunctions.ts` |
 | DMN property helpers | `studio/src/modules/dmn-editor/panes/PropertiesPaneFunctions.ts` |
 | Debugger visibility helpers | `studio/src/modules/engine-debugger/property-panel/ShouldBeDisplayedConditions.ts` |
-| SDK pane chrome | `studio-sdk/src/components/panes/` (`Pane`, `PaneHeader`, `PaneProperty`, `buildSimplePropertyPaneProvider`) |

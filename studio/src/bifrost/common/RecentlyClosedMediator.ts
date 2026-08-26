@@ -1,4 +1,4 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 import { EVENT_RECENTLY_CLOSED_CHANGED } from '../contracts/RecentTypes';
 import type { LocalStorageItem } from './LocalStorageItem';

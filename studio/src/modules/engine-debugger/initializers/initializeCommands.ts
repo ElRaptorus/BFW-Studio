@@ -1,20 +1,21 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
 import { removeMultilineIndent } from '#bifrost/common/StringFunctions';
-import type { EngineConnectionManager, RetryContext, RetryResult } from '#modules/engine-core';
-import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
-import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/daemonengine_sdk';
-import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
-import * as json5 from 'json5';
-
 import type {
   DialogContent,
   DialogOptions,
   DialogResult,
   DialogValidationResult,
-  EditorDocument,
-} from '@evil/bifrost_fw_sdk';
-import { StandardDialogResponse, assertNotNull, getUrlForOpenInNewTab } from '@evil/bifrost_fw_sdk';
-import type { QuickJumpItem } from '@evil/bifrost_fw_sdk/types/contracts';
+} from '#bifrost/contracts/DialogTypes';
+import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
+import type { EngineConnectionManager, RetryContext, RetryResult } from '#modules/engine-core';
+import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
+import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/daemonengine_sdk';
+import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
+import * as json5 from 'json5';
 
 import { DataObjectDetailLevel } from '../../bpmn-core/DataObjectDetailsSettings';
 import { DMN_TRACE_DOCUMENT_TYPE, ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';

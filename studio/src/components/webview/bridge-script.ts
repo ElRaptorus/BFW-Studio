@@ -11,12 +11,14 @@
  * Build target: `web` (standard browser context).
  */
 
+type StudioThemeType = 'light' | 'dark';
+
 interface StudioWebviewApi {
   postMessage(data: unknown): void;
   onMessage(callback: (data: unknown) => void): void;
   setState(state: unknown): void;
   getState(): unknown;
-  getThemeType(): string;
+  getThemeType(): StudioThemeType;
 }
 
 const BRIDGE_CHANNEL = 'studio-bridge';
@@ -56,8 +58,8 @@ const api: StudioWebviewApi = {
     return currentState;
   },
 
-  getThemeType(): string {
-    return document.documentElement.getAttribute('data-theme') ?? 'dark';
+  getThemeType(): StudioThemeType {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   },
 };
 
@@ -74,11 +76,11 @@ window.addEventListener('message', (event) => {
     currentState = payload.state;
   }
   if (payload.type === 'theme') {
-    applyThemeTokens(payload.tokens, payload.themeType);
+    applyThemeTokens(payload.tokens, payload.themeType === 'light' ? 'light' : 'dark');
   }
 });
 
-function applyThemeTokens(tokens: Record<string, string>, themeType: string): void {
+function applyThemeTokens(tokens: Record<string, string>, themeType: StudioThemeType): void {
   let styleEl = document.getElementById('studio-theme-tokens');
   if (!styleEl) {
     styleEl = document.createElement('style');

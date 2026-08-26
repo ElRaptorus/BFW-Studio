@@ -1,6 +1,6 @@
-import React from 'react';
+import type { FormAction } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { FormAction } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import React from 'react';
 
 type FormRendererActionsProps = {
   actions: FormAction[];

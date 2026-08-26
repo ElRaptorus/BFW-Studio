@@ -1,3 +1,4 @@
+import type { Disposable } from './Disposable';
 import type { WebviewPanelOptions } from './types';
 
 /**
@@ -35,7 +36,7 @@ export interface WebviewApi {
    * @param callback - Called with the deserialized message data.
    * @returns A disposer function that removes the listener when called.
    */
-  onMessage(iframeId: string, callback: (data: unknown) => void): Promise<() => void>;
+  onMessage(iframeId: string, callback: (data: unknown) => void): Promise<Disposable>;
 
   /**
    * Dispose a webview panel, removing its iframe and cleaning up listeners.

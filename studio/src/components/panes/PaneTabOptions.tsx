@@ -1,6 +1,8 @@
-import React from 'react';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneObject } from '#bifrost/contracts/PaneTypes';
 
-import type { EditorDocument, EditorDocumentModel, PaneObject } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import { useBifrost } from '../../bifrostContext';
 

@@ -1,9 +1,8 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type BpmnModelerComponentAdapter from '#modules/bpmn-core/BpmnModelerComponentAdapter';
 import { CmdHelper } from '#modules/bpmn-core/bpmn-js/CommandHandler/Helper/CommmandHelper';
-import { getFillColor, getStrokeColor } from 'bpmn-js/lib/draw/BpmnRenderUtil';
-
-import type { BpmnElement } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter, assertNotNull } from '@evil/bifrost_fw_sdk';
+import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 import type {
   BpmnElementColor,
   BpmnElementCustomProperty,
@@ -14,8 +13,9 @@ import type {
   BpmnElement_Process,
   FormAction,
   FormFieldDefinition,
-} from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { BpmnElementType, BpmnTimerType, LoopCharacteristics } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+} from '#modules/bpmn-editor/BpmnElementTypes';
+import { BpmnElementType, BpmnTimerType, LoopCharacteristics } from '#modules/bpmn-editor/BpmnElementTypes';
+import { getFillColor, getStrokeColor } from 'bpmn-js/lib/draw/BpmnRenderUtil';
 
 import {
   findAllEvilExtensions,

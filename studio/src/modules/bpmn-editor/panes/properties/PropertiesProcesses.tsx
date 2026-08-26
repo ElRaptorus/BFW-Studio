@@ -1,15 +1,22 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElement_Participant } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { BpmnElementType, Icon, Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
-import type { BpmnElement_Participant } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import React from 'react';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 
 const PROCESSES_HELP_ID = 'bpmn/properties/process';
 
 type ProcessPaneItemProps = {
-  bifrost: Studio;
+  bifrost: Bifrost;
   bpmnDocumentModel: BpmnDocumentModel;
   participant: BpmnElement_Participant;
   index: number;

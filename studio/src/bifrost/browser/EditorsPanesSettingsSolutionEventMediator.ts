@@ -1,13 +1,13 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import {
   EVENT_EDITOR_AREA_FOCUS_UPDATED,
   EVENT_EDITOR_AREA_LAYOUT_UPDATED,
   EVENT_EDITOR_DOCUMENT_DATA_UPDATED,
   EVENT_EDITOR_DOCUMENT_METADATA_UPDATED,
-} from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import { EVENT_PANE_LAYOUT_UPDATED } from '../../../../studio-sdk/src/contracts/internal/PaneEvents';
-import { EVENT_SETTINGS_CHANGED } from '../../../../studio-sdk/src/contracts/internal/SettingsEvents';
+} from '#bifrost/contracts/internal/EditorEvents';
+import { EVENT_PANE_LAYOUT_UPDATED } from '#bifrost/contracts/internal/PaneEvents';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
+
 import type { PaneMediator } from '../common/PaneMediator';
 import type { SettingsMediator } from '../common/SettingsMediator';
 import { EVENT_SOLUTION_CHANGED } from '../common/SolutionManager';

@@ -226,7 +226,11 @@ ThemeMediator.setTheme(id)
 
 ### SDK reference
 
-`studio-sdk/src/webview/studio-webview-theme.css` is a documentation-only file listing all available `--theme-*` tokens with their dark-theme defaults. Plugin developers can reference it for available tokens; it is not loaded at runtime.
+`studio-sdk/src/webview/studio-webview-theme.css` is a documentation-only file listing all available `--theme-*` tokens with Bifrost Night fallbacks. `ThemeToken` in `studio-sdk/src/plugin-api/theme/ThemeTokens.ts` is the typed const map of the same names. Plugin developers can reference both; neither is loaded at runtime. Live values are injected into iframes by `PluginHost.extractThemeTokens()`.
+
+The SDK is not a chrome kit. Tab strips, pane title bars, Tree, Monaco, Markdown, and host widgets (`Icon`, `Table`, `Checkbox`, `ColorPicker`) stay in the host. Inside the iframe, plugins use forwarded `--theme-*` tokens plus content controls (`FormInput`, `PaneProperty` / `PropertyValidation` / `PropertyValueWithSuggestions`, `FeelEditor` / `OneLineFeelEditor`, `PresentationalContextMenu`).
+
+Phosphor in webviews: use `<span className="ph-…">`. The host does not inject Phosphor into iframes. Manifest `icon` on panes/tabs is host-rendered and already works.
 
 ### Token categories
 
@@ -236,7 +240,7 @@ ThemeMediator.setTheme(id)
 | Surfaces | `--theme-surface-primary`, `--theme-surface-elevated`, `--theme-surface-inset` |
 | Inputs | `--theme-input-bg` |
 | Buttons | `--theme-button-bg`, `--theme-button-hover-bg` |
-| Lists | `--theme-list-hover-bg` |
+| Feel / table (Keep components) | `--theme-feel-*`, `--theme-table-*` |
 | Scrollbars | `--theme-scrollbar-track`, `--theme-scrollbar-thumb` |
 | Status colors | `--theme-success`, `--theme-warning`, `--theme-error`, `--theme-info` |
 

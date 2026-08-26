@@ -3,7 +3,6 @@ import type { FeelEditorVariable } from '@bpmn-io/feel-editor';
 
 import React, { useCallback, useEffect, useRef } from 'react';
 
-import type { Studio } from '../../index';
 import { studioFeelHighlighting, studioFeelTheme } from './FeelEditorTheme';
 
 export type { FeelEditorVariable } from '@bpmn-io/feel-editor';
@@ -11,7 +10,6 @@ export type { FeelEditorVariable } from '@bpmn-io/feel-editor';
 type FeelEditorInstance = InstanceType<typeof FeelEditorLib>;
 
 export type FeelEditorProps = {
-  studio: Studio;
   initialValue: string;
   dialect?: 'expression' | 'unaryTests';
   variables?: FeelEditorVariable[];

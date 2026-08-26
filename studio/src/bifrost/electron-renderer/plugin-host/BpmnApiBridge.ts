@@ -1,23 +1,25 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { CallbackInvocationPayload, RegisterCallbackPayload } from '#bifrost/contracts/PluginHostProtocol';
 import { PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
+import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '#bifrost/contracts/internal/EditorEvents';
 
 import type {
   BpmnElementDetailSnapshot,
   BpmnElementEvent,
   BpmnElementSnapshot,
-  EditorDocument,
   OverlayContextEvent,
   OverlayFactoryOptions,
+  PluginBpmnElementType,
   PluginBpmnOverlay,
 } from '@evil/bifrost_fw_sdk';
-import type { AbstractSubscription } from '@evil/bifrost_fw_sdk';
 
-import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { EVENT_BPMN_MODELER_ADAPTER_SELECTION_CHANGED } from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
 import type BpmnModelerComponentAdapter from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
 import { pluginBpmnContributionStore } from '../../../modules/bpmn-core/PluginBpmnContributionStore';
 import { pluginModuleLoader } from '../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
+import type BpmnDocumentModel from '../../../modules/bpmn-editor/BpmnDocumentModel';
 import type { PluginHost } from './PluginHost';
 import { PluginOverlayStore } from './PluginOverlayStore';
 
@@ -224,7 +226,7 @@ export class BpmnApiBridge {
             return;
           }
           const element = selectedElements[0];
-          this.invokeCallback(callbackId, [this.serializeElementEvent(element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, element)]);
         };
         const eventBus = adapter.getModelerComponentByName<any>('eventBus');
         eventBus.on('selection.changed', eventBusHandler);
@@ -236,7 +238,7 @@ export class BpmnApiBridge {
           if (event.element == null) {
             return;
           }
-          this.invokeCallback(callbackId, [this.serializeElementEvent(event.element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, event.element)]);
         };
         const eventBus = adapter.getModelerComponentByName<any>('eventBus');
         eventBus.on('element.hover', eventBusHandler);
@@ -248,7 +250,7 @@ export class BpmnApiBridge {
           if (event.element == null) {
             return;
           }
-          this.invokeCallback(callbackId, [this.serializeElementEvent(event.element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, event.element)]);
         };
         const eventBus = adapter.getModelerComponentByName<any>('eventBus');
         eventBus.on('element.dblclick', eventBusHandler);
@@ -260,7 +262,7 @@ export class BpmnApiBridge {
           if (event.element == null) {
             return;
           }
-          this.invokeCallback(callbackId, [this.serializeElementEvent(event.element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, event.element)]);
         };
         const eventBus = adapter.getModelerComponentByName<any>('eventBus');
         eventBus.on('element.contextmenu', eventBusHandler);
@@ -597,48 +599,27 @@ export class BpmnApiBridge {
   // --- Element queries ---
 
   private handleGetElements(uri: string): BpmnElementSnapshot[] {
-    const adapter = this.resolveAdapter(uri);
-    if (adapter == null) {
+    const documentModel = this.resolveBpmnDocumentModel(uri);
+    if (documentModel == null) {
       throw new Error(`No BPMN document open for URI: ${uri}`);
     }
 
-    const elementRegistry = adapter.getElementRegistry();
-    const elements = elementRegistry.filter(() => true) as any[];
-
-    return elements.map((element) => ({
-      id: element.id,
-      type: element.type,
-      name: element.businessObject?.name ?? null,
-      parentId: element.parent?.id ?? null,
-    }));
+    const snapshots = this.overlayStore.toElementSnapshots(documentModel.elements.getAllElements());
+    return snapshots.map(({ id, type, name, parentId }) => ({ id, type, name, parentId }));
   }
 
   private handleGetElement(uri: string, elementId: string): BpmnElementDetailSnapshot | null {
-    const adapter = this.resolveAdapter(uri);
-    if (adapter == null) {
+    const documentModel = this.resolveBpmnDocumentModel(uri);
+    if (documentModel == null) {
       throw new Error(`No BPMN document open for URI: ${uri}`);
     }
 
-    const elementRegistry = adapter.getElementRegistry();
-    const element = elementRegistry.get(elementId) as any;
+    const element = documentModel.elements.getById(elementId);
     if (element == null) {
       return null;
     }
 
-    const businessObject = element.businessObject;
-    const properties = this.serializeBusinessObjectProperties(businessObject);
-    const incoming = (businessObject?.incoming ?? []).map((flow: any) => flow.id ?? flow.$attrs?.id ?? '');
-    const outgoing = (businessObject?.outgoing ?? []).map((flow: any) => flow.id ?? flow.$attrs?.id ?? '');
-
-    return {
-      id: element.id,
-      type: element.type,
-      name: businessObject?.name ?? null,
-      parentId: element.parent?.id ?? null,
-      properties,
-      incoming,
-      outgoing,
-    };
+    return this.overlayStore.toElementSnapshots([element])[0] ?? null;
   }
 
   private async handleGetXml(uri: string): Promise<string> {
@@ -822,44 +803,23 @@ export class BpmnApiBridge {
     return (documentModel as any).modelerAdapter ?? null;
   }
 
-  private resolveBpmnDocumentModel(uri: string): any | null {
+  private resolveBpmnDocumentModel(uri: string): BpmnDocumentModel | null {
     const editorDocument = this.bifrost.editors.getEditorDocumentByUri(uri);
     if (editorDocument == null || editorDocument.documentType !== BPMN_DOCUMENT_TYPE) {
       return null;
     }
 
-    return this.bifrost.editors.getEditorDocumentModelIfPresent(editorDocument);
+    return this.bifrost.editors.getEditorDocumentModelIfPresent(editorDocument) as BpmnDocumentModel | null;
   }
 
-  private serializeElementEvent(element: any): BpmnElementEvent {
+  private serializeElementEvent(uri: string, element: any): BpmnElementEvent {
+    const documentModel = this.resolveBpmnDocumentModel(uri);
+    const typed = element?.id != null ? documentModel?.elements.getById(element.id) : null;
     return {
-      elementId: element.id ?? '',
-      elementType: element.type ?? '',
-      elementName: element.businessObject?.name ?? null,
+      elementId: typed?.id ?? element?.id ?? '',
+      elementType: (typed?.type ?? '') as PluginBpmnElementType | '',
+      elementName: typed?.name ? typed.name : (element?.businessObject?.name ?? null),
     };
-  }
-
-  private serializeBusinessObjectProperties(businessObject: any): Record<string, unknown> {
-    if (businessObject == null) {
-      return {};
-    }
-
-    const result: Record<string, unknown> = {};
-    for (const key of Object.keys(businessObject)) {
-      if (key.startsWith('$') || key === 'di' || key === 'incoming' || key === 'outgoing') {
-        continue;
-      }
-      const value = businessObject[key];
-      if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        result[key] = value;
-      } else if (
-        Array.isArray(value) &&
-        value.every((item) => typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean')
-      ) {
-        result[key] = value;
-      }
-    }
-    return result;
   }
 
   // ─── Renderer module channel ──────────────────────────────────────

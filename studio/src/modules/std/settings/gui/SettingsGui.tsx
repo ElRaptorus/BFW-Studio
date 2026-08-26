@@ -1,20 +1,17 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { EVENT_SETTINGS_CHANGED, EVENT_SETTINGS_SCHEMA_REGISTERED } from '#bifrost/contracts/internal/SettingsEvents';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { SettingDescriptor, Studio } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
 
-import {
-  EVENT_SETTINGS_CHANGED,
-  EVENT_SETTINGS_SCHEMA_REGISTERED,
-} from '../../../../../../studio-sdk/src/contracts/internal/SettingsEvents';
 import { consumePendingCategory, onCategoryNavigationRequested } from '../settingsNavigation';
 import { SettingsCategoryNav } from './SettingsCategoryNav';
 import { SettingsGroup } from './SettingsGroup';
 import { SettingsSearch } from './SettingsSearch';
 
 type SettingsGuiProps = {
-  studio: Studio;
+  studio: Bifrost;
   onOpenJsonEditor: () => void;
 };
 
@@ -40,7 +37,7 @@ function deriveCategory(key: string, descriptor: SettingDescriptor): string {
 
 function groupSettingsByCategory(
   schemas: Map<string, SettingDescriptor>,
-  studio: Studio,
+  studio: Bifrost,
   searchQuery: string,
 ): GroupedSettings {
   const groups: GroupedSettings = new Map();

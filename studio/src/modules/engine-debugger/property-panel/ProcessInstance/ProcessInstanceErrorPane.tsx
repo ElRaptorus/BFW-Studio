@@ -1,13 +1,11 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { PaneBody } from '#components/panes/PaneBody';
+import { buildSimplePropertyPaneProvider } from '#components/panes/PaneFunctions';
 
-import type { PaneComponentProps } from '@evil/bifrost_fw_sdk';
-import {
-  MultiLineCodeEditor,
-  OpenInNewTabButton,
-  PaneBody,
-  assertNotNull,
-  buildSimplePropertyPaneProvider,
-} from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { shouldDisplayProcessInstanceErrorPane } from '../ShouldBeDisplayedConditions';

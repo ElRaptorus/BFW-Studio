@@ -1,27 +1,19 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { FeelExpressionHint } from '#components/FeelExpressionHint';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React, { useEffect, useState } from 'react';
 
-import type {
-  EditorDocument,
-  FeelEditorVariable,
-  PaneComponentProps,
-  PaneProvider,
-  SelectOption,
-} from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  FeelEditor,
-  FeelExpressionHint,
-  OneLineFeelEditor,
-  OpenInNewTabButton,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable, SelectOption } from '@evil/bifrost_fw_sdk';
+import { FeelEditor, OneLineFeelEditor, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../../BpmnDocumentModel';
 import { assertBpmnElementIsHttpServiceTask } from '../../../BpmnElementTypeAssertionFunctions';
@@ -154,7 +146,6 @@ function PropertiesHttpTask(props: PaneComponentProps): React.JSX.Element {
           <FeelExpressionHint className="float-right" studio={props.studio} />
         </label>
         <OneLineFeelEditor
-          studio={props.studio}
           htmlId="http-task-auth-header-property"
           fontSize={12}
           initialValue={element.authHeader ?? ''}
@@ -168,7 +159,6 @@ function PropertiesHttpTask(props: PaneComponentProps): React.JSX.Element {
           <FeelExpressionHint className="float-right" studio={props.studio} />
         </label>
         <OneLineFeelEditor
-          studio={props.studio}
           htmlId="http-task-response-headers-property"
           fontSize={12}
           initialValue={element.responseHeaders ?? ''}
@@ -191,7 +181,6 @@ function PropertiesHttpTask(props: PaneComponentProps): React.JSX.Element {
           </span>
         </label>
         <FeelEditor
-          studio={props.studio}
           htmlId="http-task-body-property"
           size="tall"
           fontSize={12}

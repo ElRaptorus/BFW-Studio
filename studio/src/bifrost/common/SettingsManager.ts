@@ -1,14 +1,14 @@
-import * as jsonComment from 'comment-json';
-import equal from 'fast-deep-equal';
-
-import type { SettingDescriptor, SettingsValidationResult } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import {
   EVENT_SETTINGS_CHANGED,
   EVENT_SETTINGS_MERGED,
   EVENT_SETTINGS_SCHEMA_REGISTERED,
-} from '../../../../studio-sdk/src/contracts/internal/SettingsEvents';
+} from '#bifrost/contracts/internal/SettingsEvents';
+import * as jsonComment from 'comment-json';
+import equal from 'fast-deep-equal';
+
+import type { SettingDescriptor, SettingsValidationResult } from '@evil/bifrost_fw_sdk';
+
 import type { ISerializable, SerializedData } from '../contracts/SerializableTypes';
 import { validateSetting, validateSettings } from './SettingsValidator';
 

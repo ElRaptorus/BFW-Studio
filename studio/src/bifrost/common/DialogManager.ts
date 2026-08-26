@@ -1,3 +1,5 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type {
   Dialog,
   DialogAction,
@@ -13,14 +15,13 @@ import type {
   DialogResult,
   DialogValidationCallbackFn,
   DialogValidationResult,
-} from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter, assertNotNull } from '@evil/bifrost_fw_sdk';
-
+} from '#bifrost/contracts/DialogTypes';
 import {
   EVENT_CLOSE_DIALOG,
   EVENT_OPEN_DIALOG,
   EVENT_VALIDATED_DIALOG,
-} from '../../../../studio-sdk/src/contracts/internal/DialogEvents';
+} from '#bifrost/contracts/internal/DialogEvents';
+
 import type { DialogService } from './DialogService';
 import type { SettingsMediator } from './SettingsMediator';
 

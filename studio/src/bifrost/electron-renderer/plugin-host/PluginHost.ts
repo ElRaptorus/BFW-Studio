@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { PluginPermissionStore } from '#bifrost/common/plugin-host/PluginPermissionStore';
 import type { PluginPermission } from '#bifrost/common/plugin-host/permissions/PermissionTypes';
 import { PluginHostConnection } from '#bifrost/contracts/PluginHostConnection';
@@ -26,15 +27,14 @@ import {
   type UnloadPluginPayload,
 } from '#bifrost/contracts/PluginHostProtocol';
 import { EVENT_PLUGIN_LIST_CHANGED, type IPluginHost } from '#bifrost/contracts/PluginHostTypes';
+import { type PluginInfo } from '#bifrost/contracts/PluginHostTypes';
+import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 import { getPluginsDir } from '#bifrost/node/BifrostPathFunctions';
 import { PluginIframeManager } from '#components/webview/PluginIframeManager';
 import { type ChildProcess, fork } from 'child_process';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import { AbstractEmitter, type PluginInfo } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_THEME_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/ThemeEvents';
 import { pluginModuleLoader } from '../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
 import { pluginDmnModuleLoader } from '../../../modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
 import { checkApiVersionCompatibility } from '../../common/plugin-host/manifest/ApiVersionCheck';

@@ -1,11 +1,13 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+
 import React from 'react';
 
-import type { SettingDescriptor, Studio } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
 
 import { SettingRow } from './SettingRow';
 
 type SettingsGroupProps = {
-  studio: Studio;
+  studio: Bifrost;
   groupLabel: string;
   settings: {
     key: string;

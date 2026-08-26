@@ -1,15 +1,13 @@
-import React from 'react';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  EditorToolbarText,
-} from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import { SettingsGui } from './gui/SettingsGui';
 

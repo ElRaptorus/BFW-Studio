@@ -14,7 +14,7 @@ The Studio uses a CSS custom property-based theming system that enables easy the
 | `theme.dark.scss` | `studio/src/bifrost/styles/theme.dark.scss` | Dark theme token definitions |
 | `bifrost.scss` | `studio/src/bifrost/styles/bifrost.scss` | Structural layout + token-based color references |
 | `ThemeTypes.ts` | `studio/src/bifrost/contracts/ThemeTypes.ts` | TypeScript types (`ThemeType`, `ThemeDefinition`) |
-| `ThemeEvents.ts` | `studio-sdk/src/contracts/internal/ThemeEvents.ts` | Event constant (`EVENT_THEME_CHANGED`) |
+| `ThemeEvents.ts` | `studio/src/bifrost/contracts/internal/ThemeEvents.ts` | Event constant (`EVENT_THEME_CHANGED`) |
 
 ### Placement Convention
 
@@ -203,7 +203,7 @@ const monacoTheme = studio.theme.isCurrentThemeDark() ? 'vs-dark' : 'vs-light';
 ### Reacting to Theme Changes
 
 ```typescript
-import { EVENT_THEME_CHANGED } from '@evil/bifrost_fw_sdk/contracts/internal/ThemeEvents';
+import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 
 bifrost.theme.on(EVENT_THEME_CHANGED, (themeId: string) => {
   // update monaco theme, re-render, etc.

@@ -1,12 +1,12 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type {
   SearchQuery,
   SearchResult,
   SearchResultsByUri,
   SearchSerialized,
   SearchViewData,
-} from '../../../../../studio-sdk/src/contracts/internal/SearchTypes';
+} from '#bifrost/contracts/internal/SearchTypes';
+
 import type { ISerializable } from '../../contracts/SerializableTypes';
 
 export const EVENT_GLOBAL_SEARCH_FOCUS_AND_SELECT = 'EVENT_GLOBAL_SEARCH_FOCUS_AND_SELECT';

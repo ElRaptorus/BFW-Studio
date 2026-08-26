@@ -1,7 +1,11 @@
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+
 import React from 'react';
 
-import type { PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { JumpToSymbolInSolutionLink } from '../JumpToSymbolInSolutionLink';

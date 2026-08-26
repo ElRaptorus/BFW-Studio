@@ -1,10 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type {
+  EditorAreaLayout_Column,
+  EditorAreaLayout_Editor,
+  EditorAreaLayout_Row,
+} from '#bifrost/contracts/EditorTypes';
+import { NATIVE_FILE_TYPE } from '#components/Tree/HeadlessTreeItem';
 import { useDrop } from 'react-dnd';
 
 import React, { useCallback, useEffect } from 'react';
-
-import type { EditorAreaLayout_Column, EditorAreaLayout_Editor, EditorAreaLayout_Row } from '@evil/bifrost_fw_sdk';
-import { NATIVE_FILE_TYPE, isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
 
 import { useBifrost } from '../../bifrostContext';
 import { ErrorBoundaryWithMessage } from '../ErrorBoundaryWithMessage';

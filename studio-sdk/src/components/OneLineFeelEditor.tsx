@@ -4,13 +4,11 @@ import { EditorView, keymap } from '@codemirror/view';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { Studio } from '../../index';
 import { studioFeelHighlighting, studioFeelTheme } from './FeelEditorTheme';
 
 type FeelEditorInstance = InstanceType<typeof FeelEditorLib>;
 
 export type OneLineFeelEditorProps = {
-  studio: Studio;
   initialValue: string;
   dialect?: 'expression' | 'unaryTests';
   variables?: FeelEditorVariable[];

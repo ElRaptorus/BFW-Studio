@@ -1,10 +1,10 @@
-import type { Studio } from '@evil/bifrost_fw_sdk';
+import type { Bifrost } from '#bifrost/Bifrost';
 
 import { buildJsonSchema } from './validation/schemaToJsonSchema';
 
 let cachedJsonModule: any = null;
 
-export function configureMonacoJsonValidation(studio: Studio): void {
+export function configureMonacoJsonValidation(studio: Bifrost): void {
   const apply = (jsonModule: any): void => {
     cachedJsonModule = jsonModule;
     const schemas = studio.settings.getSchemas();

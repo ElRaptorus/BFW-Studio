@@ -131,7 +131,7 @@ Diff view for comparing two DMN decision models side by side. Structural compari
 
 #### git-cruiser
 
-Full Git integration for Evil Studio. Detects repos, visualizes file status, provides Git operations via a dedicated pane, context menus, status bar, and diagram-specific features (BPMN and DMN).
+Full Git integration for Bifrost Forge World. Detects repos, visualizes file status, provides Git operations via a dedicated pane, context menus, status bar, and diagram-specific features (BPMN and DMN).
 
 - **Entry:** `studio/src/modules/git-cruiser/index.ts`
 - **Dependencies (commands):** `bpmn-diff` (via `bpmn.diff.openDiffTwoFiles`), `dmn-diff` (via `dmn.diff.openDiffTwoFiles`)
@@ -205,8 +205,8 @@ Studio-native BPMN token flow simulator. Visualizes token movement through proce
 - **Entry:** `studio/src/modules/bpmn-token-simulator/index.ts`
 - **Commands registered:** `bpmn.tokenSimulation.toggle`
 - **Dependencies (commands):** `bpmn-core` (via `bpmn.modeler.registerModule`)
-- **Dependencies (SDK types):** `@evil/bifrost_fw_sdk` (BpmnDocumentModel, BpmnModelerComponentAdapter)
-- **Dependencies (imports):** None (fully decoupled)
+- **Dependencies (imports):** `#bifrost/Bifrost`, `#modules/bpmn-editor/BpmnDocumentModel`
+- **Dependencies (SDK):** none
 
 #### bpmn-linter
 
@@ -215,8 +215,8 @@ BPMN diagram linter using bpmnlint as the rule engine. Provides auto/manual lint
 - **Entry:** `studio/src/modules/bpmn-linter/index.ts`
 - **Commands registered:** `bpmn.linter.toggle`, `bpmn.linter.showProblemsPane`, `bpmn.linter.setProfile`, `bpmn.linter.createCustomRuleset`
 - **Dependencies (commands):** `bpmn-core` (via `bpmn.modeler.registerModule`)
-- **Dependencies (SDK types):** `@evil/bifrost_fw_sdk` (BpmnDocumentModel, PaneProvider, PaneComponentProps)
-- **Dependencies (imports):** None (fully decoupled)
+- **Dependencies (imports):** `#modules/bpmn-editor/BpmnDocumentModel`, `#bifrost/contracts/PaneTypes`
+- **Dependencies (host):** `#components/Icon`
 
 ### Plugin Management
 

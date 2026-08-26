@@ -1,14 +1,15 @@
-import type { DialogOptionsStrict_OpenFile, EditorDocument } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
-
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { DialogOptionsStrict_OpenFile } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import {
   EVENT_EDITOR_AREA_FOCUS_UPDATED,
   EVENT_EDITOR_DOCUMENT_METADATA_UPDATED,
   EVENT_EDITOR_DOCUMENT_TITLE_UPDATED,
-} from '../../../studio-sdk/src/contracts/internal/EditorEvents';
-import { EVENT_INDEX_UPDATED } from '../../../studio-sdk/src/contracts/internal/SearchEvents';
-import type { ISearchIndex } from '../../../studio-sdk/src/contracts/internal/SearchTypes';
-import { EVENT_SETTINGS_CHANGED } from '../../../studio-sdk/src/contracts/internal/SettingsEvents';
+} from '#bifrost/contracts/internal/EditorEvents';
+import { EVENT_INDEX_UPDATED } from '#bifrost/contracts/internal/SearchEvents';
+import type { ISearchIndex } from '#bifrost/contracts/internal/SearchTypes';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
+
 import { ClickModifierKeysManager } from './browser/ClickModifierKeysManager';
 import { CommandMediator } from './browser/CommandMediator';
 import { DiagnosticsMediator } from './browser/DiagnosticsMediator';

@@ -1,4 +1,4 @@
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
+import type { IconAliasOrData, IconComponent } from '#bifrost/contracts/IconTypes';
 
 /**
  * Icons can be saved under an id and are then available to all parts of Bifrost.
@@ -17,9 +17,9 @@ import type { IconComponent } from '@evil/bifrost_fw_sdk';
  *      )
  *    })
  *
- * When using the icons in a component, import the `Icon` component directly from the SDK:
+ * When using the icons in a component, import the host `Icon` component:
  *
- *    import { Icon } from '@evil/bifrost_fw_sdk';
+ *    import { Icon } from '#components/Icon';
  *
  *    // my-plugin/src/HighFiveButton.tsx
  *    function HighFiveButton(props: any) {
@@ -42,22 +42,26 @@ export class IconMediator {
   /**
    * Registers the given `mapOfIcons`.
    *
-   * These can then be used with the component returned by `getComponent()`.
+   * These can then be used with the host `Icon` component (`<Icon id="..." />`).
    *
    * Example:
    *
    *    bifrost.icons.registerIcons({'my-plugin/highfive/button': 'ph-fill ph-star'})
    */
-  registerIcons(mapOfIcons: any): void {
+  registerIcons(mapOfIcons: Record<string, IconAliasOrData>): void {
+    const iconComponent = this.iconComponent;
+    if (iconComponent == null) {
+      throw new Error('Icon component is not set. Call setComponent first.');
+    }
     Object.keys(mapOfIcons).forEach((id: string) => {
-      this.iconComponent.registerIcon(id, mapOfIcons[id]);
+      iconComponent.registerIcon(id, mapOfIcons[id]);
     });
   }
 
   /**
    * Internal: Used by Bifrost's initializer. Sets the used `Icon` instance.
    */
-  setComponent(iconComponent: any): any {
+  setComponent(iconComponent: IconComponent): void {
     if (this.iconComponent != null) {
       throw new Error('`iconComponent` is already set.');
     }

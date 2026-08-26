@@ -1,3 +1,5 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type {
   NotificationActionObject,
   NotificationContent,
@@ -5,9 +7,6 @@ import type {
 } from '#bifrost/contracts/NotificationTypes';
 
 import React, { useEffect, useRef, useState } from 'react';
-
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
 
 type NotificationRendererProps = {
   options: NotificationOptionsProps;

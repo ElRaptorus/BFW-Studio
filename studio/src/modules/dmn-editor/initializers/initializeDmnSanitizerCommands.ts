@@ -1,6 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { DmnDocumentModel } from '@evil/bifrost_fw_sdk/types/DmnDocumentModel';
+import type DmnDocumentModel from '#modules/dmn-editor/DmnDocumentModel';
 
 import { buildDmnSanitizerFixCommands } from '../../dmn-core/sanitizer/DmnSanitizerFixer';
 import type { DmnSanitizerBridgeApi } from '../../dmn-core/sanitizer/SanitizerBridge';

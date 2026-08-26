@@ -1,3 +1,5 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import type Canvas from 'diagram-js/lib/core/Canvas';
 import type { CanvasViewbox } from 'diagram-js/lib/core/Canvas';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
@@ -6,10 +8,6 @@ import type Overlays from 'diagram-js/lib/features/overlays/Overlays';
 import type Selection from 'diagram-js/lib/features/selection/Selection';
 import type { ElementLike, Shape } from 'diagram-js/lib/model/Types';
 import type { Rect } from 'diagram-js/lib/util/Types';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_METADATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 
 export class DmnViewerWithSync extends AbstractEmitter {
   private viewer: any;

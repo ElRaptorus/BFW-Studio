@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Studio's tree view is a reusable, accessible component backed by the `@headless-tree/core` and `@headless-tree/react` libraries. It provides multi-select, keyboard navigation, expand/collapse, drag-and-drop, and context menus. The component lives in the SDK and is consumed by several Studio panes (File Explorer, Open Editors, Engine Browser, Search Results, etc.).
+The Studio's tree view is a reusable, accessible component backed by the `@headless-tree/core` and `@headless-tree/react` libraries. It provides multi-select, keyboard navigation, expand/collapse, drag-and-drop, and context menus. The component lives in `studio/src/components/Tree/` (host chrome — not a plugin-webview control). Plugin authors contribute tree data via `api.views.registerTreeView` and `PluginTreeItem`; the host renders it.
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -28,9 +28,9 @@ The Studio's tree view is a reusable, accessible component backed by the `@headl
 
 ## Data Model
 
-### TreeItem (SDK contract)
+### TreeItem (host contract)
 
-**Path:** `studio-sdk/src/contracts/TreeTypes.ts`
+**Path:** `studio/src/bifrost/contracts/TreeTypes.ts`
 
 `TreeItem` is the Studio's tree node type. Consumers build a nested `TreeItem[]` hierarchy and pass it to the `Tree` component as the `entries` prop.
 
@@ -61,7 +61,7 @@ Every variant extends `TreeItemBase`:
 
 ### TreeItemData (internal)
 
-**Path:** `studio-sdk/src/components/Tree/TreeDataAdapter.ts`
+**Path:** `studio/src/components/Tree/TreeDataAdapter.ts`
 
 `TreeItemData` extends `TreeItem` with a single field:
 
@@ -77,7 +77,7 @@ type TreeItemData = TreeItem & {
 
 ## TreeDataAdapter
 
-**Path:** `studio-sdk/src/components/Tree/TreeDataAdapter.ts`
+**Path:** `studio/src/components/Tree/TreeDataAdapter.ts`
 
 Converts the nested `TreeItem[]` hierarchy into the flat, id-based data model that Headless Tree's `syncDataLoaderFeature` expects. A new `TreeDataAdapter` is created (via `useMemo`) whenever the `entries` prop changes.
 
@@ -106,7 +106,7 @@ A virtual root item (`__ht_root__`) is created automatically and serves as the r
 
 ## Tree Component
 
-**Path:** `studio-sdk/src/components/Tree/Tree.tsx`
+**Path:** `studio/src/components/Tree/Tree.tsx`
 
 The main React component. Accepts `TreeProps` and renders the complete tree.
 
@@ -156,7 +156,7 @@ On first render, the `Tree` component creates or retrieves a `TreeViewMediator` 
 
 ## studioTreePlugin
 
-**Path:** `studio-sdk/src/components/Tree/studioTreePlugin.ts`
+**Path:** `studio/src/components/Tree/studioTreePlugin.ts`
 
 A custom `FeatureImplementation<TreeItemData>` that overwrites the default `selection` click behavior to match the Studio's expected UX:
 
@@ -174,7 +174,7 @@ Callbacks are read from `tree.getConfig().studioCallbacks`, so each tree instanc
 
 ## HeadlessTreeItem
 
-**Path:** `studio-sdk/src/components/Tree/HeadlessTreeItem.tsx`
+**Path:** `studio/src/components/Tree/HeadlessTreeItem.tsx`
 
 A `React.memo` component that renders a single tree row. Responsibilities:
 
@@ -194,7 +194,7 @@ A `React.memo` component that renders a single tree row. Responsibilities:
 
 ## TreeViewMediator
 
-**Path:** `studio-sdk/src/browser/internal/TreeViewMediator.ts`
+**Path:** `studio/src/bifrost/browser/TreeViewMediator.ts`
 
 Imperative bridge between the `Tree` React component and command/keybinding code that runs outside the React render cycle. Registered with `ViewMediatorManager` under a consumer-specified ID (e.g. `std/file-explorer/open-solution`).
 
@@ -292,12 +292,12 @@ The Go menu contains a "Cursor Follows Tabs" toggle item between "Previous Edito
 
 | Component | Path |
 |-----------|------|
-| TreeItem types | `studio-sdk/src/contracts/TreeTypes.ts` |
-| Tree (React component) | `studio-sdk/src/components/Tree/Tree.tsx` |
-| TreeDataAdapter | `studio-sdk/src/components/Tree/TreeDataAdapter.ts` |
-| HeadlessTreeItem | `studio-sdk/src/components/Tree/HeadlessTreeItem.tsx` |
-| studioTreePlugin | `studio-sdk/src/components/Tree/studioTreePlugin.ts` |
-| TreeViewMediator | `studio-sdk/src/browser/internal/TreeViewMediator.ts` |
-| TreeViewMediator tests | `studio-sdk/src/browser/internal/TreeViewMediator.test.ts` |
-| Barrel export | `studio-sdk/src/components/Tree/index.ts` |
+| TreeItem types | `studio/src/bifrost/contracts/TreeTypes.ts` |
+| Tree (React component) | `studio/src/components/Tree/Tree.tsx` |
+| TreeDataAdapter | `studio/src/components/Tree/TreeDataAdapter.ts` |
+| HeadlessTreeItem | `studio/src/components/Tree/HeadlessTreeItem.tsx` |
+| studioTreePlugin | `studio/src/components/Tree/studioTreePlugin.ts` |
+| TreeViewMediator | `studio/src/bifrost/browser/TreeViewMediator.ts` |
+| TreeDataAdapter tests | `studio/test/unit/components/TreeDataAdapter.test.ts` |
+| Barrel export | `studio/src/components/Tree/index.ts` |
 | Auto-reveal initializer | `studio/src/modules/std/initializers/initializeFileExplorerAutoReveal.ts` |

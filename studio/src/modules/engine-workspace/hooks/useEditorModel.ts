@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
-import type { EditorDocument, EditorDocumentModel, Studio } from '@evil/bifrost_fw_sdk';
+import { useEffect, useState } from 'react';
 
 /**
  * Retrieves the `EditorDocumentModel` for a given document, triggering lazy
  * creation if needed. Returns `null` until the model is available.
  */
 export function useEditorModel<T extends EditorDocumentModel>(
-  studio: Studio,
+  studio: Bifrost,
   editorDocument: EditorDocument,
 ): T | null {
   const [model, setModel] = useState<T | null>(() => studio.editors.getEditorDocumentModelIfPresent<T>(editorDocument));

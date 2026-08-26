@@ -1,10 +1,9 @@
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import PluginIframe from '#components/webview/PluginIframe';
 import type { PluginIframeManager } from '#components/webview/PluginIframeManager';
 import type { PluginIframeHandle } from '#components/webview/types';
 
 import React, { useEffect, useRef } from 'react';
-
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
 
 interface IframeDocumentRendererContext {
   pluginName: string;

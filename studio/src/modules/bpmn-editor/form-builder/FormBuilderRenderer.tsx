@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import { Editor, EditorContent, EditorToolbar, EditorToolbarLeft, EditorToolbarText } from '@evil/bifrost_fw_sdk';
+import React, { useState } from 'react';
 
 import { ActionsEditor } from './ActionsEditor';
 import { FormBuilderPreview } from './FormBuilderPreview';

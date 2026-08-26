@@ -1,4 +1,5 @@
-import type { ISearchIndex } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
+import type { ISearchIndex } from '#bifrost/contracts/internal/SearchTypes';
+
 import type { HttpService } from '../browser/HttpService';
 import type { DialogService } from '../common/DialogService';
 import type { FileHandlingService } from '../common/FileHandlingService';

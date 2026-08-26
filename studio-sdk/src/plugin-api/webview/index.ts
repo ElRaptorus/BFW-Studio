@@ -1,1 +1,1 @@
-export type { StudioWebviewApi, WebviewMessageEvent } from './StudioWebviewApi';
+export type { StudioThemeType, StudioWebviewApi, WebviewMessageEvent } from './StudioWebviewApi';

@@ -1,7 +1,9 @@
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+
 import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
-import { FeelEditor, MultiLineCodeEditor, OneLineFeelEditor } from '@evil/bifrost_fw_sdk';
+import { FeelEditor, OneLineFeelEditor } from '@evil/bifrost_fw_sdk';
 
 import { ExecuteButton } from './ExecuteButton';
 import { FeelEvaluator } from './FeelEvaluator';
@@ -208,7 +210,6 @@ export function FeelSimulatorEditor({
               <FeelEditor
                 ref={multiLineRef}
                 htmlId={layout !== 'Both' ? props.htmlId : undefined}
-                studio={studio}
                 className="feel-simulator__feel-editor"
                 initialValue={initialExpression}
                 variables={variablesOrUndefined}
@@ -231,7 +232,6 @@ export function FeelSimulatorEditor({
             <OneLineFeelEditor
               ref={singleLineRef}
               htmlId={layout === 'SingleLine' ? props.htmlId : undefined}
-              studio={studio}
               initialValue={layout === 'SingleLine' ? initialExpression : 'token.amount > 100'}
               variables={variablesOrUndefined}
               onChange={layout === 'SingleLine' ? onChange : undefined}

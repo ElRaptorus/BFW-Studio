@@ -1,8 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogContentObject, DialogOptions } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import { Minimatch } from 'minimatch';
 import * as path from 'path';
-
-import type { DialogContentObject, DialogOptions, EditorDocument } from '@evil/bifrost_fw_sdk';
 
 import type { GitService } from '../GitService';
 import type { GitFileStatus, GitLogEntry, GitRepoState } from '../GitTypes';

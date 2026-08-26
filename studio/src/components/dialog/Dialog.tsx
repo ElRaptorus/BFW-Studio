@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-
 import type {
   DialogOptionsStrict,
   DialogResponseCallbackFn,
   DialogValidationResult,
-  IconComponent,
-} from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/DialogTypes';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
+
+import React, { useCallback, useEffect, useRef } from 'react';
 
 import DialogRenderer from './DialogRenderer';
 

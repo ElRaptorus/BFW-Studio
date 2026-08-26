@@ -1,7 +1,8 @@
-import type { EditorDocument, EditorDocumentModel } from '@evil/bifrost_fw_sdk';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { DmnDefinitions, DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 
 import type { DecisionViewerDocumentModel } from '../models/DecisionViewerDocumentModel';
-import type { DmnDefinitions, DrgSelection } from '../types/dmnModelTypes';
 
 export function isDecisionViewerDocument(editorDocument: EditorDocument | null | undefined): boolean {
   return editorDocument?.uri.startsWith('engine-decision://') === true;

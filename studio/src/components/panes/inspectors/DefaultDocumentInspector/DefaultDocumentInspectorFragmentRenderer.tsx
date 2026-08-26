@@ -1,20 +1,19 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 
-import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorToolbar,
-  EditorToolbarLeft,
-  EditorToolbarText,
-  MultiLineCodeEditor,
-  parseOpenInNewTabUrl,
-} from '@evil/bifrost_fw_sdk';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 type DefaultDocumentInspectorFragmentRendererProps = {
   editorDocument: EditorDocument;
   propertyName: string;
-  studio: Studio;
+  studio: Bifrost;
   value: string;
 };
 

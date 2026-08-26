@@ -1,3 +1,4 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type {
   PaneAreaAndGroup,
   PaneAreaName,
@@ -5,13 +6,9 @@ import type {
   PaneObject,
   PaneProvider,
   PaneProviderModule,
-} from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/PaneTypes';
+import { EVENT_PANE_LAYOUT_UPDATED, EVENT_PANE_SIZE_UPDATED } from '#bifrost/contracts/internal/PaneEvents';
 
-import {
-  EVENT_PANE_LAYOUT_UPDATED,
-  EVENT_PANE_SIZE_UPDATED,
-} from '../../../../studio-sdk/src/contracts/internal/PaneEvents';
 import type { LocalStorageItem } from './LocalStorageItem';
 import { PaneManager } from './PaneManager';
 import { PaneProviderManager } from './PaneProviderManager';

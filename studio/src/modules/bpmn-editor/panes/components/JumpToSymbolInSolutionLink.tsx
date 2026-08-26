@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
+import React, { useEffect, useState } from 'react';
 
 type JumpToSymbolInSolutionLinkProps = {
   promise: Promise<any>;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function JumpToSymbolInSolutionLink(props: JumpToSymbolInSolutionLinkProps): React.JSX.Element | null {

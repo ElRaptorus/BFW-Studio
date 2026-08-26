@@ -1,27 +1,25 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Checkbox } from '#components/Checkbox';
+import { LabelWithFeelExpressionHint } from '#components/FeelExpressionHint';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElement_Participant, BpmnElement_Process } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React, { useEffect, useState } from 'react';
 
-import type {
-  EditorDocument,
-  FeelEditorVariable,
-  PaneComponentProps,
-  PaneProvider,
-  PropertyValidationResult,
-} from '@evil/bifrost_fw_sdk';
 import {
-  BpmnElementType,
-  Checkbox,
-  LabelWithFeelExpressionHint,
+  type FeelEditorVariable,
   OneLineFeelEditor,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
   PaneProperty,
-  assertNotNull,
+  type PropertyValidationResult,
   validatePropertyMatching,
   validatePropertyNotEmpty,
 } from '@evil/bifrost_fw_sdk';
-import type { BpmnElement_Participant, BpmnElement_Process } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 import { assertBpmnElementIsParticipant } from '../BpmnElementTypeAssertionFunctions';
@@ -202,7 +200,6 @@ function PaneContentPropertiesProcess(props: PaneComponentProps): React.JSX.Elem
           <LabelWithFeelExpressionHint studio={props.studio} label="Correlation Key" />
         </label>
         <OneLineFeelEditor
-          studio={props.studio}
           htmlId="process-correlation-key-property"
           initialValue={element.correlationKey ?? ''}
           onChange={(value: string) => updateProcess({ correlationKey: value })}

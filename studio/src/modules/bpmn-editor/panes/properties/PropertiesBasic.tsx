@@ -1,25 +1,17 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { BpmnElementColorPicker, generateRandomColor } from '#components/BpmnElementColorPicker';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React from 'react';
 
-import type {
-  EditorDocument,
-  PaneComponentProps,
-  PaneProvider,
-  PropertyValidationResult,
-  SelectOption,
-} from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementColorPicker,
-  BpmnElementType,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-  assertNotNull,
-  generateRandomColor,
-  validatePropertyMatching,
-  validatePropertyNotEmpty,
-} from '@evil/bifrost_fw_sdk';
+import type { PropertyValidationResult, SelectOption } from '@evil/bifrost_fw_sdk';
+import { PaneProperty, validatePropertyMatching, validatePropertyNotEmpty } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 import { getBpmnSelectionForPropertiesPane, getKeyForPropertiesPane } from '../PropertiesPaneFunctions';

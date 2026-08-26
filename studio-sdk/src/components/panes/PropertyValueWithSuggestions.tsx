@@ -4,7 +4,11 @@ import CreatableSelect from 'react-select/async-creatable';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { assertNotNull } from '../../common';
+function assertNotNull<T>(value: T, nameForErrorMessage: string): asserts value is NonNullable<T> {
+  if (value == null) {
+    throw new Error(`Unexpected value: \`${nameForErrorMessage}\` should not be null here.`);
+  }
+}
 
 export type Suggestion =
   string | { label: string | React.JSX.Element; sublabel?: string | React.JSX.Element; value: string };

@@ -1,16 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { NotificationOptions } from '#bifrost/contracts/NotificationTypes';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleRight } from '#components/editor/EditorTitleRight';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
 
 import React, { Fragment } from 'react';
-
-import {
-  EditorContent,
-  EditorTitle,
-  EditorTitleHeroIcon,
-  EditorTitleLeft,
-  EditorTitleRight,
-  EditorTitleText,
-} from '@evil/bifrost_fw_sdk';
 
 import type { MachineSanctumExample } from '../contracts/MachineSanctumTypes';
 import { NotificationExampleRenderer } from './NotificationExampleRenderer';

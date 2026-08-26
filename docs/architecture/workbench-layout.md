@@ -136,7 +136,7 @@ The `getDisplayableGroups()` helper iterates each group's panes and checks the r
 
 ## Pane Group Data Model
 
-`PaneGroupObject` (defined in `studio-sdk/src/contracts/PaneTypes.ts`):
+`PaneGroupObject` (defined in `studio/src/bifrost/contracts/PaneTypes.ts`):
 
 | Field | Type | Description |
 |---|---|---|
@@ -209,6 +209,6 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `studio/src/bifrost/contracts/MenuBarTypes.ts` | All `MenuBarItem` type definitions including `MenuBarItem_PaneContentToggle` |
 | `studio/src/bifrost/common/PaneManager.ts` | Pane area state, visibility, `lastActivePaneIdPerArea`, `setActiveGroupInArea()`, `requestPaneLayoutUpdate()` |
 | `studio/src/bifrost/common/PaneMediator.ts` | Public API for PaneManager, persistence, pane provider registration |
-| `studio-sdk/src/contracts/PaneTypes.ts` | `PaneGroupObject` type with `label`, `icon` fields |
+| `studio/src/bifrost/contracts/PaneTypes.ts` | `PaneGroupObject` type with `label`, `icon` fields |
 | `studio/src/modules/std/initializers/initializeMenuBarItems.ts` | Left/center/right menu bar item registration |
 | `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts` | Engine menubar items (registered on 'center') |

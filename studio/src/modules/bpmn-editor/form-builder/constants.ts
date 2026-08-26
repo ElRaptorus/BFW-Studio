@@ -1,5 +1,5 @@
-import type { FormAction, FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { FormActionPreset, FormFieldType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
+import { FormActionPreset, FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 export type FieldTypeDescriptor = {
   type: FormFieldType;

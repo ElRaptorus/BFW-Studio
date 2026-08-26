@@ -1,8 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
 import type { SymbolQuery, SymbolResult } from '#bifrost/contracts/SymbolTypes';
-
-import type { DialogOptions, EditorDocument } from '@evil/bifrost_fw_sdk';
 
 export function initializeWorkbenchCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;

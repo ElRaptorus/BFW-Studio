@@ -1,15 +1,16 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { LabelWithFeelExpressionHint } from '#components/FeelExpressionHint';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+
 import React, { useEffect, useState } from 'react';
 
-import type { EditorDocument, FeelEditorVariable, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import {
-  LabelWithFeelExpressionHint,
-  OneLineFeelEditor,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import { OneLineFeelEditor } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import {
@@ -84,7 +85,6 @@ function CorrelationRetrievalExpression(props: PaneComponentProps): React.JSX.El
           <LabelWithFeelExpressionHint studio={props.studio} label="Correlation Retrieval Expression" />
         </label>
         <OneLineFeelEditor
-          studio={props.studio}
           htmlId="correlation-retrieval-expression-property"
           initialValue={currentValue}
           onChange={onChange}

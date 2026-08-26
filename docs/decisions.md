@@ -26,6 +26,39 @@ Agents should add entries here when a meaningful design choice is made during th
 
 ## Decisions
 
+### 2026-08-26 — Internalize host widgets Icon, Table, Checkbox, ColorPicker
+
+**Context**: After the SDK became the plugin-developer toolkit, four remaining content controls still did not work inside a plugin iframe. `Icon` looks up a module-level `iconMap` that the host fills via `bifrost.icons.setComponent`; the iframe copy of that map is empty and there is no `IconsApi`. `Table` pulled `@tanstack/react-table` into the SDK as a peerDependency even though `--theme-table-*` already covers plugin-authored tables. `Checkbox` uses Bootstrap `form-check-*` markup that iframes never receive. `ColorPicker` is a debounced native `<input type="color">`.
+
+**Options considered**:
+- A) Keep all four in the SDK and invent iframe bridges (icon registry RPC, Bootstrap-in-iframe, TanStack as a plugin peer).
+- B) Move `Icon`, `Table`, `Checkbox`, and `ColorPicker` into `studio/src/components/`. Keep Feel editors, `PaneProperty` (+ helpers), `FormInput`, and `PresentationalContextMenu` in the SDK. Leave `--theme-table-*` and `--theme-icon-*` on `ThemeToken`.
+
+**Decision**: Option B.
+
+**Rationale**:
+- A component stays public only if it encodes Studio domain UI that a plugin cannot reasonably rebuild from `--theme-*` tokens **and** that actually works inside a plugin iframe.
+- Feel editors and the PaneProperty family meet that bar. The four host widgets do not.
+- `PresentationalContextMenu` renders `MenuItem.icon` as `<span className={item.icon} />` (Phosphor CSS class), not via the host `Icon` registry.
+- Package is `"private": true`; no published semver break. Plugin-facing docs list the Keep set only.
+
+### 2026-08-26 — SDK is the plugin developer toolkit; internal modules type `Bifrost`
+
+**Context**: `studio-sdk/` (`@evil/bifrost_fw_sdk`) had grown into a shadow of the Studio host: chrome (`Editor*` / `Pane*` shells), Tree, Monaco, Markdown, `common/` bases, and a `Studio` facade that lagged `Bifrost`. Plugin authors need a typed `StudioPluginApi`, serializable POJO contracts, CSS theme tokens, and a few webview-safe content controls — not host chrome.
+
+**Options considered**:
+- A) Keep chrome in the SDK after swapping `studio` props for callbacks (superseded plan `sdk_audit_refactor_7c2a91de.plan.md`).
+- B) Internalize host chrome, Tree, Monaco, Markdown, and `common/` into `studio/src/`; delete the `Studio` shadow; keep only plugin-api, POJO contracts, `ThemeToken` + documentation CSS, and content controls (FormInput, Checkbox, ColorPicker, PaneProperty, Table, Feel editors, Icon, PresentationalContextMenu).
+
+**Decision**: Option B. Plan: `~/.cursor/plans/sdk_plugin_toolkit_c3f8a21e.plan.md` (supersedes the chrome-Keep revision; do not overwrite that file).
+
+**Rationale**:
+- Internal modules compile into the Studio bundle and must type `import type { Bifrost } from '#bifrost/Bifrost'`. Prop names may stay `studio`.
+- Plugin authors type `StudioPluginApi` from `@evil/bifrost_fw_sdk`. They fill a hole in host chrome (`registerWebviewPane`, `registerWebviewDocumentType`, `views.registerTreeView`); they do not rebuild title bars.
+- BPMN/DMN identification for plugins uses `PluginBpmnElementType` / `PluginDmnElementType` (Studio-semantic strings such as `'UserTask'`), bridged from typed document-model elements — not diagram-js QNames and not a `castElement()` helper.
+- Monaco, MDX editor, headless-tree, and react-dnd are host dependencies, not SDK peerDependencies.
+- Package name stays `@evil/bifrost_fw_sdk`.
+
 ### 2026-08-25 — ESLint 10 + `@eslint-react`; keep official react-hooks
 
 **Context**: ESLint 9.39.x is end-of-life. jsx-eslint `eslint-plugin-react` 7.x does not support ESLint 10 (`context.getFilename` crashes; peer range stops at ESLint 9). PRs to that plugin have stalled. The replacement is `@eslint-react/eslint-plugin` (requires ESLint >= 10.3.0). That plugin also ships compiler-like twins (`@eslint-react/rules-of-hooks`, `exhaustive-deps`, `purity`, …) that overlap Meta's `eslint-plugin-react-hooks`, which already supports ESLint 10 and is what this repo documents and suppresses (`react-hooks/refs`, `immutability`, `gating`, existing `eslint-disable-next-line react-hooks/…` comments).

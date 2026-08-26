@@ -1,7 +1,14 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+
 import React from 'react';
 
-import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
 import type { ModelViewerDocumentModel } from '../models/ModelViewerDocumentModel';

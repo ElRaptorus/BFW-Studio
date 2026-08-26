@@ -1,14 +1,16 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
 
-import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import { MultiLineCodeEditor, OpenInNewTabButton } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 
 export type ProcessInstanceInspectorProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function ProcessInstanceInspector(props: ProcessInstanceInspectorProps): React.JSX.Element {

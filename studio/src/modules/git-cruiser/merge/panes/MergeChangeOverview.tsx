@@ -1,7 +1,10 @@
-import React from 'react';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: () => 'Merge Changes',

@@ -1,4 +1,4 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 import type {
   MenuBarItem,

@@ -1,11 +1,13 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { Notification } from '#bifrost/contracts/NotificationTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import dayjs from 'dayjs';
 
 import React, { useCallback, useMemo, useState } from 'react';
 
-import type { PaneComponentProps, PaneProvider, TableColumnDef } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, Table } from '@evil/bifrost_fw_sdk';
+import { Table, type TableColumnDef } from '../../Table';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,

@@ -1,7 +1,13 @@
-import React from 'react';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { BpmnElementColorPicker, generateRandomColor } from '#components/BpmnElementColorPicker';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 
-import type { EditorDocument, IconComponent, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { BpmnElementColorPicker, Icon, Pane, PaneBody, PaneHeader, generateRandomColor } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 import { getBpmnSelectionForPropertiesPane } from '../PropertiesPaneFunctions';

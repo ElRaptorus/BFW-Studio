@@ -318,4 +318,4 @@ discoverAndLoadPlugins()
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Placeholder pane UI shown while plugin is pending activation |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderEditorDocumentRenderer.tsx` | Placeholder editor UI for `contributes.editorDocumentTypes`; triggers activation and swaps in the real editor |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Event-driven lazy activation |
-| `studio-sdk/src/contracts/PluginTypes.ts` | `PluginInfo` with `manifest?`, `manifestErrors?`, `manifestWarnings?` |
+| `studio/src/bifrost/contracts/PluginHostTypes.ts` | `PluginInfo` with `manifest?`, `manifestErrors?`, `manifestWarnings?` |

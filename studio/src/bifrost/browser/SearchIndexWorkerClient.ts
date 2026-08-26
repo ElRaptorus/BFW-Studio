@@ -1,4 +1,5 @@
-import type { SearchQuery, SearchResult } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
+import type { SearchQuery, SearchResult } from '#bifrost/contracts/internal/SearchTypes';
+
 import { AbstractWorkerClient } from './AbstractWorkerClient';
 
 export class SearchIndexWorkerClient extends AbstractWorkerClient {

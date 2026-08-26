@@ -1,6 +1,7 @@
-import React from 'react';
+import { Icon } from '#components/Icon';
+import { EditorContent } from '#components/editor/EditorContent';
 
-import { EditorContent, Icon } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 export default function MachineSanctumHome(props: any): React.JSX.Element {
   return (

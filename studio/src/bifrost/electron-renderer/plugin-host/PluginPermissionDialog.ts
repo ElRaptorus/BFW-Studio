@@ -2,8 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { PluginPermissionStore } from '#bifrost/common/plugin-host/PluginPermissionStore';
 import { PERMISSION_DISPLAY } from '#bifrost/common/plugin-host/permissions/PermissionDisplay';
 import type { PluginPermission } from '#bifrost/common/plugin-host/permissions/PermissionTypes';
-
-import type { DialogContentObject } from '@evil/bifrost_fw_sdk';
+import type { DialogContentObject } from '#bifrost/contracts/DialogTypes';
 
 function buildPermissionMarkdown(permissions: PluginPermission[]): string {
   const lines = ['This plugin requests the following permissions:\n'];

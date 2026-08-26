@@ -1,7 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type React from 'react';
-
+import type { EditorInlineSearchViewMediator } from '#bifrost/browser/EditorInlineSearchViewMediator';
+import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import {
+  validateFormData,
+  validateFormDataIsNotEmpty,
+  validateFormDataOnSubmit,
+} from '#bifrost/common/DialogHelperFunctions';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type {
   DialogContent,
   DialogContentObject,
@@ -9,19 +15,11 @@ import type {
   DialogOptions,
   DialogResult,
   DialogValidationResult,
-  EditorDocument,
-  TreeViewMediator,
-} from '@evil/bifrost_fw_sdk';
-import {
-  StandardDialogResponse,
-  assertNotNull,
-  parseOpenInNewTabUrl,
-  validateFormData,
-  validateFormDataIsNotEmpty,
-  validateFormDataOnSubmit,
-} from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/DialogTypes';
+import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
-import type { EditorInlineSearchViewMediator } from '../../../../../../studio-sdk/src/browser/internal/EditorInlineSearchViewMediator';
+import type React from 'react';
 
 export function initializeEditorCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;

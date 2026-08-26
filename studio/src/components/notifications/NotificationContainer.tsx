@@ -1,12 +1,11 @@
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type { Notification, NotificationActionObject, NotificationOptions } from '#bifrost/contracts/NotificationTypes';
+import { AutoScrollContainer } from '#components/AutoScrollContainer';
 
 import React, { useCallback } from 'react';
 
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
-
-import { AutoScrollContainer } from '../../../../studio-sdk/src/components/internal/AutoScrollContainer';
 import { useBifrost } from '../../bifrostContext';
+import { Icon } from '../Icon';
 import type { NotificationOptionsProps } from './NotificationRenderer';
 import NotificationRenderer from './NotificationRenderer';
 

@@ -47,10 +47,11 @@ Modules are static — once registered, they are included in every `BpmnModeler`
 
 ## Step 3: Access Your Module at Runtime
 
-Use the SDK-typed `BpmnDocumentModel.modelerAdapter` to reach your module:
+Use the host-typed `BpmnDocumentModel.modelerAdapter` to reach your module:
 
 ```typescript
-import type { BpmnDocumentModel } from '@evil/bifrost_fw_sdk/types/BpmnDocumentModel';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
 const editorDocument = bifrost.editors.getFocusedEditorDocument();
 const model = bifrost.editors.getEditorDocumentModelIfPresent<BpmnDocumentModel>(editorDocument);
@@ -61,9 +62,10 @@ Always check that `model` and `modelerAdapter` are non-null before accessing.
 
 ## Coupling Rules
 
-- **Never import** from `bpmn-editor` or `bpmn-core` directly. Use the `bpmn.modeler.registerModule` command for registration and SDK types for runtime access.
+- **Internal Studio modules** import `BpmnDocumentModel` from `#modules/bpmn-editor/BpmnDocumentModel` and `Bifrost` from `#bifrost/Bifrost`. They register diagram-js modules via `bpmn.modeler.registerModule`. Existing examples: `bpmn-linter`, `bpmn-token-simulator`.
 - **Never modify** `BpmnDocumentModel` for extension-specific logic. The model only exposes a generic `modelerAdapter` getter.
-- **Communication** between your extension and the modeler goes through: (1) diagram-js DI services inside your module, (2) Studio commands for user-facing actions, (3) the SDK-typed adapter for runtime access.
+- **Third-party plugins** do **not** get the host modeler adapter. They use `api.bpmn` (`studio-sdk/src/plugin-api/BpmnApi.ts`) and manifest `contributes.bpmnModules`.
+- **Communication** between an internal extension and the modeler goes through: (1) diagram-js DI services inside your module, (2) Studio commands for user-facing actions, (3) the host-typed adapter for runtime access.
 
 ## Theme Integration
 

@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 
-import { Icon } from '@evil/bifrost_fw_sdk';
-
+import { Icon } from '../Icon';
 import './KeyValueBuilder.scss';
 
 export type KeyValueEntry = {

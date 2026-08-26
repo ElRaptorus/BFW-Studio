@@ -1,9 +1,13 @@
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import { getHumanizedDateTime } from '#modules/engine-core/Formatters';
 
 import React from 'react';
 
-import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type { ModelViewerModelData } from '../types';
 import { getSelection, isModelViewerDocument } from './paneHelpers';

@@ -1,3 +1,5 @@
+declare module '*.scss';
+
 declare module '@bpmn-io/feel-editor' {
   import type { Extension } from '@codemirror/state';
   import type { EditorView } from '@codemirror/view';

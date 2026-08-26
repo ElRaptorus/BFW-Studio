@@ -1,5 +1,5 @@
-import type { StudioEventName } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { StudioEventName } from '#bifrost/contracts/StudioEvents';
 
 const BIFROST_EVENT_DELAY = 73;
 const BIFROST_UNSPECIFIED_GLOBAL_UPDATE_DELAY = 160;

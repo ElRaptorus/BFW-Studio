@@ -1,6 +1,10 @@
-import type { BpmnElement, EditorDocument, EditorDocumentModel, PaneComponentProps } from '@evil/bifrost_fw_sdk';
-import { BpmnElementType, assertNotNull } from '@evil/bifrost_fw_sdk';
-import type { LoopCharacteristics } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
+import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { LoopCharacteristics } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import type BpmnDocumentModel from '../BpmnDocumentModel';
 import { BPMN_DOCUMENT_TYPE } from '../index';

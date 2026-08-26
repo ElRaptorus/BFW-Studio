@@ -1,8 +1,7 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { PREDEFINED_COLORS } from '#components/BpmnElementColorPicker';
+import type { BpmnElementColor } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
-
-import { PREDEFINED_COLORS } from '@evil/bifrost_fw_sdk';
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import type { BpmnElementColor } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 const noColor = {
   label: 'No Color',
@@ -13,7 +12,7 @@ const colors = [noColor, ...PREDEFINED_COLORS];
 
 class ColorContextPadProvider {
   static $inject = ['contextPad', 'modeling'];
-  private studio: Studio | null = null;
+  private studio: Bifrost | null = null;
 
   private contextPad: any;
   private modeling;
@@ -25,7 +24,7 @@ class ColorContextPadProvider {
     contextPad.registerProvider(this);
   }
 
-  setStudio(studio: Studio) {
+  setStudio(studio: Bifrost) {
     this.studio = studio;
   }
 

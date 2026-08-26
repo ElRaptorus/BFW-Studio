@@ -1,4 +1,4 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 export const EVENT_DIAGNOSTICS_CHANGED = 'EVENT_DIAGNOSTICS_CHANGED';
 

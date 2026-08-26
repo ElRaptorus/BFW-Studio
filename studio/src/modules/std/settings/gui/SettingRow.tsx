@@ -1,8 +1,9 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import equal from 'fast-deep-equal';
 
 import React from 'react';
 
-import type { SettingDescriptor, Studio } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
 import { resolveSettingEnum } from '@evil/bifrost_fw_sdk';
 
 import { ArrayControl } from './controls/ArrayControl';
@@ -15,7 +16,7 @@ import { ObjectControl } from './controls/ObjectControl';
 import { StringControl } from './controls/StringControl';
 
 type SettingRowProps = {
-  studio: Studio;
+  studio: Bifrost;
   settingKey: string;
   descriptor: SettingDescriptor;
   value: unknown;
@@ -62,7 +63,6 @@ export function SettingRow(props: SettingRowProps): React.JSX.Element {
         </div>
         <div className="settings-gui__row-boolean-control">
           <BooleanControl
-            studio={studio}
             settingKey={settingKey}
             value={value as boolean}
             onChange={(newValue) => studio.settings.set(settingKey, newValue)}
@@ -94,7 +94,7 @@ export function SettingRow(props: SettingRowProps): React.JSX.Element {
 }
 
 function renderControl(
-  studio: Studio,
+  studio: Bifrost,
   key: string,
   descriptor: Exclude<SettingDescriptor, { type: 'boolean' }>,
   value: unknown,

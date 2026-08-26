@@ -1,14 +1,13 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { PaneBody } from '#components/panes/PaneBody';
+import { buildSimplePropertyPaneProvider } from '#components/panes/PaneFunctions';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { EditorDocument, PaneComponentProps } from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  OpenInNewTabButton,
-  PaneBody,
-  PaneHeaderHelpIcon,
-  assertNotNull,
-  buildSimplePropertyPaneProvider,
-} from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import { KeyValueJsonEditor } from '../../../../../components/key-value-builder';
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';

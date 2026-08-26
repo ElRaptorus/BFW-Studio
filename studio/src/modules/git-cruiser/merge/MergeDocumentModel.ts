@@ -1,7 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
-
-import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
 
 import type { GitService } from '../GitService';
 import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED } from '../GitTypes';

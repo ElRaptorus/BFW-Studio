@@ -1,4 +1,4 @@
-import type { SymbolIndexStub } from '@evil/bifrost_fw_sdk/types/common';
+import type { SymbolIndexStub } from '../common/SymbolIndexStub';
 
 /**
  * A `SymbolIndexer` analyses a given document based on its given URI, type and data and breaks it down in indexer

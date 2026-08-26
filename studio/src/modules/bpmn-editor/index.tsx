@@ -1,10 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { SearchResult } from '#bifrost/contracts/internal/SearchTypes';
 import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import '@mdxeditor/editor/style.css';
 
 import React from 'react';
 
-import type { SearchResult } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
 import BpmnDocumentModel from './BpmnDocumentModel';
 import BpmnDocumentRenderer from './BpmnDocumentRenderer';
 import { BpmnSearchIndexerWorkerClient } from './browser/BpmnSearchIndexerWorkerClient';

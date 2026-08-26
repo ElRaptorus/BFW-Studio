@@ -1,4 +1,4 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 import type { Bifrost } from '../Bifrost';
 import { EVENT_CLOSE_NOTIFICATION, EVENT_OPEN_NOTIFICATION } from '../common/NotificationManager';

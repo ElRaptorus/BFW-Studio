@@ -70,24 +70,27 @@ bifrost.commands.executeCommand('bpmn.modeler.registerModule', {
 
 ## Modeler Adapter Access
 
-**SDK type:** `studio-sdk/types/bpmn/BpmnModelerComponentAdapter.ts`
+**Host type:** `studio/src/modules/bpmn-core/BpmnModelerComponentAdapter.ts`
 **Getter on:** `BpmnDocumentModel.modelerAdapter` (readonly)
 
-Modules retrieve their injected modules by name from the currently focused editor:
+Internal modules retrieve their injected services by name from the currently focused editor:
 
 ```typescript
-import type { BpmnDocumentModel } from '@evil/bifrost_fw_sdk';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
-const editorDocument = studio.editors.getFocusedEditorDocument();
-const model = studio.editors.getEditorDocumentModelIfPresent<BpmnDocumentModel>(editorDocument);
+const editorDocument = bifrost.editors.getFocusedEditorDocument();
+const model = bifrost.editors.getEditorDocumentModelIfPresent<BpmnDocumentModel>(editorDocument);
 const myService = model?.modelerAdapter.getModelerComponentByName<MyService>('myService');
 ```
 
-The SDK type exposes:
+The adapter exposes:
 
 - `getModelerComponentByName<T>(name: string): T` — retrieves a named diagram-js service
 - `isReadyForInteraction(): boolean` — whether the modeler has finished initializing
 - `onceInteractive(callbackFn: Function): void` — callback for post-initialization
+
+Plugin authors do **not** import the host adapter. They use `api.bpmn` (`studio-sdk/src/plugin-api/BpmnApi.ts`).
 
 ## Diagram-js Module Format
 
@@ -191,8 +194,8 @@ These menu restrictions are backstopped by the `bpmn-linter` rules `escalation-b
 | Registration command | `studio/src/modules/bpmn-core/index.tsx` |
 | Registry consumer | `studio/src/modules/bpmn-editor/BpmnDocumentModel.ts` (constructor) |
 | Adapter (spreads modules) | `studio/src/modules/bpmn-core/BpmnModelerComponentAdapter.ts` (constructor) |
-| SDK adapter type | `studio-sdk/types/bpmn/BpmnModelerComponentAdapter.ts` |
-| SDK model type | `studio-sdk/types/BpmnDocumentModel.ts` |
+| Document model | `studio/src/modules/bpmn-editor/BpmnDocumentModel.ts` (default export class) |
+| Plugin BPMN API | `studio-sdk/src/plugin-api/BpmnApi.ts` |
 | PluginModuleLoader | `studio/src/modules/bpmn-core/plugin-modules/PluginModuleLoader.ts` |
 | PluginChannel | `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts` |
 | PluginPaletteProvider | `studio/src/modules/bpmn-core/plugin-contributions/PluginPaletteProvider.ts` |

@@ -1,3 +1,18 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingErrorHint } from '#components/editor/EditorLoadingErrorHint';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleCenter } from '#components/editor/EditorTitleCenter';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import {
   BpmnViewerComponentAdapter,
   EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED,
@@ -9,23 +24,6 @@ import { ENGINE_COMMANDS, EngineContextBreadcrumb } from '#modules/engine-core';
 
 import React, { useEffect, useRef, useState } from 'react';
 
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorLoadingErrorHint,
-  EditorTitle,
-  EditorTitleCenter,
-  EditorTitleHeroIcon,
-  EditorTitleLeft,
-  EditorTitleText,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-} from '@evil/bifrost_fw_sdk';
-
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
 import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
@@ -34,7 +32,7 @@ import type { ModelViewerModelData, ModelViewerSelection } from '../types';
 import './../engine-model-viewer.scss';
 
 function ProcessExplorerBreadcrumb(props: {
-  studio: Studio;
+  studio: Bifrost;
   engineId: string;
   engineDisplayName: string;
   processModelId: string;
@@ -164,7 +162,7 @@ function SubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAdapter })
 
 export default function ModelViewerRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
-  const bifrost: Studio = studio;
+  const bifrost: Bifrost = studio;
   const model = useEditorModel<ModelViewerDocumentModel>(bifrost, editorDocument);
   const viewerContainerRef = useRef<HTMLDivElement>(null);
   const adapterRef = useRef<BpmnViewerComponentAdapter | null>(null);

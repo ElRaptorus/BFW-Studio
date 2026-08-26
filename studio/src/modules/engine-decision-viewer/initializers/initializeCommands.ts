@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
-
-import type { DialogOptions, EditorDocument } from '@evil/bifrost_fw_sdk';
 
 import { DECISION_VIEWER_COMMANDS } from '../commands/DecisionViewerCommands';
 import { downloadBlob, downloadTextFile } from '../helpers/downloadFile';

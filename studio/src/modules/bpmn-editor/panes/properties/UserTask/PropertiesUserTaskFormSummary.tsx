@@ -1,16 +1,15 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  Icon,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  assertNotNull,
-  getUrlForOpenInNewTab,
-} from '@evil/bifrost_fw_sdk';
-import type { FormAction, FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import React from 'react';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsUserTask } from '../../BpmnElementTypeAssertionFunctions';

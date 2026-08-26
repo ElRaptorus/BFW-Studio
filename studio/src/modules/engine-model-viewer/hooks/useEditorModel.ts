@@ -1,9 +1,11 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+
 import { useEffect, useState } from 'react';
 
-import type { EditorDocument, EditorDocumentModel, Studio } from '@evil/bifrost_fw_sdk';
-
 export function useEditorModel<T extends EditorDocumentModel>(
-  studio: Studio,
+  studio: Bifrost,
   editorDocument: EditorDocument,
 ): T | null {
   const [model, setModel] = useState<T | null>(() => studio.editors.getEditorDocumentModelIfPresent<T>(editorDocument));

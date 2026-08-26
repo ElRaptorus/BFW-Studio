@@ -1,11 +1,13 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { FileHandlingService } from '#bifrost/common/FileHandlingService';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Checkbox } from '#components/Checkbox';
+import { Icon } from '#components/Icon';
 import ProductNameHeadline from '#components/ProductNameHeadline';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React, { useEffect, useState } from 'react';
-
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import { Checkbox, Editor, EditorContent, Icon } from '@evil/bifrost_fw_sdk';
 
 import type { StartpageCardDescriptor } from '.';
 
@@ -157,7 +159,6 @@ export default function StartpageRenderer(props: EditorDocumentRendererProps): R
 
             <div className="startpage__footer">
               <Checkbox
-                studio={props.studio}
                 checked={openOnStartupValue}
                 onChange={(event) => changeOpenOnStartupValue(event)}
                 label="Show Welcome Page at startup"
@@ -200,7 +201,7 @@ function HeroCard({
   );
 }
 
-function RecentItems({ bifrost }: { bifrost: Studio }): React.JSX.Element {
+function RecentItems({ bifrost }: { bifrost: Bifrost }): React.JSX.Element {
   const bifrostInternal = Bifrost.cast(bifrost);
   const cmd = bifrost.commands.getClickHandler();
 
@@ -250,7 +251,7 @@ function RecentItems({ bifrost }: { bifrost: Studio }): React.JSX.Element {
   );
 }
 
-function RecentItemsEmptyState({ bifrost }: { bifrost: Studio }): React.JSX.Element {
+function RecentItemsEmptyState({ bifrost }: { bifrost: Bifrost }): React.JSX.Element {
   const cmd = bifrost.commands.getClickHandler();
 
   return (

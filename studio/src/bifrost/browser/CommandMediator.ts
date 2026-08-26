@@ -1,17 +1,14 @@
-import type { Debugger } from 'debug';
-import Debug from 'debug';
-
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type {
   Command,
   CommandCallbackFn,
   CommandContext,
   CommandRegistrationOptions,
   CommandResult,
-  DialogOptions,
-  DialogResult,
-  DialogValidationResult,
-} from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/CommandTypes';
+import type { DialogOptions, DialogResult, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
+import type { Debugger } from 'debug';
+import Debug from 'debug';
 
 import { CommandManager } from '../common/CommandManager';
 import type { DialogManager } from '../common/DialogManager';

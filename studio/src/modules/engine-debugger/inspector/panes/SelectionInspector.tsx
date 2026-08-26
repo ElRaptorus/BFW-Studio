@@ -1,7 +1,9 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
 
-import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import { MultiLineCodeEditor, OpenInNewTabButton } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs';
@@ -9,7 +11,7 @@ import type { FlowNode } from '../../libs';
 export type DebuggerSelectionInspectorProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function DebuggerSelectionInspector(props: DebuggerSelectionInspectorProps): React.JSX.Element {

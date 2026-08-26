@@ -1,12 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogContent } from '#bifrost/contracts/DialogTypes';
+import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
 import type { EngineConnectionManager, RetryContext } from '#modules/engine-core';
 import { ENGINE_COMMANDS, formatDeployErrorMessage } from '#modules/engine-core';
 import type { RetryRequest } from '@elraptorus/daemonengine_sdk';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { DialogContent, Menu, Studio } from '@evil/bifrost_fw_sdk';
-import { StandardDialogResponse } from '@evil/bifrost_fw_sdk';
+import type { Menu } from '@evil/bifrost_fw_sdk';
 
 import {
   openDecisionViewer,
@@ -672,7 +673,7 @@ const TIMER_SCHEDULES_FILTERABLE_COLUMNS: Record<string, string> = {
   kind: 'Kind',
 };
 
-export function buildProcessExplorerContextMenu(_studio: Studio, metadata: ProcessExplorerContextMetadata): Menu {
+export function buildProcessExplorerContextMenu(_studio: Bifrost, metadata: ProcessExplorerContextMetadata): Menu {
   const { engineId, processModel, columnId, cellValue } = metadata;
   const enabled = processModel.enabled ?? true;
   const bpmnId = processModel.processModelId ?? processModel.id;
@@ -746,7 +747,7 @@ export function buildProcessExplorerContextMenu(_studio: Studio, metadata: Proce
   ];
 }
 
-export function buildDecisionCatalogContextMenu(_studio: Studio, metadata: DecisionCatalogContextMetadata): Menu {
+export function buildDecisionCatalogContextMenu(_studio: Bifrost, metadata: DecisionCatalogContextMetadata): Menu {
   const { engineId, decision, columnId, cellValue } = metadata;
   const enabled = decision.enabled ?? true;
   const dmnId = decision.decisionDefinitionId ?? decision.id;
@@ -803,7 +804,7 @@ const FILTERABLE_COLUMN_LABELS: Record<string, string> = {
   businessKey: 'Business Key',
 };
 
-export function buildInstanceSearchContextMenu(_studio: Studio, metadata: InstanceSearchContextMetadata): Menu {
+export function buildInstanceSearchContextMenu(_studio: Bifrost, metadata: InstanceSearchContextMetadata): Menu {
   const { engineId, instance, columnId, cellValue } = metadata;
   const isRetryable = RETRYABLE_STATES.has(instance.state);
   const isRunning = instance.state === 'running';
@@ -893,7 +894,7 @@ export function buildInstanceSearchContextMenu(_studio: Studio, metadata: Instan
   ];
 }
 
-export function buildTimerSchedulesContextMenu(_studio: Studio, metadata: TimerSchedulesContextMetadata): Menu {
+export function buildTimerSchedulesContextMenu(_studio: Bifrost, metadata: TimerSchedulesContextMetadata): Menu {
   const { engineId, schedule, columnId, cellValue } = metadata;
   const enabled = schedule.enabled ?? true;
 
@@ -934,7 +935,7 @@ export function buildTimerSchedulesContextMenu(_studio: Studio, metadata: TimerS
   ];
 }
 
-export function buildTaskInboxContextMenu(_studio: Studio, metadata: TaskInboxContextMetadata): Menu {
+export function buildTaskInboxContextMenu(_studio: Bifrost, metadata: TaskInboxContextMetadata): Menu {
   const { engineId, task, columnId, cellValue } = metadata;
 
   const filterEntry: Menu =

@@ -1,11 +1,17 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneLoadingWrapper } from '#modules/engine-core';
 import { getHumanizedDateTime, getShortId } from '#modules/engine-core/Formatters';
 import Select from 'react-select';
 
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, SelectOption, Studio } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty, type SelectOption } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getShortMultiInstanceId } from '../../libs/formattersCompat';
@@ -15,7 +21,7 @@ import { shouldDisplayFlowNodeInstanceInfoPane } from '../ShouldBeDisplayedCondi
 type FlowNodeInstancePaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
   flowNode: FlowNode;
 };
 

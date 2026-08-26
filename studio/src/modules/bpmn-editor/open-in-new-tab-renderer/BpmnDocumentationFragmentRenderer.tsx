@@ -1,19 +1,18 @@
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { EVENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { MarkdownEditor } from '#components/MarkdownEditor';
+import type { MarkdownEditorAttributes } from '#components/MarkdownEditor';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
+
 import React, { useEffect, useRef, useState } from 'react';
 
-import type { AbstractSubscription, EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorToolbar,
-  EditorToolbarLeft,
-  EditorToolbarText,
-  MarkdownEditor,
-  assertNotNull,
-  parseOpenInNewTabUrl,
-} from '@evil/bifrost_fw_sdk';
-import type { MarkdownEditorAttributes } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_DATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import BpmnDocumentModel from '../BpmnDocumentModel';
 
 export default function BpmnDocumentationFragmentRenderer(

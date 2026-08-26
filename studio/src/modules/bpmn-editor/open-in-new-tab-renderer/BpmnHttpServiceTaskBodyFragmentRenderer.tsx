@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
+import React, { useRef } from 'react';
 
 import type BpmnDocumentModel from '../BpmnDocumentModel';
 import { BpmnFragmentRendererView } from './BpmnFragmentRendererView';

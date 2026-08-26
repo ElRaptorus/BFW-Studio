@@ -1,4 +1,4 @@
-import type { Studio } from '@evil/bifrost_fw_sdk';
+import type { Bifrost } from '#bifrost/Bifrost';
 
 import type { EngineConnectionManager } from '../EngineConnectionManager';
 import { AUTO_REFRESH_INTERVALS } from '../types';
@@ -6,7 +6,7 @@ import type { AutoRefreshInterval } from '../types';
 
 export class EventDrivenRefresh {
   private connectionManager: EngineConnectionManager;
-  private studio: Studio;
+  private studio: Bifrost;
   private settingsKey: string;
   private relevantEventTypes: string[];
   private onRefresh: () => void;
@@ -22,7 +22,7 @@ export class EventDrivenRefresh {
 
   constructor(options: {
     connectionManager: EngineConnectionManager;
-    studio: Studio;
+    studio: Bifrost;
     settingsKey: string;
     relevantEventTypes: string[];
     onRefresh: () => void;

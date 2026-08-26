@@ -1,16 +1,13 @@
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 import * as jsonComment from 'comment-json';
 
 import React from 'react';
-
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorToolbar,
-  EditorToolbarLeft,
-  EditorToolbarText,
-  MultiLineCodeEditor,
-} from '@evil/bifrost_fw_sdk';
 
 export default function KeyBindingsRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const keyBindings = props.studio.keybindings.getAllKeyBindings();

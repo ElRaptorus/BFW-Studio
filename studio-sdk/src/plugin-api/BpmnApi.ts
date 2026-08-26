@@ -1,3 +1,5 @@
+import type { Disposable } from './Disposable';
+
 // --- Overlay Position & Style enums ---
 
 export enum PluginBpmnOverlayPosition {
@@ -85,11 +87,91 @@ export interface PluginBpmnOverlayStatus {
 export type PluginBpmnOverlay =
   PluginBpmnOverlayBadge | PluginBpmnOverlayIcon | PluginBpmnOverlayAction | PluginBpmnOverlayStatus;
 
+/**
+ * Studio-semantic BPMN element types returned by `api.bpmn.getElement` /
+ * `getElements` and element events. These match `BpmnElement.type` on the
+ * typed document model (e.g. `'UserTask'`), not diagram-js QNames (`'bpmn:UserTask'`).
+ */
+export const PluginBpmnElementType = {
+  AdHocSubprocess: 'AdHocSubprocess',
+  BoundaryEvent: 'BoundaryEvent',
+  BusinessRuleTask: 'BusinessRuleTask',
+  CallActivity: 'CallActivity',
+  CancelBoundaryEvent: 'BoundaryEvent/Cancel',
+  CancelEndEvent: 'EndEvent/Cancel',
+  CompensationBoundaryEvent: 'BoundaryEvent/Compensation',
+  CompensationEndEvent: 'EndEvent/Compensation',
+  CompensationStartEvent: 'StartEvent/Compensation',
+  CompensationIntermediateThrowEvent: 'IntermediateThrowEvent/Compensation',
+  ComplexGateway: 'ComplexGateway',
+  ConditionalBoundaryEvent: 'BoundaryEvent/Conditional',
+  ConditionalFlow: 'SequenceFlow/Conditional',
+  ConditionalIntermediateCatchEvent: 'IntermediateCatchEvent/Conditional',
+  ConditionalStartEvent: 'StartEvent/Conditional',
+  Association: 'Association',
+  DataInputAssociation: 'DataInputAssociation',
+  DataObject: 'DataObject',
+  DataObjectReference: 'DataObjectReference',
+  DataOutputAssociation: 'DataOutputAssociation',
+  DataStore: 'DataStore',
+  DefaultFlow: 'DefaultFlow',
+  Definition: 'Definition',
+  EndEvent: 'EndEvent',
+  ErrorBoundaryEvent: 'BoundaryEvent/Error',
+  ErrorEndEvent: 'EndEvent/Error',
+  ErrorStartEvent: 'StartEvent/Error',
+  EscalationBoundaryEvent: 'BoundaryEvent/Escalation',
+  EscalationEndEvent: 'EndEvent/Escalation',
+  EscalationStartEvent: 'StartEvent/Escalation',
+  EscalationIntermediateThrowEvent: 'IntermediateThrowEvent/Escalation',
+  EventSubprocess: 'EventSubprocess',
+  EventBasedGateway: 'EventBasedGateway',
+  ExclusiveGateway: 'ExclusiveGateway',
+  Group: 'Group',
+  IntermediateEvent: 'IntermediateEvent',
+  LinkIntermediateCatchEvent: 'IntermediateCatchEvent/Link',
+  LinkIntermediateThrowEvent: 'IntermediateThrowEvent/Link',
+  ManualTask: 'ManualTask',
+  MessageBoundaryEvent: 'BoundaryEvent/Message',
+  MessageEndEvent: 'EndEvent/Message',
+  MessageFlow: 'MessageFlow',
+  MessageIntermediateCatchEvent: 'IntermediateCatchEvent/Message',
+  MessageIntermediateThrowEvent: 'IntermediateThrowEvent/Message',
+  MessageStartEvent: 'StartEvent/Message',
+  ParallelGateway: 'ParallelGateway',
+  Participant: 'Participant',
+  Process: 'Process',
+  ReceiveTask: 'ReceiveTask',
+  ScriptTask: 'ScriptTask',
+  SendTask: 'SendTask',
+  SequenceFlow: 'SequenceFlow',
+  ServiceTask: 'ServiceTask',
+  HttpServiceTask: 'ServiceTask/Http',
+  InclusiveGateway: 'InclusiveGateway',
+  SignalBoundaryEvent: 'BoundaryEvent/Signal',
+  SignalEndEvent: 'EndEvent/Signal',
+  SignalIntermediateCatchEvent: 'IntermediateCatchEvent/Signal',
+  SignalIntermediateThrowEvent: 'IntermediateThrowEvent/Signal',
+  SignalStartEvent: 'StartEvent/Signal',
+  StartEvent: 'StartEvent',
+  Subprocess: 'Subprocess',
+  TerminateEndEvent: 'EndEvent/Terminate',
+  TextAnnotation: 'TextAnnotation',
+  TimerBoundaryEvent: 'BoundaryEvent/Timer',
+  TimerIntermediateEvent: 'IntermediateEvent/Timer',
+  TimerStartEvent: 'StartEvent/Timer',
+  Transaction: 'Transaction',
+  UntypedTask: 'UntypedTask',
+  UserTask: 'UserTask',
+} as const;
+
+export type PluginBpmnElementType = (typeof PluginBpmnElementType)[keyof typeof PluginBpmnElementType];
+
 // --- Event types ---
 
 export interface BpmnElementEvent {
   elementId: string;
-  elementType: string;
+  elementType: PluginBpmnElementType | '';
   elementName: string | null;
 }
 
@@ -102,7 +184,7 @@ export interface OverlayContextEvent {
 
 export interface BpmnElementSnapshot {
   id: string;
-  type: string;
+  type: PluginBpmnElementType;
   name: string | null;
   parentId: string | null;
 }
@@ -204,37 +286,22 @@ export interface BpmnApi {
   clearOverlays(uri: string, filter?: { elementId?: string }): Promise<void>;
 
   /** Subscribe to element selection changes in the given BPMN document. */
-  onElementSelected(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element selection changes. */
-  offElementSelected(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
+  onElementSelected(uri: string, callback: (event: BpmnElementEvent) => void): Promise<Disposable>;
 
   /** Subscribe to element hover events in the given BPMN document. */
-  onElementHover(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element hover events. */
-  offElementHover(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
+  onElementHover(uri: string, callback: (event: BpmnElementEvent) => void): Promise<Disposable>;
 
   /** Subscribe to element double-click events in the given BPMN document. */
-  onElementDoubleClick(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element double-click events. */
-  offElementDoubleClick(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
+  onElementDoubleClick(uri: string, callback: (event: BpmnElementEvent) => void): Promise<Disposable>;
 
   /** Subscribe to element context menu events in the given BPMN document. */
-  onElementContextMenu(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element context menu events. */
-  offElementContextMenu(uri: string, callback: (event: BpmnElementEvent) => void): Promise<void>;
+  onElementContextMenu(uri: string, callback: (event: BpmnElementEvent) => void): Promise<Disposable>;
 
   /**
    * Subscribe to overlay context changes. Fires when a plugin should
    * refresh its overlays (data update, selection change, document opened).
    */
-  onOverlayContextChanged(uri: string, callback: (event: OverlayContextEvent) => void): Promise<void>;
-
-  /** Unsubscribe from overlay context changes. */
-  offOverlayContextChanged(uri: string, callback: (event: OverlayContextEvent) => void): Promise<void>;
+  onOverlayContextChanged(uri: string, callback: (event: OverlayContextEvent) => void): Promise<Disposable>;
 
   /** Get all elements in the given BPMN document. */
   getElements(uri: string): Promise<BpmnElementSnapshot[]>;
@@ -270,7 +337,7 @@ export interface BpmnApi {
   registerOverlayFactory(
     factory: (context: OverlayFactoryContext) => BpmnOverlayDescriptor[],
     options?: OverlayFactoryOptions,
-  ): Promise<{ dispose: () => void }>;
+  ): Promise<Disposable>;
 
   /**
    * Register a palette entry at runtime. Requires 'bpmn.modelling' permission.
@@ -326,9 +393,7 @@ export interface BpmnApi {
   readonly modeling: BpmnModelingApi;
 }
 
-export interface Disposable {
-  dispose(): void;
-}
+export type { Disposable } from './Disposable';
 
 // ─── Palette & Context Pad types ────────────────────────────────────────────
 

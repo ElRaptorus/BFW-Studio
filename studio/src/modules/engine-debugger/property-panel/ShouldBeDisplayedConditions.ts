@@ -1,8 +1,7 @@
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import { EventDefinitionType, FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
-
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
 
 import { ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';

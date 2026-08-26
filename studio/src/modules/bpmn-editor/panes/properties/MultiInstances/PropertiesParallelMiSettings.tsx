@@ -1,8 +1,15 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { LoopCharacteristics } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon, PaneProperty, assertNotNull } from '@evil/bifrost_fw_sdk';
-import { LoopCharacteristics } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { getLoopCharacteristicType, isActivityType } from '../../PropertiesPaneFunctions';

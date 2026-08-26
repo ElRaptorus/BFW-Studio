@@ -1,17 +1,19 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { LabelWithFeelExpressionHint } from '#components/FeelExpressionHint';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElement_TimerBoundaryEvent } from '#modules/bpmn-editor/BpmnElementTypes';
+import { BpmnTimerType } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, SelectOption, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  LabelWithFeelExpressionHint,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-} from '@evil/bifrost_fw_sdk';
-import type { BpmnElement_TimerBoundaryEvent } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { BpmnTimerType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import type { SelectOption } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsTimerBoundaryEvent } from '../../BpmnElementTypeAssertionFunctions';
@@ -35,7 +37,7 @@ type TimerBoundaryEventDefinitionProps = {
   element: BpmnElement_TimerBoundaryEvent;
   onChange: (value: string) => void;
   cmd: (commandName: string, commandArgs?: any[]) => (event: any) => void;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 type DefinitionPropertyProps = TimerBoundaryEventDefinitionProps & {

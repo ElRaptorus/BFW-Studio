@@ -1,13 +1,16 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { ContextMenuState } from '#components/ContextMenuStore';
+import { ContextMenuStore } from '#components/ContextMenuStore';
+
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import type { ContextMenuState, Menu, Studio } from '@evil/bifrost_fw_sdk';
-import { ContextMenuStore } from '@evil/bifrost_fw_sdk';
+import type { Menu } from '@evil/bifrost_fw_sdk';
 
 import { renderBifrostMenu } from './ContextMenu';
 import { ErrorBoundaryWithMessage } from './ErrorBoundaryWithMessage';
 
 type ContextMenuPortalProps = {
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function ContextMenuPortal({ studio }: ContextMenuPortalProps): React.JSX.Element | null {
@@ -37,7 +40,7 @@ export function ContextMenuPortal({ studio }: ContextMenuPortalProps): React.JSX
 }
 
 type PositionedMenuProps = {
-  studio: Studio;
+  studio: Bifrost;
   x: number;
   y: number;
   menuId: string;

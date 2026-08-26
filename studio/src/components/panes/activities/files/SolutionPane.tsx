@@ -1,18 +1,19 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
 import { useScrollPositionManager } from '#components/ScrollPositionManager';
+import { NATIVE_FILE_TYPE } from '#components/Tree/HeadlessTreeItem';
+import { Tree } from '#components/Tree/Tree';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
 import { useDrop } from 'react-dnd';
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import type {
-  EditorDocument,
-  EditorDocumentModel,
-  PaneComponentProps,
-  PaneProvider,
-  Studio,
-  TreeViewMediator,
-} from '@evil/bifrost_fw_sdk';
-import { Icon, NATIVE_FILE_TYPE, Pane, PaneHeader, PaneHeaderIcon, Tree } from '@evil/bifrost_fw_sdk';
+import { Icon } from '../../../Icon';
 
 const GET_PATHS_COMMAND = 'std.internal.getPathsFromFiles';
 
@@ -43,7 +44,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 export function getPaneTitle(
   editorDocument: EditorDocument,
   editorDocumentModel: EditorDocumentModel,
-  studio: Studio,
+  studio: Bifrost,
 ): string {
   const solution = Bifrost.cast(studio).fileExplorerView.getViewData().solution;
   const solutionName = solution ? solution.label : 'Explorer';

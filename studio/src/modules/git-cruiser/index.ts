@@ -1,8 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { EVENT_EDITOR_DOCUMENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 
 import React from 'react';
 
-import { EVENT_EDITOR_DOCUMENT_DATA_UPDATED } from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { GitService } from './GitService';
 import { MERGE_URI } from './GitTypes';
 import { loadProjectConfig } from './config/ProjectConfig';

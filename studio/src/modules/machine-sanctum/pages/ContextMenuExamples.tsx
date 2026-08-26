@@ -1,10 +1,10 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import { renderBifrostMenu } from '#components/ContextMenu';
+import { showContextMenu } from '#components/ContextMenuFunctions';
 import { ErrorBoundary } from '#components/ErrorBoundary';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React, { Fragment } from 'react';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EditorContent, showContextMenu } from '@evil/bifrost_fw_sdk';
 
 import type { MachineSanctumExample } from '../contracts/MachineSanctumTypes';
 
@@ -15,7 +15,7 @@ type ContextMenuExampleData = {
 
 type ContextMenuExample = MachineSanctumExample<ContextMenuExampleData>;
 type ContextMenuExampleProps = {
-  bifrost: Studio;
+  bifrost: Bifrost;
   title?: string;
   data: ContextMenuExampleData;
 };

@@ -1,33 +1,22 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import type { TreeBadge, TreeItem } from '#bifrost/contracts/TreeTypes';
+import { Icon } from '#components/Icon';
+import { Tree } from '#components/Tree/Tree';
+import { Pane } from '#components/panes/Pane';
+import { PaneActionBar, PaneActionButton } from '#components/panes/PaneActionBar';
+import { PaneActionSplitButton } from '#components/panes/PaneActionSplitButton';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
+import { PaneInfoBar, PaneInfoBarAction, PaneInfoBarItem } from '#components/panes/PaneInfoBar';
 import * as path from 'path';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type {
-  EditorDocument,
-  EditorDocumentModel,
-  PaneComponentProps,
-  PaneProvider,
-  SelectOption,
-  Studio,
-  TreeBadge,
-  TreeItem,
-} from '@evil/bifrost_fw_sdk';
-import {
-  Icon,
-  Pane,
-  PaneActionBar,
-  PaneActionButton,
-  PaneActionSplitButton,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderIcon,
-  PaneInfoBar,
-  PaneInfoBarAction,
-  PaneInfoBarItem,
-  PaneProperty,
-  Tree,
-} from '@evil/bifrost_fw_sdk';
+import { PaneProperty, type SelectOption } from '@evil/bifrost_fw_sdk';
 
 import type { GitService } from '../GitService';
 import type { GitFileStatus, GitRepoState } from '../GitTypes';
@@ -45,7 +34,7 @@ export const paneProvider: PaneProvider = {
 function getPaneTitle(
   _editorDocument: EditorDocument,
   _editorDocumentModel: EditorDocumentModel,
-  _studio: Studio,
+  _studio: Bifrost,
 ): string {
   return 'Source Control';
 }

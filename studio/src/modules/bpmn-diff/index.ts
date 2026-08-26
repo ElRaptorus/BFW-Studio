@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
-import { assertNotNull, getUrlForOpenInNewTab, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { getUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 import { extractProcessName, slugify } from '../bpmn-core/bpmnProcessUtils';
 import {

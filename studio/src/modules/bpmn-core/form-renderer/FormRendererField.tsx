@@ -1,6 +1,6 @@
-import React from 'react';
+import type { FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import React from 'react';
 
 type FormRendererFieldProps = {
   field: FormFieldDefinition;

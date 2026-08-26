@@ -1,8 +1,7 @@
+import type { FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
 import { useDrag, useDrop } from 'react-dnd';
 
 import React, { useCallback, useRef } from 'react';
-
-import type { FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import './FormCanvas.scss';
 import { FormCanvasItem } from './FormCanvasItem';

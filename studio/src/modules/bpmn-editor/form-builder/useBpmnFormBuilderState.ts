@@ -1,12 +1,11 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { EVENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import { parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
-import type { FormAction, FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-
-import { EVENT_DATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import BpmnDocumentModel from '../BpmnDocumentModel';
 import { FormBuilderEditorMediator } from './FormBuilderEditorMediator';
 import type { FormBuilderSelection } from './FormBuilderEditorMediator';

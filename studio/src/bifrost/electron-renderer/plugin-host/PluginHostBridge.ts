@@ -1,9 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { EVENT_DIAGNOSTICS_CHANGED } from '#bifrost/common/DiagnosticsManager';
+import type { WatcherDisposable } from '#bifrost/common/FileHandlingService';
 import { insertAfterMenuBarItem, insertBeforeMenuBarItem } from '#bifrost/common/MenuBarModifierFunctions';
 import { EVENT_SOLUTION_CHANGED } from '#bifrost/common/SolutionManager';
 import { canAccessCommand, checkCommandAccess } from '#bifrost/common/plugin-host/permissions/CommandDenylist';
 import { PermissionDeniedError, PermissionGate } from '#bifrost/common/plugin-host/permissions/PermissionGate';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import {
   type ApiRequestPayload,
   type CallbackInvocationPayload,
@@ -11,18 +14,16 @@ import {
   type RegisterCallbackPayload,
 } from '#bifrost/contracts/PluginHostProtocol';
 import type { ProgressHandle, StatusBarItem, StatusBarItemArea } from '#bifrost/contracts/StatusBarTypes';
+import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
 import type { PluginIframeManager } from '#components/webview/PluginIframeManager';
 import { ipcRenderer } from 'electron';
 import { promises as fsPromises } from 'fs';
 import os from 'os';
 import path from 'path';
 
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
-import type { AbstractSubscription, Menu, MenuItem } from '@evil/bifrost_fw_sdk';
-import type { WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
+import type { Menu, MenuItem } from '@evil/bifrost_fw_sdk';
 
-import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import { EVENT_SETTINGS_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/SettingsEvents';
 import { BpmnApiBridge } from './BpmnApiBridge';
 import { DmnApiBridge } from './DmnApiBridge';
 import { createIframeDocumentRendererConstructor } from './IframeDocumentRenderer';

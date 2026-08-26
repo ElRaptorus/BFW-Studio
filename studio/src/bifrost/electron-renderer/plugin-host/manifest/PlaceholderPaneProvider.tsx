@@ -1,9 +1,9 @@
 import type { ManifestPaneContribution } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
+import type { PaneComponentProps, PaneProvider, PaneProviderModule } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 
 import React from 'react';
-
-import type { PaneComponentProps, PaneProvider, PaneProviderModule } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader } from '@evil/bifrost_fw_sdk';
 
 interface PlaceholderPaneProviderContext {
   pluginName: string;

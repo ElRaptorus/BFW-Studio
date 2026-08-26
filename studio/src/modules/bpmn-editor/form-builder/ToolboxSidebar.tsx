@@ -1,7 +1,7 @@
-import React from 'react';
+import type { FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
+import { FormActionPreset } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { FormFieldType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { FormActionPreset } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import React from 'react';
 
 import './ToolboxSidebar.scss';
 import { FIELD_TYPE_DESCRIPTORS, createDefaultAction, createDefaultField } from './constants';

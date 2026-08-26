@@ -1,10 +1,10 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import ProductNameHeadline from '#components/ProductNameHeadline';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React from 'react';
-
-import type { EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import { Editor, EditorContent } from '@evil/bifrost_fw_sdk';
 
 import * as BuildInfo from '../../../generatedBuildAndProductInfo';
 

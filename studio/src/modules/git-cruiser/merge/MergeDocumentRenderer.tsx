@@ -1,28 +1,26 @@
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import type { MergeResolverProps } from '#bifrost/contracts/MergeTypes';
+import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { Checkbox } from '#components/Checkbox';
+import { DiffEditor } from '#components/DiffEditor';
+import { Icon } from '#components/Icon';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingError } from '#components/editor/EditorLoadingError';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
 
 import React from 'react';
 
-import type { EditorDocumentRendererProps, MergeResolverProps } from '@evil/bifrost_fw_sdk';
-import {
-  Checkbox,
-  DiffEditor,
-  Editor,
-  EditorContent,
-  EditorLoadingError,
-  EditorTitle,
-  EditorTitleLeft,
-  EditorTitleText,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarRight,
-  Icon,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
-
-import type { AbstractSubscription } from '../../../../../studio-sdk';
-import { EVENT_METADATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED, type MergeConflictKind } from '../GitTypes';
 import type MergeDocumentModel from './MergeDocumentModel';
 import { getLanguageForFile } from './MergeDocumentModel';
@@ -319,7 +317,6 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
         </EditorToolbarCenter>
         <EditorToolbarRight>
           <Checkbox
-            studio={bifrost}
             label="Include non-BPMN files"
             checked={this.state.includeNonBpmn}
             onChange={this.handleIncludeNonBpmnToggle}
@@ -406,8 +403,8 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
             <div className="bpmn-merge__text-viewer">
               <div className="diff-title diff-title--ours">{oursLabel}</div>
               <DiffEditor
-                ref={this.diffEditorRef}
                 studio={this.props.studio}
+                ref={this.diffEditorRef}
                 beforeValue={survivingContent}
                 afterValue={survivingContent}
                 language={language}
@@ -425,8 +422,8 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
             <div className="bpmn-merge__text-viewer">
               <div className="diff-title diff-title--theirs">{theirsLabel}</div>
               <DiffEditor
-                ref={this.diffEditorRef}
                 studio={this.props.studio}
+                ref={this.diffEditorRef}
                 beforeValue={survivingContent}
                 afterValue={survivingContent}
                 language={language}
@@ -442,8 +439,8 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
     return (
       <div className="bpmn-merge__text-diff" data-test--bpmn-merge-text-diff>
         <DiffEditor
-          ref={this.diffEditorRef}
           studio={this.props.studio}
+          ref={this.diffEditorRef}
           beforeValue={this.model.textOurs ?? ''}
           afterValue={this.model.textTheirs ?? ''}
           language={language}

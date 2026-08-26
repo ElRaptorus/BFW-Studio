@@ -1,8 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-
-import type { PluginInfo } from '@evil/bifrost_fw_sdk';
 
 import { usePluginLogo } from './usePluginLogo';
 

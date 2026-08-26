@@ -1,9 +1,6 @@
-import { EVENT_INDEX_UPDATED } from '../../../../studio-sdk/src/contracts/internal/SearchEvents';
-import type {
-  ISearchIndexerClient,
-  SearchQuery,
-  SearchResult,
-} from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
+import { EVENT_INDEX_UPDATED } from '#bifrost/contracts/internal/SearchEvents';
+import type { ISearchIndexerClient, SearchQuery, SearchResult } from '#bifrost/contracts/internal/SearchTypes';
+
 import { SearchIndexStub } from '../common/SearchIndexStub';
 import { SearchIndexWorkerClient } from './SearchIndexWorkerClient';
 

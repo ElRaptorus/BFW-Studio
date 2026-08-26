@@ -1,10 +1,9 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { DialogManager } from '#bifrost/common/DialogManager';
+import type { DialogOptions, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
 import { convertCanvasToImageBuffer, getSvgSize } from '#modules/bpmn-core/SvgExportFunctions';
 import BpmnViewer from 'bpmn-js/lib/Viewer';
 import html2canvas from 'html2canvas';
-
-import type { DialogOptions, DialogValidationResult } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 

@@ -49,12 +49,13 @@
     "test": "npm run test:integration",
     "test:unit": "vitest run test/unit/",
     "test:integration": "npm run test:integration:all",
-    "test:integration:all": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/ --bail 1 --retry 1 --no-file-parallelism",
+    "test:integration:all": "npm run build:plugin-fixtures && cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:bpmn-editor": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/bpmn-editor/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:dmn-editor": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/dmn-editor/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:core": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/studio-core/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:git-cruiser": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/git-cruiser/ --bail 1 --retry 1 --no-file-parallelism",
-    "test:integration:plugins": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/plugins/ --bail 1 --retry 1 --no-file-parallelism",
+    "build:plugin-fixtures": "node test/fixtures/plugins/build-ts-fixtures.mjs",
+    "test:integration:plugins": "npm run build:plugin-fixtures && cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/plugins/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:smoke": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/studio-core/studio-smoke.test.ts --bail 1 --retry 1 --no-file-parallelism",
     "test-prod:electron": "cross-env BIFROST_TEST_TYPING_PAUSE=70 tsx test/RunTestOnElectronProdBuild.ts"
   },
@@ -75,7 +76,7 @@
     "@headless-tree/react": "^1.7.0",
     "@json2csv/node": "7.0.8",
     "@lezer/highlight": "^1.2.3",
-    "@mdxeditor/editor": "^4.2.1",
+    "@mdxeditor/editor": "^4.2.2",
     "@monaco-editor/react": "^4.7.0",
     "@phosphor-icons/web": "^2.1.2",
     "@rspack/cli": "^2.1.10",
@@ -112,6 +113,7 @@
     "fuse.js": "^7.5.0",
     "globals": "^17.11.0",
     "html2canvas": "^1.4.1",
+    "jaro-winkler": "^0.2.8",
     "json5": "^2.2.3",
     "lodash.debounce": "^4.0.8",
     "markdown-image-loader": "^3.0.1",
@@ -145,6 +147,7 @@
     "monaco-editor": {
       "dompurify": "$dompurify"
     },
-    "@wdio/native-utils": "^2.5.0"
+    "@wdio/native-utils": "^2.5.0",
+    "deepmerge-ts": "^8.0.0"
   }
 }

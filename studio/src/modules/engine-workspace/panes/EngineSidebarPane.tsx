@@ -1,10 +1,15 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import type { TreeBadge, TreeItem } from '#bifrost/contracts/TreeTypes';
+import { Icon } from '#components/Icon';
+import { Tree } from '#components/Tree/Tree';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
 import type { EngineConnection, EngineConnectionManager } from '#modules/engine-core';
 import { ENGINE_COMMANDS } from '#modules/engine-core';
 
 import React, { useEffect, useState } from 'react';
-
-import type { PaneComponentProps, PaneProvider, Studio, TreeBadge, TreeItem } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneHeader, PaneHeaderIcon, Tree } from '@evil/bifrost_fw_sdk';
 
 import { TASK_INBOX_PENDING_COUNTS_KEY } from '../constants/sharedResourceKeys';
 
@@ -42,7 +47,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
-  const bifrost: Studio = props.studio;
+  const bifrost: Bifrost = props.studio;
   const connectionManager = bifrost.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
 
   const computeRecentUrls = React.useCallback((): string[] => {

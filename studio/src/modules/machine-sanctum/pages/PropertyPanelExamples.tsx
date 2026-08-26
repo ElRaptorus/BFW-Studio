@@ -1,6 +1,6 @@
-import React, { Fragment } from 'react';
+import { EditorContent } from '#components/editor/EditorContent';
 
-import { EditorContent } from '@evil/bifrost_fw_sdk';
+import React, { Fragment } from 'react';
 
 import { PropertyPanelExampleRenderer } from './PropertyPanelExampleRenderer';
 

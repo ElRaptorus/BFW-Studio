@@ -1,21 +1,22 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
+
 import React, { useCallback, useRef } from 'react';
 
-import type { EditorDocument, FeelEditorVariable, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorToolbar,
-  EditorToolbarLeft,
-  EditorToolbarText,
-  MultiLineCodeEditor,
-} from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
 
 import { FeelSimulatorEditor } from '../../../components/feel-simulator';
 import type { FeelSimulatorEditorRef } from '../../../components/feel-simulator';
 import type { BpmnFragmentRendererConfig, FragmentEditorRef } from './useBpmnFragmentRenderer';
 
 type BpmnFragmentRendererViewProps = {
-  bifrost: Studio;
+  bifrost: Bifrost;
   config: BpmnFragmentRendererConfig;
   fragmentId: string;
   fragmentName: string | null;

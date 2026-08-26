@@ -291,14 +291,14 @@ function createPluginApi(): Record<string, unknown> {
       ): Promise<{ dispose: () => void }> {
         return commandsCallbackApi.register('register', [id, options ?? {}], callback);
       },
-      executeCommand(commandId: string, ...args: unknown[]): Promise<unknown> {
-        return sendApiRequest('commands', 'executeCommand', [commandId, ...args]);
+      executeCommand(commandId: string, commandArgs?: unknown[]): Promise<unknown> {
+        return sendApiRequest('commands', 'executeCommand', [commandId, commandArgs]);
       },
-      tryToExecuteCommand(commandId: string, ...args: unknown[]): Promise<unknown> {
-        return sendApiRequest('commands', 'tryToExecuteCommand', [commandId, ...args]);
+      tryToExecuteCommand(commandId: string, commandArgs?: unknown[]): Promise<unknown> {
+        return sendApiRequest('commands', 'tryToExecuteCommand', [commandId, commandArgs]);
       },
-      isCommandEnabled(commandId: string, ...args: unknown[]): Promise<unknown> {
-        return sendApiRequest('commands', 'isCommandEnabled', [commandId, ...args]);
+      isCommandEnabled(commandId: string, commandArgs?: unknown[]): Promise<unknown> {
+        return sendApiRequest('commands', 'isCommandEnabled', [commandId, commandArgs]);
       },
       isRegistered(commandId: string): Promise<unknown> {
         return sendApiRequest('commands', 'isRegistered', [commandId]);

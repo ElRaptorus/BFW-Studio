@@ -1,23 +1,18 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { LabelWithFeelExpressionHint } from '#components/FeelExpressionHint';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React, { useEffect, useState } from 'react';
 
-import type {
-  BpmnDocumentModel,
-  EditorDocument,
-  FeelEditorVariable,
-  PaneComponentProps,
-  PaneProvider,
-} from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  LabelWithFeelExpressionHint,
-  OneLineFeelEditor,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import { OneLineFeelEditor, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import { assertBpmnElementIsUserTask } from '../../BpmnElementTypeAssertionFunctions';
 import {
@@ -109,7 +104,6 @@ function PropertiesUserTask(props: PaneComponentProps): React.JSX.Element {
           <LabelWithFeelExpressionHint studio={props.studio} label="Due Date" />
         </label>
         <OneLineFeelEditor
-          studio={props.studio}
           initialValue={element.dueDate ?? ''}
           onChange={(value: string) => changeDueDate(value)}
           variables={feelVariables}

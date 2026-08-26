@@ -6,6 +6,16 @@ Each entry follows the format: what goes wrong, why it happens, and the correct 
 
 ---
 
+## Never import `Studio` from the SDK inside `studio/src/`
+
+**Mistake**: `import type { Studio } from '@evil/bifrost_fw_sdk'` (or any remaining `Studio` class) in Studio source, internalized chrome, or document models.
+
+**Why it fails**: The SDK `Studio` class was a stale shadow of the host facade and has been removed. Internal modules are compiled into the Studio bundle; they already have `Bifrost`. Using a second type desyncs constructors, events, and mediator APIs.
+
+**Correct approach**: Internal code uses `import type { Bifrost } from '#bifrost/Bifrost'`. Prop and parameter **names** may stay `studio`. Plugin code (fixtures, third-party packages) uses `StudioPluginApi` from `@evil/bifrost_fw_sdk`, never `Bifrost`.
+
+---
+
 ## BPMN moddle: `extends` on extension payload types
 
 **Mistake**: Declaring a custom type that lives under `<bpmn:extensionElements>` with `"extends": ["bpmn:ExtensionElements"]` (alongside `superClass: ["Element"]`).
@@ -215,7 +225,7 @@ async (editorDocument: import('@evil/bifrost_fw_sdk').EditorDocument) => { ... }
 **Correct approach**: Always place imports at the top of the file. Use `import type` for type-only imports:
 
 ```typescript
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 // ... later in the file:
 async (editorDocument: EditorDocument) => { ... }
@@ -504,7 +514,7 @@ adapter.onceInteractive(() => {
 **Correct**:
 
 ```typescript
-import { BpmnServiceTaskImplementation } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import { BpmnServiceTaskImplementation } from '#modules/bpmn-editor/BpmnElementTypes';
 
 function isHttpServiceTask(element: ElementLike): boolean {
   return element.businessObject?.get('implementation') === BpmnServiceTaskImplementation.Http;
@@ -915,19 +925,19 @@ The `update(elementId)` method follows the same pattern for single-element updat
 
 ---
 
-### SDK type declarations must match implementation enum values exactly
+### Plugin identification types must match host enum values exactly
 
 **Severity**: Critical (runtime type mismatch for plugin authors)
 
-The SDK type declarations in `studio-sdk/types/dmn/` are ambient declarations (`declare class`) that define the public API surface visible to plugin authors. If enum values or type shapes in the SDK diverge from the actual implementation, plugin code will compile against the SDK but fail at runtime.
+Plugin authors identify BPMN/DMN elements through `PluginBpmnElementType` and `PluginDmnElementType` in `studio-sdk/src/plugin-api/` (`BpmnApi.ts`, `DmnApi.ts`). The host typed models live in `studio/src/modules/bpmn-editor/` and `studio/src/modules/dmn-editor/`. If plugin enum values diverge from the host implementation, plugin code compiles against the SDK but snapshot comparisons fail at runtime. There are no ambient `declare class` mirrors in `studio-sdk/types/` anymore.
 
-**Example of the bug (fixed 2026-06-03)**: `DmnElementType.Decision` was declared as `'Decision'` in the SDK but the implementation used `'dmn:Decision'` (moddle-prefixed). Plugin code comparing `element.type === DmnElementType.Decision` would always be `false`.
+**Example of the bug (fixed 2026-06-03)**: `DmnElementType.Decision` was declared as `'Decision'` in the old SDK ambient types but the implementation used `'dmn:Decision'` (moddle-prefixed). Plugin code comparing `element.type === DmnElementType.Decision` would always be `false`. `PluginDmnElementType.Decision` is now `'dmn:Decision'`, matching `studio/src/modules/dmn-editor/DmnElementTypes.ts`. BPMN plugin types use Studio-semantic strings (`'UserTask'`), not diagram-js QNames.
 
 **Prevention rules**:
-1. SDK enum values must be copied verbatim from the implementation source (e.g. `studio/src/modules/dmn-editor/DmnElementTypes.ts`)
-2. SDK method signatures must only declare methods that actually exist on the implementation class
-3. When adding new SDK types, verify the method exists in the implementation before declaring it
-4. The SDK build step (`tsc` in `studio-sdk/`) does **not** catch these mismatches because `declare class` is ambient — only runtime testing reveals the gap
+1. Plugin enum values must be copied verbatim from the host source they are meant to match (or, for BPMN, from the snapshot mapper in the plugin host bridge)
+2. Plugin API method signatures must only declare methods the bridge actually implements
+3. When adding new plugin types, verify the host implementation before publishing the SDK contract
+4. `studio/test/unit/plugin-host/pluginElementSnapshots.test.ts` asserts `PluginBpmnElementType` / `PluginDmnElementType` stay aligned with the host vocabulary
 
 ---
 
@@ -1145,7 +1155,7 @@ Note: You also cannot `await` the activations directly inside `discoverAndLoadPl
 
 **Symptom**: `DataCloneError: <function> could not be cloned` — a function ends up in a `port.postMessage()` call because the old compiled code passes it as part of an argument object.
 
-**Correct approach**: After editing a TypeScript fixture plugin, run `npx tsc --project tsconfig.json` in the plugin directory to regenerate `dist/index.js`. If the user copies plugins to a custom directory, they must re-copy after recompilation.
+**Correct approach**: After editing a TypeScript fixture plugin, run `npm run build:plugin-fixtures` from `studio/` (or `npx tsc --project tsconfig.json` in the plugin directory plus `node build.mjs` in `webview/`) to regenerate `dist/index.js` and the iframe bundles. `npm run test:integration:plugins` and `npm run test:integration:all` run `build:plugin-fixtures` first so a missing `dist/` cannot silently skip activation. If the user copies plugins to a custom directory, they must re-copy after recompilation.
 
 ---
 
@@ -1334,7 +1344,7 @@ The `selectionRevision` counter in metadata acts as a lightweight re-render trig
 
 **Root cause:** `EditorAreaManager.closeEditorDocument()` iterates ALL open tabs with `fragment+` URIs and calls `parseOpenInNewTabUrl()` on each. That function requires a `fragmentId` key in the hash fragment. If any tab uses `fragment+` in its URI scheme but hand-builds the URI without `fragmentId`, the parse throws and the entire editor area crashes — including the ability to close tabs.
 
-**Correct approach:** Always use `getUrlForOpenInNewTab(type, parentUri, fragmentId, additionalData)` from the SDK to build fragment URIs. Never hand-build strings with the `fragment+` prefix. The `fragmentId` and `parentUri` are mandatory for the fragment lifecycle management (close parent → close children, rename propagation).
+**Correct approach:** Always use `getUrlForOpenInNewTab(type, parentUri, fragmentId, additionalData)` from `#bifrost/common/OpenInNewTabUrl` to build fragment URIs. Never hand-build strings with the `fragment+` prefix. The `fragmentId` and `parentUri` are mandatory for the fragment lifecycle management (close parent → close children, rename propagation).
 
 **Defense layers:**
 1. **Gate at open time** — `EditorMediator.doFocusOrOpenEditorDocument()` validates all `fragment+` URIs via `parseOpenInNewTabUrl()` before creating a new editor document. If parsing fails, the document is rejected and a **user-visible error notification** is pushed. The malformed document never enters the editor area.
@@ -1557,7 +1567,7 @@ The `async`/`await` inside the page matters for a second reason: `bifrost.comman
 
 **Why it happens**: monaco-editor 0.53 moved the language-feature namespaces from `monaco.languages.<feature>` to the module root — `monaco.typescript`, `monaco.json`, `monaco.css`, `monaco.html`. The old properties still appear in `monaco.d.ts` as `{ deprecated: true }` declarations, so TypeScript keeps compiling code that reads them, but nothing assigns them at runtime: `monaco.languages.typescript` is plain `undefined`. The mistake is easy to keep alive because the callsites need a cast anyway — `@monaco-editor/react` types its mount argument as the bare editor API (`monaco-editor/esm/vs/editor/editor.api`), which carries no feature namespaces at all even though the configured instance does.
 
-**Correct approach**: Read the feature namespace off the module root and go through `relaxJavaScriptDiagnostics` in `studio-sdk/src/components/internal/monacoJavaScriptDiagnostics.ts` rather than re-deriving it per component. For JSON validation, import the contribution module directly and use its exports (`configureMonacoJsonValidation` does this) instead of reaching through the editor instance.
+**Correct approach**: Read the feature namespace off the module root and go through `relaxJavaScriptDiagnostics` in `studio/src/components/internal/monacoJavaScriptDiagnostics.ts` rather than re-deriving it per component. For JSON validation, import the contribution module directly and use its exports (`configureMonacoJsonValidation` does this) instead of reaching through the editor instance.
 
 ---
 

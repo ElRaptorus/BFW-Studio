@@ -1,8 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { MenuBarItem_SelectEntry } from '#bifrost/contracts/MenuBarTypes';
 
 import React from 'react';
-
-import type { MenuBarItem_SelectEntry } from '@evil/bifrost_fw_sdk/types/contracts';
 
 import { useBifrost } from '../../bifrostContext';
 

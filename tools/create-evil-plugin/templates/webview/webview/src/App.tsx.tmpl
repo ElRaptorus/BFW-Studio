@@ -1,19 +1,28 @@
 import React, { useEffect, useState } from 'react';
 
+/**
+ * Iframe bridge shape. Same contract as `StudioWebviewApi` from `@evil/bifrost_fw_sdk`.
+ * The host injects live `--theme-*` values (see `ThemeToken` in the SDK). Do not use
+ * `--studio-color-*` — those are not forwarded into plugin iframes.
+ */
+type StudioThemeType = 'light' | 'dark';
+
+type StudioWebviewApi = {
+  postMessage(data: unknown): void;
+  onMessage(callback: (data: unknown) => void): void;
+  getState(): unknown;
+  setState(state: unknown): void;
+  getThemeType(): StudioThemeType;
+};
+
 declare global {
   interface Window {
-    acquireStudioApi?(): {
-      postMessage(data: unknown): void;
-      onMessage(callback: (data: unknown) => void): void;
-      getState(): unknown;
-      setState(state: unknown): void;
-      getThemeType(): string;
-    };
+    acquireStudioApi?(): StudioWebviewApi;
   }
 }
 
 export default function App(): React.JSX.Element {
-  const [themeType, setThemeType] = useState('dark');
+  const [themeType, setThemeType] = useState<StudioThemeType>('dark');
 
   useEffect(() => {
     const api = window.acquireStudioApi?.();
@@ -24,10 +33,15 @@ export default function App(): React.JSX.Element {
   }, []);
 
   return (
-    <div style={{ padding: 16 }}>
+    <div className="app">
       <h2>{{displayName}}</h2>
-      <p>Theme: {themeType}</p>
-      <p>Edit <code>webview/src/App.tsx</code> to build your UI.</p>
+      <p className="app__meta">Theme: {themeType}</p>
+      <p>
+        Edit <code>webview/src/App.tsx</code> to build your UI. Host chrome widgets
+        (Icon, Table, Checkbox, ColorPicker) are not in the SDK; style with{' '}
+        <code>--theme-*</code> tokens, or import Feel / PaneProperty / FormInput from{' '}
+        <code>@evil/bifrost_fw_sdk</code> if you add it to this webview package.
+      </p>
     </div>
   );
 }

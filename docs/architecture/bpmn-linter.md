@@ -343,7 +343,7 @@ Icons are registered in `index.ts` via `bifrost.icons.registerIcons()`:
 | `bpmn-linter/badge/warning` | `ph ph-warning` | Warning count in summary badge |
 | `bpmn-linter/badge/info` | `ph ph-info` | Info count in summary badge |
 
-All UI components use `<Icon id="..." />` from the SDK instead of raw `<i className="...">` elements, so plugin developers can override them.
+All UI components use `<Icon id="..." />` from `#components/Icon` instead of raw `<i className="...">` elements, so registered icon aliases stay overridable.
 
 ---
 

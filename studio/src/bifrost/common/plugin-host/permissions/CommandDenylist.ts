@@ -1,6 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import { getClosestMatch } from '@evil/bifrost_fw_sdk';
+import { getClosestMatch } from '#bifrost/common/StringMatchFunctions';
 
 import type { PermissionGate } from './PermissionGate';
 import type { PluginPermission } from './PermissionTypes';

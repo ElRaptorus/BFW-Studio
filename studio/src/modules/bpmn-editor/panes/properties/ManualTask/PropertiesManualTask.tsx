@@ -1,15 +1,14 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Checkbox } from '#components/Checkbox';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  Checkbox,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  assertNotNull,
-} from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsManualTask } from '../../BpmnElementTypeAssertionFunctions';

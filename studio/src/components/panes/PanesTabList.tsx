@@ -1,10 +1,11 @@
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneAreaName, PaneObject } from '#bifrost/contracts/PaneTypes';
+import { AutoScrollContainer } from '#components/AutoScrollContainer';
 import { useDrop } from 'react-dnd';
 
 import React from 'react';
 
-import type { EditorDocument, EditorDocumentModel, PaneAreaName, PaneObject } from '@evil/bifrost_fw_sdk';
-
-import { AutoScrollContainer } from '../../../../studio-sdk/src/components/internal/AutoScrollContainer';
 import { useBifrost } from '../../bifrostContext';
 import { ErrorBoundary } from '../ErrorBoundary';
 import PaneTabDraggable from './PaneTabDraggable';

@@ -1,13 +1,24 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-import type {
-  RecentlyOpenedEditorDocument,
-  RecentlyOpenedFile,
-  RecentlyOpenedSolutionItem,
-} from '@evil/bifrost_fw_sdk/types/common';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 import { EVENT_RECENTLY_OPENED_CHANGED } from '../contracts/RecentTypes';
 import type { LocalStorageItem } from './LocalStorageItem';
 import { RecentlyOpenedManager } from './RecentlyOpenedManager';
+
+export type RecentlyOpenedEditorDocument = {
+  uri: string;
+  icon?: string;
+  label?: string;
+};
+
+export type RecentlyOpenedFile = {
+  uri: string;
+  icon?: string;
+  label?: string;
+};
+
+export type RecentlyOpenedSolutionItem = {
+  uri: string;
+};
 
 /**
  * The `RecentlyOpenedMediator` connects an instance of `RecentlyOpenedManager` and an instance for storing its

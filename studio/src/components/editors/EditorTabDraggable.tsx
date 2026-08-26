@@ -1,11 +1,13 @@
+import { isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { showContextMenu } from '#components/ContextMenuFunctions';
+import { useDecoration } from '#components/Tree/DecorationContext';
 import { useDrag, useDrop } from 'react-dnd';
 
 import React, { useCallback } from 'react';
 
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
-import { Icon, isUrlForOpenInNewTab, parseOpenInNewTabUrl, showContextMenu, useDecoration } from '@evil/bifrost_fw_sdk';
-
 import { useBifrost } from '../../bifrostContext';
+import { Icon } from '../Icon';
 
 type EditorTabProps = {
   editorDocument: EditorDocument;

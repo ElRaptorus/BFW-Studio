@@ -1,7 +1,6 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { BifrostOptions } from '#bifrost/contracts/BifrostTypes';
-
-import { Icon } from '@evil/bifrost_fw_sdk';
+import { Icon } from '#components/Icon';
 
 import './dayjsSetup';
 

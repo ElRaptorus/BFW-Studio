@@ -1,6 +1,5 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { ipcMain } from 'electron';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import type { BifrostWindowSerialized } from '../contracts/BifrostTypes';
 import {

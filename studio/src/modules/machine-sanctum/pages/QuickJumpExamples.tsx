@@ -1,8 +1,7 @@
 import type { QuickJumpOptions } from '#bifrost/contracts/QuickJumpTypes';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React, { Fragment } from 'react';
-
-import { EditorContent } from '@evil/bifrost_fw_sdk';
 
 import type { MachineSanctumExample } from '../contracts/MachineSanctumTypes';
 import { QuickJumpExampleRenderer } from './QuickJumpExampleRenderer';

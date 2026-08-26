@@ -1,12 +1,10 @@
-import React from 'react';
+import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { PaneBody } from '#components/panes/PaneBody';
+import { buildSimplePropertyPaneProvider } from '#components/panes/PaneFunctions';
 
-import type { PaneComponentProps } from '@evil/bifrost_fw_sdk';
-import {
-  MultiLineCodeEditor,
-  OpenInNewTabButton,
-  PaneBody,
-  buildSimplePropertyPaneProvider,
-} from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/index';

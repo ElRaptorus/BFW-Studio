@@ -140,10 +140,10 @@ bifrost.icons.registerIcons({
 
 ### The `<Icon>` component
 
-Import `Icon` directly from the SDK:
+Import `Icon` from the host components alias:
 
 ```tsx
-import { Icon } from '@evil/bifrost_fw_sdk';
+import { Icon } from '#components/Icon';
 
 function MyComponent() {
   return (
@@ -399,7 +399,7 @@ bifrost.icons.registerIcons({
 | `studio/vendor/phosphor/` | Webfont assets (CSS + font files per weight) |
 | `studio/src/bifrost/styles/phosphor-utilities.scss` | Utility classes (spin, rotate, flip, sizing, duotone bridge) |
 | `studio/src/bifrost/common/IconMediator.ts` | Icon registry and retrieval logic |
-| `studio-sdk/src/components/internal/Icon.tsx` | `<Icon>` rendering component |
+| `studio/src/components/Icon.tsx` | `<Icon>` rendering component (host registry instance) |
 | `studio/src/modules/std/initializers/initializeIcons.tsx` | Central icon registrations |
 
 ### All available utility classes

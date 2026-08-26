@@ -1,16 +1,17 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Icon,
-  MultiLineCodeEditor,
-  OpenInNewTabButton,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-} from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { SequenceFlow } from '../../libs';
@@ -22,7 +23,7 @@ import { shouldDisplaySequenceFlowInfoPane } from '../ShouldBeDisplayedCondition
 export type SequenceFlowPaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export const paneProvider: PaneProvider = {
@@ -76,7 +77,7 @@ function SequenceFlowPane(props: SequenceFlowPaneProps): React.JSX.Element | nul
 type SequenceFlowLinksProps = {
   model: EngineBpmnDebuggerEditorDocumentModel;
   sequenceFlow: SequenceFlow;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 function SequenceFlowNotPartOfExecutedProcessHint(props: any): React.JSX.Element {

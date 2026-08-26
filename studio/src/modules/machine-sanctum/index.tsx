@@ -1,10 +1,9 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { assertGenericCommandContext } from '#bifrost/common/AssertionFunctions';
+import type { CommandContext } from '#bifrost/contracts/CommandTypes';
 import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
 
 import React from 'react';
-
-import type { CommandContext } from '@evil/bifrost_fw_sdk';
-import { assertGenericCommandContext } from '@evil/bifrost_fw_sdk';
 
 import MachineSanctumDocumentModel from './MachineSanctumDocumentModel';
 import MachineSanctumRenderer from './MachineSanctumRenderer';

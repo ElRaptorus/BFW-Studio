@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { showContextMenu } from './ContextMenuFunctions';
+import type { MenuItem } from '../contracts/MenuTypes';
+import { PresentationalContextMenu } from './PresentationalContextMenu';
 
 type FormInputProps = {
   type: string;
@@ -21,6 +22,11 @@ type FormInputProps = {
   htmlAttributes?: object;
 };
 
+type ContextMenuState = {
+  x: number;
+  y: number;
+};
+
 export function FormInput(props: FormInputProps): React.JSX.Element {
   if (props.onCommit && props.onSubmit) {
     throw new Error('FormInput does not currently support simultaneous onCommit and onSubmit callbacks');
@@ -28,10 +34,12 @@ export function FormInput(props: FormInputProps): React.JSX.Element {
 
   const valueFromProps = props.value || '';
   const { valueRef } = props;
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [originalValue] = useState(valueFromProps);
   const [currentValue, setCurrentValue] = useState(valueFromProps);
   const lastSyncedToRef = useRef(valueFromProps);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const [prevValueFromProps, setPrevValueFromProps] = useState(valueFromProps);
   if (valueFromProps !== prevValueFromProps) {
@@ -76,7 +84,7 @@ export function FormInput(props: FormInputProps): React.JSX.Element {
     setCurrentValue(value);
   };
 
-  function onChange(event: any): void {
+  function onChange(event: React.ChangeEvent<HTMLInputElement>): void {
     const value: string = event.target.value;
     if (props.onChange) {
       props.onChange(value);
@@ -101,8 +109,9 @@ export function FormInput(props: FormInputProps): React.JSX.Element {
     }
   }
 
-  function blur(e: React.FocusEvent): void {
-    if (e.relatedTarget?.className === 'react-contextmenu-item') {
+  function blur(event: React.FocusEvent): void {
+    const related = event.relatedTarget as HTMLElement | null;
+    if (related?.closest('.studio-presentational-context-menu') != null) {
       return;
     }
 
@@ -127,21 +136,125 @@ export function FormInput(props: FormInputProps): React.JSX.Element {
     }
   }
 
+  function openContextMenu(event: React.MouseEvent<HTMLInputElement>): void {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu({ x: event.clientX, y: event.clientY });
+  }
+
+  async function runContextMenuCommand(command: string): Promise<void> {
+    const input = inputRef.current;
+    if (input == null) {
+      return;
+    }
+
+    const value = input.value;
+    const selectionStart = input.selectionStart ?? 0;
+    const selectionEnd = input.selectionEnd ?? value.length;
+    const noSelection = selectionStart === selectionEnd;
+    const selection = noSelection ? value : value.substring(selectionStart, selectionEnd);
+
+    switch (command) {
+      case 'std.internal.cutToClipboard': {
+        await navigator.clipboard.writeText(selection);
+        const newValue = noSelection ? '' : value.substring(0, selectionStart) + value.substring(selectionEnd);
+        input.value = newValue;
+        onContextMenuEdit(newValue);
+        break;
+      }
+      case 'std.internal.copyToClipboard': {
+        await navigator.clipboard.writeText(selection);
+        break;
+      }
+      case 'std.internal.pasteFromClipboard': {
+        const clipboardText = await navigator.clipboard.readText();
+        const newValue = value.substring(0, selectionStart) + clipboardText + value.substring(selectionEnd);
+        input.value = newValue;
+        onContextMenuEdit(newValue);
+        break;
+      }
+      case 'std.internal.clear': {
+        input.value = '';
+        onContextMenuEdit('');
+        input.focus();
+        break;
+      }
+      case 'std.internal.selectAll': {
+        input.focus();
+        input.select();
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  const canMutate = !props.disabled && !props.readonly;
+  const contextMenuItems: MenuItem[] = [
+    {
+      type: 'command',
+      label: 'Cut',
+      id: 'std/component/input/text/cut',
+      command: 'std.internal.cutToClipboard',
+      visible: canMutate,
+    },
+    {
+      type: 'command',
+      label: 'Copy',
+      id: 'std/component/input/text/copy',
+      command: 'std.internal.copyToClipboard',
+    },
+    {
+      type: 'command',
+      label: 'Paste',
+      id: 'std/component/input/text/paste',
+      command: 'std.internal.pasteFromClipboard',
+      visible: canMutate,
+    },
+    {
+      type: 'command',
+      label: 'Clear',
+      id: 'std/component/input/text/clear',
+      command: 'std.internal.clear',
+      visible: canMutate,
+    },
+    {
+      type: 'command',
+      label: 'Select All',
+      id: 'std/component/input/text/select-all',
+      command: 'std.internal.selectAll',
+    },
+  ];
+
   return (
-    <input
-      id={props.htmlId}
-      type={props.type || 'text'}
-      className={props.className}
-      placeholder={props.placeholder}
-      disabled={props.disabled}
-      readOnly={props.readonly}
-      value={currentValue}
-      onKeyDown={(event: any): void => onKeyDown(event)}
-      onChange={(e) => onChange(e)}
-      onBlur={(e) => blur(e)}
-      onContextMenu={(event) => showContextMenu(event, 'std/component/input/text', [event.target, onContextMenuEdit])}
-      autoFocus={props.autoselect}
-      {...props.htmlAttributes}
-    />
+    <>
+      <input
+        ref={inputRef}
+        id={props.htmlId}
+        type={props.type || 'text'}
+        className={props.className}
+        placeholder={props.placeholder}
+        disabled={props.disabled}
+        readOnly={props.readonly}
+        value={currentValue}
+        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>): void => onKeyDown(event.nativeEvent)}
+        onChange={(e) => onChange(e)}
+        onBlur={(e) => blur(e)}
+        onContextMenu={openContextMenu}
+        autoFocus={props.autoselect}
+        {...props.htmlAttributes}
+      />
+      {contextMenu != null && (
+        <PresentationalContextMenu
+          items={contextMenuItems}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onCommand={(command) => {
+            void runContextMenuCommand(command);
+          }}
+          onDismiss={() => setContextMenu(null)}
+        />
+      )}
+    </>
   );
 }

@@ -1,7 +1,6 @@
-import type { Dialog } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_CLOSE_DIALOG, EVENT_OPEN_DIALOG } from '../../../../studio-sdk/src/contracts/internal/DialogEvents';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { Dialog } from '#bifrost/contracts/DialogTypes';
+import { EVENT_CLOSE_DIALOG, EVENT_OPEN_DIALOG } from '#bifrost/contracts/internal/DialogEvents';
 
 /**
  * `DialogService` is used to open and close custom HTML-based dialogs.

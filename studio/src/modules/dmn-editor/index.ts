@@ -1,6 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { SearchResult } from '#bifrost/contracts/internal/SearchTypes';
 
-import type { SearchResult } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
 import DmnDocumentModel from './DmnDocumentModel';
 import DmnDocumentRenderer from './DmnDocumentRenderer';
 import { DmnSearchIndexerWorkerClient } from './browser/DmnSearchIndexerWorkerClient';

@@ -1,4 +1,4 @@
-import type { FormAction, FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
 
 export type FormBuilderSelection =
   { type: 'field'; fieldId: string } | { type: 'action'; actionId: string } | { type: 'none' };

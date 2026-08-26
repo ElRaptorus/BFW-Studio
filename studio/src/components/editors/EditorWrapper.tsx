@@ -1,17 +1,15 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument, EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { EVENT_EDITOR_AREA_LAYOUT_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { EVENT_PANE_LAYOUT_UPDATED, EVENT_PANE_SIZE_UPDATED } from '#bifrost/contracts/internal/PaneEvents';
+import { DecorationContext } from '#components/Tree/DecorationContext';
+import { EditorLoadingError } from '#components/editor/EditorLoadingError';
 
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import type { EditorDocument, EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import { DecorationContext, EditorLoadingError, Icon } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_EDITOR_AREA_LAYOUT_UPDATED } from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import {
-  EVENT_PANE_LAYOUT_UPDATED,
-  EVENT_PANE_SIZE_UPDATED,
-} from '../../../../studio-sdk/src/contracts/internal/PaneEvents';
 import { useBifrost } from '../../bifrostContext';
 import { ErrorBoundaryWithMessage } from '../ErrorBoundaryWithMessage';
+import { Icon } from '../Icon';
 import EditorTabList from './EditorTabList';
 
 const MIN_WIDTH_BREAKPOINTS = { sm: 576, md: 768, lg: 992, xl: 1200, xxl: 1400 };

@@ -1,9 +1,14 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import { FlowNodeInstanceState } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, Studio } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/index';
@@ -12,7 +17,7 @@ import { shouldDisplayCompensationBoundaryEventPane } from '../ShouldBeDisplayed
 type CompensationBoundaryEventPaneProps = {
   editorDocument: EditorDocument;
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
   flowNode: FlowNode;
 };
 

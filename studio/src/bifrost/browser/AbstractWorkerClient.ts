@@ -1,7 +1,6 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 type WorkerType = Worker | SharedWorker;
 /**

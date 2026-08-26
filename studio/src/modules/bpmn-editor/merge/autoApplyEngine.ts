@@ -1,4 +1,4 @@
-import type { ElementResolutionStatus } from '@evil/bifrost_fw_sdk';
+import type { ElementResolutionStatus } from '#bifrost/contracts/MergeTypes';
 
 import type { BpmnDiffChangesByAction } from '../../bpmn-core/diff';
 

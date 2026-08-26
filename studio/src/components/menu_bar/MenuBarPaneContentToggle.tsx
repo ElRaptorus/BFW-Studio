@@ -1,11 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { PaneAreaName } from '#bifrost/contracts/PaneTypes';
 
 import React from 'react';
 
-import type { PaneAreaName } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
-
 import { useBifrost } from '../../bifrostContext';
+import { Icon } from '../Icon';
 
 type MenuBarPaneContentToggleProps = {
   icon: string;

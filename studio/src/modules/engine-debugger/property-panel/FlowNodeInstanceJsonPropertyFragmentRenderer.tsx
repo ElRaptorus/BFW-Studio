@@ -1,15 +1,13 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument, EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 
-import type { EditorDocument, EditorDocumentRendererProps } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorToolbar,
-  EditorToolbarLeft,
-  EditorToolbarText,
-  MultiLineCodeEditor,
-  parseOpenInNewTabUrl,
-} from '@evil/bifrost_fw_sdk';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 type JsonPayloadFragmentRendererData = {
   id: string;

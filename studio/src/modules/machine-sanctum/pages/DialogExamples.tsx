@@ -1,9 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React, { Fragment } from 'react';
-
-import type { DialogOptions } from '@evil/bifrost_fw_sdk';
-import { EditorContent } from '@evil/bifrost_fw_sdk';
 
 import type { MachineSanctumExample } from '../contracts/MachineSanctumTypes';
 import { DialogExampleRenderer } from './DialogExampleRenderer';

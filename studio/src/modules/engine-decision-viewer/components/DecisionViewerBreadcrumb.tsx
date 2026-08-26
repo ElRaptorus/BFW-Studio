@@ -1,12 +1,11 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import { EngineContextBreadcrumb } from '#modules/engine-core';
 import type { EngineHealthState } from '#modules/engine-core';
 
 import React from 'react';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-
 interface DecisionViewerBreadcrumbProps {
-  studio: Studio;
+  studio: Bifrost;
   engineId: string;
   engineDisplayName: string;
   healthState?: EngineHealthState;

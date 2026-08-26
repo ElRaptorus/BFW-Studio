@@ -1,7 +1,7 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-import type { WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { WatcherDisposable } from '#bifrost/common/FileHandlingService';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
 
-import { EVENT_SETTINGS_CHANGED } from '../../../../studio-sdk/src/contracts/internal/SettingsEvents';
 import type { Solution } from '../contracts/SolutionTypes';
 import type { FileHandlingService } from './FileHandlingService';
 import type { LocalStorageItem } from './LocalStorageItem';

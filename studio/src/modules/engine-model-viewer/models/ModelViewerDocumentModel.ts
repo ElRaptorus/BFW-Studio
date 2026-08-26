@@ -1,3 +1,5 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { BpmnViewerComponentAdapter } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
 import { EVENT_BPMN_VIEWER_ADAPTER_ROOT_CHANGED } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
 import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
@@ -6,9 +8,6 @@ import type { EngineConnectionManager } from '#modules/engine-core';
 import { convertGraphqlProcessModel } from '#modules/engine-core';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
 import type { BpmnProcess, ProcessModel, ProcessVersion } from '@elraptorus/daemonengine_sdk';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
 
 import { createModelViewerFlowNodeOverlays, createModelViewerProcessOverlays } from '../overlays/OverlayFactory';
 import type { ModelViewerModelData, ModelViewerSelection } from '../types';
@@ -31,7 +30,7 @@ const EMPTY_DATA: ModelViewerModelData = {
 };
 
 export class ModelViewerDocumentModel extends EditorDocumentModel {
-  private studio: Studio;
+  private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
   private client: DaemonEngineClient | null;
   private engineId: string;
@@ -48,7 +47,7 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
   private connectionLifecycleSubscriptions: { dispose: () => void }[] = [];
   private connectionGracePeriodTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private constructor(uri: string, studio: Studio) {
+  private constructor(uri: string, studio: Bifrost) {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
@@ -63,7 +62,7 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
     _restoredCurrentData: any,
     _restoredMetadata: any,
     _fileLoader: any,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<ModelViewerDocumentModel> {
     return new ModelViewerDocumentModel(uri, studio);
   }

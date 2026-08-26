@@ -1,7 +1,6 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import type { ProcessModel } from '@elraptorus/daemonengine_sdk';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
 
 import type { InstanceSearchDocumentModel } from '../models/InstanceSearchDocumentModel';
 
@@ -55,12 +54,12 @@ export async function bulkRemoveProcesses(
   }
 }
 
-export function openModelViewer(studio: Studio, engineId: string, processModelId: string): void {
+export function openModelViewer(studio: Bifrost, engineId: string, processModelId: string): void {
   studio.editors.focusOrOpenEditorDocument(`engine-model://${engineId}/${processModelId}`, processModelId);
 }
 
 export async function openInstanceSearch(
-  studio: Studio,
+  studio: Bifrost,
   engineId: string,
   filter?: { processModelId?: string; version?: string; businessKey?: string },
 ): Promise<void> {
@@ -91,6 +90,6 @@ export async function openInstanceSearch(
   }
 }
 
-export function openDecisionViewer(studio: Studio, engineId: string, decisionModelId: string): void {
+export function openDecisionViewer(studio: Bifrost, engineId: string, decisionModelId: string): void {
   studio.editors.focusOrOpenEditorDocument(`engine-decision://${engineId}/${decisionModelId}`, decisionModelId);
 }

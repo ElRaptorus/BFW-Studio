@@ -85,7 +85,13 @@ text-file-editors/
 
 ## Building from source
 
-**Backend** (plugin host code):
+From `studio/`, compile both TypeScript fixtures (backend + webview) in one step:
+
+```bash
+npm run build:plugin-fixtures
+```
+
+**Backend only** (plugin host code):
 
 ```bash
 cd studio/test/fixtures/plugins/text-file-editors

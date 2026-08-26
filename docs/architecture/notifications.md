@@ -38,7 +38,6 @@ Notifications are managed by `NotificationManager`, surfaced on `bifrost.notific
 ## NotificationManager
 
 **Path:** `studio/src/bifrost/common/NotificationManager.ts`
-**SDK type declaration:** `studio-sdk/types/common/NotificationManager.ts`
 **Exposed as:** `bifrost.notifications`
 
 ### Internal State
@@ -57,7 +56,7 @@ Notifications are managed by `NotificationManager`, surfaced on `bifrost.notific
 | `toggle()` | `void` | Flips the `maximized` flag. Used by the status bar bell icon. |
 | `update(id, options \| string)` | `void` | Replaces the options of an existing notification by id. |
 
-### Internal-only Methods (not in SDK declaration)
+### Internal-only methods (not on the public `bifrost.notifications` API)
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -69,7 +68,7 @@ Notifications are managed by `NotificationManager`, surfaced on `bifrost.notific
 
 ## Types
 
-**SDK types** (`studio-sdk/types/contracts/NotificationTypes.ts`):
+**Host types** (`studio/src/bifrost/contracts/NotificationTypes.ts`):
 
 ```typescript
 type NotificationType = 'info' | 'warning' | 'error';

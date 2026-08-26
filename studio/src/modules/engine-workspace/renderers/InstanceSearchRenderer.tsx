@@ -1,3 +1,28 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { showContextMenu } from '#components/ContextMenuFunctions';
+import { Icon } from '#components/Icon';
+import {
+  type PaginationState,
+  type RowSelectionState,
+  type SortingState,
+  Table,
+  type TableColumnDef,
+} from '#components/Table';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import { EditorLoadingErrorHint } from '#components/editor/EditorLoadingErrorHint';
+import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
+import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarMenu } from '#components/editor/EditorToolbarMenu';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
+import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 import type { AutoRefreshInterval, EngineConnectionManager } from '#modules/engine-core';
 import {
   ENGINE_COMMANDS,
@@ -12,31 +37,6 @@ import type { ProcessInstance } from '@elraptorus/daemonengine_sdk';
 import type { ProcessInstanceField, SortClause } from '@elraptorus/daemonengine_sdk';
 
 import React, { useCallback, useMemo, useState } from 'react';
-
-import type { EditorDocumentRendererProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  Editor,
-  EditorContent,
-  EditorLoadingErrorHint,
-  EditorTitle,
-  EditorTitleHeroIcon,
-  EditorTitleLeft,
-  EditorTitleText,
-  EditorToolbar,
-  EditorToolbarButton,
-  EditorToolbarCenter,
-  EditorToolbarLeft,
-  EditorToolbarMenu,
-  EditorToolbarRight,
-  EditorToolbarText,
-  Icon,
-  type PaginationState,
-  type RowSelectionState,
-  type SortingState,
-  Table,
-  type TableColumnDef,
-  showContextMenu,
-} from '@evil/bifrost_fw_sdk';
 
 import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
@@ -77,7 +77,7 @@ function buildInstanceTree(instances: ProcessInstance[]): TreeRow[] {
 
 export default function InstanceSearchRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
-  const bifrost: Studio = studio;
+  const bifrost: Bifrost = studio;
   const model = useEditorModel<InstanceSearchDocumentModel>(bifrost, editorDocument);
 
   const connectionManager = bifrost.getSharedRessource<EngineConnectionManager>('engineConnectionManager');

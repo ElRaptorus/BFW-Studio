@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import type { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
 
-import type { EditorDocumentRendererProps, MultiLineCodeEditor } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
+import React, { useRef } from 'react';
 
 import type BpmnDocumentModel from '../BpmnDocumentModel';
 import { BpmnFragmentRendererView } from './BpmnFragmentRendererView';

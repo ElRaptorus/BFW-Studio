@@ -1,8 +1,7 @@
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
-import type { FileEventType, WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
-import type { Project } from '@evil/bifrost_fw_sdk/types/contracts';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 import type { FileOrDirectory } from '../contracts/FileSystemTypes';
+import type { Project } from '../contracts/SolutionTypes';
 
 /**
  * The about protocol is used for "internal" views, like "about:start"
@@ -21,6 +20,12 @@ export const BUFFER_PROTOCOL = 'buffer';
  * The mocr protocol is used for mocked views during development of Bifrost
  */
 export const MOCK_PROTOCOL = 'mock';
+
+export type FileEventType = 'all' | 'ready' | 'add' | 'change' | 'addDir' | 'unlink' | 'unlinkDir' | 'raw' | 'error';
+
+export type WatcherDisposable = {
+  dispose: () => void;
+};
 
 const ILLEGAL_FILENAME_CHARACTERS = /[:^`]/;
 

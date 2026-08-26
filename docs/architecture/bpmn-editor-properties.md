@@ -447,9 +447,9 @@ Event-definition carriers (`bpmn:ErrorEventDefinition`, `bpmn:MessageEventDefini
 | UpdateLoopCharacteristicsHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateLoopCharacteristicsHandler.ts` |
 | UpdateUserTaskResourcesHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateUserTaskResourcesHandler.ts` |
 | UpdateServiceTaskHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateServiceTaskHandler.ts` |
-| BpmnServiceTaskImplementation | `studio-sdk/types/bpmn/BpmnElementTypes.ts` |
-| BpmnLoopConfig types | `studio-sdk/types/bpmn/BpmnElementTypes.ts` |
-| FormFieldDefinition / FormAction types | `studio-sdk/types/bpmn/BpmnElementTypes.ts` |
+| BpmnServiceTaskImplementation | `studio/src/modules/bpmn-editor/BpmnElementTypes.ts` |
+| BpmnLoopConfig types | `studio/src/modules/bpmn-editor/BpmnElementTypes.ts` |
+| FormFieldDefinition / FormAction types | `studio/src/modules/bpmn-editor/BpmnElementTypes.ts` |
 | FormRenderer (shared) | `studio/src/modules/bpmn-core/form-renderer/FormRenderer.tsx` |
 | FormBuilderRenderer | `studio/src/modules/bpmn-editor/form-builder/FormBuilderRenderer.tsx` |
 | PropertiesUserTaskFormSummary | `studio/src/modules/bpmn-editor/panes/properties/UserTask/PropertiesUserTaskFormSummary.tsx` |

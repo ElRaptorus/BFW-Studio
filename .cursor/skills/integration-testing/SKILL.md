@@ -214,5 +214,5 @@ See `docs/testing.md` for comprehensive testing documentation.
 | `studio/test/fixtures/` | Static test data |
 | `studio/test/integration/insiders/` | Pre-release tests |
 | `studio/test/integration/stable/` | Full release tests |
-| `studio-sdk/src/components/Tree/HeadlessTreeItem.tsx` | Tree entry `data-test` attributes |
+| `studio/src/components/Tree/HeadlessTreeItem.tsx` | Tree entry `data-test` attributes |
 | `docs/testing.md` | Full testing reference |

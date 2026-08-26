@@ -1,3 +1,5 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import OutlineModule from 'bpmn-js/lib/features/outline';
 import minimapModule from 'diagram-js-minimap';
@@ -10,9 +12,6 @@ import type Selection from 'diagram-js/lib/features/selection/Selection';
 import type { ElementLike, Shape } from 'diagram-js/lib/model/Types';
 import type { Rect } from 'diagram-js/lib/util/Types';
 
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_METADATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import evilPlatformModdleDescriptor from '../bpmn-js/moddle/evil-platform.json';
 
 export class BpmnViewerWithSync extends AbstractEmitter {

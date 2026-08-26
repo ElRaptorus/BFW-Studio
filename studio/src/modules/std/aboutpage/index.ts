@@ -1,14 +1,13 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import { IPC_INVOKE_GET_SYSTEMINFORMATION } from '#bifrost/contracts/IpcEvents';
 import { ipcRenderer } from 'electron';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
 
 import AboutpageRenderer from './AboutpageRenderer';
 import AboutpageRendererElectron from './electron-renderer/AboutpageRendererElectron';
 
 declare const __BIFROST_CLIENT__: string;
 
-export function loadAboutPage(studio: Studio): void {
+export function loadAboutPage(studio: Bifrost): void {
   const Aboutpage = __BIFROST_CLIENT__ === 'electron' ? AboutpageRendererElectron : AboutpageRenderer;
 
   studio.editors.registerDocumentType('aboutpage', {

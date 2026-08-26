@@ -1,16 +1,14 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { RelativePerformanceEntry } from '#bifrost/common/Performance';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 
 import React, { useMemo } from 'react';
 
-import type {
-  EditorDocument,
-  EditorDocumentModel,
-  PaneComponentProps,
-  PaneProvider,
-  Studio,
-  TableColumnDef,
-} from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, Table } from '@evil/bifrost_fw_sdk';
+import { Table, type TableColumnDef } from '../../Table';
 
 export const paneProvider: PaneProvider = {
   shouldBeDisplayed: shouldBeDisplayed,
@@ -20,7 +18,7 @@ export const paneProvider: PaneProvider = {
   PaneContent: PaneContent,
 };
 
-function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Studio) {
+function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Bifrost) {
   return true;
 }
 

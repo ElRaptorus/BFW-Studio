@@ -1,3 +1,4 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import {
   createCallActivityTargetLink,
   createDocumentationBadge,
@@ -6,15 +7,13 @@ import {
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { BpmnProcess } from '@elraptorus/daemonengine_sdk';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
 import { findFlowNodeById } from '../panes/paneHelpers';
 import { createStartProcessOverlay } from './StartProcessOverlay';
 
 export function createModelViewerFlowNodeOverlays(
   flowNode: any,
-  studio: Studio,
+  studio: Bifrost,
   engineId: string,
   processModelId: string,
   bpmnProcess: BpmnProcess | null = null,
@@ -71,7 +70,7 @@ export function createModelViewerFlowNodeOverlays(
   return overlays;
 }
 
-function openDocumentationPane(studio: Studio): void {
+function openDocumentationPane(studio: Bifrost): void {
   studio.panes.setActiveGroupInArea('right', 'documentation');
   studio.panes.showPaneArea('right');
 }
@@ -79,7 +78,7 @@ function openDocumentationPane(studio: Studio): void {
 export function createModelViewerProcessOverlays(
   participantId: string,
   isExecutable: boolean,
-  studio: Studio,
+  studio: Bifrost,
 ): Overlay[] {
   const overlays: Overlay[] = [];
 

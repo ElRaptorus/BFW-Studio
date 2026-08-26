@@ -116,8 +116,6 @@ export interface RegisterWebviewDocumentTypeOptions {
   uriPattern: string;
   /** Webview configuration for the editor surface. */
   webviewOptions: WebviewDocumentTypeWebviewOptions;
-  /** Called when a document of this type is opened. Receives the iframe ID and document URI. */
-  onDidOpen?: (iframeId: string, uri: string) => void;
   /**
    * Glob patterns (e.g. `["**\/*.md"]`) for files this document type handles that should be
    * shown in the File Explorer by default, without the user having to enable "Show hidden files".

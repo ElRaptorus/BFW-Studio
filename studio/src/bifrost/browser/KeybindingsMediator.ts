@@ -1,5 +1,5 @@
-import type { CommandContext, CommandResult } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { CommandContext, CommandResult } from '#bifrost/contracts/CommandTypes';
 
 import type { BifrostClient, BifrostOperatingSystem } from '../contracts/BifrostTypes';
 import type { KeybindingsDefinition } from './KeybindingsManager';

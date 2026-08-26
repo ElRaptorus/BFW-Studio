@@ -1,3 +1,5 @@
+import type { ThemeType } from '#bifrost/contracts/ThemeTypes';
+
 /**
  * Shared type definitions for the plugin iframe infrastructure.
  *
@@ -33,7 +35,7 @@ export interface PluginIframeGuestMessage_RestoreState {
 export interface PluginIframeGuestMessage_Theme {
   type: 'theme';
   tokens: Record<string, string>;
-  themeType: string;
+  themeType: ThemeType;
 }
 
 export type PluginIframeGuestMessage =

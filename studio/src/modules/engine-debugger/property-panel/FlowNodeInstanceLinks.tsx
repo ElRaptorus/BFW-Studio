@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
 
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
+import React, { useRef } from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import { resolveFlowNodeIconForDebugger } from '../libs/flowNodeDisplay';

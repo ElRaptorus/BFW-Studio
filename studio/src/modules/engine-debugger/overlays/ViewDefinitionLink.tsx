@@ -1,22 +1,21 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { Icon } from '#components/Icon';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import { OverlayPosition } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 
 import React from 'react';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
-
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 
 export type ViewDefinitionLinkProps = {
   model: EngineBpmnDebuggerEditorDocumentModel;
-  studio: Studio;
+  studio: Bifrost;
 };
 
 export function createViewDefinitionLink(
   elementId: string,
   model: EngineBpmnDebuggerEditorDocumentModel,
-  studio: Studio,
+  studio: Bifrost,
 ): Overlay {
   return {
     type: 'positioned',

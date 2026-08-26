@@ -1,4 +1,5 @@
-import { AbstractEmitter, assertNotNull } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 import BpmnDiffingWorkerClient from './BpmnDiffingWorkerClient';
 import { LAYOUT_CHANGE_REJECTED_TYPES } from './bpmnDiffConstants';

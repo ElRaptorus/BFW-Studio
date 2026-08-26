@@ -1,11 +1,10 @@
-import { ipcRenderer } from 'electron';
-
 import type {
   Dialog,
   DialogOptionsStrict,
   DialogOptionsStrict_MessageBox,
   DialogResponseCallbackFn,
-} from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/DialogTypes';
+import { ipcRenderer } from 'electron';
 
 import { DialogService } from '../common/DialogService';
 import {

@@ -1,10 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { IPC_INVOKE_UNINSTALL_PLUGIN, IPC_MESSAGE_PLUGIN_STATE_CHANGED } from '#bifrost/contracts/IpcEvents';
 import type { IPluginHost } from '#bifrost/contracts/PluginHostTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
-
-import type { AbstractSubscription, PluginInfo } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
 
 export const EVENT_PLUGIN_HOST_LOG = 'EVENT_PLUGIN_HOST_LOG';
 

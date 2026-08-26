@@ -1,8 +1,7 @@
+import type { FormAction } from '#modules/bpmn-editor/BpmnElementTypes';
 import { useDrag, useDrop } from 'react-dnd';
 
 import React, { useCallback, useRef } from 'react';
-
-import type { FormAction } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import './ActionsEditor.scss';
 import type { FormBuilderState } from './useBpmnFormBuilderState';

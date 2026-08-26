@@ -1,12 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
+import { FormActionPreset, FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
-
-import { Editor, EditorContent } from '@evil/bifrost_fw_sdk';
-import type { FormAction, FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { FormActionPreset, FormFieldType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import { FormRenderer } from '../../bpmn-core/form-renderer';
 import './DynamicUiComponentAdapter.scss';

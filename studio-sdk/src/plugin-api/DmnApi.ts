@@ -1,4 +1,4 @@
-import type { DmnViewType } from '../../types/dmn/DmnModelerComponentAdapter';
+import type { Disposable } from './Disposable';
 
 // --- Overlay Position & Style enums ---
 
@@ -87,11 +87,31 @@ export interface PluginDmnOverlayStatus {
 export type PluginDmnOverlay =
   PluginDmnOverlayBadge | PluginDmnOverlayIcon | PluginDmnOverlayAction | PluginDmnOverlayStatus;
 
+/**
+ * Studio-semantic DMN DRD element types returned by `api.dmn.getElement` /
+ * `getElements` and element events. These match `DmnElement.type` on the
+ * typed document model (e.g. `'dmn:Decision'`), not untyped diagram-js leftovers.
+ */
+export const PluginDmnElementType = {
+  Decision: 'dmn:Decision',
+  InputData: 'dmn:InputData',
+  BusinessKnowledgeModel: 'dmn:BusinessKnowledgeModel',
+  KnowledgeSource: 'dmn:KnowledgeSource',
+  DecisionService: 'dmn:DecisionService',
+  TextAnnotation: 'dmn:TextAnnotation',
+  Association: 'dmn:Association',
+  InformationRequirement: 'dmn:InformationRequirement',
+  KnowledgeRequirement: 'dmn:KnowledgeRequirement',
+  AuthorityRequirement: 'dmn:AuthorityRequirement',
+} as const;
+
+export type PluginDmnElementType = (typeof PluginDmnElementType)[keyof typeof PluginDmnElementType];
+
 // --- Event types ---
 
 export interface DmnElementEvent {
   elementId: string;
-  elementType: string;
+  elementType: PluginDmnElementType | '';
   elementName: string | null;
 }
 
@@ -105,12 +125,8 @@ export interface OverlayContextEvent {
  * boxed expression). The plugin API only operates on the DRD view — overlays,
  * palette/context-pad entries, modeling operations, and renderer modules are
  * inert while a non-DRD view is active.
- *
- * Re-exported from `types/dmn/DmnModelerComponentAdapter` to avoid a duplicate
- * export ambiguity at the package root (both `src` and `types/DmnDocumentModel`
- * are re-exported from the top-level `index.ts`).
  */
-export type { DmnViewType } from '../../types/dmn/DmnModelerComponentAdapter';
+export type DmnViewType = 'drd' | 'decisionTable' | 'literalExpression' | 'boxedExpression';
 
 export interface DmnViewChangedEvent {
   uri: string;
@@ -128,7 +144,7 @@ export interface DmnViewChangedEvent {
 
 export interface DmnElementSnapshot {
   id: string;
-  type: string;
+  type: PluginDmnElementType;
   name: string | null;
   parentId: string | null;
 }
@@ -205,46 +221,28 @@ export interface DmnApi {
   clearOverlays(uri: string, filter?: { elementId?: string }): Promise<void>;
 
   /** Subscribe to element selection changes in the given DMN document's DRD view. */
-  onElementSelected(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element selection changes. */
-  offElementSelected(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
+  onElementSelected(uri: string, callback: (event: DmnElementEvent) => void): Promise<Disposable>;
 
   /** Subscribe to element hover events in the given DMN document's DRD view. */
-  onElementHover(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element hover events. */
-  offElementHover(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
+  onElementHover(uri: string, callback: (event: DmnElementEvent) => void): Promise<Disposable>;
 
   /** Subscribe to element double-click events in the given DMN document's DRD view. */
-  onElementDoubleClick(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element double-click events. */
-  offElementDoubleClick(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
+  onElementDoubleClick(uri: string, callback: (event: DmnElementEvent) => void): Promise<Disposable>;
 
   /** Subscribe to element context menu events in the given DMN document's DRD view. */
-  onElementContextMenu(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
-
-  /** Unsubscribe from element context menu events. */
-  offElementContextMenu(uri: string, callback: (event: DmnElementEvent) => void): Promise<void>;
+  onElementContextMenu(uri: string, callback: (event: DmnElementEvent) => void): Promise<Disposable>;
 
   /**
    * Subscribe to overlay context changes. Fires when a plugin should
    * refresh its overlays (data update, selection change, document opened, view changed).
    */
-  onOverlayContextChanged(uri: string, callback: (event: OverlayContextEvent) => void): Promise<void>;
-
-  /** Unsubscribe from overlay context changes. */
-  offOverlayContextChanged(uri: string, callback: (event: OverlayContextEvent) => void): Promise<void>;
+  onOverlayContextChanged(uri: string, callback: (event: OverlayContextEvent) => void): Promise<Disposable>;
 
   /**
    * Subscribe to active-view changes on the given DMN document
    * (DRD, decision table, literal expression, boxed expression).
    */
-  onViewChanged(uri: string, callback: (event: DmnViewChangedEvent) => void): Promise<void>;
-
-  /** Unsubscribe from active-view changes. */
-  offViewChanged(uri: string, callback: (event: DmnViewChangedEvent) => void): Promise<void>;
+  onViewChanged(uri: string, callback: (event: DmnViewChangedEvent) => void): Promise<Disposable>;
 
   /** Get the currently active view for the given DMN document, or `null` if the document is not open. */
   getActiveView(uri: string): Promise<DmnViewChangedEvent | null>;
@@ -283,7 +281,7 @@ export interface DmnApi {
   registerOverlayFactory(
     factory: (context: DmnOverlayFactoryContext) => DmnOverlayDescriptor[],
     options?: DmnOverlayFactoryOptions,
-  ): Promise<{ dispose: () => void }>;
+  ): Promise<Disposable>;
 
   /**
    * Register a palette entry at runtime. Requires 'dmn.modelling' permission.
@@ -340,9 +338,7 @@ export interface DmnApi {
   readonly modeling: DmnModelingApi;
 }
 
-export interface Disposable {
-  dispose(): void;
-}
+export type { Disposable } from './Disposable';
 
 // ─── Palette & Context Pad types ────────────────────────────────────────────
 

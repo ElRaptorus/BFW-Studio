@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import type { DocumentInspectorProps } from '#bifrost/contracts/PaneTypes';
 
-import type { DocumentInspectorProps } from '@evil/bifrost_fw_sdk';
+import React, { useMemo } from 'react';
 
 import type { DmnTraceFragmentModel } from './DmnTraceFragmentModel';
 import './DmnTraceInspector.scss';

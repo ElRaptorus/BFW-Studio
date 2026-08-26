@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Studio's Table component is a shared, headless-UI wrapper around [TanStack Table v8](https://tanstack.com/table/v8) that lives in the SDK (`studio-sdk/src/components/Table/`). It provides sorting, pagination, column resizing, column pinning, row selection, sub-row expansion, column-header filters, and row interaction handlers — all driven by `--theme-table-*` CSS custom properties for theming.
+The Studio's Table component is a host list widget: a shared, headless-UI wrapper around [TanStack Table v9](https://tanstack.com/table/v9) at `studio/src/components/Table/`. It is not part of the plugin SDK. It provides sorting, pagination, column resizing, column pinning, row selection, sub-row expansion, column-header filters, and row interaction handlers — all driven by `--theme-table-*` CSS custom properties for theming. Table state persistence is owned by host consumers (EditorDocumentModel or local component state). Plugin webviews theme their own tables with the same `--theme-table-*` tokens; they do not receive this widget.
 
 The component is used in the engine-workspace module for the main data lists (Process Explorer, Decision Catalog, Instance Search, Task Inbox, Timer Schedules), in the dashboard short lists, and in the inspector panes (Performance, Notifications).
 
@@ -14,14 +14,14 @@ The component is used in the engine-workspace module for the main data lists (Pr
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  SDK  (studio-sdk/src/components/Table/)             │
+│  Host  (studio/src/components/Table/)                │
 │  ┌────────────┐  ┌──────────────────┐  ┌──────────┐ │
 │  │  Table.tsx  │  │ TablePagination  │  │ Column   │ │
 │  │  (wrapper)  │──│                  │  │ Filter   │ │
 │  └─────┬──────┘  └──────────────────┘  └──────────┘ │
-│        │   useTableSettings.ts  types.ts  Table.scss │
+│        │   types.ts  Table.scss                     │
 ├────────┼────────────────────────────────────────────┤
-│  TanStack Table v8  (useReactTable, flexRender)      │
+│  TanStack Table v9  (useTable, flexRender)           │
 └─────────────────────────────────────────────────────┘
          │
 ┌────────┼────────────────────────────────────────────┐
@@ -37,7 +37,7 @@ The component is used in the engine-workspace module for the main data lists (Pr
 
 ### Table.tsx
 
-**Path:** `studio-sdk/src/components/Table/Table.tsx`
+**Path:** `studio/src/components/Table/Table.tsx`
 
 The main component. Accepts `TableProps<TData>` and renders a `<div>`-based table with ARIA roles. Key responsibilities:
 
@@ -50,13 +50,13 @@ The main component. Accepts `TableProps<TData>` and renders a `<div>`-based tabl
 
 ### TablePagination.tsx
 
-**Path:** `studio-sdk/src/components/Table/TablePagination.tsx`
+**Path:** `studio/src/components/Table/TablePagination.tsx`
 
 Rendered below the table when `pagination` and `onPaginationChange` are provided. Shows page size selector, page info, and navigation buttons (first/prev/next/last).
 
 ### TableColumnFilter.tsx
 
-**Path:** `studio-sdk/src/components/Table/TableColumnFilter.tsx`
+**Path:** `studio/src/components/Table/TableColumnFilter.tsx`
 
 Renders one of three filter variants based on `ColumnDef.meta.filterVariant`:
 
@@ -66,15 +66,9 @@ Renders one of three filter variants based on `ColumnDef.meta.filterVariant`:
 | `boolean` | `<select>` with All/Yes/No | `boolean \| undefined` |
 | `multi-select` | Checkbox list | `string[] \| undefined` |
 
-### useTableSettings.ts
-
-**Path:** `studio-sdk/src/components/Table/useTableSettings.ts`
-
-A hook for persisting table state (column visibility, column widths, page size) to the Studio's `SettingsMediator`. Designed for simpler table instances that don't have a dedicated EditorDocumentModel. The model-backed engine-workspace lists manage their own state through the model layer and commands.
-
 ### types.ts
 
-**Path:** `studio-sdk/src/components/Table/types.ts`
+**Path:** `studio/src/components/Table/types.ts`
 
 Re-exports key TanStack Table types (`ColumnDef`, `SortingState`, `PaginationState`, `VisibilityState`, `ColumnPinningState`) and defines custom types:
 
@@ -174,7 +168,7 @@ Each setting uses `type: 'integer'` with `enum: [10, 25, 50, 100]`, rendered as 
 
 ## Theming
 
-All colors use `--theme-table-*` CSS custom properties defined in the core theme files. The SDK Table SCSS must **not** reference `--color-*` aliases (those are Bifrost-internal).
+All colors use `--theme-table-*` CSS custom properties defined in the core theme files. The Table SCSS must **not** reference `--color-*` aliases (those are Bifrost-internal). Those tokens are also forwarded into plugin iframes so plugins can style their own tables.
 
 | Token | Purpose |
 |-------|---------|
@@ -196,13 +190,12 @@ All colors use `--theme-table-*` CSS custom properties defined in the core theme
 
 | Component | Path |
 |-----------|------|
-| Table | `studio-sdk/src/components/Table/Table.tsx` |
-| TablePagination | `studio-sdk/src/components/Table/TablePagination.tsx` |
-| TableColumnFilter | `studio-sdk/src/components/Table/TableColumnFilter.tsx` |
-| useTableSettings | `studio-sdk/src/components/Table/useTableSettings.ts` |
-| types | `studio-sdk/src/components/Table/types.ts` |
-| Table.scss | `studio-sdk/src/components/Table/Table.scss` |
-| barrel export | `studio-sdk/src/components/Table/index.ts` |
+| Table | `studio/src/components/Table/Table.tsx` |
+| TablePagination | `studio/src/components/Table/TablePagination.tsx` |
+| TableColumnFilter | `studio/src/components/Table/TableColumnFilter.tsx` |
+| types | `studio/src/components/Table/types.ts` |
+| Table.scss | `studio/src/components/Table/Table.scss` |
+| barrel export | `studio/src/components/Table/index.ts` |
 | Consumer renderers | `studio/src/modules/engine-workspace/renderers/` (ProcessExplorer, Dashboard, InstanceSearch, TaskInbox, DecisionCatalog, TimerSchedules) |
 | PerformanceInspector | `studio/src/components/panes/inspectors/PerformanceInspector.tsx` |
 | NotificationInspector | `studio/src/components/panes/inspectors/NotificationInspector.tsx` |

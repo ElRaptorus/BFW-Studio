@@ -1,18 +1,21 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { GlobalSearchView } from '#bifrost/common/activities';
 import { EVENT_GLOBAL_SEARCH_FOCUS_AND_SELECT, EVENT_GLOBAL_SEARCH_UPDATED } from '#bifrost/common/activities';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import type { TreeItem } from '#bifrost/contracts/TreeTypes';
+import { EVENT_EDITOR_AREA_LAYOUT_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import type { SearchQuery, SearchResult, SearchResultsByUri } from '#bifrost/contracts/internal/SearchTypes';
+import { Tree } from '#components/Tree/Tree';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 
 import React, { Component } from 'react';
 
-import type { AbstractSubscription, PaneComponentProps, PaneProvider, TreeItem } from '@evil/bifrost_fw_sdk';
-import { FormInput, Icon, Pane, PaneHeader, Tree, assertNotNull } from '@evil/bifrost_fw_sdk';
+import { FormInput } from '@evil/bifrost_fw_sdk';
 
-import { EVENT_EDITOR_AREA_LAYOUT_UPDATED } from '../../../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import type {
-  SearchQuery,
-  SearchResult,
-  SearchResultsByUri,
-} from '../../../../../../studio-sdk/src/contracts/internal/SearchTypes';
+import { Icon } from '../../../Icon';
 
 type GlobalSearchPaneState = {
   searchQuery: SearchQuery;

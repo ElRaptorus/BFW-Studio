@@ -1,18 +1,17 @@
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElement_Definition } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider, PropertyValidationResult } from '@evil/bifrost_fw_sdk';
-import {
-  BpmnElementType,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-  assertNotNull,
-  validatePropertyMatching,
-  validatePropertyNotEmpty,
-} from '@evil/bifrost_fw_sdk';
-import type { BpmnElement_Definition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import type { PropertyValidationResult } from '@evil/bifrost_fw_sdk';
+import { PaneProperty, validatePropertyMatching, validatePropertyNotEmpty } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 

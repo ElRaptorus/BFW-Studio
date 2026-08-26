@@ -1,9 +1,12 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
 import type { ErrorInfo } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
 
-import type { EditorDocument, Studio } from '@evil/bifrost_fw_sdk';
-import { MultiLineCodeEditor, OpenInNewTabButton, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 export type CopyableJsonDataRendererProps = {
   editorDocument: EditorDocument;
@@ -14,7 +17,7 @@ export type CopyableJsonDataRendererProps = {
   formattedHeader?: string | React.JSX.Element;
   size?: 'small' | 'medium' | 'tall';
   language?: 'json' | 'javascript';
-  studio: Studio;
+  studio: Bifrost;
   value: unknown;
 };
 
@@ -23,7 +26,7 @@ export type FlowNodeErrorRendererProps = {
   id: string;
   flowNodeId: string;
   flowNodeName?: string;
-  studio: Studio;
+  studio: Bifrost;
   error: ErrorInfo | Error | Record<string, unknown> | null;
 };
 

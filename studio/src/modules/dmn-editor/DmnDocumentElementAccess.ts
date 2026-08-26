@@ -1,7 +1,6 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import type DmnModelerComponentAdapter from '../dmn-core/DmnModelerComponentAdapter';
 import { CmdHelper } from '../dmn-core/dmn-js/CommandHandler/Helper/CmdHelper';
@@ -43,6 +42,16 @@ export default class DmnDocumentElementAccess extends AbstractEmitter {
     }
 
     return this.castElement(element);
+  }
+
+  getAllElements(): DmnElement[] {
+    const elementRegistry = this.getDrdElementRegistry();
+    if (!elementRegistry) {
+      return [];
+    }
+
+    const elements = elementRegistry.filter(() => true) as any[];
+    return elements.map((element) => this.castElement(element));
   }
 
   getElementType(elementId: string): DmnElementType | null {

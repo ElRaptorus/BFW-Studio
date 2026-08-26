@@ -1,6 +1,7 @@
-import type { EditorDocument, EditorDocumentModel } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter, assertNotNull } from '@evil/bifrost_fw_sdk';
-
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import {
   EVENT_DATA_UPDATED,
   EVENT_EDITOR_DOCUMENT_DATA_UPDATED,
@@ -12,7 +13,7 @@ import {
   EVENT_LABEL_CHANGED,
   EVENT_METADATA_UPDATED,
   EVENT_URI_CHANGED,
-} from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
+} from '#bifrost/contracts/internal/EditorEvents';
 
 type EditorDocumentModelFactory = {
   create(
@@ -57,7 +58,7 @@ export class EditorDocumentModelManager extends AbstractEmitter {
    */
   async getEditorDocumentModelInstance<T>(
     editorDocument: EditorDocument,
-    verifyInstanceOf?: abstract new (...args: any[]) => any,
+    verifyInstanceOf?: { prototype: object },
   ): Promise<T> {
     const { uri } = editorDocument;
 
@@ -170,8 +171,9 @@ export class EditorDocumentModelManager extends AbstractEmitter {
     this.editorDocumentModelInstanceMap = {};
   }
 
-  private assertInstanceOf(model: any, verifyInstanceOf: abstract new (...args: any[]) => any): void {
-    if (!(model instanceof verifyInstanceOf)) {
+  private assertInstanceOf(model: any, verifyInstanceOf: { prototype: object }): void {
+    const classReference = verifyInstanceOf as { new (...args: never[]): object };
+    if (!(model instanceof classReference)) {
       throw new Error(
         `${model} was supposed to be an instance of \`${verifyInstanceOf}\`, got \`${model.constructor.name}\`.`,
       );

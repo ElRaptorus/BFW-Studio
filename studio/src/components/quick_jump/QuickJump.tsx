@@ -1,10 +1,9 @@
 import type { QuickJumpViewMediator } from '#bifrost/browser/QuickJumpViewMediator';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
 
 import React, { useEffect, useRef } from 'react';
-
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import QuickJumpRenderer from './QuickJumpRenderer';
 

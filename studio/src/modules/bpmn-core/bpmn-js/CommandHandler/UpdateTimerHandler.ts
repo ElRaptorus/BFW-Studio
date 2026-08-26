@@ -1,8 +1,7 @@
+import { BpmnTimerType } from '#modules/bpmn-editor/BpmnElementTypes';
 import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
-
-import { BpmnTimerType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import { CmdHelper } from './Helper/CommmandHelper';
 

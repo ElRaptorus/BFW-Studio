@@ -1,4 +1,6 @@
-import type { Menu, MenuFactoryFunction } from '@evil/bifrost_fw_sdk';
+import type { MenuFactoryFunction } from '#bifrost/contracts/MenuFactory';
+
+import type { Menu } from '@evil/bifrost_fw_sdk';
 
 import type { Bifrost } from '../Bifrost';
 

@@ -180,6 +180,36 @@ describe('create-evil-plugin scaffold generator', () => {
       assert.ok(src.includes('webview/dist/index.html'));
     });
 
+    it('webview CSS uses forwarded --theme-* tokens, not host-only --studio-color-*', () => {
+      tempDir = createTempDir();
+      runGenerator(tempDir, {
+        pluginName: 'theme-token-check',
+        displayName: 'Theme Token Check',
+        description: '',
+        includeWebview: true,
+      });
+
+      const css = fs.readFileSync(path.join(tempDir, 'theme-token-check', 'webview', 'src', 'styles.css'), 'utf-8');
+      assert.ok(css.includes('--theme-fg'));
+      assert.ok(css.includes('--theme-pane-bg'));
+      assert.ok(!css.includes('--studio-color'));
+    });
+
+    it('webview App.tsx documents StudioWebviewApi and typed theme', () => {
+      tempDir = createTempDir();
+      runGenerator(tempDir, {
+        pluginName: 'webview-api-check',
+        displayName: 'Webview API Check',
+        description: '',
+        includeWebview: true,
+      });
+
+      const app = fs.readFileSync(path.join(tempDir, 'webview-api-check', 'webview', 'src', 'App.tsx'), 'utf-8');
+      assert.ok(app.includes('StudioWebviewApi'));
+      assert.ok(app.includes('getThemeType(): StudioThemeType'));
+      assert.ok(app.includes('@evil/bifrost_fw_sdk'));
+    });
+
     it('generates a buildable webview plugin', () => {
       tempDir = createTempDir();
       runGenerator(tempDir, {

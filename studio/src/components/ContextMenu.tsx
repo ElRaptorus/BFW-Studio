@@ -1,12 +1,16 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { ContextMenuStore } from '#components/ContextMenuStore';
+
 import React, { Fragment, useLayoutEffect, useState } from 'react';
 
-import type { Menu, MenuItem, Studio } from '@evil/bifrost_fw_sdk';
-import { ContextMenuStore, Icon } from '@evil/bifrost_fw_sdk';
+import { type Menu, type MenuItem } from '@evil/bifrost_fw_sdk';
+
+import { Icon } from './Icon';
 
 /**
  * Renders Bifrost MenuItems as plain HTML elements with preserved CSS class names.
  */
-export function renderBifrostMenu(menu: Menu | MenuItem, bifrost: Studio, itemKey: number = 0): any {
+export function renderBifrostMenu(menu: Menu | MenuItem, bifrost: Bifrost, itemKey: number = 0): any {
   const cmd = bifrost.commands.getClickHandler();
 
   if (Array.isArray(menu)) {
@@ -77,7 +81,7 @@ export function renderBifrostMenu(menu: Menu | MenuItem, bifrost: Studio, itemKe
 type SubmenuItemProps = {
   label: string;
   submenu: MenuItem[];
-  bifrost: Studio;
+  bifrost: Bifrost;
 };
 
 function SubmenuItem({ label, submenu, bifrost }: SubmenuItemProps): React.JSX.Element {

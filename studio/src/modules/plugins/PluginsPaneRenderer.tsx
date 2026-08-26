@@ -1,17 +1,15 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
+import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
 
 import React, { useCallback, useEffect, useState } from 'react';
-
-import type {
-  EditorDocument,
-  EditorDocumentModel,
-  PaneComponentProps,
-  PaneProvider,
-  PluginInfo,
-  Studio,
-} from '@evil/bifrost_fw_sdk';
-import { Pane, PaneBody, PaneHeader, PaneHeaderIcon } from '@evil/bifrost_fw_sdk';
 
 import { PluginCard } from './PluginCard';
 import './plugins.scss';
@@ -20,7 +18,7 @@ function humanizeDomainSegment(segment: string): string {
   return segment.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (ch) => ch.toUpperCase());
 }
 
-function findSettingsCategory(studio: Studio, pluginDisplayName: string): string | null {
+function findSettingsCategory(studio: Bifrost, pluginDisplayName: string): string | null {
   const schemas = studio.settings.getSchemas();
   for (const [key, descriptor] of schemas) {
     const category = descriptor.category ?? humanizeDomainSegment(key.split('.')[0]);
@@ -40,7 +38,7 @@ export const paneProvider: PaneProvider = {
 function getPaneTitle(
   _editorDocument: EditorDocument,
   _editorDocumentModel: EditorDocumentModel,
-  _studio: Studio,
+  _studio: Bifrost,
 ): string {
   return 'Installed';
 }

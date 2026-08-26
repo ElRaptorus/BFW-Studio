@@ -1,14 +1,14 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { Icon } from '#components/Icon';
+import type { DmnImport } from '#modules/engine-decision-viewer/types/dmnModelTypes';
+
 import React from 'react';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
-
 import { DECISION_VIEWER_COMMANDS } from '../commands/DecisionViewerCommands';
-import type { DmnImport } from '../types/dmnModelTypes';
 import './ImportChainPanel.scss';
 
 interface ImportChainPanelProps {
-  studio: Studio;
+  studio: Bifrost;
   engineId: string;
   imports: DmnImport[];
   currentModelName?: string;

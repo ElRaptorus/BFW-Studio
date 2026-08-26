@@ -6,7 +6,7 @@ For the full architectural documentation of the dialog system (internal classes,
 
 ## Type Definitions
 
-All dialog types are defined in `studio-sdk/src/contracts/DialogTypes.ts` and exported via `@evil/bifrost_fw_sdk`.
+All dialog types are defined in `studio/src/bifrost/contracts/DialogTypes.ts`.
 
 ### DialogOptions
 
@@ -86,10 +86,9 @@ These are Electron-only. The `path_list` component checks `bifrost.commands.isRe
 
 | File | Purpose |
 |------|---------|
-| `studio-sdk/src/contracts/DialogTypes.ts` | Type definitions for all dialog content, options, actions, results |
-| `studio-sdk/types/common/DialogManager.ts` | SDK type declaration for `bifrost.dialog` |
+| `studio/src/bifrost/contracts/DialogTypes.ts` | Type definitions for all dialog content, options, actions, results |
 | `studio/src/bifrost/common/DialogService.ts` | Dialog queue, open/close lifecycle |
-| `studio/src/bifrost/common/DialogManager.ts` | Business logic layer around DialogService |
+| `studio/src/bifrost/common/DialogManager.ts` | Business logic layer around DialogService (`bifrost.dialog`) |
 | `studio/src/components/dialog/DialogRenderer.tsx` | React component: renders all content types |
 | `studio/src/components/dialog/Dialog.tsx` | Dialog wrapper (backdrop, positioning) |
 | `studio/src/components/dialog/extend.bootstrap.dialog.scss` | All dialog CSS |

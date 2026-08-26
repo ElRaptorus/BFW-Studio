@@ -1,18 +1,18 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { FileEventType, WatcherDisposable } from '#bifrost/common/FileHandlingService';
+import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
+import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
+import { EVENT_FRAGMENT_ID_UPDATED, EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { bpmnModelerModuleRegistry } from '#modules/bpmn-core/BpmnModelerModuleRegistry';
 import { DataObjectDetailLevel, showAllDataObjectDetails } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
+import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 
-import type { AbstractSubscription, BpmnElement, ILoadable, Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel, waitForAcceptance } from '@evil/bifrost_fw_sdk';
-import type { FileEventType, WatcherDisposable } from '@evil/bifrost_fw_sdk/types/common';
-
-import {
-  EVENT_FRAGMENT_ID_UPDATED,
-  EVENT_METADATA_UPDATED,
-} from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import { PLUGIN_OVERLAY_STORE_KEY } from '../../bifrost/electron-renderer/plugin-host/BpmnApiBridge';
 import type { PluginOverlayStore } from '../../bifrost/electron-renderer/plugin-host/PluginOverlayStore';
 import BpmnModelerComponentAdapter, {
@@ -58,7 +58,7 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
 
   private log: Debugger;
   private bpmnComponentAdapter: BpmnModelerComponentAdapter;
-  private studio: Studio;
+  private studio: Bifrost;
   private watcherDisposable?: WatcherDisposable;
 
   private subscriptions: AbstractSubscription[] = [];
@@ -73,7 +73,7 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
     currentXmlFromPreviousSession: string | null = null,
     restoredMetadataFromPreviousSession: any | null = null,
     newUniqueXml: string,
-    studio: Studio,
+    studio: Bifrost,
   ) {
     super(uri);
 
@@ -191,7 +191,7 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
     restoredCurrentData: any,
     restoredMetadata: any,
     fileLoader: ILoadable,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<BpmnDocumentModel> {
     // TODO: this is bad, we should not couple this this tightly
     const isUnsavedBuffer = uri.startsWith('buffer:');

@@ -24,7 +24,6 @@ Low-level command storage and execution. Stores commands in `commands: { [name: 
 ### CommandMediator (Public API)
 
 **Path:** `studio/src/bifrost/browser/CommandMediator.ts`
-**SDK type declaration:** `studio-sdk/types/browser/CommandMediator.ts`
 
 Orchestration layer around `CommandManager`. Adds performance marks, error handling, and user notifications.
 
@@ -59,7 +58,7 @@ Orchestration layer around `CommandManager`. Adds performance marks, error handl
 
 ### Type Definitions
 
-**Path:** `studio-sdk/types/contracts/CommandTypes.ts`
+**Path:** `studio/src/bifrost/contracts/CommandTypes.ts`
 
 ```typescript
 type Command = {
@@ -337,8 +336,7 @@ Test commands that accept parameters use `bifrost.dialog.prompt()`, which `Studi
 |-----------|------|
 | CommandManager | `studio/src/bifrost/common/CommandManager.ts` |
 | CommandMediator | `studio/src/bifrost/browser/CommandMediator.ts` |
-| CommandMediator SDK types | `studio-sdk/types/browser/CommandMediator.ts` |
-| Command types | `studio-sdk/types/contracts/CommandTypes.ts` |
+| Command types | `studio/src/bifrost/contracts/CommandTypes.ts` |
 | Solution commands | `studio/src/modules/std/initializers/commands/initializeSolutionCommands.ts` |
 | Solution file commands | `studio/src/modules/std/initializers/commands/initializeSolutionFileCommands.ts` |
 | Create Solution command | `studio/src/modules/std/initializers/commands/initializeCreateSolutionCommand.ts` |

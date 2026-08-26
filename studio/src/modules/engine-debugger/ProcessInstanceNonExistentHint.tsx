@@ -1,12 +1,12 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import { Icon } from '#components/Icon';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { Icon } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import './ProcessInstanceNonExistentHint.scss';
 
 export type ProcessInstanceNonExistentHintProps = {
-  studio: Studio;
+  studio: Bifrost;
   processInstanceId: string;
 };
 

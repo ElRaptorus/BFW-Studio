@@ -8,7 +8,7 @@ The Studio is designed around extensibility. Following the "eat your own dogfood
 
 | Folder | Purpose |
 |--------|---------|
-| `studio-sdk/` | Public SDK: types, interfaces, contracts, and reusable React components for extension developers |
+| `studio-sdk/` | Plugin SDK: `StudioPluginApi`, POJO contracts, theme tokens, and webview-safe content controls |
 | `studio/` | The Studio application itself. Everything here is strictly internal, even if implemented as an extension |
 | `docs/` | Project documentation |
 

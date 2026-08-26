@@ -1,11 +1,15 @@
-import React from 'react';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import type { DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 
-import type { EditorDocument, EditorDocumentModel, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, assertNotNull } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import { DecisionTableViewer } from '../components/DecisionTableViewer';
 import { isDecisionTable } from '../helpers/dmnExpressionHelpers';
-import type { DrgSelection } from '../types/dmnModelTypes';
 import { getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
 
 export const paneProvider: PaneProvider = {

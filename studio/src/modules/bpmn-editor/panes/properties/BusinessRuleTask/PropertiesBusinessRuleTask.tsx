@@ -1,30 +1,27 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Checkbox } from '#components/Checkbox';
+import { FeelExpressionHint } from '#components/FeelExpressionHint';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { ProjectDmnDecision, ProjectDmnModel } from '#modules/dmn-editor/initializers/initializeDmnCommands';
 
 import React, { useEffect, useState } from 'react';
 
-import type {
-  BpmnDocumentModel,
-  EditorDocument,
-  FeelEditorVariable,
-  PaneComponentProps,
-  PaneProvider,
-  SelectOption,
-  Studio,
-  Suggestion,
-} from '@evil/bifrost_fw_sdk';
 import {
-  Checkbox,
   FeelEditor,
-  FeelExpressionHint,
-  OpenInNewTabButton,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
+  type FeelEditorVariable,
   PaneProperty,
-  assertNotNull,
+  type SelectOption,
+  type Suggestion,
 } from '@evil/bifrost_fw_sdk';
-import { BpmnElementType } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
 
 import { assertBpmnElementIsBusinessRuleTask } from '../../BpmnElementTypeAssertionFunctions';
 import {
@@ -216,7 +213,6 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
             </span>
           </label>
           <FeelEditor
-            studio={props.studio}
             htmlId="business-rule-task-script-property"
             size="tall"
             fontSize={12}
@@ -284,7 +280,7 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
 function DecisionRefLinkWithLabel(props: {
   decisionRef: string;
   decisionElementId: string;
-  studio: Studio;
+  studio: Bifrost;
 }): React.JSX.Element {
   if (!props.decisionRef?.trim()) {
     return <>Decision Reference</>;

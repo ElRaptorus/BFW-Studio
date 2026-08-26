@@ -1,6 +1,6 @@
-# Evil Studio — Plugin Development Guide
+# Bifrost Forge World — Plugin Development Guide
 
-This guide covers everything you need to build, test, and deploy plugins for Evil Studio.
+This guide covers everything you need to build, test, and deploy plugins for Bifrost Forge World.
 
 ## Getting Started
 
@@ -8,7 +8,7 @@ This guide covers everything you need to build, test, and deploy plugins for Evi
 
 - Node.js >= 24.18.0
 - npm >= 12.0.0
-- Evil Studio (development build or release)
+- Bifrost Forge World (development build or release)
 
 ### Create a new plugin
 
@@ -759,7 +759,7 @@ Tree data items (`PluginTreeItem`):
 }
 ```
 
-The data model is push-based: call `updateTreeData` with the full item hierarchy whenever the tree content changes. The bridge renders it using the SDK's `Tree` component.
+The data model is push-based: call `updateTreeData` with the full item hierarchy whenever the tree content changes. The host renders it using `studio/src/components/Tree/` (not an SDK webview control).
 
 ### `api.themes`
 
@@ -1211,18 +1211,18 @@ const theme = api.getThemeType(); // "dark" or "light"
 
 ### Theming
 
-Studio injects CSS custom properties into the iframe matching the current theme. Use them for consistent styling:
+Studio injects CSS custom properties into the iframe matching the current theme (`--theme-*`, typed as `ThemeToken` in `@evil/bifrost_fw_sdk`). Use them for consistent styling:
 
 ```css
 body {
-  color: var(--studio-color-text, #ccc);
-  background: var(--studio-color-background, #1e1e1e);
-  font-family: var(--studio-font-family, sans-serif);
-  font-size: var(--studio-font-size, 13px);
+  color: var(--theme-fg, #c0d8f0);
+  background: var(--theme-pane-bg, #0a0e18);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
 }
 ```
 
-Theme changes are applied automatically — the bridge script updates CSS variables when the theme switches.
+Do **not** use `--studio-color-*` in plugin webviews — the host does not forward those names. Theme changes are applied automatically; the bridge script updates CSS variables when the theme switches. `acquireStudioApi().getThemeType()` returns `'light'` or `'dark'`.
 
 ### Messaging patterns
 
@@ -1320,7 +1320,7 @@ await build({
 }
 ```
 
-The SDK (`@evil/bifrost_fw_sdk`) is a `devDependency` only — it provides type information. At runtime, the `StudioPluginApi` instance is injected by the Plugin Host.
+The SDK (`@evil/bifrost_fw_sdk`) is a `devDependency` for types plus optional webview-safe components. At runtime, the `StudioPluginApi` instance is injected by the Plugin Host. Internal Studio modules must not import `Studio` from the SDK — they type `Bifrost` from `#bifrost/Bifrost`.
 
 ---
 
@@ -1332,6 +1332,7 @@ The `@evil/bifrost_fw_sdk` package exports the following plugin-relevant types:
 
 - `StudioPluginApi` — root API object
 - `PluginEnvironment` — `api.env` shape
+- `BpmnApi`, `DmnApi`
 - `CommandsApi`, `NotificationsApi`, `SettingsApi`, `EventsApi`, `WebviewApi`, `EditorsApi`, `PanesApi`
 - `StatusBarApi`, `MenuBarApi`, `MenusApi`
 - `DiagnosticsApi`, `DialogsApi`, `WorkspaceApi`, `ViewsApi`, `ThemesApi`
@@ -1360,11 +1361,23 @@ The `@evil/bifrost_fw_sdk` package exports the following plugin-relevant types:
 
 - `BpmnApi` — Full BPMN editor API interface
 - `BpmnModelingApi` — Modeling sub-API (updateProperties, removeElement, appendElement, createConnection, moveElement)
-- `BpmnOverlayDescriptor`, `BpmnOverlayType`, `BpmnOverlayPosition`, `BpmnOverlayStyle`
+- `BpmnOverlayDescriptor`, `PluginBpmnOverlay`, `PluginBpmnOverlayPosition`, `PluginBpmnOverlayStyle`
 - `BpmnElementSnapshot`, `BpmnElementDetailSnapshot`
+- `PluginBpmnElementType` — Studio-semantic element types (`'UserTask'`, `'BoundaryEvent/Error'`, …), not diagram-js QNames
 - `PluginBpmnPaletteEntry`, `PluginBpmnContextPadEntry`, `ContextPadEntryUpdate`
 - `ManifestBpmnModule` — Renderer module manifest declaration
 - `Disposable` — Subscription cleanup handle
+
+### DMN API types
+
+- `DmnApi` — DRD-scoped DMN editor API interface
+- `DmnModelingApi` — Modeling sub-API (`updateProperties`, `createElement`, `appendElement`, `removeElement`, `createConnection`, `moveElement`)
+- `DmnOverlayDescriptor`, `PluginDmnOverlay`, `PluginDmnOverlayPosition`, `PluginDmnOverlayStyle`
+- `DmnElementSnapshot`, `DmnElementDetailSnapshot`
+- `PluginDmnElementType` — Studio-semantic element types, not diagram-js QNames
+- `PluginDmnPaletteEntry`, `PluginDmnContextPadEntry`
+- `DmnViewType`, `DmnViewChangedEvent`
+- `ManifestDmnModule` — Renderer module manifest declaration
 
 ### Manifest types
 
@@ -1374,9 +1387,28 @@ The `@evil/bifrost_fw_sdk` package exports the following plugin-relevant types:
 - `ManifestPaneToggle` — declarative pane toggle for the menu bar
 - `ManifestTheme` — theme declaration in `contributes.themes`
 - `ManifestBpmnModule` — BPMN renderer module declaration in `contributes.bpmnModules`
+- `ManifestDmnModule` — DMN renderer module declaration in `contributes.dmnModules`
 - `ActivationEvent`, `KeybindingWhenCondition`
 
 ### Webview types
 
 - `StudioWebviewApi` — `acquireStudioApi()` return type
+- `StudioThemeType` — `'light' | 'dark'` from `getThemeType()`
 - `Window.acquireStudioApi` global augmentation
+
+### Content controls and theme tokens
+
+Webview-safe Keep components (render inside the iframe; no `studio` / `Bifrost` prop):
+
+- `FeelEditor`, `OneLineFeelEditor`
+- `PaneProperty` (+ `PropertyValidation`, `PropertyValueWithSuggestions`)
+- `FormInput`
+- `PresentationalContextMenu` — `{ items, x, y, onCommand, onDismiss }` (used by FormInput Cut/Copy/Paste)
+
+Host widgets (`Icon`, `Table`, `Checkbox`, `ColorPicker`) are not exported from the SDK. Phosphor in webviews: use `<span className="ph-…">`. The host does not inject Phosphor into iframes. Manifest `icon` on panes/tabs is host-rendered.
+
+Theme:
+
+- `ThemeToken` — typed CSS variable names (`--theme-*`), including feel and table groups
+- `studio-sdk/src/webview/studio-webview-theme.css` — documentation CSS with Bifrost Night fallbacks (not loaded at runtime)
+- `acquireStudioApi().getThemeType()` — current `'light' | 'dark'` from the webview bridge

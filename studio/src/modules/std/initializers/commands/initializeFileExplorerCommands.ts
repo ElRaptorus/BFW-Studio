@@ -1,7 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
 import { computeRelativeUri } from '#bifrost/common/FilePatternMatcher';
-
-import type { CommandContext, DialogOptions, TreeViewMediator } from '@evil/bifrost_fw_sdk';
+import type { CommandContext } from '#bifrost/contracts/CommandTypes';
+import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 
 const SETTING_FILE_EXPLORER_EXCLUDE = 'std.fileExplorer.exclude';
 

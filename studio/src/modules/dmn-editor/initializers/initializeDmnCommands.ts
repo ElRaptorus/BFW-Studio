@@ -1,9 +1,9 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { FileOrDirectory } from '#bifrost/contracts/FileSystemTypes';
 import * as path from 'path';
-
-import type { DialogOptions, EditorDocument } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../DmnDocumentModel';
 import { DMN_DOCUMENT_TYPE } from '../index';

@@ -1,21 +1,23 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
+import type { DialogOptions, DialogValidationCallbackFn } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { FileOrDirectory } from '#bifrost/contracts/FileSystemTypes';
 import { renderBpmnToPng, renderBpmnToSvg } from '#modules/bpmn-core/BpmnExportFunctions';
 import type { ProjectProcess } from '#modules/bpmn-core/BpmnSpecificSolutionAndProjectTypes';
 import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import evilPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
-import { suggestNextVersion } from '#modules/engine-core';
-import { BpmnModdle } from 'bpmn-moddle';
-import * as path from 'path';
-
-import type { DialogOptions, DialogValidationCallbackFn, EditorDocument } from '@evil/bifrost_fw_sdk';
-import { BpmnElementType, assertNotNull, getUrlForOpenInNewTab } from '@evil/bifrost_fw_sdk';
+import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 import type {
   BpmnElementColor,
   BpmnElement_Participant,
   BpmnElement_Process,
   CustomServiceTaskType,
-} from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+} from '#modules/bpmn-editor/BpmnElementTypes';
+import { suggestNextVersion } from '#modules/engine-core';
+import { BpmnModdle } from 'bpmn-moddle';
+import * as path from 'path';
 
 import { BPMN_DOCUMENT_TYPE } from '..';
 import type BpmnDocumentModel from '../BpmnDocumentModel';

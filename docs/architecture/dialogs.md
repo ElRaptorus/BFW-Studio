@@ -47,7 +47,6 @@ Both families flow through the same `DialogManager` queue, so they are mutually 
 ## DialogManager
 
 **Path:** `studio/src/bifrost/common/DialogManager.ts`
-**SDK type declaration:** `studio-sdk/types/common/DialogManager.ts`
 **Exposed as:** `bifrost.dialog`
 
 The central orchestration class. Manages the queue, normalization, validation loop, and public API.
@@ -124,7 +123,7 @@ Native dialogs bypass the React rendering pipeline entirely. Their result is fed
 
 ## Dialog Events
 
-**Path:** `studio-sdk/src/contracts/internal/DialogEvents.ts`
+**Path:** `studio/src/bifrost/contracts/internal/DialogEvents.ts`
 
 | Event | Emitted By | Payload | Purpose |
 |-------|-----------|---------|---------|
@@ -319,7 +318,7 @@ Select changes trigger `onSelectChange` up to `DialogContent`, which updates the
 
 ### checkbox
 
-Boolean toggle rendered via the SDK's `<Checkbox>` component.
+Boolean toggle rendered via the host `<Checkbox>` component (`studio/src/components/Checkbox.tsx`).
 
 ```typescript
 type DialogContentObject_Checkbox = {
@@ -533,9 +532,8 @@ Key CSS classes:
 
 | Component | Path |
 |-----------|------|
-| DialogTypes (all type definitions) | `studio-sdk/src/contracts/DialogTypes.ts` |
-| DialogManager SDK types | `studio-sdk/types/common/DialogManager.ts` |
-| DialogEvents | `studio-sdk/src/contracts/internal/DialogEvents.ts` |
+| DialogTypes (all type definitions) | `studio/src/bifrost/contracts/DialogTypes.ts` |
+| DialogEvents | `studio/src/bifrost/contracts/internal/DialogEvents.ts` |
 | DialogManager (queue, validation, normalization) | `studio/src/bifrost/common/DialogManager.ts` |
 | DialogService (base emitter) | `studio/src/bifrost/common/DialogService.ts` |
 | DialogServiceElectron (native dispatch) | `studio/src/bifrost/electron-renderer/DialogServiceElectron.ts` |

@@ -1,12 +1,12 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type { EngineHealthState } from './EngineHealthBadge';
 import { EngineHealthBadge } from './EngineHealthBadge';
 
 interface EngineContextBreadcrumbProps {
-  studio: Studio;
+  studio: Bifrost;
   engineId: string;
   engineDisplayName: string;
   healthState?: EngineHealthState;

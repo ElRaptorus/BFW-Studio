@@ -1,4 +1,5 @@
-import { AbstractEmitter, getClosestMatch } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { getClosestMatch } from '#bifrost/common/StringMatchFunctions';
 
 type ViewMediator = any;
 

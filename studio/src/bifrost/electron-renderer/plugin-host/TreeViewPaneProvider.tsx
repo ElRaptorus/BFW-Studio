@@ -1,23 +1,13 @@
+import type { PaneComponentProps, PaneProvider, PaneProviderModule } from '#bifrost/contracts/PaneTypes';
+import type { TreeBadge, TreeItem } from '#bifrost/contracts/TreeTypes';
+import { Icon } from '#components/Icon';
+import { Tree } from '#components/Tree/Tree';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
+
 import React, { useCallback, useEffect, useState } from 'react';
 
-import type { PaneComponentProps, PaneProvider, PaneProviderModule, TreeBadge, TreeItem } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneHeader, Tree } from '@evil/bifrost_fw_sdk';
-
-interface PluginTreeItem {
-  id: string;
-  type: 'directory' | 'file' | 'section' | 'property';
-  label: string;
-  sublabel?: string;
-  icon?: string;
-  expanded?: boolean;
-  children?: PluginTreeItem[];
-  command?: string;
-  badges?: (
-    { type: 'character'; character: string } | { type: 'icon'; icon: string } | { type: 'number'; number: number }
-  )[];
-  contextMenuId?: string;
-  metadata?: unknown;
-}
+import { type PluginTreeBadge, type PluginTreeItem } from '@evil/bifrost_fw_sdk';
 
 export interface TreeViewPaneProviderContext {
   pluginName: string;
@@ -29,7 +19,7 @@ export interface TreeViewPaneProviderContext {
   getVisibility?: () => boolean | undefined;
 }
 
-function mapBadge(badge: PluginTreeItem['badges'] extends (infer B)[] | undefined ? B : never): TreeBadge {
+function mapBadge(badge: PluginTreeBadge): TreeBadge {
   switch (badge.type) {
     case 'character':
       return { type: 'character', character: badge.character };

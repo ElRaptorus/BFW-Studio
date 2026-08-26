@@ -161,7 +161,7 @@ export default function BpmnScriptFragmentRenderer(props: EditorDocumentRenderer
 
 ## EditorDocument (Data Object)
 
-**Path:** `studio-sdk/src/contracts/EditorTypes.ts`
+**Path:** `studio/src/bifrost/contracts/EditorTypes.ts`
 
 Every opened tab is represented by an `EditorDocument` data object:
 
@@ -273,7 +273,7 @@ The `updateCurrentData` override (`super.updateOriginalAndCurrentData(data, data
 
 ## EditorDocumentModel (Base Class)
 
-**Path:** `studio-sdk/src/common/EditorDocumentModel.ts`
+**Path:** `studio/src/bifrost/common/EditorDocumentModel.ts`
 
 Abstract base class that all document models extend. Provides data management, event emission, and lifecycle hooks.
 
@@ -337,7 +337,7 @@ The constructor is typically `private` — only `create` constructs instances.
 
 ### Built-in Events
 
-**Path:** `studio-sdk/src/contracts/internal/EditorEvents.ts`
+**Path:** `studio/src/bifrost/contracts/internal/EditorEvents.ts`
 
 Events emitted by the base class through the protected helpers:
 
@@ -353,7 +353,7 @@ Events emitted by the base class through the protected helpers:
 
 ## Renderer Contract
 
-**Path:** `studio-sdk/src/contracts/EditorTypes.ts`
+**Path:** `studio/src/bifrost/contracts/EditorTypes.ts`
 
 Renderers are plain React components (class or function). There is no base class.
 
@@ -410,7 +410,7 @@ function RenderDocument({ editorDocument }: { editorDocument?: EditorDocument })
 
 ## Inspector Contract
 
-**Path:** `studio-sdk/src/contracts/PaneTypes.ts`
+**Path:** `studio/src/bifrost/contracts/PaneTypes.ts`
 
 Inspectors are React components shown in a side pane when a document is focused. There is no base class.
 
@@ -570,7 +570,6 @@ Only subscribe in the module's `onLoad` for concerns that are not tied to a spec
 ## EditorMediator (`bifrost.editors` / `studio.editors`)
 
 **Path:** `studio/src/bifrost/browser/EditorMediator.ts`
-**SDK type declaration:** `studio-sdk/types/browser/EditorMediator.ts`
 
 The public API for managing editor documents.
 
@@ -613,17 +612,16 @@ The public API for managing editor documents.
 
 | Component | Path |
 |-----------|------|
-| EditorDocumentModel (base class) | `studio-sdk/src/common/EditorDocumentModel.ts` |
-| EditorDocumentRendererProps | `studio-sdk/src/contracts/EditorTypes.ts` |
-| EditorDocument type | `studio-sdk/src/contracts/EditorTypes.ts` |
-| DocumentInspectorProps | `studio-sdk/src/contracts/PaneTypes.ts` |
-| EditorEvents | `studio-sdk/src/contracts/internal/EditorEvents.ts` |
+| EditorDocumentModel (base class) | `studio/src/bifrost/common/EditorDocumentModel.ts` |
+| EditorDocumentRendererProps | `studio/src/bifrost/contracts/EditorTypes.ts` |
+| EditorDocument type | `studio/src/bifrost/contracts/EditorTypes.ts` |
+| DocumentInspectorProps | `studio/src/bifrost/contracts/PaneTypes.ts` |
+| EditorEvents | `studio/src/bifrost/contracts/internal/EditorEvents.ts` |
 | EditorDocumentTypeManager | `studio/src/bifrost/common/EditorDocumentTypeManager.ts` |
 | EditorDocumentModelManager | `studio/src/bifrost/common/EditorDocumentModelManager.ts` |
 | EditorDocumentRendererManager | `studio/src/bifrost/common/EditorDocumentRendererManager.ts` |
 | EditorDocumentInspectorManager | `studio/src/bifrost/common/EditorDocumentInspectorManager.ts` |
 | EditorAreaManager | `studio/src/bifrost/common/EditorAreaManager.ts` |
 | EditorMediator | `studio/src/bifrost/browser/EditorMediator.ts` |
-| EditorMediator SDK types | `studio-sdk/types/browser/EditorMediator.ts` |
 | EditorWrapper (renderer usage) | `studio/src/components/editors/EditorWrapper.tsx` |
 | EditorDocumentInspector (inspector usage) | `studio/src/components/panes/inspectors/EditorDocumentInspector.tsx` |

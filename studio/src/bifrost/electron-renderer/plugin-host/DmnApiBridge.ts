@@ -1,6 +1,9 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { CallbackInvocationPayload, RegisterCallbackPayload } from '#bifrost/contracts/PluginHostProtocol';
 import { PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
+import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '#bifrost/contracts/internal/EditorEvents';
 
 import type {
   DmnElementDetailSnapshot,
@@ -10,12 +13,10 @@ import type {
   DmnOverlayFactoryOptions,
   DmnViewChangedEvent,
   DmnViewType,
-  EditorDocument,
+  PluginDmnElementType,
   PluginDmnOverlay,
 } from '@evil/bifrost_fw_sdk';
-import type { AbstractSubscription } from '@evil/bifrost_fw_sdk';
 
-import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
 import type DmnModelerComponentAdapter from '../../../modules/dmn-core/DmnModelerComponentAdapter';
 import {
   EVENT_DMN_ADAPTER_SELECTION_CHANGED,
@@ -24,6 +25,8 @@ import {
 } from '../../../modules/dmn-core/DmnModelerComponentAdapter';
 import { pluginDmnContributionStore } from '../../../modules/dmn-core/PluginDmnContributionStore';
 import { pluginDmnModuleLoader } from '../../../modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
+import type DmnDocumentModel from '../../../modules/dmn-editor/DmnDocumentModel';
+import type { DmnElement } from '../../../modules/dmn-editor/DmnElementTypes';
 import { DmnPluginOverlayManager } from '../../../modules/dmn-editor/DmnPluginOverlayManager';
 import type { PluginHost } from './PluginHost';
 
@@ -246,7 +249,7 @@ export class DmnApiBridge {
             return;
           }
           const element = selectedElements[0];
-          this.invokeCallback(callbackId, [this.serializeElementEvent(element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, element)]);
         };
         const eventBus = adapter.getDrdEventBus();
         eventBus.on('selection.changed', eventBusHandler);
@@ -258,7 +261,7 @@ export class DmnApiBridge {
           if (event.element == null) {
             return;
           }
-          this.invokeCallback(callbackId, [this.serializeElementEvent(event.element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, event.element)]);
         };
         const eventBus = adapter.getDrdEventBus();
         eventBus.on('element.hover', eventBusHandler);
@@ -270,7 +273,7 @@ export class DmnApiBridge {
           if (event.element == null) {
             return;
           }
-          this.invokeCallback(callbackId, [this.serializeElementEvent(event.element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, event.element)]);
         };
         const eventBus = adapter.getDrdEventBus();
         eventBus.on('element.dblclick', eventBusHandler);
@@ -282,7 +285,7 @@ export class DmnApiBridge {
           if (event.element == null) {
             return;
           }
-          this.invokeCallback(callbackId, [this.serializeElementEvent(event.element)]);
+          this.invokeCallback(callbackId, [this.serializeElementEvent(uri, event.element)]);
         };
         const eventBus = adapter.getDrdEventBus();
         eventBus.on('element.contextmenu', eventBusHandler);
@@ -722,12 +725,20 @@ export class DmnApiBridge {
       return [];
     }
 
-    return this.buildElementDetailSnapshots(adapter).map((snapshot) => ({
-      id: snapshot.id,
-      type: snapshot.type,
-      name: snapshot.name,
-      parentId: snapshot.parentId,
-    }));
+    const documentModel = this.resolveDmnDocumentModel(uri);
+    if (documentModel == null) {
+      throw new Error(`No DMN document open for URI: ${uri}`);
+    }
+
+    return documentModel.elements.getAllElements().map((typed) => {
+      const snapshot = this.buildElementDetailSnapshotFromTyped(typed, adapter);
+      return {
+        id: snapshot.id,
+        type: snapshot.type,
+        name: snapshot.name,
+        parentId: snapshot.parentId,
+      };
+    });
   }
 
   private handleGetElement(uri: string, elementId: string): DmnElementDetailSnapshot | null {
@@ -739,13 +750,17 @@ export class DmnApiBridge {
       return null;
     }
 
-    const elementRegistry = adapter.getDrdElementRegistry();
-    const element = elementRegistry.get(elementId) as any;
-    if (element == null) {
+    const documentModel = this.resolveDmnDocumentModel(uri);
+    if (documentModel == null) {
+      throw new Error(`No DMN document open for URI: ${uri}`);
+    }
+
+    const typed = documentModel.elements.getById(elementId);
+    if (typed == null) {
       return null;
     }
 
-    return this.buildElementDetailSnapshot(element);
+    return this.buildElementDetailSnapshotFromTyped(typed, adapter);
   }
 
   private async handleGetXml(uri: string): Promise<string> {
@@ -942,6 +957,15 @@ export class DmnApiBridge {
     return (documentModel as any).modelerAdapter ?? null;
   }
 
+  private resolveDmnDocumentModel(uri: string): DmnDocumentModel | null {
+    const editorDocument = this.bifrost.editors.getEditorDocumentByUri(uri);
+    if (editorDocument == null || editorDocument.documentType !== DMN_DOCUMENT_TYPE) {
+      return null;
+    }
+
+    return this.bifrost.editors.getEditorDocumentModelIfPresent(editorDocument) as DmnDocumentModel | null;
+  }
+
   /** Resolves the adapter for a modeling operation, rejecting when no document is open or the DRD view is not active. */
   private assertDrdActiveAdapter(uri: string): DmnModelerComponentAdapter {
     const adapter = this.resolveAdapter(uri);
@@ -954,18 +978,31 @@ export class DmnApiBridge {
     return adapter;
   }
 
-  private serializeElementEvent(element: any): DmnElementEvent {
+  private serializeElementEvent(uri: string, element: any): DmnElementEvent {
+    const documentModel = this.resolveDmnDocumentModel(uri);
+    const typed = element?.id != null ? documentModel?.elements.getById(element.id) : null;
     return {
-      elementId: element.id ?? '',
-      elementType: element.type ?? '',
-      elementName: element.businessObject?.name ?? null,
+      elementId: typed?.id ?? element?.id ?? '',
+      elementType: (typed?.type ?? '') as PluginDmnElementType | '',
+      elementName: typed?.name ? typed.name : (element?.businessObject?.name ?? null),
     };
   }
 
-  private buildElementDetailSnapshots(adapter: DmnModelerComponentAdapter): DmnElementDetailSnapshot[] {
+  private buildElementDetailSnapshotFromTyped(
+    typed: DmnElement,
+    adapter: DmnModelerComponentAdapter,
+  ): DmnElementDetailSnapshot {
     const elementRegistry = adapter.getDrdElementRegistry();
-    const elements = elementRegistry.filter(() => true) as any[];
-    return elements.map((element) => this.buildElementDetailSnapshot(element));
+    const registryElement = elementRegistry.get(typed.id) as any;
+    const snapshot = this.buildElementDetailSnapshot(
+      registryElement ?? { id: typed.id, businessObject: typed.businessObject, parent: null },
+    );
+    return {
+      ...snapshot,
+      id: typed.id,
+      type: typed.type as PluginDmnElementType,
+      name: typed.name || snapshot.name,
+    };
   }
 
   private buildElementDetailSnapshot(element: any): DmnElementDetailSnapshot {

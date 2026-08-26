@@ -1,3 +1,4 @@
+import type { Disposable } from './Disposable';
 import type { PluginCommandOptions, SerializedCommandInfo, SerializedCommandResult } from './types';
 
 /**
@@ -17,7 +18,7 @@ export interface CommandsApi {
    * @param callback - Handler invoked when the command is executed.
    * @param options - Optional settings for search visibility and description.
    */
-  register(id: string, callback: (...args: unknown[]) => unknown, options?: PluginCommandOptions): Promise<void>;
+  register(id: string, callback: (...args: unknown[]) => unknown, options?: PluginCommandOptions): Promise<Disposable>;
 
   /**
    * Execute a registered command by its full ID.

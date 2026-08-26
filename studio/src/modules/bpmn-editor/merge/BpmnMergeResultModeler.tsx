@@ -1,12 +1,12 @@
-import React from 'react';
-
 import type {
   ConflictKey,
   ElementResolution,
   ElementResolutionStatus,
   MergeOperationKind,
   MergeResolutionProgress,
-} from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/MergeTypes';
+
+import React from 'react';
 
 import type { BpmnDiffChangesByAction } from '../../bpmn-core/diff';
 import { BpmnViewerWithSync } from '../../bpmn-core/diff/BpmnViewerWithSync';

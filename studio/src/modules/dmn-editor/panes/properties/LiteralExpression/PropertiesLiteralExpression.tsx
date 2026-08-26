@@ -1,21 +1,16 @@
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { FeelExpressionHint } from '#components/FeelExpressionHint';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+
 import React, { useCallback, useEffect, useState } from 'react';
 
-import type {
-  EditorDocument,
-  EditorDocumentModel,
-  FeelEditorVariable,
-  PaneComponentProps,
-  PaneProvider,
-} from '@evil/bifrost_fw_sdk';
-import {
-  FeelEditor,
-  FeelExpressionHint,
-  Pane,
-  PaneBody,
-  PaneHeader,
-  PaneHeaderHelpIcon,
-  PaneProperty,
-} from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import { FeelEditor, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
 import { getActiveViewElementKey, getDmnModel, shouldBeDisplayedForDmnViewType } from '../../PropertiesPaneFunctions';
@@ -114,7 +109,6 @@ function LiteralExpressionProperties(props: PaneComponentProps): React.JSX.Eleme
           </span>
         </label>
         <FeelEditor
-          studio={props.studio}
           htmlId="dmn-le-expression-text"
           size="tall"
           fontSize={12}

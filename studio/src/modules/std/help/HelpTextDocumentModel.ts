@@ -1,10 +1,10 @@
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel } from '@evil/bifrost_fw_sdk';
+import type { Bifrost } from '#bifrost/Bifrost';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 
 export class HelpTextDocumentModel extends EditorDocumentModel {
   private helpText: any;
 
-  constructor(uri: string, studio: Studio) {
+  constructor(uri: string, studio: Bifrost) {
     super(uri);
 
     const helpTextId = uri.replace(/^help:\/\//, '');
@@ -25,7 +25,7 @@ export class HelpTextDocumentModel extends EditorDocumentModel {
     restoredCurrentData: any,
     restoredMetadata: any,
     fileLoader: any,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<HelpTextDocumentModel> {
     return new HelpTextDocumentModel(uri, studio);
   }

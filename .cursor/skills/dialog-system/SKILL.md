@@ -314,8 +314,8 @@ This applies to any code path reachable from `onLoad` or `onActivate` that could
 
 | File | Purpose |
 |------|---------|
-| `studio-sdk/src/contracts/DialogTypes.ts` | All dialog type definitions |
-| `studio-sdk/types/common/DialogManager.ts` | SDK type declaration for `bifrost.dialog` |
+| `studio/src/bifrost/contracts/DialogTypes.ts` | All dialog type definitions |
+| `studio/src/bifrost/common/DialogManager.ts` | `bifrost.dialog` implementation |
 | `studio/src/components/dialog/DialogRenderer.tsx` | React renderer for custom dialogs |
 | `studio/src/components/dialog/extend.bootstrap.dialog.scss` | Dialog styles |
 | `studio/src/bifrost/common/DialogService.ts` | Dialog queue and lifecycle management |

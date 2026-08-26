@@ -1,7 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { MenuBarItemMap } from '#bifrost/contracts/MenuBarTypes';
-
-import type { BpmnDocumentModel } from '@evil/bifrost_fw_sdk/types/BpmnDocumentModel';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
 import type { LintBridgeApi } from '../types';
 

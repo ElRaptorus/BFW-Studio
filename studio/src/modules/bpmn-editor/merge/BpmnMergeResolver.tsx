@@ -1,16 +1,16 @@
-import { SplitterLayout } from '#components/splitter/SplitterLayout';
-
-import React from 'react';
-
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type {
   ElementResolution,
   ElementResolutionStatus,
   MergeResolutionProgress,
   MergeResolverProps,
-} from '@evil/bifrost_fw_sdk';
-import { Icon, assertNotNull } from '@evil/bifrost_fw_sdk';
+} from '#bifrost/contracts/MergeTypes';
+import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { Icon } from '#components/Icon';
+import { SplitterLayout } from '#components/splitter/SplitterLayout';
 
-import { EVENT_METADATA_UPDATED } from '../../../../../studio-sdk/src/contracts/internal/EditorEvents';
+import React from 'react';
+
 import {
   type AttributeChange,
   BpmnDiff,

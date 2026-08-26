@@ -29,7 +29,7 @@ Each package has its own `eslint.config.mjs` that imports the shared exports and
 | Package | Config path | Files pattern |
 |---------|------------|---------------|
 | `studio` | `studio/eslint.config.mjs` | `src/**/*.{ts,tsx}`, `test/**/*.{ts,tsx}` |
-| `studio-sdk` | `studio-sdk/eslint.config.mjs` | `src/**/*.{ts,tsx}`, `types/**/*.ts` |
+| `studio-sdk` | `studio-sdk/eslint.config.mjs` | `src/**/*.{ts,tsx}` |
 
 Flat config using `defineConfig()` from `eslint/config`. Config objects are applied in this order:
 

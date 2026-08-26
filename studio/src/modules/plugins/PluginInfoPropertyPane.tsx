@@ -4,12 +4,14 @@ import {
   type PermissionDisplayInfo,
 } from '#bifrost/common/plugin-host/permissions/PermissionDisplay';
 import type { PluginPermission } from '#bifrost/common/plugin-host/permissions/PermissionTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
+import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
+import { PaneBody } from '#components/panes/PaneBody';
+import { buildSimplePropertyPaneProvider } from '#components/panes/PaneFunctions';
 
 import React, { useCallback, useMemo } from 'react';
-
-import type { EditorDocument, PaneComponentProps, PluginInfo } from '@evil/bifrost_fw_sdk';
-import { PaneBody, buildSimplePropertyPaneProvider } from '@evil/bifrost_fw_sdk';
 
 const WARNING_LEVEL_ORDER: Record<PermissionDisplayInfo['warningLevel'], number> = {
   low: 0,

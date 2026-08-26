@@ -1,6 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { DialogOptions } from '@evil/bifrost_fw_sdk';
+import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 
 import DefaultSettingsRenderer from './DefaultSettingsDocumentRenderer';
 import KeyBindingsDocumentRenderer from './KeyBindingsDocumentRenderer';

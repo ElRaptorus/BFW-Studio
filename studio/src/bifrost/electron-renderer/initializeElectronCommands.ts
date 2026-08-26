@@ -1,9 +1,8 @@
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { ExecException } from 'child_process';
 import { exec } from 'child_process';
 import { ipcRenderer, shell } from 'electron';
 import log from 'electron-log';
-
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
 
 import type { Bifrost } from '../Bifrost';
 import { IPC_INVOKE_GET_APP_PATH, IPC_INVOKE_OPEN_PATH, IPC_INVOKE_SHOW_ITEM_IN_FOLDER } from '../contracts/IpcEvents';

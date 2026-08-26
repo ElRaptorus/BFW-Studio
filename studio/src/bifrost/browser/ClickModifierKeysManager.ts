@@ -1,6 +1,5 @@
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { calculateSpecificity } from 'clear-cut';
-
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
 
 import type { BifrostClient, BifrostOperatingSystem } from '../contracts/BifrostTypes';
 

@@ -1,6 +1,5 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
-
-import type { Studio } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 
@@ -8,7 +7,7 @@ class CustomPopupProvider {
   static $inject: string[] = ['config', 'popupMenu', 'translate'];
 
   private model!: EngineBpmnDebuggerEditorDocumentModel;
-  private studio!: Studio;
+  private studio!: Bifrost;
   private popupMenu;
 
   constructor(config, popupMenu) {
@@ -16,7 +15,7 @@ class CustomPopupProvider {
     popupMenu.registerProvider('debugger-flow-node-instance-details', this);
   }
 
-  configure(model: EngineBpmnDebuggerEditorDocumentModel, studio: Studio): void {
+  configure(model: EngineBpmnDebuggerEditorDocumentModel, studio: Bifrost): void {
     this.model = model;
     this.studio = studio;
   }

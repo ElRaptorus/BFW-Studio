@@ -1,25 +1,14 @@
-import type {
-  EditorAreaLayout,
-  EditorAreaLayout_Column,
-  EditorAreaLayout_Editor,
-  EditorAreaLayout_Row,
-  EditorAreaSerialized,
-  EditorDocument} from '@evil/bifrost_fw_sdk';
-import {
-  AbstractEmitter,
-  assertNotNull,
-  getUrlForOpenInNewTab,
-  isUrlForOpenInNewTab,
-  parseOpenInNewTabUrl,
-} from '@evil/bifrost_fw_sdk';
-
+import type { EditorAreaLayout, EditorAreaLayout_Column, EditorAreaLayout_Editor, EditorAreaLayout_Row, EditorAreaSerialized, EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { getUrlForOpenInNewTab, isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import {
   EVENT_EDITOR_AREA_DOCUMENT_CLOSED,
   EVENT_EDITOR_AREA_FOCUS_UPDATED,
   EVENT_EDITOR_AREA_LAYOUT_UPDATED,
   EVENT_EDITOR_DOCUMENT_METADATA_UPDATED,
-} from '../../../../studio-sdk/src/contracts/internal/EditorEvents';
-import type { SearchQuery } from '../../../../studio-sdk/src/contracts/internal/SearchTypes';
+} from '#bifrost/contracts/internal/EditorEvents';
+import type { SearchQuery } from '#bifrost/contracts/internal/SearchTypes';
 import type { ISerializable } from '../contracts/SerializableTypes';
 import type { Bifrost } from '../Bifrost';
 

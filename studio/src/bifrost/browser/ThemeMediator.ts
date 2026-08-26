@@ -1,7 +1,7 @@
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
+import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 
-import { EVENT_SETTINGS_CHANGED } from '../../../../studio-sdk/src/contracts/internal/SettingsEvents';
-import { EVENT_THEME_CHANGED } from '../../../../studio-sdk/src/contracts/internal/ThemeEvents';
 import type { SettingsMediator } from '../common/SettingsMediator';
 import { ThemeManager } from '../common/ThemeManager';
 import type { ThemeDefinition, ThemeType } from '../contracts/ThemeTypes';

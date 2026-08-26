@@ -1,8 +1,15 @@
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Checkbox } from '#components/Checkbox';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import type { BpmnElementCustomProperty } from '#modules/bpmn-editor/BpmnElementTypes';
+
 import React from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Checkbox, FormInput, Pane, PaneBody, PaneHeader, PaneHeaderHelpIcon } from '@evil/bifrost_fw_sdk';
-import type { BpmnElementCustomProperty } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import { FormInput } from '@evil/bifrost_fw_sdk';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 
@@ -119,7 +126,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
         return null;
       })}
       <Checkbox
-        studio={bifrost}
         checked={showInternalCustomProperties}
         onChange={toggleInternalCustomProperties}
         label="Show internal custom properties"

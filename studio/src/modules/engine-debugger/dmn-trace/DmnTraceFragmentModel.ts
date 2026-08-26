@@ -1,13 +1,13 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EngineConnectionManager } from '#modules/engine-core';
+import type { DmnDefinitions, DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
 import { parseDmn } from '@elraptorus/daemonengine_sdk';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel, parseOpenInNewTabUrl } from '@evil/bifrost_fw_sdk';
-
 import type { DmnViewerComponentAdapter } from '../../dmn-core/DmnViewerComponentAdapter';
-import type { DmnDefinitions, DrgSelection } from '../../engine-decision-viewer/types/dmnModelTypes';
 import type { DmnFlowNodeTypeProperties, DmnTraceFragmentData } from './DmnTraceTypes';
 
 const EMPTY_DATA: DmnTraceFragmentData = {
@@ -30,7 +30,7 @@ export class DmnTraceFragmentModel extends EditorDocumentModel {
   readonly processInstanceId: string;
   readonly flowNodeInstanceId: string;
 
-  private constructor(uri: string, studio: Studio) {
+  private constructor(uri: string, studio: Bifrost) {
     super(uri);
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
 
@@ -46,7 +46,7 @@ export class DmnTraceFragmentModel extends EditorDocumentModel {
     _restoredCurrentData: unknown,
     _restoredMetadata: unknown,
     _fileLoader: unknown,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<DmnTraceFragmentModel> {
     return new DmnTraceFragmentModel(uri, studio);
   }

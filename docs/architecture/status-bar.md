@@ -127,12 +127,10 @@ The status bar is primarily an information tool. Items may trigger lightweight, 
 | StatusBar (React) | `studio/src/components/status_bar/StatusBar.tsx` |
 | StatusBarButton | `studio/src/components/status_bar/StatusBarButton.tsx` |
 | StatusBarContentRenderer | `studio/src/components/status_bar/StatusBarContentRenderer.tsx` |
-| StatusBarTypes | `studio/src/bifrost/contracts/StatusBarTypes.ts` |
+| StatusBarTypes (host) | `studio/src/bifrost/contracts/StatusBarTypes.ts` |
 | StatusBar SCSS | `studio/src/components/status_bar/workbench.status-bar.scss` |
 | DiagnosticsManager | `studio/src/bifrost/common/DiagnosticsManager.ts` |
 | DiagnosticsMediator | `studio/src/bifrost/browser/DiagnosticsMediator.ts` |
 | Std status bar items | `studio/src/modules/std/initializers/initializeStatusBarItems.ts` |
 | Git status bar items | `studio/src/modules/git-cruiser/initializers/initializeStatusBar.ts` |
-| SDK StatusBarTypes | `studio-sdk/types/contracts/StatusBarTypes.ts` |
-| SDK StatusBarMediator | `studio-sdk/types/browser/StatusBarMediator.ts` |
-| SDK DiagnosticsMediator | `studio-sdk/types/browser/DiagnosticsMediator.ts` |
+| StatusBarTypes (plugin POJO) | `studio-sdk/src/contracts/StatusBarTypes.ts` |

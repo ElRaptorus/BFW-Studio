@@ -1,9 +1,15 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
+import { EVENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { DataObjectDetailLevel, showAllDataObjectDetails } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { CompensatedActivitySnapshot, EngineConnectionManager } from '#modules/engine-core';
 import { getShortId } from '#modules/engine-core';
+import type { BpmnDiagramShape } from '#modules/engine-debugger/types/BpmnDiagramShape';
 import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
 import type { DataObjectValue, FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import type { BpmnDefinitions, FlowNode as BpmnFlowNode, BpmnProcess } from '@elraptorus/daemonengine_sdk';
@@ -11,10 +17,6 @@ import ContextPadModule from 'bpmn-js/lib/features/context-pad';
 import type { CanvasViewbox } from 'diagram-js/lib/core/Canvas';
 import type { ElementLike, Shape } from 'diagram-js/lib/model/Types';
 import debounce from 'lodash.debounce';
-
-import type { AbstractSubscription, ILoadable, Studio } from '@evil/bifrost_fw_sdk';
-import { EditorDocumentModel, assertNotNull } from '@evil/bifrost_fw_sdk';
-import { EVENT_DATA_UPDATED } from '@evil/bifrost_fw_sdk/src/contracts/internal/EditorEvents';
 
 import {
   BpmnViewerComponentAdapter,
@@ -44,7 +46,6 @@ import {
   createFlowNodeModelOverlays,
   createProcessModelOverlays,
 } from './overlays/OverlayFactory';
-import type { BpmnDiagramShape } from './types/BpmnDiagramShape';
 import type { DebuggerBaseError, DebuggerProcessInstance } from './types/DebuggerTypes';
 
 type SubProcessSanitizationMap = {
@@ -95,7 +96,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
 
   private error: DebuggerBaseError | null = null;
 
-  private constructor(documentUri: string, studio: Studio, restoredMetadataFromPreviousSession: any) {
+  private constructor(documentUri: string, studio: Bifrost, restoredMetadataFromPreviousSession: any) {
     super(documentUri);
 
     this.bifrost = Bifrost.cast(studio);
@@ -508,7 +509,7 @@ export default class EngineBpmnDebuggerEditorDocumentModel extends EditorDocumen
     restoredCurrentData: any,
     restoredMetadata: any,
     fileLoader: ILoadable,
-    studio: Studio,
+    studio: Bifrost,
   ): Promise<EngineBpmnDebuggerEditorDocumentModel> {
     const model = new EngineBpmnDebuggerEditorDocumentModel(documentUri, studio, restoredMetadata);
     model.initialize();

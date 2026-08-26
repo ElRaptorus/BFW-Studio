@@ -1,11 +1,12 @@
-import type { SettingDescriptor, SettingsValidationResult } from '@evil/bifrost_fw_sdk';
-import { AbstractEmitter } from '@evil/bifrost_fw_sdk';
-
+import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import {
   EVENT_SETTINGS_CHANGED,
   EVENT_SETTINGS_MERGED,
   EVENT_SETTINGS_SCHEMA_REGISTERED,
-} from '../../../../studio-sdk/src/contracts/internal/SettingsEvents';
+} from '#bifrost/contracts/internal/SettingsEvents';
+
+import type { SettingDescriptor, SettingsValidationResult } from '@evil/bifrost_fw_sdk';
+
 import type { LocalStorageItem } from './LocalStorageItem';
 import { SettingsManager } from './SettingsManager';
 

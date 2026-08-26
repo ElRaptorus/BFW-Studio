@@ -1,10 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { showContextMenu } from '#components/ContextMenuFunctions';
 
 import React from 'react';
 
-import { Icon, showContextMenu } from '@evil/bifrost_fw_sdk';
-
 import { useBifrost } from '../../bifrostContext';
+import { Icon } from '../Icon';
 
 type MenuBarMenuProps = {
   menu: string;

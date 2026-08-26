@@ -40,11 +40,14 @@ export interface StudioWebviewApi {
   getState(): unknown;
 
   /**
-   * Returns the current Studio theme type (e.g. `"dark"` or `"light"`).
+   * Returns the current Studio theme type.
    * Reads from `document.documentElement.getAttribute('data-theme')`.
    */
-  getThemeType(): string;
+  getThemeType(): StudioThemeType;
 }
+
+/** Theme type injected into plugin iframes (`data-theme` / `getThemeType()`). */
+export type StudioThemeType = 'light' | 'dark';
 
 /**
  * Typed wrapper for data received in an {@link StudioWebviewApi.onMessage} callback.

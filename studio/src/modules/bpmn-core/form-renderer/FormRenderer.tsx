@@ -1,7 +1,7 @@
-import React, { useCallback, useRef, useState } from 'react';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
+import { FormActionPreset } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { FormAction, FormFieldDefinition } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
-import { FormActionPreset } from '@evil/bifrost_fw_sdk/types/bpmn/BpmnElementTypes';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { FormRendererActions } from './FormRendererActions';
 import { FormRendererField } from './FormRendererField';

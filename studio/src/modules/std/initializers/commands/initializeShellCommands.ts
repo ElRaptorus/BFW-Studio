@@ -1,6 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 export function initializeShellCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;

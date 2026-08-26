@@ -1,9 +1,9 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+
 import React from 'react';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-
 interface NoAuthTokenHintProps {
-  studio: Studio;
+  studio: Bifrost;
   engineUrl: string;
 }
 

@@ -1,6 +1,9 @@
-import React, { useCallback } from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneAreaName, PaneObject } from '#bifrost/contracts/PaneTypes';
 
-import type { EditorDocument, EditorDocumentModel, PaneAreaName, PaneObject, Studio } from '@evil/bifrost_fw_sdk';
+import React, { useCallback } from 'react';
 
 import { useBifrost } from '../../bifrostContext';
 
@@ -24,7 +27,7 @@ export default function PaneWrapper(props: PaneProps): React.JSX.Element | null 
         | ((
             editorDocument: EditorDocument,
             editorDocumentModel: EditorDocumentModel,
-            studio: Studio,
+            studio: Bifrost,
             pane: PaneObject,
           ) => string),
     ): string => {

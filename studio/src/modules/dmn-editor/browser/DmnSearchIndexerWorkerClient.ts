@@ -1,6 +1,5 @@
 import { AbstractWorkerClient } from '#bifrost/browser/AbstractWorkerClient';
-
-import type { SearchIndexerResult } from '../../../../../studio-sdk/src/contracts/internal/SearchTypes';
+import type { SearchIndexerResult } from '#bifrost/contracts/internal/SearchTypes';
 
 export class DmnSearchIndexerWorkerClient extends AbstractWorkerClient {
   constructor() {

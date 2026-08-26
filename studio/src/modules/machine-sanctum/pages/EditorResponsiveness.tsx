@@ -1,8 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { Icon } from '#components/Icon';
+import { EditorContent } from '#components/editor/EditorContent';
 
 import React from 'react';
-
-import { EditorContent, Icon } from '@evil/bifrost_fw_sdk';
 
 export default function EditorResponsiveness(props: any): React.JSX.Element {
   const bifrost: Bifrost = props.bifrost;

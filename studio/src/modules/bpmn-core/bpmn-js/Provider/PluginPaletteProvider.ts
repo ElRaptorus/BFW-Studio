@@ -1,8 +1,8 @@
-import type { Studio } from '@evil/bifrost_fw_sdk';
+import type { Bifrost } from '#bifrost/Bifrost';
 
 import { pluginBpmnContributionStore } from '../../PluginBpmnContributionStore';
 
-let studioReference: Studio | null = null;
+let studioReference: Bifrost | null = null;
 
 function resolveIconClassName(icon: string): string {
   if (icon.startsWith('ph')) {
@@ -26,7 +26,7 @@ class PluginPaletteProvider {
     });
   }
 
-  static setStudio(studio: Studio): void {
+  static setStudio(studio: Bifrost): void {
     studioReference = studio;
   }
 

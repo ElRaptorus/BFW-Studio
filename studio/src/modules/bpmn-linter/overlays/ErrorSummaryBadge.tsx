@@ -1,6 +1,6 @@
-import React from 'react';
+import { Icon } from '#components/Icon';
 
-import { Icon } from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type { FindingCounts, LintScoreSnapshot } from '../types';
 

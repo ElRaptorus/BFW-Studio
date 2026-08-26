@@ -1,13 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 import type * as monaco from 'monaco-editor';
 
 import React from 'react';
 
-import type { AbstractSubscription, EditorDocument } from '@evil/bifrost_fw_sdk';
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
-
-import { EVENT_THEME_CHANGED } from '../../../../../studio-sdk/src/contracts/internal/ThemeEvents';
 import type MachineSanctumDocumentModel from '../MachineSanctumDocumentModel';
 
 type AbstractExampleRendererProps = {

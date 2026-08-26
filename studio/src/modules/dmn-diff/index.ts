@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { EditorDocument } from '@evil/bifrost_fw_sdk';
-import { assertNotNull, getUrlForOpenInNewTab } from '@evil/bifrost_fw_sdk';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 import { DmnDiff, buildDmnChangeSummary, formatDmnChangeSummaryAsMarkdown } from '../dmn-core/diff';
 import DmnDiffDocumentModel from './DmnDiffDocumentModel';

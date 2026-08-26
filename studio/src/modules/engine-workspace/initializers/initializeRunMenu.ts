@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { CommandContext } from '#bifrost/contracts/CommandTypes';
 import type { MenuBarItemMap } from '#bifrost/contracts/MenuBarTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import {
@@ -10,7 +11,7 @@ import {
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { CommandContext, Menu, MenuItem } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem } from '@evil/bifrost_fw_sdk';
 
 const DEPLOYABLE_EXTENSIONS = ['.bpmn', '.dmn'];
 

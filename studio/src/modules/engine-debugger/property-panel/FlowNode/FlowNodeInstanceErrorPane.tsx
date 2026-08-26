@@ -1,12 +1,12 @@
-import React from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
+import { PaneBody } from '#components/panes/PaneBody';
+import { buildSimplePropertyPaneProvider } from '#components/panes/PaneFunctions';
 
-import type { EditorDocument, PaneComponentProps, Studio } from '@evil/bifrost_fw_sdk';
-import {
-  MultiLineCodeEditor,
-  OpenInNewTabButton,
-  PaneBody,
-  buildSimplePropertyPaneProvider,
-} from '@evil/bifrost_fw_sdk';
+import React from 'react';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/index';
@@ -14,7 +14,7 @@ import { shouldDisplayFlowNodeInstanceErrorPane } from '../ShouldBeDisplayedCond
 
 export type FlowNodeInstanceErrorPaneProps = {
   editorDocument: EditorDocument;
-  studio: Studio;
+  studio: Bifrost;
   flowNode: FlowNode;
 };
 

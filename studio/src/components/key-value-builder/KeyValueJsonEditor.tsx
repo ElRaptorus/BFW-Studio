@@ -1,14 +1,14 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import type { Bifrost } from '#bifrost/Bifrost';
+import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
 
-import type { Studio } from '@evil/bifrost_fw_sdk';
-import { MultiLineCodeEditor } from '@evil/bifrost_fw_sdk';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import { KeyValueBuilder, entriesToJson, jsonToEntries } from './KeyValueBuilder';
 import type { KeyValueEntry } from './KeyValueBuilder';
 import './KeyValueBuilder.scss';
 
 export type KeyValueJsonEditorProps = {
-  readonly studio: Studio;
+  readonly studio: Bifrost;
   readonly initialValue: string;
   readonly onChange: (jsonString: string) => void;
   readonly keyPlaceholder?: string;

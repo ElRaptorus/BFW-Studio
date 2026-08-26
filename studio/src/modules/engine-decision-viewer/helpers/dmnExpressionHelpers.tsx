@@ -1,6 +1,6 @@
-import React from 'react';
+import type { DmnExpressionBody } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 
-import type { DmnExpressionBody } from '../types/dmnModelTypes';
+import React from 'react';
 
 export function isDecisionTable(
   expression: DmnExpressionBody | null,

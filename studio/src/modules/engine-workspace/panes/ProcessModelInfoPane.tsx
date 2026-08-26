@@ -1,11 +1,14 @@
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Pane } from '#components/panes/Pane';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { getHumanizedDateTime } from '#modules/engine-core';
 import type { ProcessModel } from '@elraptorus/daemonengine_sdk';
 
 import React, { useEffect, useState } from 'react';
 
-import type { EditorDocument, PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Pane, PaneHeader, PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type { ProcessExplorerDocumentModel } from '../models/ProcessExplorerDocumentModel';
 

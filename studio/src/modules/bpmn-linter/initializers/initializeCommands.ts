@@ -1,7 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { DialogResult } from '@evil/bifrost_fw_sdk';
-import type { BpmnDocumentModel } from '@evil/bifrost_fw_sdk/types/BpmnDocumentModel';
+import type { DialogResult } from '#bifrost/contracts/DialogTypes';
+import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
 import { profiles } from '../rules/config';
 import type { CustomRulesetEntry, LintBridgeApi } from '../types';

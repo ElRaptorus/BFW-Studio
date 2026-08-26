@@ -1,31 +1,32 @@
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import { EVENT_MENU_BAR_UPDATED } from '#bifrost/common/MenuBarManager';
 import { EVENT_CLOSE_NOTIFICATION, EVENT_OPEN_NOTIFICATION } from '#bifrost/common/NotificationManager';
 import { EVENT_QUICK_JUMP_ENTRIES_CHANGED } from '#bifrost/common/QuickJumpView';
 import { EVENT_STATUS_BAR_UPDATED } from '#bifrost/common/StatusBarManager';
 import { EVENT_FILE_EXPLORER_OPENED_SOLUTION } from '#bifrost/common/activities';
+import type { Dialog, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
 import { EVENT_RECENTLY_OPENED_CHANGED } from '#bifrost/contracts/RecentTypes';
-
-import React, { useCallback, useDeferredValue, useEffect, useReducer, useRef, useState } from 'react';
-
-import type { AbstractSubscription, Dialog, DialogValidationResult } from '@evil/bifrost_fw_sdk';
-import { Icon, assertNotNull } from '@evil/bifrost_fw_sdk';
-
 import {
   EVENT_CLOSE_DIALOG,
   EVENT_OPEN_DIALOG,
   EVENT_VALIDATED_DIALOG,
-} from '../../../studio-sdk/src/contracts/internal/DialogEvents';
+} from '#bifrost/contracts/internal/DialogEvents';
 import {
   EVENT_EDITOR_AREA_FOCUS_UPDATED,
   EVENT_EDITOR_AREA_LAYOUT_UPDATED,
   EVENT_EDITOR_DOCUMENT_DATA_UPDATED,
   EVENT_EDITOR_DOCUMENT_METADATA_UPDATED,
   EVENT_EDITOR_DOCUMENT_URI_UPDATED,
-} from '../../../studio-sdk/src/contracts/internal/EditorEvents';
-import { EVENT_PANE_LAYOUT_UPDATED } from '../../../studio-sdk/src/contracts/internal/PaneEvents';
-import { EVENT_SETTINGS_CHANGED } from '../../../studio-sdk/src/contracts/internal/SettingsEvents';
+} from '#bifrost/contracts/internal/EditorEvents';
+import { EVENT_PANE_LAYOUT_UPDATED } from '#bifrost/contracts/internal/PaneEvents';
+import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
+
+import React, { useCallback, useDeferredValue, useEffect, useReducer, useRef, useState } from 'react';
+
 import { useBifrost } from '../bifrostContext';
 import { ErrorBoundaryWithMessage } from './ErrorBoundaryWithMessage';
+import { Icon } from './Icon';
 import DialogContainer from './dialog/Dialog';
 import EditorArea from './editors/EditorArea';
 import MenuBarSection from './menu_bar/MenuBarSection';

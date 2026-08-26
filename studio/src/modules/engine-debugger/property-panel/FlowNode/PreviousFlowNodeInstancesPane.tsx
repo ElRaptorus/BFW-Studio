@@ -1,9 +1,11 @@
+import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { Icon } from '#components/Icon';
+import { Pane } from '#components/panes/Pane';
+import { PaneBody } from '#components/panes/PaneBody';
+import { PaneHeader } from '#components/panes/PaneHeader';
 import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React, { useMemo } from 'react';
-
-import type { PaneComponentProps, PaneProvider } from '@evil/bifrost_fw_sdk';
-import { Icon, Pane, PaneBody, PaneHeader } from '@evil/bifrost_fw_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs';

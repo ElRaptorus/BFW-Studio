@@ -1,11 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
 import { ErrorBoundary } from '#components/ErrorBoundary';
+import { Icon } from '#components/Icon';
 import QuickJumpRenderer from '#components/quick_jump/QuickJumpRenderer';
 
 import React from 'react';
-
-import { Icon } from '@evil/bifrost_fw_sdk';
 
 import { JsonExampleRenderer } from './JsonExampleRenderer';
 

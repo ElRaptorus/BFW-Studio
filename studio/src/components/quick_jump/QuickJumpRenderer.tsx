@@ -1,11 +1,10 @@
+import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type { QuickJumpItem, QuickJumpItemBadge } from '#bifrost/contracts/QuickJumpTypes';
+import { AutoScrollContainer } from '#components/AutoScrollContainer';
 
 import React from 'react';
 
-import type { IconComponent } from '@evil/bifrost_fw_sdk';
 import { FormInput } from '@evil/bifrost_fw_sdk';
-
-import { AutoScrollContainer } from '../../../../studio-sdk/src/components/internal/AutoScrollContainer';
 
 type QuickJumpRendererProps = {
   iconComponent: IconComponent;

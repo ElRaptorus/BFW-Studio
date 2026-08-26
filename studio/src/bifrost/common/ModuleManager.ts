@@ -1,4 +1,4 @@
-import { assertNotNull } from '@evil/bifrost_fw_sdk';
+import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 export type StudioModule = {
   name: string;

@@ -1,13 +1,14 @@
 import { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
+import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
+import { Editor } from '#components/editor/Editor';
+import { EditorContent } from '#components/editor/EditorContent';
 import DOMPurify from 'dompurify';
 import * as fs from 'fs/promises';
 import { marked } from 'marked';
 
 import React, { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-
-import type { EditorDocumentRendererProps, PluginInfo } from '@evil/bifrost_fw_sdk';
-import { Editor, EditorContent } from '@evil/bifrost_fw_sdk';
 
 import './plugins.scss';
 import { usePluginLogo } from './usePluginLogo';
