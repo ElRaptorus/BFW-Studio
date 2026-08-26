@@ -106,7 +106,7 @@ function MultipleSelectionsInspector(props: DebuggerSelectionInspectorProps): Re
             <MultiLineCodeEditor
               studio={props.studio}
               htmlId={`debugger-element-${selectedElement.name || selectedElement.id}`}
-              className="debugger-inspector__showroom-monaco-editor"
+              className="debugger-inspector__showroom-code-editor"
               fontSize={12}
               initialValue={stringifiedSelectedElement}
               readOnly={true}
@@ -147,7 +147,7 @@ function DataObjectSelectionInspector(props: DebuggerSelectionInspectorProps): R
         <MultiLineCodeEditor
           studio={props.studio}
           htmlId="debugger-selected-data-object"
-          className="debugger-inspector__showroom-monaco-editor"
+          className="debugger-inspector__showroom-code-editor"
           fontSize={12}
           initialValue={stringifiedSelectedElements}
           readOnly={true}
@@ -176,7 +176,7 @@ function DataObjectSelectionInspector(props: DebuggerSelectionInspectorProps): R
         <MultiLineCodeEditor
           studio={props.studio}
           htmlId="debugger-selected-data-object-instance"
-          className="debugger-inspector__showroom-monaco-editor"
+          className="debugger-inspector__showroom-code-editor"
           fontSize={12}
           initialValue={stringifiedSelectedInstance}
           readOnly={true}
@@ -226,7 +226,7 @@ function FlowNodeSelectionInspector(props: DebuggerSelectionInspectorProps): Rea
         <MultiLineCodeEditor
           studio={props.studio}
           htmlId="debugger-selected-flow-node"
-          className="debugger-inspector__showroom-monaco-editor"
+          className="debugger-inspector__showroom-code-editor"
           fontSize={12}
           initialValue={stringifiedSelectedElements}
           readOnly={true}
@@ -255,7 +255,7 @@ function FlowNodeSelectionInspector(props: DebuggerSelectionInspectorProps): Rea
         <MultiLineCodeEditor
           studio={props.studio}
           htmlId="debugger-selected-flow-node-instance"
-          className="debugger-inspector__showroom-monaco-editor"
+          className="debugger-inspector__showroom-code-editor"
           fontSize={12}
           initialValue={stringifiedSelectedInstance}
           readOnly={true}
@@ -284,7 +284,7 @@ function FlowNodeSelectionInspector(props: DebuggerSelectionInspectorProps): Rea
         <MultiLineCodeEditor
           studio={props.studio}
           htmlId="debugger-inspector-token-history"
-          className="debugger-inspector__showroom-monaco-editor"
+          className="debugger-inspector__showroom-code-editor"
           fontSize={12}
           initialValue={stringifiedTokenHistory}
           readOnly={true}

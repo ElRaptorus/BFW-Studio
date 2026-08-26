@@ -163,7 +163,7 @@ function MultipleSelectionsInspector(props: EditorSelectionInspectorProps): Reac
             <MultiLineCodeEditor
               studio={props.studio}
               htmlId={`editor-element-${selectedElement.name || selectedElement.id}`}
-              className="editor-inspector__showroom-monaco-editor"
+              className="editor-inspector__showroom-code-editor"
               fontSize={12}
               initialValue={stringifiedSelectedElement}
               readOnly={true}

@@ -10,7 +10,7 @@ export abstract class JsonExampleRenderer<TRendererProps> extends AbstractExampl
     }
   }
 
-  protected getMonacoLanguage(): string {
+  protected getEditorLanguage(): string {
     return 'json';
   }
 

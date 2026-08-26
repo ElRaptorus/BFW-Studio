@@ -180,8 +180,8 @@ The main rendering component. Contains:
 | `path_picker` | `DialogContentPathPicker` | `<input type="hidden" name={id} value={selectedPath}>` (plain string) |
 | `select` | `DialogContentSelect` | `<select name={id}>` |
 | `checkbox` | `DialogContentCheckbox` | `<Checkbox>` with `htmlId={id}` |
-| `json` | `DialogContentJson` | Monaco `MultiLineCodeEditor` with `name={id}` |
-| `diff` | `DialogContentDiff` | Monaco `DiffEditor` with `name={id}` |
+| `json` | `DialogContentJson` | CodeMirror `MultiLineCodeEditor` with `name={id}` |
+| `diff` | `DialogContentDiff` | CodeMirror `DiffEditor` with `name={id}` |
 | `markdown_container` | `DialogContentMarkdownEditor` | Read-only `MarkdownEditor` |
 | `markdown` | `DialogContentMarkdown` | Rendered via `marked()` |
 | `text` | `DialogContentText` | Plain `<p>` |
@@ -331,7 +331,7 @@ type DialogContentObject_Checkbox = {
 
 ### json / diff
 
-Multi-line code editors powered by Monaco.
+Multi-line code editors powered by CodeMirror 6 (`MultiLineCodeEditor` / `DiffEditor`). See [code-editors.md](code-editors.md).
 
 ```typescript
 type DialogContentObject_Json = {

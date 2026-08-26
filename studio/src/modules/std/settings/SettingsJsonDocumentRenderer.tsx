@@ -15,20 +15,21 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import type UserSettingsDocumentModel from './UserSettingsDocumentModel';
 import { EVENT_SETTINGS_RECEIVED_UPDATE } from './UserSettingsDocumentModel';
-import { configureMonacoJsonValidation } from './configureMonacoJsonValidation';
+import { buildJsonSchema } from './validation/schemaToJsonSchema';
 
 export default function SettingsJsonDocumentRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const studio = props.studio as Bifrost;
   const [model, setModel] = useState<UserSettingsDocumentModel | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
-  const monacoRef = useRef<MultiLineCodeEditor | null>(null);
+  const [jsonSchema, setJsonSchema] = useState(() => buildJsonSchema(studio.settings.getSchemas()));
+  const editorRef = useRef<MultiLineCodeEditor | null>(null);
   const subscriptionsRef = useRef<AbstractSubscription[]>([]);
 
   useEffect(() => {
-    configureMonacoJsonValidation(studio);
-
     const sub = studio.settings.on(EVENT_SETTINGS_SCHEMA_REGISTERED, () => {
-      configureMonacoJsonValidation(studio);
+      const nextSchema = buildJsonSchema(studio.settings.getSchemas());
+      setJsonSchema(nextSchema);
+      editorRef.current?.updateJsonSchema(nextSchema);
     });
     return () => sub.dispose();
   }, [studio]);
@@ -53,7 +54,7 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
         }),
       ];
 
-      monacoRef.current?.focus();
+      editorRef.current?.focus();
     }
 
     initialize();
@@ -75,7 +76,7 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
   })();
 
   const onValueChanged = (): void => {
-    model?.updateSettingsAsString(monacoRef.current?.getCurrentValue() ?? '');
+    model?.updateSettingsAsString(editorRef.current?.getCurrentValue() ?? '');
     setValidationMessage(null);
   };
 
@@ -108,12 +109,12 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
             key={model ? 'loaded' : 'loading'}
             initialValue={model?.getSettingsAsString() ?? ''}
             language="json"
-            modelPath="about:user-settings.json"
+            jsonSchema={jsonSchema}
             lineNumbers={true}
             readOnly={false}
             studio={props.studio}
             onChange={onValueChanged}
-            ref={monacoRef}
+            ref={editorRef}
             minimap={true}
           />
         </div>

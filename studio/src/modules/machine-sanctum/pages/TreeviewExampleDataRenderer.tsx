@@ -51,7 +51,7 @@ export class TreeviewExampleDataRenderer extends JsonExampleRenderer<TreeviewExa
             </div>
           </div>
           <div className="col-6">
-            <div className="machine-sanctum-example__monaco">{this.renderMonacoEditor()}</div>
+            <div className="machine-sanctum-example__code-editor">{this.renderCodeEditor()}</div>
             {hint}
             <a className="machine-sanctum-example__reset-data" href="#" onClick={() => this.resetExampleData()}>
               Reset data

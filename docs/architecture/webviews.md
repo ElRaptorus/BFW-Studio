@@ -228,7 +228,7 @@ ThemeMediator.setTheme(id)
 
 `studio-sdk/src/webview/studio-webview-theme.css` is a documentation-only file listing all available `--theme-*` tokens with Bifrost Night fallbacks. `ThemeToken` in `studio-sdk/src/plugin-api/theme/ThemeTokens.ts` is the typed const map of the same names. Plugin developers can reference both; neither is loaded at runtime. Live values are injected into iframes by `PluginHost.extractThemeTokens()`.
 
-The SDK is not a chrome kit. Tab strips, pane title bars, Tree, Monaco, Markdown, and host widgets (`Icon`, `Table`, `Checkbox`, `ColorPicker`) stay in the host. Inside the iframe, plugins use forwarded `--theme-*` tokens plus content controls (`FormInput`, `PaneProperty` / `PropertyValidation` / `PropertyValueWithSuggestions`, `FeelEditor` / `OneLineFeelEditor`, `PresentationalContextMenu`).
+The SDK is not a chrome kit. Tab strips, pane title bars, Tree, host CodeMirror wrappers, Markdown, and host widgets (`Icon`, `Table`, `Checkbox`, `ColorPicker`) stay in the host. Inside the iframe, plugins use forwarded `--theme-*` tokens plus content controls (`FormInput`, `PaneProperty` / `PropertyValidation` / `PropertyValueWithSuggestions`, `FeelEditor` / `OneLineFeelEditor`, `PresentationalContextMenu`).
 
 Phosphor in webviews: use `<span className="ph-…">`. The host does not inject Phosphor into iframes. Manifest `icon` on panes/tabs is host-rendered and already works.
 

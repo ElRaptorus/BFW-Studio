@@ -30,4 +30,4 @@ These render inside plugin iframes (and in the host). They take props only — n
 
 ## Not in this package
 
-Host chrome (editor title/toolbar, pane shells), Tree, Monaco, Markdown, host widgets (`Icon`, `Table`, `Checkbox`, `ColorPicker`), `EditorDocumentModel`, and the old `Studio` class live in `studio/src/`. Plugins contribute trees via `api.views.registerTreeView` + `PluginTreeItem`.
+Host chrome (editor title/toolbar, pane shells), Tree, host CodeMirror wrappers, Markdown, host widgets (`Icon`, `Table`, `Checkbox`, `ColorPicker`), `EditorDocumentModel`, and the old `Studio` class live in `studio/src/`. Plugins contribute trees via `api.views.registerTreeView` + `PluginTreeItem`.

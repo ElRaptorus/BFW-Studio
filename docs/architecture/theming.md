@@ -197,8 +197,10 @@ The `registerTheme()` call only registers the theme's metadata (so the Studio ca
 ### Querying Theme in TypeScript
 
 ```typescript
-const monacoTheme = studio.theme.isCurrentThemeDark() ? 'vs-dark' : 'vs-light';
+const isDark = studio.theme.isCurrentThemeDark();
 ```
+
+Host CodeMirror editors and FEEL editors read `--theme-feel-*` CSS variables for chrome and syntax. `--theme-cm-*` aliases on `.bifrost` exist for rainbow brackets and a chrome fallback; they must not be the only syntax-color hop (named themes do not keep `bifrost-theme--light` / `--dark`). Editors do not map a JS theme id (`vs-dark` / `vs-light`). See [code-editors.md](code-editors.md) and [feel-editor.md](feel-editor.md).
 
 ### Reacting to Theme Changes
 
@@ -206,7 +208,7 @@ const monacoTheme = studio.theme.isCurrentThemeDark() ? 'vs-dark' : 'vs-light';
 import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 
 bifrost.theme.on(EVENT_THEME_CHANGED, (themeId: string) => {
-  // update monaco theme, re-render, etc.
+  // re-read CSS tokens / re-render if the component cannot rely on class swap
 });
 ```
 

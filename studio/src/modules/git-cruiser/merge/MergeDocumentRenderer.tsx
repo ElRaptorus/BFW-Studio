@@ -3,8 +3,6 @@ import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import type { MergeResolverProps } from '#bifrost/contracts/MergeTypes';
 import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
-import { Checkbox } from '#components/Checkbox';
-import { DiffEditor } from '#components/DiffEditor';
 import { Icon } from '#components/Icon';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
@@ -17,17 +15,14 @@ import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
 import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
 import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
 import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
-import { SplitterLayout } from '#components/splitter/SplitterLayout';
 
 import React from 'react';
 
 import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED, type MergeConflictKind } from '../GitTypes';
 import type MergeDocumentModel from './MergeDocumentModel';
-import { getLanguageForFile } from './MergeDocumentModel';
 import './styles/component.merge-editor.scss';
 
 export default class MergeDocumentRenderer extends React.Component<EditorDocumentRendererProps, any> {
-  private diffEditorRef: React.RefObject<DiffEditor | null>;
   private resolverRef: React.MutableRefObject<any>;
   private model: MergeDocumentModel | null = null;
   private subscriptions: AbstractSubscription[] = [];
@@ -39,14 +34,11 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
   constructor(props: EditorDocumentRendererProps) {
     super(props);
 
-    this.diffEditorRef = React.createRef();
     this.resolverRef = { current: null };
 
     this.state = {
       errorWhileLoading: null,
       loading: true,
-      includeNonBpmn: props.studio.settings.get('gitCruiser.merge.includeNonBpmn') === true,
-      textModified: false,
     };
 
     props.studio.editors
@@ -58,10 +50,7 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
 
         this.subscriptions.push(
           model.on(EVENT_METADATA_UPDATED, () => this.forceUpdate()),
-          model.on(EVENT_MERGE_FILE_CHANGED, () => {
-            this.setState({ textModified: false });
-            this.forceUpdate();
-          }),
+          model.on(EVENT_MERGE_FILE_CHANGED, () => this.forceUpdate()),
           model.on(EVENT_RESOLUTION_CHANGED, () => this.forceUpdate()),
         );
 
@@ -97,21 +86,6 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
     this.model?.updateResolutionProgress(progress);
   };
 
-  private handleTextContentChanged = (): void => {
-    if (!this.state.textModified) {
-      this.setState({ textModified: true });
-    }
-  };
-
-  private handleIncludeNonBpmnToggle = (): void => {
-    const newValue = !this.state.includeNonBpmn;
-    this.setState({ includeNonBpmn: newValue });
-    this.props.studio.settings.set('gitCruiser.merge.includeNonBpmn', newValue);
-    if (this.model) {
-      this.model.reloadFileList();
-    }
-  };
-
   render(): React.JSX.Element | null {
     if (this.state.errorWhileLoading != null) {
       return (
@@ -142,14 +116,22 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
     assertNotNull(this.model, 'this.model');
 
     const ResolverComponent = this.model.resolveResolverComponent();
-    const hasResolver = ResolverComponent != null;
+    const entry = this.model.getCurrentEntry();
+    const filename = entry?.relativePath ?? 'this file';
 
     return (
       <Editor>
         {this.renderTitleBar()}
-        {this.renderToolbar(hasResolver)}
+        {this.renderToolbar()}
         <EditorContent>
-          {hasResolver ? this.renderResolverContent(ResolverComponent) : this.renderTextContent()}
+          {ResolverComponent != null ? (
+            this.renderResolverContent(ResolverComponent)
+          ) : (
+            <EditorLoadingError
+              title="No merge resolver"
+              errorMessage={`No merge editor is registered for ${filename}. Only BPMN and DMN files can be resolved in the merge editor.`}
+            />
+          )}
         </EditorContent>
       </Editor>
     );
@@ -201,7 +183,7 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
     );
   }
 
-  private renderToolbar(hasResolver: boolean): React.JSX.Element {
+  private renderToolbar(): React.JSX.Element {
     const bifrost = this.props.studio;
 
     assertNotNull(this.model, 'this.model');
@@ -281,16 +263,6 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
               )}
             </>
           )}
-          {!hasResolver && this.state.textModified && (
-            <EditorToolbarButton
-              studio={bifrost}
-              icon="ph ph-floppy-disk"
-              label="Save &amp; Next"
-              tooltip="Save the edited content, stage, and advance to the next conflict"
-              command="git.merge.saveTextAndNext"
-              commandArgs={[this.model, this.diffEditorRef.current?.getCurrentValue()]}
-            />
-          )}
         </EditorToolbarLeft>
         <EditorToolbarCenter>
           <EditorToolbarButton
@@ -316,11 +288,6 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
           />
         </EditorToolbarCenter>
         <EditorToolbarRight>
-          <Checkbox
-            label="Include non-BPMN files"
-            checked={this.state.includeNonBpmn}
-            onChange={this.handleIncludeNonBpmnToggle}
-          />
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-skip-forward"
@@ -364,91 +331,5 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
   private renderResolverContent(ResolverComponent: React.ComponentType<MergeResolverProps>): React.JSX.Element {
     const props = this.getResolverProps();
     return <ResolverComponent {...props} />;
-  }
-
-  private renderTextContent(): React.JSX.Element {
-    assertNotNull(this.model, 'this.model');
-
-    const conflictKind = this.model.conflictKind;
-    const entry = this.model.getCurrentEntry();
-    const language = entry ? getLanguageForFile(entry.relativePath) : 'plaintext';
-
-    const isRebase = this.model.getMergeStateType() == 'rebase';
-
-    const oursLabel = isRebase ? 'Theirs (base branch)' : 'Ours (current branch)';
-    const theirsLabel = isRebase ? 'Ours (current branch)' : 'Theirs (incoming branch)';
-
-    if (conflictKind === 'ours-deleted' || conflictKind === 'theirs-deleted') {
-      const survivingContent =
-        conflictKind === 'ours-deleted' ? (this.model.textTheirs ?? '') : (this.model.textOurs ?? '');
-      const deletedLabel =
-        conflictKind === 'ours-deleted'
-          ? 'This file was deleted on your branch.'
-          : 'This file was deleted on the incoming branch.';
-
-      return (
-        <SplitterLayout
-          customClassName="splitter-layout--bpmn-merge"
-          percentage={true}
-          secondaryInitialSize={50}
-          primaryMinSize={10}
-          secondaryMinSize={10}
-        >
-          {conflictKind === 'ours-deleted' ? (
-            <div className="bpmn-merge__deleted-placeholder">
-              <Icon id="ph-duotone ph-trash" />
-              <p>{deletedLabel}</p>
-            </div>
-          ) : (
-            <div className="bpmn-merge__text-viewer">
-              <div className="diff-title diff-title--ours">{oursLabel}</div>
-              <DiffEditor
-                studio={this.props.studio}
-                ref={this.diffEditorRef}
-                beforeValue={survivingContent}
-                afterValue={survivingContent}
-                language={language}
-                readOnly={true}
-                lineNumbers={true}
-              />
-            </div>
-          )}
-          {conflictKind === 'theirs-deleted' ? (
-            <div className="bpmn-merge__deleted-placeholder">
-              <Icon id="ph-duotone ph-trash" />
-              <p>{deletedLabel}</p>
-            </div>
-          ) : (
-            <div className="bpmn-merge__text-viewer">
-              <div className="diff-title diff-title--theirs">{theirsLabel}</div>
-              <DiffEditor
-                studio={this.props.studio}
-                ref={this.diffEditorRef}
-                beforeValue={survivingContent}
-                afterValue={survivingContent}
-                language={language}
-                readOnly={true}
-                lineNumbers={true}
-              />
-            </div>
-          )}
-        </SplitterLayout>
-      );
-    }
-
-    return (
-      <div className="bpmn-merge__text-diff" data-test--bpmn-merge-text-diff>
-        <DiffEditor
-          studio={this.props.studio}
-          ref={this.diffEditorRef}
-          beforeValue={this.model.textOurs ?? ''}
-          afterValue={this.model.textTheirs ?? ''}
-          language={language}
-          readOnly={false}
-          lineNumbers={true}
-          onContentChanged={this.handleTextContentChanged}
-        />
-      </div>
-    );
   }
 }

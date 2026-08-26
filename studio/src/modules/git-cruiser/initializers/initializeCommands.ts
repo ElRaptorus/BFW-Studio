@@ -991,21 +991,6 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
     },
   );
 
-  bifrost.commands.register(
-    'git.merge.saveTextAndNext',
-    async (model: MergeDocumentModel, text: string) => {
-      const entry = model.getCurrentEntry();
-      if (entry == null || text == null) {
-        return;
-      }
-      const repoRoot = model.getRepoRoot();
-      await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, text, { stage: true });
-      model.markCurrentResolved();
-      model.advanceToNext();
-    },
-    { enabledWhen: (model: MergeDocumentModel, text: string) => model != null && text != null && text.trim() != '' },
-  );
-
   bifrost.commands.register('git.merge.paneAcceptOurs', async (relativePath: string, repoRoot: string) => {
     const blobs = await gitService.getConflictBlobs(repoRoot, relativePath);
     if (blobs.ours != null) {

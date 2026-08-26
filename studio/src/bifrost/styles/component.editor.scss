@@ -97,13 +97,4 @@
   .editor--focused .editor__tabs {
     border-color: var(--theme-accent);
   }
-
-  .monaco-diff-editor-wrapper {
-    height: 100%;
-    position: relative;
-  }
-
-  .monaco-diff-editor {
-    position: unset !important;
-  }
 }

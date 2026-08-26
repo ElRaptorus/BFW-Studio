@@ -77,8 +77,8 @@ if (userInput != null) {
 | `path_list` | List of files/directories with add/remove controls | `id`, `label`, `mode` (`'file'` or `'directory'`), `hint` |
 | `select` | Dropdown menu | `id`, `label`, `value`, `entries[]` |
 | `checkbox` | Boolean toggle | `id`, `label`, `checked` |
-| `json` | Multi-line code editor (Monaco) | `id`, `label`, `value`, `language`, `size`, `readOnly`, `focus` |
-| `diff` | Side-by-side diff editor (Monaco) | `id`, `label`, `beforeValue`, `afterValue`, `language`, `size` |
+| `json` | Multi-line code editor (CodeMirror 6) | `id`, `label`, `value`, `language`, `size`, `readOnly`, `focus` |
+| `diff` | Side-by-side diff editor (CodeMirror 6) | `id`, `label`, `beforeValue`, `afterValue`, `language`, `size` |
 | `markdown_container` | Read-only Markdown viewer | `id`, `text`, `size` |
 | `markdown` | Inline rendered Markdown | `text` |
 | `text` | Plain text paragraph | `text` |

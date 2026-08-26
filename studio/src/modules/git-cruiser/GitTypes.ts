@@ -102,7 +102,7 @@ export type GitRemoteBranch = {
 
 export type MergeConflictKind = 'content' | 'ours-deleted' | 'theirs-deleted' | 'added-by-both';
 
-export type MergeFileType = 'bpmn' | 'dmn' | 'text' | 'binary';
+export type MergeFileType = 'bpmn' | 'dmn';
 
 export type MergeFileEntry = {
   relativePath: string;

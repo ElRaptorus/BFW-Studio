@@ -25,7 +25,7 @@ export function XmlInspector(props: XmlInspectorProps): React.JSX.Element {
             parentUri={props.editorDocument.uri}
             fragmentId={`${props.model.processInstance?.id}-process-model`}
             additionalData={{
-              language: 'html',
+              language: 'xml',
               processInstanceId: props.model.processInstance?.id,
               propertyName: 'XML',
               value: props.model.processInstance?.xml,
@@ -40,7 +40,7 @@ export function XmlInspector(props: XmlInspectorProps): React.JSX.Element {
         fontSize={12}
         initialValue={props.model.processInstance?.xml ?? ''}
         readOnly={true}
-        language="html"
+        language="xml"
         minimap={true}
       />
     </div>

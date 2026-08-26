@@ -54,12 +54,6 @@
 }
 
 /* RESIZE FIX */
-.user-task-form-field__monaco-editor {
-  position: absolute;
-  left: 0;
-  right: 0;
-}
-
 .user-task-form-field .form-group {
   margin-bottom: 0.75rem;
 }
@@ -67,17 +61,6 @@
 .user-task-form-field__default-value-peer__wrapper {
   display: flex;
   flex-direction: row-reverse;
-}
-
-.user-task-form-field__monaco-editor__wrapper {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.user-task-form-field__monaco-editor.user-task-form-field__monaco-editor--peer-control {
-  left: 0px;
-  right: 0px;
 }
 
 .default-value__color-picker {

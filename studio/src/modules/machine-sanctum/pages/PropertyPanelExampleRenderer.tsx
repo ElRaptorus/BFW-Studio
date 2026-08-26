@@ -26,7 +26,7 @@ export class PropertyPanelExampleRenderer extends AbstractExampleRenderer<Proper
         <h2>{this.props.title}</h2>
         <div className="row my-1">
           <div className="col-8">
-            <div className="machine-sanctum-example__monaco">{this.renderMonacoEditor()}</div>
+            <div className="machine-sanctum-example__code-editor">{this.renderCodeEditor()}</div>
             {hint}
             <a className="machine-sanctum-example__reset-data" href="#" onClick={() => this.resetExampleData()}>
               Reset data
@@ -46,7 +46,7 @@ export class PropertyPanelExampleRenderer extends AbstractExampleRenderer<Proper
     return true;
   }
 
-  protected getMonacoLanguage(): string {
+  protected getEditorLanguage(): string {
     return 'html';
   }
 

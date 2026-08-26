@@ -1,6 +1,6 @@
 # FEEL Expression Editor
 
-The Studio provides two CodeMirror 6-based editor components for FEEL (Friendly Enough Expression Language) expressions, wrapping the `@bpmn-io/feel-editor` library. These components coexist alongside the existing Monaco-based editors (`MultiLineCodeEditor`, `OneLineCodeEditor`).
+The Studio provides two CodeMirror 6-based editor components for FEEL (Friendly Enough Expression Language) expressions, wrapping the `@bpmn-io/feel-editor` library. Generic source editing (`MultiLineCodeEditor`, `DiffEditor`) is a separate host-only CodeMirror 6 kit — see [code-editors.md](code-editors.md). Do not fold FEEL into the generic wrappers.
 
 ## Components
 
@@ -14,7 +14,7 @@ The Studio provides two CodeMirror 6-based editor components for FEEL (Friendly 
 
 ## Component Architecture
 
-Both components follow the same class-wrapper + inner-functional-component pattern used by the Monaco editors:
+Both components follow the same class-wrapper + inner-functional-component pattern used by the host CodeMirror editors:
 
 ```
 FeelEditor (class component)

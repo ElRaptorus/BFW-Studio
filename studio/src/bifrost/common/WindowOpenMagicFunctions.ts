@@ -8,7 +8,7 @@ type WindowOpenMagicLinkOptions_Command = {
   commandArgs?: any[];
 };
 
-// This URL is not real. It is used as a surrogate to detect when links in tools link the Monaco Editor are targeted at Bifrost.
+// This URL is not real. It is used as a surrogate to detect when in-app hover/help links should be handled by Bifrost instead of a new window.
 // We use a UUID for this so that it is highly unlikely that the hostname will be mistaken for anything else.
 const WINDOW_OPEN_MAGIC_LINK_PREFIX = 'https://bifrost-10d4dacf-4a55-4c00-9cb0-57fd7676fa45/magic/';
 
@@ -38,7 +38,7 @@ export function initializeBifrostWindowOpenMagic(bifrost: Bifrost): void {
 /**
  * Returns a URL that, when used with `window.open`, will trigger the given `command`.
  *
- * This is useful in combination with Monaco Editor Hover Widgets.
+ * This is useful for hover widgets that would otherwise call `window.open`.
  *
  * Example:
  *

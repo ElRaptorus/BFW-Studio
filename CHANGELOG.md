@@ -17,6 +17,7 @@ This is a custom implementation purpose-built for the Studio's architecture. See
 A sandbox environment for authoring and testing FEEL expressions with instant feedback.
 
 - Available inside all multi-line script editors (open in a separate tab for a full editing experience)
+- Backed by Codemirror 6
 - Also available as a standalone sandbox tool in the Machine Sanctum
 - The Studio is designed exclusively around FEEL — no JavaScript scripting
 
@@ -269,7 +270,6 @@ See [plugin-development-guide](./docs/plugin-development-guide.md) and [manifest
 
 Ideas under consideration for future development:
 
-- Replace Monaco Editor with CodeMirror (lighter weight, native FEEL support, better performance)
 - Process Landscape Map as a solution-level feature
 - Project organization tools (grouping, tagging, folder organization by tags) — potentially combined with the landscape map
 - Cross-process data and message flow visualization ("Flow Chart") with optional debugger integration

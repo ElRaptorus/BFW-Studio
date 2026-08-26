@@ -167,6 +167,8 @@ Use this table to determine **which file to update** based on what you changed o
 | Notification API, notification types, status bar integration | `notifications.md` |
 | Tree component, TreeDataAdapter, HeadlessTreeItem, tree plugins | `tree.md` |
 | Settings registration, persistence, Settings editor UI | `settings.md` |
+| Host CodeMirror wrappers (`MultiLineCodeEditor`, `DiffEditor`), language map, Settings `json5Schema` | `code-editors.md` |
+| FEEL expression editors (`FeelEditor`, `OneLineFeelEditor`), FEEL context | `feel-editor.md` |
 | BPMN modeler modules, `registerModule`, diagram-js services | `bpmn-modeler-modules.md` |
 | Token simulator, simulation behaviors, overlays | `bpmn-token-simulator.md` |
 | Workbench layout, split bars, pane areas, menu bar | `workbench-layout.md` |

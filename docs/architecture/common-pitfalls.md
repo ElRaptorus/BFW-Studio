@@ -650,7 +650,6 @@ resolve: {
     'react-select': path.resolve(__dirname, 'node_modules/react-select'),
     'dnd-core': path.resolve(__dirname, 'node_modules/dnd-core'),
     '@mdxeditor/editor$': path.resolve(__dirname, 'node_modules/@mdxeditor/editor'),
-    '@monaco-editor/react': path.resolve(__dirname, 'node_modules/@monaco-editor/react'),
   },
 }
 ```
@@ -1561,13 +1560,63 @@ The `async`/`await` inside the page matters for a second reason: `bifrost.comman
 
 ---
 
-## Monaco language features live on the module root, not under `monaco.languages`
+## Settings JSON unknown keys are warnings, not `{ not: true }` schema errors
 
-**Symptom**: Opening any editor backed by `MultiLineCodeEditor` / `OneLineCodeEditor` (Settings (JSON), FEEL inputs, Machine Sanctum examples) throws `TypeError: Cannot read properties of undefined (reading 'javascriptDefaults')` from the `onMount` handler and the editor surfaces a React error boundary instead of a code editor.
+**Symptom**: Settings JSON underlines a leftover plugin key (e.g. `webviewShowcase.panes.showExample`) with "Value `false` at pointer should not match schema `true`".
 
-**Why it happens**: monaco-editor 0.53 moved the language-feature namespaces from `monaco.languages.<feature>` to the module root — `monaco.typescript`, `monaco.json`, `monaco.css`, `monaco.html`. The old properties still appear in `monaco.d.ts` as `{ deprecated: true }` declarations, so TypeScript keeps compiling code that reads them, but nothing assigns them at runtime: `monaco.languages.typescript` is plain `undefined`. The mistake is easy to keep alive because the callsites need a cast anyway — `@monaco-editor/react` types its mount argument as the bare editor API (`monaco-editor/esm/vs/editor/editor.api`), which carries no feature namespaces at all even though the configured instance does.
+**Why it happens**: `buildJsonSchema` used to set `additionalProperties: { not: true, errorMessage: 'Unknown setting.' }` to mimic VS Code. `codemirror-json-schema` validates with json-schema-library, which does not honor `errorMessage`. Schema `true` matches every value, so `not: true` fails with that pointer message. Runtime `validateSettings` already ignores unregistered keys (plugin leftovers persist).
 
-**Correct approach**: Read the feature namespace off the module root and go through `relaxJavaScriptDiagnostics` in `studio/src/components/internal/monacoJavaScriptDiagnostics.ts` rather than re-deriving it per component. For JSON validation, import the contribution module directly and use its exports (`configureMonacoJsonValidation` does this) instead of reaching through the editor instance.
+**Correct approach**: Root `additionalProperties: false` plus `createJson5SchemaExtensions`, which rewrites additional-property diagnostics to severity `warning` and message `Unknown setting.`. Do not put VS Code `errorMessage` on the schema expecting CodeMirror to show it.
+
+---
+
+## Empty JSON editors must not run the parse linter
+
+**Symptom**: Payload Contract, Result Contract, and other `language="json"` panes show a red gutter badge and "Unexpected end of JSON input" when the field is unset.
+
+**Why it happens**: `MultiLineCodeEditor` / `DiffEditor` attach `@codemirror/lang-json`'s `jsonParseLinter` whenever `language === 'json'` and no `jsonSchema` is set. That helper is `JSON.parse(doc)`. An empty string is a `SyntaxError`, so optional properties that serialize as `''` look broken.
+
+**Correct approach**: Skip lint when `doc.toString().trim() === ''` (`lintJsonDocument` in `jsonParseLinter.ts`). Do not special-case individual panes. Incomplete JSON (`{`) still reports. Settings JSON stays on `json5Schema` and is not this linter.
+
+---
+
+## Host CodeMirror syntax colors must use `--theme-feel-*`
+
+**Symptom**: `MultiLineCodeEditor` / `DiffEditor` look monochrome (JSON keys, strings, XML tags all the same foreground) while `FeelEditor` is colored.
+
+**Why it happens**: FEEL coloring comes from `@bpmn-io/lang-feel` decoration classes (`.string`, `.variableName`, …) painted with `--theme-feel-*`, which every theme file defines. Host languages (`json`, `javascript`, `html`, `xml`) only get Lezer `tok-*` classes from `classHighlighter`. Those spans were painted with `--theme-cm-*` aliases that lived only under `.bifrost-theme--light` / `--dark`. Named themes (`vscode-dark`, `forge-world-night`, …) apply `bifrost-theme--{id}` without also adding `--light`/`--dark` (only `plugin.*` themes layer a base class). `color: var(--theme-cm-string)` is then invalid CSS, so the property is ignored and every token inherits `--theme-feel-fg`. Editor chrome can still look themed because `[data-code-editor] .cm-editor` sets background/foreground in SCSS.
+
+**Correct approach**: Paint `tok-*` with `var(--theme-feel-*)` in `CodeEditorTheme.ts` (same tokens as `FeelEditorTheme`) and in `[data-code-editor] .tok-*` SCSS. Keep `--theme-cm-*` aliases on `.bifrost` (not only `--light`/`--dark`) if a chrome/bracket fallback still needs them. Do not introduce a second set of syntax tokens that named theme files would have to copy.
+
+---
+
+## Host code-editor language map is not a generic highlighter zoo
+
+**Symptom**: `@codemirror/legacy-modes` (or extra `@codemirror/lang-*` packages) appear in `studio/package.json` with no corresponding `language="…"` callsite.
+
+**Why it happens**: The Monaco → CodeMirror plan copied Git Cruiser's old `getLanguageForFile` map (yaml, python, rust, …) so a courtesy text-merge DiffEditor could highlight rare languages. That fallback was removed; merge is BPMN/DMN only. Unknown ids already fall through to plaintext.
+
+**Correct approach**: `languageSupport.ts` lists only ids the host actually passes: `json`, `javascript`, `html`, `xml`. Add a language package when a callsite needs it, not in anticipation of a generic file editor.
+
+---
+
+## Do not add Monaco Editor back
+
+**Symptom**: A change reintroduces `monaco-editor` or `@monaco-editor/react` as a Studio dependency.
+
+**Why it happens**: Monaco was the previous host code editor. Historical architecture notes, Machine Sanctum examples, and copy-pasted snippets still mention it.
+
+**Correct approach**: Host source editing is CodeMirror 6 via `MultiLineCodeEditor` and `DiffEditor` (`studio/src/components/`). FEEL stays on `@bpmn-io/feel-editor`. Do not add Monaco packages, workers, or rspack aliases. See [code-editors.md](code-editors.md).
+
+---
+
+## Merge Change Overview must optional-call resolverRef methods
+
+**Symptom**: Skipping from a conflicted DMN file to a BPMN file (or the reverse) throws `TypeError: …getDefinitionsMetadataOurs is not a function` in the Merge Changes pane.
+
+**Why it happens**: `resolverRef.current` is a shared slot. After `advanceToNext` / `loadFile`, `currentFileType` updates immediately and the BPMN pane's `shouldBeDisplayed` becomes true, but the previous resolver instance (or `null`) is still in `resolverRef` until the new resolver mounts and calls `exposeImperativeApi`. Optional chaining on the *object* (`resolverApi?.getDefinitionsMetadataOurs()`) still invokes the property when the object exists but the method does not.
+
+**Correct approach**: Optional-call the method: `resolverApi?.getDefinitionsMetadataOurs?.() ?? []`. Same for `getClassifiedElements`, `getDefinitionsMetadataTheirs`, and any other type-specific API. Do not assume `currentFileType === 'bpmn'` means the BPMN imperative API is already installed.
 
 ---
 

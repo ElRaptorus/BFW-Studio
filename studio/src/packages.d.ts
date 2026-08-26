@@ -116,8 +116,6 @@ declare module '*.txt' {
   export default content;
 }
 
-declare module 'monaco-editor/esm/vs/language/json/monaco.contribution';
-
 declare const __non_webpack_require__: NodeRequire;
 
 declare module 'jaro-winkler' {

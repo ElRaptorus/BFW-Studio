@@ -20,12 +20,4 @@ export function initializePanes(bifrost: Bifrost, gitService: GitService): void 
       },
     ]);
   });
-
-  bifrost.panes.prependToPaneGroup('right', 'property', [
-    bifrost.panes.getPaneViaPaneProvider(
-      'git-cruiser/panes/merge/MergeChangeOverview',
-      'git-cruiser/pane-providers/merge/MergeChangeOverview',
-      require('../merge/panes/MergeChangeOverview'),
-    ),
-  ]);
 }

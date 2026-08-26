@@ -396,15 +396,6 @@ input[type='radio'] input[type='range'] {
     }
   }
 
-  .one-line-monaco-editor__placeholder {
-    position: absolute;
-    left: 5px;
-    top: 3px;
-    z-index: 1;
-    border: none;
-    background-color: transparent;
-  }
-
   .runtime-expressions-hint {
     display: inline-flex;
     align-items: center;
@@ -1291,16 +1282,7 @@ input[type='radio'] input[type='range'] {
     background: var(--theme-search-result-bg);
   }
 
-  // ─── One-Line Monaco / Calendar ────────────────────
-  .one-line-monaco-editor {
-    border-color: var(--theme-one-line-editor-border);
-
-    &:focus-within {
-      box-shadow: 0 0 0 0.2rem var(--theme-input-focus-shadow);
-      border-color: transparent;
-    }
-  }
-
+  // ─── Calendar ──────────────────────────────────────
   .default-value__calendar-picker {
     border: 1px solid var(--theme-calendar-picker-border);
     background-color: var(--theme-calendar-picker-bg);
@@ -1309,11 +1291,6 @@ input[type='radio'] input[type='range'] {
 
   .default-value__calendar-input {
     color-scheme: var(--theme-calendar-color-scheme);
-  }
-
-  .monaco-editor textarea {
-    color: transparent;
-    background-color: transparent;
   }
 }
 

@@ -6,7 +6,6 @@ import type { GitService } from '../GitService';
 import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED } from '../GitTypes';
 import type {
   GitConflictBlobs,
-  GitFileStatus,
   GitMergeStateType,
   MergeConflictKind,
   MergeFileEntry,
@@ -14,100 +13,14 @@ import type {
   MergeProgress,
 } from '../GitTypes';
 
-const BINARY_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.bmp',
-  '.ico',
-  '.webp',
-  '.svg',
-  '.pdf',
-  '.doc',
-  '.docx',
-  '.xls',
-  '.xlsx',
-  '.ppt',
-  '.pptx',
-  '.zip',
-  '.tar',
-  '.gz',
-  '.bz2',
-  '.7z',
-  '.rar',
-  '.exe',
-  '.dll',
-  '.so',
-  '.dylib',
-  '.bin',
-  '.woff',
-  '.woff2',
-  '.ttf',
-  '.otf',
-  '.eot',
-  '.mp3',
-  '.mp4',
-  '.wav',
-  '.avi',
-  '.mov',
-  '.mkv',
-  '.sqlite',
-  '.db',
-]);
-
-const LANGUAGE_MAP: Record<string, string> = {
-  '.json': 'json',
-  '.js': 'javascript',
-  '.ts': 'typescript',
-  '.jsx': 'javascript',
-  '.tsx': 'typescript',
-  '.md': 'markdown',
-  '.yaml': 'yaml',
-  '.yml': 'yaml',
-  '.xml': 'xml',
-  '.html': 'html',
-  '.css': 'css',
-  '.scss': 'scss',
-  '.less': 'less',
-  '.sh': 'shell',
-  '.bash': 'shell',
-  '.py': 'python',
-  '.rb': 'ruby',
-  '.java': 'java',
-  '.go': 'go',
-  '.rs': 'rust',
-  '.toml': 'toml',
-  '.ini': 'ini',
-  '.cfg': 'ini',
-  '.env': 'plaintext',
-  '.txt': 'plaintext',
-  '.csv': 'plaintext',
-  '.log': 'plaintext',
-};
-
-export function getLanguageForFile(filePath: string): string {
-  const ext = getFileExtension(filePath);
-  return LANGUAGE_MAP[ext] ?? 'plaintext';
-}
-
-function getFileExtension(filePath: string): string {
-  const dotIndex = filePath.lastIndexOf('.');
-  return dotIndex >= 0 ? filePath.substring(dotIndex).toLowerCase() : '';
-}
-
-function classifyFileType(filePath: string): MergeFileType {
+function classifyFileType(filePath: string): MergeFileType | null {
   if (filePath.endsWith('.bpmn')) {
     return 'bpmn';
   }
   if (filePath.endsWith('.dmn')) {
     return 'dmn';
   }
-  const ext = getFileExtension(filePath);
-  if (BINARY_EXTENSIONS.has(ext)) {
-    return 'binary';
-  }
-  return 'text';
+  return null;
 }
 
 /**
@@ -127,9 +40,6 @@ export default class MergeDocumentModel extends EditorDocumentModel {
   public conflictKind: MergeConflictKind = 'content';
 
   public blobs: GitConflictBlobs | null = null;
-
-  public textOurs: string | null = null;
-  public textTheirs: string | null = null;
 
   /**
    * Optional reference set by type-specific resolvers so that commands
@@ -228,24 +138,9 @@ export default class MergeDocumentModel extends EditorDocumentModel {
     return null;
   }
 
-  get includeNonBpmn(): boolean {
-    return this.bifrost.settings.get('gitCruiser.merge.includeNonBpmn') === true;
-  }
-
   get currentFileType(): MergeFileType {
     const entry = this.getCurrentEntry();
     return entry?.fileType ?? 'bpmn';
-  }
-
-  reloadFileList(): void {
-    this.populateConflictedFileList();
-    this.emitProgressUpdate();
-    if (this.conflictedFiles.length > 0) {
-      const clampedIndex = Math.min(this.currentFileIndex, this.conflictedFiles.length - 1);
-      this.loadFile(clampedIndex);
-    } else {
-      this.closeSelf();
-    }
   }
 
   private populateConflictedFileList(): void {
@@ -254,18 +149,19 @@ export default class MergeDocumentModel extends EditorDocumentModel {
       return;
     }
 
-    const includeNonBpmn = this.includeNonBpmn;
-    this.conflictedFiles = state.mergeState.conflictedFiles
-      .filter((file) => {
-        const fileType = classifyFileType(file.path);
-        return fileType === 'bpmn' || fileType === 'dmn' || (includeNonBpmn && fileType === 'text');
-      })
-      .map((gitFile: GitFileStatus) => ({
+    this.conflictedFiles = [];
+    for (const gitFile of state.mergeState.conflictedFiles) {
+      const fileType = classifyFileType(gitFile.path);
+      if (fileType == null) {
+        continue;
+      }
+      this.conflictedFiles.push({
         relativePath: gitFile.path,
         uri: gitFile.uri,
         resolved: false,
-        fileType: classifyFileType(gitFile.path),
-      }));
+        fileType,
+      });
+    }
   }
 
   private syncResolvedState(): void {
@@ -303,14 +199,6 @@ export default class MergeDocumentModel extends EditorDocumentModel {
       this.conflictKind = 'added-by-both';
     } else {
       this.conflictKind = 'content';
-    }
-
-    if (entry.fileType === 'text') {
-      this.textOurs = this.blobs.ours;
-      this.textTheirs = this.blobs.theirs;
-    } else {
-      this.textOurs = null;
-      this.textTheirs = null;
     }
 
     await this.onFileLoaded();
@@ -393,7 +281,7 @@ export default class MergeDocumentModel extends EditorDocumentModel {
 
   /**
    * Resolves the merge resolver component for the current file's document type,
-   * or `null` if no resolver is registered (triggers the text fallback).
+   * or `null` if no resolver is registered.
    */
   resolveResolverComponent(): any | null {
     const entry = this.getCurrentEntry();

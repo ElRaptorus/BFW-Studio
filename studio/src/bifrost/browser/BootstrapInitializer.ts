@@ -1,37 +1,5 @@
-import { loader } from '@monaco-editor/react';
 import { Tooltip } from 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import * as monaco from 'monaco-editor';
-
-(self as any).MonacoEnvironment = {
-  getWorker(_: string, label: string) {
-    if (label === 'json') {
-      return new Worker(new URL('monaco-editor/language/json/json.worker.js', import.meta.url));
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new Worker(new URL('monaco-editor/language/typescript/ts.worker.js', import.meta.url));
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new Worker(new URL('monaco-editor/language/html/html.worker.js', import.meta.url));
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new Worker(new URL('monaco-editor/language/css/css.worker.js', import.meta.url));
-    }
-    return new Worker(new URL('monaco-editor/editor/editor.worker.js', import.meta.url));
-  },
-};
-
-// Monaco's internal Delayer rejects a promise with "Canceled" when editors are
-// disposed (e.g. WordHighlighter cleanup). Has no actual impact and can be ignored.
-window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason instanceof Error && event.reason.message === 'Canceled') {
-    event.preventDefault();
-  }
-});
-
-loader.config({ monaco });
-
-(window as any).__internal_monaco__ = monaco;
 
 // ─── Bootstrap 5 Tooltip Delegation ──────────────────────────────────
 // Bootstrap 5 removed jQuery-based delegated tooltips. This MutationObserver

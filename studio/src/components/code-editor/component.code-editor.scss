@@ -1,0 +1,137 @@
+// Host CodeMirror 6 editors (MultiLineCodeEditor, DiffEditor).
+// Syntax and chrome use `--theme-feel-*` (defined by every theme file).
+// `--theme-cm-*` aliases live on `.bifrost` so named themes inherit them;
+// they are for rainbow brackets and the `[data-code-editor]` chrome fallback.
+
+.bifrost {
+  --theme-cm-bg: var(--theme-feel-bg);
+  --theme-cm-fg: var(--theme-feel-fg);
+  --theme-cm-cursor: var(--theme-feel-cursor);
+  --theme-cm-selection-bg: var(--theme-feel-selection-bg);
+  --theme-cm-active-line-bg: var(--theme-feel-active-line-bg);
+  --theme-cm-border: var(--theme-feel-border);
+  --theme-cm-gutter-bg: var(--theme-feel-gutter-bg);
+  --theme-cm-tooltip-bg: var(--theme-feel-tooltip-bg);
+  --theme-cm-tooltip-fg: var(--theme-feel-tooltip-fg);
+  --theme-cm-tooltip-border: var(--theme-feel-tooltip-border);
+  --theme-cm-tooltip-selected-bg: var(--theme-feel-tooltip-selected-bg);
+  --theme-cm-tooltip-selected-fg: var(--theme-feel-tooltip-selected-fg);
+  --theme-cm-keyword: var(--theme-feel-keyword);
+  --theme-cm-string: var(--theme-feel-string);
+  --theme-cm-number: var(--theme-feel-number);
+  --theme-cm-bool: var(--theme-feel-bool);
+  --theme-cm-comment: var(--theme-feel-comment);
+  --theme-cm-variable: var(--theme-feel-variable);
+  --theme-cm-function: var(--theme-feel-function);
+  --theme-cm-type: var(--theme-feel-function);
+  --theme-cm-invalid: #f44747;
+  --theme-cm-matching-bracket-bg: color-mix(in srgb, var(--theme-cm-selection-bg) 70%, transparent);
+
+  // Dark-default rainbow brackets (named dark themes have no `--dark` class).
+  --theme-cm-bracket-0: #ffd700;
+  --theme-cm-bracket-1: #da70d6;
+  --theme-cm-bracket-2: #87ceeb;
+  --theme-cm-bracket-3: #98c379;
+  --theme-cm-bracket-4: #e06c75;
+  --theme-cm-bracket-5: #61afef;
+}
+
+.bifrost.bifrost-theme--light,
+.bifrost.bifrost-theme--vscode-light,
+.bifrost.bifrost-theme--zed-light,
+.bifrost.bifrost-theme--forge-world-day,
+.bifrost.bifrost-theme--snow-fall {
+  --theme-cm-bracket-0: #c18401;
+  --theme-cm-bracket-1: #a626a4;
+  --theme-cm-bracket-2: #0184bc;
+  --theme-cm-bracket-3: #50a14f;
+  --theme-cm-bracket-4: #e45649;
+  --theme-cm-bracket-5: #4078f2;
+}
+
+[data-code-editor] {
+  .cm-editor {
+    height: 100%;
+    background-color: var(--theme-feel-bg);
+    color: var(--theme-feel-fg);
+  }
+
+  // Stylesheet backup for `classHighlighter` spans. `color: var(--theme-feel-*)`
+  // is valid on every registered theme; an unset `--theme-cm-*` would be ignored
+  // and tokens would inherit the editor foreground (looks uncolored).
+  .tok-keyword,
+  .tok-null,
+  .tok-link,
+  .tok-heading,
+  .tok-tagName {
+    color: var(--theme-feel-keyword);
+  }
+
+  .tok-bool,
+  .tok-atom {
+    color: var(--theme-feel-bool);
+  }
+
+  .tok-propertyName,
+  .tok-definition,
+  .tok-variableName,
+  .tok-attributeName {
+    color: var(--theme-feel-variable);
+  }
+
+  .tok-string,
+  .tok-string2,
+  .tok-attributeValue {
+    color: var(--theme-feel-string);
+  }
+
+  .tok-number,
+  .tok-literal {
+    color: var(--theme-feel-number);
+  }
+
+  .tok-comment,
+  .tok-meta {
+    color: var(--theme-feel-comment);
+  }
+
+  .tok-typeName,
+  .tok-className,
+  .tok-name {
+    color: var(--theme-feel-function);
+  }
+
+  .tok-invalid {
+    color: var(--theme-cm-invalid);
+  }
+
+  .cm-rainbow-bracket-0 {
+    color: var(--theme-cm-bracket-0);
+  }
+  .cm-rainbow-bracket-1 {
+    color: var(--theme-cm-bracket-1);
+  }
+  .cm-rainbow-bracket-2 {
+    color: var(--theme-cm-bracket-2);
+  }
+  .cm-rainbow-bracket-3 {
+    color: var(--theme-cm-bracket-3);
+  }
+  .cm-rainbow-bracket-4 {
+    color: var(--theme-cm-bracket-4);
+  }
+  .cm-rainbow-bracket-5 {
+    color: var(--theme-cm-bracket-5);
+  }
+}
+
+[data-code-editor='diff'] {
+  .cm-mergeView {
+    height: 100%;
+    overflow: auto;
+  }
+
+  .cm-mergeViewEditors {
+    height: 100%;
+  }
+}

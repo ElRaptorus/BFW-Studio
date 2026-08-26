@@ -36,29 +36,15 @@ const SELECT_ALL = OsSpecificKeystroke('cmd-a', 'ctrl-a');
 
 export class StudioAgentBpmnExtension extends StudioAgent {
   /**
-   * Detects whether a code editor within `parentSelector` is a FEEL (CodeMirror 6)
-   * or Monaco editor by probing for their respective content elements.
-   */
-  private async detectCodeEditorType(parentSelector: string): Promise<'feel' | 'monaco'> {
-    const feelElements = await this.$$(`${parentSelector} .cm-content`);
-    if ((await feelElements.length) > 0) {
-      return 'feel';
-    }
-    return 'monaco';
-  }
-
-  /**
-   * Clicks into the editable area of a code editor (FEEL or Monaco) within the
-   * given `parentSelector`. Auto-detects the editor type.
+   * Clicks into the editable area of a host code editor or FEEL editor
+   * within `parentSelector`. All host editors are CodeMirror 6 (`.cm-content`).
    */
   async clickOnCodeEditor(parentSelector: string): Promise<void> {
-    const type = await this.detectCodeEditorType(parentSelector);
-    const target = type === 'feel' ? `${parentSelector} .cm-content` : `${parentSelector} .view-lines`;
-    await this.clickOn(target);
+    await this.clickOn(`${parentSelector} .cm-content`);
   }
 
   /**
-   * Clears the content of a code editor (FEEL or Monaco) within `parentSelector`
+   * Clears the content of a code editor within `parentSelector`
    * by selecting all text and deleting it.
    */
   async clearCodeEditor(parentSelector: string): Promise<void> {
@@ -68,15 +54,11 @@ export class StudioAgentBpmnExtension extends StudioAgent {
   }
 
   /**
-   * Returns the visible text of a code editor (FEEL or Monaco) within
-   * `parentSelector`, trimmed of leading/trailing whitespace.
+   * Returns the visible text of a code editor within `parentSelector`,
+   * trimmed of leading/trailing whitespace.
    */
   async getCodeEditorText(parentSelector: string): Promise<string> {
-    const type = await this.detectCodeEditorType(parentSelector);
-    if (type === 'feel') {
-      return (await this.getText(`${parentSelector} .cm-content`)).trim();
-    }
-    return (await this.getText(parentSelector)).trim();
+    return (await this.getText(`${parentSelector} .cm-content`)).trim();
   }
 
   private async selectBpmnElementById(name: string): Promise<void> {

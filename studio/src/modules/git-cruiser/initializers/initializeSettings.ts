@@ -45,13 +45,5 @@ export function initializeSettings(bifrost: Bifrost): void {
         'Glob patterns for protected BPMN diagrams. A warning will be shown before committing changes to matching files. Project-level settings in .evilstudio/git-cruiser.json take precedence.',
       default: [],
     },
-    'gitCruiser.merge.includeNonBpmn': {
-      category: 'Git',
-      type: 'boolean',
-      label: 'Include Non-BPMN Files in Merge Resolver',
-      description:
-        'When enabled, the merge conflict resolver also shows non-BPMN text files using a text diff editor. Binary files are always excluded. Off by default.',
-      default: false,
-    },
   });
 }

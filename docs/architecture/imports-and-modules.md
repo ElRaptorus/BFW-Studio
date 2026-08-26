@@ -65,7 +65,6 @@ Both paths produce the same result. The dual-mapping is necessary because TypeSc
 | `*.md`, `*.markdown` | `markdown-image-loader` | Markdown content (export `string`) |
 | `*.txt` | `asset/source` | Plain text content |
 | `*.bpmn` | `asset/source` | BPMN XML content |
-| `monaco-editor/esm/vs/language/json/monaco.contribution` | (bundler resolves) | Deep Monaco path not in package exports |
 
 TypeScript 6.0 defaults `noUncheckedSideEffectImports` to `true`, meaning every `import './Foo.scss'` must resolve to a known module. These declarations ensure such imports pass type checking.
 

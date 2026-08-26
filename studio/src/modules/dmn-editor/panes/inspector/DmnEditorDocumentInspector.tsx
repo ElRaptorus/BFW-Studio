@@ -174,7 +174,7 @@ function DmnXmlInspector(props: DmnXmlInspectorProps): React.JSX.Element {
         fontSize={12}
         initialValue={props.model.currentXml ?? ''}
         readOnly={true}
-        language="html"
+        language="xml"
       />
     </div>
   );

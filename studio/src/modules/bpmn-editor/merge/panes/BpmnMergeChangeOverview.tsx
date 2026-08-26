@@ -47,7 +47,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const model = props.editorDocumentModel as BpmnMergeResultModeler | null;
   const resolverApi = model?.resolverRef?.current;
 
-  const [elements, setElements] = useState<ClassifiedElement[]>(() => resolverApi?.getClassifiedElements() ?? []);
+  const [elements, setElements] = useState<ClassifiedElement[]>(() => resolverApi?.getClassifiedElements?.() ?? []);
   const [resolutionProgress, setResolutionProgress] = useState<MergeResolutionProgress | null>(
     () => model?.getResolutionProgress() ?? null,
   );
@@ -56,7 +56,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   if (model !== prevModel) {
     setPrevModel(model);
-    setElements(resolverApi?.getClassifiedElements() ?? []);
+    setElements(resolverApi?.getClassifiedElements?.() ?? []);
     setResolutionProgress(model?.getResolutionProgress() ?? null);
   }
 
@@ -67,7 +67,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
     const sub1 = model.on(EVENT_MERGE_FILE_CHANGED, () => {
       const api = model.resolverRef?.current;
-      setElements(api?.getClassifiedElements() ?? []);
+      setElements(api?.getClassifiedElements?.() ?? []);
       setResolutionProgress(model.getResolutionProgress());
     });
     const sub2 = model.on(EVENT_RESOLUTION_CHANGED, () => {
@@ -122,8 +122,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     resolverApi?.undoConflictResolution?.(key);
   };
 
-  const defsOurs: DefinitionsMetadataChange[] = resolverApi?.getDefinitionsMetadataOurs() ?? [];
-  const defsTheirs: DefinitionsMetadataChange[] = resolverApi?.getDefinitionsMetadataTheirs() ?? [];
+  const defsOurs: DefinitionsMetadataChange[] = resolverApi?.getDefinitionsMetadataOurs?.() ?? [];
+  const defsTheirs: DefinitionsMetadataChange[] = resolverApi?.getDefinitionsMetadataTheirs?.() ?? [];
   const linterScoresOurs: LinterScoreChange[] = resolverApi?.getLinterScoreChangesOurs?.() ?? [];
   const linterScoresTheirs: LinterScoreChange[] = resolverApi?.getLinterScoreChangesTheirs?.() ?? [];
   const hasPerElementResolution = resolverApi?.getResolutionStatus != null;

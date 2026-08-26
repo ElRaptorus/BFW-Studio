@@ -686,7 +686,7 @@ function DialogContentDiff(props: DialogContentObject_DiffProps): React.JSX.Elem
           htmlId={props.id}
           ref={htmlElementRef}
           size={(props.size ?? 'medium') as any}
-          className={`monaco-diff-editor-wrapper ${props.validationErrors?.length ? 'is-invalid' : ''}`}
+          className={`code-diff-editor-wrapper ${props.validationErrors?.length ? 'is-invalid' : ''}`}
           beforeValue={beforeValue ?? ''}
           afterValue={afterValue ?? ''}
           readOnly={props.readOnly === true}

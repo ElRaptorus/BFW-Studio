@@ -92,7 +92,6 @@ const configElectronRenderer = {
       'react-select': path.resolve(__dirname, 'node_modules/react-select'),
       'dnd-core': path.resolve(__dirname, 'node_modules/dnd-core'),
       '@mdxeditor/editor$': path.resolve(__dirname, 'node_modules/@mdxeditor/editor'),
-      '@monaco-editor/react': path.resolve(__dirname, 'node_modules/@monaco-editor/react'),
     },
   },
   plugins: [

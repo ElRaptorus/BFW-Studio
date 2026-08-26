@@ -24,7 +24,7 @@ type JsonSchema = {
 type RootJsonSchema = {
   type: 'object';
   properties: Record<string, JsonSchema>;
-  additionalProperties: boolean | { not: true; errorMessage: string };
+  additionalProperties: boolean;
 };
 
 function settingDescriptorRootJsonType(descriptor: SettingDescriptor): string {
@@ -179,6 +179,6 @@ export function buildJsonSchema(schemaRegistry: Map<string, SettingDescriptor>):
   return {
     type: 'object',
     properties,
-    additionalProperties: { not: true, errorMessage: 'Unknown setting.' },
+    additionalProperties: false,
   };
 }

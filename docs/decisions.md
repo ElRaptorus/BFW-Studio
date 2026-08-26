@@ -26,6 +26,42 @@ Agents should add entries here when a meaningful design choice is made during th
 
 ## Decisions
 
+### 2026-08-26 — Git Cruiser merge editor is BPMN and DMN only
+
+**Context**: `MergeDocumentRenderer` kept a courtesy CodeMirror `DiffEditor` fallback for conflicted non-diagram files, gated by `gitCruiser.merge.includeNonBpmn` (default off) plus `git.merge.saveTextAndNext` and a generic Merge Changes pane. The Studio no longer ships generic Markdown/text document types in `std`; a generic merge editor for those files is the same leftover class of surface.
+
+**Options considered**:
+- A) Keep the opt-in text DiffEditor fallback.
+- B) Remove the fallback, the setting, the generic overview pane, and walk only `.bpmn` / `.dmn`.
+
+**Decision**: Option B.
+
+**Rationale**: Merge visualization is a product of the BPMN and DMN editors. Non-diagram conflicts remain resolvable from the Git Pane (Accept Ours / Theirs). Host `DiffEditor` stays for dialog `diff` content, not for Git merge.
+
+### 2026-08-26 — Host code editors on CodeMirror 6; FEEL stays a distinct SDK widget
+
+**Context**: Host source editing still used `monaco-editor` / `@monaco-editor/react` (`MultiLineCodeEditor`, `DiffEditor`, Machine Sanctum playgrounds, Settings JSON workers). FEEL already ran on CodeMirror 6 via `@bpmn-io/feel-editor`. Monaco workers, JSON schema validation, and a ~2 MB editor payload were the last remaining Monaco surface.
+
+**Options considered**:
+- A) Rewrite the two host wrappers on CodeMirror 6, extract a host-only kit, keep FEEL as a separate SDK widget.
+- B) Migrate every callsite to new component names.
+- C) Drop in `@uiw/react-codemirror`.
+- D) Export a generic CodeMirror editor from the SDK.
+
+**Decision**: Option A.
+
+**Rationale**:
+- Public wrapper APIs stay stable; ~40 callsites do not churn.
+- Generic editors stay in `studio/src/components/` — exporting them from the SDK would reverse the SDK refactoring.
+- FEEL grammar, dialects, lint, builtins, and nested variable completion are product, not a `language="feel"` switch.
+- Settings JSON uses `codemirror-json-schema` plus `createJson5SchemaExtensions` (unknown keys → warning `Unknown setting.`). VS Code dialect mapping for deprecation/enumDescriptions is deferred.
+- Rainbow brackets are an in-house `ViewPlugin`. Minimap is a no-op prop (no Replit package).
+- Markdown stays MDXEditor (Lexical WYSIWYG). Plugin `text-file-editors` stays its own webview CodeMirror.
+- After the Git Cruiser text-merge fallback was removed, the host language map was trimmed to `json` / `javascript` / `html` / `xml`. `@codemirror/legacy-modes` is not used.
+- Host syntax highlighting uses `classHighlighter` `tok-*` classes painted with `--theme-feel-*` (plus a `[data-code-editor] .tok-*` SCSS backup). `--theme-cm-*` is only an alias on `.bifrost` for rainbow brackets — not the syntax-color hop — because named themes do not keep `bifrost-theme--light` / `--dark`.
+
+See [code-editors.md](architecture/code-editors.md).
+
 ### 2026-08-26 — Internalize host widgets Icon, Table, Checkbox, ColorPicker
 
 **Context**: After the SDK became the plugin-developer toolkit, four remaining content controls still did not work inside a plugin iframe. `Icon` looks up a module-level `iconMap` that the host fills via `bifrost.icons.setComponent`; the iframe copy of that map is empty and there is no `IconsApi`. `Table` pulled `@tanstack/react-table` into the SDK as a peerDependency even though `--theme-table-*` already covers plugin-authored tables. `Checkbox` uses Bootstrap `form-check-*` markup that iframes never receive. `ColorPicker` is a debounced native `<input type="color">`.

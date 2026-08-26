@@ -242,7 +242,7 @@ studio.events.on('settingsUpdate', (settingName: string, value: any) => {
 |-------|-------------|-------------|
 | `EVENT_SETTINGS_CHANGED` | A single setting value is created, updated, or deleted | Settings GUI (bumps revision to re-read values), Bifrost (broadcasts `settingsUpdate`), SettingsMediator (persists to storage) |
 | `EVENT_SETTINGS_MERGED` | A bulk `deserialize` / `merge` replaces the entire config | Engine modules (re-apply connection settings) |
-| `EVENT_SETTINGS_SCHEMA_REGISTERED` | `register()` adds new descriptors to the schema registry | Settings GUI (re-fetches schemas so newly registered settings appear), JSON editor (re-configures Monaco validation schema) |
+| `EVENT_SETTINGS_SCHEMA_REGISTERED` | `register()` adds new descriptors to the schema registry | Settings GUI (re-fetches schemas so newly registered settings appear), JSON editor (calls `updateJsonSchema` on the CodeMirror editor) |
 
 ---
 
@@ -276,12 +276,15 @@ Shell command settings use platform suffixes (`.macos`, `.windows`). These are r
 The settings system provides two independent editor document types:
 
 - **GUI Editor** (`about:settings`): Renders each visible setting with an appropriate control (checkbox, text input, number input, dropdown, color picker + hex field, date picker, array editor). Settings are grouped by category in a two-panel layout: a **category sidebar** on the left for quick navigation, and a scrollable settings body on the right. The sidebar highlights the currently visible category using `IntersectionObserver` and supports click-to-scroll. Boolean settings use a VS Code-style layout (label on top, checkbox + description on the row below). A search bar filters by key, label, or description. Changes are applied immediately. No editor document model is needed — the GUI reads live from `studio.settings`. The GUI subscribes to both `EVENT_SETTINGS_CHANGED` and `EVENT_SETTINGS_SCHEMA_REGISTERED`, so it reacts to both value changes and late schema registrations (e.g., plugins loading after the editor was restored from a previous session).
-- **JSON Editor** (`about:settings-json`): Raw Monaco editor for editing the full settings JSON. Validation is performed via JSON Schema (generated from the registered descriptors). Changes are applied on save. Uses `UserSettingsDocumentModel` for dirty tracking and save/merge. The JSON editor provides VS Code-like highlighting:
-  - **Unknown keys**: Yellow warning squiggle with "Unknown setting." message (via `additionalProperties: { not: true, errorMessage }` in the root schema)
-  - **Invalid values**: Red squiggle for type mismatches, enum violations, range violations, pattern mismatches
-  - **Deprecated settings**: Key shown with strikethrough, deprecation message on hover
-  - **Hover tooltips**: Setting description (with optional markdown formatting via `markdownDescription`)
-  - **Autocompletion**: Suggests registered setting keys and values, with enum value descriptions
+- **JSON Editor** (`about:settings-json`): Raw CodeMirror 6 editor for editing the full settings JSON (JSONC). Validation uses `createJson5SchemaExtensions(buildJsonSchema())` plus save-time `isInvalidJSON()` / `settings.merge()`. Changes are applied on save. Uses `UserSettingsDocumentModel` for dirty tracking and save/merge. Stock schema coverage:
+  - **Property-key completion** from registered `properties`
+  - **Enum value completion**
+  - **Type / enum / min / max / pattern squiggles**
+  - **Hover** of `description` (not `markdownDescription`)
+  - **Unknown keys** as warnings (`Unknown setting.`) — leftover keys from unloaded plugins; save is not blocked
+  - VS Code dialect fields (`deprecationMessage` strikethrough, `enumDescriptions`, custom unknown-key copy) are not mapped natively; unknown-key copy is rewritten in `createJson5SchemaExtensions`
+
+See [code-editors.md](code-editors.md).
 
 Both editors can be open simultaneously. Each has a toolbar button to open the other.
 
@@ -309,16 +312,16 @@ Settings marked with `hidden: true` are validated but not shown in the GUI. Thes
 | `studio/src/bifrost/common/SettingsValidator.ts` | Runtime validation engine |
 | `studio/src/bifrost/common/LocalStorageItem.ts` | Single-key read/write over BifrostLocalStorage |
 | `studio/src/modules/std/settings/index.ts` | Settings sub-feature of `std`: document types, commands, menus, keybindings (loaded via `loadSettings()`) |
-| `studio/src/modules/std/settings/configureMonacoJsonValidation.ts` | Builds JSON Schema from registry and configures Monaco diagnostics |
 | `studio/src/modules/std/settings/settingsNavigation.ts` | Shared state for programmatic category navigation (open settings at category) |
 | `studio/src/modules/std/settings/UserSettingsDocumentModel.ts` | JSON Settings editor model (save → validate → merge) |
 | `studio/src/modules/std/settings/SettingsGuiDocumentRenderer.tsx` | GUI Settings editor (about:settings) |
-| `studio/src/modules/std/settings/SettingsJsonDocumentRenderer.tsx` | JSON Settings editor (about:settings-json) |
+| `studio/src/modules/std/settings/SettingsJsonDocumentRenderer.tsx` | JSON Settings editor (about:settings-json); passes `jsonSchema` into `MultiLineCodeEditor` |
 | `studio/src/modules/std/settings/gui/SettingsGui.tsx` | Main GUI container with search, category sidebar, and domain grouping |
 | `studio/src/modules/std/settings/gui/SettingsCategoryNav.tsx` | Category sidebar with active highlight and click-to-scroll |
 | `studio/src/modules/std/settings/gui/SettingsGroup.tsx` | Renders a group of settings under a domain label |
 | `studio/src/modules/std/settings/gui/SettingRow.tsx` | Individual setting row with label, description, and control |
 | `studio/src/modules/std/settings/gui/SettingsSearch.tsx` | Search input for filtering settings |
 | `studio/src/modules/std/settings/gui/controls/*.tsx` | Type-specific controls (Boolean, String, Number, Enum, Color, Date, Array, Object, ObjectArrayItems) |
-| `studio/src/modules/std/settings/validation/schemaToJsonSchema.ts` | Converts SettingDescriptor registry to JSON Schema for Monaco |
+| `studio/src/modules/std/settings/validation/schemaToJsonSchema.ts` | Converts SettingDescriptor registry to JSON Schema for `codemirror-json-schema` |
+| `studio/src/components/code-editor/json5SchemaExtensions.ts` | Settings JSON5 schema bundle; unknown keys → warning `Unknown setting.` |
 | `studio/src/modules/std/settings/DefaultSettingsDocumentRenderer.tsx` | Default Settings viewer (read-only) |

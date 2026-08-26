@@ -120,6 +120,13 @@ describe('git-merge-resolver', { timeout: 120_000 }, () => {
 
     await studioAgent.clickMergeToolbarButton('Accept Ours');
     await studioAgent.pause(1000);
+    try {
+      await studioAgent.clickMergeToolbarButton('Resolve & Stage');
+      await studioAgent.pause(1000);
+    } catch {
+      // Resolve & Stage appears only when the visual resolver reports element progress.
+      // File-level Accept Ours already stages and advances.
+    }
 
     const titleAfter = await studioAgent.getMergeResolverTitle();
     assert.notStrictEqual(titleBefore, titleAfter, 'Expected title to change after accepting ours');

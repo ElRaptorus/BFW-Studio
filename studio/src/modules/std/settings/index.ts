@@ -6,7 +6,6 @@ import KeyBindingsDocumentRenderer from './KeyBindingsDocumentRenderer';
 import SettingsGuiDocumentRenderer from './SettingsGuiDocumentRenderer';
 import SettingsJsonDocumentRenderer from './SettingsJsonDocumentRenderer';
 import UserSettingsDocumentModel from './UserSettingsDocumentModel';
-import { configureMonacoJsonValidation } from './configureMonacoJsonValidation';
 import { requestCategoryNavigation } from './settingsNavigation';
 
 export function loadSettings(bifrost: Bifrost): void {
@@ -160,6 +159,4 @@ export function loadSettings(bifrost: Bifrost): void {
       },
     ]);
   });
-
-  configureMonacoJsonValidation(bifrost);
 }

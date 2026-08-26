@@ -521,7 +521,6 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | Git Error Notification | `studio/src/modules/git-cruiser/dialogs/gitErrorNotification.ts` |
 | **Merge Document Model** | `studio/src/modules/git-cruiser/merge/MergeDocumentModel.ts` |
 | **Merge Document Renderer** | `studio/src/modules/git-cruiser/merge/MergeDocumentRenderer.tsx` |
-| **Merge Change Overview Pane (fallback)** | `studio/src/modules/git-cruiser/merge/panes/MergeChangeOverview.tsx` |
 | **Merge Resolution Utility** | `studio/src/modules/git-cruiser/merge/writeResolvedFile.ts` |
 | **Merge Styles (generic)** | `studio/src/modules/git-cruiser/merge/styles/component.merge-editor.scss` |
 | **BPMN Merge Resolver** | `studio/src/modules/bpmn-editor/merge/BpmnMergeResolver.tsx` |
@@ -534,7 +533,7 @@ The merge conflict resolver is a **pluggable** subsystem for resolving Git merge
 
 ### Architecture overview
 
-The resolver follows the same pattern as the **EditorDocumentInspector**: each editor document type can optionally register a merge resolver component via `mergeResolverKey` / `mergeResolverConstructor` on the document type definition. The generic `MergeDocumentRenderer` in `git-cruiser` looks up the resolver at runtime; if none is registered, it falls back to a Monaco DiffEditor for text files.
+The resolver follows the same pattern as the **EditorDocumentInspector**: each editor document type can optionally register a merge resolver component via `mergeResolverKey` / `mergeResolverConstructor` on the document type definition. The generic `MergeDocumentRenderer` in `git-cruiser` looks up the resolver at runtime. Only `.bpmn` and `.dmn` conflicted files enter the resolver walk; other extensions are skipped. If a walked file has no registered resolver, the renderer shows an error instead of a generic text editor.
 
 Merge-specific actions (zoom, conflict navigation, etc.) use a **std-style command dispatch pattern**: generic commands like `git.merge.zoomToViewport` dispatch to type-specific variants like `git.merge.zoomToViewport.bpmn`. When no variant is registered, the command is simply disabled.
 
@@ -545,7 +544,7 @@ The merge editor is opened as a singleton document type (`merge`) at the fixed U
 | File | Purpose |
 |------|---------|
 | `git-cruiser/merge/MergeDocumentModel.ts` | Generic model: file list, blobs, progress, navigation, resolution tracking |
-| `git-cruiser/merge/MergeDocumentRenderer.tsx` | Generic renderer: toolbar, title bar, resolution progress, delegates content to resolver or text fallback |
+| `git-cruiser/merge/MergeDocumentRenderer.tsx` | Generic renderer: toolbar, title bar, resolution progress, delegates content to the BPMN or DMN resolver |
 | `bpmn-editor/merge/BpmnMergeResolver.tsx` | BPMN resolver: three-panel layout (ours/theirs viewers + result viewer), diff overlays, element classification, per-element resolution |
 | `bpmn-editor/merge/BpmnMergeResultModeler.tsx` | Read-only result preview: tracks resolution state and rebuilds merged XML via `xmlMergeEngine` on every change |
 | `bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx` | BPMN-specific merge pane: classified elements, per-attribute conflict resolution, auto-applied tracking |
@@ -561,7 +560,7 @@ The merge editor is opened as a singleton document type (`merge`) at the fixed U
 | `GitMergeState` | `GitTypes.ts` | Merge kind + list of conflicted `GitFileStatus` entries |
 | `GitConflictBlobs` | `GitTypes.ts` | `{ base, ours, theirs }` — each `string \| null` |
 | `MergeConflictKind` | `MergeDocumentModel.ts` | `'content' \| 'ours-deleted' \| 'theirs-deleted'` |
-| `MergeFileType` | `GitTypes.ts` | `'bpmn' \| 'dmn' \| 'text' \| 'binary'` — determines rendering strategy |
+| `MergeFileType` | `GitTypes.ts` | `'bpmn' \| 'dmn'` — only diagram files enter the merge resolver |
 | `MergeFileEntry` | `MergeDocumentModel.ts` | Per-file tracking: path, URI, resolved flag, fileType |
 | `MergeResolverProps` | `studio/src/bifrost/contracts/MergeTypes.ts` | Props contract for resolver components (blobs, conflictKind, operationKind, entry, resolverRef, callbacks) |
 | `MergeOperationKind` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
@@ -592,7 +591,6 @@ The merge editor is opened as a singleton document type (`merge`) at the fixed U
 | `git.merge.acceptOurs` | `model: MergeDocumentModel` | Writes "ours" blob to disk, stages, advances to next |
 | `git.merge.acceptTheirs` | `model: MergeDocumentModel` | Writes "theirs" blob to disk, stages, advances to next |
 | `git.merge.skip` | `model: MergeDocumentModel` | Advances to the next unresolved file |
-| `git.merge.saveTextAndNext` | `model: MergeDocumentModel, content: string` | Writes user-edited text content, stages, advances (text files only) |
 | `git.merge.resolveAndStage` | `model: MergeDocumentModel` | Writes result XML from resolver, stages, advances (enabled when all conflicts resolved) |
 | `git.merge.abort` | — | Aborts the current merge/rebase/cherry-pick |
 | `git.merge.continue` | — | Continues rebase or cherry-pick after all conflicts resolved |
@@ -726,9 +724,7 @@ Overlay status per element is derived from the compound keys: if any sub-key is 
 
 ### Toolbar button strategy
 
-When `hasResolutionProgress` is true (BPMN resolver with content conflicts), the toolbar shows **only** the resolution-specific buttons ("Resolve & Stage", "Accept All Ours", "Accept All Theirs"). The per-file "Accept Ours" / "Accept Theirs" / "Accept & Edit" buttons are shown only for non-BPMN files or when no resolution progress is active.
-
-This separation exists because the per-element buttons in the Merge Changes pane are the primary resolution mechanism for BPMN files — the toolbar "Accept All" buttons are batch operations for convenience.
+When `hasResolutionProgress` is true (BPMN or DMN resolver with content conflicts), the toolbar shows **only** the resolution-specific buttons ("Resolve & Stage", "Accept All Ours", "Accept All Theirs"). The per-file "Accept Ours" / "Accept Theirs" / "Accept & Edit" buttons are shown when no resolution progress is active yet (for example delete conflicts, or before the resolver reports element progress).
 
 ### Whole-file accept with active result modeler
 
@@ -738,9 +734,9 @@ This separation exists because the per-element buttons in the Merge Changes pane
 
 Two separate panes cover merge change visualization, following the same separation-of-concerns principle as the rest of the merge subsystem:
 
-**Generic fallback** (`git-cruiser/merge/panes/MergeChangeOverview.tsx`): Registered by the `git-cruiser` module. Displayed when the active merge document has no BPMN resolver (i.e., non-BPMN text files). Shows a simplified message directing the user to the diff editor.
-
 **BPMN-specific** (`bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx`): Registered by the `bpmn-editor` module via `initializeBpmnPanes`. Displayed when `model.currentFileType === 'bpmn'`. Provides the full categorized element list with per-attribute conflict resolution. It accesses BPMN-specific data (classified elements, definitions metadata) through the `resolverRef` on the model, which is set by the active resolver component.
+
+**DMN-specific** (`dmn-editor/merge/panes/DmnMergeChangeOverview.tsx`): Registered by the `dmn-editor` module via `initializeDmnPanes`. Displayed when `model.currentFileType === 'dmn'`.
 
 When the BPMN pane is active, its sections are displayed in this order:
 1. **Resolution progress bar** — resolved / total conflict keys (counts compound keys, not elements)
@@ -764,23 +760,17 @@ The conflict badge count in the section header reflects the total number of conf
 
 When one side deletes a file while the other modifies it, `git show :N:` returns `null` for the missing stage. The model sets `conflictKind` to `'ours-deleted'` or `'theirs-deleted'`, and the renderer shows a placeholder panel with a trash icon and a "Compare with base" link instead of a viewer.
 
-### Non-BPMN text file support (opt-in)
+### File types in the merge resolver
 
-By default, the merge resolver only walks `.bpmn` files. The setting `git.merge.includeNonBpmn` (default `false`) enables an opt-in mode that also includes non-BPMN text files.
+The merge resolver walks only `.bpmn` and `.dmn` files (`classifyFileType` in `MergeDocumentModel.ts`):
 
-**File classification** (`classifyFileType` in `MergeDocumentModel.ts`):
 - `.bpmn` → `'bpmn'` — rendered with the registered `BpmnMergeResolver`
 - `.dmn` → `'dmn'` — rendered with the registered `DmnMergeResolver`
-- Known binary extensions (images, fonts, archives, executables, etc.) → `'binary'` — always excluded
-- Everything else → `'text'` — rendered with the SDK's `DiffEditor` (Monaco)
+- Every other extension (text, binary, JSON, Markdown, …) is excluded from the walk
 
-**Text fallback behavior** (built into the generic `MergeDocumentRenderer`):
-- Monaco `DiffEditor` showing ours (left) vs theirs (right), with an editable right (modified) side.
-- The DiffEditor's `onContentChanged` callback tracks modifications, enabling a "Save & Next" button when the user edits content.
-- "Save & Next" calls `git.merge.saveTextAndNext` which writes the edited content to disk, stages, and advances.
-- Command-gated toolbar buttons (zoom, conflict nav) are automatically disabled since no type-specific commands are registered for text files.
+Conflicted non-diagram files stay visible in the Git Pane (Accept Ours / Accept Theirs / Open in editor). They are not opened in the merge editor.
 
-**Language detection** (`getLanguageForFile`): Maps file extensions to Monaco language IDs. Falls back to `plaintext`.
+There is no generic CodeMirror text-merge fallback. That courtesy editor was removed; the merge editor is BPMN/DMN only, matching the Studio's document-type scope.
 
 ### Registering a new merge resolver
 

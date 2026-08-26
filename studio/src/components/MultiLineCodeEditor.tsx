@@ -1,11 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
-import { relaxJavaScriptDiagnostics } from '#components/internal/monacoJavaScriptDiagnostics';
-import MonacoEditor, { type OnMount } from '@monaco-editor/react';
-import type * as monaco from 'monaco-editor';
+import { createDefaultEditorExtensions } from '#components/code-editor/defaultExtensions';
+import { createJson5SchemaExtensions } from '#components/code-editor/json5SchemaExtensions';
+import { jsonParseLinterExtension } from '#components/code-editor/jsonParseLinter';
+import { getLanguageSupport } from '#components/code-editor/languageSupport';
+import { EditorState, type Extension } from '@codemirror/state';
+import { EditorView, keymap } from '@codemirror/view';
+import { updateSchema } from 'codemirror-json-schema';
+import type { JSONSchema7 } from 'json-schema';
 
-import React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 type MultiLineCodeEditorProps = {
   name?: string;
@@ -17,29 +20,63 @@ type MultiLineCodeEditorProps = {
   lineNumbers?: boolean;
   fontSize?: number;
   onChange?: (value: string) => void;
-  onKeyDown?: (e: monaco.IKeyboardEvent) => void;
-  onKeyUp?: (e: monaco.IKeyboardEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
+  onKeyUp?: (event: KeyboardEvent) => void;
   autoFocus?: boolean;
   htmlId?: string;
   htmlAttributes?: any;
   readOnly?: boolean;
+  /**
+   * Kept so existing callsites compile. CodeMirror 6 has no minimap;
+   * this prop is a no-op.
+   */
   minimap?: boolean;
   /**
-   * Optional model path for the Monaco editor. When set, the editor model is identified
-   * by this path, which can be used for language-specific configuration (e.g., JSON schema matching).
+   * When set, the editor uses JSON5 + `codemirror-json-schema` instead of
+   * strict JSON parse lint. Used by Settings JSON (JSONC comments).
    */
-  modelPath?: string;
+  jsonSchema?: object;
+  /**
+   * When true, `onChange` fires on every document change instead of on blur.
+   * Used by Machine Sanctum live playgrounds.
+   */
+  liveUpdate?: boolean;
 };
 
 type MultiLineCodeEditorInnerProps = MultiLineCodeEditorProps & {
-  onEditorReady: (editor: monaco.editor.IStandaloneCodeEditor) => void;
+  onEditorReady: (editor: EditorView) => void;
 };
 
-const DEFAULT_FONT_SIZE = 14;
+const shiftEnterBlurKeymap = keymap.of([
+  {
+    key: 'Shift-Enter',
+    run: (view) => {
+      view.contentDOM.blur();
+      return true;
+    },
+  },
+]);
+
+function buildExtensions(props: MultiLineCodeEditorProps): Extension[] {
+  const useSchema = props.jsonSchema != null;
+  const useStrictJsonLint = props.language === 'json' && !useSchema;
+
+  return [
+    ...createDefaultEditorExtensions({
+      readOnly: props.readOnly,
+      lineNumbers: props.lineNumbers,
+      fontSize: props.fontSize,
+      lintGutter: useStrictJsonLint || useSchema,
+    }),
+    shiftEnterBlurKeymap,
+    useSchema ? createJson5SchemaExtensions(props.jsonSchema as JSONSchema7) : getLanguageSupport(props.language),
+    ...(useStrictJsonLint ? [jsonParseLinterExtension()] : []),
+  ];
+}
 
 export class MultiLineCodeEditor extends React.Component<MultiLineCodeEditorProps> {
   public readonly name?: string;
-  private editorInstance: monaco.editor.IStandaloneCodeEditor | null = null;
+  private editorInstance: EditorView | null = null;
 
   constructor(props: MultiLineCodeEditorProps) {
     super(props);
@@ -55,11 +92,28 @@ export class MultiLineCodeEditor extends React.Component<MultiLineCodeEditorProp
   }
 
   getCurrentValue(): string | undefined {
-    return this.editorInstance?.getValue();
+    return this.editorInstance?.state.doc.toString();
   }
 
   resetValue(): void {
-    this.editorInstance?.setValue('');
+    this.setValue('');
+  }
+
+  setValue(value: string): void {
+    const view = this.editorInstance;
+    if (view == null) {
+      return;
+    }
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: value },
+    });
+  }
+
+  updateJsonSchema(schema: object): void {
+    if (this.editorInstance == null) {
+      return;
+    }
+    updateSchema(this.editorInstance, schema as JSONSchema7);
   }
 
   render(): React.JSX.Element {
@@ -75,22 +129,14 @@ export class MultiLineCodeEditor extends React.Component<MultiLineCodeEditorProp
 }
 
 function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.JSX.Element {
-  const studio = props.studio;
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const [monacoTheme, setMonacoTheme] = useState(() => getMonacoTheme(studio));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<EditorView | null>(null);
   const latestPropsRef = useRef(props);
   const currentValueRef = useRef(props.initialValue ?? '');
 
   useEffect(() => {
     latestPropsRef.current = props;
   });
-
-  useEffect(() => {
-    const sub = studio.theme.on(EVENT_THEME_CHANGED, () => {
-      setMonacoTheme(getMonacoTheme(studio));
-    });
-    return () => sub.dispose();
-  }, [studio]);
 
   useEffect(() => {
     return () => {
@@ -101,66 +147,78 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
     };
   }, []);
 
-  const handleMount: OnMount = useCallback((editor, monacoObj) => {
-    editorRef.current = editor;
-    latestPropsRef.current.onEditorReady(editor);
+  const handleBlur = useCallback(() => {
+    if (latestPropsRef.current.liveUpdate === true) {
+      return;
+    }
+    const value = currentValueRef.current;
+    const current = latestPropsRef.current;
+    const valueIsAlreadySet = value === current.initialValue;
+    const valueIsStillEmpty = value === '' && current.initialValue === undefined;
+    if (valueIsAlreadySet || valueIsStillEmpty) {
+      return;
+    }
+    current.onChange?.(value);
+  }, []);
 
-    relaxJavaScriptDiagnostics(monacoObj);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container == null) {
+      return;
+    }
 
-    editor.onDidChangeModelContent(() => {
-      currentValueRef.current = editor.getValue();
+    const view = new EditorView({
+      parent: container,
+      state: EditorState.create({
+        doc: props.initialValue ?? '',
+        extensions: [
+          ...buildExtensions(props),
+          EditorView.updateListener.of((update) => {
+            if (!update.docChanged) {
+              return;
+            }
+            currentValueRef.current = update.state.doc.toString();
+            if (latestPropsRef.current.liveUpdate === true) {
+              latestPropsRef.current.onChange?.(currentValueRef.current);
+            }
+          }),
+          EditorView.domEventHandlers({
+            keydown: (event) => {
+              latestPropsRef.current.onKeyDown?.(event);
+              return false;
+            },
+            keyup: (event) => {
+              latestPropsRef.current.onKeyUp?.(event);
+              return false;
+            },
+          }),
+        ],
+      }),
     });
+
+    editorRef.current = view;
+    latestPropsRef.current.onEditorReady(view);
+    view.contentDOM.addEventListener('focusout', handleBlur);
 
     if (latestPropsRef.current.autoFocus === true) {
-      editor.focus();
+      view.focus();
     }
 
-    editor.onDidBlurEditorText(() => {
-      const value = currentValueRef.current;
-      const current = latestPropsRef.current;
-      const valueIsAlreadySet = value === current.initialValue;
-      const valueIsStillEmpty = value === '' && current.initialValue === undefined;
-      if (valueIsAlreadySet || valueIsStillEmpty) {
-        return;
-      }
-      current.onChange?.(value);
-    });
-
-    editor.createContextKey('isMultiLineCodeEditor', true);
-
-    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyMod.Shift | monacoObj.KeyCode.KeyZ, () => null);
-
-    editor.addCommand(
-      monacoObj.KeyMod.Shift | monacoObj.KeyCode.Enter,
-      () => {
-        (document.activeElement as HTMLElement).blur();
-      },
-      'isMultiLineCodeEditor',
-    );
-
-    const pasteFromClipBoard = async () =>
-      editor.executeEdits(null, [
-        {
-          range: editor.getSelection() as monaco.IRange,
-          text: await navigator.clipboard.readText(),
-          forceMoveMarkers: true,
-        },
-      ]);
-
-    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyV, pasteFromClipBoard);
-    editor.addCommand(monacoObj.KeyMod.Shift | monacoObj.KeyCode.Insert, pasteFromClipBoard);
-
-    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyY, () =>
-      editor.trigger('MultiLineCodeEditor', 'redo', null),
-    );
-
-    if (latestPropsRef.current.onKeyDown) {
-      editor.onKeyDown(latestPropsRef.current.onKeyDown);
-    }
-    if (latestPropsRef.current.onKeyUp) {
-      editor.onKeyUp(latestPropsRef.current.onKeyUp);
-    }
+    return () => {
+      view.contentDOM.removeEventListener('focusout', handleBlur);
+      view.destroy();
+      editorRef.current = null;
+    };
+    // Mount once; language / schema / readOnly are applied at construction.
+    // Schema updates go through `updateJsonSchema`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (editorRef.current != null && props.jsonSchema != null) {
+      updateSchema(editorRef.current, props.jsonSchema as JSONSchema7);
+    }
+  }, [props.jsonSchema]);
 
   const sizeClass = props.size ? `pane__textarea--${props.size}` : '';
   return (
@@ -168,31 +226,10 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
       className={`pane__textarea ${sizeClass} ${props.className ?? ''}`}
       style={{ position: 'relative' }}
       id={props.htmlId}
+      data-code-editor="multiline"
       {...props.htmlAttributes}
     >
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <MonacoEditor
-          value={props.initialValue ?? ''}
-          language={props.language}
-          path={props.modelPath}
-          theme={monacoTheme}
-          options={{
-            fontFamily: 'SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace',
-            fontSize: props.fontSize ?? DEFAULT_FONT_SIZE,
-            lineNumbers: props.lineNumbers === true ? 'on' : 'off',
-            minimap: { enabled: props.minimap === true },
-            wordWrap: 'on',
-            readOnly: props.readOnly,
-            fixedOverflowWidgets: true,
-            automaticLayout: true,
-          }}
-          onMount={handleMount}
-        />
-      </div>
+      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
     </div>
   );
-}
-
-function getMonacoTheme(studio: Bifrost): string {
-  return studio.theme.isCurrentThemeDark() ? 'vs-dark' : 'vs-light';
 }

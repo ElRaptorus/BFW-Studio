@@ -312,8 +312,10 @@ function matchesPrimitiveType(value: unknown, expectedType: string): boolean {
 /**
  * Validates a settings dump against the schema registry.
  *
- * Unknown keys (not in the registry) are collected as warnings but do NOT cause validation failure.
- * Only type/enum/constraint violations on registered keys cause failure.
+ * Unknown keys (not in the registry) are ignored and do NOT cause validation failure.
+ * Leftover plugin settings stay in the dump. Only type/enum/constraint
+ * violations on registered keys cause failure. The Settings JSON editor
+ * surfaces unknown keys as warnings ("Unknown setting."), not save blockers.
  */
 export function validateSettings(
   dump: Record<string, unknown>,

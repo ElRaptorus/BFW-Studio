@@ -41,27 +41,6 @@
   }
 }
 
-.bpmn-merge__text-viewer {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-
-  .pane__textarea {
-    flex: 1;
-    height: 100%;
-  }
-}
-
-.bpmn-merge__text-diff {
-  height: 100%;
-  position: relative;
-
-  .pane__textarea {
-    height: 100%;
-  }
-}
-
 // Colored border overlays around elements
 .highlight-overlay--ours {
   border-color: var(--theme-merge-ours-foreground, #48c78e);

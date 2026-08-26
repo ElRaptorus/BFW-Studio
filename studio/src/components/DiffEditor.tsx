@@ -1,11 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
-import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
-import { type DiffOnMount, DiffEditor as MonacoDiffEditor } from '@monaco-editor/react';
-import type * as monaco from 'monaco-editor';
+import { createDefaultEditorExtensions } from '#components/code-editor/defaultExtensions';
+import { jsonParseLinterExtension } from '#components/code-editor/jsonParseLinter';
+import { getLanguageSupport } from '#components/code-editor/languageSupport';
+import { MergeView } from '@codemirror/merge';
+import type { Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 
-import React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 type DiffEditorProps = {
   name?: string;
@@ -25,18 +27,28 @@ type DiffEditorProps = {
 };
 
 type DiffEditorInnerProps = DiffEditorProps & {
-  onEditorReady: (editor: monaco.editor.IStandaloneDiffEditor) => void;
+  onEditorReady: (mergeView: MergeView) => void;
 };
 
-const DEFAULT_FONT_SIZE = 14;
+function sideExtensions(props: DiffEditorProps, side: 'a' | 'b'): Extension[] {
+  const readOnly = side === 'a' || props.readOnly === true;
+  const useStrictJsonLint = props.language === 'json';
 
-function getMonacoTheme(studio: Bifrost): string {
-  return studio.theme.isCurrentThemeDark() ? 'vs-dark' : 'vs-light';
+  return [
+    ...createDefaultEditorExtensions({
+      readOnly,
+      lineNumbers: props.lineNumbers,
+      fontSize: props.fontSize,
+      lintGutter: useStrictJsonLint,
+    }),
+    getLanguageSupport(props.language),
+    ...(useStrictJsonLint ? [jsonParseLinterExtension()] : []),
+  ];
 }
 
 export class DiffEditor extends React.Component<DiffEditorProps> {
   public readonly name?: string;
-  private editorInstance: monaco.editor.IStandaloneDiffEditor | null = null;
+  private mergeView: MergeView | null = null;
 
   constructor(props: DiffEditorProps) {
     super(props);
@@ -44,41 +56,39 @@ export class DiffEditor extends React.Component<DiffEditorProps> {
   }
 
   componentWillUnmount(): void {
-    if (this.editorInstance) {
-      try {
-        this.editorInstance.setModel(null);
-        this.editorInstance.dispose();
-      } catch {
-        // Already disposed — safe to ignore.
-      }
-    }
-    this.editorInstance = null;
+    this.mergeView?.destroy();
+    this.mergeView = null;
   }
 
   layout(): void {
-    this.editorInstance?.getOriginalEditor()?.layout();
-    this.editorInstance?.getModifiedEditor()?.layout();
+    // CodeMirror 6 MergeView sizes from CSS; no Monaco layout() equivalent.
   }
 
   focus(): void {
-    assertNotNull(this.editorInstance, 'this.editorInstance');
-    this.editorInstance.getModifiedEditor().focus();
+    assertNotNull(this.mergeView, 'this.mergeView');
+    this.mergeView.b.focus();
   }
 
   getCurrentValue(): string | undefined {
-    return this.editorInstance?.getModel()?.modified?.getValue();
+    return this.mergeView?.b.state.doc.toString();
   }
 
   resetValue(): void {
-    this.editorInstance?.getModel()?.modified?.setValue('');
+    const view = this.mergeView?.b;
+    if (view == null) {
+      return;
+    }
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: '' },
+    });
   }
 
   render(): React.JSX.Element {
     return (
       <DiffEditorInner
         {...this.props}
-        onEditorReady={(editor) => {
-          this.editorInstance = editor;
+        onEditorReady={(mergeView) => {
+          this.mergeView = mergeView;
         }}
       />
     );
@@ -86,40 +96,53 @@ export class DiffEditor extends React.Component<DiffEditorProps> {
 }
 
 function DiffEditorInner(props: DiffEditorInnerProps): React.JSX.Element {
-  const studio = props.studio;
-  const editorRef = useRef<monaco.editor.IStandaloneDiffEditor | null>(null);
-  const [monacoTheme, setMonacoTheme] = useState(() => getMonacoTheme(studio));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mergeViewRef = useRef<MergeView | null>(null);
 
   useEffect(() => {
-    const sub = studio.theme.on(EVENT_THEME_CHANGED, () => {
-      setMonacoTheme(getMonacoTheme(studio));
+    const container = containerRef.current;
+    if (container == null) {
+      return;
+    }
+
+    const mergeView = new MergeView({
+      parent: container,
+      // MergeView's public option keys are `a` (ours) and `b` (theirs).
+      // eslint-disable-next-line id-length -- MergeView API
+      a: {
+        doc: props.beforeValue,
+        extensions: sideExtensions(props, 'a'),
+      },
+      // eslint-disable-next-line id-length -- MergeView API
+      b: {
+        doc: props.afterValue,
+        extensions: [
+          ...sideExtensions(props, 'b'),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              props.onContentChanged?.();
+            }
+          }),
+        ],
+      },
+      highlightChanges: true,
+      gutter: true,
     });
-    return () => sub.dispose();
-  }, [studio]);
 
-  const handleMount: DiffOnMount = (editor, monacoObj) => {
-    editorRef.current = editor;
-    props.onEditorReady(editor);
-
-    editor.getOriginalEditor()?.layout();
-    editor.getModifiedEditor()?.layout();
+    mergeViewRef.current = mergeView;
+    props.onEditorReady(mergeView);
 
     if (props.autoFocus === true) {
-      editor.getModifiedEditor().focus();
+      mergeView.b.focus();
     }
 
-    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyMod.Shift | monacoObj.KeyCode.KeyZ, () => null);
-
-    editor.addCommand(monacoObj.KeyMod.CtrlCmd | monacoObj.KeyCode.KeyY, () =>
-      editor.trigger('DiffEditor', 'redo', null),
-    );
-
-    if (props.onContentChanged) {
-      editor.getModifiedEditor().onDidChangeModelContent(() => {
-        props.onContentChanged?.();
-      });
-    }
-  };
+    return () => {
+      mergeView.destroy();
+      mergeViewRef.current = null;
+    };
+    // Mount once; merge contents are the initial before/after values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const sizeClass = props.size ? `pane__textarea--${props.size}` : '';
   return (
@@ -127,27 +150,10 @@ function DiffEditorInner(props: DiffEditorInnerProps): React.JSX.Element {
       className={`pane__textarea ${sizeClass} ${props.className ?? ''}`}
       style={{ position: 'relative' }}
       id={props.htmlId}
+      data-code-editor="diff"
       {...props.htmlAttributes}
     >
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <MonacoDiffEditor
-          original={props.beforeValue}
-          modified={props.afterValue}
-          language={props.language}
-          theme={monacoTheme}
-          options={{
-            fontFamily: 'SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace',
-            fontSize: props.fontSize ?? DEFAULT_FONT_SIZE,
-            lineNumbers: props.lineNumbers === true ? 'on' : 'off',
-            readOnly: props.readOnly,
-            enableSplitViewResizing: false,
-            renderSideBySide: true,
-            renderOverviewRuler: false,
-            automaticLayout: true,
-          }}
-          onMount={handleMount}
-        />
-      </div>
+      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
     </div>
   );
 }

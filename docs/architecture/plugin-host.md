@@ -16,7 +16,7 @@ The Plugin Host is a process-isolated runtime for external plugins. Each rendere
 
 Plugins never execute in the renderer process. They communicate with Bifrost through a typed message protocol. Plugins have **no access** to the DOM, Electron APIs, or shared memory with the renderer — all interaction flows through serializable IPC messages. Caller identity on API requests is **attested** by `SandboxManager` (see _IPC caller attestation_ below); plugin code cannot forge `pluginName`.
 
-**Host vs plugin types:** Internal Studio modules type `import type { Bifrost } from '#bifrost/Bifrost'`. Plugin authors type `StudioPluginApi` from `@evil/bifrost_fw_sdk`. The SDK is the plugin toolkit (API contract, POJO contracts, `ThemeToken` + documentation CSS, content controls). It is not a chrome kit — tab strips, pane shells, Tree, and Monaco stay in the host. Plugins fill a hole in host chrome via `registerWebviewPane`, `registerWebviewDocumentType`, and `views.registerTreeView`.
+**Host vs plugin types:** Internal Studio modules type `import type { Bifrost } from '#bifrost/Bifrost'`. Plugin authors type `StudioPluginApi` from `@evil/bifrost_fw_sdk`. The SDK is the plugin toolkit (API contract, POJO contracts, `ThemeToken` + documentation CSS, content controls). It is not a chrome kit — tab strips, pane shells, Tree, and host CodeMirror wrappers stay in the host. Plugins fill a hole in host chrome via `registerWebviewPane`, `registerWebviewDocumentType`, and `views.registerTreeView`.
 
 ```
 Renderer (PluginHost + PluginHostBridge + PermissionGate)
