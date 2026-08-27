@@ -1,8 +1,10 @@
 import type { ExecException } from 'child_process';
 import { exec, execSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 
-function getRawAndEscapedPathForMacOSAndLinux(result: string): string {
-  return result.trim().replace(/^\.\//g, '').replace(/\s/g, '\\ ').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+function quoteForShell(filePath: string): string {
+  return `"${filePath.replace(/"/g, '\\"')}"`;
 }
 
 async function getBuiltStudioPath(): Promise<string> {
@@ -14,23 +16,20 @@ async function getBuiltStudioPath(): Promise<string> {
       const currentDir = await execCommand('CD');
       const result = await execCommand(`where /r "${currentDir.trim()}" "Bifrost Forge World*.exe"`);
       const files = result.split('\n');
-      const correctPath = files.find((path) => path.includes('win-unpacked')) as string;
+      const correctPath = files.find((filePath) => filePath.includes('win-unpacked'));
 
       if (!correctPath) {
         throw new Error('Unable to find the Studio Electron App!');
       }
 
-      return `"${correctPath.trim()}"`;
+      return correctPath.trim();
     } catch (error) {
       console.error(error);
       return process.exit(1);
     }
   } else if (isLinux) {
     try {
-      const result = await execCommand('find ./dist/electron/bifrost-forge-world-*.AppImage');
-      const rawPath = getRawAndEscapedPathForMacOSAndLinux(result);
-
-      return rawPath;
+      return findLinuxUnpackedExecutable();
     } catch (error) {
       console.error(error);
       return process.exit(1);
@@ -38,18 +37,42 @@ async function getBuiltStudioPath(): Promise<string> {
   }
 
   try {
-    const arch = getArchitecture();
-    const macAppFolder = arch === 'arm64' ? 'mac-arm64' : 'mac';
+    const architecture = getArchitecture();
+    const macAppFolder = architecture === 'arm64' ? 'mac-arm64' : 'mac';
     const result = await execCommand(
       `find ./dist/electron/${macAppFolder}/*.app/Contents/MacOS/Bifrost\\ Forge\\ World*`,
     );
-    const rawPath = getRawAndEscapedPathForMacOSAndLinux(result);
 
-    return rawPath;
+    return result.trim().replace(/^\.\//g, '');
   } catch (error) {
     console.error(error);
     return process.exit(1);
   }
+}
+
+function findLinuxUnpackedExecutable(): string {
+  const unpackedDirectory = path.join('dist', 'electron', 'linux-unpacked');
+  if (!fs.existsSync(unpackedDirectory)) {
+    throw new Error(`Linux unpacked app directory not found: ${unpackedDirectory}`);
+  }
+
+  const excludedNames = new Set(['chrome-sandbox', 'chrome_crashpad_handler']);
+  const directoryEntries = fs.readdirSync(unpackedDirectory, { withFileTypes: true });
+  const executableCandidates = directoryEntries.filter((directoryEntry) => {
+    if (!directoryEntry.isFile()) {
+      return false;
+    }
+    if (excludedNames.has(directoryEntry.name)) {
+      return false;
+    }
+    return !directoryEntry.name.includes('.');
+  });
+
+  if (executableCandidates.length === 0) {
+    throw new Error(`Unable to find the Studio Electron binary in ${unpackedDirectory}`);
+  }
+
+  return path.join(unpackedDirectory, executableCandidates[0].name);
 }
 
 async function execCommand(command: string): Promise<string> {
@@ -64,19 +87,19 @@ async function execCommand(command: string): Promise<string> {
 }
 
 function getArchitecture() {
-  let arch = process.arch;
-  if (process.platform === 'darwin' && arch === 'x64') {
+  let architecture = process.arch;
+  if (process.platform === 'darwin' && architecture === 'x64') {
     // When ON macOS we should check if we're running under rosetta and use the arm64 version
     try {
       const output = execSync('sysctl -in sysctl.proc_translated');
       if (output.toString().trim() === '1') {
-        arch = 'arm64';
+        architecture = 'arm64';
       }
     } catch {
       // Ignore failure
     }
   }
-  return arch;
+  return architecture;
 }
 
 async function runTests(): Promise<void> {
@@ -89,7 +112,9 @@ async function runTests(): Promise<void> {
     process.exit(2);
   }
 
-  const childProcess = exec(`cross-env TEST_APP_PATH=${pathToBifrost} npm run ${npmRunArgs.join(' ')}`);
+  console.log(`Running production Electron tests against: ${pathToBifrost}`);
+
+  const childProcess = exec(`cross-env TEST_APP_PATH=${quoteForShell(pathToBifrost)} npm run ${npmRunArgs.join(' ')}`);
 
   childProcess.stdout?.on('data', (data) => {
     console.log(data);
@@ -99,7 +124,7 @@ async function runTests(): Promise<void> {
     console.error(data);
   });
 
-  childProcess.on('exit', (code, signal) => {
+  childProcess.on('exit', (code, _signal) => {
     process.exit(code as number);
   });
 }

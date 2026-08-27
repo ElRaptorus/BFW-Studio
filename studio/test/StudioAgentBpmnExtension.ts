@@ -1,6 +1,5 @@
 import * as assert from 'node:assert';
 import * as path from 'path';
-import { Key } from 'webdriverio';
 
 import { OsSpecificKeystroke } from './OsSpecificKeystroke';
 import type { TestContext } from './StudioAgent';
@@ -32,35 +31,7 @@ export async function createAndStartStudioAgentBpmnExtension(
   return bpmnExtensionAgent;
 }
 
-const SELECT_ALL = OsSpecificKeystroke('cmd-a', 'ctrl-a');
-
 export class StudioAgentBpmnExtension extends StudioAgent {
-  /**
-   * Clicks into the editable area of a host code editor or FEEL editor
-   * within `parentSelector`. All host editors are CodeMirror 6 (`.cm-content`).
-   */
-  async clickOnCodeEditor(parentSelector: string): Promise<void> {
-    await this.clickOn(`${parentSelector} .cm-content`);
-  }
-
-  /**
-   * Clears the content of a code editor within `parentSelector`
-   * by selecting all text and deleting it.
-   */
-  async clearCodeEditor(parentSelector: string): Promise<void> {
-    await this.clickOnCodeEditor(parentSelector);
-    await this.sendKeyboardInput([SELECT_ALL], false);
-    await this.sendKeyboardInput([Key.Backspace], false);
-  }
-
-  /**
-   * Returns the visible text of a code editor within `parentSelector`,
-   * trimmed of leading/trailing whitespace.
-   */
-  async getCodeEditorText(parentSelector: string): Promise<string> {
-    return (await this.getText(`${parentSelector} .cm-content`)).trim();
-  }
-
   private async selectBpmnElementById(name: string): Promise<void> {
     await this.fitDiagramToViewport();
     await this.clickOn(`[data-element-id=${name}]`);

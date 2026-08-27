@@ -52,10 +52,6 @@ export default class TestDriver {
   private async createClient() {
     const args: string[] = [...this.startOptions.args];
 
-    if (process.env.APPVEYOR) {
-      args.push('no-sandbox');
-    }
-
     if (this.startOptions.env && Object.keys(this.startOptions.env).length > 0) {
       for (const [key, value] of Object.entries(this.startOptions.env)) {
         process.env[key] = value;
@@ -82,6 +78,7 @@ export default class TestDriver {
       },
       'goog:chromeOptions': {
         binary: executablePathGiven ? this.startOptions.paths.executable : this.startOptions.paths.electron,
+        args: this.getChromiumCiArguments(),
       },
     };
 
@@ -155,10 +152,19 @@ export default class TestDriver {
   }
 
   public async maximizeWindow() {
-    await this.client!.execute(() => {
-      const remote = require('@electron/remote');
-      remote.getCurrentWindow().maximize();
-    });
+    try {
+      await this.client!.maximizeWindow();
+    } catch {
+      try {
+        await this.client!.execute(() => {
+          const remote = require('@electron/remote');
+          remote.getCurrentWindow().maximize();
+        });
+      } catch {
+        // Best-effort. CI ChromeDriver/Electron can reject execute/sync with
+        // "call function result missing int 'status'".
+      }
+    }
     await this.pause(500);
   }
 
@@ -215,6 +221,17 @@ export default class TestDriver {
 
       resolve(result);
     });
+  }
+
+  private getChromiumCiArguments(): string[] {
+    const isContinuousIntegration =
+      process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true' || process.env.APPVEYOR != null;
+
+    if (!isContinuousIntegration) {
+      return [];
+    }
+
+    return ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'];
   }
 
   private async pause(timeInMilliseconds: number): Promise<void> {

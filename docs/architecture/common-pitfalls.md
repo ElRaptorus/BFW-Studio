@@ -1610,6 +1610,26 @@ The `async`/`await` inside the page matters for a second reason: `bifrost.comman
 
 ---
 
+## Integration tests must clear before typing a replacement
+
+**Symptom**: A property-pane test fails with a concatenated value such as `'10100' !== '100'`, or a FEEL/CodeMirror assertion includes the fixture expression plus the typed replacement.
+
+**Why it happens**: Monaco often overwrote the document on the first keystroke. CodeMirror 6 and native `<input>` fields insert at the caret. Clicking the middle of a filled field (fixture `loopMaximum="10"`, `evil:LoopInterval` `PT1S`, existing FEEL) and typing `"100"` appends.
+
+**Correct approach**: Native pane inputs — `clearTextInput` then type (see the parallel MI max-iterations test). CodeMirror / FEEL — `clickOnCodeEditor` / `clearCodeEditor` on `StudioAgent` (select-all + backspace). JSON property panes such as Data Object value contract are `MultiLineCodeEditor`, not `<input>` — do not `clickOn` the wrapper and `getValue`. DMN — `setDmnPropertyValue` already clears. Await `StudioAgent.maximize()`; `maximizeWindow` is best-effort because CI ChromeDriver can reject Electron `execute/sync`.
+
+---
+
+## `git.showFileHistory` is disabled until the history cache is known
+
+**Symptom**: Integration tests throw `Executed command is not enabled: git.showFileHistory` from `StudioAgent.executeCommand`, even though the file has multiple commits. Common on CI after a previous test closed the editor.
+
+**Why it happens**: `git.showFileHistory` `enabledWhen` calls `GitService.hasFileHistory(uri)`. That used to return `false` on a cache miss and while `getLog` was in flight. Every git status refresh also clears `fileHistoryCache`. Tests that `executeCommand` immediately after `jumpToFile` raced the background check. `file://${tmpPath}` can also disagree with the editor URI (`/tmp` vs `/private/tmp`).
+
+**Correct approach**: `hasFileHistory` returns `true` unless a completed check stored `false`. Tests open the file, use `getFocusedDocumentUri()`, then `waitUntilCommandEnabled('git.showFileHistory', [uri])` before `executeCommand`. History tests that need two commits must create them themselves — do not rely on a previous test's `git commit`. The command handler still awaits `getLog` and notifies if there is nothing to browse.
+
+---
+
 ## Merge Change Overview must optional-call resolverRef methods
 
 **Symptom**: Skipping from a conflicted DMN file to a BPMN file (or the reverse) throws `TypeError: …getDefinitionsMetadataOurs is not a function` in the Merge Changes pane.
@@ -1633,3 +1653,13 @@ The `async`/`await` inside the page matters for a second reason: `bifrost.comman
 ## Disabling a plugin does not restore its manifest editor-document-type placeholder
 
 Disabling or reloading a plugin that already replaced its placeholder does **not** re-register the placeholder — the document type is fully unregistered (via the real registration's own disposer) until the plugin is re-enabled. A file that was openable while the plugin was active becomes unopenable (not "lazily openable again") while it's disabled. This matches the existing behavior of `registerWebviewDocumentType` without a manifest placeholder.
+
+---
+
+## Linux CI must not launch the AppImage with ChromeDriver
+
+**Mistake**: Pointing `TEST_APP_PATH` / `goog:chromeOptions.binary` at `dist/electron/bifrost-forge-world-*.AppImage`, and relying on xvfb plus `APPIMAGE_EXTRACT_AND_RUN=1` to make GitHub Actions integration tests start.
+
+**Why it fails**: ChromeDriver launches that path as a Chromium/Electron binary. An AppImage is a FUSE self-extractor. GitHub-hosted Ubuntu 24.04 does not provide unprivileged FUSE/libfuse2; Chromium flags such as `--remote-debugging-port` can also be consumed by the AppImage runtime. The window never appears, which looks like a missing display. xvfb is still required, but it cannot fix the wrong binary. `--no-sandbox` stuffed into Studio `appArgs` after `---` is also ignored as a Chromium switch.
+
+**Correct approach**: Drive `dist/electron/linux-unpacked/<product binary>` (already produced next to the AppImage). Pass `--no-sandbox`, `--disable-gpu`, and `--disable-dev-shm-usage` via `goog:chromeOptions.args` when `CI` / `GITHUB_ACTIONS` is set. Install GTK/NSS/GBM libraries in the workflow. Keep `xvfb-run`. Matrix suite names must match `package.json` scripts (`test:integration:core`, `plugins`, not `studio-core` / `plugin-host`).

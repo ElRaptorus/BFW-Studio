@@ -31,6 +31,14 @@ jobs:
           node-version: 24
           check-latest: true
 
+      - name: Install latest NPM v12
+        run: npm install -g npm@12
+
+      - name: Authenticate GitHub Packages
+        run: echo "//npm.pkg.github.com/:_authToken=${CI_AUTH}" >> ~/.npmrc
+        env:
+          CI_AUTH: ${{ secrets.CI_AUTH }}
+
       - name: Install Dependencies
         run: npm ci
 
@@ -43,10 +51,10 @@ jobs:
       - name: Build Linux Prod App
         run: npm run build-prod:electron:linux
 
-      - name: Upload AppImage
+      - name: Upload Linux Electron Dist
         uses: actions/upload-artifact@v7
         with:
-          name: studio_appimage_linux
+          name: studio_linux_electron
           path: studio/dist/electron/
           retention-days: 3
 
@@ -67,10 +75,11 @@ jobs:
       fail-fast: false
       matrix:
         suite:
-          - studio-core
           - bpmn-editor
-          - plugin-host
+          - core
+          - dmn-editor
           - git-cruiser
+          - plugins
 
     steps:
       - uses: actions/checkout@v6
@@ -81,6 +90,14 @@ jobs:
           node-version: 24
           check-latest: true
 
+      - name: Authenticate GitHub Packages
+        run: echo "//npm.pkg.github.com/:_authToken=${CI_AUTH}" >> ~/.npmrc
+        env:
+          CI_AUTH: ${{ secrets.CI_AUTH }}
+
+      - name: Install latest NPM v12
+        run: npm install -g npm@12
+
       - name: Configure Git Identity
         run: |
           git config --global user.email "ci@evilstudio.dev"
@@ -90,42 +107,38 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      # - name: Ensure chromedriver binary exists
-      #   run: |
-      #     if [ ! -f node_modules/electron-chromedriver/bin/chromedriver ]; then
-      #       echo "Chromedriver binary missing, running download script..."
-      #       node node_modules/electron-chromedriver/download-chromedriver.js
-      #       echo "Waiting for async download to complete..."
-      #       sleep 10
-      #     fi
-      #     if [ ! -f node_modules/electron-chromedriver/bin/chromedriver ]; then
-      #       echo "Still missing — downloading manually from Electron releases..."
-      #       ELECTRON_VERSION=$(node -p "require('./node_modules/electron-chromedriver/package.json').version")
-      #       curl -fSL "https://github.com/electron/electron/releases/download/v${ELECTRON_VERSION}/chromedriver-v${ELECTRON_VERSION}-linux-x64.zip" -o /tmp/chromedriver.zip
-      #       unzip -o /tmp/chromedriver.zip -d node_modules/electron-chromedriver/bin/
-      #       chmod +x node_modules/electron-chromedriver/bin/chromedriver
-      #     fi
-      #     ls -la node_modules/electron-chromedriver/bin/chromedriver
-
-      - name: Download AppImage
+      - name: Download Linux Electron Dist
         uses: actions/download-artifact@v8
         with:
-          name: studio_appimage_linux
+          name: studio_linux_electron
           path: studio/dist/electron
 
-      - name: Make AppImage executable
-        run: chmod +x dist/electron/*.AppImage
+      - name: Restore executable bits on unpacked app
+        run: |
+          find dist/electron/linux-unpacked -maxdepth 1 -type f -exec chmod +x {} \;
 
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install Electron OS dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            xvfb \
+            libgtk-3-0 \
+            libnotify4 \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            libatspi2.0-0 \
+            libsecret-1-0 \
+            libasound2t64 \
+            libgbm1 \
+            libdrm2 \
+            libxshmfence1
 
       - name: Disable AppArmor unprivileged userns restriction
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: 'Run Integration Tests: ${{ matrix.suite }}'
         run: xvfb-run --auto-servernum -s "-screen 0 1920x1080x24" npm run test-prod:electron test:integration:${{ matrix.suite }}
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: '1'
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v7

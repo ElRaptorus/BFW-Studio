@@ -11,7 +11,7 @@ export default class InputSimulator {
     for (const key of keys) {
       const keysToPress = this.getKeysToPress(key);
 
-      this.testDriver.client!.keys(keysToPress);
+      await this.testDriver.client!.keys(keysToPress);
       await this.pause(pauseAfterEachKey);
     }
 

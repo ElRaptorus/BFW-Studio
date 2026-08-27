@@ -181,21 +181,31 @@ export class GitService {
   }
 
   /**
-   * Returns `true` if the file has at least 2 commits (i.e. meaningful history
-   * to browse). Returns `false` if unknown or insufficient. The first call for
-   * a given URI triggers an async background check that emits
-   * `unspecifiedGlobalUpdate` once the result is cached.
+   * Synchronous enablement check for `git.showFileHistory`.
+   *
+   * Returns `false` only after a completed check found fewer than 2 commits.
+   * Unknown and in-flight lookups return `true` so `executeCommand` is not
+   * blocked while `getLog` runs. The handler itself awaits `getLog` and
+   * notifies if there is nothing to browse. A cache miss starts
+   * `checkFileHistoryInBackground`, which emits `unspecifiedGlobalUpdate`
+   * when the result is stored.
    */
   hasFileHistory(uri: string): boolean {
     const cached = this.fileHistoryCache.get(uri);
-    if (cached === true || cached === false) {
-      return cached;
+    if (cached === true) {
+      return true;
     }
-    if (cached === 'pending') {
+    if (cached === false) {
       return false;
     }
-    this.checkFileHistoryInBackground(uri);
-    return false;
+    if (cached !== 'pending') {
+      this.checkFileHistoryInBackground(uri);
+    }
+    // Unknown or in-flight: stay enabled. Returning false here made
+    // executeCommand throw on the first call and after every status refresh
+    // (emitStatusChanged clears this cache). showFileHistory awaits getLog
+    // and notifies if there is nothing to browse.
+    return true;
   }
 
   private checkFileHistoryInBackground(uri: string): void {

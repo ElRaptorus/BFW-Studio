@@ -94,7 +94,7 @@ Do not paint host syntax with `--theme-cm-*`. Named themes (`vscode-dark`, `zed-
 
 ## Test selectors
 
-All host code editors and FEEL editors expose `.cm-content`. `StudioAgentBpmnExtension.clickOnCodeEditor` / `getCodeEditorText` always target `.cm-content`. To distinguish FEEL from generic source, probe a `.feel-editor` ancestor, not a different engine.
+All host code editors and FEEL editors expose `.cm-content`. `StudioAgent.clickOnCodeEditor` / `getCodeEditorText` always target `.cm-content`. `clickOnCodeEditor` also select-all + backspace before returning — CodeMirror inserts at the caret, so tests that type a replacement must start from an empty document. To distinguish FEEL from generic source, probe a `.feel-editor` ancestor, not a different engine. Native `PaneProperty` inputs are not CodeMirror; those tests use `clearTextInput`.
 
 ---
 
@@ -108,4 +108,4 @@ All host code editors and FEEL editors expose `.cm-content`. `StudioAgentBpmnExt
 | Settings JSON renderer | `studio/src/modules/std/settings/SettingsJsonDocumentRenderer.tsx` |
 | Schema builder | `studio/src/modules/std/settings/validation/schemaToJsonSchema.ts` |
 | FEEL editors | `studio-sdk/src/components/FeelEditor.tsx`, `OneLineFeelEditor.tsx` |
-| Agent helpers | `studio/test/StudioAgentBpmnExtension.ts` |
+| Agent helpers | `studio/test/StudioAgent.ts` (`clickOnCodeEditor`, `clearCodeEditor`, `getCodeEditorText`) |

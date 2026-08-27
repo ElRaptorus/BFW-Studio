@@ -23,6 +23,7 @@ const QUERY_VISIBLE_CONTEXTMENU = '.react-contextmenu--visible[tabindex="-1"]';
 
 const SHOW_QUICK_JUMP_COMMANDS = OsSpecificKeystroke('cmd-shift-p', 'ctrl-shift-p');
 const SHOW_QUICK_JUMP = OsSpecificKeystroke('cmd-j', 'ctrl-j');
+const SELECT_ALL = OsSpecificKeystroke('cmd-a', 'ctrl-a');
 
 const ILLEGAL_FILENAME_CHARS_REGEX = /[^a-z0-9-_.]/gi;
 
@@ -45,7 +46,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 const webdriverLogPath = path.join(__dirname, '..', 'tmp', 'logs', 'webdriver');
 const studioAgentLogPath = path.join(__dirname, '..', 'tmp', 'logs', 'studioagent');
 
-const executablePath = process.env.TEST_APP_PATH;
+const executablePath = process.env.TEST_APP_PATH?.trim() || undefined;
 const electronBundlePath = path.join(__dirname, '..', 'out', 'bundle-electron-main.js');
 
 let isRetryOnStartupError = false;
@@ -214,7 +215,33 @@ export class StudioAgent {
   }
 
   async maximize(): Promise<void> {
-    this.testDriver.maximizeWindow();
+    await this.testDriver.maximizeWindow();
+  }
+
+  /**
+   * Focuses a host CodeMirror 6 or FEEL editor inside `parentSelector` and
+   * clears it. CodeMirror inserts at the caret; tests that type a replacement
+   * must start from an empty document (Monaco often overwrote on first key).
+   */
+  async clickOnCodeEditor(parentSelector: string): Promise<void> {
+    await this.clickOn(`${parentSelector} .cm-content`);
+    await this.sendKeyboardInput([SELECT_ALL], false);
+    await this.sendKeyboardInput([Key.Backspace], false);
+  }
+
+  /**
+   * Clears a code editor inside `parentSelector`. Same as `clickOnCodeEditor`.
+   */
+  async clearCodeEditor(parentSelector: string): Promise<void> {
+    await this.clickOnCodeEditor(parentSelector);
+  }
+
+  /**
+   * Returns the visible text of a code editor inside `parentSelector`,
+   * trimmed of leading/trailing whitespace.
+   */
+  async getCodeEditorText(parentSelector: string): Promise<string> {
+    return (await this.getText(`${parentSelector} .cm-content`)).trim();
   }
 
   async openViaCommandSearch(query: string, assertNotVisibleAfterwards: boolean = true): Promise<void> {
@@ -367,10 +394,33 @@ export class StudioAgent {
     return (await this.testDriver.client!.execute(`return bifrost.solution.hasOpenSolution()`)) as boolean;
   }
 
-  async isCommandEnabled(commandName: string): Promise<boolean> {
-    return (await this.testDriver.client!.execute(
-      `return bifrost.commands.isCommandEnabled('${commandName}')`,
-    )) as boolean;
+  async isCommandEnabled(commandName: string, commandArgs: unknown[] = []): Promise<boolean> {
+    const envelope = (await this.testDriver.client!.execute(
+      (name: string, args: unknown[]) => ({
+        value: (window as any).bifrost.commands.isCommandEnabled(name, args),
+      }),
+      commandName,
+      commandArgs,
+    )) as { value: boolean };
+
+    return envelope.value;
+  }
+
+  async waitUntilCommandEnabled(
+    commandName: string,
+    commandArgs: unknown[] = [],
+    timeoutInMilliseconds: number = 10_000,
+  ): Promise<void> {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutInMilliseconds) {
+      if (await this.isCommandEnabled(commandName, commandArgs)) {
+        return;
+      }
+      await this.pause(200);
+    }
+    throw new Error(
+      `Command ${commandName} was not enabled within ${timeoutInMilliseconds}ms (args: ${JSON.stringify(commandArgs)})`,
+    );
   }
 
   async getProjectBaseUri(index: number = 0): Promise<string | null> {

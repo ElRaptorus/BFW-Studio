@@ -133,7 +133,8 @@ describe('git-cruiser/dmn-diff', { timeout: 60_000 }, () => {
     await studioAgent.jumpToFileInSolution('test-decision.dmn', 'dmn');
     await studioAgent.pause(500);
 
-    const dmnFileUri = `file://${dmnPath}`;
+    const dmnFileUri = await studioAgent.getFocusedDocumentUri();
+    await studioAgent.waitUntilCommandEnabled('git.showFileHistory', [dmnFileUri]);
     await studioAgent.executeCommand('git.showFileHistory', [dmnFileUri]);
     await studioAgent.pause(1000);
 
@@ -154,11 +155,15 @@ describe('git-cruiser/dmn-diff', { timeout: 60_000 }, () => {
 
   it('dmn-diff/history-diff-mode: should toggle between preview and diff mode in history', async () => {
     const dmnPath = path.join(repoDir, 'test-decision.dmn');
+    const original = fs.readFileSync(dmnPath, 'utf-8');
+    fs.writeFileSync(dmnPath, original.replace('name="Discount"', 'name="History Toggle Discount"'));
+    execSync('git add -A && git commit -m "history-diff-mode commit"', { cwd: repoDir });
 
     await studioAgent.jumpToFileInSolution('test-decision.dmn', 'dmn');
     await studioAgent.pause(500);
 
-    const dmnFileUri = `file://${dmnPath}`;
+    const dmnFileUri = await studioAgent.getFocusedDocumentUri();
+    await studioAgent.waitUntilCommandEnabled('git.showFileHistory', [dmnFileUri]);
     await studioAgent.executeCommand('git.showFileHistory', [dmnFileUri]);
     await studioAgent.pause(1000);
 
@@ -187,6 +192,9 @@ describe('git-cruiser/dmn-diff', { timeout: 60_000 }, () => {
     );
 
     await studioAgent.assertNoErrorsPresentAndIdle();
+
+    fs.writeFileSync(dmnPath, original);
+    execSync('git add -A && git commit -m "restore original after history-diff-mode"', { cwd: repoDir });
   });
 
   it('dmn-diff/change-overview-pane: should show the ChangeOverview pane in diff view', async () => {

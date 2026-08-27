@@ -95,4 +95,4 @@ Production builds set `NODE_ENV=production`, which enables:
 - JS minification via `SwcJsMinimizerRspackPlugin`
 - Full source maps
 - Blocking type checking
-- Packaging via `electron-builder` (config in `build/electron-builder.js`)
+- Packaging via `electron-builder` (config in `build/electron-builder.js`). Linux `target` is AppImage; electron-builder also always writes `dist/electron/linux-unpacked/` (the ELF ChromeDriver uses in CI). Do not point WebDriver at the `.AppImage`.

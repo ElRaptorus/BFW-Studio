@@ -42,6 +42,7 @@
 Singleton service managing all renderer-side Git state and IPC communication. Key responsibilities:
 
 - **Status cache**: `Map<repoRoot, GitRepoState>` maps each detected repo root to its current status
+- **File history cache**: `Map<uri, boolean | 'pending'>`. `hasFileHistory(uri)` returns `true` unless a completed check stored `false` (fewer than two commits). A cache miss starts a background `getLog`; unknown and `'pending'` stay enabled so `executeCommand('git.showFileHistory')` is not rejected on the first call. `emitStatusChanged` clears this map.
 - **Repo detection**: Iterates solution projects, calls `IPC_INVOKE_GIT_IS_REPO` to find `.git` roots
 - **Debounced refresh**: Uses `lodash.debounce` on `scheduleRefresh()` to coalesce multiple triggers
 - **Operation methods**: `stage`, `unstage`, `commit`, `push`, `pull`, `revert`, `stash`, `stashApply` (with optional `{ restoreIndex }` for `--index`), `switchBranch`, `createBranch`, `fetch`, `showFileAtRef`, `getLog`

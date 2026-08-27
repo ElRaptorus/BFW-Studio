@@ -1094,6 +1094,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#timer-start-event-definition-input', ASSERT_VISIBLE_TIMEOUT);
 
+    await studioAgent.clearTextInput('#timer-start-event-definition-input');
     await studioAgent.clickOn('#timer-start-event-definition-input');
     await studioAgent.sendKeyboardInput([...newTimerDefinition.split(''), 'enter']);
 
@@ -1391,8 +1392,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#timer-intermediate-event-select', ASSERT_VISIBLE_TIMEOUT);
 
+    await studioAgent.clearTextInput('#timer-intermediate-event-definition-input');
     await studioAgent.clickOn('#timer-intermediate-event-definition-input');
-
     await studioAgent.sendKeyboardInput([...newTimerDefinition.split(''), 'enter']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(timerStartEvent);
@@ -3307,14 +3308,14 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.selectBpmnElementByIdAndWaitForElement(dataObjectRef, DATA_OBJECT_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertVisible('#data-object-value-contract', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.clickOn('#data-object-value-contract');
-    await studioAgent.sendKeyboardInput([...newValueContract.split(''), 'enter']);
+    await studioAgent.clickOnCodeEditor('#data-object-value-contract');
+    await studioAgent.sendKeyboardInput([...newValueContract.split('')]);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(dataObjectRef, DATA_OBJECT_PANE, ASSERT_VISIBLE_TIMEOUT);
 
-    const valueContract = await studioAgent.getValue('#data-object-value-contract');
-    assert.ok(valueContract.includes(newValueContract));
+    const valueContract = await studioAgent.getCodeEditorText('#data-object-value-contract');
+    assert.strictEqual(valueContract, newValueContract);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -3666,8 +3667,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.selectBpmnElementByIdAndWaitForElement(loopTask, LOOP_CONFIGURATION_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesLoop');
 
+    await studioAgent.assertVisible('[data-test--loop-max-iterations-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clearTextInput('[data-test--loop-max-iterations-input]');
     await studioAgent.clickOn('[data-test--loop-max-iterations-input]');
-    await studioAgent.sendKeyboardInput([...newMaxIterations.split('')]);
+    await studioAgent.sendKeyboardInput([...newMaxIterations.split(''), 'enter']);
 
     await studioAgent.assertVisible('[data-test--loop-max-iterations-input]', ASSERT_VISIBLE_TIMEOUT);
 
@@ -3707,8 +3710,9 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesLoop');
 
     await studioAgent.assertVisible('[data-test--loop-interval-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clearTextInput('[data-test--loop-interval-input]');
     await studioAgent.clickOn('[data-test--loop-interval-input]');
-    await studioAgent.sendKeyboardInput([...newInterval.split('')]);
+    await studioAgent.sendKeyboardInput([...newInterval.split(''), 'enter']);
 
     await studioAgent.assertVisible('[data-test--loop-interval-input]', ASSERT_VISIBLE_TIMEOUT);
 

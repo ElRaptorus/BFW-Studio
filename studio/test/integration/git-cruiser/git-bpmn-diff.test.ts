@@ -83,7 +83,8 @@ describe('git-cruiser/bpmn-diff', { timeout: 60_000 }, () => {
     await studioAgent.jumpToFileInSolution('test-process.bpmn');
     await studioAgent.pause(500);
 
-    const bpmnFileUri = `file://${bpmnPath}`;
+    const bpmnFileUri = await studioAgent.getFocusedDocumentUri();
+    await studioAgent.waitUntilCommandEnabled('git.showFileHistory', [bpmnFileUri]);
     await studioAgent.executeCommand('git.showFileHistory', [bpmnFileUri]);
     await studioAgent.pause(1000);
 

@@ -22,6 +22,10 @@ Tests run via npm scripts defined in `studio/package.json`:
 
 **Important:** Integration tests require a built Electron application. Run `npm run build` before running integration tests. Plugin host tests also compile the TypeScript fixture plugins (`text-file-editors`, `webview-showcase`) first — `npm run test:integration:plugins` and `npm run test:integration:all` invoke `npm run build:plugin-fixtures` automatically because those plugins' `dist/` output is gitignored.
 
+`npm run test-prod:electron <script>` runs the same suites against a packaged build by setting `TEST_APP_PATH`. On Linux that path is the **unpacked** binary under `dist/electron/linux-unpacked/`, not the AppImage. ChromeDriver must launch an Electron/Chromium ELF, not an AppImage wrapper. GitHub Actions workflow `.github/workflows/studio.yml` builds the Linux prod app, uploads `dist/electron/`, then runs matrix suites (`core`, `bpmn-editor`, `dmn-editor`, `plugins`, `git-cruiser`) under `xvfb-run`. `TestDriver` adds `--no-sandbox`, `--disable-gpu`, and `--disable-dev-shm-usage` when `CI`, `GITHUB_ACTIONS`, or `APPVEYOR` is set.
+
+Private Engine packages (`@elraptorus/daemonengine_sdk`, `@elraptorus/daemonengine_client`) are fetched from GitHub Packages. `studio/.npmrc` maps that scope to `https://npm.pkg.github.com` and leaves the default registry as npmjs. CI writes `//npm.pkg.github.com/:_authToken=…` to `~/.npmrc` from repo secret `CI_AUTH` (`read:packages`). Do **not** set `actions/setup-node` `registry-url` to GitHub — that makes GitHub the default registry and breaks public packages.
+
 ### TypeScript Configuration
 
 - Tests are compiled on-the-fly by Vitest (via esbuild) — they are not included in any build-time tsconfig
@@ -138,6 +142,10 @@ afterEach(async ({ task }) => {
 | `openViaCommandSearch(command)` | Executes a command via the command search |
 | `clickOn(selector)` | Left-clicks on an element |
 | `rightClickOn(selector)` | Right-clicks on an element |
+| `clearTextInput(selector)` | Clears a native `<input>` / `<textarea>` (select-all is not enough; the caret may sit mid-value) |
+| `clickOnCodeEditor(parentSelector)` | Focuses `.cm-content` inside the parent and **clears** it (CodeMirror inserts at the caret) |
+| `clearCodeEditor(parentSelector)` | Alias of `clickOnCodeEditor` |
+| `getCodeEditorText(parentSelector)` | Trimmed visible text of `.cm-content` inside the parent |
 | `sendKeyboardInput(keys)` | Types keys into the focused element |
 | `assertVisible(selector, timeout)` | Waits for element to be visible |
 | `assertNotVisible(selector)` | Asserts element is not in the DOM |
@@ -157,7 +165,8 @@ afterEach(async ({ task }) => {
 | `getProjectEntryCount()` | Counts visible project entries in the file explorer |
 | `getProjectBaseUri(index)` | Returns the base URI of a project by index |
 | `hasOpenSolution()` | Returns whether a solution is currently open |
-| `isCommandEnabled(name)` | Returns whether a command is currently enabled |
+| `isCommandEnabled(name, args?)` | Returns whether a command is currently enabled (pass the same args `executeCommand` will use) |
+| `waitUntilCommandEnabled(name, args?, timeout?)` | Polls `isCommandEnabled` until true or timeout |
 | `isExplicitSolution()` | Returns whether the current solution is explicit (multi-root) |
 | `isSolutionDirty()` | Returns whether the current solution has unsaved changes |
 | `getFocusedDocumentUri()` | Returns the URI of the currently focused editor document |
@@ -334,6 +343,19 @@ await studioAgent.maximize();
 
 - **Keep enough spacing** between selectable elements in test BPMN diagrams. This prevents context pads from covering adjacent elements that the test needs to interact with next.
 
+### Replacing values in property panes
+
+Host editors are CodeMirror 6 (`.cm-content`). Native pane fields are ordinary inputs. Neither replaces existing text on the first keystroke — typing appends at the caret. That is why `'10'` + `'100'` becomes `'10100'`.
+
+| Field type | How to replace |
+|---|---|
+| Native input (`PaneProperty` text/number) | `clearTextInput(selector)` then `clickOn` then `sendKeyboardInput` |
+| CodeMirror / FEEL (`.cm-content`) | `clickOnCodeEditor(parentSelector)` then `sendKeyboardInput` — the helper already select-all + backspace |
+| JSON panes (`MultiLineCodeEditor`, e.g. Data Object value contract) | Same as CodeMirror — do not `clickOn` the wrapper or `getValue` |
+| DMN native properties | `setDmnPropertyValue` already calls `clearTextInput` |
+
+Do not click a filled field and type a new value. Fixture XML often already has `loopMaximum`, `evil:LoopInterval`, FEEL conditions, and collection expressions.
+
 ## Adding New Tests
 
 When adding new functionality:
@@ -351,8 +373,8 @@ When adding new functionality:
 |---|---|
 | StudioAgent API | `studio/test/StudioAgent.ts` |
 | BPMN test extensions | `studio/test/StudioAgentBpmnExtension.ts` |
-| TestDriver (WebDriverIO) | `studio/test/TestDriver.ts` |
-| Input simulation | `studio/test/helpers/InputSimulator.ts` |
+| TestDriver (WebDriverIO) | `studio/test/Driver/TestDriver.ts` |
+| Input simulation | `studio/test/StudioAgent/InputSimulator.ts` |
 | BPMN editor tests | `studio/test/integration/bpmn-editor/` |
 | DMN editor tests | `studio/test/integration/dmn-editor/` |
 | Git cruiser tests | `studio/test/integration/git-cruiser/` |
