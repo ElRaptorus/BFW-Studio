@@ -1546,7 +1546,9 @@ The `async`/`await` inside the page matters for a second reason: `bifrost.comman
 
 **Why it happens**: `ContributionRegistrar` registers every `contributes.commands` entry as a stub whose only job is to trigger activation, so `isRegistered` returns `true` long before the plugin's real handler exists. For a plugin activated by `onDocumentType:bpmn` (or any other lazy trigger), the real handler only appears once the trigger has fired — typically once a matching document has been opened. Under Vitest's shuffled order, the test that happens to open the document may run *after* the test that needs the handler.
 
-**Correct approach**: Open whatever the plugin's activation trigger needs in `beforeAll`, and wait for the plugin's real handler to answer rather than for the command to be registered — for example poll a `test.isActivated` command until it returns `{ activated: true }` (see `waitForPluginActivation` in `plugin-bpmn-renderer-module.test.ts`). Do not rely on `isRegistered` or on `waitForPluginCommand` alone to prove activation.
+**Correct approach**: Open whatever the plugin's activation trigger needs in `beforeAll`, and wait for the plugin's real handler to answer rather than for the command to be registered — for example poll a `test.isActivated` command until it returns `{ activated: true }` (see `waitForPluginActivation` in `plugin-bpmn-renderer-module.test.ts`). Do not rely on `isRegistered` or on `waitUntilCommandRegistered` alone to prove activation.
+
+The same race exists **inside** `activate()`: kitchen-sink registers `getStatus` on the first line, then hundreds of lines later registers the View menu modifier. Waiting for that command returns while activate is still running, so a one-shot `getMenu` can miss `plugin.kitchen-sink.viewEntry`. Wait in `beforeAll` / `beforeEach` for `PluginInfo.status === 'loaded'` via `studioAgent.pluginHost.waitUntilStatus` (or `waitUntilLoaded` on `createAndStartStudioAgentForPluginHost`) — the host sets `loaded` only after `activate()` finishes. Do not poll the View submenu inside the test.
 
 ---
 

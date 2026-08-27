@@ -11,6 +11,7 @@ import { OsSpecificKeystroke } from './OsSpecificKeystroke';
 import InputSimulator from './StudioAgent/InputSimulator';
 import LeftMenuBar from './StudioAgent/LeftMenuBar';
 import LogCapture from './StudioAgent/LogCapture';
+import PluginHost, { PLUGIN_HOST_WAIT_TIMEOUT_MS } from './StudioAgent/PluginHost';
 import ScreenCapture from './StudioAgent/ScreenCapture';
 
 function getElectronPath(): string {
@@ -89,8 +90,125 @@ export async function createAndStartStudioAgent<T extends StudioAgent>(
   }
 }
 
+export interface PluginHostEnvSnapshot {
+  BFR_PLUGINS_DIR: string | undefined;
+  BFR_SKIP_PERMISSION_DIALOG: string | undefined;
+  BFR_PLUGIN_STORAGE_PATH: string | undefined;
+  extraEnv: Record<string, string | undefined>;
+}
+
+export interface PluginHostStudioStartOptions {
+  pluginsDirectory: string;
+  skipPermissionDialog?: boolean;
+  pluginStoragePath?: string;
+  extraEnv?: Record<string, string>;
+  waitUntilListCountAtLeast?: number;
+  waitUntilLoaded?: string[];
+  waitUntilCommandRegistered?: string[];
+  studioAgentClass?: any;
+  cliArgsForBifrost?: string[];
+}
+
+function restoreEnvKey(key: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = value;
+  }
+}
+
+export function capturePluginHostEnv(extraEnvKeys: string[] = []): PluginHostEnvSnapshot {
+  const extraEnv: Record<string, string | undefined> = {};
+  for (const key of extraEnvKeys) {
+    extraEnv[key] = process.env[key];
+  }
+
+  return {
+    BFR_PLUGINS_DIR: process.env.BFR_PLUGINS_DIR,
+    BFR_SKIP_PERMISSION_DIALOG: process.env.BFR_SKIP_PERMISSION_DIALOG,
+    BFR_PLUGIN_STORAGE_PATH: process.env.BFR_PLUGIN_STORAGE_PATH,
+    extraEnv,
+  };
+}
+
+export function restorePluginHostEnv(snapshot: PluginHostEnvSnapshot): void {
+  restoreEnvKey('BFR_PLUGINS_DIR', snapshot.BFR_PLUGINS_DIR);
+  restoreEnvKey('BFR_SKIP_PERMISSION_DIALOG', snapshot.BFR_SKIP_PERMISSION_DIALOG);
+  restoreEnvKey('BFR_PLUGIN_STORAGE_PATH', snapshot.BFR_PLUGIN_STORAGE_PATH);
+  for (const [key, value] of Object.entries(snapshot.extraEnv)) {
+    restoreEnvKey(key, value);
+  }
+}
+
+const pluginHostEnvSnapshots = new WeakMap<StudioAgent, PluginHostEnvSnapshot>();
+
+export async function createAndStartStudioAgentForPluginHost<T extends StudioAgent = StudioAgent>(
+  testContext: TestContext,
+  options: PluginHostStudioStartOptions,
+): Promise<T> {
+  const snapshot = capturePluginHostEnv(Object.keys(options.extraEnv ?? {}));
+
+  process.env.BFR_PLUGINS_DIR = options.pluginsDirectory;
+  if (options.skipPermissionDialog !== false) {
+    process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
+  }
+  if (options.pluginStoragePath) {
+    process.env.BFR_PLUGIN_STORAGE_PATH = options.pluginStoragePath;
+  }
+  if (options.extraEnv) {
+    Object.assign(process.env, options.extraEnv);
+  }
+
+  let studioAgent: T | undefined;
+
+  try {
+    studioAgent = await createAndStartStudioAgent<T>(
+      testContext,
+      options.studioAgentClass ?? StudioAgent,
+      options.cliArgsForBifrost ?? [],
+    );
+    pluginHostEnvSnapshots.set(studioAgent, snapshot);
+
+    if (options.waitUntilListCountAtLeast != null) {
+      await studioAgent.pluginHost.waitUntilListCountAtLeast(options.waitUntilListCountAtLeast);
+    }
+    for (const pluginName of options.waitUntilLoaded ?? []) {
+      await studioAgent.pluginHost.waitUntilStatus(pluginName, 'loaded');
+    }
+    for (const commandId of options.waitUntilCommandRegistered ?? []) {
+      await studioAgent.pluginHost.waitUntilCommandRegistered(commandId);
+    }
+
+    return studioAgent;
+  } catch (error) {
+    if (studioAgent != null) {
+      await stopPluginHostStudioAgent(studioAgent, false);
+    } else {
+      restorePluginHostEnv(snapshot);
+    }
+    throw error;
+  }
+}
+
+export async function stopPluginHostStudioAgent(
+  studioAgent: StudioAgent | undefined,
+  warnAboutAppNotRunning: boolean = false,
+): Promise<void> {
+  if (studioAgent == null) {
+    return;
+  }
+
+  const snapshot = pluginHostEnvSnapshots.get(studioAgent);
+  await studioAgent.stopAndRecordErrors(warnAboutAppNotRunning);
+  if (snapshot != null) {
+    restorePluginHostEnv(snapshot);
+    pluginHostEnvSnapshots.delete(studioAgent);
+  }
+}
+
 export class StudioAgent {
   public leftMenuBar: LeftMenuBar;
+  public pluginHost: PluginHost;
 
   protected testDriver: TestDriver;
 
@@ -108,6 +226,7 @@ export class StudioAgent {
     this.inputSimulator = new InputSimulator(this.testDriver);
 
     this.leftMenuBar = new LeftMenuBar(this);
+    this.pluginHost = new PluginHost(this);
 
     this.testDriver.client!.addLocatorStrategy('querySelectorAll', (selector: any) => {
       const result = document.querySelectorAll(selector);
@@ -212,6 +331,161 @@ export class StudioAgent {
     await (this.testDriver.client! as any).waitUntilWindowLoaded();
     const element = await this.testDriver.client!.$('.bifrost');
     await element.waitForDisplayed({ timeout: ASSERT_VISIBLE_TIMEOUT });
+  }
+
+  async waitUntil(
+    condition: () => Promise<boolean> | boolean,
+    options: { timeout: number; timeoutMsg: string },
+  ): Promise<void> {
+    await this.testDriver.client!.waitUntil(condition, options);
+  }
+
+  async waitUntilEditorDocumentTypePlaceholderGone(): Promise<void> {
+    await this.waitUntil(
+      async () => {
+        const envelope = (await this.testDriver.client!.execute(() => ({
+          value: document.querySelector('[data-test--editor-doctype-placeholder]') == null,
+        }))) as { value: boolean };
+
+        return envelope.value;
+      },
+      {
+        timeout: PLUGIN_HOST_WAIT_TIMEOUT_MS,
+        timeoutMsg: 'Placeholder never swapped for the real markdown editor',
+      },
+    );
+  }
+
+  async waitUntilDialogActive(timeoutMsg: string = 'Dialog did not open in time'): Promise<void> {
+    await this.waitUntil(
+      async () => {
+        const envelope = (await this.testDriver.client!.execute(() => ({
+          value: (window as any).bifrost.dialog.isActive(),
+        }))) as { value: boolean };
+
+        return envelope.value === true;
+      },
+      { timeout: 5_000, timeoutMsg },
+    );
+  }
+
+  async submitActiveDialog(response: string, formData: Record<string, unknown> = {}): Promise<void> {
+    await this.testDriver.client!.execute(
+      (dialogResponse: string, dialogFormData: Record<string, unknown>) => {
+        (window as any).bifrost.dialog.submit(dialogResponse, dialogFormData);
+      },
+      response,
+      formData,
+    );
+  }
+
+  async closeActiveDialog(): Promise<void> {
+    await this.testDriver.client!.execute(() => {
+      (window as any).bifrost.dialog.close();
+    });
+  }
+
+  async executeCommandWithoutBlocking(commandId: string, args: unknown[] = []): Promise<void> {
+    await this.testDriver.client!.execute(
+      (id: string, commandArgs: unknown[]) => {
+        (window as any).__unblockedCommandResult = null;
+        (window as any).bifrost.commands.executeCommand(id, commandArgs).then((result: unknown) => {
+          (window as any).__unblockedCommandResult = result;
+        });
+      },
+      commandId,
+      args,
+    );
+  }
+
+  async waitUntilUnblockedCommandResult(timeoutMsg: string = 'Command result was not received'): Promise<unknown> {
+    await this.waitUntil(
+      async () => {
+        const envelope = (await this.testDriver.client!.execute(() => ({
+          value: (window as any).__unblockedCommandResult != null,
+        }))) as { value: boolean };
+
+        return envelope.value === true;
+      },
+      { timeout: 5_000, timeoutMsg },
+    );
+
+    const envelope = (await this.testDriver.client!.execute(() => ({
+      value: (window as any).__unblockedCommandResult,
+    }))) as { value: unknown };
+
+    return envelope.value;
+  }
+
+  async isDialogActive(): Promise<boolean> {
+    const envelope = (await this.testDriver.client!.execute(() => ({
+      value: (window as any).bifrost.dialog.isActive(),
+    }))) as { value: boolean };
+
+    return envelope.value === true;
+  }
+
+  async getStatusBarViewData(): Promise<any> {
+    const envelope = (await this.testDriver.client!.execute(() => ({
+      value: (window as any).bifrost.statusBar.getViewData(),
+    }))) as { value: any };
+
+    return envelope.value;
+  }
+
+  async getMenuBarViewData(): Promise<any> {
+    const envelope = (await this.testDriver.client!.execute(() => ({
+      value: (window as any).bifrost.menuBar.getViewData(),
+    }))) as { value: any };
+
+    return envelope.value;
+  }
+
+  async getApplicationMenu(menuId: string = 'std/application/main'): Promise<any[]> {
+    const envelope = (await this.testDriver.client!.execute(
+      async (id: string) => ({
+        value: await (window as any).bifrost.menus.getMenu(id, [(window as any).bifrost]),
+      }),
+      menuId,
+    )) as { value: any[] };
+
+    return envelope.value;
+  }
+
+  async isPaneRegistered(paneId: string): Promise<boolean> {
+    const envelope = (await this.testDriver.client!.execute(
+      (id: string) => ({
+        value: (window as any).bifrost.panes.alreadyRegistered(id),
+      }),
+      paneId,
+    )) as { value: boolean };
+
+    return envelope.value === true;
+  }
+
+  async getPaneShouldBeDisplayed(paneId: string, editorDocument: unknown = null): Promise<boolean | null> {
+    const envelope = (await this.testDriver.client!.execute(
+      (id: string, documentModel: unknown) => {
+        const provider = (window as any).bifrost.panes.getPaneProvider(id);
+        if (provider?.shouldBeDisplayed == null) {
+          return { value: null };
+        }
+
+        return { value: provider.shouldBeDisplayed(documentModel, null, (window as any).bifrost) };
+      },
+      paneId,
+      editorDocument,
+    )) as { value: boolean | null };
+
+    return envelope.value;
+  }
+
+  async getDiagnosticCount(): Promise<{ errors: number; warnings: number }> {
+    const envelope = (await this.testDriver.client!.execute(() => ({
+      value: (window as any).bifrost.diagnostics.getCount(),
+    }))) as { value: { errors: number; warnings: number } };
+
+    return envelope.value;
   }
 
   async maximize(): Promise<void> {
@@ -351,14 +625,14 @@ export class StudioAgent {
    * See `docs/architecture/common-pitfalls.md` §`client.execute` cannot return an object
    * with a top-level `error` property.
    */
-  async executeCommand(commandId: string, args: unknown[] = []): Promise<unknown> {
+  async executeCommand<T = any>(commandId: string, args: any[] = []): Promise<T> {
     const envelope = (await this.testDriver.client!.execute(
-      async (cmd: string, cmdArgs: unknown[]) => ({
+      async (cmd: string, cmdArgs: any[]) => ({
         value: await (window as any).bifrost.commands.executeCommand(cmd, cmdArgs),
       }),
       commandId,
       args,
-    )) as { value: unknown };
+    )) as { value: any };
 
     return envelope.value;
   }
@@ -995,12 +1269,12 @@ export class StudioAgent {
 
   async isDmnMergeResolverVisible(): Promise<boolean> {
     const elements = await this.$$('[data-test--dmn-merge-ours]');
-    return elements.length > 0;
+    return (await elements.length) > 0;
   }
 
   async isBpmnMergeResolverVisible(): Promise<boolean> {
     const elements = await this.$$('[data-test--bpmn-merge-ours]');
-    return elements.length > 0;
+    return (await elements.length) > 0;
   }
 
   async getMergeResolverTitle(): Promise<string> {

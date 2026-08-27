@@ -2,54 +2,14 @@ import * as assert from 'node:assert';
 import * as path from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
-import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';
+import {
+  ASSERT_VISIBLE_TIMEOUT,
+  createAndStartStudioAgentForPluginHost,
+  stopPluginHostStudioAgent,
+} from '../../StudioAgent';
 import type { StudioAgent } from '../../StudioAgent';
-import { createAndStartStudioAgent } from '../../StudioAgent';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
-
-const PLUGIN_LOAD_TIMEOUT = 30_000;
-
-async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string): Promise<void> {
-  await studioAgent.getTestDriver().client!.waitUntil(
-    async () => {
-      return studioAgent
-        .getTestDriver()
-        .client!.execute((cmd: string) => (window as any).bifrost.commands.isRegistered(cmd), commandId);
-    },
-    { timeout: PLUGIN_LOAD_TIMEOUT, timeoutMsg: `Plugin command '${commandId}' was not registered in time` },
-  );
-}
-
-// Manifest-declared commands are registered as stubs at plugin discovery time,
-// before `activate()` runs — `isRegistered` is true for a stub immediately, so
-// waiting on any particular command name does not guarantee `activate()` has
-// finished replacing every stub with its real handler. Waiting for the plugin
-// status to reach 'loaded' is the only reliable signal (see the DMN permission
-// test suites, which already use this pattern for the same reason).
-async function waitForPluginStatus(
-  studioAgent: StudioAgent,
-  pluginName: string,
-  expectedStatus: string,
-): Promise<void> {
-  await studioAgent.getTestDriver().client!.waitUntil(
-    async () => {
-      const plugins = await studioAgent
-        .getTestDriver()
-        .client!.execute(() => (window as any).bifrost.plugins.getPluginList());
-      const plugin = plugins.find((entry: any) => entry.name === pluginName);
-      return plugin?.status === expectedStatus;
-    },
-    {
-      timeout: PLUGIN_LOAD_TIMEOUT,
-      timeoutMsg: `Plugin '${pluginName}' did not reach status '${expectedStatus}' in time`,
-    },
-  );
-}
-
-async function executePluginCommand(studioAgent: StudioAgent, commandId: string, ...args: unknown[]): Promise<any> {
-  return studioAgent.executeCommand(commandId, args);
-}
 
 async function openBpmnFileAndGetUri(studioAgent: StudioAgent, filename: string): Promise<string> {
   const fixtureDir = path.resolve(__dirname, '../../fixtures/test-solution-bpmn');
@@ -90,19 +50,15 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgent;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgent({
-        testName: 'bpmn-palette-perm',
-        testFile: __filename,
-      });
-      await waitForPluginStatus(studioAgent, 'bpmn-perm-low', 'loaded');
+      studioAgent = await createAndStartStudioAgentForPluginHost(
+        { testName: 'bpmn-palette-perm', testFile: __filename },
+        { pluginsDirectory: PLUGINS_FIXTURE_DIR },
+      );
+      await studioAgent.pluginHost.waitUntilStatus('bpmn-perm-low', 'loaded');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -119,7 +75,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies registerPaletteEntry to plugin without bpmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryRegisterPaletteEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryRegisterPaletteEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -128,7 +84,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies unregisterPaletteEntry to plugin without bpmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryUnregisterPaletteEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryUnregisterPaletteEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -137,7 +93,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies registerContextPadEntry to plugin without bpmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryRegisterContextPadEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryRegisterContextPadEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -146,7 +102,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies unregisterContextPadEntry to plugin without bpmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryUnregisterContextPadEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryUnregisterContextPadEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -155,7 +111,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies updateContextPadEntry to plugin without bpmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryUpdateContextPadEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryUpdateContextPadEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -164,7 +120,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('permission error message mentions the required permission', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryRegisterPaletteEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryRegisterPaletteEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('modelling') || result.toLowerCase().includes('bpmn.modelling'),
@@ -184,22 +140,20 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     let bpmnUri: string;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgent({
-        testName: 'bpmn-palette-lifecycle',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.bpmn-palette-demo.test.isActivated');
+      studioAgent = await createAndStartStudioAgentForPluginHost(
+        { testName: 'bpmn-palette-lifecycle', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          waitUntilCommandRegistered: ['plugin.bpmn-palette-demo.test.isActivated'],
+        },
+      );
       await installBpmnAdapterResolver(studioAgent);
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
       bpmnUri = await openBpmnFileAndGetUri(studioAgent, 'untyped-task.bpmn');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -216,7 +170,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('plugin activates successfully', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-palette-demo.test.isActivated');
+      const result = await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.isActivated');
       assert.strictEqual(result, true);
     });
 
@@ -363,12 +317,10 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
       }, bpmnUri);
       assert.ok(targetElementId != null, 'Expected to find at least one Task element');
 
-      const updateResult = await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-palette-demo.test.updateContextPadEntry',
+      const updateResult = await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.updateContextPadEntry', [
         'view-connections',
         { elementIds: [targetElementId] },
-      );
+      ]);
       assert.strictEqual(updateResult, 'ok', `Expected 'ok', got: ${updateResult}`);
 
       const hasEntry = await studioAgent.getTestDriver().client!.execute(
@@ -400,12 +352,10 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('updateContextPadEntry with null clears the allowlist (entry shows on all matching types)', async () => {
-      const updateResult = await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-palette-demo.test.updateContextPadEntry',
+      const updateResult = await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.updateContextPadEntry', [
         'view-connections',
         { elementIds: null },
-      );
+      ]);
       assert.strictEqual(updateResult, 'ok', `Expected 'ok', got: ${updateResult}`);
 
       const hasEntry = await studioAgent.getTestDriver().client!.execute((uri: string) => {
@@ -433,21 +383,17 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('updateContextPadEntry for non-existent entry returns error', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-palette-demo.test.updateContextPadEntry',
+      const result = await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.updateContextPadEntry', [
         'non-existent-entry-id',
         { elementIds: ['Task_1'] },
-      );
+      ]);
       assert.ok(typeof result === 'string' && result.startsWith('error:'), `Expected error, got: ${result}`);
     });
 
     it('unregisterContextPadEntry removes the entry', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-palette-demo.test.tryUnregisterContextPadEntry',
+      const result = await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.tryUnregisterContextPadEntry', [
         'toggle-flag',
-      );
+      ]);
       assert.strictEqual(result, 'ok', `Expected 'ok', got: ${result}`);
 
       const hasEntry = await studioAgent.getTestDriver().client!.execute((uri: string) => {
@@ -475,11 +421,9 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('unregisterContextPadEntry for non-existent entry returns error', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-palette-demo.test.tryUnregisterContextPadEntry',
+      const result = await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.tryUnregisterContextPadEntry', [
         'does-not-exist',
-      );
+      ]);
       assert.ok(typeof result === 'string' && result.startsWith('error:'), `Expected error, got: ${result}`);
     });
 
@@ -517,12 +461,10 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
       // "inspect-element" has elementTypes: ['bpmn:Task', 'bpmn:SubProcess'] from the manifest.
       // Now set elementIds to include only the startEventId — which does NOT match the type filter.
       // The entry should NOT appear on the start event because elementTypes blocks it.
-      const updateResult = await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-palette-demo.test.updateContextPadEntry',
+      const updateResult = await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.updateContextPadEntry', [
         'inspect-element',
         { elementIds: [startEventId, taskId] },
-      );
+      ]);
       assert.strictEqual(updateResult, 'ok', `Expected 'ok', got: ${updateResult}`);
 
       // Check that the entry appears on the task (type match + id match)
@@ -586,12 +528,10 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
       );
 
       // Clean up: clear the elementIds so subsequent tests aren't affected
-      await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-palette-demo.test.updateContextPadEntry',
+      await studioAgent.executeCommand('plugin.bpmn-palette-demo.test.updateContextPadEntry', [
         'inspect-element',
         { elementIds: null },
-      );
+      ]);
     });
   });
 });

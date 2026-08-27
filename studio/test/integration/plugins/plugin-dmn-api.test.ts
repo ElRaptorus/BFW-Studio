@@ -2,31 +2,10 @@ import * as assert from 'node:assert';
 import * as path from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
-import type { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
-import { createAndStartStudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
+import { createAndStartStudioAgentForPluginHost, stopPluginHostStudioAgent } from '../../StudioAgent';
+import { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
-
-const PLUGIN_LOAD_TIMEOUT = 30_000;
-
-async function waitForPluginCommand(studioAgent: StudioAgentDmnExtension, commandId: string): Promise<void> {
-  await studioAgent.getTestDriver().client!.waitUntil(
-    async () => {
-      return studioAgent
-        .getTestDriver()
-        .client!.execute((cmd: string) => (window as any).bifrost.commands.isRegistered(cmd), commandId);
-    },
-    { timeout: PLUGIN_LOAD_TIMEOUT, timeoutMsg: `Plugin command '${commandId}' was not registered in time` },
-  );
-}
-
-async function executePluginCommand(
-  studioAgent: StudioAgentDmnExtension,
-  commandId: string,
-  ...args: unknown[]
-): Promise<any> {
-  return studioAgent.executeCommand(commandId, args);
-}
 
 async function openDmnFileAndGetUri(studioAgent: StudioAgentDmnExtension, filename: string): Promise<string> {
   const fixtureDir = path.resolve(__dirname, '../../fixtures/test-solution-dmn');
@@ -44,15 +23,18 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgentDmnExtension;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({ testName: 'dmn-api-perm', testFile: __filename });
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-api-perm', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+          waitUntilLoaded: ['dmn-no-perm'],
+        },
+      );
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -69,8 +51,7 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('denies dmn.setOverlays to plugin without dmn permission', async () => {
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-no-perm.trySetOverlays');
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-no-perm.trySetOverlays');
+      const result = await studioAgent.executeCommand('plugin.dmn-no-perm.trySetOverlays');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -79,8 +60,7 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('denies dmn.getElements to plugin without dmn permission', async () => {
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-no-perm.tryGetElements');
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-no-perm.tryGetElements');
+      const result = await studioAgent.executeCommand('plugin.dmn-no-perm.tryGetElements');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -89,8 +69,7 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('denies dmn.onElementSelected to plugin without dmn permission', async () => {
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-no-perm.trySubscribe');
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-no-perm.trySubscribe');
+      const result = await studioAgent.executeCommand('plugin.dmn-no-perm.trySubscribe');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -99,8 +78,7 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('denies dmn.getXml to plugin without dmn permission', async () => {
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-no-perm.tryGetXml');
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-no-perm.tryGetXml');
+      const result = await studioAgent.executeCommand('plugin.dmn-no-perm.tryGetXml');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -114,21 +92,20 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     let dmnUri: string;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({
-        testName: 'dmn-api-overlays',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-overlay-demo.setOverlays');
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-api-overlays', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+          waitUntilLoaded: ['dmn-overlay-demo'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-dmn');
       dmnUri = await openDmnFileAndGetUri(studioAgent, 'simple-decision.dmn');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -145,31 +122,31 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('sets overlays on a DMN element', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.setOverlays', dmnUri);
+      const result = await studioAgent.executeCommand('plugin.dmn-overlay-demo.setOverlays', [dmnUri]);
       assert.strictEqual(result, 'ok', `Expected 'ok', got: ${result}`);
 
-      const isSet = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.isOverlaysSet');
+      const isSet = await studioAgent.executeCommand('plugin.dmn-overlay-demo.isOverlaysSet');
       assert.strictEqual(isSet, true);
     });
 
     it('clears all overlays for a URI', async () => {
-      await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.setOverlays', dmnUri);
+      await studioAgent.executeCommand('plugin.dmn-overlay-demo.setOverlays', [dmnUri]);
 
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.clearOverlays', dmnUri);
+      const result = await studioAgent.executeCommand('plugin.dmn-overlay-demo.clearOverlays', [dmnUri]);
       assert.strictEqual(result, 'ok', `Expected 'ok', got: ${result}`);
 
-      const isSet = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.isOverlaysSet');
+      const isSet = await studioAgent.executeCommand('plugin.dmn-overlay-demo.isOverlaysSet');
       assert.strictEqual(isSet, false);
     });
 
     it('returns error when setting overlays on non-existent URI', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.setOverlaysOnMissingUri');
+      const result = await studioAgent.executeCommand('plugin.dmn-overlay-demo.setOverlaysOnMissingUri');
       assert.ok(typeof result === 'string', 'Expected string');
       assert.ok(result.startsWith('error:'), `Expected error, got: ${result}`);
     });
 
     it('returns error when subscribing to events on non-existent URI', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.subscribeOnMissingUri');
+      const result = await studioAgent.executeCommand('plugin.dmn-overlay-demo.subscribeOnMissingUri');
       assert.ok(typeof result === 'string', 'Expected string');
       assert.ok(result.startsWith('error:'), `Expected error, got: ${result}`);
     });
@@ -179,20 +156,19 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgentDmnExtension;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({
-        testName: 'dmn-api-factory',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getFactoryCallCount');
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-api-factory', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+          waitUntilLoaded: ['dmn-overlay-demo'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-dmn');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -211,15 +187,15 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     it('overlay factory is invoked automatically when DMN file opens on DRD view', async () => {
       await openDmnFileAndGetUri(studioAgent, 'simple-decision.dmn');
 
-      await studioAgent.getTestDriver().client!.waitUntil(
+      await studioAgent.waitUntil(
         async () => {
-          const count = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getFactoryCallCount');
+          const count = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getFactoryCallCount');
           return typeof count === 'number' && count > 0;
         },
         { timeout: 10_000, timeoutMsg: 'Overlay factory was never called after opening DMN file' },
       );
 
-      const callCount = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getFactoryCallCount');
+      const callCount = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getFactoryCallCount');
       assert.ok(callCount > 0, `Expected factory to be called at least once, got ${callCount}`);
     });
   });
@@ -228,20 +204,19 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgentDmnExtension;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({
-        testName: 'dmn-api-view-awareness',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getActiveView');
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-api-view-awareness', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+          waitUntilLoaded: ['dmn-overlay-demo'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-dmn');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -260,7 +235,7 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     it('getActiveView reports drd while on the DRD view', async () => {
       const dmnUri = await openDmnFileAndGetUri(studioAgent, 'kitchen-sink.dmn');
 
-      const view = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getActiveView', dmnUri);
+      const view = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getActiveView', [dmnUri]);
       assert.strictEqual(view?.viewType, 'drd', `Expected active view type to be 'drd', got: ${JSON.stringify(view)}`);
       assert.strictEqual(view?.isDrd, true, `Expected isDrd to be true, got: ${JSON.stringify(view)}`);
     });
@@ -268,7 +243,7 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     it('overlays are cleared from the DRD canvas when navigating away to a decision table', async () => {
       const dmnUri = await openDmnFileAndGetUri(studioAgent, 'kitchen-sink.dmn');
 
-      const setResult = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.setOverlays', dmnUri);
+      const setResult = await studioAgent.executeCommand('plugin.dmn-overlay-demo.setOverlays', [dmnUri]);
       assert.strictEqual(setResult, 'ok');
 
       await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
@@ -284,24 +259,22 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
       await studioAgent.navigateBackToDrd();
       await studioAgent.assertBackToDrdButtonNotPresent();
 
-      await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.clearOverlays', dmnUri);
+      await studioAgent.executeCommand('plugin.dmn-overlay-demo.clearOverlays', [dmnUri]);
     });
 
     it('subscribeViewChanged fires when switching between DRD and decision table', async () => {
       const dmnUri = await openDmnFileAndGetUri(studioAgent, 'kitchen-sink.dmn');
 
-      const subscribeResult = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-overlay-demo.subscribeViewChanged',
+      const subscribeResult = await studioAgent.executeCommand('plugin.dmn-overlay-demo.subscribeViewChanged', [
         dmnUri,
-      );
+      ]);
       assert.strictEqual(subscribeResult, 'ok');
 
       await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
 
-      await studioAgent.getTestDriver().client!.waitUntil(
+      await studioAgent.waitUntil(
         async () => {
-          const lastViewChanged = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getLastViewChanged');
+          const lastViewChanged = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getLastViewChanged');
           return lastViewChanged != null;
         },
         { timeout: 10_000, timeoutMsg: 'onViewChanged never fired after drilling into decision table' },
@@ -316,21 +289,20 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     let dmnUri: string;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({
-        testName: 'dmn-api-queries',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getElements');
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-api-queries', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+          waitUntilLoaded: ['dmn-overlay-demo'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-dmn');
       dmnUri = await openDmnFileAndGetUri(studioAgent, 'simple-decision.dmn');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -347,7 +319,7 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('getElements returns non-empty array of element snapshots', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getElements', dmnUri);
+      const result = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getElements', [dmnUri]);
       assert.ok(Array.isArray(result), `Expected array, got: ${typeof result}`);
       assert.ok(result.length > 0, 'Expected at least one element');
 
@@ -357,11 +329,11 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('getElement returns detail snapshot for existing element', async () => {
-      const elements = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getElements', dmnUri);
+      const elements = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getElements', [dmnUri]);
       assert.ok(Array.isArray(elements) && elements.length > 0);
 
       const targetId = elements[0].id;
-      const detail = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getElement', dmnUri, targetId);
+      const detail = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getElement', [dmnUri, targetId]);
       assert.ok(detail != null, 'Expected non-null detail snapshot');
       assert.strictEqual(detail.id, targetId);
       assert.ok('properties' in detail, 'Detail snapshot missing properties');
@@ -370,17 +342,15 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('getElement returns null for non-existent element', async () => {
-      const detail = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-overlay-demo.getElement',
+      const detail = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getElement', [
         dmnUri,
         'NonExistentElement_xyz',
-      );
+      ]);
       assert.strictEqual(detail, null);
     });
 
     it('getXml returns valid XML string', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getXml', dmnUri);
+      const result = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getXml', [dmnUri]);
       assert.strictEqual(result, 'ok', `Expected 'ok', got: ${result}`);
     });
   });
@@ -394,21 +364,20 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     let dmnUri: string;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({
-        testName: 'dmn-api-interaction-events',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.dmn-overlay-demo.subscribeHover');
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-api-interaction-events', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+          waitUntilLoaded: ['dmn-overlay-demo'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-dmn');
       dmnUri = await openDmnFileAndGetUri(studioAgent, 'kitchen-sink.dmn');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -425,14 +394,14 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('onElementHover fires when hovering a DRD element', async () => {
-      const subscribeResult = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.subscribeHover', dmnUri);
+      const subscribeResult = await studioAgent.executeCommand('plugin.dmn-overlay-demo.subscribeHover', [dmnUri]);
       assert.strictEqual(subscribeResult, 'ok');
 
       await studioAgent.hoverOn('[data-element-id=Decision_Discount]');
 
-      await studioAgent.getTestDriver().client!.waitUntil(
+      await studioAgent.waitUntil(
         async () => {
-          const lastHovered = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getLastHovered');
+          const lastHovered = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getLastHovered');
           return lastHovered?.elementId === 'Decision_Discount';
         },
         { timeout: 10_000, timeoutMsg: 'onElementHover never fired for Decision_Discount' },
@@ -440,18 +409,16 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     });
 
     it('onElementContextMenu fires when right-clicking a DRD element', async () => {
-      const subscribeResult = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-overlay-demo.subscribeContextMenu',
+      const subscribeResult = await studioAgent.executeCommand('plugin.dmn-overlay-demo.subscribeContextMenu', [
         dmnUri,
-      );
+      ]);
       assert.strictEqual(subscribeResult, 'ok');
 
       await studioAgent.rightClickOn('[data-element-id=Decision_Discount]');
 
-      await studioAgent.getTestDriver().client!.waitUntil(
+      await studioAgent.waitUntil(
         async () => {
-          const lastContextMenu = await executePluginCommand(studioAgent, 'plugin.dmn-overlay-demo.getLastContextMenu');
+          const lastContextMenu = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getLastContextMenu');
           return lastContextMenu?.elementId === 'Decision_Discount';
         },
         { timeout: 10_000, timeoutMsg: 'onElementContextMenu never fired for Decision_Discount' },
@@ -461,21 +428,16 @@ describe('plugin/dmn-api', { timeout: 120_000 }, () => {
     // Runs last on purpose: the double click drills into the decision-table view, and returning
     // to the DRD re-creates its viewer, which drops subscriptions the other tests rely on.
     it('onElementDoubleClick fires when double-clicking a DRD element', async () => {
-      const subscribeResult = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-overlay-demo.subscribeDoubleClick',
+      const subscribeResult = await studioAgent.executeCommand('plugin.dmn-overlay-demo.subscribeDoubleClick', [
         dmnUri,
-      );
+      ]);
       assert.strictEqual(subscribeResult, 'ok');
 
       await studioAgent.doubleClickOn('[data-element-id=Decision_Discount]');
 
-      await studioAgent.getTestDriver().client!.waitUntil(
+      await studioAgent.waitUntil(
         async () => {
-          const lastDoubleClicked = await executePluginCommand(
-            studioAgent,
-            'plugin.dmn-overlay-demo.getLastDoubleClicked',
-          );
+          const lastDoubleClicked = await studioAgent.executeCommand('plugin.dmn-overlay-demo.getLastDoubleClicked');
           return lastDoubleClicked?.elementId === 'Decision_Discount';
         },
         { timeout: 10_000, timeoutMsg: 'onElementDoubleClick never fired for Decision_Discount' },

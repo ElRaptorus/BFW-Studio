@@ -2,49 +2,17 @@ import * as assert from 'node:assert';
 import * as path from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
-import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';
-import type { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
-import { createAndStartStudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
+import {
+  ASSERT_VISIBLE_TIMEOUT,
+  createAndStartStudioAgentForPluginHost,
+  stopPluginHostStudioAgent,
+} from '../../StudioAgent';
+import { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 
-const PLUGIN_LOAD_TIMEOUT = 30_000;
-
 const DECISION_ELEMENT_ID = 'Decision_Discount';
 const INPUT_DATA_ELEMENT_ID = 'InputData_Age';
-
-// Manifest-declared commands are registered as stubs at plugin discovery time,
-// before `activate()` runs — `isRegistered` is true for a stub immediately, so
-// waiting on any particular command name (even the "last" one declared) does not
-// guarantee `activate()` has finished replacing every stub with its real handler.
-// Waiting for the plugin status to reach 'loaded' is the only reliable signal.
-async function waitForPluginStatus(
-  studioAgent: StudioAgentDmnExtension,
-  pluginName: string,
-  expectedStatus: string,
-): Promise<void> {
-  await studioAgent.getTestDriver().client!.waitUntil(
-    async () => {
-      const plugins = await studioAgent
-        .getTestDriver()
-        .client!.execute(() => (window as any).bifrost.plugins.getPluginList());
-      const plugin = plugins.find((entry: any) => entry.name === pluginName);
-      return plugin?.status === expectedStatus;
-    },
-    {
-      timeout: PLUGIN_LOAD_TIMEOUT,
-      timeoutMsg: `Plugin '${pluginName}' did not reach status '${expectedStatus}' in time`,
-    },
-  );
-}
-
-async function executePluginCommand(
-  studioAgent: StudioAgentDmnExtension,
-  commandId: string,
-  ...args: unknown[]
-): Promise<any> {
-  return studioAgent.executeCommand(commandId, args);
-}
 
 async function hasContextPadEntry(
   studioAgent: StudioAgentDmnExtension,
@@ -73,19 +41,18 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgentDmnExtension;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({
-        testName: 'dmn-palette-perm',
-        testFile: __filename,
-      });
-      await waitForPluginStatus(studioAgent, 'dmn-perm-low', 'loaded');
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-palette-perm', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+          waitUntilLoaded: ['dmn-perm-low'],
+        },
+      );
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -102,7 +69,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies registerPaletteEntry to plugin without dmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-perm-low.tryRegisterPaletteEntry');
+      const result = await studioAgent.executeCommand('plugin.dmn-perm-low.tryRegisterPaletteEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -111,7 +78,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies unregisterPaletteEntry to plugin without dmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-perm-low.tryUnregisterPaletteEntry');
+      const result = await studioAgent.executeCommand('plugin.dmn-perm-low.tryUnregisterPaletteEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -120,7 +87,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies registerContextPadEntry to plugin without dmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-perm-low.tryRegisterContextPadEntry');
+      const result = await studioAgent.executeCommand('plugin.dmn-perm-low.tryRegisterContextPadEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -129,7 +96,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies unregisterContextPadEntry to plugin without dmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-perm-low.tryUnregisterContextPadEntry');
+      const result = await studioAgent.executeCommand('plugin.dmn-perm-low.tryUnregisterContextPadEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -138,7 +105,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('denies updateContextPadEntry to plugin without dmn.modelling', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-perm-low.tryUpdateContextPadEntry');
+      const result = await studioAgent.executeCommand('plugin.dmn-perm-low.tryUpdateContextPadEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('denied') || result.toLowerCase().includes('permission'),
@@ -147,7 +114,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('permission error message mentions the required permission', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-perm-low.tryRegisterPaletteEntry');
+      const result = await studioAgent.executeCommand('plugin.dmn-perm-low.tryRegisterPaletteEntry');
       assert.ok(typeof result === 'string', 'Expected string error message');
       assert.ok(
         result.toLowerCase().includes('modelling') || result.toLowerCase().includes('dmn.modelling'),
@@ -160,25 +127,24 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgentDmnExtension;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgentDmnExtension({
-        testName: 'dmn-palette-lifecycle',
-        testFile: __filename,
-      });
+      studioAgent = await createAndStartStudioAgentForPluginHost<StudioAgentDmnExtension>(
+        { testName: 'dmn-palette-lifecycle', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          studioAgentClass: StudioAgentDmnExtension,
+        },
+      );
       // dmn-palette-demo activates lazily via `onDocumentType:dmn` — it only starts
       // activating once a DMN document is opened, so the status wait must come after.
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-dmn');
       await studioAgent.jumpToFileInSolution('simple-decision.dmn', 'dmn');
       await studioAgent.waitForInteractiveDmnDocument();
       await studioAgent.assertVisible('.dmn-drd-container', ASSERT_VISIBLE_TIMEOUT);
-      await waitForPluginStatus(studioAgent, 'dmn-palette-demo', 'loaded');
+      await studioAgent.pluginHost.waitUntilStatus('dmn-palette-demo', 'loaded');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -195,7 +161,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('plugin activates successfully', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.dmn-palette-demo.test.isActivated');
+      const result = await studioAgent.executeCommand('plugin.dmn-palette-demo.test.isActivated');
       assert.strictEqual(result, true);
     });
 
@@ -242,14 +208,12 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
       // cannot assume it runs before the "updateContextPadEntry" tests below that
       // mutate the same 'view-requirements' entry — reset it back to its manifest-
       // declared empty allowlist first.
-      await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.updateContextPadEntry',
+      await studioAgent.executeCommand('plugin.dmn-palette-demo.test.updateContextPadEntry', [
         'view-requirements',
         {
           elementIds: [],
         },
-      );
+      ]);
       await studioAgent.selectDmnElementByIdAndWaitForElement(DECISION_ELEMENT_ID, '.djs-context-pad');
       const hasEntry = await hasContextPadEntry(
         studioAgent,
@@ -260,12 +224,10 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('updateContextPadEntry with specific IDs makes entry visible on those elements', async () => {
-      const updateResult = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.updateContextPadEntry',
+      const updateResult = await studioAgent.executeCommand('plugin.dmn-palette-demo.test.updateContextPadEntry', [
         'view-requirements',
         { elementIds: [DECISION_ELEMENT_ID] },
-      );
+      ]);
       assert.strictEqual(updateResult, 'ok', `Expected 'ok', got: ${updateResult}`);
 
       await studioAgent.selectDmnElementByIdAndWaitForElement(DECISION_ELEMENT_ID, '.djs-context-pad');
@@ -278,12 +240,10 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('updateContextPadEntry with null clears the allowlist (entry shows on all matching types)', async () => {
-      const updateResult = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.updateContextPadEntry',
+      const updateResult = await studioAgent.executeCommand('plugin.dmn-palette-demo.test.updateContextPadEntry', [
         'view-requirements',
         { elementIds: null },
-      );
+      ]);
       assert.strictEqual(updateResult, 'ok', `Expected 'ok', got: ${updateResult}`);
 
       await studioAgent.selectDmnElementByIdAndWaitForElement(DECISION_ELEMENT_ID, '.djs-context-pad');
@@ -296,21 +256,17 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('updateContextPadEntry for non-existent entry returns error', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.updateContextPadEntry',
+      const result = await studioAgent.executeCommand('plugin.dmn-palette-demo.test.updateContextPadEntry', [
         'non-existent-entry-id',
         { elementIds: [DECISION_ELEMENT_ID] },
-      );
+      ]);
       assert.ok(typeof result === 'string' && result.startsWith('error:'), `Expected error, got: ${result}`);
     });
 
     it('unregisterContextPadEntry removes the entry', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.tryUnregisterContextPadEntry',
+      const result = await studioAgent.executeCommand('plugin.dmn-palette-demo.test.tryUnregisterContextPadEntry', [
         'toggle-flag',
-      );
+      ]);
       assert.strictEqual(result, 'ok', `Expected 'ok', got: ${result}`);
 
       await studioAgent.selectDmnElementByIdAndWaitForElement(INPUT_DATA_ELEMENT_ID, '.djs-context-pad');
@@ -323,11 +279,9 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('unregisterContextPadEntry for non-existent entry returns error', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.tryUnregisterContextPadEntry',
+      const result = await studioAgent.executeCommand('plugin.dmn-palette-demo.test.tryUnregisterContextPadEntry', [
         'does-not-exist',
-      );
+      ]);
       assert.ok(typeof result === 'string' && result.startsWith('error:'), `Expected error, got: ${result}`);
     });
 
@@ -335,12 +289,10 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
       // "view-requirements" has elementTypes: ['dmn:Decision'] from the manifest/runtime registration.
       // Set elementIds to include both the InputData and Decision element — InputData does NOT
       // match the type filter, so the entry must still be excluded there despite the id match.
-      const updateResult = await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.updateContextPadEntry',
+      const updateResult = await studioAgent.executeCommand('plugin.dmn-palette-demo.test.updateContextPadEntry', [
         'view-requirements',
         { elementIds: [INPUT_DATA_ELEMENT_ID, DECISION_ELEMENT_ID] },
-      );
+      ]);
       assert.strictEqual(updateResult, 'ok', `Expected 'ok', got: ${updateResult}`);
 
       await studioAgent.selectDmnElementByIdAndWaitForElement(DECISION_ELEMENT_ID, '.djs-context-pad');
@@ -368,14 +320,12 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
       );
 
       // Clean up: clear the elementIds so subsequent tests aren't affected.
-      await executePluginCommand(
-        studioAgent,
-        'plugin.dmn-palette-demo.test.updateContextPadEntry',
+      await studioAgent.executeCommand('plugin.dmn-palette-demo.test.updateContextPadEntry', [
         'view-requirements',
         {
           elementIds: null,
         },
-      );
+      ]);
     });
   });
 });

@@ -131,6 +131,19 @@ afterEach(async ({ task }) => {
 });
 ```
 
+**Plugin Host suites** use `createAndStartStudioAgentForPluginHost` instead of `createAndStartStudioAgent`. It sets `BFR_PLUGINS_DIR` (and optionally `BFR_SKIP_PERMISSION_DIALOG` / `BFR_PLUGIN_STORAGE_PATH`) before boot, then waits for named plugins to reach `PluginInfo.status === 'loaded'`. Call it from `beforeAll` (shared agent) or `beforeEach` (agent per test). `stopPluginHostStudioAgent` stops the app and restores the env snapshot.
+
+```typescript
+studioAgent = await createAndStartStudioAgentForPluginHost(
+  { testName: task.name, testFile: __filename },
+  { pluginsDirectory: PLUGINS_FIXTURE_DIR, waitUntilLoaded: ['kitchen-sink'] },
+);
+```
+
+Default plugin readiness is `studioAgent.pluginHost.waitUntilStatus(name, 'loaded')` — that is set only after `activate()` finishes. `pluginHost.waitUntilCommandRegistered` is only for lazy **stub** commands on `pending` plugins, or for asserting that a command exists. A command registered at the start of `activate()` (kitchen-sink `getStatus`) is not a loaded signal.
+
+Do not wait for plugin load inside `it()`. Waits that observe an action the test just performed (toggle → `disabled`, stub command → lazy `loaded`, crash → `quarantined`) stay in the test body via `pluginHost.waitUntilStatus`. Shared-agent suites that disable a plugin restore it in `afterEach` with `toggleAndWaitUntilStatus`, not at the end of the `it()`.
+
 ### Key Methods
 
 | Method | Purpose |
@@ -366,19 +379,21 @@ When adding new functionality:
 4. For `.essln`-based tests, generate the file in `beforeEach` and clean up in `afterEach`
 5. Always end tests with `assertNoErrorsPresentAndIdle()` to catch unexpected errors
 6. For DMN tests, use `StudioAgentDmnExtension` from `test/StudioAgentDmnExtension.ts`
+7. For plugin-host tests, start via `createAndStartStudioAgentForPluginHost` and wait for `loaded` in `beforeAll` / `beforeEach` (`studioAgent.pluginHost.waitUntilStatus`). Do not poll for a command registered mid-`activate()`, and do not `waitUntil` for View-menu entries inside the test — those contributions exist once status is `loaded`.
 
 ## File Path Reference
 
 | Concern | Key Files |
 |---|---|
 | StudioAgent API | `studio/test/StudioAgent.ts` |
+| Plugin Host test collaborator | `studio/test/StudioAgent/PluginHost.ts` |
 | BPMN test extensions | `studio/test/StudioAgentBpmnExtension.ts` |
 | TestDriver (WebDriverIO) | `studio/test/Driver/TestDriver.ts` |
 | Input simulation | `studio/test/StudioAgent/InputSimulator.ts` |
 | BPMN editor tests | `studio/test/integration/bpmn-editor/` |
 | DMN editor tests | `studio/test/integration/dmn-editor/` |
 | Git cruiser tests | `studio/test/integration/git-cruiser/` |
-| Core / solutions tests | `studio/test/integration/studio-core/` |
+| Plugin host tests | `studio/test/integration/plugins/` |
 | DMN test agent extension | `studio/test/StudioAgentDmnExtension.ts` |
 | Static fixtures | `studio/test/fixtures/` |
 | Test commands registration | `studio/src/modules/std/initializers/initializeCommands.ts` |

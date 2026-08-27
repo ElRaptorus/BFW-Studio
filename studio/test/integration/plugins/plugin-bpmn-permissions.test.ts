@@ -2,48 +2,14 @@ import * as assert from 'node:assert';
 import * as path from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
-import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';
+import {
+  ASSERT_VISIBLE_TIMEOUT,
+  createAndStartStudioAgentForPluginHost,
+  stopPluginHostStudioAgent,
+} from '../../StudioAgent';
 import type { StudioAgent } from '../../StudioAgent';
-import { createAndStartStudioAgent } from '../../StudioAgent';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
-
-const PLUGIN_LOAD_TIMEOUT = 30_000;
-
-async function waitForPluginCommand(studioAgent: StudioAgent, commandId: string): Promise<void> {
-  await studioAgent.getTestDriver().client!.waitUntil(
-    async () => {
-      return studioAgent
-        .getTestDriver()
-        .client!.execute((cmd: string) => (window as any).bifrost.commands.isRegistered(cmd), commandId);
-    },
-    { timeout: PLUGIN_LOAD_TIMEOUT, timeoutMsg: `Plugin command '${commandId}' was not registered in time` },
-  );
-}
-
-async function waitForPluginStatus(
-  studioAgent: StudioAgent,
-  pluginName: string,
-  expectedStatus: string,
-): Promise<void> {
-  await studioAgent.getTestDriver().client!.waitUntil(
-    async () => {
-      const plugins = await studioAgent
-        .getTestDriver()
-        .client!.execute(() => (window as any).bifrost.plugins.getPluginList());
-      const plugin = plugins.find((entry: any) => entry.name === pluginName);
-      return plugin?.status === expectedStatus;
-    },
-    {
-      timeout: PLUGIN_LOAD_TIMEOUT,
-      timeoutMsg: `Plugin '${pluginName}' did not reach status '${expectedStatus}' in time`,
-    },
-  );
-}
-
-async function executePluginCommand(studioAgent: StudioAgent, commandId: string, ...args: unknown[]): Promise<any> {
-  return studioAgent.executeCommand(commandId, args);
-}
 
 describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
   /**
@@ -57,20 +23,18 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgent;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgent({
-        testName: 'bpmn-perm-low',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingUpdateProperties');
+      studioAgent = await createAndStartStudioAgentForPluginHost(
+        { testName: 'bpmn-perm-low', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          waitUntilCommandRegistered: ['plugin.bpmn-perm-low.tryModelingUpdateProperties'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -90,42 +54,42 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
       await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
       await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
 
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingUpdateProperties');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryModelingUpdateProperties');
       assert.ok(typeof result === 'string' || result?.success === false, 'Expected denial');
     });
 
     it('denies modeling.removeElement', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingRemoveElement');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryModelingRemoveElement');
       assert.ok(typeof result === 'string' || result?.success === false, 'Expected denial');
     });
 
     it('denies modeling.appendElement', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingAppendElement');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryModelingAppendElement');
       assert.ok(typeof result === 'string' || result?.success === false, 'Expected denial');
     });
 
     it('denies modeling.createConnection', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingCreateConnection');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryModelingCreateConnection');
       assert.ok(typeof result === 'string' || result?.success === false, 'Expected denial');
     });
 
     it('denies modeling.moveElement', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingMoveElement');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryModelingMoveElement');
       assert.ok(typeof result === 'string' || result?.success === false, 'Expected denial');
     });
 
     it('denies registerPaletteEntry', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryRegisterPaletteEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryRegisterPaletteEntry');
       assert.ok(typeof result === 'string' || result?.success === false, 'Expected denial');
     });
 
     it('denies registerContextPadEntry', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryRegisterContextPadEntry');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryRegisterContextPadEntry');
       assert.ok(typeof result === 'string' || result?.success === false, 'Expected denial');
     });
 
     it('permission error message states required permission', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-low.tryModelingUpdateProperties');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-low.tryModelingUpdateProperties');
       const errorMessage = typeof result === 'string' ? result : result?.error || '';
       assert.ok(
         errorMessage.includes('bpmn.modelling') || errorMessage.includes('permission'),
@@ -138,23 +102,21 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgent;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgent({
-        testName: 'bpmn-perm-medium',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.bpmn-perm-medium.test.isActivated');
+      studioAgent = await createAndStartStudioAgentForPluginHost(
+        { testName: 'bpmn-perm-medium', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          waitUntilCommandRegistered: ['plugin.bpmn-perm-medium.test.isActivated'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
       await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
       await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
-      await waitForPluginStatus(studioAgent, 'bpmn-perm-medium', 'loaded');
+      await studioAgent.pluginHost.waitUntilStatus('bpmn-perm-medium', 'loaded');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -171,12 +133,10 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     });
 
     it('allows modeling.updateProperties (implied by bpmn.modelling)', async () => {
-      const result = await executePluginCommand(
-        studioAgent,
-        'plugin.bpmn-perm-medium.tryModelingUpdateProperties',
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-medium.tryModelingUpdateProperties', [
         'file:///dummy',
         'StartEvent_1',
-      );
+      ]);
       // The call may fail for reasons other than permissions (e.g. element not found),
       // but it should NOT fail with a permission error.
       if (result?.success === false) {
@@ -188,7 +148,7 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     });
 
     it('denies postToRendererModule (requires bpmn.renderer)', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-medium.tryPostToRendererModule');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-medium.tryPostToRendererModule');
       assert.strictEqual(result?.success, false);
       assert.ok(
         result?.error?.includes('bpmn.renderer') || result?.error?.includes('permission'),
@@ -197,7 +157,7 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     });
 
     it('denies onRendererModuleMessage (requires bpmn.renderer)', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-medium.tryOnRendererModuleMessage');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-medium.tryOnRendererModuleMessage');
       assert.strictEqual(result?.success, false);
       assert.ok(
         result?.error?.includes('bpmn.renderer') || result?.error?.includes('permission'),
@@ -210,23 +170,21 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     let studioAgent: StudioAgent;
 
     beforeAll(async () => {
-      process.env.BFR_PLUGINS_DIR = PLUGINS_FIXTURE_DIR;
-      process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
-      studioAgent = await createAndStartStudioAgent({
-        testName: 'bpmn-perm-high',
-        testFile: __filename,
-      });
-      await waitForPluginCommand(studioAgent, 'plugin.bpmn-perm-high.test.isActivated');
+      studioAgent = await createAndStartStudioAgentForPluginHost(
+        { testName: 'bpmn-perm-high', testFile: __filename },
+        {
+          pluginsDirectory: PLUGINS_FIXTURE_DIR,
+          waitUntilCommandRegistered: ['plugin.bpmn-perm-high.test.isActivated'],
+        },
+      );
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-bpmn');
       await studioAgent.jumpToFileInSolution('definition.bpmn', 'bpmn');
       await studioAgent.assertVisible('.djs-container', ASSERT_VISIBLE_TIMEOUT);
-      await waitForPluginStatus(studioAgent, 'bpmn-perm-high', 'loaded');
+      await studioAgent.pluginHost.waitUntilStatus('bpmn-perm-high', 'loaded');
     });
 
     afterAll(async () => {
-      await studioAgent?.stop();
-      delete process.env.BFR_PLUGINS_DIR;
-      delete process.env.BFR_SKIP_PERMISSION_DIALOG;
+      await stopPluginHostStudioAgent(studioAgent, false);
     });
 
     beforeEach(({ task }) => {
@@ -243,27 +201,27 @@ describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
     });
 
     it('allows all bpmn.* methods (full hierarchy)', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-high.test.isActivated');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-high.test.isActivated');
       assert.strictEqual(result?.activated, true);
     });
 
     it('allows postToRendererModule', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-high.tryPostToRendererModule');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-high.tryPostToRendererModule');
       assert.strictEqual(result?.success, true);
     });
 
     it('allows onRendererModuleMessage (registered at activation)', async () => {
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-high.tryOnRendererModuleMessage');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-high.tryOnRendererModuleMessage');
       assert.strictEqual(result?.success, true);
     });
 
     it('renderer module loads and responds via pluginChannel', async () => {
       // Send a ping to the renderer module
-      await executePluginCommand(studioAgent, 'plugin.bpmn-perm-high.tryPostToRendererModule');
+      await studioAgent.executeCommand('plugin.bpmn-perm-high.tryPostToRendererModule');
       // Give the renderer module time to respond
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const result = await executePluginCommand(studioAgent, 'plugin.bpmn-perm-high.tryOnRendererModuleMessage');
+      const result = await studioAgent.executeCommand('plugin.bpmn-perm-high.tryOnRendererModuleMessage');
       assert.strictEqual(result?.success, true);
     });
   });
