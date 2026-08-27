@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git@github.com:ElRaptorus/EvilStudio.git",
+    "url": "ssh://git@github.com:ElRaptorus/BFW-Studio.git",
     "directory": "studio-sdk"
   },
   "scripts": {
@@ -36,7 +36,7 @@
     "@eslint/js": "^10.0.1",
     "@lezer/highlight": "^1.2.3",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
-    "@types/node": "^26.3.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
@@ -48,12 +48,12 @@
   },
   "peerDependencies": {
     "@bpmn-io/feel-editor": "^2.7.1",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-select": "^5.10.2",
     "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.9",
-    "@lezer/highlight": "^1.2.3"
+    "@lezer/highlight": "^1.2.3",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-select": "^5.10.2"
   }
 }
