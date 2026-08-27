@@ -463,6 +463,44 @@ This applies to `EditorToolbarButton`, `getClickHandler()`, and direct `executeC
 
 ---
 
+## `enabledWhen` must not assume command arguments are present
+
+**Mistake**: Guarding a document-scoped command with `enabledWhen: (editorDocument) => editorDocument.documentType === 'dmn.diff'` (or any other required property on the first argument).
+
+**Why it fails**: `executeCommand('dmn.diff.showChangeSummaryDialog')` with no args is a valid invocation — integration tests, command search, and keybindings all do this. The predicate then evaluates `undefined.documentType`, throws, and `CommandMediator.isCommandEnabled` catches the throw and returns `false`. The error message is `Executed command is not enabled`, which looks like a missing editor rather than a crashing predicate. The toolbar button still works because it passes `[editorDocument]`.
+
+**Correct approach**: Resolve the document from the argument or the focused editor, and use optional chaining so the predicate never throws:
+
+```typescript
+{
+  enabledWhen: (editorDocument?: EditorDocument) =>
+    (editorDocument ?? bifrost.editors.getFocusedEditorDocument())?.documentType === 'dmn.diff',
+}
+```
+
+The command handler must use the same fallback before looking up the model. Same pattern: `bpmn.diff.showChangeSummaryDialog` / `dmn.diff.showChangeSummaryDialog`.
+
+---
+
+## `StudioAgent.executeCommand` hangs on commands that await `dialog.open`
+
+**Mistake**: `await studioAgent.executeCommand('dmn.diff.showChangeSummaryDialog')` then `assertVisible('[data-test--dialog]')` then Escape / `closeActiveDialog`.
+
+**Why it fails**: `executeCommand` runs `await bifrost.commands.executeCommand(...)` inside the page. The product handler correctly `await`s `bifrost.dialog.open(...)` until the user closes the dialog. The test therefore never reaches the dismiss step. Vitest hits `testTimeout` (60s); the dialog stays open and `afterEach` (`recordErrors` / `closeOpenEditors`) then hits `hookTimeout` (120s). Local WebDriverIO may appear to return before the promise settles, so the same test can pass locally and fail in CI.
+
+**Correct approach**: Fire the command without waiting, then interact with the dialog:
+
+```typescript
+await studioAgent.executeCommandWithoutBlocking('dmn.diff.showChangeSummaryDialog');
+await studioAgent.waitUntilDialogActive();
+await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
+await studioAgent.closeActiveDialog();
+```
+
+Do not change the product command to stop awaiting `dialog.open` — copy-vs-close needs the result. Kitchen-sink plugin tests already use this pattern. Dismiss leftover dialogs in `afterEach` (`isDialogActive` → `closeActiveDialog`) so a hung modal cannot stall editor cleanup.
+
+---
+
 ## bpmn-js canvas operations on zero-dimension containers
 
 **Symptom**: `TypeError: Failed to execute 'scale' on 'SVGMatrix': The provided float value is non-finite`.

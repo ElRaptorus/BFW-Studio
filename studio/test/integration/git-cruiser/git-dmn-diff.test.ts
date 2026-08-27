@@ -40,6 +40,9 @@ describe('git-cruiser/dmn-diff', { timeout: 60_000 }, () => {
       testFile: __filename,
       state: task.result?.state === 'fail' ? 'failed' : 'passed',
     });
+    if (await studioAgent.isDialogActive()) {
+      await studioAgent.closeActiveDialog();
+    }
     await studioAgent.recordErrors();
     await studioAgent.closeOpenEditors('dmn');
     await studioAgent.closeOpenEditors('dmn.diff');
@@ -113,11 +116,11 @@ describe('git-cruiser/dmn-diff', { timeout: 60_000 }, () => {
 
     await studioAgent.assertVisible('[data-test--editors--focused-document-type="dmn.diff"]', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.executeCommand('dmn.diff.showChangeSummaryDialog');
-    await studioAgent.pause(1000);
-
+    await studioAgent.waitUntilCommandEnabled('dmn.diff.showChangeSummaryDialog');
+    await studioAgent.executeCommandWithoutBlocking('dmn.diff.showChangeSummaryDialog');
+    await studioAgent.waitUntilDialogActive();
     await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.sendKeyboardInput(['Escape']);
+    await studioAgent.closeActiveDialog();
 
     await studioAgent.assertNoErrorsPresentAndIdle();
 

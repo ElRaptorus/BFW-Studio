@@ -324,8 +324,11 @@ export function onLoad(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'bpmn.diff.showChangeSummaryDialog',
-    async (editorDocument: EditorDocument) => {
-      const bpmnDiffDocumentModel = await bifrost.editors.getEditorDocumentModel<BpmnDiffDocumentModel>(editorDocument);
+    async (editorDocument?: EditorDocument) => {
+      const documentToSummarize = editorDocument ?? bifrost.editors.getFocusedEditorDocument();
+      assertNotNull(documentToSummarize, 'editorDocument');
+      const bpmnDiffDocumentModel =
+        await bifrost.editors.getEditorDocumentModel<BpmnDiffDocumentModel>(documentToSummarize);
       const summary = bpmnDiffDocumentModel.getChangeSummary();
 
       if (summary == null) {
@@ -358,7 +361,10 @@ export function onLoad(bifrost: Bifrost): void {
         }
       }
     },
-    { enabledWhen: (editorDocument: EditorDocument) => editorDocument.documentType === BPMN_DIFF_DOCUMENT_TYPE },
+    {
+      enabledWhen: (editorDocument?: EditorDocument) =>
+        (editorDocument ?? bifrost.editors.getFocusedEditorDocument())?.documentType === BPMN_DIFF_DOCUMENT_TYPE,
+    },
   );
 
   bifrost.panes.prependToPaneGroup('right', 'property', [

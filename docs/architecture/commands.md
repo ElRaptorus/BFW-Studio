@@ -112,7 +112,7 @@ All commands are registered through a single `register(name, callback, options?)
 | `visibleInSearch` | `false` | When `true`, the command appears in the command search palette |
 | `description` | `undefined` | Human-readable label (or array of search aliases) shown in the palette; required when `visibleInSearch` is `true` |
 | `expectsContext` | `false` | When `true`, the callback receives `CommandContext` as its first argument |
-| `enabledWhen` | always enabled | Synchronous predicate; receives the same args as the callback (excluding context) |
+| `enabledWhen` | always enabled | Synchronous predicate; receives the same args as the callback (excluding context). Must tolerate omitted args: tests, command search, and keybindings often call `executeCommand(name)` with `[]`. Accessing a property on an undefined first argument throws, and `CommandMediator` treats that throw as "disabled". Fall back to `bifrost.editors.getFocusedEditorDocument()` when the argument is missing. |
 
 **Internal command** (callable but not searchable):
 

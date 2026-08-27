@@ -218,8 +218,10 @@ export function onLoad(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'dmn.diff.showChangeSummaryDialog',
-    async (editorDocument: EditorDocument) => {
-      const model = await bifrost.editors.getEditorDocumentModel<DmnDiffDocumentModel>(editorDocument);
+    async (editorDocument?: EditorDocument) => {
+      const documentToSummarize = editorDocument ?? bifrost.editors.getFocusedEditorDocument();
+      assertNotNull(documentToSummarize, 'editorDocument');
+      const model = await bifrost.editors.getEditorDocumentModel<DmnDiffDocumentModel>(documentToSummarize);
       const summary = model.getChangeSummary();
 
       if (summary == null) {
@@ -252,7 +254,10 @@ export function onLoad(bifrost: Bifrost): void {
         }
       }
     },
-    { enabledWhen: (editorDocument: EditorDocument) => editorDocument.documentType === DMN_DIFF_DOCUMENT_TYPE },
+    {
+      enabledWhen: (editorDocument?: EditorDocument) =>
+        (editorDocument ?? bifrost.editors.getFocusedEditorDocument())?.documentType === DMN_DIFF_DOCUMENT_TYPE,
+    },
   );
 
   // --- Panes ---

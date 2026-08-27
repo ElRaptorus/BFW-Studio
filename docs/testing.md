@@ -178,6 +178,11 @@ Do not wait for plugin load inside `it()`. Waits that observe an action the test
 | `getProjectEntryCount()` | Counts visible project entries in the file explorer |
 | `getProjectBaseUri(index)` | Returns the base URI of a project by index |
 | `hasOpenSolution()` | Returns whether a solution is currently open |
+| `executeCommand(name, args?)` | Runs a Bifrost command in the renderer and **awaits the handler**. Do not use this for commands that await `bifrost.dialog.open()` — the test cannot dismiss the dialog until the command returns, so the call hangs until `testTimeout` |
+| `executeCommandWithoutBlocking(name, args?)` | Fires the command without waiting for the handler. Use this for dialog-opening commands, then `waitUntilDialogActive` / `closeActiveDialog` |
+| `waitUntilDialogActive(timeoutMsg?)` | Polls until `bifrost.dialog.isActive()` is true |
+| `closeActiveDialog()` | Closes the active dialog via `bifrost.dialog.close()` |
+| `isDialogActive()` | Returns whether a Bifrost dialog is currently open |
 | `isCommandEnabled(name, args?)` | Returns whether a command is currently enabled (pass the same args `executeCommand` will use) |
 | `waitUntilCommandEnabled(name, args?, timeout?)` | Polls `isCommandEnabled` until true or timeout |
 | `isExplicitSolution()` | Returns whether the current solution is explicit (multi-root) |
@@ -380,6 +385,7 @@ When adding new functionality:
 5. Always end tests with `assertNoErrorsPresentAndIdle()` to catch unexpected errors
 6. For DMN tests, use `StudioAgentDmnExtension` from `test/StudioAgentDmnExtension.ts`
 7. For plugin-host tests, start via `createAndStartStudioAgentForPluginHost` and wait for `loaded` in `beforeAll` / `beforeEach` (`studioAgent.pluginHost.waitUntilStatus`). Do not poll for a command registered mid-`activate()`, and do not `waitUntil` for View-menu entries inside the test — those contributions exist once status is `loaded`.
+8. For commands whose handler awaits `bifrost.dialog.open()` (for example `dmn.diff.showChangeSummaryDialog`), use `executeCommandWithoutBlocking`, then `waitUntilDialogActive` / `closeActiveDialog`. `executeCommand` waits for the handler, so the test never reaches the dismiss step and times out; an open dialog then also hangs `afterEach` (`closeOpenEditors`).
 
 ## File Path Reference
 

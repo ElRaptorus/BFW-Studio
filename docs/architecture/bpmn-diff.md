@@ -165,7 +165,7 @@ Visible when an element is selected in either a `bpmn.diff` or `bpmn.history-pre
 | `bpmn.diff.openDiffOriginalDataVsCurrentData` | Working copy diff for focused BPMN | Command search |
 | `bpmn.diff.openDiffCurrentDataVsOriginalData` | Reverse working copy diff | Internal |
 | `bpmn.diff.openDiffTwoFiles` | Compare two files by URI | Internal |
-| `bpmn.diff.showChangeSummaryDialog` | Show markdown summary dialog from computed diff data | Internal (diff view toolbar) |
+| `bpmn.diff.showChangeSummaryDialog` | Show markdown summary dialog from computed diff data | Internal (diff view toolbar). `enabledWhen` and the handler fall back to the focused `bpmn.diff` document when invoked with no args (tests / command search / keybindings). |
 | `bpmn.diff.getChangeSummaryMarkdown` | Return markdown summary for two XMLs | Internal (called by git-cruiser commit preview) |
 | `bpmn.diff.exportBeforeToNewFile` | Export the "before" document | Internal |
 | `bpmn.diff.openHistoryPreview` | Open history preview for a BPMN file at a commit | Internal |
@@ -181,7 +181,7 @@ Visible when an element is selected in either a `bpmn.diff` or `bpmn.history-pre
 
 The history preview model fetches historical XML via `git.getFileAtRef`, maintaining a clean separation: git-cruiser provides raw Git data, bpmn-diff handles all BPMN-specific rendering and UI.
 
-The interactive summary dialog (`bpmn.diff.showChangeSummaryDialog`) has no cross-module dependency — it reads directly from the `BpmnDiffDocumentModel`, which already has the diff computed. The button lives in the diff view toolbar (`BpmnDiffDocumentRenderer.tsx`).
+The interactive summary dialog (`bpmn.diff.showChangeSummaryDialog`) has no cross-module dependency — it reads directly from the `BpmnDiffDocumentModel`, which already has the diff computed. The button lives in the diff view toolbar (`BpmnDiffDocumentRenderer.tsx`) and passes the current `editorDocument`. When the command is invoked without arguments, both `enabledWhen` and the handler resolve `bifrost.editors.getFocusedEditorDocument()` so the command stays enabled while a `bpmn.diff` tab is focused.
 
 ## Future Work
 
