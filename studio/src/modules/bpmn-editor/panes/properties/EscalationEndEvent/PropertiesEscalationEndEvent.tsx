@@ -89,24 +89,22 @@ function PropertiesEscalationEndEvent(props: PaneComponentProps): React.JSX.Elem
   return (
     <PaneBody>
       <PaneProperty
-        key={`escalation-code_${element.escalationCode}`}
         htmlId="escalation-end-event-code"
         label="Escalation Code"
         type="text-with-suggestions"
         suggestions={allUniqueEscalationCodes}
         value={element.escalationCode}
-        onCommit={(newValue: any) => updateEscalation({ escalationCode: newValue?.value ?? '' })}
+        onCommit={(newValue: any) => updateEscalation({ escalationCode: newValue?.value ?? newValue ?? '' })}
         isClearable={true}
       />
       <PaneProperty
-        key={`escalation-name_${element.name}`}
         htmlId="escalation-end-event-name"
         label="Escalation Name"
         type="text-with-suggestions"
         suggestions={allUniqueEscalationNames}
         placeholder="Type escalation name ..."
         value={element.name}
-        onCommit={(newValue: any) => updateEscalation({ name: newValue?.value ?? '' })}
+        onCommit={(newValue: any) => updateEscalation({ name: newValue?.value ?? newValue ?? '' })}
         isClearable={true}
       />
     </PaneBody>

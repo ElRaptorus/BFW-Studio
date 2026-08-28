@@ -23,7 +23,7 @@ async function openBpmnFileAndGetUri(studioAgent: StudioAgent, filename: string)
   return fileUri;
 }
 
-describe('plugin/bpmn-api', { timeout: 120_000 }, () => {
+describe('plugin/bpmn-api', () => {
   describe('permission gating', () => {
     let studioAgent: StudioAgent;
 

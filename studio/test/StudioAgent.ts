@@ -1080,6 +1080,78 @@ export class StudioAgent {
   }
 
   /**
+   * Clicks the CreatableSelect clear **X** and waits until the search input is empty.
+   * The X disappearing only means the selected option is gone. `clearValue()`
+   * does not reset `inputValue`, so typing without this wait can append leftover
+   * search text (`error code` + `new error code` → `error codenew error code`).
+   */
+  async clearSuggestionSelect(propertySelector: string): Promise<void> {
+    const clearSelector = `${propertySelector} .react-select__clear-indicator`;
+    const inputSelector = `${propertySelector} .react-select__input-container input`;
+    await this.clickOn(clearSelector);
+    await this.waitForNotVisible(clearSelector);
+    await this.poll(
+      async () => this.getValue(inputSelector),
+      (value: string) => value === '' || value == null,
+      `waiting for suggestion select input to be empty: ${inputSelector}`,
+    );
+  }
+
+  /**
+   * Commits a CreatableSelect "Use …" create option by clicking it.
+   * Type the new value first without Enter. Enter alone used to hang because
+   * `PropertyValueWithSuggestions` overwrote react-select's Input `onKeyDown`.
+   */
+  async commitSuggestionCreateOption(propertySelector: string, createdValue: string): Promise<void> {
+    const optionSelector = `${propertySelector} [data-test-option-value="${createdValue}"]`;
+    await this.assertVisible(optionSelector, ASSERT_VISIBLE_TIMEOUT);
+    await this.clickOn(optionSelector);
+    await this.waitForNotVisible('.react-select__control--menu-is-open');
+  }
+
+  /**
+   * Reads the committed CreatableSelect value after the menu has closed.
+   * The selected option displays as `.react-select__single-value`; the search
+   * input stays empty so the menu is unfiltered. Fall back to the input only
+   * while a value is still being typed.
+   */
+  async getSuggestionSelectValue(propertySelector: string): Promise<string> {
+    const singleValueSelector = `${propertySelector} .react-select__single-value`;
+    const inputSelector = `${propertySelector} .react-select__input-container input`;
+    let selectedValue = '';
+
+    await this.poll(
+      async () => {
+        const openMenus = await this.$$('.react-select__control--menu-is-open');
+        if (openMenus.length > 0) {
+          return '';
+        }
+
+        const singleValueElements = await this.$$(singleValueSelector);
+        if (singleValueElements.length > 0) {
+          try {
+            const singleValueText = await this.getText(singleValueSelector);
+            if (typeof singleValueText === 'string' && singleValueText.trim() !== '') {
+              selectedValue = singleValueText;
+              return selectedValue;
+            }
+          } catch {
+            return '';
+          }
+        }
+
+        const inputValue = await this.getValue(inputSelector);
+        selectedValue = inputValue ?? '';
+        return selectedValue;
+      },
+      (value: string) => typeof value === 'string' && value.trim() !== '',
+      `waiting for suggestion select value: ${propertySelector}`,
+    );
+
+    return selectedValue;
+  }
+
+  /**
    * Waits for the given `selector` to have no result.
    */
   public async waitForNotVisible(selector: string): Promise<void> {

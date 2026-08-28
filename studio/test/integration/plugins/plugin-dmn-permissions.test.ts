@@ -11,7 +11,7 @@ import { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 
-describe('plugin/dmn-permissions', { timeout: 120_000 }, () => {
+describe('plugin/dmn-permissions', () => {
   /**
    * Tests the tiered permission model:
    * - dmn-perm-low: ['dmn'] — read-only access, no modeling, no renderer

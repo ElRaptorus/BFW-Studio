@@ -76,7 +76,6 @@ function PropertiesMessageStartEvent(props: PaneComponentProps): React.JSX.Eleme
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_message_name_${element.message}`}
         type="text-with-suggestions"
         htmlId="message-start-event-message-property"
         label="Message"

@@ -80,7 +80,6 @@ function PropertiesMessageBoundaryEvent(props: PaneComponentProps): React.JSX.El
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_message_name_${element.message}`}
         type="text-with-suggestions"
         htmlId="message-boundary-event-message-property"
         label="Message"

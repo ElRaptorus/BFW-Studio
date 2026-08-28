@@ -4,6 +4,7 @@ import type BpmnModelerComponentAdapter from '#modules/bpmn-core/BpmnModelerComp
 import { CmdHelper } from '#modules/bpmn-core/bpmn-js/CommandHandler/Helper/CommmandHelper';
 import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 import type {
+  BpmnDataMapping,
   BpmnElementColor,
   BpmnElementCustomProperty,
   BpmnElement_Definition,
@@ -112,6 +113,10 @@ type ModelerElementPropertyValue = any;
 
 export default class BpmnDocumentElementAccess extends AbstractEmitter {
   private bpmnModelerProxy: BpmnModelerComponentAdapter;
+  private readonly customPropertyRowIds = new WeakMap<object, string>();
+  private customPropertyRowIdSequence = 0;
+  private readonly dataPipelineMappingRowIds = new WeakMap<object, string>();
+  private dataPipelineMappingRowIdSequence = 0;
 
   constructor(bpmnModelerProxy: BpmnModelerComponentAdapter) {
     super();
@@ -1360,14 +1365,12 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       },
       dataPipeline: (element: any) => {
         const businessObject = element.businessObject;
-        const inputMappings = findAllEvilExtensions(businessObject, 'evil:InputMapping').map((mapping: any) => ({
-          source: mapping.source ?? '',
-          target: mapping.target ?? '',
-        }));
-        const outputMappings = findAllEvilExtensions(businessObject, 'evil:OutputMapping').map((mapping: any) => ({
-          source: mapping.source ?? '',
-          target: mapping.target ?? '',
-        }));
+        const inputMappings = findAllEvilExtensions(businessObject, 'evil:InputMapping').map((mapping: any) =>
+          this.castDataPipelineMapping(mapping),
+        );
+        const outputMappings = findAllEvilExtensions(businessObject, 'evil:OutputMapping').map((mapping: any) =>
+          this.castDataPipelineMapping(mapping),
+        );
         return {
           inputMappings,
           outputMappings,
@@ -2364,10 +2367,33 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
     return selectedElement.businessObject.eventDefinitions[0]?.$type;
   }
 
+  private castDataPipelineMapping(mapping: any): BpmnDataMapping {
+    let rowId = this.dataPipelineMappingRowIds.get(mapping);
+    if (rowId == null) {
+      this.dataPipelineMappingRowIdSequence += 1;
+      rowId = `data-pipeline-mapping-row-${this.dataPipelineMappingRowIdSequence}`;
+      this.dataPipelineMappingRowIds.set(mapping, rowId);
+    }
+
+    return {
+      source: mapping.source ?? '',
+      target: mapping.target ?? '',
+      rowId,
+    };
+  }
+
   private castCustomProperty(property: any): BpmnElementCustomProperty {
+    let rowId = this.customPropertyRowIds.get(property);
+    if (rowId == null) {
+      this.customPropertyRowIdSequence += 1;
+      rowId = `custom-property-row-${this.customPropertyRowIdSequence}`;
+      this.customPropertyRowIds.set(property, rowId);
+    }
+
     return {
       name: property.name,
       value: property.value,
+      rowId,
     };
   }
 

@@ -272,6 +272,7 @@ export type BpmnElement_StartEvent = BpmnElementCommonProperties & {
 export type BpmnDataMapping = {
   readonly source: string;
   readonly target: string;
+  readonly rowId?: string;
 };
 
 export type BpmnDataPipeline = {
@@ -856,6 +857,8 @@ export type BpmnElement_Participant_WithCollapseCheck =
 export type BpmnElementCustomProperty = {
   readonly name: string;
   readonly value: string;
+  /** Stable React list identity from the live moddle object. Not serialized to BPMN. */
+  readonly rowId?: string;
 };
 
 export enum LoopCharacteristics {

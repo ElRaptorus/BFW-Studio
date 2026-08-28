@@ -317,5 +317,8 @@ export function getKeyForPropertiesPane(selection: BpmnElement[]): string {
   const selectedElement = selection[0];
   assertNotNull(selectedElement, 'selectedElement');
 
-  return `${selectedElement.type}__${selectedElement.id}__${selectedElement.name}`;
+  // type + id only. Including `name` remounts the pane when Escalation / Error
+  // overlay `name` commits (that field is the value being edited, not the BPMN
+  // element label) and re-initializes match-all radios.
+  return `${selectedElement.type}__${selectedElement.id}`;
 }

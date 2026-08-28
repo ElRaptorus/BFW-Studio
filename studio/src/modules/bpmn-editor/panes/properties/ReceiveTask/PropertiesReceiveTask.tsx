@@ -76,7 +76,6 @@ function PropertiesReceiveTask(props: PaneComponentProps): React.JSX.Element {
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_message_name_${element.message}`}
         type="text-with-suggestions"
         htmlId="receive-task-message-property"
         label="Message"

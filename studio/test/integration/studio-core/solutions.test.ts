@@ -27,7 +27,7 @@ function removeEsslnFile(): void {
   }
 }
 
-describe('solutions', { timeout: 120_000 }, () => {
+describe('solutions', () => {
   let studioAgent: StudioAgent;
 
   afterEach(async ({ task }) => {

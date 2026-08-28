@@ -5,7 +5,7 @@ import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';
 import type { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 import { createAndStartStudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 
-describe('dmn/sanitizer', { timeout: 120_000 }, () => {
+describe('dmn/sanitizer', () => {
   let studioAgent: StudioAgentDmnExtension;
 
   beforeAll(async () => {
@@ -74,6 +74,6 @@ describe('dmn/sanitizer', { timeout: 120_000 }, () => {
     await studioAgent.jumpToFileInSolution('clean.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
     await studioAgent.pause(1000);
-    await studioAgent.assertNotVisible('.sanitizer-badge', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertNotVisible('.sanitizer-badge');
   });
 });

@@ -195,7 +195,7 @@ function PaneContentPropertiesProcess(props: PaneComponentProps): React.JSX.Elem
         onCommit={(value: string) => updateProcess({ version: value })}
         onValidate={[validatePropertyNotEmpty('Version is required by the engine')]}
       />
-      <div className="form-group" key={`process-correlation-key-${element.correlationKey ?? ''}`}>
+      <div className="form-group">
         <label className="d-block">
           <LabelWithFeelExpressionHint studio={props.studio} label="Correlation Key" />
         </label>

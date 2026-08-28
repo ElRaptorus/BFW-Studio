@@ -16,7 +16,6 @@ import type BpmnDocumentModel from '../../BpmnDocumentModel';
 type CustomPropertyProps = {
   index: number;
   property: BpmnElementCustomProperty;
-  showInternalCustomProperties: boolean;
   changeCustomPropertyName: (index: number, name: string) => void;
   changeCustomPropertyValue: (index: number, value: string) => void;
 };
@@ -81,13 +80,14 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     return null;
   }
 
-  const properties = bpmnDocumentModel.elements.getCustomProperties(selectedElement.id) || [];
+  const storedProperties = bpmnDocumentModel.elements.getCustomProperties(selectedElement.id) || [];
+  const emptyAddRow: BpmnElementCustomProperty = { name: '', value: '' };
+  const properties = [...storedProperties, emptyAddRow];
 
   const changeCustomPropertyName = (index: number, name: string): void =>
     bpmnDocumentModel.elements.setCustomPropertyName(selectedElement.id, index, name);
   const changeCustomPropertyValue = (index: number, value: string): void =>
     bpmnDocumentModel.elements.setCustomPropertyValue(selectedElement.id, index, value);
-  properties.push({ name: '', value: '' });
 
   const knownInternalProperties = bifrost.commands.executeCommand(
     'bpmn.customProperties.getInternalPropertiesByBpmnElementType',
@@ -111,12 +111,12 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     <PaneBody>
       {properties.map((property: BpmnElementCustomProperty, index: number) => {
         if (shownProperties.includes(property)) {
+          const rowKey = property.rowId ?? `custom-property-add-row-${selectedElement.id}`;
           return (
             <CustomProperty
-              key={property.name}
+              key={rowKey}
               index={index}
               property={property}
-              showInternalCustomProperties={showInternalCustomProperties}
               changeCustomPropertyName={changeCustomPropertyName}
               changeCustomPropertyValue={changeCustomPropertyValue}
             />
@@ -136,7 +136,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 
 function CustomProperty(props: CustomPropertyProps): React.JSX.Element {
   return (
-    <div className="form-row" key={`custom-property-${props.index}-${props.showInternalCustomProperties}`}>
+    <div className="form-row">
       <div className="form-group col">
         <FormInput
           htmlId={`custom-property-${props.index}-name`}

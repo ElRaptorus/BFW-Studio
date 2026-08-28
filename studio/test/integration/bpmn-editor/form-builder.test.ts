@@ -1,16 +1,26 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
-import { OsSpecificKeystroke } from '../../OsSpecificKeystroke';
 import type { StudioAgentBpmnExtension } from '../../StudioAgentBpmnExtension';
 import { createAndStartStudioAgentBpmnExtension } from '../../StudioAgentBpmnExtension';
 
 const ASSERT_VISIBLE_TIMEOUT = 30000;
-const CREATE_NEW_DOCUMENT = OsSpecificKeystroke('cmd-n', 'ctrl-n');
+const USER_TASK_ID = 'UserTask_1';
+const FORM_BUILDER_FIXTURE = 'form-builder.bpmn';
 
 const USER_TASK_FORM_SUMMARY_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesUserTaskFormSummary"]';
 
-describe('bpmn/form-builder', { timeout: 120_000 }, () => {
+describe('bpmn/form-builder', () => {
   let studioAgent: StudioAgentBpmnExtension;
+
+  async function openBlankUserTaskFormSummary(): Promise<void> {
+    await studioAgent.jumpToFileInSolution(FORM_BUILDER_FIXTURE);
+    await studioAgent.waitForInteractiveBpmnDocument();
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      USER_TASK_ID,
+      USER_TASK_FORM_SUMMARY_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+  }
 
   beforeAll(async () => {
     studioAgent = await createAndStartStudioAgentBpmnExtension({ testName: 'setup', testFile: __filename });
@@ -35,51 +45,13 @@ describe('bpmn/form-builder', { timeout: 120_000 }, () => {
     await studioAgent?.stop();
   });
 
-  it('bpmn/form-builder: should open Form Builder from summary pane Create Form button', async () => {
-    await studioAgent.sendKeyboardInput([CREATE_NEW_DOCUMENT]);
-    await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      'UserTask_1',
-      USER_TASK_FORM_SUMMARY_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    await studioAgent.clickOn('[data-test--form-summary-create-button]');
-    await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
-  });
-
-  it('bpmn/form-builder: should add a text field from toolbox and show it on canvas', async () => {
-    await studioAgent.sendKeyboardInput([CREATE_NEW_DOCUMENT]);
-    await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      'UserTask_1',
-      USER_TASK_FORM_SUMMARY_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+  it('bpmn/form-builder: should add a text field from the toolbox and show it on canvas', async () => {
+    await openBlankUserTaskFormSummary();
 
     await studioAgent.clickOn('[data-test--form-summary-create-button]');
     await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('[data-test--form-builder-toolbox-item]');
-    await studioAgent.assertVisible('[data-test--form-canvas-item]', ASSERT_VISIBLE_TIMEOUT);
-  });
-
-  it('bpmn/form-builder: should select a field and show inspector properties', async () => {
-    await studioAgent.sendKeyboardInput([CREATE_NEW_DOCUMENT]);
-    await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      'UserTask_1',
-      USER_TASK_FORM_SUMMARY_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    await studioAgent.clickOn('[data-test--form-summary-create-button]');
-    await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.clickOn('[data-test--form-builder-toolbox-item]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="text"]');
     await studioAgent.assertVisible('[data-test--form-canvas-item]', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOn('[data-test--form-canvas-item]');
@@ -88,36 +60,22 @@ describe('bpmn/form-builder', { timeout: 120_000 }, () => {
   });
 
   it('bpmn/form-builder: should add a form action preset', async () => {
-    await studioAgent.sendKeyboardInput([CREATE_NEW_DOCUMENT]);
-    await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      'UserTask_1',
-      USER_TASK_FORM_SUMMARY_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await openBlankUserTaskFormSummary();
 
     await studioAgent.clickOn('[data-test--form-summary-create-button]');
     await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('[data-test--actions-editor-add-button]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-action="confirm"]');
     await studioAgent.assertVisible('[data-test--actions-editor-item]', ASSERT_VISIBLE_TIMEOUT);
   });
 
   it('bpmn/form-builder: should switch to preview and render FormRenderer', async () => {
-    await studioAgent.sendKeyboardInput([CREATE_NEW_DOCUMENT]);
-    await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      'UserTask_1',
-      USER_TASK_FORM_SUMMARY_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await openBlankUserTaskFormSummary();
 
     await studioAgent.clickOn('[data-test--form-summary-create-button]');
     await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('[data-test--form-builder-toolbox-item]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="text"]');
     await studioAgent.assertVisible('[data-test--form-canvas-item]', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOn('[data-test--form-builder-tab-preview]');
@@ -125,25 +83,18 @@ describe('bpmn/form-builder', { timeout: 120_000 }, () => {
   });
 
   it('bpmn/form-builder: should persist fields across close and reopen', async () => {
-    await studioAgent.sendKeyboardInput([CREATE_NEW_DOCUMENT]);
-    await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      'UserTask_1',
-      USER_TASK_FORM_SUMMARY_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await openBlankUserTaskFormSummary();
 
     await studioAgent.clickOn('[data-test--form-summary-create-button]');
     await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('[data-test--form-builder-toolbox-item]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="text"]');
     await studioAgent.assertVisible('[data-test--form-canvas-item]', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.closeOpenEditors();
-
+    await studioAgent.executeCommand('std.editor.closeFocusedDocument');
+    await studioAgent.waitForInteractiveBpmnDocument();
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      'UserTask_1',
+      USER_TASK_ID,
       USER_TASK_FORM_SUMMARY_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );

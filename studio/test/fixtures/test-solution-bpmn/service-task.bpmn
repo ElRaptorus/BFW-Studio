@@ -19,11 +19,6 @@
     <bpmn:sequenceFlow id="Flow_1f21fy8" sourceRef="ServiceTask_1" targetRef="ServiceTask_2" />
     <bpmn:sequenceFlow id="Flow_04zcqle" sourceRef="ServiceTask_2" targetRef="ServiceTask_3" />
     <bpmn:serviceTask id="ServiceTask_1" name="ServiceTask_1" implementation="##external">
-      <bpmn:extensionElements>
-        <evil:Properties>
-          <evil:Property name="payload" value="Payload" />
-        </evil:Properties>
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_10jplq8</bpmn:incoming>
       <bpmn:outgoing>Flow_1f21fy8</bpmn:outgoing>
     </bpmn:serviceTask>

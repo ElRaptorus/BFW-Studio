@@ -91,7 +91,6 @@ function PropertiesErrorStartEvent(props: PaneComponentProps): React.JSX.Element
 
   return (
     <ErrorEventPropertiesRenderer
-      key={`element_message_${element.errorMessage}_element_code_${element.errorCode}`}
       element={element}
       bpmnDocumentModel={bpmnDocumentModel}
       errorCodes={allUniqueErrorCodes}

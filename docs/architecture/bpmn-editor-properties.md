@@ -111,6 +111,8 @@ Notable set handlers:
 
 The matching `getHandlers.activationCondition` returns `element.businessObject.activationCondition?.body`. Both handlers follow the same pattern as `transformation`/`conditionExpression`: write creates a `bpmn:FormalExpression { body }` (or `undefined` to remove the child), read returns the child's `body` text. The engine parses this element as trimmed body text (see `docs/architecture/engine.md` §Complex Gateway).
 
+`castCustomProperty` and `castDataPipelineMapping` stamp a stable `rowId` on the live moddle object via WeakMaps (`customPropertyRowIds`, `dataPipelineMappingRowIds`). Pane lists must use that `rowId` as the React `key`, not the live name/source/target text.
+
 ### Command Handlers
 
 #### UpdateLoopCharacteristicsHandler
@@ -190,23 +192,37 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 ### property group
 
 - `PropertiesElementInfo` (consolidated help text)
-- `PropertiesBasic`, `PropertiesDefinition`, `PropertiesProcess`
+- `PropertiesBasic`, `PropertiesDefinition`, `PropertiesProcess` — Process Name / Version / Id are `PaneProperty type="text"`. Correlation Key is `OneLineFeelEditor` (`#process-correlation-key-property`). Do **not** key that editor (or its wrapper) on `element.correlationKey`: `onChange` fires on blur, a value-based key remounts CodeMirror during the canvas click that commits, and leftover FEEL autocomplete can steal the click so `selectBpmnElementByIdAndWaitForElement('StartEvent_1')` fails. User Task due date / HTTP auth header already omit that key. Re-selecting the process after visiting another element remounts the pane from the model.
 - Task-specific: `PropertiesServiceTask`, `PropertiesReceiveTask`, `PropertiesSendTask`, `PropertiesScriptTask`, `PropertiesCallActivity`, `PropertiesManualTask`, `PropertiesBusinessRuleTask`, `PropertiesHttpTask`
 - User task: `PropertiesUserTask`, `PropertiesUserTaskFormSummary`, `PropertiesUserTaskAssignees`
 - All event panes (message, signal, error, escalation, conditional, timer, link)
 - `PropertiesConditionalFlow`
+- `PropertiesTextAnnotation` — native `PaneProperty type="textarea"` for `text` (not CodeMirror). Open-in-new-tab fragment is `BpmnTextFragmentRenderer` / `MultiLineCodeEditor`.
 - `PropertiesComplexGatewayActivationCondition` — FEEL multi-line editor for the Complex Gateway join **activation condition** (visible only when the selected Complex Gateway is a join or mixed gateway, i.e. more than one incoming sequence flow)
 - Loop/MI: `PropertiesLoop`, `PropertiesCompletionCondition`, `PropertiesInputCollection`, `PropertiesOutputCollection`, `PropertiesParallelMiSettings`, `PropertiesSequentialMiSettings`
 - Data Object: `PropertiesDataObject`
 - `PropertiesAdHocSubprocess` — ordering, cancel remaining instances, implementation, active elements, completion condition (visible only for `BpmnElementType.AdHocSubprocess`)
 
+#### Suggestion-select remount keys (Call Activity / Business Rule Task)
+
+`PropertyValueWithSuggestions` is **uncontrolled** (`defaultValue` once, not `value`). The search input starts empty so the menu is unfiltered; the selected option displays as `.react-select__single-value`. Do not seed `defaultInputValue` with the selected option and do not restore that option into the search input on blur/Escape — that filters the menu to the current value (Send Task then cannot pick a newly created name). Dependent fields remount **after** the parent ID commits; the control being edited must not include that ID in its own React `key`. The custom Input `onKeyDown` handles Escape (blur + clear search input) and **must** forward every other key to `inputProps.onKeyDown` so Enter selects `Use "…"`. `handleChange` with `action === 'clear'` (or a blank value) calls `onInputChange('')` and `onChange(null)` — `optionize` must not turn `''` into `{ value: '' }`, because react-select `hasValue()` is then true and the clear **X** stays on an empty field. Do **not** pass a controlled `value={selectedOption}`: that blocks the Creatable "Use …" option so typed text never becomes a create-option. Each CreatableSelect sets `instanceId` from `htmlId` so two suggestion controls on one pane do not share listbox IDs. `loadOptions` reads the suggestions Promise from a ref so a new Promise on parent render does not restart the async select.
+
+| Pane | Parent ID | Remount target |
+|------|-----------|----------------|
+| `PropertiesCallActivity` | `processModelId` | `PaneBody key={element_process_id_${processModelId}}`. Process `PaneProperty` has no value-based key. Start Event is keyed by `startEventId`. |
+| `PropertiesBusinessRuleTask` | `decisionRef` | Decision Ref has **no** value-based key. Decision Element ID, Result Variable, and Trace Unmatched Rules wrap in `Fragment key={element_decision_ref_${decisionRef}}`. `optionize('')` is `null` — an empty string is not a selected option (otherwise the X stays on a blank field). Clearing Decision Ref writes `newDecisionRef` and `newDecisionElementId` in one command. |
+| `PropertiesEscalationBoundaryEvent` | — | Renderer has **no** value-based key. Name and code `PaneProperty`s have none either. `getKeyForPropertiesPane` is `type__id` only (not `name`). A wrapper `key={element_code_${code}_element_name_${name}}` remounted the radios and re-initialized `matchAllEscalations` when Clear wrote `name: ''`, hiding the fields mid-`clearSuggestionSelect`. Tests click the specific-escalation **label** after Escape closes the context pad. |
+| Send / Receive / Message * / Signal * / Link * / Error End | — | The field being edited has **no** value-based key. `key={element_message_name_${message}}` (and the signal / link / error-code equivalents) remounted the control, seeded a filtered search box, and hid other options. |
+
+`htmlId` is on the CreatableSelect. `JumpToSymbolInSolutionLink` (`[data-test--jump-to-symbol-in-solution]`) lives in the `PaneProperty` label, not inside that id.
+
 ### scripting group
 
-- Data pipeline: `PropertiesInputMappings`, `PropertiesOutputMappings`, `PropertiesPayloadContract`, `PropertiesResultContract`
+- Data pipeline: `PropertiesInputMappings`, `PropertiesOutputMappings`, `PropertiesPayloadContract`, `PropertiesResultContract`. Mapping **source** is `OneLineFeelEditor`. Row React keys use a stable `rowId` stamped on the live `evil:InputMapping` / `evil:OutputMapping` moddle object (`BpmnDocumentElementAccess` WeakMap), not `${source}->${target}` (that remounts CodeMirror on blur). `htmlId`s still use the array index (`#data-pipeline-input-source-0`).
 - `PropertiesCorrelationRetrievalExpression` — FEEL editor for **throw-side** message events (`MessageIntermediateThrowEvent`, `MessageEndEvent`, `SendTask`). Catch-side correlation uses the process-level `evil:correlationKey`, not this extension.
 - `PropertiesDataOutputAssociationDataSource`
 - `DefaultCustomStartToken`, `PropertiesExamplePayload`, `PropertiesExampleResult`
-- `PropertiesCustomAttributes`
+- `PropertiesCustomAttributes` — name/value rows for `evil:property`. Names in `getInternalCustomPropertyNames` (e.g. `studio.defaultCustomStartToken` on Start Events) are hidden unless **Show internal custom properties** is on. Row React keys use a stable `rowId` stamped on the live moddle object (`BpmnDocumentElementAccess` WeakMap), not `property.name` (names can be blank or duplicated) and not the `.map` index (`@eslint-react/no-array-index-key` is an error). The empty add-row uses `custom-property-add-row-${elementId}`. Input `htmlId`s still use the full array index including hidden rows. Integration-test fixtures keep only rows that tests assert, Custom Attributes indexes, Timer Start `enabled`, or merge-diff payload. Default Configured Start Payload tests use `untyped-task.bpmn`. ProcessEngine leftovers (`module`/`method`/`params`/`role`, Task-level `enabled`, `payload` on `##external`) and unnamed sample diagrams are not stored in fixtures.
 
 #### Message Event Data Pipeline (D-MSG-1)
 
@@ -288,6 +304,10 @@ When no actions are configured, the `FormRenderer` shows a default "OK" button.
 
 The Form Builder opens as a fragment editor tab (no own model). It parses a URI of the form `fragment+bpmn.form-builder:<parentUri>#!fragmentId=<elementId>` and accesses the parent BPMN document model to read/write form data.
 
+Integration tests live in `studio/test/integration/bpmn-editor/form-builder.test.ts` and open `studio/test/fixtures/test-solution-bpmn/form-builder.bpmn` (`UserTask_1` with no form fields). The empty new-document template (`BpmnEmptyDocument.bpmn`) has no user task. `user-task.bpmn` already has `evil:formFields`, so the summary pane shows Edit Form instead of Create Form. Persist tests close only the focused Form Builder tab (`std.editor.closeFocusedDocument`), not `Test: Close all`, so the parent BPMN stays in memory with the written fields.
+
+There is no `data-test--actions-editor-add-button` and no shared `data-test--form-builder-toolbox-item`. Field kits use `[data-test--form-builder-toolbox-field="<type>"]` (`text`, `number`, `date`, `checkbox`, `select`, `radio`, `textarea`, `file`, `boolean`, `header`). Action presets use `[data-test--form-builder-toolbox-action="<preset>"]` (`confirm`, `ok`, `yes`, `no`, `cancel`, `custom`). Added actions render `[data-test--actions-editor-item]` in `ActionsEditor`.
+
 Command: `bpmn.formBuilder.open` — opens the form builder for the selected User Task element.
 
 ### Debugger Integration
@@ -350,6 +370,8 @@ A dual-mode editor component for panes that store JSON object data. Provides a s
 | `smartParseValue()` | Types string values: `"true"`/`"false"` → boolean, `"null"` → null, numeric strings → number |
 
 **Builder compatibility detection:** When the stored JSON contains nested objects or arrays, the component automatically starts in raw JSON mode because those structures cannot be represented as flat key-value pairs. Empty or flat-object values start in builder mode.
+
+**Test selectors:** `htmlAttributes` (for example `data-test--default-custom-start-token-input`) land on the outer wrapper, which also carries `data-test--kv-json-editor-mode` (`builder` or `json`). Builder rows use `[data-test--kv-builder-add-button]`, `[data-test--kv-builder-key-input="<index>"]`, and `[data-test--kv-builder-value-input="<index>"]`. The mode toggle is `[data-test--kv-json-editor-toggle]`. Empty/flat payloads have no `.cm-content` until the user switches to JSON. The open-in-new-tab fragment renderer is still `MultiLineCodeEditor`.
 
 **Used by:**
 
@@ -466,5 +488,11 @@ Event-definition carriers (`bpmn:ErrorEventDefinition`, `bpmn:MessageEventDefini
 | DefaultCustomStartToken | `studio/src/modules/bpmn-editor/panes/properties/DefaultCustomStartToken/PropertiesDefaultCustomStartToken.tsx` |
 | PropertiesExamplePayload | `studio/src/modules/bpmn-editor/panes/properties/ExamplePayload/PropertiesExamplePayload.tsx` |
 | PropertiesExampleResult | `studio/src/modules/bpmn-editor/panes/properties/ExampleResult/PropertiesExampleResult.tsx` |
+| PropertiesCallActivity | `studio/src/modules/bpmn-editor/panes/properties/CallActivity/PropertiesCallActivity.tsx` |
+| PropertiesProcess | `studio/src/modules/bpmn-editor/panes/properties/PropertiesProcess.tsx` |
+| PropertiesBusinessRuleTask | `studio/src/modules/bpmn-editor/panes/properties/BusinessRuleTask/PropertiesBusinessRuleTask.tsx` |
+| JumpToSymbolInSolutionLink | `studio/src/modules/bpmn-editor/panes/components/JumpToSymbolInSolutionLink.tsx` |
+| PropertiesTextAnnotation | `studio/src/modules/bpmn-editor/panes/properties/TextAnnotation/PropertiesTextAnnotation.tsx` |
+| BpmnTextFragmentRenderer | `studio/src/modules/bpmn-editor/open-in-new-tab-renderer/BpmnTextFragmentRenderer.tsx` |
 | PropertiesComplexGatewayActivationCondition | `studio/src/modules/bpmn-editor/panes/properties/ComplexGateway/PropertiesComplexGatewayActivationCondition.tsx` |
 | Complex Gateway help text | `studio/src/modules/bpmn-editor/panes/properties/ComplexGateway/PropertiesComplexGateway.md` |

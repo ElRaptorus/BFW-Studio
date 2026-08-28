@@ -1650,13 +1650,225 @@ The same race exists **inside** `activate()`: kitchen-sink registers `getStatus`
 
 ---
 
+## Custom Properties tests need user-visible `evil:property` rows
+
+**Symptom**: `bpmn/elements/property-panel/CustomAttributes` times out on `#custom-property-1-value` / `#custom-property-2-name`. The Start Event is selected and the Custom Properties pane is visible, but it only shows empty Name/Value fields. Default Configured Start Payload still lists keys such as `hallo` / `wurst`.
+
+**Why it happens**: `PropertiesCustomAttributes` hides names returned by `bpmn.customProperties.getInternalPropertiesByBpmnElementType` unless **Show internal custom properties** is on. For a Start Event that list includes `studio.defaultCustomStartToken`. Fixture cleanup dropped the original four user-visible rows (`name1`, `name2`, empty value, empty name) and later only re-added the internal start-token JSON. Input ids use the full array index including hidden rows, so the blank add-row became `#custom-property-1-*` and `#custom-property-2-name` never exists.
+
+**Correct approach**: Keep user-visible (non-`studio.*`) properties in `custom-properties.bpmn` at indices 0–3 so rename/value/delete tests hit real rows. Leave `studio.defaultCustomStartToken` after those rows for the start-payload pane. The empty add-row is then `#custom-property-5-*`. Do not treat the start-payload builder as a substitute for Custom Properties. React list keys use `property.rowId` (or `custom-property-add-row-${elementId}` for the empty add-row), not `property.name` — the fixture includes an empty name, and emptying a name for delete would otherwise collide with that row and the add-row. Input ids still use the full array index. Delete tests should `Enter` after `clearTextInput` so `FormInput.onCommit` runs; blur during a remount does not.
+
+---
+
+## Fixture `evil:property` rows that no test reads are ProcessEngine leftovers
+
+**Mistake**: Leaving `evil:Property` / `evil:property` rows in BPMN fixtures after the Studio moved those concerns onto dedicated extensions (`evil:httpUrl`, `evil:formFields`, Timer Start `enabled`, …). Typical leftovers: `module` / `method` / `params` / `role` (old service-task invocation), `payload` on a `##external` Service Task, and `enabled` on a generic `bpmn:task`.
+
+**Why it happens**: Fixtures were copied from ProcessEngine diagrams. Property-panel tests only select a subset of elements (e.g. `ServiceTask_2` for HTTP, `CycleTimerStartEvent_1` for `enabled`). Plugin tests that open `untyped-task.bpmn` only need Task shapes.
+
+**Correct approach**: Keep a custom-property row only when a test asserts its value, the Custom Attributes pane indexes it (`custom-properties.bpmn`), a Timer Start `enabled` checkbox starts from it (`timer-event.bpmn`), or it is the merge-diff payload (`test-solution-git-merge/*/process-properties.bpmn`). Current Studio internals that the UI still reads (`preferredControl` on User Tasks, `enabled` on Timer Start Events) stay. Do not keep ProcessEngine `module`/`method`/`params`/`role`, a stray Task-level `enabled`, unused sample diagrams (pre/post-script, bpmn.org examples), or BPMN files that no test names. Default Configured Start Payload tests open `untyped-task.bpmn`, not a dedicated start-token fixture. Form Builder tests open `form-builder.bpmn` (blank `UserTask_1`); they must not `Ctrl+N` a new untitled diagram.
+
+---
+
+## Form Builder tests cannot use a new untitled BPMN
+
+**Symptom**: `bpmn/form-builder: should open Form Builder from summary pane Create Form button` times out on `[data-element-id=UserTask_1]`. The Studio is left on `Untitled-1` with a pool and a start event.
+
+**Why it happens**: `bpmn.editor.newBpmnDocument` loads `BpmnEmptyDocument.bpmn` — collaboration, one lane, `StartEvent_1`. There is no user task. The Create Form button lives on `PropertiesUserTaskFormSummary`, which only displays for a selected `bpmn:userTask` with no fields. `user-task.bpmn` cannot substitute: it already has `evil:formFields`, so the pane shows Edit Form.
+
+**Correct approach**: Open `form-builder.bpmn` (`UserTask_1`, no form fields). Persist tests close the Form Builder fragment with `std.editor.closeFocusedDocument` so the parent BPMN stays loaded; `Test: Close all` force-closes every tab and discards in-memory form data.
+
+---
+
+## Form Builder has no actions-editor add button
+
+**Symptom**: `bpmn/form-builder: should add a form action preset` times out on `[data-test--actions-editor-add-button]` after the Form Builder Design tab is open. The canvas shows the empty-fields hint and "No actions (default OK button will be shown)".
+
+**Why it happens**: `ActionsEditor` only lists existing actions. Presets are added from `ToolboxSidebar` under Add Actions. The test selector was never rendered.
+
+**Correct approach**: Click `[data-test--form-builder-toolbox-action="confirm"]` (or another preset), then assert `[data-test--actions-editor-item]`. Field kits use `[data-test--form-builder-toolbox-field="<type>"]` (for example `text`). Do not invent an add button on the actions strip, and do not put a shared `data-test--form-builder-toolbox-item` on both kits.
+
+---
+
+## Do not clear a suggestion select before picking an existing option
+
+**Symptom**: `bpmn/elements/property-panel/SendTask: should change the selected message name` hangs after the new message is created. The Studio is waiting on `#send-task-message-property [data-test-option-value="newSendMessage"]`. The menu on the second Send Task is open and shows only the current name (`received-test-message`), highlighted.
+
+**Why it happens**: `PropertyValueWithSuggestions` used to seed `defaultInputValue` from the selected option, and message/signal `PaneProperty` used `key={element_message_name_${element.message}}`. Opening the menu then filtered by that search text, so a name created on the first element never appeared. Restoring `select.getValue()` into the search input on blur did the same on later opens. The 20s suite timeout was a leftover from when this file was `describe.skip`; it is shorter than `ASSERT_VISIBLE_TIMEOUT`.
+
+**Correct approach**: Keep the search input empty (`defaultValue` only; blur/Escape clear the search box, not refill it). Do not key the field being edited on the value it is editing. Create the name on the first element (`clearSuggestionSelect`, type the name, `commitSuggestionCreateOption` to click `Use "…"`). On the second element, click the control, click `[data-test-option-value="…"]`. Do not clear on the second element. Vitest `testTimeout` / `hookTimeout` live in `studio/vitest.config.mts` (`120_000`); do not set `{ timeout: … }` on `describe` blocks.
+
+---
+
+## Suggestion-select clear X must finish before typing
+
+**Symptom**: Error Start Event create times out on `[data-test-option-value="new error code"]`. The input shows `error codenew error code` and the create option is `Use "error codenew error code" …`. `#error-start-event-code-property` is the correct `htmlId`.
+
+**Why it happens**: While a value is selected, react-select hides that text behind `.react-select__single-value`. `clearValue()` only nulls the option (the X disappears) — it does not call `onInputChange('')`. If the search box still holds `"error code"`, typing `new error code` appends. `clearTextInput` does not work on CreatableSelect. Waiting for the X alone is not enough.
+
+**Correct approach**: `handleChange` with `action === 'clear'` calls `onInputChange('')`. Tests use `clearSuggestionSelect(propertySelector)`, which waits until the inner `.react-select__input-container input` is empty, then click the control and type.
+
+---
+
+## Suggestion-select selected value is `.react-select__single-value`
+
+**Symptom**: Error Start Event create works, then `assert.strictEqual(selectedErrorCode, 'new error code')` fails because `getValue` on `.react-select__input-container input` is `''`. Receive Task (and other message/signal) tests time out waiting for `#receive-task-message-property .react-select__single-value`.
+
+**Why it happens**: `ErrorStartEvent_2` has an empty error definition. After "Match a specific error", the CreatableSelect mounts with an empty search input. Clicking an option runs react-select `setValue`, which calls `onInputChange('')`. The committed text is in `.react-select__single-value`. Seeding `defaultInputValue` (or remounting on `key={element_message_name_…}`) used to copy the selected text into the search box and hide single-value.
+
+**Correct approach**: `getSuggestionSelectValue(propertySelector)` waits for the menu to close, then reads `.react-select__single-value` if it has text, otherwise the search input. Keep `getValue` on the search input only when asserting that the field is empty.
+
+---
+
+## Do not key a suggestion select on the value it is editing
+
+**Symptom**: Business Rule Task Decision Reference looks pre-filled (clear **X** visible) but the dropdown menu stays empty. Tests that re-click the already-selected `discount-rules` option time out, or later canvas clicks fail with `Could not select element with id StartEvent_1` because the menu overlay is still open.
+
+**Why it happens**: `PropertyValueWithSuggestions` is uncontrolled (`useState(defaultValue)` once) and does not re-read `propertyValue` after mount. Call Activity remounts **dependent** fields after the process ID **commits** (`PaneBody key={element_process_id_${processModelId}}`; the process `PaneProperty` itself has no value-based key). Business Rule Task used to put `key={element_decision_ref_${decisionRef}_${decisionElementId}}` on the Decision Ref control, so any model write (including re-selecting `implementation="dmn"` on a fixture that is already DMN) remounted the CreatableSelect while its menu was opening. `suggestions={getDecisionRefSuggestions()}` is also a new Promise every parent render, which restarts `loadOptions`.
+
+`business-rule-task.bpmn` already has `implementation="dmn"`, `evil:decisionRef` `discount-rules`, and `evil:decisionElementId` `Decision_Discount`. Re-clicking those values is not required and reopens a pre-filled menu.
+
+**Correct approach**: Key a wrapper (or only the Decision Element ID field) by the **committed** `decisionRef`, the same way Call Activity keys `PaneBody` by `processModelId`. Do not include `decisionRef` or `decisionElementId` on the Decision Ref `PaneProperty` key. Do not put `decisionElementId` on a sibling's key either — that remounts Decision Element ID when the async invalid-id clear runs, blurs Decision Ref, and wipes in-progress create text. Tests: open the file, select the BRT, wait for options or the jump link. Do not click implementation `dmn` or re-pick `discount-rules` unless the test is changing them.
+
+---
+
+## Two suggestion selects must not share a value-based wrapper key
+
+**Symptom**: Business Rule Task Decision Reference and Decision Element ID both go empty at once while typing `my-decision-table`. The create option `Use "my-decision-table" ...` never appears; `commitSuggestionCreateOption` times out on `#business-rule-task-decision-ref-property [data-test-option-value="my-decision-table"]`. The same pattern is Error Boundary / Error Start keyed `element_message_${errorMessage}_element_code_${errorCode}`.
+
+**Why it happens**: `PropertyValueWithSuggestions` does not re-read `propertyValue` after mount. A React `key` that includes a sibling's committed value remounts that sibling when the model updates. Remounting a neighbor blurs the CreatableSelect the user is typing in. The custom blur handler restored `select.getValue()` (empty after Clear) and closed the menu, so both displayed values vanished. `updateDecisionRef` writes `decisionRef` first, then asynchronously clears an invalid `decisionElementId` — a second key change while the test is already typing. `suggestions={getDecisionRefSuggestions()}` also allocated a new Promise on every parent render.
+
+**Correct approach**: Wrap dependents in a fragment keyed only by the committed parent ID (`element_decision_ref_${decisionRef}`). Leave the control being edited without a value-based key. Do not key Error Boundary / Error Start / Escalation Boundary renderers on both code and name/message — that remounts match-all radios and hides the fields. `PropertyValueWithSuggestions` uses `instanceId={htmlId}` and reads suggestions through a ref. Clear must not leave an empty selected option (`optionize('')` is `null`).
+
+---
+
+## Suggestion-select Clear must not commit an empty option
+
+**Symptom**: Business Rule Task `should clear Decision Element ID when Decision Reference changes` times out waiting for `#business-rule-task-decision-ref-property .react-select__clear-indicator` to disappear. The Decision Reference field looks empty but the **X** remains. Decision Element ID still shows `Decision_Discount`.
+
+**Why it happens**: `onCommit` maps a cleared CreatableSelect to `''`. `optionize('')` used to return `{ label: '', value: '' }`. react-select `hasValue()` is true for that option (`cleanValue` wraps any non-null object in a one-element array), so the X stays on a blank control. The DMN fields fragment was keyed by `decisionRef`, so Clear remounted Decision Ref with that empty option. Decision Element ID only remounts when `decisionRef` changes — clearing the ref asynchronously did not remount it, so `Decision_Discount` stayed on screen.
+
+**Correct approach**: `optionize` of a blank string is `null`. `handleChange` on clear / blank calls `onInputChange('')` then `onChange(null)`. Do not switch the select to a controlled `value={…}` — that blocks Creatable create-options. Decision Ref is not inside `Fragment key={element_decision_ref_…}`. Clearing Decision Ref writes `newDecisionRef: ''` and `newDecisionElementId: ''` in one command so the keyed dependents remount empty.
+
+---
+
+## Context pad can intercept property-pane radio clicks
+
+**Symptom**: `EscalationBoundaryEvent: should change an escalation boundary event name` times out (`Test timed out in 80000ms`) with no "still not displayed" message. The boundary is selected, **Match all escalations** is still on, and `#escalation-boundary-event-match-a-specific-escalation` was never clicked.
+
+**Why it happens**: Selecting a BPMN element opens the bpmn-js context pad. `clickOn('#…')` on the native radio waits until that pixel is unobstructed. The pad sits next to a boundary on the right of the diagram and covers the tiny `form-check-input`. `waitForDisplayed` already passed (the radios are in the pane). The test then dies at `testTimeout` instead of a click-intercept error. `getKeyForPropertiesPane` used to be `type__id__name`; for Escalation that `name` is the overlay value, so a later Clear remounted the pane and flipped match-all back on.
+
+**Correct approach**: After the canvas select, `sendKeyboardInput(['Escape'])` to close the pad, then click `[data-test--escalation-boundary-event-specific-escalation-radio]` on the **label**, not the `#id` input. `getKeyForPropertiesPane` is `type__id` only. Do not put Escape inside `selectBpmnElementByIdAndWaitForElement`.
+
+---
+
+## Do not remount match-all radios when a suggestion select clears
+
+**Symptom**: `EscalationBoundaryEvent: should change an escalation boundary event name` times out (120s) inside `clearSuggestionSelect('#escalation-boundary-event-name')`. The extra click on **Match a specific escalation** after Clear never runs.
+
+**Why it happens**: `PropertiesEscalationBoundaryEvent` used `key={element_code_${code}_element_name_${name}}` on the renderer. Clear commits `name: ''`, the key changes, React remounts, and `useState` re-initializes `matchAllEscalations` from the live fields. The fixture `escalation-event.bpmn` stores `<bpmn:escalation code="boundary">`; the caster reads `escalationRef.escalationCode`, so the Code field is already blank. After Clear both fields are blank → `matchAllEscalations` becomes `true` → name/code unmount. `clearSuggestionSelect` then polls an input that no longer exists. Error Boundary / Error Start already keep `matchAllErrors` in class state and do not key the renderer on both fields. Escalation End / Start / Intermediate Throw have no match-all radios; they only needed the same null-safe `onCommit` and no value-based keys on the fields being edited.
+
+**Correct approach**: Leave the Escalation Boundary renderer without a value-based key. `getKeyForPropertiesPane` is `type__id` only — including `name` remounts this pane when the escalation name commits. `matchAllEscalations` is `useState` once; Clear must not hide the fields the user is editing. Stay uncontrolled in `PropertyValueWithSuggestions` — a controlled `value={null}` on Clear was the wrong fix for the X-stays-visible bug (it blocks Creatable "Use …"). The same rule applies to Send / Receive / Message / Signal / Link / Error End: do not key the field being edited on its current value. Tests: close the context pad, click the specific-escalation **label**, `clearSuggestionSelect` then type then `commitSuggestionCreateOption`.
+
+---
+
+## Suggestion-select Enter must not restore `props.value`
+
+**Symptom**: Choosing a suggestion with the mouse keeps the value. Confirming with Enter (or Enter after a click) clears the field. The clear **X** can still be visible. `getValue` on `.react-select__input-container input` is `''`.
+
+**Why it happens**: After Enter, react-select selects the option and clears the search input. The custom Input `onBlur` / Escape handler then called `onInputChange` with `creatableSelect.props.value`, which used to be `undefined` (the select was `defaultValue`-only), so it wrote `''` into the input. Mouse clicks on an option keep the input focused (react-select `preventDefault` on mousedown) and skip that restore, so `defaultInputValue` still shows. Wrapping the Decision Ref control in `key={decisionRef}` remounts it on the same commit and races with that empty restore. `updateDecisionRef` also awaited DMN lookups **before** writing `decisionRef`, so the model lagged behind the cleared input.
+
+**Correct approach**: Do not restore `props.value` (it is `undefined` on an uncontrolled select). Blur/Escape clear the search input so `.react-select__single-value` shows the selection and the next menu open is unfiltered. Set `blurInputOnSelect`. Ignore empty `create-option` commits. Write `decisionRef` first, then clear an invalid Decision Element ID. Remount only the Decision Element ID field when `decisionRef` commits — not the Decision Ref control itself. Tests that only need to prove suggestions exist should open the menu, assert `[data-test-option-value]`, and `sendKeyboardInput(['Escape'])`; do not click the already-selected option and press Enter. Create a new id by typing then `commitSuggestionCreateOption` (click `Use "…"`) — the same as Call Activity / Escalation. Do not `waitForNotVisible('.react-select__control--menu-is-open')` after typing Enter alone.
+
+---
+
+## Suggestion-select Input `onKeyDown` must forward to react-select
+
+**Symptom**: Send Task / Error Boundary (and other CreatableSelect) tests hang on `waitForNotVisible('.react-select__control--menu-is-open')` after typing a new name plus Enter. The screenshot still shows `Use "newSendMessage" ...` with the menu open.
+
+**Why it happens**: `PropertyValueWithSuggestions` wraps react-select `components.Input` to handle Escape (blur + clear the search input). The custom `onKeyDown` used to replace `inputProps.onKeyDown` entirely, so Enter / arrows never reached react-select. Typing opened the create option; Enter did nothing.
+
+**Correct approach**: On Escape, run the custom blur/clear handler and return. For every other key, call `inputProps.onKeyDown`. Tests that create a new value should type without Enter, then `commitSuggestionCreateOption(propertySelector, createdValue)`.
+
+---
+
+## `sendKeyboardInput(['escape'])` types the word "escape"
+
+**Symptom**: A suggestion-select test fails with `'Decision_Discountescape' !== 'Decision_Discount'` (or `discount-rulesescape`) after supposedly closing the menu with Escape.
+
+**Why it happens**: `InputSimulator.getKeyToPress` maps `'enter'` to the Enter key, but any other string is sent as characters. `'escape'` is six keystrokes. WebDriverIO's named key is `'Escape'` (used in DMN tests). `'Backspace'` and `'Tab'` are the same class.
+
+**Correct approach**: Use `sendKeyboardInput(['Escape'])`. `InputSimulator` now also maps lowercase `'escape'` to that key.
+
+---
+
+## Jump-to-symbol link is in the PaneProperty label, not inside `htmlId`
+
+**Symptom**: `bpmn/elements/property-panel/BusinessRuleTask: should show Open in new tab link for valid Decision Reference` times out on `#business-rule-task-decision-ref-property a[href="#"]`.
+
+**Why it happens**: `PaneProperty type="text-with-suggestions"` puts `htmlId` on the CreatableSelect. `JumpToSymbolInSolutionLink` renders `<a href="#">Open in new tab</a>` in the **label**, a sibling of that select. Call Activity uses the same layout (`TargetProcessLinkWithLabel`). The anchor is never a descendant of `#business-rule-task-decision-ref-property`.
+
+**Correct approach**: Assert `[data-test--jump-to-symbol-in-solution]` (scope with the pane `data-test--pane` if several jump links could exist). The fixture already has a valid Decision Reference; do not re-select it to make the link appear.
+
+---
+
 ## Integration tests must clear before typing a replacement
 
 **Symptom**: A property-pane test fails with a concatenated value such as `'10100' !== '100'`, or a FEEL/CodeMirror assertion includes the fixture expression plus the typed replacement.
 
 **Why it happens**: Monaco often overwrote the document on the first keystroke. CodeMirror 6 and native `<input>` fields insert at the caret. Clicking the middle of a filled field (fixture `loopMaximum="10"`, `evil:LoopInterval` `PT1S`, existing FEEL) and typing `"100"` appends.
 
-**Correct approach**: Native pane inputs — `clearTextInput` then type (see the parallel MI max-iterations test). CodeMirror / FEEL — `clickOnCodeEditor` / `clearCodeEditor` on `StudioAgent` (select-all + backspace). JSON property panes such as Data Object value contract are `MultiLineCodeEditor`, not `<input>` — do not `clickOn` the wrapper and `getValue`. DMN — `setDmnPropertyValue` already clears. Await `StudioAgent.maximize()`; `maximizeWindow` is best-effort because CI ChromeDriver can reject Electron `execute/sync`.
+**Correct approach**: Native pane inputs — `clearTextInput` then type, then read with `getValue` (see the parallel MI max-iterations test and the MI element-variable tests). `StudioAgent` has no `setInputValue` / `getInputValue`. CodeMirror / FEEL — `clickOnCodeEditor` / `clearCodeEditor` on `StudioAgent` (select-all + backspace). JSON property panes such as Data Object value contract are `MultiLineCodeEditor`, not `<input>` — do not `clickOn` the wrapper or `getValue`. Default Configured Start Payload / Example Payload / Example Result are `KeyValueJsonEditor`: empty or flat JSON starts in builder mode with no `.cm-content`. Text Annotation is `PaneProperty type="textarea"` (`#text-annotation-text-property`) — `getCodeEditorText` looks for `.cm-content` and fails; the open-in-new-tab fragment is still CodeMirror. Process Correlation Key is the opposite: `OneLineFeelEditor`, so `getValue('#process-correlation-key-property')` is `''`. DMN — `setDmnPropertyValue` already clears. Await `StudioAgent.maximize()`; `maximizeWindow` is best-effort because CI ChromeDriver can reject Electron `execute/sync`.
+
+---
+
+## Process Correlation Key is OneLineFeelEditor, not a native input
+
+**Symptom**: `bpmn/elements/property-panel/Process: should change a process correlation key` fails with `'' !== 'my-correlation-key'` on `getValue('#process-correlation-key-property')`.
+
+**Why it happens**: Process Id / Name / Version are `PaneProperty type="text"`. Correlation Key is `OneLineFeelEditor` (`htmlId` on the wrapper `div`). `getValue` reads a native input `value`; that div has none. `clearTextInput` / `clickOn` on the wrapper do not type into `.cm-content`. Enter on one-line FEEL blurs instead of inserting.
+
+**Correct approach**: `clickOnCodeEditor('#process-correlation-key-property')`, type without `enter`, read with `getCodeEditorText`. Same pattern as User Task due date. Multi-line `FeelEditor` fields (Conditional Flow, Script Task, HTTP body, loop condition, …) also must not send `enter` — it inserts a newline rather than committing.
+
+---
+
+## Do not key OneLineFeelEditor on the value it is editing
+
+**Symptom**: `bpmn/elements/property-panel/Process: should change a process correlation key` fails with `Could not select element with id StartEvent_1`. The fixture `process-root.bpmn` **does** contain that start event. Process Id / Name / Version tests on the same file succeed.
+
+**Why it happens**: `OneLineFeelEditor` is uncontrolled (`initialValue` on mount; `onChange` on blur / unmount). `PropertiesProcess` used `key={process-correlation-key-${element.correlationKey}}`. Typing does not change the key; the canvas click that unfocuses the editor does. Blur writes the model, the key changes, React destroys CodeMirror while `selectBpmnElementById` is clicking `StartEvent_1`. A FEEL autocomplete tooltip can remain as an overlay and eat the click for all five retries. Input / Output mapping rows used `key={${source}->${target}}`, which remounts the source editor on the same blur. User Task due date, HTTP auth header, Sequential MI loop break, and Correlation Retrieval Expression wrap `OneLineFeelEditor` **without** a value-based key.
+
+**Correct approach**: Do not put the live FEEL text in the React `key`. Correlation Key has no wrapper key. Mapping rows use a `rowId` stamped on the live `evil:InputMapping` / `evil:OutputMapping` moddle object (`BpmnDocumentElementAccess` WeakMap), same pattern as Custom Attributes. After typing into any `OneLineFeelEditor`, `sendKeyboardInput(['Escape'])` to close autocomplete before a canvas click. Re-selecting another element remounts the pane from the committed model.
+
+---
+
+## Text Annotation pane is a textarea, not CodeMirror
+
+**Symptom**: `bpmn/elements/property-panel/TextAnnotation` fails with `Can't call getText on element with selector "#text-annotation-text-property .cm-content"`. The pane shows two stacked **Text** labels above a native multiline field.
+
+**Why it happens**: `PropertiesTextAnnotation` wrapped `PaneProperty type="textarea" label="Text"` in an extra `<div className="form-group"><label>Text</label>…`. `PaneProperty` already renders that label and `form-group`. The tests called `clearCodeEditor` / `getCodeEditorText`, which require `.cm-content`. Only the open-in-new-tab fragment (`#bpmn-text-fragment-editor`) is CodeMirror. Sending `enter` into the textarea would insert a newline.
+
+**Correct approach**: One `PaneProperty` in `PaneBody` (no outer label). Tests: `clearTextInput` + `sendKeyboardInput` + `getValue` on `#text-annotation-text-property`. Use `clickOnCodeEditor` only on the fragment editor.
+
+---
+
+## Default Configured Start Payload is a key-value builder, not CodeMirror
+
+**Symptom**: `bpmn/elements/property-panel/DefaultCustomStartToken: should change a default custom start token of an element` times out on `[data-test--default-custom-start-token-input] .cm-content` after the Start Event is selected and the pane is visible.
+
+**Why it happens**: The pane stores `studio.defaultCustomStartToken` through `KeyValueJsonEditor`. An empty or flat JSON object starts in builder mode (`+ Add entry` and native key/value inputs). CodeMirror is mounted only after **Switch to JSON**, or when the stored value is nested/invalid JSON. The open-in-new-tab fragment is still `MultiLineCodeEditor`.
+
+**Correct approach**: Add a row with `[data-test--kv-builder-add-button]`, type `[data-test--kv-builder-key-input="<index>"]` / `[data-test--kv-builder-value-input="<index>"]`, and read with `getValue`. Do not call `clickOnCodeEditor` on `[data-test--default-custom-start-token-input]` while `data-test--kv-json-editor-mode="builder"`.
+
+---
+
+## Tests must not access `StudioAgent.testDriver`
+
+**Symptom**: TypeScript error `Property 'testDriver' is protected and only accessible within class 'StudioAgent' and its subclasses` in an integration test (for example `dmn/elements/delete` calling `studioAgent.testDriver.client.execute` to read `model.elements.getAllIds()`).
+
+**Why it happens**: `testDriver` is the WebDriverIO session. Tests are supposed to go through `StudioAgent` / `StudioAgentDmnExtension` / `StudioAgentBpmnExtension`. Read-only `execute()` belongs inside those helpers, not in `*.test.ts`. Keyboard already has `sendKeyboardInput`.
+
+**Correct approach**: Delete a selected DMN/BPMN shape with `sendKeyboardInput(['Backspace'])`, then `waitForNotVisible('[data-element-id=…]')` (and pane assertions). If a new renderer query is required, add a typed method on the agent or extension.
 
 ---
 

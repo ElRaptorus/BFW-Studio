@@ -82,6 +82,7 @@ export function KeyValueBuilder(props: KeyValueBuilderProps): React.JSX.Element 
             className="form-control kv-builder__input kv-builder__col-key"
             placeholder={props.keyPlaceholder ?? 'Key'}
             value={entry.key}
+            data-test--kv-builder-key-input={String(index)}
             onChange={(event) => updateEntry(index, 'key', event.target.value)}
           />
           <span className="kv-builder__separator">:</span>
@@ -90,6 +91,7 @@ export function KeyValueBuilder(props: KeyValueBuilderProps): React.JSX.Element 
             className="form-control kv-builder__input kv-builder__col-value"
             placeholder={props.valuePlaceholder ?? 'Value'}
             value={entry.value}
+            data-test--kv-builder-value-input={String(index)}
             onChange={(event) => updateEntry(index, 'value', event.target.value)}
           />
           <span className="kv-builder__remove" onClick={() => removeEntry(index)}>
@@ -100,7 +102,7 @@ export function KeyValueBuilder(props: KeyValueBuilderProps): React.JSX.Element 
 
       {entries.length === 0 && props.emptyMessage && <div className="kv-builder__empty">{props.emptyMessage}</div>}
 
-      <button type="button" className="kv-builder__add-button" onClick={addEntry}>
+      <button type="button" className="kv-builder__add-button" data-test--kv-builder-add-button onClick={addEntry}>
         + Add entry
       </button>
 

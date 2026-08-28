@@ -11,7 +11,7 @@ import type { StudioAgent } from '../../StudioAgent';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 
-describe('plugin/bpmn-permissions', { timeout: 120_000 }, () => {
+describe('plugin/bpmn-permissions', () => {
   /**
    * Tests the tiered permission model:
    * - bpmn-perm-low: ['bpmn'] — read-only access, no modeling, no renderer

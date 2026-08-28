@@ -39,6 +39,8 @@ export const customRules = {
   // -- React (@eslint-react) --
   // Keep missing-key at warn to match the previous react/jsx-key policy.
   '@eslint-react/no-missing-key': 'warn',
+  // recommended-typescript ships this as warn; list identity must not be the map index.
+  '@eslint-react/no-array-index-key': 'error',
   // Official eslint-plugin-react-hooks owns compiler / Rules-of-React coverage.
   // recommended-typescript ships overlapping twins; turn those off so suppressions
   // and docs stay on the react-hooks/* names.

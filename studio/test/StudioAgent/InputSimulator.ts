@@ -57,6 +57,10 @@ export default class InputSimulator {
       return '\uE007';
     }
 
+    if (key.toLowerCase() === 'escape') {
+      return 'Escape';
+    }
+
     return key;
   }
 

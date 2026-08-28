@@ -80,7 +80,6 @@ function PropertiesSignalBoundaryEvent(props: PaneComponentProps): React.JSX.Ele
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_signal_name_${element.signal}`}
         type="text-with-suggestions"
         htmlId="signal-boundary-event-signal-property"
         label="Signal"

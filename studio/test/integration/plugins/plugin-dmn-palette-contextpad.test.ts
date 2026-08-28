@@ -36,7 +36,7 @@ async function hasContextPadEntry(
   );
 }
 
-describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
+describe('plugin/dmn-palette-contextpad', () => {
   describe('permission gating — dmn.modelling required', () => {
     let studioAgent: StudioAgentDmnExtension;
 
@@ -204,7 +204,7 @@ describe('plugin/dmn-palette-contextpad', { timeout: 120_000 }, () => {
     });
 
     it('dynamic context pad entry with empty elementIds does NOT appear', async () => {
-      // `vitest.config.ts` shuffles test order within a describe block, so this test
+      // `vitest.config.mts` shuffles test order within a describe block, so this test
       // cannot assume it runs before the "updateContextPadEntry" tests below that
       // mutate the same 'view-requirements' entry — reset it back to its manifest-
       // declared empty allowlist first.

@@ -1,5 +1,6 @@
 import * as assert from 'node:assert';
 import * as path from 'path';
+import { Key } from 'webdriverio';
 
 import { OsSpecificKeystroke } from './OsSpecificKeystroke';
 import type { TestContext } from './StudioAgent';

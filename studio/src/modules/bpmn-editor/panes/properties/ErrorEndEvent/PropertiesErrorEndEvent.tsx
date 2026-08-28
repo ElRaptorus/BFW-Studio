@@ -90,7 +90,6 @@ function PropertiesErrorEndEvent(props: PaneComponentProps): React.JSX.Element {
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_code_${element.errorCode}`}
         type="text-with-suggestions"
         htmlId="error-end-event-code-property"
         label="Error Code"
@@ -101,7 +100,6 @@ function PropertiesErrorEndEvent(props: PaneComponentProps): React.JSX.Element {
         isClearable={true}
       />
       <PaneProperty
-        key={`element_message_${element.errorMessage}`}
         type="text-with-suggestions"
         htmlId="error-end-event-message-property"
         label="Error Message"

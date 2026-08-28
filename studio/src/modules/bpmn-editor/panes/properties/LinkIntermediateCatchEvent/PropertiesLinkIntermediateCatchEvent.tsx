@@ -80,7 +80,6 @@ function PropertiesLinkIntermediateCatchEvent(props: PaneComponentProps): React.
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_link_name_${element.link}`}
         type="text-with-suggestions"
         htmlId="link-intermediate-catch-event-link-property"
         label="Name"

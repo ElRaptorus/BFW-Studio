@@ -5,7 +5,7 @@ import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';
 import type { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 import { createAndStartStudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 
-describe('dmn/smoke', { timeout: 120_000 }, () => {
+describe('dmn/smoke', () => {
   let studioAgent: StudioAgentDmnExtension;
 
   beforeAll(async () => {

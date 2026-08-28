@@ -90,24 +90,22 @@ function PropertiesEscalationIntermediateThrowEvent(props: PaneComponentProps): 
   return (
     <PaneBody>
       <PaneProperty
-        key={`escalation-code_${element.escalationCode}`}
         htmlId="escalation-intermediate-throw-event-code"
         label="EscalationCode"
         type="text-with-suggestions"
         suggestions={allUniqueEscalationCodes}
         value={element.escalationCode}
-        onCommit={(newValue: any) => updateEscalation({ escalationCode: newValue?.value ?? '' })}
+        onCommit={(newValue: any) => updateEscalation({ escalationCode: newValue?.value ?? newValue ?? '' })}
         isClearable={true}
       />
       <PaneProperty
-        key={`escalation-name_${element.name}`}
         htmlId="escalation-intermediate-throw-event-name"
         label="Escalation Name"
         type="text-with-suggestions"
         suggestions={allUniqueEscalationNames}
         placeholder="Type escalation name ..."
         value={element.name}
-        onCommit={(newValue: any) => updateEscalation({ name: newValue?.value ?? '' })}
+        onCommit={(newValue: any) => updateEscalation({ name: newValue?.value ?? newValue ?? '' })}
         isClearable={true}
       />
     </PaneBody>

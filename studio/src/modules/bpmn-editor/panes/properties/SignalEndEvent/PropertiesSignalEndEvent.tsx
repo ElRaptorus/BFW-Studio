@@ -78,7 +78,6 @@ function PropertiesSignalEndEvent(props: PaneComponentProps): React.JSX.Element 
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_signal_name_${element.signal}`}
         type="text-with-suggestions"
         htmlId="signal-end-event-signal-property"
         label="Signal"

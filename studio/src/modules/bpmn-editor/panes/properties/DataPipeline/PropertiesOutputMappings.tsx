@@ -7,6 +7,7 @@ import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import type { BpmnDataMapping } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React, { useEffect, useState } from 'react';
 
@@ -18,11 +19,6 @@ import {
   getKeyForPropertiesPane,
   shouldBeDisplayedForOutboundPipelineElement,
 } from '../../PropertiesPaneFunctions';
-
-type DataPipelineMapping = {
-  source: string;
-  target: string;
-};
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,
@@ -109,7 +105,7 @@ function OutputMappingsContent(props: PaneComponentProps): React.JSX.Element {
   }, [editorDocument, commands]);
 
   const dataPipeline = bpmnDocumentModel.elements.getElementPropertyValue(element.id, 'dataPipeline') as any;
-  const mappings: DataPipelineMapping[] = dataPipeline?.outputMappings ?? [];
+  const mappings: BpmnDataMapping[] = dataPipeline?.outputMappings ?? [];
 
   const updateSource = (index: number, source: string): void => {
     bpmnDocumentModel.elements.setElementProperty(element.id, 'dataPipeline', {
@@ -141,7 +137,7 @@ function OutputMappingsContent(props: PaneComponentProps): React.JSX.Element {
     <div className="form-group">
       {mappings.map((mapping, index) => (
         <div
-          key={`${mapping.source}->${mapping.target}`}
+          key={mapping.rowId}
           className="form-group"
           style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           data-test--data-pipeline-mapping-row="output"

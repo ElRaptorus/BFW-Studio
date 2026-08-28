@@ -24,7 +24,11 @@ export function JumpToSymbolInSolutionLink(props: JumpToSymbolInSolutionLinkProp
   if (symbol?.uri) {
     return (
       <small>
-        <a href="#" onClick={cmd('std.editor.gotoSymbolInDocument', [symbol.uri, symbol.id])}>
+        <a
+          href="#"
+          data-test--jump-to-symbol-in-solution
+          onClick={cmd('std.editor.gotoSymbolInDocument', [symbol.uri, symbol.id])}
+        >
           Open in new tab
         </a>
       </small>

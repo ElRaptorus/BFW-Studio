@@ -62,7 +62,7 @@ const MESSAGE_INTERMEDIATE_CATCH_EVENT_PANE =
 const LOOP_CONFIGURATION_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesLoop"]';
 const AD_HOC_SUBPROCESS_PANE = '[data-test--pane="bpmn/panes/properties/PropertiesAdHocSubprocess"]';
 
-describe('bpmn/elements', { timeout: 20_000 }, () => {
+describe('bpmn/elements', () => {
   let studioAgent: StudioAgentBpmnExtension;
 
   beforeAll(async () => {
@@ -106,11 +106,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#receive-task-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#receive-task-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#receive-task-message-property');
     await studioAgent.clickOn('#receive-task-message-property');
-
-    await studioAgent.sendKeyboardInput([...newMessageName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newMessageName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#receive-task-message-property', newMessageName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(receiveTask2, RECEIVE_TASK_PANE, ASSERT_VISIBLE_TIMEOUT);
 
@@ -120,10 +119,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.clickOn(`#receive-task-message-property [data-test-option-value="${newMessageName}"]`);
 
-    await studioAgent.sendKeyboardInput(['enter']);
-    const selectedMessage = await studioAgent.getValue(
-      '#receive-task-message-property .react-select__input-container input',
-    );
+    const selectedMessage = await studioAgent.getSuggestionSelectValue('#receive-task-message-property');
 
     assert.strictEqual(selectedMessage, newMessageName);
 
@@ -150,11 +146,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#message-boundary-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#message-boundary-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#message-boundary-event-message-property');
     await studioAgent.clickOn('#message-boundary-event-message-property');
-
-    await studioAgent.sendKeyboardInput([...newMessageName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newMessageName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#message-boundary-event-message-property', newMessageName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       boundaryEvent2,
@@ -168,9 +163,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.clickOn(`#message-boundary-event-message-property [data-test-option-value="${newMessageName}"]`);
 
-    const selectedMessage = await studioAgent.getValue(
-      '#message-boundary-event-message-property .react-select__input-container input',
-    );
+    const selectedMessage = await studioAgent.getSuggestionSelectValue('#message-boundary-event-message-property');
 
     assert.strictEqual(selectedMessage, newMessageName);
 
@@ -197,11 +190,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#message-start-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#message-start-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#message-start-event-message-property');
     await studioAgent.clickOn('#message-start-event-message-property');
-
-    await studioAgent.sendKeyboardInput([...newMessageName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newMessageName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#message-start-event-message-property', newMessageName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       startEvent2,
@@ -214,9 +206,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#message-start-event-message-property');
 
     await studioAgent.clickOn(`#message-start-event-message-property [data-test-option-value="${newMessageName}"]`);
-    const selectedMessage = await studioAgent.getValue(
-      '#message-start-event-message-property .react-select__input-container input',
-    );
+    const selectedMessage = await studioAgent.getSuggestionSelectValue('#message-start-event-message-property');
 
     assert.strictEqual(newMessageName, selectedMessage);
 
@@ -257,11 +247,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#message-end-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#message-end-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#message-end-event-message-property');
     await studioAgent.clickOn('#message-end-event-message-property');
-
-    await studioAgent.sendKeyboardInput([...newMessageName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newMessageName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#message-end-event-message-property', newMessageName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(endEvent2, MESSAGE_END_EVENT_PANE, ASSERT_VISIBLE_TIMEOUT);
 
@@ -270,9 +259,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#message-end-event-message-property');
 
     await studioAgent.clickOn(`#message-end-event-message-property [data-test-option-value="${newMessageName}"]`);
-    const selectedMessage = await studioAgent.getValue(
-      '#message-end-event-message-property .react-select__input-container input',
-    );
+    const selectedMessage = await studioAgent.getSuggestionSelectValue('#message-end-event-message-property');
 
     assert.strictEqual(newMessageName, selectedMessage);
 
@@ -410,11 +397,13 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#message-intermediate-throw-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#message-intermediate-throw-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#message-intermediate-throw-event-message-property');
     await studioAgent.clickOn('#message-intermediate-throw-event-message-property');
-
-    await studioAgent.sendKeyboardInput([...newMessageName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newMessageName.split('')]);
+    await studioAgent.commitSuggestionCreateOption(
+      '#message-intermediate-throw-event-message-property',
+      newMessageName,
+    );
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       intermediateThrowEvent2,
@@ -427,8 +416,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn(
       `#message-intermediate-throw-event-message-property [data-test-option-value="${newMessageName}"]`,
     );
-    const selectedMessage = await studioAgent.getValue(
-      '#message-intermediate-throw-event-message-property .react-select__input-container input',
+    const selectedMessage = await studioAgent.getSuggestionSelectValue(
+      '#message-intermediate-throw-event-message-property',
     );
 
     assert.strictEqual(newMessageName, selectedMessage);
@@ -454,11 +443,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#signal-boundary-event-signal-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#signal-boundary-event-signal-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#signal-boundary-event-signal-property');
     await studioAgent.clickOn('#signal-boundary-event-signal-property');
-
-    await studioAgent.sendKeyboardInput([...newSignalName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newSignalName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#signal-boundary-event-signal-property', newSignalName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       boundaryEvent2,
@@ -470,9 +458,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#signal-boundary-event-signal-property');
     await studioAgent.clickOn(`#signal-boundary-event-signal-property [data-test-option-value="${newSignalName}"]`);
 
-    const selectedSignal = await studioAgent.getValue(
-      '#signal-boundary-event-signal-property .react-select__input-container input',
-    );
+    const selectedSignal = await studioAgent.getSuggestionSelectValue('#signal-boundary-event-signal-property');
 
     assert.strictEqual(selectedSignal, newSignalName);
 
@@ -497,11 +483,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#signal-start-event-signal-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#signal-start-event-signal-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#signal-start-event-signal-property');
     await studioAgent.clickOn('#signal-start-event-signal-property');
-
-    await studioAgent.sendKeyboardInput([...newSignalName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newSignalName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#signal-start-event-signal-property', newSignalName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       startEvent2,
@@ -512,9 +497,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertVisible('#signal-start-event-signal-property', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOn('#signal-start-event-signal-property');
     await studioAgent.clickOn(`#signal-start-event-signal-property [data-test-option-value="${newSignalName}"]`);
-    const selectedSignal = await studioAgent.getValue(
-      '#signal-start-event-signal-property .react-select__input-container input',
-    );
+    const selectedSignal = await studioAgent.getSuggestionSelectValue('#signal-start-event-signal-property');
 
     assert.strictEqual(selectedSignal, newSignalName);
 
@@ -535,20 +518,17 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.selectBpmnElementByIdAndWaitForElement(endEvent1, SIGNAL_END_EVENT_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertVisible('#signal-end-event-signal-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#signal-end-event-signal-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#signal-end-event-signal-property');
     await studioAgent.clickOn('#signal-end-event-signal-property');
-
-    await studioAgent.sendKeyboardInput([...newSignalName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newSignalName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#signal-end-event-signal-property', newSignalName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(endEvent2, SIGNAL_END_EVENT_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertVisible('#signal-end-event-signal-property', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOn('#signal-end-event-signal-property');
     await studioAgent.clickOn(`#signal-end-event-signal-property [data-test-option-value="${newSignalName}"]`);
-    const selectedSignal = await studioAgent.getValue(
-      '#signal-end-event-signal-property .react-select__input-container input',
-    );
+    const selectedSignal = await studioAgent.getSuggestionSelectValue('#signal-end-event-signal-property');
 
     assert.strictEqual(selectedSignal, newSignalName);
 
@@ -573,11 +553,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#signal-intermediate-throw-event-signal-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#signal-intermediate-throw-event-signal-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#signal-intermediate-throw-event-signal-property');
     await studioAgent.clickOn('#signal-intermediate-throw-event-signal-property');
-
-    await studioAgent.sendKeyboardInput([...newSignalName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newSignalName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#signal-intermediate-throw-event-signal-property', newSignalName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       intermediateThrowEvent2,
@@ -590,8 +569,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn(
       `#signal-intermediate-throw-event-signal-property [data-test-option-value="${newSignalName}"]`,
     );
-    const selectedSignal = await studioAgent.getValue(
-      '#signal-intermediate-throw-event-signal-property .react-select__input-container input',
+    const selectedSignal = await studioAgent.getSuggestionSelectValue(
+      '#signal-intermediate-throw-event-signal-property',
     );
 
     assert.strictEqual(selectedSignal, newSignalName);
@@ -617,11 +596,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#signal-intermediate-catch-event-signal-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#signal-intermediate-catch-event-signal-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#signal-intermediate-catch-event-signal-property');
     await studioAgent.clickOn('#signal-intermediate-catch-event-signal-property');
-
-    await studioAgent.sendKeyboardInput([...newSignalName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newSignalName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#signal-intermediate-catch-event-signal-property', newSignalName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       intermediateCatchEvent2,
@@ -634,8 +612,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn(
       `#signal-intermediate-catch-event-signal-property [data-test-option-value="${newSignalName}"]`,
     );
-    const selectedSignal = await studioAgent.getValue(
-      '#signal-intermediate-catch-event-signal-property .react-select__input-container input',
+    const selectedSignal = await studioAgent.getSuggestionSelectValue(
+      '#signal-intermediate-catch-event-signal-property',
     );
 
     assert.strictEqual(selectedSignal, newSignalName);
@@ -648,8 +626,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.jumpToFileInSolution('signal-autocomplete.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(endEvent, SIGNAL_END_EVENT_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(endEvent);
     await studioAgent.switchToPaneGroup('scripting');
 
     await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesInputMappings');
@@ -666,11 +643,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.jumpToFileInSolution('signal-autocomplete.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      throwEvent,
-      SIGNAL_INTERMEDIATE_THROW_EVENT_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(throwEvent);
     await studioAgent.switchToPaneGroup('scripting');
 
     await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesInputMappings');
@@ -687,11 +660,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.jumpToFileInSolution('signal-autocomplete.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      catchEvent,
-      SIGNAL_INTERMEDIATE_CATCH_EVENT_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(catchEvent);
     await studioAgent.switchToPaneGroup('scripting');
 
     await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesOutputMappings');
@@ -708,11 +677,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.jumpToFileInSolution('signal-autocomplete.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      boundaryEvent,
-      SIGNAL_BOUNDARY_EVENT_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(boundaryEvent);
     await studioAgent.switchToPaneGroup('scripting');
 
     await studioAgent.assertPaneVisible('bpmn/panes/properties/PropertiesOutputMappings');
@@ -729,11 +694,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.jumpToFileInSolution('signal-autocomplete.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      startEvent,
-      SIGNAL_START_EVENT_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('scripting');
 
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesOutputMappings');
     await studioAgent.assertPaneNotVisible('bpmn/panes/properties/PropertiesThrowEventPayload');
@@ -761,11 +723,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#escalation-end-event-name', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#escalation-end-event-name .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#escalation-end-event-name');
     await studioAgent.clickOn('#escalation-end-event-name');
     await studioAgent.sendKeyboardInput([...newName.split('')]);
-
-    await studioAgent.clickOn(`#escalation-end-event-name [data-test-option-value="${newName}"]`);
+    await studioAgent.commitSuggestionCreateOption('#escalation-end-event-name', newName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -774,7 +735,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const name = await studioAgent.getValue('#escalation-end-event-name .react-select__input-container input');
+    const name = await studioAgent.getSuggestionSelectValue('#escalation-end-event-name');
 
     assert.strictEqual(name, newName);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -800,8 +761,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.clickOn('#escalation-end-event-code');
     await studioAgent.sendKeyboardInput([...newEscalationCode.split('')]);
-
-    await studioAgent.clickOn(`#escalation-end-event-code [data-test-option-value="${newEscalationCode}"]`);
+    await studioAgent.commitSuggestionCreateOption('#escalation-end-event-code', newEscalationCode);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -810,7 +770,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const code = await studioAgent.getValue('#escalation-end-event-code .react-select__input-container input');
+    const code = await studioAgent.getSuggestionSelectValue('#escalation-end-event-code');
 
     assert.strictEqual(code, newEscalationCode);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -834,11 +794,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#error-end-event-code-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#error-end-event-code-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#error-end-event-code-property');
     await studioAgent.clickOn('#error-end-event-code-property');
-
-    await studioAgent.sendKeyboardInput([...newErrorCode.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newErrorCode.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#error-end-event-code-property', newErrorCode);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       errorEndEvent2,
@@ -849,9 +808,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertVisible('#error-end-event-code-property', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOn('#error-end-event-code-property');
     await studioAgent.clickOn(`#error-end-event-code-property [data-test-option-value="${newErrorCode}"]`);
-    const selectedErrorCode = await studioAgent.getValue(
-      '#error-end-event-code-property .react-select__input-container input',
-    );
+    const selectedErrorCode = await studioAgent.getSuggestionSelectValue('#error-end-event-code-property');
 
     assert.strictEqual(selectedErrorCode, newErrorCode);
 
@@ -876,10 +833,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#error-end-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#error-end-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#error-end-event-message-property');
     await studioAgent.clickOn('#error-end-event-message-property');
-    await studioAgent.sendKeyboardInput([...newErrorMessage.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newErrorMessage.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#error-end-event-message-property', newErrorMessage);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       errorEndEvent2,
@@ -891,9 +848,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#error-end-event-message-property');
 
     await studioAgent.clickOn(`#error-end-event-message-property [data-test-option-value="${newErrorMessage}"]`);
-    const selectedErrorMessage = await studioAgent.getValue(
-      '#error-end-event-message-property .react-select__input-container input',
-    );
+    const selectedErrorMessage = await studioAgent.getSuggestionSelectValue('#error-end-event-message-property');
 
     assert.strictEqual(selectedErrorMessage, newErrorMessage);
 
@@ -918,11 +873,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#error-boundary-event-code-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clearTextInput('#error-boundary-event-code-property');
+    await studioAgent.clearSuggestionSelect('#error-boundary-event-code-property');
     await studioAgent.clickOn('#error-boundary-event-code-property');
-
-    await studioAgent.sendKeyboardInput([...newErrorCode.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newErrorCode.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#error-boundary-event-code-property', newErrorCode);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       errorBoundaryEvent2,
@@ -935,9 +889,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#error-boundary-event-code-property');
 
     await studioAgent.clickOn(`#error-boundary-event-code-property [data-test-option-value="${newErrorCode}"]`);
-    const selectedErrorCode = await studioAgent.getValue(
-      '#error-boundary-event-code-property .react-select__input-container input',
-    );
+    const selectedErrorCode = await studioAgent.getSuggestionSelectValue('#error-boundary-event-code-property');
 
     assert.strictEqual(selectedErrorCode, newErrorCode);
 
@@ -962,11 +914,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#error-boundary-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#error-boundary-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#error-boundary-event-message-property');
     await studioAgent.clickOn('#error-boundary-event-message-property');
-
-    await studioAgent.sendKeyboardInput([...newErrorMessage.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newErrorMessage.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#error-boundary-event-message-property', newErrorMessage);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       errorBoundaryEvent2,
@@ -979,9 +930,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#error-boundary-event-message-property');
 
     await studioAgent.clickOn(`#error-boundary-event-message-property [data-test-option-value="${newErrorMessage}"]`);
-    const selectedErrorMessage = await studioAgent.getValue(
-      '#error-boundary-event-message-property .react-select__input-container input',
-    );
+    const selectedErrorMessage = await studioAgent.getSuggestionSelectValue('#error-boundary-event-message-property');
 
     assert.strictEqual(selectedErrorMessage, newErrorMessage);
 
@@ -1006,11 +955,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#error-start-event-code-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#error-start-event-code-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#error-start-event-code-property');
     await studioAgent.clickOn('#error-start-event-code-property');
-
-    await studioAgent.sendKeyboardInput([...newErrorCode.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newErrorCode.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#error-start-event-code-property', newErrorCode);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       errorStartEvent2,
@@ -1023,9 +971,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#error-start-event-code-property');
 
     await studioAgent.clickOn(`#error-start-event-code-property [data-test-option-value="${newErrorCode}"]`);
-    const selectedErrorCode = await studioAgent.getValue(
-      '#error-start-event-code-property .react-select__input-container input',
-    );
+    const selectedErrorCode = await studioAgent.getSuggestionSelectValue('#error-start-event-code-property');
 
     assert.strictEqual(selectedErrorCode, newErrorCode);
 
@@ -1050,11 +996,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#error-start-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#error-start-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#error-start-event-message-property');
     await studioAgent.clickOn('#error-start-event-message-property');
-
-    await studioAgent.sendKeyboardInput([...newErrorMessage.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newErrorMessage.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#error-start-event-message-property', newErrorMessage);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       errorStartEvent2,
@@ -1067,9 +1012,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#error-start-event-message-property');
 
     await studioAgent.clickOn(`#error-start-event-message-property [data-test-option-value="${newErrorMessage}"]`);
-    const selectedErrorMessage = await studioAgent.getValue(
-      '#error-start-event-message-property .react-select__input-container input',
-    );
+    const selectedErrorMessage = await studioAgent.getSuggestionSelectValue('#error-start-event-message-property');
 
     assert.strictEqual(selectedErrorMessage, newErrorMessage);
 
@@ -1210,7 +1153,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertVisible('[data-test--conditional-flow-condition]', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOnCodeEditor('[data-test--conditional-flow-condition]');
-    await studioAgent.sendKeyboardInput([...newCondition.split(''), 'enter']);
+    await studioAgent.sendKeyboardInput([...newCondition.split('')]);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       conditionalFlow1,
@@ -1430,7 +1373,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible('#link-intermediate-catch-event-link-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#link-intermediate-catch-event-link-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#link-intermediate-catch-event-link-property');
     await studioAgent.clickOn('#link-intermediate-catch-event-link-property');
     await studioAgent.clickOn(`#link-intermediate-catch-event-link-property [data-test-option-value="${newLinkName}"]`);
 
@@ -1441,9 +1384,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const linkName = await studioAgent.getValue(
-      '#link-intermediate-catch-event-link-property .react-select__input-container input',
-    );
+    const linkName = await studioAgent.getSuggestionSelectValue('#link-intermediate-catch-event-link-property');
 
     assert.strictEqual(linkName, newLinkName);
 
@@ -1453,7 +1394,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
   it('bpmn/elements/property-panel/LinkIntermediateThrowEvent: should change a link intermediate throw event name', async () => {
     const linkIntermediateThrowEvent = 'LinkIntermediateThrowEvent1';
     const startEvent = 'StartEvent_1';
-    const newLinkName = 'LinkName2';
+    const newLinkName = 'LinkName1';
 
     await studioAgent.jumpToFileInSolution('link-event.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
@@ -1468,7 +1409,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#link-intermediate-throw-event-link-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#link-intermediate-throw-event-link-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#link-intermediate-throw-event-link-property');
     await studioAgent.clickOn('#link-intermediate-throw-event-link-property');
     await studioAgent.clickOn(`#link-intermediate-throw-event-link-property [data-test-option-value="${newLinkName}"]`);
 
@@ -1479,9 +1420,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const linkName = await studioAgent.getValue(
-      '#link-intermediate-throw-event-link-property .react-select__input-container input',
-    );
+    const linkName = await studioAgent.getSuggestionSelectValue('#link-intermediate-throw-event-link-property');
 
     assert.strictEqual(linkName, newLinkName);
 
@@ -1560,16 +1499,14 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.selectBpmnElementByIdAndWaitForElement(callActivity, CALL_ACTIVITY_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertVisible('#call-activity-start-event-id-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#call-activity-start-event-id-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#call-activity-start-event-id-property');
     await studioAgent.clickOn('#call-activity-start-event-id-property');
     await studioAgent.sendKeyboardInput([...newStartEventId.split(''), 'enter']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(callActivity, CALL_ACTIVITY_PANE, ASSERT_VISIBLE_TIMEOUT);
 
-    const startEventId = await studioAgent.getValue(
-      '#call-activity-start-event-id-property .react-select__input-container input',
-    );
+    const startEventId = await studioAgent.getSuggestionSelectValue('#call-activity-start-event-id-property');
 
     assert.strictEqual(startEventId, newStartEventId);
 
@@ -1593,15 +1530,12 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clearTextInput('#call-activity-process-id-property');
     await studioAgent.clickOn('#call-activity-process-id-property');
     await studioAgent.sendKeyboardInput([...newProcessId.split('')]);
-
-    await studioAgent.clickOn(`#call-activity-process-id-property [data-test-option-value="${newProcessId}"]`);
+    await studioAgent.commitSuggestionCreateOption('#call-activity-process-id-property', newProcessId);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(callActivity, CALL_ACTIVITY_PANE, ASSERT_VISIBLE_TIMEOUT);
 
-    const processId = await studioAgent.getValue(
-      '#call-activity-process-id-property .react-select__input-container input',
-    );
+    const processId = await studioAgent.getSuggestionSelectValue('#call-activity-process-id-property');
 
     assert.strictEqual(processId, newProcessId);
 
@@ -1878,18 +1812,19 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ESCALATION_BOUNDARY_EVENT_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
-    await studioAgent.assertVisible('#escalation-boundary-event-match-all-escalations', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.assertVisible('#escalation-boundary-event-match-a-specific-escalation', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.clickOn('#escalation-boundary-event-match-a-specific-escalation');
+    await studioAgent.sendKeyboardInput(['Escape']);
+    await studioAgent.assertVisible(
+      '[data-test--escalation-boundary-event-specific-escalation-radio]',
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+    await studioAgent.clickOn('[data-test--escalation-boundary-event-specific-escalation-radio]');
     await studioAgent.assertVisible('#escalation-boundary-event-name', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#escalation-boundary-event-name .react-select__clear-indicator');
-    await studioAgent.clickOn('#escalation-boundary-event-match-a-specific-escalation');
+    await studioAgent.clearSuggestionSelect('#escalation-boundary-event-name');
     await studioAgent.assertVisible('#escalation-boundary-event-name', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOn('#escalation-boundary-event-name');
     await studioAgent.sendKeyboardInput([...newName.split('')]);
-
-    await studioAgent.clickOn(`#escalation-boundary-event-name [data-test-option-value="${newName}"]`);
+    await studioAgent.commitSuggestionCreateOption('#escalation-boundary-event-name', newName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -1898,7 +1833,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const name = await studioAgent.getValue('#escalation-boundary-event-name .react-select__input-container input');
+    const name = await studioAgent.getSuggestionSelectValue('#escalation-boundary-event-name');
 
     assert.strictEqual(name, newName);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -1920,17 +1855,18 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ESCALATION_BOUNDARY_EVENT_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
-    await studioAgent.assertVisible('#escalation-boundary-event-match-all-escalations', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.assertVisible('#escalation-boundary-event-match-a-specific-escalation', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.clickOn('#escalation-boundary-event-match-a-specific-escalation');
+    await studioAgent.sendKeyboardInput(['Escape']);
+    await studioAgent.assertVisible(
+      '[data-test--escalation-boundary-event-specific-escalation-radio]',
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+    await studioAgent.clickOn('[data-test--escalation-boundary-event-specific-escalation-radio]');
 
     await studioAgent.assertVisible('#escalation-boundary-event-code', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOn('#escalation-boundary-event-code');
     await studioAgent.sendKeyboardInput([...newEscalationCode.split('')]);
-
-    await studioAgent.clickOn(`#escalation-boundary-event-code [data-test-option-value="${newEscalationCode}"]`);
+    await studioAgent.commitSuggestionCreateOption('#escalation-boundary-event-code', newEscalationCode);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -1939,7 +1875,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const code = await studioAgent.getValue('#escalation-boundary-event-code .react-select__input-container input');
+    const code = await studioAgent.getSuggestionSelectValue('#escalation-boundary-event-code');
 
     assert.strictEqual(code, newEscalationCode);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -1965,8 +1901,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.clickOn('#escalation-start-event-name');
     await studioAgent.sendKeyboardInput([...newName.split('')]);
-
-    await studioAgent.clickOn(`#escalation-start-event-name [data-test-option-value="${newName}"]`);
+    await studioAgent.commitSuggestionCreateOption('#escalation-start-event-name', newName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -1975,7 +1910,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const name = await studioAgent.getValue('#escalation-start-event-name .react-select__input-container input');
+    const name = await studioAgent.getSuggestionSelectValue('#escalation-start-event-name');
 
     assert.strictEqual(name, newName);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2001,8 +1936,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.clickOn('#escalation-start-event-code');
     await studioAgent.sendKeyboardInput([...newEscalationCode.split('')]);
-
-    await studioAgent.clickOn(`#escalation-start-event-code [data-test-option-value="${newEscalationCode}"]`);
+    await studioAgent.commitSuggestionCreateOption('#escalation-start-event-code', newEscalationCode);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -2011,7 +1945,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const code = await studioAgent.getValue('#escalation-start-event-code .react-select__input-container input');
+    const code = await studioAgent.getSuggestionSelectValue('#escalation-start-event-code');
 
     assert.strictEqual(code, newEscalationCode);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2035,11 +1969,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
     await studioAgent.assertVisible('#escalation-intermediate-throw-event-name', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#escalation-intermediate-throw-event-name .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#escalation-intermediate-throw-event-name');
     await studioAgent.clickOn('#escalation-intermediate-throw-event-name');
     await studioAgent.sendKeyboardInput([...newName.split('')]);
-
-    await studioAgent.clickOn(`#escalation-intermediate-throw-event-name [data-test-option-value="${newName}"]`);
+    await studioAgent.commitSuggestionCreateOption('#escalation-intermediate-throw-event-name', newName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -2048,9 +1981,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const name = await studioAgent.getValue(
-      '#escalation-intermediate-throw-event-name .react-select__input-container input',
-    );
+    const name = await studioAgent.getSuggestionSelectValue('#escalation-intermediate-throw-event-name');
 
     assert.strictEqual(name, newName);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2076,10 +2007,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.clickOn('#escalation-intermediate-throw-event-code');
     await studioAgent.sendKeyboardInput([...newEscalationCode.split('')]);
-
-    await studioAgent.clickOn(
-      `#escalation-intermediate-throw-event-code [data-test-option-value="${newEscalationCode}"]`,
-    );
+    await studioAgent.commitSuggestionCreateOption('#escalation-intermediate-throw-event-code', newEscalationCode);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -2088,9 +2016,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const code = await studioAgent.getValue(
-      '#escalation-intermediate-throw-event-code .react-select__input-container input',
-    );
+    const code = await studioAgent.getSuggestionSelectValue('#escalation-intermediate-throw-event-code');
 
     assert.strictEqual(code, newEscalationCode);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2112,13 +2038,12 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       TEXT_ANNOTATION_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
-    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible('#text-annotation-text-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clearCodeEditor('#text-annotation-text-property');
-    await studioAgent.sendKeyboardInput([...newText.split(''), 'enter']);
+    await studioAgent.clearTextInput('#text-annotation-text-property');
+    await studioAgent.clickOn('#text-annotation-text-property');
+    await studioAgent.sendKeyboardInput([...newText.split('')]);
 
-    await studioAgent.pause(500);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       textAnnotation,
@@ -2126,9 +2051,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const text = await studioAgent.getCodeEditorText('#text-annotation-text-property');
-
-    assert.strictEqual(text.trim(), newText);
+    const text = await studioAgent.getValue('#text-annotation-text-property');
+    assert.strictEqual(text, newText);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -2144,7 +2068,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible('#text-annotation-text-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#text-annotation-open-text-tab');
+    await studioAgent.clickOn('[data-test--text-annotation-open-text-tab]');
 
     await studioAgent.assertVisible('#bpmn-text-fragment-editor', ASSERT_VISIBLE_TIMEOUT);
 
@@ -2154,9 +2078,9 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn('#bpmn-text-fragment-link-to-editor-document');
     await studioAgent.assertVisible('#text-annotation-text-property', ASSERT_VISIBLE_TIMEOUT);
 
-    const text = await studioAgent.getCodeEditorText('#text-annotation-text-property');
+    const text = await studioAgent.getValue('#text-annotation-text-property');
 
-    assert.strictEqual(text.trim(), newText);
+    assert.strictEqual(text, newText);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -2317,17 +2241,15 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
     await studioAgent.assertVisible('#business-rule-task-implementation-property', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertVisible('#business-rule-task-decision-ref-property', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOn('#business-rule-task-implementation-property');
+    await studioAgent.clickOn('#business-rule-task-implementation-property [data-test-option-value="feel"]');
+    await studioAgent.assertVisible('#business-rule-task-script-property', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.waitForNotVisible('#business-rule-task-decision-ref-property');
 
     await studioAgent.clickOn('#business-rule-task-implementation-property');
     await studioAgent.clickOn('#business-rule-task-implementation-property [data-test-option-value="dmn"]');
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      businessRuleTask,
-      BUSINESS_RULE_TASK_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
     await studioAgent.assertVisible('#business-rule-task-decision-ref-property', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2388,14 +2310,12 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.clickOn('#business-rule-task-implementation-property');
-    await studioAgent.clickOn('#business-rule-task-implementation-property [data-test-option-value="dmn"]');
-
     await studioAgent.assertVisible('#business-rule-task-decision-ref-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clearTextInput('#business-rule-task-decision-ref-property');
+    await studioAgent.clearSuggestionSelect('#business-rule-task-decision-ref-property');
     await studioAgent.clickOn('#business-rule-task-decision-ref-property');
-    await studioAgent.sendKeyboardInput([...newDecisionRef.split(''), 'enter']);
+    await studioAgent.sendKeyboardInput([...newDecisionRef.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#business-rule-task-decision-ref-property', newDecisionRef);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -2404,9 +2324,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const decisionRef = await studioAgent.getValue(
-      '#business-rule-task-decision-ref-property .react-select__input-container input',
-    );
+    const decisionRef = await studioAgent.getSuggestionSelectValue('#business-rule-task-decision-ref-property');
     assert.strictEqual(decisionRef, newDecisionRef);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2428,24 +2346,17 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.clickOn('#business-rule-task-implementation-property');
-    await studioAgent.clickOn('#business-rule-task-implementation-property [data-test-option-value="dmn"]');
-
     await studioAgent.assertVisible('#business-rule-task-decision-ref-property', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOn('#business-rule-task-decision-ref-property');
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property [data-test-option-value="discount-rules"]');
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      businessRuleTask,
-      BUSINESS_RULE_TASK_PANE,
+    await studioAgent.assertVisible(
+      '#business-rule-task-decision-ref-property [data-test-option-value="discount-rules"]',
       ASSERT_VISIBLE_TIMEOUT,
     );
+    await studioAgent.sendKeyboardInput(['Escape']);
+    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
 
-    const decisionRef = await studioAgent.getValue(
-      '#business-rule-task-decision-ref-property .react-select__input-container input',
-    );
+    const decisionRef = await studioAgent.getSuggestionSelectValue('#business-rule-task-decision-ref-property');
     assert.strictEqual(decisionRef, 'discount-rules');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2467,35 +2378,18 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.clickOn('#business-rule-task-implementation-property');
-    await studioAgent.clickOn('#business-rule-task-implementation-property [data-test-option-value="dmn"]');
-
-    await studioAgent.assertVisible('#business-rule-task-decision-ref-property', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property');
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property [data-test-option-value="discount-rules"]');
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      businessRuleTask,
-      BUSINESS_RULE_TASK_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
+    await studioAgent.assertVisible('#business-rule-task-decision-element-id-property', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOn('#business-rule-task-decision-element-id-property');
-    await studioAgent.clickOn(
+    await studioAgent.assertVisible(
       '#business-rule-task-decision-element-id-property [data-test-option-value="Decision_Discount"]',
-    );
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      businessRuleTask,
-      BUSINESS_RULE_TASK_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
+    await studioAgent.sendKeyboardInput(['Escape']);
+    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
 
-    const decisionElementId = await studioAgent.getValue(
-      '#business-rule-task-decision-element-id-property .react-select__input-container input',
+    const decisionElementId = await studioAgent.getSuggestionSelectValue(
+      '#business-rule-task-decision-element-id-property',
     );
     assert.strictEqual(decisionElementId, 'Decision_Discount');
 
@@ -2518,34 +2412,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.clickOn('#business-rule-task-implementation-property');
-    await studioAgent.clickOn('#business-rule-task-implementation-property [data-test-option-value="dmn"]');
-
     await studioAgent.assertVisible('#business-rule-task-decision-ref-property', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property');
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property [data-test-option-value="discount-rules"]');
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      businessRuleTask,
-      BUSINESS_RULE_TASK_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    await studioAgent.clickOn('#business-rule-task-decision-element-id-property');
-    await studioAgent.clickOn(
-      '#business-rule-task-decision-element-id-property [data-test-option-value="Decision_Discount"]',
-    );
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      businessRuleTask,
-      BUSINESS_RULE_TASK_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#business-rule-task-decision-ref-property');
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -2583,22 +2451,11 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.clickOn('#business-rule-task-implementation-property');
-    await studioAgent.clickOn('#business-rule-task-implementation-property [data-test-option-value="dmn"]');
-
     await studioAgent.assertVisible('#business-rule-task-decision-ref-property', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property');
-    await studioAgent.clickOn('#business-rule-task-decision-ref-property [data-test-option-value="discount-rules"]');
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
-    await studioAgent.selectBpmnElementByIdAndWaitForElement(
-      businessRuleTask,
-      BUSINESS_RULE_TASK_PANE,
+    await studioAgent.assertVisible(
+      `${BUSINESS_RULE_TASK_PANE} [data-test--jump-to-symbol-in-solution]`,
       ASSERT_VISIBLE_TIMEOUT,
     );
-
-    await studioAgent.assertVisible('#business-rule-task-decision-ref-property a[href="#"]', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -2696,6 +2553,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clearCodeEditor('#http-task-auth-header-property');
     await studioAgent.clickOnCodeEditor('#http-task-auth-header-property');
     await studioAgent.sendKeyboardInput([...newAuthHeader.split('')]);
+    await studioAgent.sendKeyboardInput(['Escape']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(serviceTask, HTTP_TASK_PANE, ASSERT_VISIBLE_TIMEOUT);
@@ -2852,16 +2710,17 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#process-correlation-key-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clearTextInput('#process-correlation-key-property');
-    await studioAgent.clickOn('#process-correlation-key-property');
-    await studioAgent.sendKeyboardInput([...newCorrelationKey.split(''), 'enter']);
+    await studioAgent.clickOnCodeEditor('#process-correlation-key-property');
+    await studioAgent.sendKeyboardInput([...newCorrelationKey.split('')]);
+    await studioAgent.sendKeyboardInput(['Escape']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent, ELEMENT_INFO_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.selectProcessRootById(process);
 
     await studioAgent.assertVisible('#process-correlation-key-property', ASSERT_VISIBLE_TIMEOUT);
 
-    const correlationKey = await studioAgent.getValue('#process-correlation-key-property');
+    const correlationKey = await studioAgent.getCodeEditorText('#process-correlation-key-property');
     assert.strictEqual(correlationKey, newCorrelationKey);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2885,7 +2744,9 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
 
     await studioAgent.assertVisible('[data-test--mi-element-variable-input]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.setInputValue('[data-test--mi-element-variable-input]', newElementVariable);
+    await studioAgent.clearTextInput('[data-test--mi-element-variable-input]');
+    await studioAgent.clickOn('[data-test--mi-element-variable-input]');
+    await studioAgent.sendKeyboardInput([...newElementVariable.split(''), 'enter']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -2894,7 +2755,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const value = await studioAgent.getInputValue('[data-test--mi-element-variable-input]');
+    const value = await studioAgent.getValue('[data-test--mi-element-variable-input]');
     assert.strictEqual(value, newElementVariable);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2918,7 +2779,9 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     );
 
     await studioAgent.assertVisible('[data-test--mi-output-element-variable-input]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.setInputValue('[data-test--mi-output-element-variable-input]', newOutputElementVariable);
+    await studioAgent.clearTextInput('[data-test--mi-output-element-variable-input]');
+    await studioAgent.clickOn('[data-test--mi-output-element-variable-input]');
+    await studioAgent.sendKeyboardInput([...newOutputElementVariable.split(''), 'enter']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -2927,7 +2790,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const value = await studioAgent.getInputValue('[data-test--mi-output-element-variable-input]');
+    const value = await studioAgent.getValue('[data-test--mi-output-element-variable-input]');
     assert.strictEqual(value, newOutputElementVariable);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -3055,6 +2918,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertVisible('[data-test--seq-mi-loop-break-condition-input]', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOnCodeEditor('[data-test--seq-mi-loop-break-condition-input]');
     await studioAgent.sendKeyboardInput([...newBreakCondition.split('')]);
+    await studioAgent.sendKeyboardInput(['Escape']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -3199,6 +3063,7 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.assertVisible('[data-test--user-task-due-date-input]', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOnCodeEditor('[data-test--user-task-due-date-input]');
     await studioAgent.sendKeyboardInput([...newDueDate.split('')]);
+    await studioAgent.sendKeyboardInput(['Escape']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(userTask, USER_TASK_PANE, ASSERT_VISIBLE_TIMEOUT);
@@ -3251,22 +3116,20 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#send-task-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#send-task-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#send-task-message-property');
     await studioAgent.clickOn('#send-task-message-property');
-
-    await studioAgent.sendKeyboardInput([...newMessageName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newMessageName.split('')]);
+    await studioAgent.commitSuggestionCreateOption('#send-task-message-property', newMessageName);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(sendTask2, SEND_TASK_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertVisible('#send-task-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#send-task-message-property .react-select__clear-indicator');
     await studioAgent.clickOn('#send-task-message-property');
+
     await studioAgent.clickOn(`#send-task-message-property [data-test-option-value="${newMessageName}"]`);
-    const selectedMessage = await studioAgent.getValue(
-      '#send-task-message-property .react-select__input-container input',
-    );
+
+    const selectedMessage = await studioAgent.getSuggestionSelectValue('#send-task-message-property');
 
     assert.strictEqual(selectedMessage, newMessageName);
 
@@ -3747,9 +3610,10 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
   it('bpmn/elements/property-panel/DefaultCustomStartToken: should change a default custom start token of an element', async () => {
     const untypedTask = 'UntypedTask_1';
     const startEvent = 'StartEvent_1';
-    const newDefaultCustomStartToken = 'my new default custom start token';
+    const payloadKey = 'orderId';
+    const payloadValue = 'alpha';
 
-    await studioAgent.jumpToFileInSolution('post-script.bpmn');
+    await studioAgent.jumpToFileInSolution('untyped-task.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(untypedTask);
@@ -3760,10 +3624,12 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.clearCodeEditor('[data-test--default-custom-start-token-input]');
-    await studioAgent.clickOnCodeEditor('[data-test--default-custom-start-token-input]');
-
-    await studioAgent.sendKeyboardInput([...newDefaultCustomStartToken.split('')]);
+    await studioAgent.clickOn('[data-test--default-custom-start-token-input] [data-test--kv-builder-add-button]');
+    await studioAgent.assertVisible('[data-test--kv-builder-key-input="0"]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOn('[data-test--kv-builder-key-input="0"]');
+    await studioAgent.sendKeyboardInput([...payloadKey.split('')]);
+    await studioAgent.clickOn('[data-test--kv-builder-value-input="0"]');
+    await studioAgent.sendKeyboardInput([...payloadValue.split('')]);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(untypedTask);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
@@ -3772,24 +3638,19 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.assertVisible('[data-test--default-custom-start-token-input]', ASSERT_VISIBLE_TIMEOUT);
-
-    const defaultCustomStartToken = await studioAgent.getCodeEditorText(
-      '[data-test--default-custom-start-token-input]',
-    );
-
-    const normalizedValue = defaultCustomStartToken.replace(/\s+/g, ' ');
-    assert.strictEqual(normalizedValue, newDefaultCustomStartToken);
+    assert.strictEqual(await studioAgent.getValue('[data-test--kv-builder-key-input="0"]'), payloadKey);
+    assert.strictEqual(await studioAgent.getValue('[data-test--kv-builder-value-input="0"]'), payloadValue);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
   it('bpmn/elements/property-panel/DefaultCustomStartToken: should change a default custom start token from default custom start token tab', async () => {
     const startEvent = 'StartEvent_1';
+    const payloadKey = 'orderId';
+    const payloadValue = 'alpha';
+    const payloadJson = `{"${payloadKey}":"${payloadValue}"}`;
 
-    const newDefaultCustomStartToken = 'my new default custom start token';
-
-    await studioAgent.jumpToFileInSolution('post-script.bpmn');
+    await studioAgent.jumpToFileInSolution('untyped-task.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
@@ -3805,17 +3666,14 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOnCodeEditor('[data-test--bpmn-default-custom-start-token-fragment-editor]');
 
     await studioAgent.clearCodeEditor('[data-test--bpmn-default-custom-start-token-fragment-editor]');
-    await studioAgent.sendKeyboardInput([...newDefaultCustomStartToken.split('')]);
+    await studioAgent.sendKeyboardInput([...payloadJson.split('')]);
 
     await studioAgent.clickOn('[data-test--bpmn-default-custom-start-token-fragment-link-to-editor-document]');
     await studioAgent.assertVisible('[data-test--default-custom-start-token-input]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.waitForText('[data-test--default-custom-start-token-input]');
-    const defaultCustomStartToken = await studioAgent.getCodeEditorText(
-      '[data-test--default-custom-start-token-input]',
-    );
+    await studioAgent.assertVisible('[data-test--kv-builder-key-input="0"]', ASSERT_VISIBLE_TIMEOUT);
 
-    const normalizedValue = defaultCustomStartToken.replace(/\s+/g, ' ');
-    assert.strictEqual(normalizedValue, newDefaultCustomStartToken);
+    assert.strictEqual(await studioAgent.getValue('[data-test--kv-builder-key-input="0"]'), payloadKey);
+    assert.strictEqual(await studioAgent.getValue('[data-test--kv-builder-value-input="0"]'), payloadValue);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -3900,23 +3758,23 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.assertPaneVisible('bpmn/panes/PropertiesCustomAttributes');
 
-    await studioAgent.clickOn('#custom-property-4-name');
+    await studioAgent.clickOn('#custom-property-5-name');
     await studioAgent.sendKeyboardInput([...newPropertyName.split(''), 'enter']);
-    await studioAgent.clickOn('#custom-property-4-value');
+    await studioAgent.clickOn('#custom-property-5-value');
     await studioAgent.sendKeyboardInput([...newPropertyValue.split(''), 'enter']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(endEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       startEvent,
-      '#custom-property-4-name',
+      '#custom-property-5-name',
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.assertVisible('#custom-property-4-value', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.assertVisible('#custom-property-4-name', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertVisible('#custom-property-5-value', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertVisible('#custom-property-5-name', ASSERT_VISIBLE_TIMEOUT);
 
-    const name = await studioAgent.getValue('#custom-property-4-name');
-    const value = await studioAgent.getValue('#custom-property-4-value');
+    const name = await studioAgent.getValue('#custom-property-5-name');
+    const value = await studioAgent.getValue('#custom-property-5-value');
 
     assert.strictEqual(name, newPropertyName);
     assert.strictEqual(value, newPropertyValue);
@@ -3940,7 +3798,9 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     const value = await studioAgent.getValue('#custom-property-1-value');
 
     await studioAgent.clearTextInput('#custom-property-1-name');
+    await studioAgent.sendKeyboardInput(['enter']);
     await studioAgent.clearTextInput('#custom-property-1-value');
+    await studioAgent.sendKeyboardInput(['enter']);
 
     await studioAgent.clickOn('#custom-property-2-name');
 
@@ -4006,11 +3866,13 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
 
     await studioAgent.assertVisible('#message-intermediate-catch-event-message-property', ASSERT_VISIBLE_TIMEOUT);
 
-    await studioAgent.clickOn('#message-intermediate-catch-event-message-property .react-select__clear-indicator');
+    await studioAgent.clearSuggestionSelect('#message-intermediate-catch-event-message-property');
     await studioAgent.clickOn('#message-intermediate-catch-event-message-property');
-
-    await studioAgent.sendKeyboardInput([...newMessageName.split(''), 'enter']);
-    await studioAgent.waitForNotVisible('.react-select__control--menu-is-open');
+    await studioAgent.sendKeyboardInput([...newMessageName.split('')]);
+    await studioAgent.commitSuggestionCreateOption(
+      '#message-intermediate-catch-event-message-property',
+      newMessageName,
+    );
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(
       intermediateCatchEvent2,
@@ -4025,8 +3887,8 @@ describe('bpmn/elements', { timeout: 20_000 }, () => {
     await studioAgent.clickOn(
       `#message-intermediate-catch-event-message-property [data-test-option-value="${newMessageName}"]`,
     );
-    const selectedMessage = await studioAgent.getValue(
-      '#message-intermediate-catch-event-message-property .react-select__input-container input',
+    const selectedMessage = await studioAgent.getSuggestionSelectValue(
+      '#message-intermediate-catch-event-message-property',
     );
 
     assert.strictEqual(newMessageName, selectedMessage);

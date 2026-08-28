@@ -76,7 +76,6 @@ function PropertiesSignalStartEvent(props: PaneComponentProps): React.JSX.Elemen
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_signal_name_${element.signal}`}
         type="text-with-suggestions"
         htmlId="signal-start-event-signal-property"
         label="Signal"

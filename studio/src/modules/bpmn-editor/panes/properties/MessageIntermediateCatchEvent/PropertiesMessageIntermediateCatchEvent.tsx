@@ -80,7 +80,6 @@ function PropertiesMessageIntermediateCatchEvent(props: PaneComponentProps): Rea
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_message_name_${element.message}`}
         type="text-with-suggestions"
         htmlId="message-intermediate-catch-event-message-property"
         label="Message"

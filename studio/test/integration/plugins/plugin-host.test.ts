@@ -46,7 +46,7 @@ async function restorePluginIfDisabled(studioAgent: StudioAgent, pluginName: str
   }
 }
 
-describe('plugin-host/integration', { timeout: 60_000 }, () => {
+describe('plugin-host/integration', () => {
   describe('plugins pane', () => {
     let studioAgent: StudioAgent;
 

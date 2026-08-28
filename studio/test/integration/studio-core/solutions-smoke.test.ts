@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, it } from 'vitest';
 import type { StudioAgent } from '../../StudioAgent';
 import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioAgent';
 
-describe('solution', { timeout: 30_000 }, () => {
+describe('solution', () => {
   let studioAgent: StudioAgent;
 
   beforeEach(async ({ task }) => {
@@ -67,7 +67,7 @@ describe('solution', { timeout: 30_000 }, () => {
     await studioAgent.leftMenuBar.togglePane('pane/left/search');
     await studioAgent.assertPaneVisible('pane/left/search');
 
-    await studioAgent.sendKeyboardInput([...'Start Event'.split(''), 'enter']);
+    await studioAgent.sendKeyboardInput([...'StartEvent CallActivityTest'.split(''), 'enter']);
 
     await studioAgent.clickOn('.treeview__entry--depth-1');
     await studioAgent.assertVisible('[data-test--editors--focused-document-type="bpmn"]', ASSERT_VISIBLE_TIMEOUT);

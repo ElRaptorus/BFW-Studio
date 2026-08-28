@@ -45,7 +45,7 @@ async function installBpmnAdapterResolver(studioAgent: StudioAgent): Promise<voi
   });
 }
 
-describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
+describe('plugin/bpmn-palette-contextpad', () => {
   describe('permission gating — bpmn.modelling required', () => {
     let studioAgent: StudioAgent;
 
@@ -133,7 +133,7 @@ describe('plugin/bpmn-palette-contextpad', { timeout: 120_000 }, () => {
   // order dependencies (e.g. "unregisterContextPadEntry removes the entry" must run after
   // "runtime context pad entry (toggle-flag) appears", and the updateContextPadEntry tests must
   // run in the order they mutate the shared `view-connections` allowlist). The global
-  // `sequence: { shuffle: true }` in vitest.config.ts would otherwise interleave these
+  // `sequence: { shuffle: true }` in vitest.config.mts would otherwise interleave these
   // mutating/asserting pairs randomly. See docs/architecture/common-pitfalls.md.
   describe('palette and context pad lifecycle', { shuffle: false }, () => {
     let studioAgent: StudioAgent;

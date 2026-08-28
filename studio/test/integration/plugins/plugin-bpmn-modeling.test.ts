@@ -45,7 +45,7 @@ async function installBpmnAdapterResolver(studioAgent: StudioAgent): Promise<voi
   });
 }
 
-describe('plugin/bpmn-modeling', { timeout: 120_000 }, () => {
+describe('plugin/bpmn-modeling', () => {
   describe('permission gating — bpmn.modelling required for modeling.*', () => {
     let studioAgent: StudioAgent;
 

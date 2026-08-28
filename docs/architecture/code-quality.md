@@ -47,7 +47,7 @@ Flat config using `defineConfig()` from `eslint/config`. Config objects are appl
 │     + disable-rsc                        │  ← Electron, not Next.js RSC
 ├──────────────────────────────────────────┤
 │  6. eslint-plugin-react-hooks            │  ← compiler / Rules of React
-│     + customRules                        │  ← re-enables curly, key warn
+│     + customRules                        │  ← re-enables curly; array-index-key error
 └──────────────────────────────────────────┘
 ```
 
@@ -87,6 +87,7 @@ The `format` script passes `--config ../.prettierrc.json` to reference the root 
 | `@typescript-eslint/no-unsafe-function-type` | error | Use specific signatures instead of `Function` |
 | `@typescript-eslint/consistent-type-imports` | error | Ban inline `import('...').Type` annotations; enforce `import type` for type-only imports |
 | `@eslint-react/no-missing-key` | warn | Same policy as the former `react/jsx-key` |
+| `@eslint-react/no-array-index-key` | error | Ban using a `.map` index as a React `key` (recommended preset is warn) |
 
 ### React Compiler rules
 

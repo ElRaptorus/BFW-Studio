@@ -78,7 +78,6 @@ function PropertiesMessageEndEvent(props: PaneComponentProps): React.JSX.Element
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_message_name_${element.message}`}
         type="text-with-suggestions"
         htmlId="message-end-event-message-property"
         label="Message"

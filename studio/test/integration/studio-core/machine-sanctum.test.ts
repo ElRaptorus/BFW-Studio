@@ -7,7 +7,7 @@ import { createAndStartStudioAgent } from '../../StudioAgent';
 
 const SELECT_ALL = OsSpecificKeystroke('cmd-a', 'ctrl-a');
 
-describe('machine-sanctum', { timeout: 200_000 }, () => {
+describe('machine-sanctum', () => {
   let studioAgent: StudioAgent;
 
   beforeEach(async ({ task }) => {

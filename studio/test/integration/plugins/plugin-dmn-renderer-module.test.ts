@@ -11,7 +11,7 @@ import { StudioAgentDmnExtension } from '../../StudioAgentDmnExtension';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 
-describe('plugin/dmn-renderer-module', { timeout: 120_000 }, () => {
+describe('plugin/dmn-renderer-module', () => {
   describe('renderer module injection (dmn.renderer permission)', () => {
     let studioAgent: StudioAgentDmnExtension;
 

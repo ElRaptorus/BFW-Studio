@@ -29,32 +29,51 @@ type PropertyValueWithSuggestionsProps = {
 };
 
 export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestionsProps): React.JSX.Element {
+  const { onChange, suggestions, htmlId, placeholder, isClearable: isClearableProp, propertyValue } = props;
   const creatableSelectRef = useRef<SelectInstance>(null);
+  const suggestionsRef = useRef(suggestions);
 
-  const defaultValueFromProps = optionize(props.propertyValue);
+  useEffect(() => {
+    suggestionsRef.current = suggestions;
+  }, [suggestions]);
 
+  const defaultValueFromProps = optionize(propertyValue);
+
+  // Uncontrolled: `defaultValue` is read once. Passing `value={selectedOption}`
+  // makes the select fully controlled and blocks the Creatable "Use …" path
+  // (typed text never becomes a create option). Do not seed `defaultInputValue`
+  // with the selected option — that puts the text in the search box, hides
+  // `.react-select__single-value`, and filters the menu so other options never
+  // appear (e.g. a newly created message name on a second Send Task).
   const [defaultValue] = useState(defaultValueFromProps);
-  const [defaultInputValue] = useState(defaultValueFromProps?.value ?? defaultValueFromProps);
 
-  const isClearable = props.isClearable ?? false;
+  const isClearable = isClearableProp ?? false;
   const loadOptions = useCallback(async () => {
-    const resolvedSuggestions = await props.suggestions;
-    return resolvedSuggestions.map(optionize);
-  }, [props.suggestions]);
+    const resolvedSuggestions = await suggestionsRef.current;
+    return resolvedSuggestions.map(optionize).filter((option): option is ReactSelectOption => option != null);
+  }, []);
 
   const filterFunction = useCallback((candidate: any, inputValue: string): boolean => {
     const text = candidate.data?.filterText || candidate.label;
     return text.toString().toLowerCase().includes(inputValue.toLowerCase());
   }, []);
 
+  const clearSearchInput = (action: 'input-blur' | 'menu-close'): void => {
+    assertNotNull(creatableSelectRef.current, 'creatableSelectRef.current');
+    creatableSelectRef.current.onInputChange('', {
+      prevInputValue: '',
+      action,
+    });
+  };
+
   const handleInputKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       creatableSelectRef.current!.blur();
       setTimeout(() => {
-        creatableSelectRef.current!.onInputChange((creatableSelectRef.current!.props?.value as any)?.value ?? '', {
-          prevInputValue: (creatableSelectRef.current!.props?.value as any)?.value,
-          action: 'menu-close',
-        });
+        if (creatableSelectRef.current == null) {
+          return;
+        }
+        clearSearchInput('menu-close');
       }, 32);
     }
   };
@@ -74,15 +93,8 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
       creatableSelectRef.current.props.onBlur(event);
     }
 
-    creatableSelectRef.current.onInputChange((creatableSelectRef.current.props?.value as any)?.value ?? '', {
-      prevInputValue: (creatableSelectRef.current.props?.value as any)?.value,
-      action: 'input-blur',
-    });
-
-    creatableSelectRef.current.onInputChange((creatableSelectRef.current.props?.value as any)?.value ?? '', {
-      prevInputValue: (creatableSelectRef.current.props?.value as any)?.value,
-      action: 'menu-close',
-    });
+    clearSearchInput('input-blur');
+    clearSearchInput('menu-close');
 
     creatableSelectRef.current.props.onMenuClose();
 
@@ -91,6 +103,36 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
       isFocused: false,
     });
   };
+
+  const handleChange = useCallback(
+    (newValue: any, actionMeta: { action?: string }) => {
+      let selectedValue = '';
+      if (newValue != null) {
+        selectedValue = typeof newValue === 'string' ? newValue : (newValue.value ?? '');
+      }
+      if (actionMeta?.action === 'clear' || selectedValue.trim() === '') {
+        // clearValue() nulls the option but does not reset inputValue. Do not
+        // commit `{ value: '' }` — optionize of that still hasValue(), so the X
+        // stays on a blank-looking field. Stay uncontrolled; empty the input and
+        // tell the parent there is no selection.
+        creatableSelectRef.current?.onInputChange('', {
+          prevInputValue: '',
+          action: 'set-value',
+        });
+        onChange(null);
+        return;
+      }
+      onChange(newValue);
+    },
+    [onChange],
+  );
+
+  const formatOptionLabel = useCallback((option: any, meta: { context: string }) => {
+    if (meta.context === 'value') {
+      return option.value;
+    }
+    return option.label;
+  }, []);
 
   const onInputKeyDownRef = useRef(handleInputKeyDown);
   const overwriteInternalOnInputBlurRef = useRef(handleInputBlur);
@@ -108,7 +150,13 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
         <components.Input
           {...inputProps}
           onBlur={(event: any) => overwriteInternalOnInputBlurRef.current(event)}
-          onKeyDown={(event: any) => onInputKeyDownRef.current(event)}
+          onKeyDown={(event: any) => {
+            if (event.key === 'Escape') {
+              onInputKeyDownRef.current(event);
+              return;
+            }
+            inputProps.onKeyDown?.(event);
+          }}
         />
       );
     };
@@ -120,30 +168,43 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
   return (
     <CreatableSelect
       ref={creatableSelectRef}
-      id={props.htmlId}
-      placeholder={props.placeholder}
+      id={htmlId}
+      instanceId={htmlId}
+      placeholder={placeholder}
       defaultValue={defaultValue}
-      onChange={props.onChange}
+      onChange={handleChange}
       loadOptions={loadOptions}
       className="react-select"
       classNamePrefix="react-select"
       createOptionPosition={'first'}
       formatCreateLabel={formatCreateLabel}
+      formatOptionLabel={formatOptionLabel}
       defaultOptions={true}
       components={selectComponents}
       isClearable={isClearable}
       filterOption={filterFunction}
-      defaultInputValue={defaultInputValue}
+      blurInputOnSelect={true}
     />
   );
 }
 
-function optionize(givenSuggestion: Suggestion): ReactSelectOption {
+function optionize(givenSuggestion: Suggestion | null | undefined): ReactSelectOption | null {
+  if (givenSuggestion == null) {
+    return null;
+  }
+
   if (typeof givenSuggestion === 'string') {
+    if (givenSuggestion.trim() === '') {
+      return null;
+    }
     return { label: givenSuggestion, value: givenSuggestion, filterText: givenSuggestion };
   }
 
-  if (givenSuggestion?.sublabel == null) {
+  if (givenSuggestion.value == null || givenSuggestion.value.trim() === '') {
+    return null;
+  }
+
+  if (givenSuggestion.sublabel == null) {
     return givenSuggestion;
   }
 

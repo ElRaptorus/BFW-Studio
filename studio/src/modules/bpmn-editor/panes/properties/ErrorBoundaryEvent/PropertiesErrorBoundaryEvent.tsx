@@ -91,7 +91,6 @@ function PropertiesErrorBoundaryEvent(props: PaneComponentProps): React.JSX.Elem
 
   return (
     <ErrorEventPropertiesRenderer
-      key={`element_message_${element.errorMessage}_element_code_${element.errorCode}`}
       element={element}
       bpmnDocumentModel={bpmnDocumentModel}
       errorCodes={allUniqueErrorCodes}

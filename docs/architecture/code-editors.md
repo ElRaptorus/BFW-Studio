@@ -94,7 +94,7 @@ Do not paint host syntax with `--theme-cm-*`. Named themes (`vscode-dark`, `zed-
 
 ## Test selectors
 
-All host code editors and FEEL editors expose `.cm-content`. `StudioAgent.clickOnCodeEditor` / `getCodeEditorText` always target `.cm-content`. `clickOnCodeEditor` also select-all + backspace before returning — CodeMirror inserts at the caret, so tests that type a replacement must start from an empty document. To distinguish FEEL from generic source, probe a `.feel-editor` ancestor, not a different engine. Native `PaneProperty` inputs are not CodeMirror; those tests use `clearTextInput`.
+All host code editors and FEEL editors expose `.cm-content`. `StudioAgent.clickOnCodeEditor` / `getCodeEditorText` always target `.cm-content`. `clickOnCodeEditor` also select-all + backspace before returning — CodeMirror inserts at the caret, so tests that type a replacement must start from an empty document. To distinguish FEEL from generic source, probe a `.feel-editor` ancestor, not a different engine. Native `PaneProperty` inputs are not CodeMirror; those tests use `clearTextInput`. `KeyValueJsonEditor` (Default Configured Start Payload, Example Payload, Example Result) starts in builder mode for empty or flat JSON — there is no `.cm-content` until "Switch to JSON".
 
 ---
 

@@ -12,7 +12,7 @@ const OPEN_NEW_WINDOW = OsSpecificKeystroke('cmd-shift-n', 'ctrl-shift-n');
 
 const ASSERT_VISIBLE_TIMEOUT = 30000;
 
-describe('studio/smoke', { timeout: 120_000 }, () => {
+describe('studio/smoke', () => {
   let studioAgent: StudioAgent;
   let currentContext: TestContext;
 

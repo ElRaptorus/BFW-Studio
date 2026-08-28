@@ -54,9 +54,9 @@ export function KeyValueJsonEditor(props: KeyValueJsonEditorProps): React.JSX.El
   }, []);
 
   return (
-    <div>
+    <div {...(props.htmlAttributes ?? {})} data-test--kv-json-editor-mode={rawMode ? 'json' : 'builder'}>
       <div className="kv-builder-wrapper__toggle">
-        <button type="button" onClick={toggleMode}>
+        <button type="button" data-test--kv-json-editor-toggle onClick={toggleMode}>
           {rawMode ? 'Switch to Builder' : 'Switch to JSON'}
         </button>
       </div>
@@ -70,7 +70,6 @@ export function KeyValueJsonEditor(props: KeyValueJsonEditorProps): React.JSX.El
           fontSize={12}
           language="json"
           onChange={handleRawChange}
-          htmlAttributes={props.htmlAttributes}
         />
       ) : (
         <KeyValueBuilder
@@ -80,7 +79,6 @@ export function KeyValueJsonEditor(props: KeyValueJsonEditorProps): React.JSX.El
           valuePlaceholder={props.valuePlaceholder}
           hint={props.hint ?? 'Smart typing: true/false → boolean, numbers → number, null → null, rest → string'}
           emptyMessage={props.emptyMessage}
-          htmlAttributes={props.htmlAttributes}
         />
       )}
     </div>

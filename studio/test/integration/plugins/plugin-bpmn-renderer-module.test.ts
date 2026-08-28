@@ -11,7 +11,7 @@ import type { StudioAgent } from '../../StudioAgent';
 
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 
-describe('plugin/bpmn-renderer-module', { timeout: 120_000 }, () => {
+describe('plugin/bpmn-renderer-module', () => {
   describe('renderer module injection (bpmn.renderer permission)', () => {
     let studioAgent: StudioAgent;
 

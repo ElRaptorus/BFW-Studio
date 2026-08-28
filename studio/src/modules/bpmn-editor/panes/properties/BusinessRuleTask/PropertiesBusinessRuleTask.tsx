@@ -13,7 +13,7 @@ import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { ProjectDmnDecision, ProjectDmnModel } from '#modules/dmn-editor/initializers/initializeDmnCommands';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   FeelEditor,
@@ -108,10 +108,28 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
     });
   };
 
-  const updateDecisionRef = async (newDecisionRef: string): Promise<void> => {
+  const updateDecisionRef = (newDecisionRef: string): void => {
     const currentElementId = element.decisionElementId;
 
-    if (currentElementId && props.studio.commands.isRegistered('dmn.project.getAllDecisionsForDmnModel')) {
+    if (newDecisionRef.trim() === '') {
+      bpmnDocumentModel.elements.setElementProperty(element.id, 'businessRule', {
+        command: 'updateDmnConfig',
+        newDecisionRef: '',
+        newDecisionElementId: '',
+      });
+      return;
+    }
+
+    bpmnDocumentModel.elements.setElementProperty(element.id, 'businessRule', {
+      command: 'updateDmnConfig',
+      newDecisionRef: newDecisionRef,
+    });
+
+    if (!currentElementId || !props.studio.commands.isRegistered('dmn.project.getAllDecisionsForDmnModel')) {
+      return;
+    }
+
+    void (async () => {
       const validDecisions = await props.studio.commands.executeCommand<ProjectDmnDecision[]>(
         'dmn.project.getAllDecisionsForDmnModel',
         [newDecisionRef],
@@ -123,12 +141,7 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
           newDecisionElementId: '',
         });
       }
-    }
-
-    bpmnDocumentModel.elements.setElementProperty(element.id, 'businessRule', {
-      command: 'updateDmnConfig',
-      newDecisionRef: newDecisionRef,
-    });
+    })();
   };
 
   const updateDecisionElementId = (decisionElementId: string): void => {
@@ -138,7 +151,7 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
     });
   };
 
-  const getDecisionRefSuggestions = async (): Promise<Suggestion[]> => {
+  const getDecisionRefSuggestions = useCallback(async (): Promise<Suggestion[]> => {
     if (!props.studio.commands.isRegistered('dmn.project.getAllReachableDmnModels')) {
       return [];
     }
@@ -151,9 +164,9 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
       sublabel: `${model.name} — ${model.filename}`,
       value: model.definitionsId,
     }));
-  };
+  }, [props.studio]);
 
-  const getDecisionElementIdSuggestions = async (): Promise<Suggestion[]> => {
+  const getDecisionElementIdSuggestions = useCallback(async (): Promise<Suggestion[]> => {
     const currentRef = element.decisionRef;
     if (!currentRef || !props.studio.commands.isRegistered('dmn.project.getAllDecisionsForDmnModel')) {
       return [];
@@ -167,7 +180,13 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
       sublabel: decision.name !== decision.decisionId ? decision.name : undefined,
       value: decision.decisionId,
     }));
-  };
+  }, [element.decisionRef, props.studio]);
+
+  const decisionRefSuggestions = useMemo(() => getDecisionRefSuggestions(), [getDecisionRefSuggestions]);
+  const decisionElementIdSuggestions = useMemo(
+    () => getDecisionElementIdSuggestions(),
+    [getDecisionElementIdSuggestions],
+  );
 
   const updateResultVariable = (resultVariable: string): void => {
     bpmnDocumentModel.elements.setElementProperty(element.id, 'businessRule', {
@@ -226,7 +245,6 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
       {element.implementation === 'dmn' && (
         <>
           <PaneProperty
-            key={`element_decision_ref_${element.decisionRef ?? ''}_${element.decisionElementId ?? ''}`}
             htmlId="business-rule-task-decision-ref-property"
             label={
               <DecisionRefLinkWithLabel
@@ -239,38 +257,38 @@ function PropertiesBusinessRuleTask(props: PaneComponentProps): React.JSX.Elemen
             placeholder="Type or select a DMN model ID..."
             value={element.decisionRef ?? ''}
             onCommit={(newValue: any) => updateDecisionRef(newValue?.value ?? newValue ?? '')}
-            suggestions={getDecisionRefSuggestions()}
+            suggestions={decisionRefSuggestions}
             isClearable={true}
           />
-          <PaneProperty
-            key={`element_decision_element_id_${element.decisionElementId ?? ''}_${element.decisionRef ?? ''}`}
-            htmlId="business-rule-task-decision-element-id-property"
-            label="Decision Element ID"
-            type="text-with-suggestions"
-            placeholder="Type or select a decision ID..."
-            value={element.decisionElementId ?? ''}
-            onCommit={(newValue: any) => updateDecisionElementId(newValue?.value ?? newValue ?? '')}
-            suggestions={getDecisionElementIdSuggestions()}
-            isClearable={true}
-          />
-          <PaneProperty
-            key={`element_result_variable_${element.resultVariable ?? ''}`}
-            htmlId="business-rule-task-result-variable-property"
-            label="Result Variable"
-            type="text"
-            value={element.resultVariable ?? ''}
-            onCommit={(resultVariable: string) => updateResultVariable(resultVariable)}
-            htmlAttributes={{ 'data-test--business-rule-task-result-variable-input': true }}
-          />
-          <div className="form-group">
-            <Checkbox
-              htmlId="business-rule-task-trace-unmatched-rules-checkbox"
-              key={traceUnmatchedRules.toString()}
-              checked={traceUnmatchedRules}
-              onChange={changeTraceUnmatchedRules}
-              label="Trace Unmatched Rules"
+          <React.Fragment key={`element_decision_ref_${element.decisionRef ?? ''}`}>
+            <PaneProperty
+              htmlId="business-rule-task-decision-element-id-property"
+              label="Decision Element ID"
+              type="text-with-suggestions"
+              placeholder="Type or select a decision ID..."
+              value={element.decisionElementId ?? ''}
+              onCommit={(newValue: any) => updateDecisionElementId(newValue?.value ?? newValue ?? '')}
+              suggestions={decisionElementIdSuggestions}
+              isClearable={true}
             />
-          </div>
+            <PaneProperty
+              htmlId="business-rule-task-result-variable-property"
+              label="Result Variable"
+              type="text"
+              value={element.resultVariable ?? ''}
+              onCommit={(resultVariable: string) => updateResultVariable(resultVariable)}
+              htmlAttributes={{ 'data-test--business-rule-task-result-variable-input': true }}
+            />
+            <div className="form-group">
+              <Checkbox
+                htmlId="business-rule-task-trace-unmatched-rules-checkbox"
+                key={traceUnmatchedRules.toString()}
+                checked={traceUnmatchedRules}
+                onChange={changeTraceUnmatchedRules}
+                label="Trace Unmatched Rules"
+              />
+            </div>
+          </React.Fragment>
         </>
       )}
     </PaneBody>
@@ -282,32 +300,40 @@ function DecisionRefLinkWithLabel(props: {
   decisionElementId: string;
   studio: Bifrost;
 }): React.JSX.Element {
-  if (!props.decisionRef?.trim()) {
+  const { decisionRef, decisionElementId, studio } = props;
+
+  const getSymbolPromise = useMemo(() => {
+    if (!decisionRef.trim()) {
+      return Promise.resolve(null);
+    }
+
+    return (async () => {
+      if (decisionElementId.trim()) {
+        const decisionSymbols = await studio.symbolIndex.getAll({
+          type: 'dmn:Decision',
+          id: decisionElementId,
+          definitionId: decisionRef,
+        });
+        if (decisionSymbols.length > 0) {
+          return decisionSymbols[0];
+        }
+      }
+
+      const definitionsSymbols = await studio.symbolIndex.getAll({
+        type: 'dmn:Definitions',
+        id: decisionRef,
+      });
+      return definitionsSymbols[0] ?? null;
+    })();
+  }, [decisionRef, decisionElementId, studio]);
+
+  if (!decisionRef.trim()) {
     return <>Decision Reference</>;
   }
 
-  const getSymbolPromise = (async () => {
-    if (props.decisionElementId?.trim()) {
-      const decisionSymbols = await props.studio.symbolIndex.getAll({
-        type: 'dmn:Decision',
-        id: props.decisionElementId,
-        definitionId: props.decisionRef,
-      });
-      if (decisionSymbols.length > 0) {
-        return decisionSymbols[0];
-      }
-    }
-
-    const definitionsSymbols = await props.studio.symbolIndex.getAll({
-      type: 'dmn:Definitions',
-      id: props.decisionRef,
-    });
-    return definitionsSymbols[0] ?? null;
-  })();
-
   return (
     <>
-      Decision Reference <JumpToSymbolInSolutionLink studio={props.studio} promise={getSymbolPromise} />
+      Decision Reference <JumpToSymbolInSolutionLink studio={studio} promise={getSymbolPromise} />
     </>
   );
 }

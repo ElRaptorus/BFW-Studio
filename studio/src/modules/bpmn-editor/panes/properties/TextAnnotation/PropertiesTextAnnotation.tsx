@@ -48,6 +48,7 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element | null {
       parentUri={editorDocument.uri}
       fragmentId={selectedElement.id}
       id="text-annotation-open-text-tab"
+      dataTest="text-annotation-open-text-tab"
     />
   );
 
@@ -84,16 +85,14 @@ export function PropertiesTextAnnotation(props: PaneComponentProps): React.JSX.E
 
   return (
     <PaneBody>
-      <div className="form-group">
-        <label>Text</label>
-        <PaneProperty
-          htmlId="text-annotation-text-property"
-          type="textarea"
-          label="Text"
-          value={element.text}
-          onChange={(value: string) => updateTextAnnotation(value)}
-        />
-      </div>
+      <PaneProperty
+        htmlId="text-annotation-text-property"
+        type="textarea"
+        label="Text"
+        value={element.text}
+        onChange={(value: string) => updateTextAnnotation(value)}
+        htmlAttributes={{ 'data-test--text-annotation-text': true }}
+      />
     </PaneBody>
   );
 }

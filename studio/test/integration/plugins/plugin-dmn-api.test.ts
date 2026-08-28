@@ -18,7 +18,7 @@ async function openDmnFileAndGetUri(studioAgent: StudioAgentDmnExtension, filena
   return fileUri;
 }
 
-describe('plugin/dmn-api', { timeout: 120_000 }, () => {
+describe('plugin/dmn-api', () => {
   describe('permission gating', () => {
     let studioAgent: StudioAgentDmnExtension;
 

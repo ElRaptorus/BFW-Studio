@@ -48,6 +48,7 @@ type PanePropertyProps_Textarea = {
   className?: string;
   rows?: number;
   valueRef?: { current: string };
+  htmlAttributes?: object;
 };
 
 type PanePropertyProps_TextWithSuggestions = {
@@ -190,6 +191,7 @@ function PanePropertyTextarea(props: PanePropertyProps_Textarea): React.JSX.Elem
     label,
     rows,
     valueRef,
+    htmlAttributes,
   } = props;
   const [validationErrors, setValidationErrors] = useState<any[]>([]);
   const [currentValue, setCurrentValue] = useState(value);
@@ -277,6 +279,7 @@ function PanePropertyTextarea(props: PanePropertyProps_Textarea): React.JSX.Elem
         onBlur={handleBlur}
         disabled={disabled}
         rows={rows ?? 3}
+        {...htmlAttributes}
       />
       <ValidationErrors validationErrors={validationErrors} />
     </div>

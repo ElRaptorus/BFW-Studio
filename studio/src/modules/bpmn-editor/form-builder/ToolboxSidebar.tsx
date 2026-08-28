@@ -36,7 +36,7 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
               key={descriptor.type}
               type="button"
               className="form-builder-toolbox__item"
-              data-test--form-builder-toolbox-item
+              data-test--form-builder-toolbox-field={descriptor.type}
               title={descriptor.label}
               onClick={() => handleAddField(descriptor.type)}
             >
@@ -52,7 +52,7 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
           <button
             type="button"
             className="form-builder-toolbox__item"
-            data-test--form-builder-toolbox-item
+            data-test--form-builder-toolbox-action="confirm"
             title="Add Confirm action"
             onClick={() => handleAddAction(FormActionPreset.Confirm)}
           >
@@ -62,7 +62,7 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
           <button
             type="button"
             className="form-builder-toolbox__item"
-            data-test--form-builder-toolbox-item
+            data-test--form-builder-toolbox-action="ok"
             title="Add OK action"
             onClick={() => handleAddAction(FormActionPreset.Ok)}
           >
@@ -72,7 +72,7 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
           <button
             type="button"
             className="form-builder-toolbox__item"
-            data-test--form-builder-toolbox-item
+            data-test--form-builder-toolbox-action="yes"
             title="Add Yes action"
             onClick={() => handleAddAction(FormActionPreset.Yes)}
           >
@@ -82,7 +82,7 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
           <button
             type="button"
             className="form-builder-toolbox__item"
-            data-test--form-builder-toolbox-item
+            data-test--form-builder-toolbox-action="no"
             title="Add No action"
             onClick={() => handleAddAction(FormActionPreset.No)}
           >
@@ -92,7 +92,7 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
           <button
             type="button"
             className="form-builder-toolbox__item"
-            data-test--form-builder-toolbox-item
+            data-test--form-builder-toolbox-action="cancel"
             title="Add Cancel action"
             onClick={() => handleAddAction(FormActionPreset.Cancel)}
           >
@@ -102,7 +102,7 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
           <button
             type="button"
             className="form-builder-toolbox__item"
-            data-test--form-builder-toolbox-item
+            data-test--form-builder-toolbox-action="custom"
             title="Add Custom action"
             onClick={() => handleAddAction(FormActionPreset.Custom)}
           >

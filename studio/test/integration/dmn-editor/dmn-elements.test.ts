@@ -24,7 +24,7 @@ const ITEM_DEFINITIONS_PANE = 'dmn/panes/properties/PropertiesItemDefinitions';
 const IMPORTS_PANE = 'dmn/panes/properties/PropertiesImports';
 const VALIDATION_PANE = 'dmn/panes/properties/PropertiesValidation';
 
-describe('dmn/elements', { timeout: 40_000 }, () => {
+describe('dmn/elements', () => {
   let studioAgent: StudioAgentDmnExtension;
 
   beforeAll(async () => {
@@ -1164,32 +1164,23 @@ describe('dmn/elements', { timeout: 40_000 }, () => {
   // ─── Delete via Keyboard ────────────────────────────────────────────
 
   it('dmn/elements/delete: should delete a selected element via keyboard', async () => {
+    const knowledgeSourceId = 'KnowledgeSource_Regulations';
+    const knowledgeSourceShape = `[data-element-id=${knowledgeSourceId}]`;
+
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
-    const initialIds = (await studioAgent.testDriver.client!.execute(() => {
-      const editorDocument = (window as any).bifrost?.editors?.getFocusedEditorDocument?.();
-      const model = (window as any).bifrost?.editors?.getEditorDocumentModelSync?.(editorDocument);
-      return model?.elements?.getAllIds?.() ?? [];
-    })) as string[];
-
     await studioAgent.selectDmnElementByIdAndWaitForElement(
-      'KnowledgeSource_Regulations',
+      knowledgeSourceId,
       KNOWLEDGE_SOURCE_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
 
     await studioAgent.sendKeyboardInput(['Backspace']);
-    await studioAgent.pause(500);
 
-    const afterIds = (await studioAgent.testDriver.client!.execute(() => {
-      const editorDocument = (window as any).bifrost?.editors?.getFocusedEditorDocument?.();
-      const model = (window as any).bifrost?.editors?.getEditorDocumentModelSync?.(editorDocument);
-      return model?.elements?.getAllIds?.() ?? [];
-    })) as string[];
-
-    assert.ok(afterIds.length < initialIds.length, 'Expected element count to decrease after deletion');
-    assert.ok(!afterIds.includes('KnowledgeSource_Regulations'), 'Deleted element should no longer be in registry');
+    await studioAgent.waitForNotVisible(knowledgeSourceShape);
+    await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesKnowledgeSource');
+    await studioAgent.assertVisible(DEFINITIONS_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

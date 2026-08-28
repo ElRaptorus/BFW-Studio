@@ -36,6 +36,7 @@ The single-line variant passes additional CodeMirror extensions to constrain the
 - **Enter → blur**: Keymap intercepts Enter and blurs instead of inserting a newline
 - **Paste newline stripping**: DOM event handler strips `\n`/`\r` from pasted text
 - **Single-line CSS**: `maxHeight: 2rem`, `overflow: hidden`, `whiteSpace: nowrap`
+- **Do not key the host wrapper on the live value.** `onChange` fires on blur. A `key={…${committedValue}}` remounts and destroys CodeMirror during the click that commits, which can leave a FEEL autocomplete overlay on the canvas. `PropertiesProcess` Correlation Key, User Task due date, HTTP auth header / response headers, Sequential MI loop break, and Correlation Retrieval Expression omit that key. Input / Output mapping **rows** use a WeakMap `rowId`, not `${source}->${target}`.
 
 ## Props
 

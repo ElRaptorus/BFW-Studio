@@ -54,7 +54,7 @@ export class StudioAgentDmnExtension extends StudioAgent {
 
   async assertBackToDrdButtonNotPresent(): Promise<void> {
     const elements = await this.testDriver.client!.$$('[data-test--dmn-view-switcher-back]');
-    if (elements.length > 0) {
+    if ((await elements.length) > 0) {
       throw new Error('Expected "Back to DRD" button to not be present, but it was found');
     }
   }

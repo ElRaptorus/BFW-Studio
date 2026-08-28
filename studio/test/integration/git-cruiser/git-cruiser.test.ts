@@ -20,7 +20,7 @@ function createGitRepoFromFixture(): string {
   return tmpDir;
 }
 
-describe('git-cruiser/smoke', { timeout: 40_000 }, () => {
+describe('git-cruiser/smoke', () => {
   let studioAgent: StudioAgent;
   let repoDir: string;
 

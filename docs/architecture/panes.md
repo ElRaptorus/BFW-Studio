@@ -79,6 +79,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 
 `getBpmnSelectionForPropertiesPane` / `getDmnSelectionForPropertiesPane` return `null` when the modeler is not ready. That empties the body; the header stays because `shouldBeDisplayed` does not require readiness.
 
+`getKeyForPropertiesPane` is `type__id` only. Do not include `name` — for Escalation events that field is the overlay value being edited, so a name commit would remount the pane and re-initialize match-all radios.
+
 `PaneFull` may still skip `PaneContent` when `props.collapsed === true`. That is collapse UX, not visibility.
 
 ### What belongs in `shouldBeDisplayed`

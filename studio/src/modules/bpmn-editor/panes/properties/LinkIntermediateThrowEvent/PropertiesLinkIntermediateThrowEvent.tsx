@@ -80,7 +80,6 @@ function PropertiesLinkIntermediateThrowEvent(props: PaneComponentProps): React.
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_link_name_${element.link}`}
         type="text-with-suggestions"
         htmlId="link-intermediate-throw-event-link-property"
         label="Name"

@@ -54,6 +54,8 @@ Source file: import '#bifrost/Bifrost'
 
 Both paths produce the same result. The dual-mapping is necessary because TypeScript's `imports` field resolution (even with `moduleResolution: "bundler"`) does not perform extension appending on resolved targets, while `paths` does.
 
+Vitest does not use `package.json` `imports` for these aliases. Tests get a third mapping in `studio/vitest.config.mts` (`#bifrost` → `src/bifrost`, and the same for `#components` / `#modules`). That file is `.mts` so Node loads it as ESM: `studio/package.json` stays CommonJS for Electron (`"main": "out/bundle-electron-main.js"`) and must not set `"type": "module"`. A `vitest.config.ts` in a CJS package is loaded as CommonJS, which Vite's native `configLoader` rejects. Use `import.meta.dirname` there, not `__dirname`.
+
 ## Ambient Module Declarations
 
 `studio/src/packages.d.ts` declares types for non-TypeScript assets that Rspack handles via loaders:
@@ -82,10 +84,6 @@ Key settings for module resolution:
 | `paths` | `{ "#bifrost/*": [...], ... }` | Subpath alias resolution for type checking |
 | `skipLibCheck` | `true` | Avoids type-checking third-party `.d.ts` files |
 
-### ts-node Config
-
-The `ts-node` block in `tsconfig.base.json` overrides `target` to `"es2022"` and `module` to `"CommonJS"` for integration test execution.
-
 ### Per-Target Configs
 
 | Config | Scope | Notes |
@@ -94,5 +92,5 @@ The `ts-node` block in `tsconfig.base.json` overrides `target` to `"es2022"` and
 | `tsconfig.electron-main.json` | `src/` minus renderer/worker dirs | Main process type checking |
 | `tsconfig.webworker.json` | Web worker sources | Includes `packages.d.ts` explicitly |
 | `tsconfig.sharedworker.json` | Shared worker sources | Includes `packages.d.ts` explicitly |
-| `tsconfig.components.json` | Full project (tests + src) | Used by `ts-node` for integration tests; adds `"mocha"` to `types` |
+| `tsconfig.components.json` | Shared component type checking | Extends the base config with `dom` + `esnext` libs |
 | `studio-sdk/tsconfig.json` | SDK sources | Emits `.d.ts` declarations to `out/` |

@@ -50,7 +50,7 @@ function createMergeConflictRepo(): string {
   return tmpDir;
 }
 
-describe('git-merge-resolver', { timeout: 120_000 }, () => {
+describe('git-merge-resolver', () => {
   let studioAgent: StudioAgent;
   let repoDir: string;
 

@@ -85,7 +85,6 @@ function PropertiesEscalationBoundaryEvent(props: PaneComponentProps): React.JSX
 
   return (
     <EscalationEventPropertiesRenderer
-      key={`element_code_${element.escalationCode}_element_name_${element.name}`}
       element={element}
       bpmnDocumentModel={bpmnDocumentModel}
       escalationCodes={allUniqueEscalationCodes}
@@ -131,9 +130,12 @@ const EscalationEventPropertiesRenderer = (props) => {
             name="optionsRadios"
             defaultChecked={matchAllEscalations}
             onClick={() => matchAllEscalationsChanged(true)}
-            data-test--escalation-end-event-match-all-radio
           />
-          <label className="form-check-label" htmlFor="escalation-boundary-event-match-all-escalations">
+          <label
+            className="form-check-label"
+            htmlFor="escalation-boundary-event-match-all-escalations"
+            data-test--escalation-boundary-event-match-all-radio
+          >
             Match all escalations
           </label>
         </div>
@@ -145,9 +147,12 @@ const EscalationEventPropertiesRenderer = (props) => {
             name="optionsRadios"
             defaultChecked={!matchAllEscalations}
             onClick={() => matchAllEscalationsChanged(false)}
-            data-test--escalation-boundary-event-specific-escalation-radio
           />
-          <label className="form-check-label" htmlFor="escalation-boundary-event-match-a-specific-escalation">
+          <label
+            className="form-check-label"
+            htmlFor="escalation-boundary-event-match-a-specific-escalation"
+            data-test--escalation-boundary-event-specific-escalation-radio
+          >
             Match a specific escalation
           </label>
         </div>
@@ -156,24 +161,22 @@ const EscalationEventPropertiesRenderer = (props) => {
       {!matchAllEscalations && (
         <fieldset>
           <PaneProperty
-            key={`escalation-code_${element.escalationCode}`}
             htmlId="escalation-boundary-event-code"
             label="Escalation Code"
             type="text-with-suggestions"
             suggestions={escalationCodes}
             value={element.escalationCode}
-            onCommit={(newValue) => updateEscalation({ escalationCode: newValue?.value ?? '' })}
+            onCommit={(newValue) => updateEscalation({ escalationCode: newValue?.value ?? newValue ?? '' })}
             isClearable={true}
           />
           <PaneProperty
-            key={`escalation-name_${element.name}`}
             htmlId="escalation-boundary-event-name"
             label="Escalation Name"
             type="text-with-suggestions"
             suggestions={escalationNames}
             placeholder="Type escalation name ..."
             value={element.name}
-            onCommit={(newValue) => updateEscalation({ name: newValue?.value ?? '' })}
+            onCommit={(newValue) => updateEscalation({ name: newValue?.value ?? newValue ?? '' })}
             isClearable={true}
           />
         </fieldset>

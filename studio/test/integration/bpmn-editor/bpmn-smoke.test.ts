@@ -8,7 +8,7 @@ import { createAndStartStudioAgentBpmnExtension } from '../../StudioAgentBpmnExt
 
 const CREATE_NEW_DOCUMENT = OsSpecificKeystroke('cmd-n', 'ctrl-n');
 
-describe('bpmn/smoke', { timeout: 120_000 }, () => {
+describe('bpmn/smoke', () => {
   let studioAgent: StudioAgentBpmnExtension;
 
   beforeAll(async () => {
@@ -87,18 +87,6 @@ describe('bpmn/smoke', { timeout: 120_000 }, () => {
   });
 
   it('bpmn/smoke/contextmenu: should show contextmenu for a call activity', async () => {
-    await studioAgent.jumpToFileInSolution('callactivity-test.bpmn');
-    await studioAgent.waitForInteractiveBpmnDocument();
-
-    await studioAgent.selectBpmnElementByIdAndWaitForElement('CallActivity_1');
-    await studioAgent.rightClickBpmnElementById('CallActivity_1');
-
-    await studioAgent.assertContextMenuVisible(2000);
-
-    await studioAgent.assertNoErrorsPresent();
-  });
-
-  it('bpmn/smoke/contextmenu: should show contextmenu for a call activity without open solution', async () => {
     await studioAgent.jumpToFileInSolution('callactivity-test.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 

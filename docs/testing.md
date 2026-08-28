@@ -29,11 +29,11 @@ Private Engine packages (`@elraptorus/daemonengine_sdk`, `@elraptorus/daemonengi
 ### TypeScript Configuration
 
 - Tests are compiled on-the-fly by Vitest (via esbuild) — they are not included in any build-time tsconfig
-- Path aliases (`#bifrost`, `#components`, `#modules`) are configured in `studio/vitest.config.ts`
+- Path aliases (`#bifrost`, `#components`, `#modules`) are configured in `studio/vitest.config.mts`
 
 ## Test Framework
 
-- **Vitest** — Test runner for both unit and integration tests (configured in `studio/vitest.config.ts`)
+- **Vitest** — Test runner for both unit and integration tests (configured in `studio/vitest.config.mts`). The file is `.mts` so Node loads it as ESM; `studio/package.json` is CommonJS for Electron and must not set `"type": "module"`. `testTimeout` and `hookTimeout` are `120_000` in that config — do not repeat `{ timeout: … }` on `describe` / `it` / hooks. WebDriverIO waits (`ASSERT_VISIBLE_TIMEOUT`, `waitForDisplayed`) are a separate layer.
 - **WebDriverIO** — Browser automation for integration tests (via `TestDriver`)
 - **ChromeDriver** (`electron-chromedriver`) — Drives the Electron application
 - **assert** (Node built-in) — Assertion library
@@ -51,9 +51,9 @@ studio/test/
 │   ├── OsSpecificKeystroke.ts  # Cross-platform keystroke handling
 │   └── ScreenCapture.ts        # Screenshot capture on failure
 ├── fixtures/                   # Test data directories
-│   ├── test-solution-simple/   # Single-root fixture with BPMN files
-│   ├── test-solution-bpmn/     # BPMN-specific test files
-│   ├── test-solution-navigator/ # Navigation history test files
+│   ├── test-solution-simple/   # Single-root smoke: call_activity_test.bpmn + hidden-file.fixture
+│   ├── test-solution-bpmn/     # BPMN files named by editor / plugin / linter tests
+│   ├── test-solution-navigator/ # Navigation history (001.bpmn)
 │   ├── test-solution-multi-a/  # Multi-root fixture: project A
 │   ├── test-solution-multi-b/  # Multi-root fixture: project B
 │   └── ...
@@ -156,12 +156,17 @@ Do not wait for plugin load inside `it()`. Waits that observe an action the test
 | `clickOn(selector)` | Left-clicks on an element |
 | `rightClickOn(selector)` | Right-clicks on an element |
 | `clearTextInput(selector)` | Clears a native `<input>` / `<textarea>` (select-all is not enough; the caret may sit mid-value) |
+| `getValue(selector)` | Reads the `value` of a native `<input>` / `<textarea>` |
 | `clickOnCodeEditor(parentSelector)` | Focuses `.cm-content` inside the parent and **clears** it (CodeMirror inserts at the caret) |
 | `clearCodeEditor(parentSelector)` | Alias of `clickOnCodeEditor` |
 | `getCodeEditorText(parentSelector)` | Trimmed visible text of `.cm-content` inside the parent |
-| `sendKeyboardInput(keys)` | Types keys into the focused element |
+| `clearSuggestionSelect(propertySelector)` | Clicks the CreatableSelect clear **X** and waits until the inner search input is empty. Do not type a replacement until this returns |
+| `getSuggestionSelectValue(propertySelector)` | Reads the committed CreatableSelect value after the menu closes: `.react-select__single-value` if present, otherwise the search input. Keep `getValue` on the input only when asserting empty |
+| `commitSuggestionCreateOption(propertySelector, createdValue)` | Clicks the CreatableSelect `Use "…"` option after typing a new value; waits for the menu to close |
+| `sendKeyboardInput(keys)` | Types keys into the focused element. Named keys: `'enter'` (mapped), `'Escape'` / `'escape'` (Escape), `'Backspace'`, `'Tab'`. A lowercase `'escape'` used to be typed as the letters e-s-c-a-p-e |
 | `assertVisible(selector, timeout)` | Waits for element to be visible |
 | `assertNotVisible(selector)` | Asserts element is not in the DOM |
+| `waitForNotVisible(selector)` | Polls until the selector matches no elements |
 | `assertNoErrorsPresentAndIdle()` | Asserts no React error boundaries and no loading indicators |
 | `assertPaneVisible(paneId)` | Asserts a pane is displayed |
 | `assertContextMenuVisible(timeout)` | Asserts a context menu is displayed |
@@ -204,7 +209,7 @@ The Studio registers test-only commands in `initializeTestCommands()` (available
 | `std.test.renameProjectInSolution` | Prompts for base URI then new name, renames the project |
 | `std.test.closeSolution` | Closes the current solution without dirty-check dialog |
 
-Test commands that accept parameters use `bifrost.dialog.prompt()`. StudioAgent types the parameter into the prompt dialog automatically. Read-only queries (e.g., `getSolutionProjectCount`) use `testDriver.client.execute()` internally within StudioAgent helper methods, since command search cannot return values to the test harness.
+Test commands that accept parameters use `bifrost.dialog.prompt()`. StudioAgent types the parameter into the prompt dialog automatically. Read-only queries (e.g., `getSolutionProjectCount`) use `testDriver.client.execute()` internally within StudioAgent helper methods, since command search cannot return values to the test harness. Test files must never read `studioAgent.testDriver` — it is `protected`. Keyboard input goes through `sendKeyboardInput`; canvas deletion is `sendKeyboardInput(['Backspace'])` then `waitForNotVisible('[data-element-id=…]')`.
 
 ## Selector Conventions
 
@@ -251,7 +256,7 @@ await studioAgent.assertVisible(`[data-test--tab="${uriForSelector}"]`);
 
 ### Static Fixtures
 
-Place static test files in `studio/test/fixtures/<fixture-name>/`. Fixtures are referenced by name in tests.
+Place static test files in `studio/test/fixtures/<fixture-name>/`. Fixtures are referenced by name in tests (`jumpToFileInSolution`, `readFileSync`, directory copy). Do not keep BPMN/DMN files that no test names. Default Configured Start Payload tests use `untyped-task.bpmn` (`StartEvent_1` + `UntypedTask_1`); there is no dedicated pre/post-script fixture. Form Builder tests open `form-builder.bpmn` (`UserTask_1` with no `evil:formFields` so the summary pane shows Create Form). Do not use `user-task.bpmn` for those tests — it already has form fields and shows Edit Form. Do not create a new untitled BPMN (`Ctrl+N` / `BpmnEmptyDocument.bpmn`); that template is a pool plus a start event and has no user task. `test-solution-simple` is a single-root smoke folder (`call_activity_test.bpmn` plus `hidden-file.fixture` for the hidden-files toggle).
 
 ### Dynamic Fixtures (`.essln` Files)
 
@@ -354,6 +359,7 @@ it('should add folder to solution', async () => {
 When testing interactions with BPMN diagrams:
 
 - **Maximize the window** at the start of each BPMN test. The context pad rendered by `bpmn-js` has a fixed size and may overlap neighboring elements, causing clicks to land on the wrong target.
+- **Close the context pad** (`sendKeyboardInput(['Escape'])`) before clicking small property-pane controls (radios). After a canvas select the pad stays open; WebDriverIO `click()` waits until the target is unobstructed and can hang until `testTimeout` with no "not displayed" error. Click the **label** (`[data-test--…-radio]` on the label, not `#id` on the native `input`) — the label is the larger hit target. Do not add Escape inside `selectBpmnElementByIdAndWaitForElement`; some tests wait for `.djs-context-pad`.
 
 ```typescript
 await studioAgent.maximize();
@@ -367,9 +373,11 @@ Host editors are CodeMirror 6 (`.cm-content`). Native pane fields are ordinary i
 
 | Field type | How to replace |
 |---|---|
-| Native input (`PaneProperty` text/number) | `clearTextInput(selector)` then `clickOn` then `sendKeyboardInput` |
-| CodeMirror / FEEL (`.cm-content`) | `clickOnCodeEditor(parentSelector)` then `sendKeyboardInput` — the helper already select-all + backspace |
+| Native input (`PaneProperty` text/number/textarea) | `clearTextInput(selector)` then `clickOn` then `sendKeyboardInput`; read with `getValue`. There is no `setInputValue` / `getInputValue` on `StudioAgent`. Do not send `enter` into a textarea — it inserts a newline. Text Annotation (`#text-annotation-text-property`) is a textarea |
+| Suggestion select (`text-with-suggestions`) | Pre-filled controls show a clear **X**. The committed value is `.react-select__single-value`; the search input stays empty so opening the menu lists every option. Create a new value: `clearSuggestionSelect(propertySelector)` (waits until the search input is empty), click the control, type (no Enter), then `commitSuggestionCreateOption(propertySelector, createdValue)`. After picking an option, read with `getSuggestionSelectValue(propertySelector)`. Do not click the X and type immediately. Do not clear before picking an existing option. Wait for `[data-test-option-value="…"]`. Do not press Enter after clicking an already-selected option. Closing an open menu without committing uses `sendKeyboardInput(['Escape'])`. `htmlId` is on the CreatableSelect — jump-to-symbol lives in the label (`[data-test--jump-to-symbol-in-solution]`). Business Rule Task fixture is already `dmn` / `discount-rules` |
+| CodeMirror / FEEL (`.cm-content`) | `clickOnCodeEditor(parentSelector)` then `sendKeyboardInput` — the helper already select-all + backspace. Process Correlation Key (`#process-correlation-key-property`) is `OneLineFeelEditor`, not `PaneProperty type="text"` — `getValue` on that id is `''`. One-line FEEL maps Enter to blur; multi-line `FeelEditor` (e.g. Conditional Flow) inserts a newline. Do not send `enter` as if it were a native input. Read with `getCodeEditorText` |
 | JSON panes (`MultiLineCodeEditor`, e.g. Data Object value contract) | Same as CodeMirror — do not `clickOn` the wrapper or `getValue` |
+| `KeyValueJsonEditor` (Default Configured Start Payload, Example Payload, Example Result) | Empty/flat JSON is the key-value builder, not CodeMirror. Click `[data-test--kv-builder-add-button]`, type `[data-test--kv-builder-key-input]` / `[data-test--kv-builder-value-input]`, read with `getValue`. Use `clickOnCodeEditor` only after `[data-test--kv-json-editor-toggle]` or in the open-in-new-tab fragment |
 | DMN native properties | `setDmnPropertyValue` already calls `clearTextInput` |
 
 Do not click a filled field and type a new value. Fixture XML often already has `loopMaximum`, `evil:LoopInterval`, FEEL conditions, and collection expressions.

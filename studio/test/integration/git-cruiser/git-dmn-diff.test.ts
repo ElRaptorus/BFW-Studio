@@ -19,7 +19,7 @@ function createGitRepoFromFixture(): string {
   return tmpDir;
 }
 
-describe('git-cruiser/dmn-diff', { timeout: 60_000 }, () => {
+describe('git-cruiser/dmn-diff', () => {
   let studioAgent: StudioAgent;
   let repoDir: string;
 

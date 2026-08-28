@@ -80,7 +80,6 @@ function PropertiesSignalIntermediateCatchEvent(props: PaneComponentProps): Reac
   return (
     <PaneBody>
       <PaneProperty
-        key={`element_signal_name_${element.signal}`}
         type="text-with-suggestions"
         htmlId="signal-intermediate-catch-event-signal-property"
         label="Signal"
