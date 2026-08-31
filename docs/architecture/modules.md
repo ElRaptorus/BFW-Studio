@@ -112,11 +112,12 @@ Shared DMN infrastructure: `DmnModelerComponentAdapter` wrapping `dmn-js`, DMN d
 
 #### dmn-editor
 
-The DMN 1.5 decision model editor. Provides the interactive DRD modeler, decision table editor, literal expression editor, boxed expression editor, property panels, merge resolver, and all editing functionality. Mirrors the `bpmn-editor` module structure.
+The DMN 1.5 decision model editor. Provides the interactive DRD modeler, decision table editor, literal expression editor, boxed expression editor, right-area panes in four groups (`property`, `scripting`, `documentation`, `validation`), merge resolver, and all editing functionality. Mirrors the `bpmn-editor` module structure.
 
 - **Entry:** `studio/src/modules/dmn-editor/index.ts`
 - **Dependencies (imports):** `dmn-core`
 - **Document types registered:** `dmn` (`.dmn` files)
+- **Panes registered:** Definitions / DRG element / Decision Table / Literal Expression (`property`); Item Definitions + Imports (`scripting`); Documentation; Validation (own right group). Merge overview on merge documents.
 - **Merge resolver:** `DmnMergeResolver` + `DmnMergeResultModeler` (per-element resolution via three-panel DRD layout and `dmnXmlMergeEngine`)
 
 #### dmn-diff

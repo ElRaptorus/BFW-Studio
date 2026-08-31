@@ -70,21 +70,6 @@ export function shouldBeDisplayedForDmnDrdElementOfType(
   return selectedElements?.length === 1 && selectedElements[0]?.type === selectionType;
 }
 
-export function shouldBeDisplayedForDmnDrdElementOfTypes(
-  editorDocument: EditorDocument,
-  editorDocumentModel: EditorDocumentModel,
-  selectionTypes: string[],
-): boolean {
-  if (!shouldBeDisplayedForDmnDrdView(editorDocument, editorDocumentModel)) {
-    return false;
-  }
-
-  const model = getDmnModel(editorDocumentModel);
-  const selectedElements = model?.selection?.getElements();
-
-  return selectedElements?.length === 1 && selectionTypes.includes(selectedElements[0]?.type);
-}
-
 export function shouldBeDisplayedForDmnDrdNoSelection(
   editorDocument: EditorDocument,
   editorDocumentModel: EditorDocumentModel,
@@ -134,7 +119,10 @@ export function getKeyForDmnPropertiesPane(selection: DmnElement[]): string {
     return 'empty';
   }
 
-  return `${selectedElement.type}__${selectedElement.id}__${selectedElement.name}`;
+  // type + id only. Including `name` remounts the pane when the Name field
+  // commits (that field is the value being edited) and re-initializes
+  // uncontrolled controls (selects, documentation editor).
+  return `${selectedElement.type}__${selectedElement.id}`;
 }
 
 export function getActiveViewElementKey(model: DmnDocumentModel): string {
@@ -142,5 +130,7 @@ export function getActiveViewElementKey(model: DmnDocumentModel): string {
   if (!view) {
     return 'no-view';
   }
-  return `${view.type}__${view.id}__${view.name}`;
+  // type + id only. `view.name` is the DRG element name; renaming the
+  // decision remounts expression-view panes (Hit Policy select, FEEL editor).
+  return `${view.type}__${view.id}`;
 }

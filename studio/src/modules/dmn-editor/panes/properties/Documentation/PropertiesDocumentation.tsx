@@ -83,7 +83,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   return (
     <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <MarkdownEditor
-        key={`${element.type}__${element.id}__${element.name}`}
+        key={`${element.type}__${element.id}`}
         studio={props.studio}
         data={currentDescription}
         onDataChanged={onDocumentationChanged}

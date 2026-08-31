@@ -18,6 +18,6 @@ A composite Item Definition contains `itemComponent` children, each of which is 
 
 ## Usage
 
-1. Open the Item Definitions pane in the Properties panel.
+1. Open the Item Definitions pane in the Scripts panel (empty canvas / no DRG element selected).
 2. Add, edit, or remove type definitions.
 3. Reference them from Decision variables, Input Data variables, and BKM parameters via `typeRef`.

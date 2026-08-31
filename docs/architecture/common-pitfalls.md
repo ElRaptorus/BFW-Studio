@@ -1762,6 +1762,36 @@ The same race exists **inside** `activate()`: kitchen-sink registers `getStatus`
 
 ---
 
+## Do not include `name` in DMN pane React keys
+
+**Symptom**: Renaming a Decision, InputData, or BKM remounts the property pane and the Documentation `MarkdownEditor`. Hit Policy / Item Definition Collection selects snap back to `defaultValue`. Integration tests that type a new name then read another field see the old value.
+
+**Why it happens**: `getKeyForDmnPropertiesPane` used to be `type__id__name`. `getActiveViewElementKey` included `view.name`. Those names are the overlay values being edited. A name commit changes the React key, remounts uncontrolled `PaneProperty type="select"` (`defaultValue`) and `MarkdownEditor`.
+
+**Correct approach**: Keys are `type__id` only (`getKeyForDmnPropertiesPane`, Documentation `MarkdownEditor`, `getActiveViewElementKey`). After a DRD canvas select, `closeContextPad()` (Escape) before clicking small pane controls (Hit Policy, Add/Remove). Do not put Escape inside `selectDmnElementByIdAndWaitForElement`. `clickOnDrdCanvas` calls `selection.clearSelection()` — it does not click the center of `.djs-container` (that can hit a shape after fit-to-viewport).
+
+---
+
+## DMN tests must switch the right-area pane group explicitly
+
+**Mistake**: Asserting Definitions, Item Definitions, Validation, or Documentation without `switchToPaneGroup`, on the assumption that Scripting hides when an element is selected and Property becomes the fallback.
+
+**Why it happens**: `PaneAreaRight` picks `visibleGroups.find(g => g.visible) ?? visibleGroups[0]`. `group.visible` is the last tab the user (or a test) clicked; it is not cleared when the group becomes empty. The fallback runs only when the active group is **absent** from `visibleGroups`. Validation is always displayable on a DMN document, so after a Validation test the next test still shows Validation. Empty-canvas Scripting stays displayable, so Definitions is not on screen if Scripts is still active. `dmn-elements.test.ts` shares one Studio window (`beforeAll` agent; `afterEach` only `closeOpenEditors`).
+
+**Correct approach**: Every remaining DMN pane test calls `switchToPaneGroup` for the group it asserts (`property` / `scripting` / `validation` / `documentation`). Same pattern as BPMN `bpmn-elements.test.ts`. See `docs/testing.md` §Testing DMN Diagrams.
+
+---
+
+## Document-type export must use `std.editor.exportDocumentAs.{documentType}`
+
+**Mistake**: Registering the BPMN SVG/PNG/XML writer on unsuffixed `std.editor.exportDocumentAs`. DMN **Export as...** and `test.editor.exportDocumentAs` then call that name. The handler runs `BpmnViewer.importXML` on DMN XML and throws `failed to parse document as <bpmn:Definitions>`.
+
+**Why it happens**: `std.editor.showExportDialog` already dispatches to `showExportDialog.{documentType}`. Zoom commands do the same. `exportDocumentAs` was registered only by `bpmn-editor` as the implementation, while `dmn-editor` registered `std.editor.exportDocumentAs.dmn` which nothing invoked.
+
+**Correct approach**: `std` registers unsuffixed `std.editor.exportDocumentAs` and forwards to `std.editor.exportDocumentAs.${editorDocument.documentType}`. BPMN implements `.bpmn` (`renderBpmnToSvg` / PNG / XML). DMN implements `.dmn` (`getSvg()` / `currentXml`). Dialogs and the test helper keep calling the unsuffixed name.
+
+---
+
 ## Do not remount match-all radios when a suggestion select clears
 
 **Symptom**: `EscalationBoundaryEvent: should change an escalation boundary event name` times out (120s) inside `clearSuggestionSelect('#escalation-boundary-event-name')`. The extra click on **Match a specific escalation** after Clear never runs.

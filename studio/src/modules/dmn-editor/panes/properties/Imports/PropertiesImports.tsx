@@ -27,15 +27,7 @@ function getPaneTitle(): string {
 }
 
 function shouldBeDisplayed(editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel): boolean {
-  if (!shouldBeDisplayedForDmnDrdNoSelection(editorDocument, editorDocumentModel)) {
-    return false;
-  }
-  const model = getDmnModel(editorDocumentModel);
-  if (!model) {
-    return false;
-  }
-  const imports = model.elements.getImports();
-  return imports.length > 0;
+  return shouldBeDisplayedForDmnDrdNoSelection(editorDocument, editorDocumentModel);
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {

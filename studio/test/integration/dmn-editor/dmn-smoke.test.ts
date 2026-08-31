@@ -83,15 +83,17 @@ describe('dmn/smoke', () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
-    await studioAgent.openViaQuickJump('Discount');
-    await studioAgent.pause(1000);
-
-    await studioAgent.assertVisible('.quick-jump', ASSERT_VISIBLE_TIMEOUT);
-    const resultText = await studioAgent.getText('.quick-jump');
-    const hasDecisionResult = resultText.includes('Discount');
-    if (!hasDecisionResult) {
-      throw new Error(`Expected search results to contain "Discount", got: ${resultText}`);
-    }
+    await studioAgent.typeInGoToSymbol('Discount');
+    await studioAgent.waitUntil(
+      async () => {
+        const resultText = await studioAgent.getText('.quick-jump');
+        return resultText.includes('Discount');
+      },
+      {
+        timeout: ASSERT_VISIBLE_TIMEOUT,
+        timeoutMsg: 'Expected Go to Symbol results to contain "Discount"',
+      },
+    );
 
     await studioAgent.sendKeyboardInput(['Escape']);
     await studioAgent.assertNoErrorsPresentAndIdle();

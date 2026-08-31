@@ -13,7 +13,7 @@ import type { PropertyValidationResult } from '@evil/bifrost_fw_sdk';
 import { PaneProperty, validatePropertyNotEmpty } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
-import { DmnElementType, getExpressionType, getExpressionTypeLabel } from '../../../DmnElementTypes';
+import { DmnElementType } from '../../../DmnElementTypes';
 import {
   getDmnSelectionForPropertiesPane,
   getKeyForDmnPropertiesPane,
@@ -65,11 +65,6 @@ function BkmProperties(props: PaneComponentProps): React.JSX.Element | null {
 
   const businessObject = element.businessObject;
   const variable = businessObject?.variable;
-  const encapsulatedLogic = businessObject?.encapsulatedLogic;
-  const formalParameters: any[] = encapsulatedLogic?.formalParameter ?? [];
-
-  const bodyExpression = encapsulatedLogic?.body ?? encapsulatedLogic?.expression;
-  const bodyExpressionType = bodyExpression ? getExpressionType({ decisionLogic: bodyExpression }) : 'none';
 
   const validateIdIsUnique = (newId: string): PropertyValidationResult => {
     const allIds = model.elements.getAllIds();
@@ -111,31 +106,6 @@ function BkmProperties(props: PaneComponentProps): React.JSX.Element | null {
         value={variable?.typeRef ?? ''}
         onCommit={(value: any) => changeProperty('variable.typeRef', value)}
         htmlAttributes={{ 'data-test--dmn-bkm-variable-type': true }}
-      />
-      <PaneProperty
-        label="Encapsulated Logic Kind"
-        type="text"
-        value="FEEL"
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-bkm-logic-kind': true }}
-      />
-      <PaneProperty
-        label="Formal Parameters"
-        type="text"
-        value={
-          formalParameters
-            .map((parameter: any) => `${parameter.name ?? ''}${parameter.typeRef ? `: ${parameter.typeRef}` : ''}`)
-            .join(', ') || '(none)'
-        }
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-bkm-formal-parameters': true }}
-      />
-      <PaneProperty
-        label="Body Expression Type"
-        type="text"
-        value={getExpressionTypeLabel(bodyExpressionType)}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-bkm-body-expression-type': true }}
       />
     </PaneBody>
   );

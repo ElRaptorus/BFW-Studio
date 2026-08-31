@@ -24,6 +24,7 @@ const QUERY_VISIBLE_CONTEXTMENU = '.react-contextmenu--visible[tabindex="-1"]';
 
 const SHOW_QUICK_JUMP_COMMANDS = OsSpecificKeystroke('cmd-shift-p', 'ctrl-shift-p');
 const SHOW_QUICK_JUMP = OsSpecificKeystroke('cmd-j', 'ctrl-j');
+const SHOW_GO_TO_SYMBOL_IN_DOCUMENT = OsSpecificKeystroke('cmd-shift-o', 'ctrl-shift-o');
 const SELECT_ALL = OsSpecificKeystroke('cmd-a', 'ctrl-a');
 
 const ILLEGAL_FILENAME_CHARS_REGEX = /[^a-z0-9-_.]/gi;
@@ -724,11 +725,23 @@ export class StudioAgent {
     await this.sendKeyboardInput([...uri.split(''), 'enter']);
   }
 
-  async openViaQuickJump(query: string): Promise<void> {
+  async typeInQuickJump(query: string): Promise<void> {
     await this.waitForNotVisible(QUERY_QUICK_JUMP);
     await this.sendKeyboardInput([SHOW_QUICK_JUMP]);
     await this.assertVisible(QUERY_QUICK_JUMP, ASSERT_VISIBLE_TIMEOUT);
-    await this.sendKeyboardInput([...query.split(''), 'enter'], false);
+    await this.sendKeyboardInput([...query.split('')], false);
+  }
+
+  async typeInGoToSymbol(query: string): Promise<void> {
+    await this.waitForNotVisible(QUERY_QUICK_JUMP);
+    await this.sendKeyboardInput([SHOW_GO_TO_SYMBOL_IN_DOCUMENT]);
+    await this.assertVisible(QUERY_QUICK_JUMP, ASSERT_VISIBLE_TIMEOUT);
+    await this.sendKeyboardInput([...query.split('')], false);
+  }
+
+  async openViaQuickJump(query: string): Promise<void> {
+    await this.typeInQuickJump(query);
+    await this.sendKeyboardInput(['enter'], false);
     await this.waitForNotVisible(QUERY_QUICK_JUMP);
   }
 
@@ -895,7 +908,7 @@ export class StudioAgent {
   async getElementCount(selector: string): Promise<number> {
     const result = await this.$$(selector);
 
-    return result.length;
+    return await result.length;
   }
 
   async getHtml(selector: string): Promise<any> {

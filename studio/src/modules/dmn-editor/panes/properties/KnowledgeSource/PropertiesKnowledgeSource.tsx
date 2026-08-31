@@ -60,7 +60,6 @@ function KnowledgeSourceProperties(props: PaneComponentProps): React.JSX.Element
   assertNotNull(element, 'element');
 
   const businessObject = element.businessObject;
-  const authorityRequirements: any[] = businessObject?.authorityRequirement ?? [];
 
   const validateIdIsUnique = (newId: string): PropertyValidationResult => {
     const allIds = model.elements.getAllIds();
@@ -71,20 +70,6 @@ function KnowledgeSourceProperties(props: PaneComponentProps): React.JSX.Element
   const changeProperty = (propertyName: string, value: any): void => {
     model.elements.setElementProperty(element.id, propertyName, value);
   };
-
-  const authorityRequirementsSummary = authorityRequirements
-    .map((requirement: any) => {
-      const target =
-        requirement.requiredAuthority?.name ??
-        requirement.requiredDecision?.name ??
-        requirement.requiredInput?.name ??
-        requirement.requiredAuthority?.href ??
-        requirement.requiredDecision?.href ??
-        requirement.requiredInput?.href ??
-        '(unknown)';
-      return target;
-    })
-    .join(', ');
 
   return (
     <PaneBody>
@@ -109,13 +94,6 @@ function KnowledgeSourceProperties(props: PaneComponentProps): React.JSX.Element
         value={businessObject?.type ?? ''}
         onCommit={(value: any) => changeProperty('type', value)}
         htmlAttributes={{ 'data-test--dmn-knowledge-source-type': true }}
-      />
-      <PaneProperty
-        label="Authority Requirements"
-        type="text"
-        value={authorityRequirementsSummary || '(none)'}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-knowledge-source-authority-requirements': true }}
       />
     </PaneBody>
   );

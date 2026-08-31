@@ -10,7 +10,6 @@ export function initializeDmnPanes(bifrost: Bifrost): void {
   ]);
 
   bifrost.panes.prependToPaneGroup('right', 'property', [
-    // DRD-level property panes
     bifrost.panes.getPaneViaPaneProvider(
       'dmn/panes/properties/PropertiesDefinitions',
       'dmn/pane-providers/properties/PropertiesDefinitions',
@@ -48,28 +47,9 @@ export function initializeDmnPanes(bifrost: Bifrost): void {
     ),
 
     bifrost.panes.getPaneViaPaneProvider(
-      'dmn/panes/properties/PropertiesRequirements',
-      'dmn/pane-providers/properties/PropertiesRequirements',
-      require('../panes/properties/Requirements/PropertiesRequirements'),
-    ),
-
-    // Expression view property panes (Phase 3)
-    bifrost.panes.getPaneViaPaneProvider(
       'dmn/panes/properties/PropertiesDecisionTable',
       'dmn/pane-providers/properties/PropertiesDecisionTable',
       require('../panes/properties/DecisionTable/PropertiesDecisionTable'),
-    ),
-
-    bifrost.panes.getPaneViaPaneProvider(
-      'dmn/panes/properties/PropertiesTableInputs',
-      'dmn/pane-providers/properties/PropertiesTableInputs',
-      require('../panes/properties/DecisionTable/PropertiesTableInputs'),
-    ),
-
-    bifrost.panes.getPaneViaPaneProvider(
-      'dmn/panes/properties/PropertiesTableOutputs',
-      'dmn/pane-providers/properties/PropertiesTableOutputs',
-      require('../panes/properties/DecisionTable/PropertiesTableOutputs'),
     ),
 
     bifrost.panes.getPaneViaPaneProvider(
@@ -77,14 +57,9 @@ export function initializeDmnPanes(bifrost: Bifrost): void {
       'dmn/pane-providers/properties/PropertiesLiteralExpression',
       require('../panes/properties/LiteralExpression/PropertiesLiteralExpression'),
     ),
+  ]);
 
-    bifrost.panes.getPaneViaPaneProvider(
-      'dmn/panes/properties/PropertiesBoxedExpression',
-      'dmn/pane-providers/properties/PropertiesBoxedExpression',
-      require('../panes/properties/BoxedExpression/PropertiesBoxedExpression'),
-    ),
-
-    // Phase 4: Item Definitions, Imports, and Validation panes
+  bifrost.panes.prependToPaneGroup('right', 'scripting', [
     bifrost.panes.getPaneViaPaneProvider(
       'dmn/panes/properties/PropertiesItemDefinitions',
       'dmn/pane-providers/properties/PropertiesItemDefinitions',
@@ -96,12 +71,6 @@ export function initializeDmnPanes(bifrost: Bifrost): void {
       'dmn/pane-providers/properties/PropertiesImports',
       require('../panes/properties/Imports/PropertiesImports'),
     ),
-
-    bifrost.panes.getPaneViaPaneProvider(
-      'dmn/panes/properties/PropertiesValidation',
-      'dmn/pane-providers/properties/PropertiesValidation',
-      require('../panes/properties/Validation/PropertiesValidation'),
-    ),
   ]);
 
   bifrost.panes.prependToPaneGroup('right', 'documentation', [
@@ -111,4 +80,17 @@ export function initializeDmnPanes(bifrost: Bifrost): void {
       require('../panes/properties/Documentation/PropertiesDocumentation'),
     ),
   ]);
+
+  bifrost.panes.registerPaneGroup(
+    'right',
+    'validation',
+    [
+      bifrost.panes.getPaneViaPaneProvider(
+        'dmn/panes/properties/PropertiesValidation',
+        'dmn/pane-providers/properties/PropertiesValidation',
+        require('../panes/properties/Validation/PropertiesValidation'),
+      ),
+    ],
+    { label: 'Validation', icon: 'ph-fill ph-highlighter' },
+  );
 }

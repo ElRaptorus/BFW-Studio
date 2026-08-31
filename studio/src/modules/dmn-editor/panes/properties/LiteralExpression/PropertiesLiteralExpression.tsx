@@ -74,31 +74,35 @@ function LiteralExpressionProperties(props: PaneComponentProps): React.JSX.Eleme
     [model],
   );
 
+  const decisionElement = model.elements.getActiveViewDecisionElement();
+  const decisionElementId = decisionElement?.id as string | undefined;
+
+  const onOutputTypeCommit = useCallback(
+    (value: any): void => {
+      if (!decisionElementId) {
+        return;
+      }
+      model.elements.setElementProperty(decisionElementId, 'variable.typeRef', value);
+    },
+    [model, decisionElementId],
+  );
+
   const literalExpression = model.elements.getActiveViewLiteralExpression();
   if (!literalExpression) {
     return null;
   }
 
-  const decisionElement = model.elements.getActiveViewDecisionElement();
   const variable = decisionElement?.variable;
   const expressionText = literalExpression.text ?? '';
   const typeRef = variable?.typeRef ?? literalExpression.typeRef ?? '';
-  const expressionLanguage = literalExpression.expressionLanguage ?? 'FEEL';
 
   return (
     <PaneBody>
       <PaneProperty
-        label="Expression Language"
-        type="text"
-        value={expressionLanguage}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-le-language': true }}
-      />
-      <PaneProperty
         label="Output Type"
         type="text"
         value={typeRef}
-        disabled={true}
+        onCommit={onOutputTypeCommit}
         htmlAttributes={{ 'data-test--dmn-le-type-ref': true }}
       />
       <div className="form-group">

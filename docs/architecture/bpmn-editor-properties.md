@@ -12,7 +12,7 @@ The BPMN editor exposes element-specific property panes in the right pane area. 
 
 ### Pane Group Structure
 
-The BPMN editor registers panes into three groups on the `right` pane area:
+The BPMN editor registers panes into three groups on the `right` pane area. DMN uses the same `property` / `scripting` / `documentation` split plus a dedicated `validation` group (see **[dmn-editor.md](dmn-editor.md)** §Pane System). Do not reuse BPMN’s `linter` group for DMN findings.
 
 | Group | Purpose | Examples |
 |-------|---------|----------|

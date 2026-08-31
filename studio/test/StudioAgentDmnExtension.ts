@@ -61,12 +61,16 @@ export class StudioAgentDmnExtension extends StudioAgent {
 
   async getViewSwitcherItemCount(): Promise<number> {
     const elements = await this.testDriver.client!.$$('[data-test--dmn-view-switcher-item]');
-    return elements.length;
+    return await elements.length;
   }
 
   async fitDiagramToViewport(): Promise<void> {
     await this.sendKeyboardInput([FIT_DIAGRAM_TO_VIEWPORT]);
     await this.pause(200);
+  }
+
+  async closeContextPad(): Promise<void> {
+    await this.sendKeyboardInput(['Escape']);
   }
 
   async selectDmnElementById(elementId: string): Promise<void> {
@@ -108,7 +112,15 @@ export class StudioAgentDmnExtension extends StudioAgent {
 
   async clickOnDrdCanvas(): Promise<void> {
     await this.fitDiagramToViewport();
-    await this.clickOn('.dmn-drd-container .djs-container');
+    await this.testDriver.client!.execute(() => {
+      const bifrost = (window as any).bifrost;
+      const editorDocument = bifrost?.editors?.getFocusedEditorDocument?.();
+      if (!editorDocument) {
+        return;
+      }
+      const model = bifrost.editors.getEditorDocumentModelIfPresent(editorDocument);
+      model?.selection?.clearSelection?.();
+    });
     await this.pause(300);
   }
 
@@ -131,11 +143,12 @@ export class StudioAgentDmnExtension extends StudioAgent {
 
   async getActiveViewType(): Promise<string | null> {
     return (await this.testDriver.client!.execute(() => {
-      const editorDocument = (window as any).bifrost?.editors?.getFocusedEditorDocument?.();
+      const bifrost = (window as any).bifrost;
+      const editorDocument = bifrost?.editors?.getFocusedEditorDocument?.();
       if (!editorDocument) {
         return null;
       }
-      const model = (window as any).bifrost?.editors?.getEditorDocumentModelSync?.(editorDocument);
+      const model = bifrost.editors.getEditorDocumentModelIfPresent(editorDocument);
       return model?.getActiveViewType?.() ?? null;
     })) as string | null;
   }
@@ -149,6 +162,7 @@ export class StudioAgentDmnExtension extends StudioAgent {
   async setDmnPropertyValue(dataTestAttribute: string, newValue: string): Promise<void> {
     const selector = `[${dataTestAttribute}]`;
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
+    await this.closeContextPad();
     await this.clearTextInput(selector);
     await this.sendKeyboardInput([...newValue.split('')]);
     await this.sendKeyboardInput(['Tab'], false);
@@ -168,6 +182,7 @@ export class StudioAgentDmnExtension extends StudioAgent {
   async selectDmnDropdownOption(selectHtmlId: string, optionValue: string): Promise<void> {
     const controlSelector = `#${selectHtmlId} .react-select__control`;
     await this.assertVisible(controlSelector, ASSERT_VISIBLE_TIMEOUT);
+    await this.closeContextPad();
     await this.clickOn(controlSelector);
     await this.pause(300);
 
@@ -188,12 +203,6 @@ export class StudioAgentDmnExtension extends StudioAgent {
   }
 
   async waitForPaneNotVisible(paneId: string): Promise<void> {
-    const elements = await this.testDriver.client!.$$(`[data-test--pane="${paneId}"]`);
-    for (const element of elements) {
-      const displayed = await element.isDisplayed();
-      if (displayed) {
-        throw new Error(`Expected pane "${paneId}" to not be visible, but it was`);
-      }
-    }
+    await this.waitForNotVisible(`[data-test--pane="${paneId}"]`);
   }
 }

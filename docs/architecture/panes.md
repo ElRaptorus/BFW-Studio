@@ -6,7 +6,7 @@
 
 Panes are the Studio's side-panel UI: property inspectors, documentation, scripting, and module-specific views registered into the left, right, and bottom pane areas. Every pane is a `PaneProvider` registered through `bifrost.panes`. Wrapper visibility is a single predicate — `shouldBeDisplayed` — evaluated by `PaneWrapper` before the pane component mounts. Renderers assume that predicate already passed; they may still `return null` for conditions the gate does not cover so the header stays visible.
 
-Module-specific pane catalogs live in **[bpmn-editor-properties.md](bpmn-editor-properties.md)**, **[dmn-editor.md](dmn-editor.md)** §Pane System, and **[engine.md](engine.md)**. Layout, groups, and tab bars live in **[workbench-layout.md](workbench-layout.md)**.
+Module-specific pane catalogs live in **[bpmn-editor-properties.md](bpmn-editor-properties.md)** (`property` / `scripting` / `documentation` plus BPMN `linter`), **[dmn-editor.md](dmn-editor.md)** §Pane System (`property` / `scripting` / `documentation` / `validation`), and **[engine.md](engine.md)**. Layout, groups, and tab bars live in **[workbench-layout.md](workbench-layout.md)**.
 
 ---
 
@@ -80,6 +80,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 `getBpmnSelectionForPropertiesPane` / `getDmnSelectionForPropertiesPane` return `null` when the modeler is not ready. That empties the body; the header stays because `shouldBeDisplayed` does not require readiness.
 
 `getKeyForPropertiesPane` is `type__id` only. Do not include `name` — for Escalation events that field is the overlay value being edited, so a name commit would remount the pane and re-initialize match-all radios.
+
+`getKeyForDmnPropertiesPane` and `getActiveViewElementKey` are the same rule (`type__id`). Do not include `name` / `view.name` — renaming a Decision remounts documentation (`MarkdownEditor`) and expression-view panes (Hit Policy `PaneProperty type="select"`, FEEL editor).
 
 `PaneFull` may still skip `PaneContent` when `props.collapsed === true`. That is collapse UX, not visibility.
 

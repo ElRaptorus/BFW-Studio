@@ -11,15 +11,11 @@ const DECISION_PANE = '[data-test--pane="dmn/panes/properties/PropertiesDecision
 const INPUT_DATA_PANE = '[data-test--pane="dmn/panes/properties/PropertiesInputData"]';
 const BKM_PANE = '[data-test--pane="dmn/panes/properties/PropertiesBKM"]';
 const KNOWLEDGE_SOURCE_PANE = '[data-test--pane="dmn/panes/properties/PropertiesKnowledgeSource"]';
-const REQUIREMENTS_PANE = '[data-test--pane="dmn/panes/properties/PropertiesRequirements"]';
 
 const DOCUMENTATION_PANE = 'dmn/panes/properties/PropertiesDocumentation';
 
 const DECISION_TABLE_PANE = 'dmn/panes/properties/PropertiesDecisionTable';
-const TABLE_INPUTS_PANE = 'dmn/panes/properties/PropertiesTableInputs';
-const TABLE_OUTPUTS_PANE = 'dmn/panes/properties/PropertiesTableOutputs';
 const LITERAL_EXPRESSION_PANE = 'dmn/panes/properties/PropertiesLiteralExpression';
-const BOXED_EXPRESSION_PANE = 'dmn/panes/properties/PropertiesBoxedExpression';
 const ITEM_DEFINITIONS_PANE = 'dmn/panes/properties/PropertiesItemDefinitions';
 const IMPORTS_PANE = 'dmn/panes/properties/PropertiesImports';
 const VALIDATION_PANE = 'dmn/panes/properties/PropertiesValidation';
@@ -57,10 +53,12 @@ describe('dmn/elements', () => {
   it('dmn/elements/definitions: should show Definitions pane when canvas is clicked (no selection)', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesDefinitions');
     await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesDecision');
@@ -73,7 +71,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
-
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible(DEFINITIONS_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     const name = await studioAgent.getDmnPropertyValue('data-test--dmn-definitions-name');
@@ -93,35 +91,18 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible(DEFINITIONS_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.setDmnPropertyValue('data-test--dmn-definitions-name', 'Renamed Definitions');
 
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount');
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible(DEFINITIONS_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     const name = await studioAgent.getDmnPropertyValue('data-test--dmn-definitions-name');
     assert.strictEqual(name, 'Renamed Definitions');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/definitions: should show element count summary', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.clickOnDrdCanvas();
-    await studioAgent.assertVisible(DEFINITIONS_PANE, ASSERT_VISIBLE_TIMEOUT);
-
-    const summary = await studioAgent.getDmnPropertyText('data-test--dmn-definitions-summary');
-    assert.ok(summary.includes('2 Decisions'), `Expected summary to include "2 Decisions", got: "${summary}"`);
-    assert.ok(summary.includes('2 Inputs'), `Expected summary to include "2 Inputs", got: "${summary}"`);
-    assert.ok(summary.includes('2 BKMs'), `Expected summary to include "2 BKMs", got: "${summary}"`);
-    assert.ok(
-      summary.includes('1 Knowledge Sources'),
-      `Expected summary to include "1 Knowledge Sources", got: "${summary}"`,
-    );
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -131,6 +112,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/decision: should show Decision pane when a Decision is selected', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -145,6 +127,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/decision: should display correct Decision properties', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -162,15 +145,13 @@ describe('dmn/elements', () => {
     const variableType = await studioAgent.getDmnPropertyValue('data-test--dmn-decision-variable-type');
     assert.strictEqual(variableType, 'number');
 
-    const expressionType = await studioAgent.getDmnPropertyText('data-test--dmn-decision-expression-type');
-    assert.strictEqual(expressionType, 'Decision Table');
-
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
   it('dmn/elements/decision: should update Decision name and persist across re-selection', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -191,27 +172,10 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('dmn/elements/decision: should show literal expression type for FinalPrice', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.clickOnDrdCanvas();
-
-    await studioAgent.selectDmnElementByIdAndWaitForElement(
-      'Decision_FinalPrice',
-      DECISION_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    const expressionType = await studioAgent.getDmnPropertyText('data-test--dmn-decision-expression-type');
-    assert.strictEqual(expressionType, 'Literal Expression');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
   it('dmn/elements/decision: should update output variable name', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -220,6 +184,7 @@ describe('dmn/elements', () => {
     await studioAgent.setDmnPropertyValue('data-test--dmn-decision-variable-name', 'DiscountRate');
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     const variableName = await studioAgent.getDmnPropertyValue('data-test--dmn-decision-variable-name');
@@ -233,6 +198,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/inputdata: should show InputData pane when an InputData is selected', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -251,6 +217,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/inputdata: should display correct InputData properties', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -278,6 +245,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/inputdata: should update InputData name and persist', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -305,6 +273,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/inputdata: should update variable type', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -317,6 +286,7 @@ describe('dmn/elements', () => {
     await studioAgent.setDmnPropertyValue('data-test--dmn-inputdata-variable-type', 'string');
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.selectDmnElementByIdAndWaitForElement(
       'InputData_OrderTotal',
       INPUT_DATA_PANE,
@@ -334,6 +304,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/bkm: should show BKM pane when a BKM is selected', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -349,6 +320,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/bkm: should display correct BKM properties', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -366,25 +338,13 @@ describe('dmn/elements', () => {
     const variableType = await studioAgent.getDmnPropertyValue('data-test--dmn-bkm-variable-type');
     assert.strictEqual(variableType, 'number');
 
-    const logicKind = await studioAgent.getDmnPropertyText('data-test--dmn-bkm-logic-kind');
-    assert.strictEqual(logicKind, 'FEEL');
-
-    const formalParameters = await studioAgent.getDmnPropertyText('data-test--dmn-bkm-formal-parameters');
-    assert.ok(
-      formalParameters.includes('basePrice'),
-      `Expected formal parameters to include "basePrice", got: "${formalParameters}"`,
-    );
-    assert.ok(
-      formalParameters.includes('discountRate'),
-      `Expected formal parameters to include "discountRate", got: "${formalParameters}"`,
-    );
-
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
   it('dmn/elements/bkm: should update BKM name and persist', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -393,6 +353,7 @@ describe('dmn/elements', () => {
     await studioAgent.setDmnPropertyValue('data-test--dmn-bkm-name', 'Updated Pricing');
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.selectDmnElementByIdAndWaitForElement('BKM_PricingFormula', BKM_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     const name = await studioAgent.getDmnPropertyValue('data-test--dmn-bkm-name');
@@ -406,6 +367,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/knowledge-source: should show KnowledgeSource pane when a KS is selected', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -424,6 +386,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/knowledge-source: should display correct KnowledgeSource properties', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -445,6 +408,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/knowledge-source: should update KnowledgeSource name and persist', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.clickOnDrdCanvas();
 
@@ -457,6 +421,7 @@ describe('dmn/elements', () => {
     await studioAgent.setDmnPropertyValue('data-test--dmn-knowledge-source-name', 'Updated Regulations');
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.selectDmnElementByIdAndWaitForElement(
       'KS_Regulations',
       KNOWLEDGE_SOURCE_PANE,
@@ -469,102 +434,12 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  // ─── Requirements Pane ───────────────────────────────────────────────
-
-  it('dmn/elements/requirements: should show Requirements pane when a Decision with requirements is selected', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.clickOnDrdCanvas();
-
-    await studioAgent.selectDmnElementByIdAndWaitForElement(
-      'Decision_Discount',
-      REQUIREMENTS_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesRequirements');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/requirements: should display information requirements for Discount decision', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.clickOnDrdCanvas();
-
-    await studioAgent.selectDmnElementByIdAndWaitForElement(
-      'Decision_Discount',
-      REQUIREMENTS_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    const informationRequirements = await studioAgent.getDmnPropertyText('data-test--dmn-info-requirements');
-    assert.ok(
-      informationRequirements.includes('Customer Age') || informationRequirements.includes('InputData_CustomerAge'),
-      `Expected information requirements to reference Customer Age, got: "${informationRequirements}"`,
-    );
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/requirements: should display knowledge requirements for FinalPrice decision', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.clickOnDrdCanvas();
-
-    await studioAgent.selectDmnElementByIdAndWaitForElement(
-      'Decision_FinalPrice',
-      REQUIREMENTS_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    const knowledgeRequirements = await studioAgent.getDmnPropertyText('data-test--dmn-knowledge-requirements');
-    assert.ok(
-      knowledgeRequirements.includes('Pricing Formula') || knowledgeRequirements.includes('BKM_PricingFormula'),
-      `Expected knowledge requirements to reference Pricing Formula, got: "${knowledgeRequirements}"`,
-    );
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/requirements: should also show Requirements pane for BKM elements', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.clickOnDrdCanvas();
-
-    await studioAgent.selectDmnElementByIdAndWaitForElement('BKM_PricingFormula', BKM_PANE, ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesRequirements');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/requirements: should NOT show Requirements pane for InputData elements', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.clickOnDrdCanvas();
-
-    await studioAgent.selectDmnElementByIdAndWaitForElement(
-      'InputData_CustomerAge',
-      INPUT_DATA_PANE,
-      ASSERT_VISIBLE_TIMEOUT,
-    );
-
-    await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesRequirements');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
   // ─── Pane Switching on Selection Change ──────────────────────────────
 
   it('dmn/elements/pane-switching: should switch panes when selection changes between element types', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesDecision');
@@ -591,6 +466,7 @@ describe('dmn/elements', () => {
     await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesBKM');
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesDefinitions');
     await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesKnowledgeSource');
 
@@ -613,6 +489,7 @@ describe('dmn/elements', () => {
   it('dmn/elements/drilldown: should hide DRD property panes when drilled into a Decision Table', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesDecision');
@@ -640,6 +517,7 @@ describe('dmn/elements', () => {
     await studioAgent.assertBackToDrdButtonNotPresent();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesDefinitions');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -669,13 +547,14 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  // ─── Phase 3: Expression View Panes ──────────────────────────────────
+  // ─── Expression View Panes ─────────────────────────────────────────
 
   it('dmn/elements/expression: should show Decision Table pane when drilled into a decision table', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.waitForPaneVisible(DECISION_TABLE_PANE);
 
     await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesDecision');
@@ -689,36 +568,11 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.waitForPaneVisible(DECISION_TABLE_PANE);
 
-    const inputCount = await studioAgent.getDmnPropertyText('data-test--dmn-dt-input-count');
-    assert.strictEqual(inputCount, '2');
-
-    const outputCount = await studioAgent.getDmnPropertyText('data-test--dmn-dt-output-count');
-    assert.strictEqual(outputCount, '1');
-
-    const ruleCount = await studioAgent.getDmnPropertyText('data-test--dmn-dt-rule-count');
-    assert.strictEqual(ruleCount, '3');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/expression: should show Table Inputs pane when drilled into a decision table', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
-    await studioAgent.waitForPaneVisible(TABLE_INPUTS_PANE);
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/expression: should show Table Outputs pane when drilled into a decision table', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
-    await studioAgent.waitForPaneVisible(TABLE_OUTPUTS_PANE);
+    const hitPolicy = await studioAgent.getDmnSelectValue('dmn-dt-hit-policy');
+    assert.strictEqual(hitPolicy, 'UNIQUE');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -728,6 +582,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.drillDownIntoDecisionTable('Decision_FinalPrice');
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.waitForPaneVisible(LITERAL_EXPRESSION_PANE);
 
     await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesDecision');
@@ -736,15 +591,13 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('dmn/elements/expression: should show expression language and editable FEEL editor in Literal Expression pane', async () => {
+  it('dmn/elements/expression: should show editable FEEL editor in Literal Expression pane', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.drillDownIntoDecisionTable('Decision_FinalPrice');
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.waitForPaneVisible(LITERAL_EXPRESSION_PANE);
-
-    const language = await studioAgent.getDmnPropertyText('data-test--dmn-le-language');
-    assert.strictEqual(language, 'FEEL');
 
     await studioAgent.assertVisible('[data-test--dmn-le-expression-text]', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertVisible('[data-test--dmn-le-expression-text] .cm-content', ASSERT_VISIBLE_TIMEOUT);
@@ -763,15 +616,15 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.waitForPaneVisible(DECISION_TABLE_PANE);
 
     await studioAgent.navigateBackToDrd();
 
     await studioAgent.waitForPaneNotVisible(DECISION_TABLE_PANE);
-    await studioAgent.waitForPaneNotVisible(TABLE_INPUTS_PANE);
-    await studioAgent.waitForPaneNotVisible(TABLE_OUTPUTS_PANE);
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesDefinitions');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -782,6 +635,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.drillDownIntoDecisionTable('Decision_Discount');
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.waitForPaneVisible(DECISION_TABLE_PANE);
 
     const initialPolicy = await studioAgent.getDmnSelectValue('dmn-dt-hit-policy');
@@ -797,42 +651,14 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('dmn/elements/expression: should show Boxed Expression pane when drilled into a BKM with context body', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.drillDownIntoDecisionTable('BKM_OrderSummary');
-    await studioAgent.waitForPaneVisible(BOXED_EXPRESSION_PANE);
-
-    await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesDecision');
-    await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesDefinitions');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/elements/expression: should display context entry count in Boxed Expression pane', async () => {
-    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.drillDownIntoDecisionTable('BKM_OrderSummary');
-    await studioAgent.waitForPaneVisible(BOXED_EXPRESSION_PANE);
-
-    const expressionType = await studioAgent.getDmnPropertyText('data-test--dmn-be-expression-type');
-    assert.strictEqual(expressionType, 'Boxed Context');
-
-    const entryCount = await studioAgent.getDmnPropertyText('data-test--dmn-be-context-entry-count');
-    assert.strictEqual(entryCount, '2');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  // ─── Phase 4: Item Definitions Pane ──────────────────────────────────
+  // ─── Item Definitions Pane (scripting) ─────────────────────────────
 
   it('dmn/elements/item-definitions: should show Item Definitions pane when no element is selected', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -843,6 +669,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
     const firstEntry = await studioAgent.assertVisible(
@@ -865,6 +692,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
     const typeSelector = '[data-test--dmn-item-definition-entry="tAge"] [data-test--dmn-item-definition-type]';
@@ -881,6 +709,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
     await studioAgent.assertVisible('[data-test--dmn-item-definition-entry="tSummary"]', ASSERT_VISIBLE_TIMEOUT);
@@ -905,11 +734,13 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
     const initialCount = await studioAgent.getElementCount('[data-test--dmn-item-definition-entry]');
     assert.strictEqual(initialCount, 2, 'Expected 2 initial item definitions');
 
+    await studioAgent.closeContextPad();
     await studioAgent.clickOn('[data-test--dmn-item-definitions-add]');
     await studioAgent.pause(300);
 
@@ -924,16 +755,19 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
+    await studioAgent.closeContextPad();
     await studioAgent.clickOn('[data-test--dmn-item-definitions-add]');
     await studioAgent.pause(300);
 
     const countBeforeRemove = await studioAgent.getElementCount('[data-test--dmn-item-definition-entry]');
 
-    const removeButtons = await studioAgent.$$('[data-test--dmn-item-definition-remove]').getElements();
-    const lastRemoveButton = removeButtons[removeButtons.length - 1];
-    await lastRemoveButton.click();
+    await studioAgent.closeContextPad();
+    const itemDefinitionRemoveButtons = await studioAgent.$$('[data-test--dmn-item-definition-remove]');
+    const itemDefinitionRemoveButtonCount = await itemDefinitionRemoveButtons.length;
+    await itemDefinitionRemoveButtons[itemDefinitionRemoveButtonCount - 1].click();
     await studioAgent.pause(300);
 
     const countAfterRemove = await studioAgent.getElementCount('[data-test--dmn-item-definition-entry]');
@@ -947,6 +781,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
@@ -956,13 +791,14 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  // ─── Phase 4: Imports Pane ──────────────────────────────────────────
+  // ─── Imports Pane (scripting) ──────────────────────────────────────
 
   it('dmn/elements/imports: should show Imports pane when no element is selected', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(IMPORTS_PANE);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -973,6 +809,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(IMPORTS_PANE);
 
     const namespace = await studioAgent.getDmnPropertyValue('data-test--dmn-import-namespace');
@@ -992,11 +829,13 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(IMPORTS_PANE);
 
     const initialCount = await studioAgent.getElementCount('[data-test--dmn-import-entry]');
     assert.strictEqual(initialCount, 1, 'Expected 1 initial import');
 
+    await studioAgent.closeContextPad();
     await studioAgent.clickOn('[data-test--dmn-imports-add]');
     await studioAgent.pause(300);
 
@@ -1011,16 +850,19 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(IMPORTS_PANE);
 
+    await studioAgent.closeContextPad();
     await studioAgent.clickOn('[data-test--dmn-imports-add]');
     await studioAgent.pause(300);
 
     const countBeforeRemove = await studioAgent.getElementCount('[data-test--dmn-import-entry]');
 
-    const removeButtons = await studioAgent.$$('[data-test--dmn-import-remove]').getElements();
-    const lastRemoveButton = removeButtons[removeButtons.length - 1];
-    await lastRemoveButton.click();
+    await studioAgent.closeContextPad();
+    const importRemoveButtons = await studioAgent.$$('[data-test--dmn-import-remove]');
+    const importRemoveButtonCount = await importRemoveButtons.length;
+    await importRemoveButtons[importRemoveButtonCount - 1].click();
     await studioAgent.pause(300);
 
     const countAfterRemove = await studioAgent.getElementCount('[data-test--dmn-import-entry]');
@@ -1029,23 +871,27 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('dmn/elements/imports: should NOT show Imports pane for model without imports', async () => {
+  it('dmn/elements/imports: should show empty state for a model without imports', async () => {
     await studioAgent.jumpToFileInSolution('simple-decision.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('scripting');
+    await studioAgent.waitForPaneVisible(IMPORTS_PANE);
 
-    await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesImports');
+    await studioAgent.assertVisible('[data-test--dmn-imports-empty]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertVisible('[data-test--dmn-imports-add]', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  // ─── Phase 4: Validation Pane ───────────────────────────────────────
+  // ─── Validation Pane ───────────────────────────────────────────────
 
   it('dmn/elements/validation: should show Validation pane for DMN document', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    await studioAgent.switchToPaneGroup('validation');
     await studioAgent.waitForPaneVisible(VALIDATION_PANE);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -1055,6 +901,7 @@ describe('dmn/elements', () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    await studioAgent.switchToPaneGroup('validation');
     await studioAgent.waitForPaneVisible(VALIDATION_PANE);
     await studioAgent.pause(800);
 
@@ -1068,6 +915,7 @@ describe('dmn/elements', () => {
     await studioAgent.jumpToFileInSolution('validation-errors.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    await studioAgent.switchToPaneGroup('validation');
     await studioAgent.waitForPaneVisible(VALIDATION_PANE);
     await studioAgent.pause(800);
 
@@ -1088,6 +936,7 @@ describe('dmn/elements', () => {
     await studioAgent.jumpToFileInSolution('validation-errors.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    await studioAgent.switchToPaneGroup('validation');
     await studioAgent.waitForPaneVisible(VALIDATION_PANE);
     await studioAgent.pause(800);
 
@@ -1107,6 +956,7 @@ describe('dmn/elements', () => {
     await studioAgent.jumpToFileInSolution('validation-errors.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    await studioAgent.switchToPaneGroup('validation');
     await studioAgent.waitForPaneVisible(VALIDATION_PANE);
     await studioAgent.pause(800);
 
@@ -1116,6 +966,7 @@ describe('dmn/elements', () => {
     await violationElements[0].click();
     await studioAgent.pause(500);
 
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertPaneVisible('dmn/panes/properties/PropertiesDecision');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -1125,6 +976,7 @@ describe('dmn/elements', () => {
     await studioAgent.jumpToFileInSolution('validation-errors.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    await studioAgent.switchToPaneGroup('validation');
     await studioAgent.waitForPaneVisible(VALIDATION_PANE);
     await studioAgent.pause(800);
 
@@ -1145,6 +997,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.switchToPaneGroup('documentation');
     await studioAgent.waitForPaneVisible(DOCUMENTATION_PANE);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -1153,6 +1006,10 @@ describe('dmn/elements', () => {
   it('dmn/elements/documentation: should hide the Documentation pane when nothing is selected', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+
+    await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.switchToPaneGroup('documentation');
+    await studioAgent.waitForPaneVisible(DOCUMENTATION_PANE);
 
     await studioAgent.clickOnDrdCanvas();
     await studioAgent.pause(500);
@@ -1164,11 +1021,12 @@ describe('dmn/elements', () => {
   // ─── Delete via Keyboard ────────────────────────────────────────────
 
   it('dmn/elements/delete: should delete a selected element via keyboard', async () => {
-    const knowledgeSourceId = 'KnowledgeSource_Regulations';
+    const knowledgeSourceId = 'KS_Regulations';
     const knowledgeSourceShape = `[data-element-id=${knowledgeSourceId}]`;
 
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.selectDmnElementByIdAndWaitForElement(
       knowledgeSourceId,
@@ -1180,6 +1038,7 @@ describe('dmn/elements', () => {
 
     await studioAgent.waitForNotVisible(knowledgeSourceShape);
     await studioAgent.assertPaneNotVisible('dmn/panes/properties/PropertiesKnowledgeSource');
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible(DEFINITIONS_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -1190,10 +1049,12 @@ describe('dmn/elements', () => {
   it('dmn/elements/multi-select: should deselect all and show Definitions pane when clicking canvas after multi-select', async () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
 
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOnDrdCanvas();
     await studioAgent.pause(500);
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.assertVisible(DEFINITIONS_PANE, ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();

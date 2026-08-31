@@ -99,4 +99,16 @@ export default class DmnDocumentSelection extends AbstractEmitter {
       // Selection may fail if elements are not in the DRD view
     }
   }
+
+  clearSelection(): void {
+    if (!this.adapter.isDrdActive()) {
+      return;
+    }
+
+    try {
+      this.adapter.getDrdSelection().select([]);
+    } catch {
+      // Selection may fail if the DRD viewer is not ready
+    }
+  }
 }

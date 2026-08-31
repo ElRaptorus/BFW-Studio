@@ -493,6 +493,19 @@ export function initializeEditorCommands(bifrost: Bifrost): void {
   );
 
   commands.register(
+    'std.editor.exportDocumentAs',
+    async (editorDocument: EditorDocument, format: string, filename: string) => {
+      assertNotNull(editorDocument, 'editorDocument');
+
+      return bifrost.commands.executeCommand(`std.editor.exportDocumentAs.${editorDocument.documentType}`, [
+        editorDocument,
+        format,
+        filename,
+      ]);
+    },
+  );
+
+  commands.register(
     'std.editor.reexportFile',
     () => {
       const editorDocument = bifrost.editors.getFocusedEditorDocument();

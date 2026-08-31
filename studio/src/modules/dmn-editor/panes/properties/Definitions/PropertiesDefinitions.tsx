@@ -55,24 +55,6 @@ function DefinitionsProperties(props: PaneComponentProps): React.JSX.Element | n
     return null;
   }
 
-  const elementCounts = model.elements.countElementsByType();
-  const summaryParts: string[] = [];
-
-  const typeLabels: Record<string, string> = {
-    'dmn:Decision': 'Decisions',
-    'dmn:InputData': 'Inputs',
-    'dmn:BusinessKnowledgeModel': 'BKMs',
-    'dmn:KnowledgeSource': 'Knowledge Sources',
-    'dmn:DecisionService': 'Decision Services',
-  };
-
-  for (const [type, label] of Object.entries(typeLabels)) {
-    const count = elementCounts[type] ?? 0;
-    if (count > 0) {
-      summaryParts.push(`${count} ${label}`);
-    }
-  }
-
   const changeDefinitionsProperty = (propertyName: string, value: any): void => {
     model.elements.setDefinitionsProperty(propertyName, value);
   };
@@ -99,13 +81,6 @@ function DefinitionsProperties(props: PaneComponentProps): React.JSX.Element | n
         value={definitions.namespace ?? ''}
         onCommit={(value: any) => changeDefinitionsProperty('namespace', value)}
         htmlAttributes={{ 'data-test--dmn-definitions-namespace': true }}
-      />
-      <PaneProperty
-        label="Element Summary"
-        type="text"
-        value={summaryParts.join(', ') || '(empty diagram)'}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-definitions-summary': true }}
       />
       <PaneProperty
         label="Exported by"

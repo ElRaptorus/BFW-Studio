@@ -54,28 +54,12 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   return <DecisionServiceProperties key={getKeyForDmnPropertiesPane(selection)} {...props} />;
 }
 
-function resolveRefName(reference: any): string {
-  if (!reference) {
-    return '(unknown)';
-  }
-  if (reference.name) {
-    return reference.name;
-  }
-  const href = reference.href ?? reference.$ref ?? '';
-  const fragmentIndex = href.indexOf('#');
-  return fragmentIndex >= 0 ? href.substring(fragmentIndex + 1) : href || '(unknown)';
-}
-
 function DecisionServiceProperties(props: PaneComponentProps): React.JSX.Element | null {
   const model = props.editorDocumentModel as DmnDocumentModel;
   const element = model.selection.getOnlyElementOrNull();
   assertNotNull(element, 'element');
 
   const businessObject = element.businessObject;
-  const outputDecisions: any[] = businessObject?.outputDecision ?? [];
-  const encapsulatedDecisions: any[] = businessObject?.encapsulatedDecision ?? [];
-  const inputDecisions: any[] = businessObject?.inputDecision ?? [];
-  const inputData: any[] = businessObject?.inputData ?? [];
 
   const validateIdIsUnique = (newId: string): PropertyValidationResult => {
     const allIds = model.elements.getAllIds();
@@ -103,34 +87,6 @@ function DecisionServiceProperties(props: PaneComponentProps): React.JSX.Element
         onCommit={(value: any) => changeProperty('id', value)}
         onValidate={[validatePropertyNotEmpty('ID must not be empty'), validateIdIsUnique]}
         htmlAttributes={{ 'data-test--dmn-decision-service-id': true }}
-      />
-      <PaneProperty
-        label="Output Decisions"
-        type="text"
-        value={outputDecisions.map(resolveRefName).join(', ') || '(none)'}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-decision-service-output-decisions': true }}
-      />
-      <PaneProperty
-        label="Encapsulated Decisions"
-        type="text"
-        value={encapsulatedDecisions.map(resolveRefName).join(', ') || '(none)'}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-decision-service-encapsulated-decisions': true }}
-      />
-      <PaneProperty
-        label="Input Decisions"
-        type="text"
-        value={inputDecisions.map(resolveRefName).join(', ') || '(none)'}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-decision-service-input-decisions': true }}
-      />
-      <PaneProperty
-        label="Input Data"
-        type="text"
-        value={inputData.map(resolveRefName).join(', ') || '(none)'}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-decision-service-input-data': true }}
       />
     </PaneBody>
   );

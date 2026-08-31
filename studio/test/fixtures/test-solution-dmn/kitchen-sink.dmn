@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="KitchenSink_Definitions" name="Kitchen Sink DMN" namespace="https://evilengine.dev/test/kitchen-sink" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+  <import id="Import_Shared" namespace="https://evilengine.dev/test/shared" locationURI="shared-decisions.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <itemDefinition id="ItemDef_tAge" name="tAge">
+    <typeRef>number</typeRef>
+  </itemDefinition>
   <itemDefinition id="ItemDef_tSummary" name="tSummary" isCollection="false">
     <itemComponent id="ItemComp_total" name="total">
       <typeRef>number</typeRef>

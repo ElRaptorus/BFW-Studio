@@ -97,9 +97,6 @@ function DecisionTableProperties(props: PaneComponentProps): React.JSX.Element |
   }
 
   const aggregation: DmnAggregation = decisionTable.aggregation ?? '';
-  const inputCount = model.elements.getDecisionTableInputs(decisionTable).length;
-  const outputCount = model.elements.getDecisionTableOutputs(decisionTable).length;
-  const ruleCount = model.elements.getDecisionTableRuleCount(decisionTable);
 
   return (
     <PaneBody>
@@ -123,27 +120,6 @@ function DecisionTableProperties(props: PaneComponentProps): React.JSX.Element |
           />
         </div>
       )}
-      <PaneProperty
-        label="Inputs"
-        type="text"
-        value={String(inputCount)}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-dt-input-count': true }}
-      />
-      <PaneProperty
-        label="Outputs"
-        type="text"
-        value={String(outputCount)}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-dt-output-count': true }}
-      />
-      <PaneProperty
-        label="Rules"
-        type="text"
-        value={String(ruleCount)}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-dt-rule-count': true }}
-      />
     </PaneBody>
   );
 }

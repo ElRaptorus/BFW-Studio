@@ -367,6 +367,28 @@ await studioAgent.maximize();
 
 - **Keep enough spacing** between selectable elements in test BPMN diagrams. This prevents context pads from covering adjacent elements that the test needs to interact with next.
 
+## Testing DMN Diagrams
+
+When testing interactions with DMN diagrams:
+
+- **Maximize the window** at the start of each DMN test (same overlap risk as bpmn-js: dmn-js context pad is fixed-size).
+- **Close the context pad** (`closeContextPad()` / `sendKeyboardInput(['Escape'])`) after a canvas select and before clicking small property-pane controls (Hit Policy select, Add/Remove on Item Definitions and Imports). `clickOn` waits until the target is unobstructed and can hang until `testTimeout`. Do not add Escape inside `selectDmnElementByIdAndWaitForElement`.
+- **Deselect** with `clickOnDrdCanvas()`. That helper fits the diagram then calls `model.selection.clearSelection()`. Do not click the center of `.djs-container` — after fit-to-viewport that pixel often hits a shape.
+- **Native DMN text fields**: `setDmnPropertyValue` already closes the context pad, then `clearTextInput`, types, and Tabs.
+- **Hit Policy / other `PaneProperty type="select"`**: `htmlId` is on the wrapper `div`; `instanceId` is on the Select. Use `selectDmnDropdownOption(htmlId, optionValue)` / `getDmnSelectValue(htmlId)`. Wait for `[data-test-option-value="…"]` before clicking the option.
+- **Pane groups**: each test must call `switchToPaneGroup` for the group it is about to assert. Do **not** rely on the right-area fallback (`visibleGroups.find(g => g.visible) ?? visibleGroups[0]`). The suite shares one Studio window (`beforeAll` agent; `afterEach` only `closeOpenEditors`); `group.visible` is the last tab clicked and is **not** reset between tests. Validation is always displayable on a DMN document, so it never drops out of `visibleGroups`. Empty-canvas Scripting stays displayable, so Definitions will not show if Scripts is still the active tab.
+  - `'property'` — Definitions, DRG element panes, Decision Table, Literal Expression
+  - `'scripting'` — Item Definitions, Imports (after `clickOnDrdCanvas` so no DRG element is selected)
+  - `'validation'` — Validation findings list
+  - `'documentation'` — after selecting a DRG element, before asserting `[data-test--pane="dmn/panes/properties/PropertiesDocumentation"]`
+- **WDIO 9**: `await` `.length` on `$$` results (`getViewSwitcherItemCount`, `getElementCount`, remove-button lists).
+- **Quick Jump (files)**: `typeInQuickJump(query)` is Ctrl+J recent files. Type without Enter so results stay visible. `openViaQuickJump` submits and waits for the overlay to close. File jump does **not** list DRG element names.
+- **Go to Symbol**: DMN element names live in the symbol index. `typeInGoToSymbol(query)` is Ctrl+Shift+O (document symbols) and types without Enter. Wait until `.quick-jump` text contains the name (index may still be filling). Do not use `typeInQuickJump` for element search.
+
+```typescript
+await studioAgent.maximize();
+```
+
 ### Replacing values in property panes
 
 Host editors are CodeMirror 6 (`.cm-content`). Native pane fields are ordinary inputs. Neither replaces existing text on the first keystroke — typing appends at the caret. That is why `'10'` + `'100'` becomes `'10100'`.

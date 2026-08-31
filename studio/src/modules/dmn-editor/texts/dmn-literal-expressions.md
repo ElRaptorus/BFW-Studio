@@ -9,9 +9,9 @@ A Literal Expression is a single FEEL expression that computes the output of a D
 ## Usage
 
 1. Select a Decision on the DRD.
-2. Set its expression type to "Literal Expression" in the Properties pane.
-3. Double-click the Decision to open the expression editor.
-4. Write a FEEL expression. The editor provides syntax highlighting and autocompletion.
+2. Double-click the Decision to open its expression view (use the view switcher if the Decision currently uses a table or boxed expression).
+3. Write a FEEL expression. The editor provides syntax highlighting and autocompletion.
+4. Output Type is editable in the Properties pane while the literal view is open.
 
 ## Example
 

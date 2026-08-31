@@ -23,4 +23,5 @@ A Decision Table maps input conditions to output values using rules. Each row is
 - Click on a cell to edit its FEEL expression.
 - Right-click a column header to add, remove, or reorder columns.
 - Right-click a row to add, remove, or reorder rules.
-- Use the Properties pane to configure input/output types and labels.
+- Use the Properties pane to set Hit Policy (and Aggregation when Hit Policy is COLLECT).
+- Configure input/output types and labels on the table column headers, not in Properties.

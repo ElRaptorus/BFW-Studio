@@ -638,7 +638,7 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
   }
 
   bifrost.commands.register(
-    'std.editor.exportDocumentAs',
+    'std.editor.exportDocumentAs.bpmn',
     async (editorDocument: EditorDocument, format: string, filename: string) => {
       const extensionHandlerMap = {
         svg: async () => renderBpmnToSvg(editorDocument.data.current),

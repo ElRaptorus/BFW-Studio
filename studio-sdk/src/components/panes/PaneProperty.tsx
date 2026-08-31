@@ -357,10 +357,10 @@ function PanePropertySelect(props: PanePropertyProps_Select): React.JSX.Element 
   const className = props.className ?? 'form-group';
 
   return (
-    <div className={className}>
+    <div className={className} id={props.htmlId}>
       {props.label != null && <label>{props.label}</label>}
       <Select
-        id={props.htmlId}
+        instanceId={props.htmlId}
         options={props.options}
         isSearchable={false}
         isMulti={props.isMulti === true}

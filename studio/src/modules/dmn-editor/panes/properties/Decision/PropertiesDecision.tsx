@@ -13,7 +13,7 @@ import type { PropertyValidationResult } from '@evil/bifrost_fw_sdk';
 import { PaneProperty, validatePropertyNotEmpty } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
-import { DmnElementType, getExpressionType, getExpressionTypeLabel } from '../../../DmnElementTypes';
+import { DmnElementType } from '../../../DmnElementTypes';
 import {
   getDmnSelectionForPropertiesPane,
   getKeyForDmnPropertiesPane,
@@ -61,8 +61,6 @@ function DecisionProperties(props: PaneComponentProps): React.JSX.Element | null
 
   const businessObject = element.businessObject;
   const variable = businessObject?.variable;
-  const expressionType = getExpressionType(businessObject);
-  const expressionTypeLabel = getExpressionTypeLabel(expressionType);
 
   const validateIdIsUnique = (newId: string): PropertyValidationResult => {
     const allIds = model.elements.getAllIds();
@@ -104,13 +102,6 @@ function DecisionProperties(props: PaneComponentProps): React.JSX.Element | null
         value={variable?.typeRef ?? ''}
         onCommit={(value: any) => changeProperty('variable.typeRef', value)}
         htmlAttributes={{ 'data-test--dmn-decision-variable-type': true }}
-      />
-      <PaneProperty
-        label="Expression Type"
-        type="text"
-        value={expressionTypeLabel}
-        disabled={true}
-        htmlAttributes={{ 'data-test--dmn-decision-expression-type': true }}
       />
     </PaneBody>
   );

@@ -15,7 +15,7 @@ All three modules are internal (bundled with the Studio), loaded sequentially in
 | Module | Directory | Purpose |
 |--------|-----------|---------|
 | `dmn-core` | `studio/src/modules/dmn-core/` | Shared infrastructure: `DmnModelerComponentAdapter`, `DmnModelerModuleRegistry`, validation (`DmnValidator`), command handlers, diff engine (`DmnDiff`, `DmnViewerWithSync`, change summary builder) |
-| `dmn-editor` | `studio/src/modules/dmn-editor/` | Main editing module: `DmnDocumentModel`, `DmnDocumentRenderer`, property panes (15 panes across DRD + expression views), search indexing, keyboard shortcuts, menus, settings, merge resolver, FEEL context, help texts |
+| `dmn-editor` | `studio/src/modules/dmn-editor/` | Main editing module: `DmnDocumentModel`, `DmnDocumentRenderer`, right-area panes across four groups (`property` / `scripting` / `documentation` / `validation`), search indexing, keyboard shortcuts, menus, settings, merge resolver, FEEL context, help texts |
 | `dmn-diff` | `studio/src/modules/dmn-diff/` | Diff and history: `DmnDiffDocumentModel`, `DmnHistoryPreviewDocumentModel`, renderers, change overview / content diff panes, diff commands |
 
 ### Dependency Direction
@@ -119,27 +119,43 @@ Selection abstraction that works across DRD and expression views. Listens to `EV
 
 The general pane contract (`PaneProvider`, `shouldBeDisplayed` vs renderer, `PaneWrapper` gating) is documented in **[panes.md](panes.md)**. DMN-specific helpers live in `studio/src/modules/dmn-editor/panes/PropertiesPaneFunctions.ts`. Those helpers check document type, view, and selection only. Modeler `isReadyForInteraction()` is handled in `getDmnSelectionForPropertiesPane` / renderer `return null` so the pane header can still show while the body is empty.
 
+Registration is in `initializeDmnPanes.ts`. Grouping matches BPMN: **property** holds fields without which the element cannot function; **scripting** holds optional definitions-level catalogs; **documentation** holds Markdown; **validation** is a findings group of its own (same role as BPMN `linter`, but a dedicated group so BPMN `linterCounts` icon wiring is not reused). Canvas-redundant dumps (requirement edges, table column lists, boxed-expression counts, Decision Service composition, Element Summary) are not registered.
+
+### Right-area groups
+
+| Group | Purpose | Empty DRD (nothing selected) |
+|-------|---------|-------------------------------|
+| `property` | Element / definitions identity and the expression’s raison d’être | Definitions only (Name, ID, Namespace, Exporter, Exporter Version) |
+| `scripting` | Optional type catalog and cross-model imports | Item Definitions + Imports (empty-state + Add) |
+| `documentation` | Markdown `description` on the selected DRG element | Hidden (no selection) |
+| `validation` | `DmnValidator` findings, selection-independent | Always shown for a focused DMN document |
+
+Do **not** reuse BPMN’s `linter` group. DMN `validation` hides on BPMN documents (no displayable panes) and vice versa.
+
 ### Property Panes (right / property group)
 
-All registered in `initializeDmnPanes.ts`:
+| Pane | Component | Visibility Rule | Fields |
+|------|-----------|-----------------|--------|
+| Merge Changes | `DmnMergeChangeOverview` | Merge documents only | Unchanged merge UI |
+| Definitions | `PropertiesDefinitions` | DMN focused, DRD view, no element or root selected | Name, ID, Namespace (editable); Exporter, Exporter Version (read-only) |
+| Decision | `PropertiesDecision` | DMN focused, DRD view, single `dmn:Decision` selected | Name, ID, Output Variable, Output Type |
+| InputData | `PropertiesInputData` | DMN focused, DRD view, single `dmn:InputData` selected | Name, ID, Variable Name, Type |
+| BKM | `PropertiesBKM` | DMN focused, DRD view, single `dmn:BusinessKnowledgeModel` selected | Name, ID, Output Variable, Output Type |
+| KnowledgeSource | `PropertiesKnowledgeSource` | DMN focused, DRD view, single `dmn:KnowledgeSource` selected | Name, ID, Type |
+| DecisionService | `PropertiesDecisionService` | DMN focused, DRD view, single `dmn:DecisionService` selected | Name, ID |
+| DecisionTable | `PropertiesDecisionTable` | DMN focused, `decisionTable` view active | Hit Policy; Aggregation when Hit Policy is COLLECT |
+| LiteralExpression | `PropertiesLiteralExpression` | DMN focused, `literalExpression` view active | Output Type (editable via `variable.typeRef` on the owning Decision); `FeelEditor` for the expression text |
+
+Expression views treat the canvas as the editor. Property does not reprint table columns, rule counts, or boxed-expression structure. Column types and labels are edited in the decision-table column headers.
+
+### Scripting Panes (right / scripting group)
+
+`prependToPaneGroup('right', 'scripting', …)`. Same visibility as BPMN Process scripting: definitions-level, hidden when a DRG element is selected.
 
 | Pane | Component | Visibility Rule |
 |------|-----------|-----------------|
-| Definitions | `PropertiesDefinitions` | DMN focused, DRD view, no element or root selected |
-| Decision | `PropertiesDecision` | DMN focused, DRD view, single `dmn:Decision` selected |
-| InputData | `PropertiesInputData` | DMN focused, DRD view, single `dmn:InputData` selected |
-| BKM | `PropertiesBKM` | DMN focused, DRD view, single `dmn:BusinessKnowledgeModel` selected |
-| KnowledgeSource | `PropertiesKnowledgeSource` | DMN focused, DRD view, single `dmn:KnowledgeSource` selected |
-| DecisionService | `PropertiesDecisionService` | DMN focused, DRD view, single `dmn:DecisionService` selected |
-| Requirements | `PropertiesRequirements` | DMN focused, DRD view, connection selected |
-| DecisionTable | `PropertiesDecisionTable` | DMN focused, `decisionTable` view active |
-| TableInputs | `PropertiesTableInputs` | DMN focused, `decisionTable` view active |
-| TableOutputs | `PropertiesTableOutputs` | DMN focused, `decisionTable` view active |
-| LiteralExpression | `PropertiesLiteralExpression` | DMN focused, `literalExpression` view active |
-| BoxedExpression | `PropertiesBoxedExpression` | DMN focused, `boxedExpression` view active |
-| ItemDefinitions | `PropertiesItemDefinitions` | DMN focused, any view |
-| Imports | `PropertiesImports` | DMN focused, any view |
-| Validation | `PropertiesValidation` | DMN focused, any view |
+| ItemDefinitions | `PropertiesItemDefinitions` | DMN focused, DRD view, no DRG element selected (connection-only selection still counts as none) |
+| Imports | `PropertiesImports` | Same as Item Definitions. Visible with zero imports: empty-state copy plus **Add Import** |
 
 ### Documentation Pane (right / documentation group)
 
@@ -148,6 +164,18 @@ All registered in `initializeDmnPanes.ts`:
 | Documentation | `PropertiesDocumentation` | DMN focused, DRD view, single element selected |
 
 Edits the `description` attribute on the DMN business object (not `documentation[0].text` like BPMN).
+
+### Validation Pane (right / validation group)
+
+Registered with `registerPaneGroup('right', 'validation', …, { label: 'Validation', icon: 'ph-fill ph-highlighter' })`. Independent of BPMN `linter`.
+
+| Pane | Component | Visibility Rule |
+|------|-----------|-----------------|
+| Validation | `PropertiesValidation` | DMN focused, any view |
+
+Global findings list from `DmnValidator`. Clicking a finding zooms and selects. Not the sanitizer (`DmnSanitizerInspector` in the bottom inspector).
+
+`getKeyForDmnPropertiesPane` (DRD element panes) and `getActiveViewElementKey` (expression-view panes) are `type__id` only. Documentation `MarkdownEditor` is keyed `type__id`. Do not include `name` — that field is the value being edited; committing it remounts uncontrolled selects and the markdown editor.
 
 ### Inspector (bottom)
 
@@ -239,7 +267,7 @@ Debounced validator triggered on XML changes and property updates. Rules include
 - Variable name consistency
 - Item definition type validity
 
-Results rendered via `DmnValidationOverlayManager` as DRD overlays and listed in the Validation property pane.
+Results rendered via `DmnValidationOverlayManager` as DRD overlays and listed in the Validation right-area pane (`validation` group).
 
 ---
 
@@ -275,8 +303,10 @@ Undo, redo, zoom, save, and select-all are handled by the `std` module (generic 
 | `dmn.editor.openSettings` | DMN: Open DMN Settings |
 | `dmn.editor.toggleShowGrid` | DMN: Toggle Grid |
 | `dmn.editor.toggleShowMinimap` | DMN: Toggle Minimap |
-| `std.editor.showExportDialog.dmn` | DMN: Export as SVG, DMN: Export DMN |
+| `std.editor.showExportDialog.dmn` | (toolbar **Export as...**) |
 | `dmn.diff.compareTwoFilesFromSolution` | DMN: Compare two DMN files |
+
+`std.editor.showExportDialog` dispatches to `std.editor.showExportDialog.dmn`. That dialog then calls `std.editor.exportDocumentAs`, which `std` forwards to `std.editor.exportDocumentAs.dmn` (SVG via `DmnModelerComponentAdapter.getSvg()`, DMN copy from `currentXml`). Do not put a BPMN `BpmnViewer.importXML` body on the unsuffixed `exportDocumentAs` name.
 
 ---
 
@@ -359,15 +389,14 @@ Registered on the `dmn` document type via `mergeResolverKey: 'DmnMergeResolver'`
 
 Plus pane-level help text for the Documentation pane (`dmn/properties/documentation`).
 
-All 16 property panes wire `PaneHeaderHelpIcon` to a matching help text ID:
+Each remaining pane wires `PaneHeaderHelpIcon` to a matching help text ID:
 
-| Pane group | Help text ID |
-|------------|-------------|
-| Definitions, Decision, InputData, BKM, KnowledgeSource, Requirements | `dmn/drd` |
+| Pane | Help text ID |
+|-------|-------------|
+| Definitions, Decision, InputData, BKM, KnowledgeSource | `dmn/drd` |
 | DecisionService | `dmn/decision-services` |
-| DecisionTable, TableInputs, TableOutputs | `dmn/decision-tables` |
+| DecisionTable | `dmn/decision-tables` |
 | LiteralExpression | `dmn/literal-expressions` |
-| BoxedExpression | `dmn/boxed-expressions` |
 | ItemDefinitions | `dmn/item-definitions` |
 | Imports, Validation | `dmn/editor` |
 | Documentation | `dmn/properties/documentation` |

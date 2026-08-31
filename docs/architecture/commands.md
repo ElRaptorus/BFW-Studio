@@ -190,6 +190,8 @@ bifrost.commands.executeCommand('myModule.resolve', [this.model, additionalArg])
 
 **Exception**: The `std.editor.zoomToViewport.{documentType}` / `zoomToActualSize` / `zoomToSelectedElement` commands follow a convention of receiving `editorDocument` and resolving the model internally. This keeps them consistent across all document types that implement the zoom pattern.
 
+`std.editor.showExportDialog` / `reexportFile` / `exportDocumentAs` are the same dispatcher: `std` registers the unsuffixed name and forwards to `std.editor.{action}.{documentType}`. BPMN implements `std.editor.exportDocumentAs.bpmn` (`renderBpmnToSvg` / PNG / XML copy). DMN implements `std.editor.exportDocumentAs.dmn` (`DmnModelerComponentAdapter.getSvg()` / XML copy). Do not register a BPMN-only body on the unsuffixed `exportDocumentAs` name — that parses DMN XML as `<bpmn:Definitions>`.
+
 ## Naming Convention
 
 Command names follow the strict schema `{group}.{module-segment}.{domain}.{action}`:

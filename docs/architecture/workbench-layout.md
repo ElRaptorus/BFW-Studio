@@ -101,9 +101,11 @@ Maps over `paneGroups` and renders a `PanesList` per group. Only the group with 
 Supports multiple pane groups with a conditional icon-based tab bar:
 
 - Computes `visibleGroups` by checking `shouldBeDisplayed` on each group's panes.
+- Active group: `visibleGroups.find(g => g.visible) ?? visibleGroups[0]`. `group.visible` is the last tab selected via `setActiveGroupInArea`. It is **not** cleared when that group becomes empty; the `?? visibleGroups[0]` fallback runs only when the active group is **absent** from `visibleGroups`.
 - **1 visible group:** Renders `PanesList` directly, no tab bar.
 - **2+ visible groups:** Renders `PaneGroupTabBar` (icon variant) at top, followed by the active group's `PanesList`.
 - Tab click calls `bifrost.panes.setActiveGroupInArea('right', groupId)`.
+- DMN registers a dedicated `validation` group (highlighter icon) from `initializeDmnPanes.ts`. It is not BPMN’s `linter` group.
 
 ### PaneAreaBottom
 

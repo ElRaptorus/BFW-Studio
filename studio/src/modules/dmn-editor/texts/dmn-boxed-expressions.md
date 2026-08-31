@@ -22,4 +22,4 @@ DMN CL3 boxed expressions provide structured computation patterns beyond simple 
 
 ## Usage
 
-Select a Decision, then choose the desired expression type from the Properties pane. The editor will switch to the appropriate view for editing.
+Double-click a Decision (or BKM) to open its expression view. The view switcher at the top of the editor selects table, literal, or boxed editing — not the Properties pane. Boxed structure (context entries, invocations, and so on) is edited on the canvas.
