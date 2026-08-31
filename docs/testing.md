@@ -366,6 +366,7 @@ await studioAgent.maximize();
 ```
 
 - **Keep enough spacing** between selectable elements in test BPMN diagrams. This prevents context pads from covering adjacent elements that the test needs to interact with next.
+- **`PaneProperty type="select"`**: `htmlId` is on the wrapper `div` (label + control). `getText('#…-property')` returns `"Label\nVALUE"`. Read the committed option with `getText('#…-property .react-select__single-value')` (same as timers / ad-hoc ordering in this file).
 
 ## Testing DMN Diagrams
 

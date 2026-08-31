@@ -2503,7 +2503,7 @@ describe('bpmn/elements', () => {
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
     await studioAgent.selectBpmnElementByIdAndWaitForElement(serviceTask, HTTP_TASK_PANE, ASSERT_VISIBLE_TIMEOUT);
 
-    const method = await studioAgent.getText('#http-task-method-property');
+    const method = await studioAgent.getText('#http-task-method-property .react-select__single-value');
     assert.strictEqual(method, 'PUT');
 
     await studioAgent.assertNoErrorsPresentAndIdle();

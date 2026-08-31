@@ -1136,12 +1136,12 @@ export class StudioAgent {
     await this.poll(
       async () => {
         const openMenus = await this.$$('.react-select__control--menu-is-open');
-        if (openMenus.length > 0) {
+        if ((await openMenus.length) > 0) {
           return '';
         }
 
         const singleValueElements = await this.$$(singleValueSelector);
-        if (singleValueElements.length > 0) {
+        if ((await singleValueElements.length) > 0) {
           try {
             const singleValueText = await this.getText(singleValueSelector);
             if (typeof singleValueText === 'string' && singleValueText.trim() !== '') {
