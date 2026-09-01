@@ -142,7 +142,7 @@ describe('dmn/elements', () => {
     const variableName = await studioAgent.getDmnPropertyValue('data-test--dmn-decision-variable-name');
     assert.strictEqual(variableName, 'Discount');
 
-    const variableType = await studioAgent.getDmnPropertyValue('data-test--dmn-decision-variable-type');
+    const variableType = await studioAgent.getSuggestionSelectValue('#dmn-decision-variable-type-property');
     assert.strictEqual(variableType, 'number');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -193,6 +193,30 @@ describe('dmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
+  it('dmn/elements/decision: should pick Item Definition name as output type', async () => {
+    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
+    await studioAgent.waitForInteractiveDmnDocument();
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.clickOnDrdCanvas();
+
+    await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.closeContextPad();
+
+    await studioAgent.assertVisible('#dmn-decision-variable-type-property', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOn('#dmn-decision-variable-type-property');
+    await studioAgent.clickOn('#dmn-decision-variable-type-property [data-test-option-value="tAge"]');
+
+    await studioAgent.clickOnDrdCanvas();
+    await studioAgent.switchToPaneGroup('property');
+    await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
+
+    const variableType = await studioAgent.getSuggestionSelectValue('#dmn-decision-variable-type-property');
+    assert.strictEqual(variableType, 'tAge');
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
   // ─── InputData Properties Pane ───────────────────────────────────────
 
   it('dmn/elements/inputdata: should show InputData pane when an InputData is selected', async () => {
@@ -236,7 +260,7 @@ describe('dmn/elements', () => {
     const variableName = await studioAgent.getDmnPropertyValue('data-test--dmn-inputdata-variable-name');
     assert.strictEqual(variableName, 'CustomerAge');
 
-    const variableType = await studioAgent.getDmnPropertyValue('data-test--dmn-inputdata-variable-type');
+    const variableType = await studioAgent.getSuggestionSelectValue('#dmn-inputdata-variable-type-property');
     assert.strictEqual(variableType, 'number');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -282,8 +306,11 @@ describe('dmn/elements', () => {
       INPUT_DATA_PANE,
       ASSERT_VISIBLE_TIMEOUT,
     );
+    await studioAgent.closeContextPad();
 
-    await studioAgent.setDmnPropertyValue('data-test--dmn-inputdata-variable-type', 'string');
+    await studioAgent.assertVisible('#dmn-inputdata-variable-type-property', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOn('#dmn-inputdata-variable-type-property');
+    await studioAgent.clickOn('#dmn-inputdata-variable-type-property [data-test-option-value="string"]');
 
     await studioAgent.clickOnDrdCanvas();
     await studioAgent.switchToPaneGroup('property');
@@ -293,7 +320,7 @@ describe('dmn/elements', () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const variableType = await studioAgent.getDmnPropertyValue('data-test--dmn-inputdata-variable-type');
+    const variableType = await studioAgent.getSuggestionSelectValue('#dmn-inputdata-variable-type-property');
     assert.strictEqual(variableType, 'string');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -335,7 +362,7 @@ describe('dmn/elements', () => {
     const variableName = await studioAgent.getDmnPropertyValue('data-test--dmn-bkm-variable-name');
     assert.strictEqual(variableName, 'PricingFormula');
 
-    const variableType = await studioAgent.getDmnPropertyValue('data-test--dmn-bkm-variable-type');
+    const variableType = await studioAgent.getSuggestionSelectValue('#dmn-bkm-variable-type-property');
     assert.strictEqual(variableType, 'number');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -695,10 +722,10 @@ describe('dmn/elements', () => {
     await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(ITEM_DEFINITIONS_PANE);
 
-    const typeSelector = '[data-test--dmn-item-definition-entry="tAge"] [data-test--dmn-item-definition-type]';
+    const typeSelector = '#dmn-item-definition-type-property-ItemDef_tAge';
     await studioAgent.assertVisible(typeSelector, ASSERT_VISIBLE_TIMEOUT);
 
-    const tAgeType = await studioAgent.getValue(typeSelector);
+    const tAgeType = await studioAgent.getSuggestionSelectValue(typeSelector);
     assert.strictEqual(tAgeType, 'number');
 
     await studioAgent.assertNoErrorsPresentAndIdle();

@@ -7,13 +7,18 @@ import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
 import { FeelEditor, PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
-import { getActiveViewElementKey, getDmnModel, shouldBeDisplayedForDmnViewType } from '../../PropertiesPaneFunctions';
+import {
+  getActiveViewElementKey,
+  getDmnModel,
+  getTypeRefSuggestions,
+  shouldBeDisplayedForDmnViewType,
+} from '../../PropertiesPaneFunctions';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -78,14 +83,16 @@ function LiteralExpressionProperties(props: PaneComponentProps): React.JSX.Eleme
   const decisionElementId = decisionElement?.id as string | undefined;
 
   const onOutputTypeCommit = useCallback(
-    (value: any): void => {
+    (newValue: any): void => {
       if (!decisionElementId) {
         return;
       }
-      model.elements.setElementProperty(decisionElementId, 'variable.typeRef', value);
+      model.elements.setElementProperty(decisionElementId, 'variable.typeRef', newValue?.value ?? newValue ?? '');
     },
     [model, decisionElementId],
   );
+
+  const typeRefSuggestions = useMemo(() => Promise.resolve(getTypeRefSuggestions(model)), [model]);
 
   const literalExpression = model.elements.getActiveViewLiteralExpression();
   if (!literalExpression) {
@@ -99,11 +106,13 @@ function LiteralExpressionProperties(props: PaneComponentProps): React.JSX.Eleme
   return (
     <PaneBody>
       <PaneProperty
+        htmlId="dmn-le-type-ref-property"
         label="Output Type"
-        type="text"
+        type="text-with-suggestions"
         value={typeRef}
         onCommit={onOutputTypeCommit}
-        htmlAttributes={{ 'data-test--dmn-le-type-ref': true }}
+        suggestions={typeRefSuggestions}
+        isClearable={true}
       />
       <div className="form-group">
         <label className="d-block" style={{ width: '100%' }}>

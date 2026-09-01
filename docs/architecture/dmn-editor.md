@@ -138,13 +138,15 @@ Do **not** reuse BPMN’s `linter` group. DMN `validation` hides on BPMN documen
 |------|-----------|-----------------|--------|
 | Merge Changes | `DmnMergeChangeOverview` | Merge documents only | Unchanged merge UI |
 | Definitions | `PropertiesDefinitions` | DMN focused, DRD view, no element or root selected | Name, ID, Namespace (editable); Exporter, Exporter Version (read-only) |
-| Decision | `PropertiesDecision` | DMN focused, DRD view, single `dmn:Decision` selected | Name, ID, Output Variable, Output Type |
-| InputData | `PropertiesInputData` | DMN focused, DRD view, single `dmn:InputData` selected | Name, ID, Variable Name, Type |
-| BKM | `PropertiesBKM` | DMN focused, DRD view, single `dmn:BusinessKnowledgeModel` selected | Name, ID, Output Variable, Output Type |
-| KnowledgeSource | `PropertiesKnowledgeSource` | DMN focused, DRD view, single `dmn:KnowledgeSource` selected | Name, ID, Type |
+| Decision | `PropertiesDecision` | DMN focused, DRD view, single `dmn:Decision` selected | Name, ID, Output Variable, Output Type (`variable.typeRef`, creatable catalog) |
+| InputData | `PropertiesInputData` | DMN focused, DRD view, single `dmn:InputData` selected | Name, ID, Variable Name, Type (`variable.typeRef`, creatable catalog) |
+| BKM | `PropertiesBKM` | DMN focused, DRD view, single `dmn:BusinessKnowledgeModel` selected | Name, ID, Output Variable, Output Type (`variable.typeRef`, creatable catalog) |
+| KnowledgeSource | `PropertiesKnowledgeSource` | DMN focused, DRD view, single `dmn:KnowledgeSource` selected | Name, ID, Type (`businessObject.type`, free text — not `typeRef`) |
 | DecisionService | `PropertiesDecisionService` | DMN focused, DRD view, single `dmn:DecisionService` selected | Name, ID |
 | DecisionTable | `PropertiesDecisionTable` | DMN focused, `decisionTable` view active | Hit Policy; Aggregation when Hit Policy is COLLECT |
-| LiteralExpression | `PropertiesLiteralExpression` | DMN focused, `literalExpression` view active | Output Type (editable via `variable.typeRef` on the owning Decision); `FeelEditor` for the expression text |
+| LiteralExpression | `PropertiesLiteralExpression` | DMN focused, `literalExpression` view active | Output Type (owning Decision `variable.typeRef`, creatable catalog); `FeelEditor` for the expression text |
+
+`typeRef` fields use `PaneProperty type="text-with-suggestions"` via `getTypeRefSuggestions` in `PropertiesPaneFunctions.ts`: FEEL builtins (`FEEL_BUILTIN_TYPES`) plus `model.elements.getItemDefinitionNames()`. Free text remains allowed (create option). Simple Item Definition Type on the Scripts pane uses the same helper (`excludeName` skips the definition being edited). Composite Item Definition Type stays a disabled dump. Table column Type menus still list only the nine builtins until a dedicated `dataTypes` follow-up.
 
 Expression views treat the canvas as the editor. Property does not reprint table columns, rule counts, or boxed-expression structure. Column types and labels are edited in the decision-table column headers.
 

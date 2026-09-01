@@ -6,12 +6,16 @@ import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import { PaneProperty } from '@evil/bifrost_fw_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
-import { getDmnModel, shouldBeDisplayedForDmnDrdNoSelection } from '../../PropertiesPaneFunctions';
+import {
+  getDmnModel,
+  getTypeRefSuggestions,
+  shouldBeDisplayedForDmnDrdNoSelection,
+} from '../../PropertiesPaneFunctions';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle,
@@ -90,6 +94,7 @@ function ItemDefinitionsContent(props: PaneComponentProps): React.JSX.Element | 
         <ItemDefinitionEntry
           key={itemDef.id}
           itemDefinition={itemDef}
+          model={model}
           onUpdate={updateItemDefinition}
           onRemove={removeItemDefinition}
         />
@@ -111,16 +116,21 @@ function ItemDefinitionsContent(props: PaneComponentProps): React.JSX.Element | 
 
 type ItemDefinitionEntryProps = {
   itemDefinition: any;
+  model: DmnDocumentModel;
   onUpdate: (itemDef: any, propertyName: string, value: any) => void;
   onRemove: (itemDef: any) => void;
 };
 
 function ItemDefinitionEntry(props: ItemDefinitionEntryProps): React.JSX.Element {
-  const { itemDefinition, onUpdate, onRemove } = props;
+  const { itemDefinition, model, onUpdate, onRemove } = props;
   const itemComponents: any[] = itemDefinition.itemComponent ?? [];
   const isComposite = itemComponents.length > 0;
   const typeDisplay = isComposite ? `composite (${itemComponents.length} components)` : (itemDefinition.typeRef ?? '');
   const collectionLabel = itemDefinition.isCollection === true ? 'Yes' : 'No';
+  const typeRefSuggestions = useMemo(
+    () => Promise.resolve(getTypeRefSuggestions(model, { excludeName: itemDefinition.name })),
+    [model, itemDefinition.name],
+  );
 
   return (
     <div
@@ -136,11 +146,13 @@ function ItemDefinitionEntry(props: ItemDefinitionEntryProps): React.JSX.Element
       />
       {!isComposite && (
         <PaneProperty
+          htmlId={`dmn-item-definition-type-property-${itemDefinition.id}`}
           label="Type"
-          type="text"
+          type="text-with-suggestions"
           value={itemDefinition.typeRef ?? ''}
-          onCommit={(value: any) => onUpdate(itemDefinition, 'typeRef', value)}
-          htmlAttributes={{ 'data-test--dmn-item-definition-type': true }}
+          onCommit={(newValue: any) => onUpdate(itemDefinition, 'typeRef', newValue?.value ?? newValue ?? '')}
+          suggestions={typeRefSuggestions}
+          isClearable={true}
         />
       )}
       {isComposite && (

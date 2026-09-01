@@ -2,9 +2,11 @@ import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
 
+import type { Suggestion } from '@evil/bifrost_fw_sdk';
+
 import type { DmnViewType } from '../../dmn-core/DmnModelerComponentAdapter';
 import type DmnDocumentModel from '../DmnDocumentModel';
-import { type DmnElement, DmnElementType } from '../DmnElementTypes';
+import { type DmnElement, DmnElementType, FEEL_BUILTIN_TYPES } from '../DmnElementTypes';
 import { DMN_DOCUMENT_TYPE } from '../index';
 
 const DRD_CONNECTION_TYPES: Set<string> = new Set([
@@ -133,4 +135,26 @@ export function getActiveViewElementKey(model: DmnDocumentModel): string {
   // type + id only. `view.name` is the DRG element name; renaming the
   // decision remounts expression-view panes (Hit Policy select, FEEL editor).
   return `${view.type}__${view.id}`;
+}
+
+export type TypeRefSuggestionsOptions = {
+  excludeName?: string;
+};
+
+export function getTypeRefSuggestions(model: DmnDocumentModel, options?: TypeRefSuggestionsOptions): Suggestion[] {
+  const builtinSuggestions: Suggestion[] = FEEL_BUILTIN_TYPES.map((typeName) => ({
+    label: typeName,
+    sublabel: 'FEEL built-in',
+    value: typeName,
+  }));
+
+  const catalogNames = model.elements.getItemDefinitionNames().filter((name) => name !== options?.excludeName);
+
+  const catalogSuggestions: Suggestion[] = catalogNames.map((name) => ({
+    label: name,
+    sublabel: 'Item Definition',
+    value: name,
+  }));
+
+  return [...builtinSuggestions, ...catalogSuggestions];
 }

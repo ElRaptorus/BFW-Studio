@@ -7,7 +7,7 @@ import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { PropertyValidationResult } from '@evil/bifrost_fw_sdk';
 import { PaneProperty, validatePropertyNotEmpty } from '@evil/bifrost_fw_sdk';
@@ -17,6 +17,7 @@ import { DmnElementType } from '../../../DmnElementTypes';
 import {
   getDmnSelectionForPropertiesPane,
   getKeyForDmnPropertiesPane,
+  getTypeRefSuggestions,
   shouldBeDisplayedForDmnDrdElementOfType,
 } from '../../PropertiesPaneFunctions';
 
@@ -72,6 +73,8 @@ function DecisionProperties(props: PaneComponentProps): React.JSX.Element | null
     model.elements.setElementProperty(element.id, propertyName, value);
   };
 
+  const typeRefSuggestions = useMemo(() => Promise.resolve(getTypeRefSuggestions(model)), [model]);
+
   return (
     <PaneBody>
       <PaneProperty
@@ -97,11 +100,13 @@ function DecisionProperties(props: PaneComponentProps): React.JSX.Element | null
         htmlAttributes={{ 'data-test--dmn-decision-variable-name': true }}
       />
       <PaneProperty
+        htmlId="dmn-decision-variable-type-property"
         label="Output Type"
-        type="text"
+        type="text-with-suggestions"
         value={variable?.typeRef ?? ''}
-        onCommit={(value: any) => changeProperty('variable.typeRef', value)}
-        htmlAttributes={{ 'data-test--dmn-decision-variable-type': true }}
+        onCommit={(newValue: any) => changeProperty('variable.typeRef', newValue?.value ?? newValue ?? '')}
+        suggestions={typeRefSuggestions}
+        isClearable={true}
       />
     </PaneBody>
   );
