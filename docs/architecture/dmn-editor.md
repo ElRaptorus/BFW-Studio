@@ -36,7 +36,7 @@ dmn-core  ←  dmn-editor  ←  dmn-diff
 
 The adapter wraps the `dmn-js` `Manager` (v17.8.1) and provides a unified API for the document model and panes. Key responsibilities:
 
-- **Lifecycle:** `initialize(xml, restoredMetadata)`, `attachToHtmlElement(target)`, `dispose()`
+- **Lifecycle:** `initialize(xml, restoredMetadata)`, `attachToHtmlElement(target)`, `dispose()`. `EVENT_DMN_ADAPTER_ATTACHED_TO_HTML` fires on `Manager.attach`. `EVENT_DMN_ADAPTER_READY_FOR_INTERACTION` fires **after** `waitForDrdCanvasLayout` sees a non-zero DRD `viewbox.outer` and the initial zoom/restore has run. Do not treat attach as interactive — dmn-js imported XML into a detached 0×0 container.
 - **View management:** `getActiveView()`, `getActiveViewType()`, `getViews()`, `switchToView(view)` — DRD, decision table, literal expression, boxed expression
 - **Canvas:** `getZoom()`, `setZoom(pct)`, `zoomToViewport()`, `zoomToElement(id)`, `getSvg()`
 - **Undo/redo:** `canUndo()`, `canRedo()`, `undo()`, `redo()` — proxied to the active view's `CommandStack`
@@ -84,7 +84,7 @@ Owns a `DmnModelerComponentAdapter`, a `DmnDocumentElementAccess`, a `DmnDocumen
 
 1. `create()` — static factory; loads XML from file, detects merge conflict markers, calls `initialize()`
 2. `initialize()` — passes XML to the adapter, marks `xmlLoaded = true`
-3. `attachToHtmlElement()` — deferred until the renderer mounts the DOM container
+3. `attachToHtmlElement()` — deferred until the renderer mounts the DOM container. `isReadyForInteraction()` stays false until the DRD canvas has a non-zero outer viewbox (see `waitForDrdCanvasLayout.ts`).
 4. `onEditorDocumentWillSave()` / `onEditorDocumentDidSave()` — file watcher management
 5. `onEditorDocumentWillClose()` — disposes subscriptions, adapter, validation manager
 
@@ -351,6 +351,7 @@ Host typed model:
 | `studio/src/modules/dmn-editor/DmnDocumentSelection.ts` | Selection helpers |
 | `studio/src/modules/dmn-editor/DmnDocumentElementAccess.ts` | Element access helpers |
 | `studio/src/modules/dmn-core/DmnModelerComponentAdapter.ts` | Adapter + `DmnView` |
+| `studio/src/modules/dmn-core/waitForDrdCanvasLayout.ts` | Poll until DRD `viewbox.outer` is non-zero after attach |
 
 ---
 

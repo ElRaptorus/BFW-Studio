@@ -563,6 +563,16 @@ adapter.onceInteractive(() => {
 
 ---
 
+## DMN `READY_FOR_INTERACTION` must wait for a non-zero DRD viewbox
+
+**Mistake**: Set `readyForInteraction = true` (and thus `data-test--dmn-document-is-interactive="true"`) in the dmn-js `attach` handler after a single `canvas.resized()`, then zoom in a listener that runs *after* ready is already true.
+
+**Why it fails**: dmn-js `Manager.attachTo` does not call `canvas.resized()` (bpmn-js `BaseViewer.attachTo` does). `importXML` also runs while the Manager container is still detached, so the DRD canvas caches `0×0`. The editor host is a flex `EditorContent`; `jumpToFile` waits for `[data-test--editors--focused-document-type="dmn"]`, which can appear before that flex child has a layout. `zoomToViewport()` then no-ops on zero outer dimensions. Integration tests click `[data-element-id=…]`; diagram-js hit-testing uses the viewbox, so the click misses and `.selected` never appears. Five retries with no delay all run in the same failed frame.
+
+**Correct approach**: After attach, `waitForDrdCanvasLayout` retries `resized()` until `viewbox.outer` is non-zero (or DRD is not active), then apply zoom / restored viewbox, *then* emit `EVENT_DMN_ADAPTER_READY_FOR_INTERACTION`. The same sequence lives on `DmnViewerComponentAdapter`. Selection-helper retries should also pause between attempts so a remaining race cannot exhaust five tries instantly.
+
+---
+
 ## Service task type detection: check `implementation` attribute, not Camunda extensions
 
 **Mistake**: Detecting HTTP or custom service tasks by checking `camunda:type` or a `engine.setServiceTaskType` custom property.

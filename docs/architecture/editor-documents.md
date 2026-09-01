@@ -523,6 +523,8 @@ The adapter's `zoomToViewport()` and `setZoom()` also include a zero-dimension g
 
 See also: [common-pitfalls.md → bpmn-js canvas operations on zero-dimension containers](common-pitfalls.md#bpmn-js-canvas-operations-on-zero-dimension-containers).
 
+DMN is stricter: `DmnModelerComponentAdapter` / `DmnViewerComponentAdapter` must **not** emit `READY_FOR_INTERACTION` (or set `isReadyForInteraction`) until `waitForDrdCanvasLayout` has observed a non-zero DRD outer viewbox. Tests that wait on `data-test--dmn-document-is-interactive="true"` depend on that flag meaning hit-testing will work.
+
 ---
 
 ## Renderer → Command Communication

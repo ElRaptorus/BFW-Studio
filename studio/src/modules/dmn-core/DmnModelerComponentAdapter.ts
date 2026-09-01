@@ -16,6 +16,7 @@ import { DmnCommandHandler } from './dmn-js/CommandHandler/index';
 import { PluginDmnContextPadProvider } from './dmn-js/Provider/PluginDmnContextPadProvider';
 import { PluginDmnPaletteProvider } from './dmn-js/Provider/PluginDmnPaletteProvider';
 import { type DmnSanitizerBridgeApi, createDmnSanitizerModule } from './sanitizer/SanitizerBridge';
+import { waitForDrdCanvasLayout } from './waitForDrdCanvasLayout';
 
 export const EVENT_DMN_ADAPTER_READY_FOR_INTERACTION = 'EVENT_DMN_ADAPTER_READY_FOR_INTERACTION';
 export const EVENT_DMN_ADAPTER_ATTACHED_TO_HTML = 'EVENT_DMN_ADAPTER_ATTACHED_TO_HTML';
@@ -40,6 +41,7 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
   private log: Debugger;
   private modeler: any;
   private readyForInteraction: boolean = false;
+  private disposed: boolean = false;
   private activeViewerEventCleanup: (() => void) | null = null;
   private drdCommandStackListenerRegistered: boolean = false;
 
@@ -98,25 +100,15 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
   }
 
   async initialize(xml: string, metadata: Record<string, unknown> | null = null): Promise<string> {
-    this.once(EVENT_DMN_ADAPTER_READY_FOR_INTERACTION, async () => {
-      if (this.isDrdActive()) {
-        if (metadata?.viewbox == null) {
-          this.zoomToViewport();
-        } else {
-          this.getDrdCanvas().viewbox(metadata.viewbox as Rect);
-        }
-      }
-    });
-
     this.once(EVENT_DMN_ADAPTER_ATTACHED_TO_HTML, () => {
-      this.readyForInteraction = true;
-      this.emit(EVENT_DMN_ADAPTER_READY_FOR_INTERACTION);
+      void this.finishAttachAndMarkReady(metadata);
     });
 
     return this.setXml(xml);
   }
 
   dispose(): void {
+    this.disposed = true;
     this.cleanupActiveViewerEvents();
     this.modeler.destroy();
   }
@@ -162,9 +154,10 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
       // dmn-js Manager.attachTo does not call canvas.resized() on the active
       // viewer (unlike bpmn-js BaseViewer.attachTo which does). During importXML
       // the DRD viewer attached to the Manager's _container while it was still
-      // detached from the DOM, so the canvas cached 0×0 outer dimensions. Now
-      // that the container is in the live DOM we must tell the viewer to
-      // recalculate, otherwise hit-testing and zoom-to-viewport silently fail.
+      // detached from the DOM, so the canvas cached 0×0 outer dimensions. A
+      // single resized() here is not enough when the host flex layout has not
+      // flushed — finishAttachAndMarkReady retries until the outer viewbox is
+      // non-zero, then zooms, then emits READY_FOR_INTERACTION.
       this.resizeActiveViewer();
 
       this.emit(EVENT_DMN_ADAPTER_ATTACHED_TO_HTML);
@@ -551,6 +544,40 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
       (viewer.get('canvas') as Canvas).resized();
     } catch {
       // Table and expression viewers do not expose a diagram-js canvas
+    }
+  }
+
+  private async finishAttachAndMarkReady(metadata: Record<string, unknown> | null): Promise<void> {
+    const layoutReady = await waitForDrdCanvasLayout(
+      () => !this.disposed && this.isDrdActive(),
+      () => this.resizeActiveViewer(),
+      () => this.readDrdOuterViewbox(),
+    );
+    if (this.disposed) {
+      return;
+    }
+    if (!layoutReady) {
+      this.log('DRD canvas still 0×0 after waiting for layout; marking interactive anyway');
+    }
+
+    if (this.isDrdActive()) {
+      if (metadata?.viewbox == null) {
+        this.zoomToViewport();
+      } else {
+        this.getDrdCanvas().viewbox(metadata.viewbox as Rect);
+      }
+    }
+
+    this.readyForInteraction = true;
+    this.emit(EVENT_DMN_ADAPTER_READY_FOR_INTERACTION);
+  }
+
+  private readDrdOuterViewbox(): { width: number; height: number } | null {
+    try {
+      const viewbox = this.getDrdCanvas().viewbox(false as any) as CanvasViewbox;
+      return viewbox.outer;
+    } catch {
+      return null;
     }
   }
 

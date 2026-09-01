@@ -40,7 +40,7 @@ export async function createAndStartStudioAgentDmnExtension(
 
 export class StudioAgentDmnExtension extends StudioAgent {
   async waitForInteractiveDmnDocument(timeout: number = ASSERT_VISIBLE_TIMEOUT): Promise<true> {
-    const element = this.testDriver.client!.$('[data-test--dmn-document-is-interactive="true"]');
+    const element = await this.testDriver.client!.$('[data-test--dmn-document-is-interactive="true"]');
     return element.waitForExist({ timeout: timeout });
   }
 
@@ -89,6 +89,7 @@ export class StudioAgentDmnExtension extends StudioAgent {
     const selectedElements = await this.$$(`[data-element-id=${elementId}].selected`);
     if ((await selectedElements.length) === 0) {
       if (retryCount < 5) {
+        await this.pause(150);
         return this.selectDmnElementByIdAndWaitForElement(elementId, waitForSelector, timeout, retryCount + 1);
       } else {
         throw new Error(`Could not select DMN element with id ${elementId}`);
@@ -101,6 +102,7 @@ export class StudioAgentDmnExtension extends StudioAgent {
         await this.assertVisible(waitForSelector, timeoutToUse);
       } catch (error) {
         if (retryCount < 5) {
+          await this.pause(150);
           return this.selectDmnElementByIdAndWaitForElement(elementId, waitForSelector, timeout, retryCount + 1);
         }
         throw error;

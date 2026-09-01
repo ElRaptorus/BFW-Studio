@@ -10,6 +10,7 @@ import DrdOutlineModule from 'dmn-js-drd/lib/features/outline';
 import DmnNavigatedViewer from 'dmn-js/lib/NavigatedViewer';
 
 import type { DmnView, DmnViewType } from './DmnModelerComponentAdapter';
+import { waitForDrdCanvasLayout } from './waitForDrdCanvasLayout';
 
 export const EVENT_DMN_VIEWER_READY_FOR_INTERACTION = 'EVENT_DMN_VIEWER_READY_FOR_INTERACTION';
 export const EVENT_DMN_VIEWER_ATTACHED_TO_HTML = 'EVENT_DMN_VIEWER_ATTACHED_TO_HTML';
@@ -33,6 +34,7 @@ export class DmnViewerComponentAdapter extends AbstractEmitter {
   private log: Debugger;
   private viewer: any;
   private readyForInteraction: boolean = false;
+  private disposed: boolean = false;
   private activeViewerEventCleanup: (() => void) | null = null;
 
   constructor(uri: string, options?: DmnViewerOptions) {
@@ -64,8 +66,7 @@ export class DmnViewerComponentAdapter extends AbstractEmitter {
 
   async initialize(xml: string): Promise<void> {
     this.once(EVENT_DMN_VIEWER_ATTACHED_TO_HTML, () => {
-      this.readyForInteraction = true;
-      this.emit(EVENT_DMN_VIEWER_READY_FOR_INTERACTION);
+      void this.finishAttachAndMarkReady();
     });
 
     try {
@@ -101,6 +102,7 @@ export class DmnViewerComponentAdapter extends AbstractEmitter {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.cleanupActiveViewerEvents();
     this.viewer.destroy();
   }
@@ -294,6 +296,40 @@ export class DmnViewerComponentAdapter extends AbstractEmitter {
       (viewer.get('canvas') as Canvas).resized();
     } catch {
       // Table and expression viewers do not expose a diagram-js canvas
+    }
+  }
+
+  private async finishAttachAndMarkReady(): Promise<void> {
+    const layoutReady = await waitForDrdCanvasLayout(
+      () => !this.disposed && this.isDrdActive(),
+      () => this.resizeActiveViewer(),
+      () => this.readDrdOuterViewbox(),
+    );
+    if (this.disposed) {
+      return;
+    }
+    if (!layoutReady) {
+      this.log('DRD canvas still 0×0 after waiting for layout; marking interactive anyway');
+    }
+
+    if (this.isDrdActive()) {
+      this.zoomToViewport();
+    }
+
+    this.readyForInteraction = true;
+    this.emit(EVENT_DMN_VIEWER_READY_FOR_INTERACTION);
+  }
+
+  private readDrdOuterViewbox(): { width: number; height: number } | null {
+    try {
+      const canvas = this.getDrdCanvas();
+      if (!canvas) {
+        return null;
+      }
+      const viewbox = canvas.viewbox(false as any) as CanvasViewbox;
+      return viewbox.outer;
+    } catch {
+      return null;
     }
   }
 
