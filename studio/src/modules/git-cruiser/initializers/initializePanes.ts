@@ -15,6 +15,7 @@ export function initializePanes(bifrost: Bifrost, gitService: GitService): void 
         id: 'pane/left/git',
         tooltip: 'Source Control',
         icon: 'git-cruiser/menubar-icon',
+        visible: bifrost.panes.getPaneAreaVisibility('left'),
         paneAreaId: 'left',
         paneId: 'pane/left/git',
       },

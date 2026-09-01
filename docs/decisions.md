@@ -26,6 +26,21 @@ Agents should add entries here when a meaningful design choice is made during th
 
 ## Decisions
 
+### 2026-09-01 — Park left/right menu bars on the center row when a pane area hides
+
+**Context**: The Layout menu (`menu-bar/layout`) lived in the right column's `MenuBarSection`. That section was gated on `deferredPaneArea.right.visible`, so hiding the Property Panel unmounted the only control that could show it again. Toggle Sidebar sat in the same right-hand menu, away from the left pane it controls.
+
+**Options considered**:
+- A) Collapsed rail (~32px column) that stays on the hidden side with only the Show button.
+- B) Full-width unified toolbar above the splitter, always on, independent of pane visibility.
+- C) Park the hidden side's entire `MenuBarSection` on the matching edge of the center column top row; replace the Layout dropdown with `>>` / `<<` buttons (`std.workbench.togglePropertyPanel` / `toggleSidebar`).
+
+**Decision**: Option C.
+
+**Rationale**: Smallest change that keeps Show reachable without a new splitter size mode or a persistent empty 34px bar while both panes are visible and the center factory is empty. Parking the whole section also keeps Explorer/Search/Engines and the linter ruleset select clickable after hide. View → Appearance and Ctrl/Cmd+B (`togglePanels`) stay as they are.
+
+---
+
 ### 2026-08-26 — Git Cruiser merge editor is BPMN and DMN only
 
 **Context**: `MergeDocumentRenderer` kept a courtesy CodeMirror `DiffEditor` fallback for conflicted non-diagram files, gated by `gitCruiser.merge.includeNonBpmn` (default off) plus `git.merge.saveTextAndNext` and a generic Merge Changes pane. The Studio no longer ships generic Markdown/text document types in `std`; a generic merge editor for those files is the same leftover class of surface.

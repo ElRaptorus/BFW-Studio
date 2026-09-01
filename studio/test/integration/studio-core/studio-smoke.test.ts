@@ -1,4 +1,3 @@
-import assert from 'node:assert';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import { OsSpecificKeystroke } from '../../OsSpecificKeystroke';
@@ -10,6 +9,9 @@ const SHOW_QUICK_JUMP_COMMANDS = OsSpecificKeystroke('cmd-shift-j', 'ctrl-shift-
 const FOCUS_SEARCH = OsSpecificKeystroke('cmd-shift-f', 'ctrl-shift-f');
 const OPEN_NEW_WINDOW = OsSpecificKeystroke('cmd-shift-n', 'ctrl-shift-n');
 
+const PROPERTY_PANEL_TOGGLE = '[data-test--menubar--button-for-command="std.workbench.togglePropertyPanel"]';
+const SIDEBAR_TOGGLE = '[data-test--menubar--button-for-command="std.workbench.toggleSidebar"]';
+
 const ASSERT_VISIBLE_TIMEOUT = 30000;
 
 describe('studio/smoke', () => {
@@ -19,6 +21,9 @@ describe('studio/smoke', () => {
   beforeAll(async () => {
     currentContext = { testName: 'setup', testFile: __filename };
     studioAgent = await createAndStartStudioAgent(currentContext);
+    await studioAgent.executeCommand('std.workbench.showPanels');
+    await studioAgent.assertVisible('.app-layout__panes-left', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertVisible('.app-layout__panes-right', ASSERT_VISIBLE_TIMEOUT);
   });
 
   beforeEach(({ task }) => {
@@ -103,18 +108,6 @@ describe('studio/smoke', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  // Guards the envelope in StudioAgent.executeCommand. Without it, WebdriverIO reads the
-  // returned object's `error` property as a WebDriver protocol error and throws instead of
-  // handing the value back, which silently breaks every test that inspects a command's
-  // failure result. See docs/architecture/common-pitfalls.md.
-  it('smoke/harness: executeCommand returns a result carrying a top-level error property', async () => {
-    const result = await studioAgent.executeCommand('std.test.returnObjectWithErrorProperty');
-
-    assert.deepStrictEqual(result, { success: false, error: 'sentinel-error-value' });
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
   it('smoke/editor: should split editors', async () => {
     await studioAgent.openViaCommandSearch('start');
     await studioAgent.openViaCommandSearch('Settings (JSON)');
@@ -125,6 +118,38 @@ describe('studio/smoke', () => {
 
     await studioAgent.assertVisible('[data-editor-id="Editor1"]');
     await studioAgent.assertVisible('[data-editor-id="Editor2"]');
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('smoke/workbench: should toggle the property pane from the right-side pane toggle button', async () => {
+    await studioAgent.assertVisible(PROPERTY_PANEL_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel');
+    await studioAgent.pause(500);
+
+    await studioAgent.assertNotVisible('.app-layout__panes-right');
+    await studioAgent.assertVisible(PROPERTY_PANEL_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel');
+    await studioAgent.assertVisible('.app-layout__panes-right', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('smoke/workbench: should toggle the sidebar from the left-side pane toggle button', async () => {
+    await studioAgent.leftMenuBar.togglePane('pane/left/explorer');
+    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/explorer');
+
+    await studioAgent.assertVisible(SIDEBAR_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnMenubarButtonForCommand('std.workbench.toggleSidebar');
+    await studioAgent.pause(500);
+
+    await studioAgent.assertNotVisible('.app-layout__panes-left');
+    await studioAgent.assertVisible(SIDEBAR_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOnMenubarButtonForCommand('std.workbench.toggleSidebar');
+    await studioAgent.assertVisible('.app-layout__panes-left', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/explorer');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

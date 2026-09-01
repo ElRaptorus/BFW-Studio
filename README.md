@@ -8,7 +8,7 @@
 
 ## Prerequisites
 
-- Node `>= 24.18.0`
+- Node `>= 24.20.0`
 - NPM `>= 12.0.0`
 
 ## Installation

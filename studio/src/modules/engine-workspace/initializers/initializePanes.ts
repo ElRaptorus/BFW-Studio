@@ -51,6 +51,7 @@ export default function initializePanes(bifrost: Bifrost): void {
         id: 'pane/left/engines',
         tooltip: 'Engines',
         icon: 'engine-workspace/sidebar-icon',
+        visible: bifrost.panes.getPaneAreaVisibility('left'),
         paneAreaId: 'left',
         paneId: 'pane/left/engines',
       },

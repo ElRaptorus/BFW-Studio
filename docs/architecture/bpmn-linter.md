@@ -366,7 +366,7 @@ A floating React component mounted inside `.editor__content` via DOM injection. 
 
 **Path:** `studio/src/modules/bpmn-linter/initializers/initializeMenuBarItems.ts`
 
-A `<select>` dropdown registered in the right menu bar via `bifrost.menuBar.registerMenuBarItemModifier`. Positioned before the layout menu item. Replaces the former `RulesetSelectorPane` that lived inside the right pane area.
+A `<select>` dropdown registered in the right menu bar via `bifrost.menuBar.registerMenuBarItemModifier`. Positioned before the property-panel toggle button (`id: 'menu-bar-menu-layout'`). Replaces the former `RulesetSelectorPane` that lived inside the right pane area. When the right pane area is hidden, the select stays reachable because the right `MenuBarSection` is parked on the center column top row.
 
 - **Visibility**: shown when a BPMN editor is focused AND `bpmnLinter.enabled` is `true`
 - **Data source**: reads from bridge's `getActiveProfile()` and `getAvailableProfiles()` via the modeler adapter

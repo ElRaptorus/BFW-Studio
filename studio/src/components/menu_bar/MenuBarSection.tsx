@@ -17,8 +17,12 @@ type MenuBarSectionProps = {
 
 export default function MenuBarSection(props: MenuBarSectionProps): React.JSX.Element {
   const classNames = ['menu-bar-section'];
-  if (props.align === 'right') {
+  if (props.align === 'left') {
+    classNames.push('menu-bar-section--left');
+  } else if (props.align === 'right') {
     classNames.push('menu-bar-section--right');
+  } else if (props.align === 'center') {
+    classNames.push('menu-bar-section--center');
   }
 
   return (

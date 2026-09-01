@@ -136,6 +136,9 @@ export default function Workbench(): React.JSX.Element {
   const hasLeftMenuBarItems = menuBar.visible && menuBar.items.left.length > 0;
   const hasCenterMenuBarItems = menuBar.visible && menuBar.items.center.length > 0;
   const hasRightMenuBarItems = menuBar.visible && menuBar.items.right.length > 0;
+  const parkLeftMenuBar = hasLeftMenuBarItems && !deferredPaneArea.left.visible;
+  const parkRightMenuBar = hasRightMenuBarItems && !deferredPaneArea.right.visible;
+  const showCenterMenuBarRow = hasCenterMenuBarItems || parkLeftMenuBar || parkRightMenuBar;
 
   const appSplitterLayoutClassName = `app-layout__splitter-layout${statusBar.visible ? ' app-layout__splitter-layout--with-status-bar' : ''}`;
 
@@ -195,7 +198,13 @@ export default function Workbench(): React.JSX.Element {
               )}
 
               <div className="app-layout__column">
-                {hasCenterMenuBarItems && <MenuBarSection items={menuBar.items.center} align="center" />}
+                {showCenterMenuBarRow && (
+                  <div className="menu-bar-section-row">
+                    {parkLeftMenuBar && <MenuBarSection items={menuBar.items.left} align="left" />}
+                    {hasCenterMenuBarItems && <MenuBarSection items={menuBar.items.center} align="center" />}
+                    {parkRightMenuBar && <MenuBarSection items={menuBar.items.right} align="right" />}
+                  </div>
+                )}
                 <div className="app-layout__center-content">
                   <SplitterLayout
                     customClassName="app-layout__main"

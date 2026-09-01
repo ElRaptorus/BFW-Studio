@@ -8,7 +8,6 @@ export function initializeMenus(bifrost: Bifrost): void {
   registerApplicationMenu(bifrost);
 
   registerLeftMenuBarOverflowMenu(bifrost);
-  registerMenuBarEditorLayoutMenu(bifrost);
   registerEditorMenu(bifrost);
   registerEditorTabListControlsMoreMenu(bifrost);
   registerFileExplorerMenus(bifrost);
@@ -1313,36 +1312,6 @@ function registerEditorTabListControlsMoreMenu(bifrost: Bifrost): void {
         id: 'std/editor/editor-tab-list-controls/more/close-all',
         command: 'std.editor.closeAllEditorDocumentsInTabGroup',
         commandArgs: [editorDocuments],
-      },
-    ];
-  });
-}
-
-function registerMenuBarEditorLayoutMenu(bifrost: Bifrost): void {
-  bifrost.menus.registerMenu('menu-bar/layout', (): Menu => {
-    return [
-      {
-        type: 'command',
-        label: 'Toggle Property Panel',
-        id: 'menu-bar/layout/toggle-property-panel',
-        icon: 'ph ph-split-vertical',
-        command: 'std.workbench.togglePropertyPanel',
-      },
-      {
-        type: 'command',
-        label: 'Toggle Sidebar',
-        id: 'menu-bar/layout/toggle-sidebar',
-        icon: 'ph ph-split-vertical ph-flip-h',
-        command: 'std.workbench.toggleSidebar',
-      },
-      {
-        type: 'divider',
-      },
-      {
-        type: 'command',
-        label: 'Toggle Both',
-        id: 'menu-bar/layout/toggle-panels',
-        command: 'std.workbench.togglePanels',
       },
     ];
   });

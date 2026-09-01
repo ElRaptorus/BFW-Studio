@@ -6,7 +6,7 @@ This guide covers everything you need to build, test, and deploy plugins for Bif
 
 ### Prerequisites
 
-- Node.js >= 24.18.0
+- Node.js >= 24.20.0
 - npm >= 12.0.0
 - Bifrost Forge World (development build or release)
 

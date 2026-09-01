@@ -15,8 +15,40 @@
   border-bottom: 2px solid var(--color-border-menu-bar);
 }
 
+.menu-bar-section--left {
+  justify-content: flex-start;
+}
+
+.menu-bar-section--center {
+  justify-content: center;
+}
+
 .menu-bar-section--right {
   justify-content: flex-end;
+}
+
+.menu-bar-section-row {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  height: 34px;
+  flex: 0 0 34px;
+  border-bottom: 2px solid var(--color-border-menu-bar);
+
+  .menu-bar-section {
+    border-bottom: none;
+    height: auto;
+    flex: 0 0 auto;
+  }
+
+  .menu-bar-section--center {
+    flex: 1 1 auto;
+  }
+
+  .menu-bar-section--right {
+    margin-left: auto;
+  }
 }
 
 .menu-bar__title {

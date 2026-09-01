@@ -1,5 +1,25 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import type { MenuBarItem, MenuBarItemMap } from '#bifrost/contracts/MenuBarTypes';
+import type { MenuBarItem, MenuBarItemMap, MenuBarItem_Button } from '#bifrost/contracts/MenuBarTypes';
+
+function createPaneAreaToggleButton(options: {
+  id: string;
+  command: string;
+  areaVisible: boolean;
+  hideDirection: 'left' | 'right';
+  hideTooltip: string;
+  showTooltip: string;
+}): MenuBarItem_Button {
+  const hideIcon = options.hideDirection === 'right' ? 'ph ph-caret-double-right' : 'ph ph-caret-double-left';
+  const showIcon = options.hideDirection === 'right' ? 'ph ph-caret-double-left' : 'ph ph-caret-double-right';
+
+  return {
+    type: 'button',
+    id: options.id,
+    command: options.command,
+    icon: options.areaVisible ? hideIcon : showIcon,
+    tooltip: options.areaVisible ? options.hideTooltip : options.showTooltip,
+  };
+}
 
 export function initializeMenuBarItems(bifrost: Bifrost): void {
   bifrost.menuBar.registerMenuBarItem('left', () => {
@@ -9,6 +29,7 @@ export function initializeMenuBarItems(bifrost: Bifrost): void {
         id: 'pane/left/explorer',
         tooltip: 'Explorer',
         icon: 'std/left-pane-item/files',
+        visible: bifrost.panes.getPaneAreaVisibility('left'),
         paneAreaId: 'left',
         paneId: 'pane/left/explorer',
       },
@@ -17,17 +38,28 @@ export function initializeMenuBarItems(bifrost: Bifrost): void {
         id: 'pane/left/search',
         tooltip: 'Search',
         icon: 'std/left-pane-item/search',
+        visible: bifrost.panes.getPaneAreaVisibility('left'),
         paneAreaId: 'left',
         paneId: 'pane/left/search',
       },
-      { type: 'divider' },
+      { type: 'divider', visible: bifrost.panes.getPaneAreaVisibility('left') },
       {
         type: 'menu',
         id: 'left-overflow',
         icon: 'ph-bold ph-caret-down',
+        visible: bifrost.panes.getPaneAreaVisibility('left'),
         menu: 'std/menubar/left-overflow',
         tooltip: 'More...',
       },
+      { type: 'divider', visible: bifrost.panes.getPaneAreaVisibility('left') },
+      createPaneAreaToggleButton({
+        id: 'menu-bar-toggle-sidebar',
+        command: 'std.workbench.toggleSidebar',
+        areaVisible: bifrost.panes.getPaneAreaVisibility('left'),
+        hideDirection: 'left',
+        hideTooltip: 'Hide Sidebar',
+        showTooltip: 'Show Sidebar',
+      }),
     ];
 
     return items;
@@ -58,14 +90,14 @@ export function initializeMenuBarItems(bifrost: Bifrost): void {
 
   bifrost.menuBar.registerMenuBarItem('right', () => {
     return [
-      {
-        type: 'menu',
+      createPaneAreaToggleButton({
         id: 'menu-bar-menu-layout',
-        icon: 'ph ph-split-vertical',
-        menu: 'menu-bar/layout',
-        menuArgs: [],
-        tooltip: 'Layout',
-      },
+        command: 'std.workbench.togglePropertyPanel',
+        areaVisible: bifrost.panes.getPaneAreaVisibility('right'),
+        hideDirection: 'right',
+        hideTooltip: 'Hide Property Panel',
+        showTooltip: 'Show Property Panel',
+      }),
     ];
   });
 }

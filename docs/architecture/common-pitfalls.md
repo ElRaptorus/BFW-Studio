@@ -1244,6 +1244,16 @@ Note: You also cannot `await` the activations directly inside `discoverAndLoadPl
 
 ---
 
+## Do not gate a column's menu bar on pane-area visibility
+
+**Mistake**: Rendering `MenuBarSection` only inside `{paneArea.left.visible && (…)}` / `{paneArea.right.visible && (…)}` in `Workbench.tsx`.
+
+**Why it fails**: Hiding the pane area unmounts the entire column, including the Hide/Show control, left `pane_content_toggle` icons, and right-bar items such as the BPMN linter ruleset select. The user cannot restore the pane with the same chrome that hid it.
+
+**Correct approach**: When a pane area is hidden, park that area's `MenuBarSection` on the matching edge of the center column's `.menu-bar-section-row`. Only skip the center row when it would be empty (no center items and nothing parked). `menuBar.visible === false` (zen / hide bars) still hides all sections, including parked ones.
+
+---
+
 ## Each command ID may be registered only once
 
 **Mistake**: Calling `commands.register('some.command', handler)` and then calling `commands.register('some.command', handler, { visibleInSearch: true, description: '...' })` to add palette visibility. This throws `"Command already registered: some.command"` at module load time, preventing the entire module from starting.

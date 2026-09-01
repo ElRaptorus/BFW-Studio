@@ -9,7 +9,7 @@ The layout uses a three-column design where each column can have its own indepen
 ```
 ┌──────────────┬──────────────────────────────┬──────────────┐
 │ Left MenuBar │ Center MenuBar (optional)    │ Right MenuBar│
-│ (icons)      │ (engine menubar items)       │ (layout)     │
+│ icons+toggle │ engine items                 │ linter+toggle│
 ├──────────────┼──────────────────────────────┼──────────────┤
 │              │                              │              │
 │  Left Pane   │  Editor Area + Bottom Pane   │  Right Pane  │
@@ -23,13 +23,15 @@ The layout uses a three-column design where each column can have its own indepen
 
 Each column is wrapped in a `div.app-layout__column` (flex column) where the last child flexes to fill remaining space. If a menu bar section has no items, it is not rendered, and the pane below extends to the top.
 
+**Parking:** `MenuBarSection` for the left and right columns must not unmount with the pane area. When `deferredPaneArea.left/right.visible` is false, that area's section is parked on the matching edge of the **center** column's `.menu-bar-section-row` (left items `align="left"`, right items `align="right"`). The center row is created only when it has something to show: center items, a parked left section, or a parked right section. This keeps Hide/Show pane-area buttons, left `pane_content_toggle` icons, and the BPMN linter ruleset select clickable after the pane hides. `std.workbench.hideBarsAndPanels` still hides every menu bar (`menuBar.visible === false`), including parked sections.
+
 The center column requires special handling: `SplitterLayout` uses `position: absolute; width: 100%; height: 100%`, which breaks out of flex flow. To prevent the editor area from overlapping the center menu bar, the inner `SplitterLayout` is wrapped in `div.app-layout__center-content` (`position: relative`), which provides a positioned container for the absolutely-positioned splitter. The wrapper receives `flex: 1; min-height: 0` from the `.app-layout__column > *:last-child` rule, so it fills remaining space after the menu bar. The left and right columns do not need this wrapper because their last child (`PaneArea`) uses normal flex positioning.
 
 ### Menu Bar Sections
 
-Each column's menu bar is rendered by `MenuBarSection` (`studio/src/components/menu_bar/MenuBarSection.tsx`), a lightweight component that receives an array of `MenuBarItem` objects and an optional `align` prop (`'left' | 'center' | 'right'`). Left and center sections use centered alignment; the right section uses right-alignment. The old monolithic `<MenuBar>` component (which rendered left/center/right in a single row) is no longer used in the Workbench.
+Each column's menu bar is rendered by `MenuBarSection` (`studio/src/components/menu_bar/MenuBarSection.tsx`), a lightweight component that receives an array of `MenuBarItem` objects and an optional `align` prop (`'left' | 'center' | 'right'`). In-column left and center sections use centered alignment; the right section uses right-alignment. Parked left sections (center row) use left-alignment. The old monolithic `<MenuBar>` component (which rendered left/center/right in a single row) is no longer used in the Workbench.
 
-Menu bar sections have a fixed height of 34px (`flex: 0 0 34px`), use `--color-border-menu-bar` for the bottom border, and are conditionally rendered based on whether items exist. Buttons within a section use compact sizing (26px min, 18px icons) and the active state is themed via `--theme-menu-bar-active-bg`.
+Menu bar sections have a fixed height of 34px (`flex: 0 0 34px`), use `--color-border-menu-bar` for the bottom border, and are conditionally rendered based on whether items exist. Nested sections inside `.menu-bar-section-row` drop their own bottom border; the row owns the 34px chrome. Buttons within a section use compact sizing (26px min, 18px icons) and the active state is themed via `--theme-menu-bar-active-bg`.
 
 ### Splitter Structure
 
@@ -73,16 +75,26 @@ Clicking a `pane_content_toggle` calls `bifrost.panes.setVisibilityOfPaneAreaByP
 
 The left menu bar is populated by factories and modifiers registered in `initializeMenuBarItems.ts`:
 
-1. **Explorer** (type `pane_content_toggle`, paneId `activities/explorer`)
-2. **Search** (type `pane_content_toggle`, paneId `activities/search`)
+1. **Explorer** (type `pane_content_toggle`, paneId `pane/left/explorer`)
+2. **Search** (type `pane_content_toggle`, paneId `pane/left/search`)
 3. **Engines** (type `pane_content_toggle`, paneId `pane/left/engines`) — injected by `engine-workspace` module via modifier
 4. **Divider** + **Overflow menu** (`std/menubar/left-overflow`) — a chevron dropdown listing all toggle items with icons and keyboard shortcuts
+5. **Hide/Show Sidebar** (type `button`, id `menu-bar-toggle-sidebar`, command `std.workbench.toggleSidebar`) — `<<` / `>>` caret-double icons; tooltip **Hide Sidebar** / **Show Sidebar** from `getPaneAreaVisibility('left')`
 
 Startpage and Settings are accessible through the **View** application menu, not the toolbar.
 
 ### Overflow Menu Keyboard Shortcuts
 
 The overflow menu (`std/menubar/left-overflow`) maps known pane IDs to their specific focus commands via `PANE_FOCUS_COMMANDS` in `initializeMenus.ts`. This allows `renderBifrostMenu` to resolve keybindings automatically (e.g. `activities/explorer` → `std.workbench.focusExplorer`). Module-registered toggles without a mapped command fall back to `std.workbench.toggleActivity`.
+
+## Right Menu Bar Items
+
+The right menu bar is registered in the same initializer. There is no Layout dropdown.
+
+1. **Hide/Show Property Panel** (type `button`, id `menu-bar-menu-layout`, command `std.workbench.togglePropertyPanel`) — `>>` when the right pane is visible (tooltip **Hide Property Panel**), `<<` when hidden (**Show Property Panel**). The id is historical; `bpmn-linter` still `insertBeforeMenuBarItem(..., 'menu-bar-menu-layout', …)`.
+2. **Linter ruleset select** — injected by `bpmn-linter` immediately before that button when a BPMN document is focused and the linter is enabled.
+
+View → Appearance still exposes Sidebar, Property Panel, and Inspector Panel. Ctrl/Cmd+B remains `std.workbench.togglePanels` (both sides).
 
 ## Pane Area Renderers (3-Way Split)
 
@@ -186,8 +198,9 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 
 ## Interaction Model
 
-- **Clicking a `pane_content_toggle` icon** in the left menu bar selects that pane content. Clicking the already-active icon is effectively a no-op.
-- **Toggle Sidebar** (`std.workbench.toggleSidebar`) hides or shows the left pane area. When hiding, calls `hidePaneArea('left')`. When showing, calls `selectLastActivePaneInArea('left')`.
+- **Clicking a `pane_content_toggle` icon** in the left menu bar selects that pane content. Clicking the already-active icon is effectively a no-op. When the left pane area is hidden, the icons are parked on the center row; clicking one still calls `setVisibilityOfPaneAreaByPaneId(paneId, true)` and restores the sidebar.
+- **Hide/Show Sidebar** (`std.workbench.toggleSidebar`, left menu bar button `menu-bar-toggle-sidebar`) hides or shows the left pane area. When hiding, calls `hidePaneArea('left')`. When showing, calls `selectLastActivePaneInArea('left')`.
+- **Hide/Show Property Panel** (`std.workbench.togglePropertyPanel`, right menu bar button `menu-bar-menu-layout`) toggles `bifrost.panes.togglePaneArea('right')`. The button stays mounted via parking when the right column unmounts.
 - **Right pane group tabs** (icon variant): Click switches active group. Right-click opens context menu listing all displayable groups with labels.
 - **Bottom pane group tabs** (text variant): Click switches active group. Pane-level tabs below update to show the selected group's panes.
 
@@ -206,7 +219,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `studio/src/components/menu_bar/MenuBarSection.tsx` | Per-column menu bar component, dispatches to type-specific renderers |
 | `studio/src/components/menu_bar/MenuBarButton.tsx` | Generic button with command execution and `active` CSS class |
 | `studio/src/components/menu_bar/MenuBarPaneContentToggle.tsx` | PaneContentToggle button: self-determines active state from `bifrost.panes` |
-| `studio/src/components/menu_bar/workbench.menu-bar.scss` | Menu bar section styles (`.menu-bar-section`, `.menu-bar__button--active`) |
+| `studio/src/components/menu_bar/workbench.menu-bar.scss` | Menu bar section styles (`.menu-bar-section`, `.menu-bar-section-row`, `.menu-bar__button--active`) |
 | `studio/src/bifrost/styles/workbench.app-layout.scss` | Column layout (`.app-layout__column`) |
 | `studio/src/bifrost/contracts/MenuBarTypes.ts` | All `MenuBarItem` type definitions including `MenuBarItem_PaneContentToggle` |
 | `studio/src/bifrost/common/PaneManager.ts` | Pane area state, visibility, `lastActivePaneIdPerArea`, `setActiveGroupInArea()`, `requestPaneLayoutUpdate()` |

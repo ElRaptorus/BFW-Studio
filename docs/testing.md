@@ -74,6 +74,7 @@ studio/test/
     ├── plugins/                # Plugin host tests
     └── studio-core/            # Core smoke, solutions, machine sanctum
         ├── studio-smoke.test.ts
+        ├── workbench-panes.test.ts
         ├── solutions-smoke.test.ts
         └── solutions.test.ts
 ```
@@ -335,6 +336,7 @@ it('should add folder to solution', async () => {
 - **Single-root backwards compatibility**: open directory, file flattening, quick jump
 - **Multi-root via `.essln`**: open file, project entries, cross-project search
 - **Custom project names**, add/remove folders, context menus, `.essln` file persistence
+- **Workbench pane toggles** (`workbench-panes.test.ts`): hide/show Property Panel and Sidebar; parked left icons restore the sidebar; property-panel control is a button, not a Layout context menu
 
 ### BPMN Editor (`bpmn-editor/`)
 
@@ -353,6 +355,16 @@ it('should add folder to solution', async () => {
 - **BPMN diff/history**: working-tree diff, history preview
 - **DMN diff/history**: working-tree diff, change navigation, summary dialog, history preview, preview/diff mode toggle, change overview pane
 - **Merge resolver**: BPMN + DMN merge conflict detection, accept ours/theirs, resolver navigation
+
+## Testing Workbench Layout
+
+Hide/show of the left and right pane areas uses always-visible menu bar **buttons**, not a Layout dropdown.
+
+- **Property Panel**: `[data-test--menubar--button-for-command="std.workbench.togglePropertyPanel"]` (stable id `menu-bar-menu-layout`). Prefer `clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel')`. After hide, the same selector must still match — the right `MenuBarSection` is parked on the center row. Assert the area with `.app-layout__panes-right`.
+- **Sidebar**: `[data-test--menubar--button-for-command="std.workbench.toggleSidebar"]` (id `menu-bar-toggle-sidebar`). After hide, parked left `pane_content_toggle` icons still work (`leftMenuBar.togglePane('pane/left/explorer')`). Assert the area with `.app-layout__panes-left`.
+- Do **not** expect a context menu on `menu-bar-menu-layout`. That id is a `MenuBarButton`, not `MenuBarMenu`.
+- Reset both areas with `executeCommand('std.workbench.showPanels')` at the start of a test when the shared agent may have left a pane hidden.
+- Ctrl/Cmd+B is still `std.workbench.togglePanels` (both sides). View → Appearance remains the menu path.
 
 ## Testing BPMN Diagrams
 

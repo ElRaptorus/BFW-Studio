@@ -32,6 +32,7 @@ export function initializePanes(bifrost: Bifrost): void {
         id: 'pane/left/plugins',
         tooltip: 'Plugins',
         icon: 'plugins/left-pane-icon',
+        visible: bifrost.panes.getPaneAreaVisibility('left'),
         paneAreaId: 'left',
         paneId: 'pane/left/plugins',
       },
