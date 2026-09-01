@@ -2,16 +2,14 @@ name: Studio CI
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
-  #     - develop
-  #     - release/*
-  # pull_request:
-  #   branches:
-  #     - main
-  #     - develop
-  #     - release/*
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
 
 defaults:
   run:
