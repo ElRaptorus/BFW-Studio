@@ -1,32 +1,32 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { MenuBarItemMap } from '#bifrost/contracts/MenuBarTypes';
-import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
-import type { LintBridgeApi } from '../types';
+import type { CustomRulesetEntry } from '../types';
+
+function listLinterProfileEntries(
+  profileName: string | undefined,
+  customRulesets: Record<string, CustomRulesetEntry>,
+): { entries: { value: string; label: string }[]; activeProfile: string } {
+  const builtIn = [
+    { value: 'bpmn-development', label: 'Development' },
+    { value: 'bpmn-production-ready', label: 'Production Ready' },
+  ];
+  const custom = Object.keys(customRulesets).map((name) => ({
+    value: name,
+    label: name,
+  }));
+  const entries = [...builtIn, ...custom];
+  const activeProfile =
+    profileName && entries.some((entry) => entry.value === profileName) ? profileName : 'bpmn-development';
+  return { entries, activeProfile };
+}
 
 export function initializeMenuBarItems(bifrost: Bifrost): void {
   bifrost.menuBar.registerMenuBarItemModifier((menuBarItems: MenuBarItemMap) => {
-    const doc = bifrost.editors.getFocusedEditorDocument();
-    const isBpmn = doc?.documentType === 'bpmn';
-    const linterEnabled = bifrost.settings.get('bpmnLinter.enabled') === true;
-
-    if (!isBpmn || !linterEnabled) {
-      return menuBarItems;
-    }
-
-    const model = bifrost.editors.getEditorDocumentModelIfPresent<BpmnDocumentModel>(doc);
-    const bridge = model?.modelerAdapter?.getModelerComponentByName<LintBridgeApi>('lintBridge');
-    const profiles = bridge?.getAvailableProfiles() ?? [];
-    const activeProfile = bridge?.getActiveProfile() ?? 'bpmn-development';
-
-    const entries = profiles.map((profile: { id: string; label: string }) => ({
-      value: profile.id,
-      label: profile.label,
-    }));
-
-    if (entries.length === 0) {
-      return menuBarItems;
-    }
+    const profileName = bifrost.settings.get('bpmnLinter.profile') as string | undefined;
+    const customRulesets =
+      (bifrost.settings.get('bpmnLinter.customRulesets') as Record<string, CustomRulesetEntry> | undefined) ?? {};
+    const { entries, activeProfile } = listLinterProfileEntries(profileName, customRulesets);
 
     return bifrost.menuBar.insertBeforeMenuBarItem(menuBarItems, 'menu-bar-menu-layout', () => [
       {

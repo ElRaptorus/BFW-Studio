@@ -314,6 +314,19 @@ The command implementation is decomposed into focused helper functions: `removeS
 | `std.fileExplorer.collapseAll` | Collapses all tree nodes |
 | `std.fileExplorer.expandAll` | Expands all tree nodes |
 
+## BPMN Linter Commands
+
+**Path:** `studio/src/modules/bpmn-linter/initializers/initializeCommands.ts`
+
+| Command | Purpose |
+|---------|---------|
+| `bpmn.linter.toggle` | Writes `bpmnLinter.enabled` (live editor lint only) |
+| `bpmn.linter.lintUris` | Recursive `*.bpmn` lint of file/directory URIs; closed files via `lintOnDisk`, open tabs via command stack |
+| `bpmn.linter.lintSolution` | Lint every project `baseUri` |
+| `bpmn.linter.setProfile` | Writes `bpmnLinter.profile` (always enabled) |
+
+Explorer menu wiring: `studio/src/modules/bpmn-linter/initializers/initializeMenus.ts`. Details: [bpmn-linter.md](bpmn-linter.md).
+
 ## Editor Commands (file-related)
 
 | Command | Purpose |

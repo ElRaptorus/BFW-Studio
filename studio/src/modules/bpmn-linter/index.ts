@@ -4,6 +4,7 @@ import { LintBridge } from './LintBridge';
 import { LinterPaletteProvider } from './LinterPaletteProvider';
 import { initializeCommands } from './initializers/initializeCommands';
 import { initializeMenuBarItems } from './initializers/initializeMenuBarItems';
+import { initializeMenus } from './initializers/initializeMenus';
 import { initializePanes, linterCounts } from './initializers/initializePanes';
 import { initializeSettings } from './initializers/initializeSettings';
 import './styles/bpmn-linter.scss';
@@ -13,6 +14,7 @@ export function onLoad(bifrost: Bifrost): void {
 
   initializeSettings(bifrost);
   initializeCommands(bifrost);
+  initializeMenus(bifrost);
   initializePanes(bifrost);
   initializeMenuBarItems(bifrost);
 

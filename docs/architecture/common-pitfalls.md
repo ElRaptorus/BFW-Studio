@@ -6,6 +6,26 @@ Each entry follows the format: what goes wrong, why it happens, and the correct 
 
 ---
 
+## Explorer lint is not gated on live editor lint
+
+**Mistake**: Hide File Explorer Lint File / Folder / Solution behind `bpmnLinter.enabled`, or require a focused BPMN tab before `bpmn.linter.setProfile` / the ruleset selector.
+
+**Why it fails**: `bpmnLinter.enabled` only controls live editor lint (overlays, Findings pane, badge, auto-lint). Batch scoring of closed files cannot depend on that toggle. Gating the profile selector on a BPMN tab or on live lint leaves Explorer lint without a visible ruleset.
+
+**Correct approach**: Explorer menus and `bpmn.linter.lintUris` / `lintSolution` are always available. The ruleset selector is always in the right menu bar. `bpmn.linter.toggle` writes `bpmnLinter.enabled` with no `enabledWhen`. Palette titles stay Activate/Deactivate linting and still call `lintBridge.toggle()`.
+
+---
+
+## Disk lint scoring must use the canvas element set, not the full moddle tree
+
+**Mistake**: Build Explorer / closed-file `computeLintScore` input by walking every moddle node with `$type` + `id`, and pass `definitions.id` as `rootElementId`.
+
+**Why it fails**: Live lint scores `elementRegistry.getAll()` minus `canvas.getRootElement()` (the DI plane's `bpmnElement` — Collaboration or Process) and minus `type === 'label'`. The full tree also includes `bpmn:Collaboration`, `bpmn:Process`, and `bpmn:LaneSet`, which have no canvas shapes. That inflates `maxPoints` (12 vs 9 on a pool+lane diagram). `scoreMatchesExisting` then fails, Explorer writes a different `evil:LinterRulesetScore`, and the Live Linter rewrites it on open — plus `elements.changed` → `saveXML` stamps exporter metadata the Explorer path never wrote.
+
+**Correct approach**: `buildModdleElementRegistry` collects unique semantic ids from `bpmndi:BPMNShape` / `bpmndi:BPMNEdge` and uses the first plane's `bpmnElement` as `rootElementId`. Without DI, exclude those structural types and still use Collaboration-or-Process as root. Do not treat `bpmn:Definitions` as the canvas root.
+
+---
+
 ## Never import `Studio` from the SDK inside `studio/src/`
 
 **Mistake**: `import type { Studio } from '@evil/bifrost_fw_sdk'` (or any remaining `Studio` class) in Studio source, internalized chrome, or document models.

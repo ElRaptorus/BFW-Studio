@@ -63,6 +63,8 @@ studio/test/
     │   ├── bpmn-elements.test.ts
     │   ├── bpmn-drilldown.test.ts
     │   └── form-builder.test.ts  # Form Builder fragment editor tests
+    ├── bpmn-linter/            # Explorer lint + live-linter UX
+    │   └── explorer-lint.test.ts
     ├── dmn-editor/             # DMN editor tests
     │   ├── dmn-smoke.test.ts
     │   └── dmn-elements.test.ts
@@ -343,6 +345,10 @@ it('should add folder to solution', async () => {
 - **Smoke**: export as PNG/SVG/BPMN, context menu
 - **Elements**: 131 tests covering all element types, property panes, palette, replace popup, participants, loops, custom attributes
 - **Drilldown**: subprocess drill-down/up, breadcrumbs, overlay click
+
+### BPMN Linter (`bpmn-linter/`)
+
+- **Explorer lint** (`explorer-lint.test.ts`): live lint off still shows Explorer Lint File and the ruleset selector; closed-file lint writes `evil:LinterRulesetScore`; View → Live Linter checkbox tracks `bpmn.linter.toggle`
 
 ### DMN Editor (`dmn-editor/`)
 

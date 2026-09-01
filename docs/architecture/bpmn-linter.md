@@ -13,7 +13,8 @@ Key characteristics:
 - **Canvas markers** for visual severity feedback on elements
 - **Error Summary Badge** at the bottom of the editor
 - **Findings Pane** (formerly "Problems Pane") with hover-highlighting, click-to-zoom, and bidirectional selection
-- **Palette integration** — linter toggle is a palette entry, not a floating button
+- **Palette integration** — live-lint toggle is a palette entry, not a floating button
+- **File Explorer batch lint** — Lint File / Folder / Solution writes `evil:LinterRulesetScore` without requiring live editor lint
 - **Pane group label**: "Linter" (pane group icon: `ph-fill ph-highlighter`)
 
 > **Note:** Structural integrity checks (ghost artifacts, dangling references, empty containers) are handled by the separate [BPMN Sanitizer](bpmn-sanitizer.md), not by the linter. The two systems are architecturally independent.
@@ -31,6 +32,7 @@ Key characteristics:
 ├───────────────┴───────────────┴───────────────────────────┤
 │  ErrorSummaryBadge │ ProblemsPane │ PaletteProvider        │
 │                    │ (linter grp) │ MenuBar RulesetSelect  │
+│ Explorer lintUris  │ lintOnDisk   │ View → Live Linter     │
 └───────────────────────────────────────────────────────────┘
          │                │               │
     ┌────▼────┐     ┌─────▼─────┐   ┌─────▼──────┐
@@ -39,6 +41,8 @@ Key characteristics:
     │         │     │ diagnostics│   │            │
     └─────────┘     └───────────┘   └────────────┘
 ```
+
+Live editor lint (overlays, Findings pane, badge, auto-lint) is gated by `bpmnLinter.enabled`. Explorer Lint File / Folder / Solution is always available and is not hidden by that setting. Both consumers share `bpmnLinter.profile` and `bpmnLinter.customRulesets`.
 
 ### LintBridge
 
@@ -100,7 +104,7 @@ The bridge exposes:
 
 **Path:** `studio/src/modules/bpmn-linter/LinterPaletteProvider.ts`
 
-A diagram-js palette provider registered in the same module as `LintBridge` at priority **600**. Adds two entries to the `z-extensions` group (bottom of palette): an explicit `separator: true` entry that renders an `<hr>` dividing the standard palette from module entries, and a "Toggle Linter" toggle. Listens to the `lintBridge.toggled` event and rebuilds the palette to reflect active/inactive state.
+A diagram-js palette provider registered in the same module as `LintBridge` at priority **600**. Adds two entries to the `z-extensions` group (bottom of palette): an explicit `separator: true` entry that renders an `<hr>` dividing the standard palette from module entries, and a live-lint toggle whose titles stay **Activate linting** / **Deactivate linting**. The palette calls `lintBridge.toggle()` (not the command). Listens to the `lintBridge.toggled` event and rebuilds the palette to reflect active/inactive state.
 
 > **Important:** Diagram-js does **not** auto-insert separators between groups. The `separator: true` entry is required for a visible `<hr>`. See `common-pitfalls.md`.
 
@@ -368,9 +372,9 @@ A floating React component mounted inside `.editor__content` via DOM injection. 
 
 A `<select>` dropdown registered in the right menu bar via `bifrost.menuBar.registerMenuBarItemModifier`. Positioned before the property-panel toggle button (`id: 'menu-bar-menu-layout'`). Replaces the former `RulesetSelectorPane` that lived inside the right pane area. When the right pane area is hidden, the select stays reachable because the right `MenuBarSection` is parked on the center column top row.
 
-- **Visibility**: shown when a BPMN editor is focused AND `bpmnLinter.enabled` is `true`
-- **Data source**: reads from bridge's `getActiveProfile()` and `getAvailableProfiles()` via the modeler adapter
-- **On change**: executes `bpmn.linter.setProfile` command, which writes to `bpmnLinter.profile` setting, triggering profile reapplication and re-lint
+- **Visibility**: always inserted in the right menu bar (parked on the center row when the property pane is hidden). Not gated on a focused BPMN tab or on `bpmnLinter.enabled`.
+- **Data source**: `bpmnLinter.profile` plus built-in Development / Production Ready names and `bpmnLinter.customRulesets` keys, read from settings (not from `LintBridge`)
+- **On change**: executes `bpmn.linter.setProfile`, which writes `bpmnLinter.profile`. Live lint re-runs only when a `LintBridge` is active.
 
 ---
 
@@ -426,10 +430,11 @@ On diagram destroy, diagnostics are cleared via `setDiagnostics(uri, 'bpmn-linte
 
 | Key | Type | Default | Purpose |
 |-----|------|---------|---------|
-| `bpmnLinter.enabled` | boolean | `false` | Master toggle — synced with `LintBridge._active`, controls menu bar selector visibility |
+| `bpmnLinter.enabled` | boolean | `false` | Enable live linting in the BPMN editor (overlays, Findings pane, badge, auto-lint). Does **not** gate Explorer batch lint or the ruleset selector. |
 | `bpmnLinter.autoLintDelay` | number | `300` | Debounce delay in ms |
-| `bpmnLinter.profile` | string | `bpmn-development` | Active ruleset name (built-in or custom) |
+| `bpmnLinter.profile` | string | `bpmn-development` | Active ruleset name (built-in or custom), shared by live lint and Explorer lint |
 | `bpmnLinter.customRulesets` | object | `{}` | Dictionary of custom rulesets (see Profiles and Custom Rulesets) |
+| `bpmnLinter.alwaysLintForeignDiagrams` | boolean | `false` | When false, foreign-origin diagrams are skipped by live auto-lint and by Explorer disk lint |
 
 The two built-in profiles are immutable — they cannot be modified through settings. Per-rule severity customization is only available via custom rulesets.
 
@@ -450,10 +455,48 @@ When the profile is a built-in name, no overrides are applied.
 
 | Command | Title | Context |
 |---------|-------|---------|
-| `bpmn.linter.toggle` | (internal) | Palette entry |
+| `bpmn.linter.toggle` | BPMN: Toggle Live Linter | Command search, View → BPMN Editor → Live Linter. Writes `bpmnLinter.enabled` directly (no focused BPMN required). Palette still calls `lintBridge.toggle()`. |
 | `bpmn.linter.showProblemsPane` | (internal) | Badge click — activates the `linter` group in the right pane area |
-| `bpmn.linter.setProfile` | (internal) | Menu bar selector — writes to `bpmnLinter.profile` setting |
+| `bpmn.linter.setProfile` | (internal) | Menu bar selector — writes `bpmnLinter.profile`. Always enabled. |
 | `bpmn.linter.createCustomRuleset` | BPMN: Create Custom Lint Ruleset | Command search |
+| `bpmn.linter.lintUris` | (internal) | Explorer Lint File / Folder / multi-select. Args: `string[]` of file or directory URIs. Recursive `*.bpmn` walk for directories. |
+| `bpmn.linter.lintSolution` | BPMN: Lint Solution | Explorer solution header + command search. Walks every `solution.projects[].baseUri`. |
+
+### View menu
+
+**Path:** `studio/src/modules/bpmn-linter/initializers/initializeMenus.ts`
+
+`std/application/main` modifier awaits the async factory chain and inserts before `view/bpmn-editor/show-grid`:
+
+| Id | Label | Command | Notes |
+|----|-------|---------|-------|
+| `view/bpmn-editor/live-linter` | Live Linter | `bpmn.linter.toggle` | Checkbox reflects `bpmnLinter.enabled` only |
+
+### Explorer menus
+
+Same initializer. Items are **not** gated on `bpmnLinter.enabled`.
+
+| Menu | Id | Label | Anchor |
+|------|----|-------|--------|
+| `std/file-explorer/file` | `bpmn-linter/file/lint` | Lint File | before `compare-to/external-file` (`.bpmn` only) |
+| `std/file-explorer/directory` | `bpmn-linter/directory/lint` | Lint Folder | before `rename` |
+| `std/file-explorer/project` | `bpmn-linter/project/lint` | Lint Folder | before `rename-project` |
+| `std/file-explorer/solution-root` | `bpmn-linter/solution-root/lint` | Lint Folder | before `rename` |
+| `std/file-explorer/solution` | `bpmn-linter/solution/lint` | Lint Solution | before Reveal |
+| `std/file-explorer/multi-selection` | `bpmn-linter/multi-selection/lint` | Lint N items | before `delete` |
+
+Folder / project / solution walks are recursive (`*.bpmn` only). Deploy-to-engine stays non-recursive.
+
+### Closed-file vs open-tab persist
+
+**Path:** `studio/src/modules/bpmn-linter/lintUris.ts`, `studio/src/modules/bpmn-linter/lintOnDisk.ts`
+
+Per URI:
+
+1. If the URI is an open BPMN document with a ready modeler: `LintEngine.lint` on live definitions, `computeLintScore` with the modeler `elementRegistry`, persist via `evil.platform.updateLinterRulesetScore` + `elements.changed`. Never `files.save` behind the modeler.
+2. Otherwise: `bpmn-moddle` `fromXML` → `LintEngine` → `computeLintScore` with `buildModdleElementRegistry` (BPMNDI shape/edge `bpmnElement` refs, plane `bpmnElement` as `rootElementId`) → upsert `evil:LinterRulesetScore` via `moddle.create` → `toXML({ format: true })` → `files.save`.
+
+Foreign diagrams (`detectBpmnOrigin`) are skipped unless `bpmnLinter.alwaysLintForeignDiagrams`. The disk registry is built to match the live canvas denominator (`elementRegistry.getAll()` minus `canvas.getRootElement()`, labels excluded). A full moddle walk is **not** used — it would count `bpmn:Collaboration`, `bpmn:Process`, and `bpmn:LaneSet`, which have no canvas shapes. `lintOnDisk` is a private helper, not a public headless API.
 
 ---
 
@@ -489,6 +532,8 @@ Palette entry active state uses `--theme-focus` for the highlight color.
 - **Types:** `LintScoreSnapshot`, `ScorePolicy`, `LintScoreComplianceStatus` in `studio/src/modules/bpmn-linter/types.ts`.
 - **Policy resolution:** `studio/src/modules/bpmn-linter/resolveScorePolicy.ts` merges built-in `scorePolicy` from `rules/config.ts` with optional `scorePolicy` on custom rulesets (`bpmnLinter.customRulesets`).
 - **Per ruleset:** Only the **active** profile is recomputed on each lint; other ruleset rows in XML are left as last written.
+- **Denominator (live):** `countScorableElements(elementRegistry, canvas.getRootElement().id)` — bpmn-js shapes/edges with a `bpmn:*` business object; canvas root and `type === 'label'` excluded.
+- **Denominator (disk / Explorer):** `buildModdleElementRegistry` in `lintOnDisk.ts` collects unique semantic ids from `bpmndi:BPMNShape` / `bpmndi:BPMNEdge` `bpmnElement` refs and uses the first plane's `bpmnElement` id as `rootElementId`. Files without DI fall back to semantic `bpmn:*` nodes excluding `Definitions` / `Process` / `Collaboration` / `LaneSet`, with Collaboration-or-Process as root. Same `isScorableElement` / `computeLintScore` as live lint.
 
 ### UI
 
@@ -597,6 +642,8 @@ An interface describing the public surface of the `LintBridge` diagram-js servic
 | Linter score help | `studio/src/modules/bpmn-linter/texts/linter-score.md` |
 | Settings initializer | `studio/src/modules/bpmn-linter/initializers/initializeSettings.ts` |
 | Commands initializer | `studio/src/modules/bpmn-linter/initializers/initializeCommands.ts` |
+| Menus initializer | `studio/src/modules/bpmn-linter/initializers/initializeMenus.ts` |
+| Explorer / disk lint | `studio/src/modules/bpmn-linter/lintUris.ts`, `studio/src/modules/bpmn-linter/lintOnDisk.ts` |
 | Panes initializer | `studio/src/modules/bpmn-linter/initializers/initializePanes.ts` |
 | Menu bar items | `studio/src/modules/bpmn-linter/initializers/initializeMenuBarItems.ts` |
 | SCSS | `studio/src/modules/bpmn-linter/styles/bpmn-linter.scss` |

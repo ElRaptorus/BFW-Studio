@@ -26,6 +26,35 @@ Agents should add entries here when a meaningful design choice is made during th
 
 ## Decisions
 
+### 2026-09-01 — Live editor lint and Explorer batch lint are separate availability
+
+**Context**: File Explorer needed Lint File / Folder / Solution that writes `evil:LinterRulesetScore` using the active Studio profile. Live canvas linting (`bpmnLinter.enabled`) already gated overlays, the Findings pane, the badge, and auto-lint. Hiding Explorer lint behind that toggle would make batch scoring of closed files depend on editor chrome.
+
+**Options considered**:
+- A) One master `bpmnLinter.enabled` switch for live editor lint and Explorer menus.
+- B) Two consumers, one engine: live editor lint stays on `bpmnLinter.enabled`; Explorer lint is always available (like Deploy). Shared `bpmnLinter.profile`. Relabel the toggle so it does not sound global.
+
+**Decision**: Option B.
+
+**Rationale**: Closed-file folder walks cannot require opening every diagram. The profile selector stays always visible so the batch path has an obvious ruleset. No headless npm package or `LintBridge` evaluate-API refactor. Disk vs canvas **score numbers** were later required to match (see the BPMNDI-denominator decision below); availability remains split.
+
+---
+
+### 2026-09-01 — Explorer disk scoring uses the BPMNDI canvas set as the score denominator
+
+**Context**: After Explorer “Lint Folder” wrote `evil:LinterRulesetScore` and the files were committed, opening a diagram and turning on the Live Linter rewrote the score (`maxPoints` 12 → 9 on a pool+lane file) and dirtied the working tree. `scoreMatchesExisting` compares `maxPoints`; a denominator mismatch always persists a new row (and live persist fires `elements.changed` → `saveXML`, which also stamps exporter metadata).
+
+**Options considered**:
+- A) Extract a shared evaluate API from `LintBridge._runLint` and run a headless bpmn-js instance per closed file.
+- B) Keep `lintOnDisk` private, but build its `{ getAll, get }` from BPMNDI shape/edge `bpmnElement` refs and use the plane's `bpmnElement` as `rootElementId` — the same population live lint scores via `elementRegistry` + `canvas.getRootElement()`.
+- C) Accept different disk vs canvas scores (the earlier Explorer-lint slice).
+
+**Decision**: Option B.
+
+**Rationale**: `isScorableElement` already excludes the canvas root and labels. A full moddle walk counted `bpmn:Collaboration`, `bpmn:Process`, and `bpmn:LaneSet` (no dedicated shapes when a participant exists). That is exactly a +3 `maxPoints` gap on typical Studio diagrams. BPMNDI is already on disk; no modeler boot and no `LintBridge` extract. Option C is rejected: Explorer lint must persist the same score the Live Linter would write.
+
+---
+
 ### 2026-09-01 — Park left/right menu bars on the center row when a pane area hides
 
 **Context**: The Layout menu (`menu-bar/layout`) lived in the right column's `MenuBarSection`. That section was gated on `deferredPaneArea.right.visible`, so hiding the Property Panel unmounted the only control that could show it again. Toggle Sidebar sat in the same right-hand menu, away from the left pane it controls.

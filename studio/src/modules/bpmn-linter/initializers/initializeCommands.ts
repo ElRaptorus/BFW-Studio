@@ -2,6 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { DialogResult } from '#bifrost/contracts/DialogTypes';
 import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
+import { lintSolution, lintUris } from '../lintUris';
 import { profiles } from '../rules/config';
 import type { CustomRulesetEntry, LintBridgeApi } from '../types';
 
@@ -24,8 +25,25 @@ function deriveDefaultFilename(documentUri: string): string {
 export function initializeCommands(bifrost: Bifrost): void {
   const isBpmnFocused = () => bifrost.editors.getFocusedEditorDocument()?.documentType === 'bpmn';
 
-  bifrost.commands.register('bpmn.linter.toggle', () => getLintBridge(bifrost)?.toggle(), {
-    enabledWhen: isBpmnFocused,
+  bifrost.commands.register(
+    'bpmn.linter.toggle',
+    () => {
+      const currentlyEnabled = bifrost.settings.get('bpmnLinter.enabled') === true;
+      bifrost.settings.set('bpmnLinter.enabled', !currentlyEnabled);
+    },
+    {
+      visibleInSearch: true,
+      description: 'BPMN: Toggle Live Linter',
+    },
+  );
+
+  bifrost.commands.register('bpmn.linter.lintUris', (uris: string | string[]) => lintUris(bifrost, uris), {
+    visibleInSearch: false,
+  });
+
+  bifrost.commands.register('bpmn.linter.lintSolution', () => lintSolution(bifrost), {
+    visibleInSearch: true,
+    description: 'BPMN: Lint Solution',
   });
 
   bifrost.commands.register(
@@ -37,13 +55,9 @@ export function initializeCommands(bifrost: Bifrost): void {
     { enabledWhen: isBpmnFocused },
   );
 
-  bifrost.commands.register(
-    'bpmn.linter.setProfile',
-    (profile: string) => {
-      bifrost.settings.set('bpmnLinter.profile', profile);
-    },
-    { enabledWhen: isBpmnFocused },
-  );
+  bifrost.commands.register('bpmn.linter.setProfile', (profile: string) => {
+    bifrost.settings.set('bpmnLinter.profile', profile);
+  });
 
   bifrost.commands.register(
     'bpmn.linter.createCustomRuleset',

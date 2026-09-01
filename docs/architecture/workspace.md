@@ -370,6 +370,8 @@ External files and folders can be dragged from the OS file manager into the Stud
 
 All file explorer context menus include "Add Folder to Solution ..." for discoverability. It is always placed directly after "New Directory ..." for consistent positioning.
 
+BPMN linter Explorer items (`bpmn-linter/file/lint`, folder/project/solution-root Lint Folder, `bpmn-linter/solution/lint`, multi-select Lint N items) are always available — they are **not** gated on `bpmnLinter.enabled`. See [bpmn-linter.md](bpmn-linter.md) §Explorer menus.
+
 ---
 
 ## Search and Symbol Index

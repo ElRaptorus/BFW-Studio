@@ -5,8 +5,9 @@ export function initializeSettings(bifrost: Bifrost): void {
     'bpmnLinter.enabled': {
       category: 'BPMN Linter',
       type: 'boolean',
-      label: 'Enable BPMN Linter',
-      description: 'Enable or disable BPMN diagram linting.',
+      label: 'Enable live linting in the BPMN editor',
+      description:
+        'Show overlays, the Findings pane, and the error-summary badge, and auto-lint while editing a BPMN diagram. File Explorer Lint File / Folder / Solution is always available.',
       default: false,
     },
     'bpmnLinter.autoLintDelay': {
