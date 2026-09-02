@@ -13,8 +13,10 @@ const appId = `de.bifrost.forge.world.${BuildInfo.packageName}`;
  * @type {import('electron-builder').Configuration}
  */
 const buildConfiguration = {
+  nativeModules: {
+    rebuildMode: 'parallel',
+  },
   productName: BuildInfo.productNameWithReleaseChannel,
-  nativeRebuilder: 'parallel',
   appId: appId,
   asar: {
     smartUnpack: false,
@@ -38,6 +40,10 @@ const buildConfiguration = {
     runAfterFinish: true,
   },
   win: {
+    sign: {
+      publisherName: 'ElRaptorus',
+      type: "signtool",
+    },
     icon: ICON_PATH_WIN,
     target: 'nsis',
     fileAssociations: [
@@ -48,9 +54,6 @@ const buildConfiguration = {
       },
     ],
     artifactName: 'bifrost-forge-world-${version}.${ext}',
-    signtoolOptions: {
-      publisherName: 'ElRaptorus',
-    },
   },
   mac: {
     icon: ICON_PATH_MAC,
