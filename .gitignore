@@ -3,28 +3,22 @@
 /dist
 **/dist
 
+/out
+**/out
+
 # dependencies
 /node_modules
 **/node_modules
-/.pnp
-.pnp.js
 
 # testing
 /coverage
 .nyc_output/
-
-# production
-/out
-**/out
 
 /tmp
 **/tmp
 
 # types
 studio/types/**/*.ts
-
-# atlas-studio-sdk
-atlas-studio-sdk/out
 
 # misc
 .DS_Store
