@@ -1,6 +1,6 @@
 {
   "author": "ElRaptorus",
-  "description": "Purified Studio.",
+  "description": "Development Studio for modeling BPMN and DMN diagrams for the Daemon Engine.",
   "name": "studio",
   "version": "1.0.0",
   "private": true,
@@ -154,6 +154,7 @@
       "js-yaml": ">=4.3.0"
     },
     "@wdio/native-utils": "^2.5.0",
-    "deepmerge-ts": "^8.0.0"
+    "deepmerge-ts": "^8.0.0",
+    "extract-zip": "npm:@elraptorus/zippogryph@^1.0.1"
   }
 }

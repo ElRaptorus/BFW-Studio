@@ -6,6 +6,38 @@ A curated overview of the Studio's standout capabilities for the v1 release.
 
 ## BPMN Modeling
 
+Apart from a Fully featured BPMN 2.0 Editor, covering the entire Spec, there are several additional tools to help you build coherent and powerful BPMNs. 
+
+### BPMN Linter
+
+A fully configurable static analysis engine for BPMN diagrams.
+
+- Configurable rule sets with three severity levels: Info, Warning, Error
+- Full-color visualization of findings directly on the canvas
+- Right-area panes: **Score** (aggregate quality score) and **Problems** (detailed issue list)
+- Scores are persisted in the BPMN XML so that downstream tools (e.g. the Daemon Engine's linter gate) can evaluate them at deploy time
+- Can be disabled per-project via settings
+
+See [architecture](./docs/architecture/bpmn-linter.md).
+
+### BPMN Sanitizer
+
+An always-on structural integrity scanner that detects invisible elements, dangling references, empty property collections, and other silent corruption after every diagram change.
+
+- Issues listed in the Inspector Pane
+- Per-issue quick-fix and "Fix All" bulk repair
+
+See [architecture](./docs/architecture/bpmn-sanitizer.md).
+
+## User Task Form Builder
+
+A standalone GUI editor for designing User Task forms — replacing the traditional click-heavy inline property panels.
+
+- Accessible from the User Task Property Pane (click opens the editor, Shift+click opens it side-by-side)
+- Live form preview
+- Streamlined form type palette (user-friendly subset focused on practical modeling)
+- Form Action collection modeled after the dialog system (Yes, No, Confirm, Cancel, Custom)
+
 ### Token Simulator
 
 A built-in token flow simulator that lets you execute BPMN diagrams step-by-step directly inside the editor. Walk through exclusive gateways, observe parallel forks and joins, and validate that your process logic behaves as intended — all without deploying to an engine.
@@ -46,6 +78,8 @@ Restore previous diagram versions from the Git commit history. Available for bot
 
 ### Version Management
 
+Since the Engine enforces unique versions for each diagram, the Studio's deployment assistant helps you keep your versions set and up to date.
+
 - New pools are automatically assigned the version `1.0.0`
 - One-click **Bump Version** command for semver-style increments across all processes in a file
 - Guided Version Conflict Resolution when deploying to the Engine
@@ -81,41 +115,6 @@ Inspect deployed DMN definitions on a connected engine and test them interactive
 
 **Planned:** Decision Simulator (analogous to the BPMN Token Simulator), cross-diagram import resolution for multi-model decision graphs.
 
----
-
-## Quality Tools
-
-### BPMN Linter
-
-A fully configurable static analysis engine for BPMN diagrams.
-
-- Configurable rule sets with three severity levels: Info, Warning, Error
-- Full-color visualization of findings directly on the canvas
-- Right-area panes: **Score** (aggregate quality score) and **Problems** (detailed issue list)
-- Scores are persisted in the BPMN XML so that downstream tools (e.g. the Daemon Engine's linter gate) can evaluate them at deploy time
-- Can be disabled per-project via settings
-
-See [architecture](./docs/architecture/bpmn-linter.md).
-
-### BPMN Sanitizer
-
-An always-on structural integrity scanner that detects invisible elements, dangling references, empty property collections, and other silent corruption after every diagram change.
-
-- Issues listed in the Inspector Pane
-- Per-issue quick-fix and "Fix All" bulk repair
-
-See [architecture](./docs/architecture/bpmn-sanitizer.md).
-
----
-
-## User Task Form Builder
-
-A standalone GUI editor for designing User Task forms — replacing the traditional click-heavy inline property panels.
-
-- Accessible from the User Task Property Pane (click opens the editor, Shift+click opens it side-by-side)
-- Live form preview
-- Streamlined form type palette (user-friendly subset focused on practical modeling)
-- Form Action collection modeled after the dialog system (Yes, No, Confirm, Cancel, Custom)
 
 ---
 
@@ -252,10 +251,10 @@ See [architecture](./docs/architecture/status-bar.md).
 
 A process-isolated, permission-gated plugin architecture.
 
-- Each plugin runs in its own SES-sandboxed Worker Thread, orchestrated by the Plugin Host
+- Each plugin runs in its own isolated Worker Thread, orchestrated by the Plugin Host
 - Plugins are individually toggleable with a dedicated management pane
 - Permissions must be declared upfront (filesystem, commands, renderer modules, native access, etc.)
-- Network access via Node.js native libraries is blocked by default
+    - Network access via Node.js native libraries is blocked. Period.
 - Declarative feature manifest for commands, panes, webview-based documents, menus, settings, themes, and more
 - Full API bridge for runtime interaction with the Studio
 - The Studio SDK provides fully typed contracts and interfaces, which Plugin developers can use for properly accessing the Studio's Plugin Host
