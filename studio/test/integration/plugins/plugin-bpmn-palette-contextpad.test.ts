@@ -133,7 +133,7 @@ describe('plugin/bpmn-palette-contextpad', () => {
   // order dependencies (e.g. "unregisterContextPadEntry removes the entry" must run after
   // "runtime context pad entry (toggle-flag) appears", and the updateContextPadEntry tests must
   // run in the order they mutate the shared `view-connections` allowlist). The global
-  // `sequence: { shuffle: true }` in vitest.config.mts would otherwise interleave these
+  // `sequence.shuffle: { files: true, tests: true }` in vitest.config.mts would otherwise interleave these
   // mutating/asserting pairs randomly. See docs/architecture/common-pitfalls.md.
   describe('palette and context pad lifecycle', { shuffle: false }, () => {
     let studioAgent: StudioAgent;
