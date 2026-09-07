@@ -1,8 +1,5 @@
 # Plugin Manifest — Declarative Contribution Model
 
-> **Phase**: 4 of the [Extension v2 roadmap](../extensions-v2/extension-v2-roadmap.md)
-> **Status**: Implemented (Batches 4.1–4.6)
-
 ## Overview
 
 Plugins can declare static contributions in the `bifrostStudio` section of their `package.json`. These contributions (commands, settings, keybindings, icons, menus, panes, service task types) are registered at discovery time — before any plugin code runs. This enables lazy activation, contribution discovery, and pre-validation.
@@ -60,7 +57,7 @@ The `permissions` array declares which sandbox capabilities the plugin needs. Pl
 | `native` | Load `.node` native addons | Critical |
 | `system-info` | `require('os')` (safe subset: `platform`, `arch`, `tmpdir`, `EOL`) | Low |
 
-**BPMN permission hierarchy**: `bpmn.renderer` ⊃ `bpmn.modelling` ⊃ `bpmn`. Declaring a higher tier implicitly grants all lower tiers.
+**BPMN permission hierarchy**: `bpmn.renderer` ⊃ `bpmn.modelling` ⊃ `bpmn`. Declaring a higher tier implicitly grants all lower tiers. Same shape for `dmn` / `dmn.modelling` / `dmn.renderer`. `renderer-modules` is a legacy alias of `bpmn.renderer` only.
 
 **Reserved**: `network` is recognized but rejected — plugins have zero network access in v1.
 
@@ -286,10 +283,10 @@ discoverAndLoadPlugins()
 | Contribution | On disable/uninstall |
 |---|---|
 | Commands | `CommandMediator.unregister()` |
-| Keybindings | `KeybindingsMediator.unregisterKeyBindings()` (added in Phase 4) |
+| Keybindings | `KeybindingsMediator.unregisterKeyBindings()` |
 | Icons | No cleanup (accepted limitation; icons are lightweight string mappings) |
-| Menus | Menu modifier disposer (returns `{ dispose }` since Phase 4) |
-| Settings | `SettingsMediator.unregisterSettings()` (added in Phase 4). Values preserved, schema removed. |
+| Menus | Menu modifier disposer (returns `{ dispose }`) |
+| Settings | `SettingsMediator.unregisterSettings()`. Values preserved, schema removed. |
 | Panes | `PaneMediator.unregisterPane()` + `unregisterPaneProvider()` |
 | Editor Document Types | `SolutionMediator.unregisterDefaultIncludedFiles()`; the placeholder document type is unregistered via `EditorMediator.unregisterDocumentType()` only if it has not already been replaced by the plugin's real `registerWebviewDocumentType()` registration (which owns its own disposer in `PluginHostBridge`) |
 | Pane Toggles | Menu bar item/modifier disposer + `updateMenuBarItems()` |

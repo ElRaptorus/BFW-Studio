@@ -2,12 +2,7 @@
 
 ## Divergence and Convergence
 
-The present prototype is exactly that: a prototype.
-An evolutionary prototype, to be precise.
-But a prototype nonetheless.
-
-For many aspects we don't yet know (as of late 2019) exactly where the journey leads.
-Our "research journey" often consists of seeing how "wide" we can go, then consciously narrowing our focus again for the sake of reducing complexity.
+Design work alternates between going wide and narrowing focus to keep complexity in check.
 
 Example:
 

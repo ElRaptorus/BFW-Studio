@@ -147,135 +147,17 @@ The variable names use FEEL-side camelCase conventions, matching the engine's `E
 
 ## FEEL Simulator Component
 
-`studio/src/components/feel-simulator/` provides a reusable composite component that combines FEEL expression editing with live evaluation. It is used by:
+`studio/src/components/feel-simulator/` combines FEEL editing with live `@bpmn-io/feelin` evaluation in a Web Worker (5 s timeout). Consumers: BPMN “Open in New Tab” fragment renderers, the Machine Sanctum playground (`about:machine-sanctum/feel_editor`, `layout="Both"`), and the Engine Debugger Expression Runner (`initialContext` from runtime FNI bindings — see [engine.md](engine.md)).
 
-1. **BPMN fragment renderers** — every "Open in New Tab" FEEL property tab shows the simulator instead of a plain editor
-2. **Machine Sanctum sandbox** — the `about:machine-sanctum/feel_editor` page as a document-free playground
+| `layout` | Editor | Typical consumer |
+|----------|--------|------------------|
+| `'MultiLine'` | `FeelEditor` | Fragment renderers |
+| `'SingleLine'` | `OneLineFeelEditor` | Inline fragments |
+| `'Both'` | stacked | Machine Sanctum |
 
-### File Structure
+Files: `FeelSimulatorEditor.tsx`, `FeelEvaluator.ts`, `feel-eval-worker.ts`, `ResultRenderer.tsx`. Props and ref: `FeelSimulatorProps` / `FeelSimulatorEditorRef` in `types.ts`.
 
-| File | Purpose |
-|------|---------|
-| `types.ts` | Shared types: `FeelSimulatorLayout`, `FeelSimulatorProps`, `FeelSimulatorEditorRef`, `EvalResult`, `FeelWarning` |
-| `FeelEvaluator.ts` | Web Worker lifecycle manager (create, evaluate, timeout, dispose) |
-| `feel-eval-worker.ts` | Worker script: evaluates FEEL via `@bpmn-io/feelin`, serializes non-cloneable result types |
-| `ResultRenderer.tsx` | Displays evaluation results (idle, loading, success, error, timeout states) |
-| `ExecuteButton.tsx` | Run button triggering evaluation |
-| `FeelSimulatorEditor.tsx` | Main composite component (expression editor + variable values JSON + result) |
-| `component.feel-simulator.scss` | BEM-style layout (CSS custom property-based theming) |
-| `index.ts` | Barrel export |
+One-line FEEL maps Enter to blur; Escape only closes autocomplete. Canvas tests must dismiss `.cm-tooltip` — see [common-pitfalls.md](common-pitfalls.md) and [testing.md](../testing.md).
 
-### Layout Modes
+`BpmnFragmentRendererView` uses `layout="MultiLine"` when `language === 'feel'`. Autocomplete variables come from `bpmn.feel.getExpressionContext`; evaluation values are a separate JSON map.
 
-The `layout` prop controls which expression editor variant is rendered:
-
-| `layout` | Expression editor shown | Consumer |
-|----------|------------------------|----------|
-| `'MultiLine'` | `FeelEditor` (full multi-line CodeMirror) | Fragment renderers (assignees, HTTP body, conditions, scripts, etc.) |
-| `'SingleLine'` | `OneLineFeelEditor` | Future single-line fragment renderers |
-| `'Both'` | Both editors stacked vertically | Machine Sanctum sandbox |
-
-The bottom area (Variable Values JSON editor + Result renderer) is identical in all three modes.
-
-### Props
-
-```typescript
-type FeelSimulatorLayout = 'SingleLine' | 'MultiLine' | 'Both';
-
-type FeelSimulatorProps = {
-  studio: Studio;
-  initialExpression: string;
-  variables: FeelEditorVariable[] | null;
-  onChange: (expression: string) => void;
-  layout: FeelSimulatorLayout;
-  onKeyDown?: (event: KeyboardEvent) => boolean | void;
-  autoFocus?: boolean;
-  dialect?: 'expression' | 'unaryTests';
-  htmlId?: string;
-  htmlAttributes?: Record<string, unknown>;
-  className?: string;
-};
-```
-
-### Imperative API
-
-The component exposes `FeelSimulatorEditorRef` via a React 19 `ref` prop:
-
-```typescript
-type FeelSimulatorEditorRef = {
-  getCurrentValue(): string | undefined;
-};
-```
-
-In `'MultiLine'` and `'Both'` mode, `getCurrentValue()` returns the multi-line editor's value. In `'SingleLine'` mode, it returns the single-line editor's value. This is used by `BpmnFragmentRendererView` for flush-on-navigate.
-
-### Integration with Fragment Renderers
-
-`BpmnFragmentRendererView.tsx` renders the simulator when `language === 'feel'`:
-
-```tsx
-<FeelSimulatorEditor
-  ref={setSimulatorRef}
-  studio={props.bifrost}
-  initialExpression={props.fragmentValue ?? ''}
-  onChange={props.onValueChange}
-  variables={props.feelVariables ?? null}
-  layout="MultiLine"
-  autoFocus={true}
-/>
-```
-
-All 9 FEEL fragment renderers inherit this automatically since they delegate to the shared view.
-
-### Evaluation Architecture
-
-Evaluation runs in a dedicated **Web Worker** (`feel-eval-worker.ts`) to isolate the main thread from pathological expressions that could freeze the Studio.
-
-```
-FeelSimulatorEditor.tsx
-  └── FeelEvaluator (class, manages worker lifecycle)
-        └── feel-eval-worker.ts (Web Worker)
-              └── @bpmn-io/feelin evaluate()
-```
-
-Key behaviors of `FeelEvaluator`:
-
-| Behavior | Detail |
-|----------|--------|
-| Persistent worker | One worker instance created on first use, reused for subsequent evaluations |
-| Timeout | 5 s hard limit; worker is terminated via `worker.terminate()` on timeout |
-| Lazy recreation | After termination, a new worker is created on the next evaluation |
-| Result serialization | Worker converts non-cloneable types (Luxon DateTime/Duration, feelin Range, FunctionWrapper) to JSON-safe primitives before `postMessage` |
-| Disposal | Component unmount calls `evaluator.dispose()` to terminate the worker |
-
-### Variable Definitions vs. Variable Values
-
-| Concern | Source | Purpose |
-|---------|--------|---------|
-| Definitions (`FeelEditorVariable[]`) | `bpmn.feel.getExpressionContext` command | Autocomplete context for FEEL editors |
-| Values (`Record<string, unknown>`) | User-editable JSON in the Variable Values editor | Runtime evaluation context passed to `evaluate()` |
-
-The Variable Values editor is pre-populated with a default context matching the engine's FEEL bindings (`token`, `this`, `context`, `process`, `processInstance`, `identity`, `loop`, `dataObjects`) with sample values, giving users immediate context for testing.
-
-### Result Renderer States
-
-| State | Visual | Trigger |
-|-------|--------|---------|
-| Idle | Muted italic text, grey left border | No evaluation has been run |
-| Loading | Pulsing "Evaluating expression…" text, grey left border | Evaluation in progress (shown after 300 ms delay) |
-| Success | Green left border, formatted value, type label, elapsed time, warnings | `evaluate()` returned successfully |
-| Error | Red left border, error message, elapsed time | Expression is empty, JSON is invalid, or `evaluate()` threw |
-| Timeout | Orange left border, timeout message | Worker did not respond within 5 s |
-
-## Machine Sanctum Sandbox
-
-`FeelEditorExamples.tsx` in the Machine Sanctum module provides a document-free FEEL sandbox.
-
-Access via: `about:machine-sanctum/feel_editor`
-
-It wraps the shared `FeelSimulatorEditor` component with `layout="Both"`, adding only a header/description. The sandbox is useful for:
-
-- Learning FEEL syntax without needing an open BPMN diagram
-- Prototyping complex expressions before pasting them into a property
-- Testing edge cases (recursive structures, large lists, timeout behavior)
-- Comparing multi-line and single-line expression behavior side-by-side

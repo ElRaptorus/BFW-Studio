@@ -27,21 +27,6 @@ When a BPMN element is selected:
 
 The general pane contract (`shouldBeDisplayed` vs renderer, `PaneWrapper` gating, data access) is documented in **[panes.md](panes.md)**. BPMN-specific helpers live in `PropertiesPaneFunctions.ts` (`shouldBeDisplayedForBpmnElementOfType` and related type lists). Those helpers check document type and selection only. Modeler `isReadyForInteraction()` is handled in `getBpmnSelectionForPropertiesPane`, which returns `null` so the pane header can still show while the body is empty.
 
-### PaneProvider Contract
-
-Every property pane exports a `paneProvider: PaneProvider` object:
-
-```typescript
-export const paneProvider: PaneProvider = {
-  getPaneTitle: () => string,
-  shouldBeDisplayed: (editorDocument, editorDocumentModel) => boolean,
-  Pane: (props: PaneComponentProps) => JSX.Element,      // Full pane (header + body)
-  PaneContent: (props: PaneComponentProps) => JSX.Element, // Body only
-};
-```
-
-`shouldBeDisplayed` is the only wrapper visibility gate. `PaneWrapper` does not mount `Pane` / `PaneContent` when it returns `false`. Renderers must not restate type, selection, or document-URI checks that the gate already proved. A renderer may still `return null` for conditions the gate does not cover (modeler readiness, missing payload). Use `assertNotNull` only for data the gate proved.
-
 ### PropertiesElementInfo — Consolidated Help Pane
 
 **Path:** `studio/src/modules/bpmn-editor/panes/properties/PropertiesElementInfo.tsx`
@@ -192,7 +177,7 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 ### property group
 
 - `PropertiesElementInfo` (consolidated help text)
-- `PropertiesBasic`, `PropertiesDefinition`, `PropertiesProcess` — Process Name / Version / Id are `PaneProperty type="text"`. Correlation Key is `OneLineFeelEditor` (`#process-correlation-key-property`). Do **not** key that editor (or its wrapper) on `element.correlationKey`: `onChange` fires on blur, a value-based key remounts CodeMirror during the canvas click that commits, and leftover FEEL autocomplete can steal the click so `selectBpmnElementByIdAndWaitForElement('StartEvent_1')` fails. Escape does not blur OneLineFeelEditor (Enter does); tests send `['Escape', 'enter']` then let canvas helpers dismiss `.cm-tooltip` before clicking. User Task due date / HTTP auth header already omit that key. Re-selecting the process after visiting another element remounts the pane from the model.
+- `PropertiesBasic`, `PropertiesDefinition`, `PropertiesProcess` — Process Name / Version / Id are `PaneProperty type="text"`. Correlation Key is `OneLineFeelEditor` (`#process-correlation-key-property`); do not key it on the live value. Enter blurs; Escape only closes autocomplete. See [feel-editor.md](feel-editor.md) and [common-pitfalls.md](common-pitfalls.md).
 - Task-specific: `PropertiesServiceTask`, `PropertiesReceiveTask`, `PropertiesSendTask`, `PropertiesScriptTask`, `PropertiesCallActivity`, `PropertiesManualTask`, `PropertiesBusinessRuleTask`, `PropertiesHttpTask`
 - User task: `PropertiesUserTask`, `PropertiesUserTaskFormSummary`, `PropertiesUserTaskAssignees`
 - All event panes (message, signal, error, escalation, conditional, timer, link)

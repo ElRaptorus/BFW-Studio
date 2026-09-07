@@ -41,7 +41,7 @@ At runtime, `permissionGate.assert(pluginName, requiredPermission, context)` thr
 
 ## Overlay API
 
-DMN has no internal overlay factory pipeline of its own (unlike BPMN, which already had one before plugins existed). `DmnPluginOverlayManager` was built specifically for Phase 9: it combines factory-chain resolution with direct rendering of raw DOM overlays onto the DRD's `overlays` diagram-js service, obtained via `DmnModelerComponentAdapter.getDrdOverlays()` / `getDrdElementRegistry()`.
+DMN has no internal overlay factory pipeline of its own (unlike BPMN). `DmnPluginOverlayManager` combines factory-chain resolution with direct rendering of raw DOM overlays onto the DRD's `overlays` diagram-js service, obtained via `DmnModelerComponentAdapter.getDrdOverlays()` / `getDrdElementRegistry()`.
 
 ### Overlay types
 
@@ -154,7 +154,7 @@ All modeling operations go through the DRD's diagram-js `commandStack` and are u
 DMN's DRD is a graph of loosely-coupled artifacts (decisions, inputs, knowledge sources, BKMs) rather than a strictly sequential flow like BPMN. Both an absolute-positioning primitive and a relative "append near an existing element" primitive are useful for DMN plugin authors, so both are exposed:
 
 - `createElement(uri, { type, name?, position: { x, y } })` — places a new element at an exact canvas position. Useful when a plugin is laying out an entire generated DRD fragment (e.g. importing a decision table batch) and needs full control over positions.
-- `appendElement(uri, sourceId, { type, name? })` — places a new element near `sourceId` and creates a connection to it, mirroring BPMN's `appendElement` ergonomics for the common "insert a related decision" case. See `docs/decisions.md` for the rationale.
+- `appendElement(uri, sourceId, { type, name? })` — places a new element near `sourceId` and creates a connection to it, mirroring BPMN's `appendElement` ergonomics for the common "insert a related decision" case.
 
 Validation errors are returned as rejected promises with `{ message, code }` — the modeler never crashes.
 
@@ -246,4 +246,4 @@ When a plugin with renderer modules is disabled:
 | `studio-sdk/src/plugin-api/DmnApi.ts` | SDK type definitions for `api.dmn` |
 | `studio-sdk/src/plugin-api/manifest/ManifestTypes.ts` | Manifest contribution types (`dmnPalette`, `dmnContextPad`, `dmnModules`) |
 
-There is no internal `api/DmnApi.ts` typed-class hierarchy — the equivalent BPMN pattern (`common/plugin-host/api/BpmnApi.ts`) was removed from the codebase before Phase 9 began. The sandbox-worker `createPluginApi()` object and the SDK `DmnApi.ts` contract types are the only two surfaces plugin authors and Studio contributors need to keep in sync.
+There is no internal `api/DmnApi.ts` typed-class hierarchy. The sandbox-worker `createPluginApi()` object and the SDK `DmnApi.ts` contract types are the only two surfaces plugin authors and Studio contributors need to keep in sync.

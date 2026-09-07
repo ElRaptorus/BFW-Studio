@@ -115,7 +115,7 @@ Available injectable services include any standard diagram-js / bpmn-js service:
 
 Modules are collected at module init time (during `onLoad`), but `BpmnModelerComponentAdapter` is only instantiated when a user opens a BPMN document. By the time a user can open any document, all modules have finished their `onLoad`. Therefore, the order in which modules register diagram-js modules is irrelevant — the only constraint is that `bpmn-core` loads before any module that calls `bpmn.modeler.registerModule`.
 
-## Plugin Module Support (Phase 8)
+## Plugin Module Support
 
 The registry was extended to support per-plugin module tracking. Plugins with the `bpmn.renderer` permission can declare `bpmnModules` in their manifest, which are loaded by `PluginModuleLoader` and registered separately from internal modules.
 

@@ -104,7 +104,7 @@ Modules…
 - may call internal APIs without compatibility guarantees
 - may, in justified cases, share code with one another (e.g. contracts)
 
-*Plugins* are user-installed and process-isolated. The legacy dynamic loading approach (loading scripts from `~/.evil/studio/extensions/` into the renderer process) has been removed due to fundamental isolation and stability issues. See `docs/extensions-v2/extension-v2-roadmap.md` for the roadmap toward a proper plugin mechanism with process isolation and declarative manifests.
+*Plugins* are user-installed and process-isolated. The Plugin Host is shipped: each window forks a Node child process, and each plugin runs in a Worker Thread inside a SES Compartment. Plugins declare contributions in `package.json` (`bifrostStudio`) and implement `activate()` / `deactivate()`. They have no DOM or Electron access. Authoring: [plugin-development-guide.md](plugin-development-guide.md). Host architecture: [architecture/plugin-host.md](architecture/plugin-host.md).
 
 ## Icons
 

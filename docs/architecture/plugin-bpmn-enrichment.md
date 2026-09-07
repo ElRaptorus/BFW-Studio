@@ -16,7 +16,7 @@ bpmn (low risk)
 | `bpmn.modelling` | Medium | All of `bpmn` + modify the model (updateProperties, removeElement, appendElement, createConnection, moveElement) + contribute palette/context pad entries |
 | `bpmn.renderer` | High | All of `bpmn.modelling` + inject diagram-js modules directly into the renderer process |
 
-Higher tiers implicitly grant all lower-tier capabilities. A plugin declaring `bpmn.renderer` does not need to also declare `bpmn` or `bpmn.modelling`.
+Higher tiers implicitly grant all lower-tier capabilities. A plugin declaring `bpmn.renderer` does not need to also declare `bpmn` or `bpmn.modelling`. `renderer-modules` is a legacy alias of `bpmn.renderer`.
 
 ### Hierarchy enforcement
 

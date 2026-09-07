@@ -28,7 +28,7 @@ code-editor kit
 
 **Path:** `studio/src/components/MultiLineCodeEditor.tsx`
 
-Public host API for JSON, JavaScript, XML, HTML, and plaintext. Mounts an `EditorView` once. Imperative methods: `focus()`, `getCurrentValue()`, `resetValue()`, `setValue()`, `updateJsonSchema()`.
+Public host API for JSON, JavaScript, XML, HTML, and plaintext. Mounts an `EditorView` once. Imperative methods: `focus()`, `getCurrentValue()`, `resetValue()`, `setValue()`, `updateJsonSchema()`. When `readOnly` is true, a later `initialValue` replaces the document (`nextDocumentForReadOnlyEditor`) so debugger JSON panes that stay mounted across Flow Node Instance selection stay current. Editable editors stay uncontrolled — remount with a **parent identity** `key` (element id / FNI id), never the live value.
 
 | Prop | Notes |
 |------|-------|
@@ -56,6 +56,7 @@ Side-by-side `@codemirror/merge` `MergeView`. Used by dialog `diff` content (`Di
 | `languageSupport.ts` | `getLanguageSupport(language)` — ids the host actually passes (`json`, `javascript`, `html`, `xml`); unknown → plaintext |
 | `defaultExtensions.ts` | History, keymap (including Mod-Y redo), search, wrapping, bracket matching, close brackets, rainbow brackets, optional line numbers / lint gutter, read-only |
 | `jsonParseLinter.ts` | Strict `JSON.parse` linter for contracts/tokens/dialogs — not Settings. Empty / whitespace-only docs are not linted |
+| `readOnlyDocumentReplace.ts` | When to apply a new `initialValue` on a mounted read-only `MultiLineCodeEditor` |
 | `json5SchemaExtensions.ts` | Settings JSON5 schema bundle; unknown keys → warning `Unknown setting.` |
 | `unknownSettingDiagnostics.ts` | Rewrites json-schema-library additional-property errors to `Unknown setting.` |
 | `rainbowBrackets.ts` | In-house `ViewPlugin`; viewport decorations `cm-rainbow-bracket-0` … `5` |
@@ -103,6 +104,7 @@ All host code editors and FEEL editors expose `.cm-content`. `StudioAgent.clickO
 | Component | Path |
 |-----------|------|
 | MultiLineCodeEditor | `studio/src/components/MultiLineCodeEditor.tsx` |
+| Read-only initialValue replace | `studio/src/components/code-editor/readOnlyDocumentReplace.ts` |
 | DiffEditor | `studio/src/components/DiffEditor.tsx` |
 | CodeMirror kit | `studio/src/components/code-editor/` |
 | Settings JSON renderer | `studio/src/modules/std/settings/SettingsJsonDocumentRenderer.tsx` |

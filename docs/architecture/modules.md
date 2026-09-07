@@ -6,9 +6,7 @@
 
 The Studio follows an "eat your own dogfood" principle: its core functionality is delivered through modules. All internal modules are packaged with the application and located in `studio/src/modules/`. They have direct access to internal APIs without compatibility guarantees.
 
-> **Note (2026-05-12):** The legacy external extension mechanism has been removed. Previously, user-developed extensions could be loaded from `~/.evil/studio/extensions/` at runtime. This mechanism relied on `eval()`-based code loading and a fragile `window` bridge for sharing React and other framework singletons — both fundamentally broken approaches. A proper module mechanism with process isolation, declarative manifests, and framework-agnostic webview UI is being developed. See [`docs/extensions-v2/extension-v2-roadmap.md`](../extensions-v2/extension-v2-roadmap.md) for the roadmap.
-
-> **External plugins** are now handled by the Plugin Host — a per-window, process-isolated Node.js child process managed by the renderer. Plugins run in their own process, communicate via a typed message protocol, and have no access to the DOM or Electron APIs. See [`plugin-host.md`](plugin-host.md) for the full architecture.
+**External plugins** are handled by the Plugin Host (shipped): a per-window Node.js child process, each plugin in a Worker + SES Compartment. Plugins communicate via a typed message protocol and have no DOM or Electron access. See [`plugin-host.md`](plugin-host.md) and the [plugin-development-guide](../plugin-development-guide.md).
 
 ## Loading Mechanism
 

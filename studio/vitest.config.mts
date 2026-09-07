@@ -13,8 +13,6 @@ export default defineConfig({
     globals: false,
     testTimeout: 80_000,
     hookTimeout: 80_000,
-    // v4 `shuffle: true` randomized files and tests. Spell both out so a future
-    // boolean-default change cannot drop one of the two axes.
     sequence: {
       shuffle: {
         files: true,

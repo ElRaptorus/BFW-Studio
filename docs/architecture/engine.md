@@ -469,11 +469,7 @@ The Studio supports multiple simultaneous engine connections. Each engine view (
 
 ### Document-scoped data via model getters
 
-All selection state and working data (parsed models, fetched lists, computed state) live on private model fields exposed through public getters. Panes access data by casting `props.editorDocumentModel` to the concrete model type — the same pattern the Debugger has always used. See the Data Placement Rules section in `docs/architecture/editor-documents.md` for details.
-
-### Future work: replace `engineId` with engine URL
-
-The current `engineId` is a synthetic Studio-generated identifier (`engine-{timestamp}-{random}`). Since the engine URL is already the true unique identifier (duplicate connections are prevented by `findByUrl()`), a future cleanup should remove `engineId` entirely and re-key all internal structures, document URIs, and event filtering by normalized URL. This is tracked as a separate refactoring.
+All selection state and working data (parsed models, fetched lists, computed state) live on private model fields exposed through public getters. Panes access data by casting `props.editorDocumentModel` to the concrete model type. Placement of `currentData` vs `metadata` vs private fields is in [editor-documents.md](editor-documents.md).
 
 ---
 

@@ -424,6 +424,16 @@ Host editors are CodeMirror 6 (`.cm-content`). Native pane fields are ordinary i
 
 Do not click a filled field and type a new value. Fixture XML often already has `loopMaximum`, `evil:LoopInterval`, FEEL conditions, and collection expressions.
 
+## Harness gotchas
+
+Architecture constraints that tests also hit live in [`architecture/common-pitfalls.md`](architecture/common-pitfalls.md). This section is only the test runner / StudioAgent surface.
+
+- **Open a solution before jumping to a file.** `jumpToFileInSolution` walks the explorer of the current solution. Opening a fixture URI as a document without `openFixturesDirectoryAsSolution` / `openSolutionFileFromFixtures` first fails to find the file.
+- **Canvas clicks after FEEL.** `prepareCanvasPointer` (used by BPMN select helpers) blurs `document.activeElement` and waits until `.cm-tooltip` is gone, then fits the viewport. After typing a one-line FEEL value, still send `['Escape', 'enter']` first — Escape alone does not blur `OneLineFeelEditor`.
+- **Custom Properties fixtures.** Keep only rows tests assert (or Custom Attributes indexes, Timer Start `enabled`, merge-diff payload). Do not leave ProcessEngine leftovers (`module` / `method` / `params` / `role`, Task-level `enabled`, `payload` on `##external`) in fixture XML.
+- **`client.execute` return shape.** A renderer execute callback must not return a top-level `error` property — WebDriverIO treats that as a protocol failure. Rename the field.
+- **Named Escape.** `sendKeyboardInput(['Escape'])` or `['escape']` both send the Escape key. A lowercase `'escape'` used to be typed as the letters e-s-c-a-p-e; do not invent other spellings.
+
 ## Adding New Tests
 
 When adding new functionality:

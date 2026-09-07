@@ -183,9 +183,22 @@ The history preview model fetches historical XML via `git.getFileAtRef`, maintai
 
 The interactive summary dialog (`bpmn.diff.showChangeSummaryDialog`) has no cross-module dependency — it reads directly from the `BpmnDiffDocumentModel`, which already has the diff computed. The button lives in the diff view toolbar (`BpmnDiffDocumentRenderer.tsx`) and passes the current `editorDocument`. When the command is invoked without arguments, both `enabledWhen` and the handler resolve `bifrost.editors.getFocusedEditorDocument()` so the command stays enabled while a `bpmn.diff` tab is focused.
 
-## Future Work
+## Merge UI
 
-The `evil:` extension schema is defined in `evil-platform.json` and used by the editor moddle stack. The next step is `evilEnginePropertiesDiff.ts` mirroring the Camunda approach — walking the moddle tree, extracting typed `evil:` extension elements, and producing structured per-property deltas for the change summary and merge resolver.
+Git merge **framework** (model, IPC, commands, `.bpmn`/`.dmn` walk) lives in [git-cruiser.md](git-cruiser.md). This section is the BPMN three-panel visualization.
+
+For `content` conflicts the resolver is a nested splitter: ours | theirs on top, result preview below. All three are read-only `NavigatedViewer`s. `BpmnMergeResultModeler` holds starting-side and apply-side XML plus a resolution map. Every resolution change re-runs `xmlMergeEngine` (`DOMParser` / `XMLSerializer`) and reloads the result viewer. Viewboxes stay synced via `addViewboxSync()`.
+
+| Operation | Starting side | Apply side |
+|-----------|---------------|------------|
+| merge / cherry-pick | ours | theirs |
+| rebase | theirs (base) | ours (replayed) |
+
+`xmlMergeEngine(startingXml, applyXml, applyDiff, conflictIds)` copies non-conflicting apply-side changes into the starting DOM (delete / update / move / add, including DI and lane `flowNodeRef`). Deletions before additions; connections after shapes on add. Do not merge via `modeling.createShape` / `updateProperties` — see [common-pitfalls.md](common-pitfalls.md).
+
+Resolution is per **conflict key** (`{elementId}` or `{elementId}:cp:{propertyName}`): `auto-applied` | `pending` | `accepted-ours` | `accepted-theirs`. Rebuild uses an effective skip set: apply-side-accepted keys leave the skip set; reverted auto-applies re-enter it. Progress counts conflict keys on `'both'` elements. `onResolutionChanged` updates `MergeDocumentModel`.
+
+Paths: `studio/src/modules/bpmn-editor/merge/` (`BpmnMergeResolver.tsx`, `BpmnMergeResultModeler.tsx`, `autoApplyEngine.ts`, `panes/BpmnMergeChangeOverview.tsx`).
 
 ---
 

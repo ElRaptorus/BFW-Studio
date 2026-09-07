@@ -36,11 +36,9 @@ The Studio is designed around extensibility. Following the "eat your own dogfood
 | **[systeme.md](systeme.md)** | Core subsystems: commands, keybindings, menus, dialogs, modules |
 | **[philosophie.md](philosophie.md)** | Design philosophy and guiding principles |
 | **[testing.md](testing.md)** | Testing infrastructure, StudioAgent API, selector conventions, fixture management |
+| **[plugin-development-guide.md](plugin-development-guide.md)** | How to author, build, and load a plugin |
 | **[architecture/](architecture/index.md)** | Detailed architecture reference (start with `index.md` for a topic overview) |
-| **[decisions.md](decisions.md)** | Technical decision log with rationale for significant design choices |
 
 ## Build
 
-The Studio can be built as an Electron application on Windows, Linux, and macOS. Build scripts are located in `studio/build/`. No code signing is configured and nothing is published externally.
-
-Other build modes (`webapp`, `embedded`) exist but are not functional and can be ignored.
+The product build is Electron (Windows, Linux, macOS). Scripts live in `studio/build/`. No code signing; nothing is published externally. `__BIFROST_CLIENT__` can be `'electron'`, `'embed'`, or `'webapp'` for dead-code elimination (currently used only on the about page); there is no separate webapp or embedded product. See [architecture/build.md](architecture/build.md).

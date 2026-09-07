@@ -1,8 +1,5 @@
 # Plugin Host
 
-> **Phase**: 1 (infrastructure) + 2 (management UI) + 3 (webview UI) + 4 (declarative contributions) + 7 (per-plugin sandboxing) of the [Extension v2 roadmap](../extensions-v2/extension-v2-roadmap.md)
-> **Status**: Implemented (Batches 1.1–1.7, 2.1–2.3, 3.7–3.8, 3.1–3.6, 4.1–4.6, 7.1–7.5), migrated to renderer (2026-05-13), integrated as `bifrost.plugins` (2026-05-15), full Settings & Commands API bridged (2026-05-15), selective plugin reload (2026-05-18), architecture streamlined (2026-05-18): PluginService is now the sole public API, PluginHost is hidden; iframe infrastructure + messaging (2026-05-19); iframe as editor document type (2026-05-19); iframe as pane, theming bridge, webview architecture docs (2026-05-20); declarative manifest contributions + lazy activation + API versioning (Phase 4); per-plugin Worker Thread + SES Compartment sandboxing (Phase 7)
-
 ## Overview
 
 The Plugin Host is a process-isolated runtime for external plugins. Each renderer window owns its own Plugin Host instance, forking a dedicated child process. Inside that child process, **each plugin runs in its own Worker Thread** inside a **SES Compartment** (Secure EcmaScript). This three-layer model (renderer → child process → worker + compartment) aligns with VSCode/Cursor's Extension Host architecture while adding per-plugin JavaScript isolation.
@@ -39,7 +36,7 @@ Each Electron window creates its own `PluginService` (which internally creates a
 - No relay layer — API requests flow directly between the child process and the renderer.
 - Settings, commands, and events are resolved against the window's own `Bifrost` instance.
 
-### Sandbox orchestration (Phase 7)
+### Sandbox orchestration
 
 | Component | Layer | Purpose |
 |-----------|-------|---------|
@@ -235,502 +232,33 @@ export async function activate(api: StudioPluginApi): Promise<void> {
 | `themes` | `bifrost.theme` (ThemeMediator / ThemeManager) via `PluginHostBridge` + CSS injection |
 | `env` | Frozen environment object |
 
-#### `commands`
+Method signatures live on `StudioPluginApi` in `@evil/bifrost_fw_sdk`. How-to examples: [plugin-development-guide.md](../plugin-development-guide.md). iframe protocol: [webviews.md](webviews.md). BPMN/DMN enrichment: [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) / [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md).
 
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `register` | `(id, callback, options?) → Promise<void>` | Registers a command. Auto-prefixed `plugin.<name>.<id>`. `options.visibleInSearch` controls palette visibility; `options.description` sets the palette label. `enabledWhen` not supported (sync/async boundary). |
-| `executeCommand` | `(id, args?) → any` | Executes any registered command. Throws on failure. |
-| `tryToExecuteCommand` | `(id, args?) → {success, returnValue/error}` | Non-throwing variant. Error is serialized as `{message, stack}`. |
-| `isCommandEnabled` | `(id, args?) → boolean` | Checks if a command is enabled. |
-| `isRegistered` | `(commandName) → boolean` | Checks if a command exists. |
-| `getCommands` | `() → CommandInfo[]` | Returns all commands as `{name, description, visibleInSearch}` (functions stripped). |
+Host-only facts:
 
-#### `notifications`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `open` | `({type, content, origin?, actions?, sticky?}) → notificationId` | Opens a notification. `origin` defaults to the plugin name. `actions` adds clickable buttons. `sticky` keeps the notification visible until dismissed. |
-| `close` | `(notificationId) → void` | Closes an open notification. |
-| `update` | `(notificationId, {content}) → void` | Updates notification content. |
-| `onResponse` | `(notificationId, callback) → void` | Subscribe to action button clicks on a notification (via `PH_REGISTER_CALLBACK`). Callback receives `{ action, label }`. |
-
-#### `settings`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `register` | `(descriptors) → void` | Registers settings with SettingDescriptor schemas. |
-| `has` | `(key) → boolean` | Checks if a setting is registered. |
-| `get` | `(key) → any` | Reads the current value (falls back to default). |
-| `getSchema` | `(key) → SettingDescriptor?` | Returns the schema for one key. |
-| `getSchemas` | `() → Record<string, SettingDescriptor>` | All schemas (Map converted to object for serialization). |
-| `getDefault` | `(key) → any` | Returns the registered default value. |
-| `getDefaults` | `() → Record<string, any>` | All registered defaults. |
-| `set` | `(key, value) → void` | Sets a setting value (validated against descriptor). |
-| `add` | `(key, value) → void` | Pushes to array or shallow-merges into object. |
-| `removeValue` | `(key, value) → void` | Removes from array or deletes object property. |
-| `onDidChange` | `(key, callback) → void` | Fires callback when a setting changes. |
-
-**Not exposed to plugins**: `merge()` (bulk-replaces all settings) and `resetToDefault()` (resets all settings) are omitted to prevent plugins from disrupting user configuration.
-
-#### `webviews`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `createPanel` | `(options: {title, entryPoint, localResourceRoots?}) → iframeId` | Stub — returns a deterministic `iframeId` but does not yet mount a UI panel. Editor documents (Batch 3.3) and panes (Batch 3.4) are the implemented surfaces. |
-| `postMessage` | `(iframeId, data) → void` | Sends a message from the plugin (child process) to the specified iframe. Routed through the bridge → `PluginIframeManager.postMessageToIframe()` → `contentWindow.postMessage()`. |
-| `onMessage` | `(iframeId, callback) → disposer` | Registers a listener for messages coming from the iframe. Uses the `PH_REGISTER_CALLBACK` mechanism. The bridge sets a `messageHandler` on `PluginIframeManager`, which invokes `PH_CALLBACK_INVOCATION` back to the child process. Returns a disposer function. |
-| `dispose` | `(iframeId) → void` | Cleans up the iframe entry in `PluginIframeManager`. |
-
-**Message flow (plugin → iframe)**:
-
-```
-Plugin code (child process)
-  → api.webviews.postMessage(iframeId, data)
-  → PH_API_REQUEST { namespace: 'webviews', method: 'postMessage' }
-  → (Node IPC: child → renderer)
-  → PluginHostBridge.handleWebviewsApi → pluginIframeManager.postMessageToIframe
-  → iframeRef.contentWindow.postMessage({ channel: 'studio-bridge', direction: 'to-guest', payload })
-  → bridge-script.ts message listener → plugin's onMessage callback in the iframe
-```
-
-**Message flow (iframe → plugin)**:
-
-```
-Plugin iframe code: acquireStudioApi().postMessage(data)
-  → window.parent.postMessage({ channel: 'studio-bridge', direction: 'to-host',
-      payload: { type: 'plugin-message', data } })
-  → PluginIframe: 'message' event [validates origin] → pluginIframeManager.handleIframeMessage
-  → PluginIframeHostMessage { type: 'plugin-message', data } → entry.messageHandler(message.data)
-  → PH_CALLBACK_INVOCATION { callbackId, args: [data] }
-  → (Node IPC: renderer → child)
-  → plugin-host-main.ts: getGlobalCallback(callbackId)(data)
-  → plugin's onMessage callback fires
-```
-
-#### `editors`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerWebviewDocumentType` | `(options) → void` | Registers an iframe-backed editor document type. Options include `id`, `displayName`, `icon`, `uriPattern` (serialized regex), `webviewOptions` (`entryPoint`, optional `localResourceRoots`), optional `onDidOpen` callback, and optional `includedFilePatterns` (glob patterns forwarded to `bifrost.solution.registerDefaultIncludedFiles`/`unregisterDefaultIncludedFiles`, so matching files aren't hidden in the File Explorer by default). The document type is namespaced as `plugin.<pluginName>.<id>`. |
-| `openDocument` | `(uri) → void` | Opens a document by URI. Delegates to `bifrost.editors.focusOrOpenEditorDocument()`. |
-
-**Document type registration flow (plugin → renderer)**:
-
-```
-Plugin code (child process)
-  → api.editors.registerWebviewDocumentType(options)
-  → PH_API_REQUEST { namespace: 'editors', method: 'registerWebviewDocumentType' }
-  → PluginHostBridge.handleEditorsApi
-  → createIframeDocumentRendererConstructor(context) → rendererConstructor
-  → bifrost.editors.registerOrReplaceDocumentType('plugin.<name>.<id>', { uriMatch, rendererConstructor, ... })
-```
-
-When a matching document is opened, `EditorWrapper` resolves the renderer constructor and mounts `IframeDocumentRenderer`, which renders a `PluginIframe` with `iframeId = 'editor:<uri>'`.
-
-**`registerOrReplaceDocumentType`** (`EditorMediator`, backed by `EditorDocumentTypeManager.registerOrReplace`) is used here instead of the throwing `registerDocumentType`, so this call transparently overwrites a manifest-declared placeholder for the same id (see "Static editor document type contributions" below) without an "already registered" error. If no placeholder preceded it, it behaves identically to a fresh registration.
-
-**`onDidOpen` callback**: When provided, the callback is registered via `PH_REGISTER_CALLBACK` and stored by the bridge. `IframeDocumentRenderer` fires the notification on mount via a `useEffect`, which triggers `PH_CALLBACK_INVOCATION` back to the child process with `(iframeId, uri)`. This lets plugins wire up per-document `onMessage` handlers.
-
-**Cleanup on plugin unload**: The disposer calls `bifrost.editors.unregisterDocumentType(id)`, which force-closes all open tabs of that type and removes all sub-manager entries (renderer, model, inspector, merge resolver).
+- **Commands** — IDs are auto-prefixed `plugin.<name>.`. `enabledWhen` is not supported (sync/async boundary). Execute is gated by `CommandDenylist` (below).
+- **Settings** — plugins may read any key; writes/register only `plugin.<name>.*`. `merge()` / `resetToDefault()` are not exposed.
+- **Webviews** — `createPanel` is a stub. Implemented surfaces are editor documents and panes. Register `onMessage` before the iframe `load`.
+- **Editors** — `registerWebviewDocumentType` uses `registerOrReplaceDocumentType` so it can overwrite a manifest placeholder. `onDidOpen` is a `PH_REGISTER_CALLBACK`. Unload unregisters the type and force-closes those tabs.
+- **Dirty / save** — model-less documents use `EditorMediator.registerSaveDelegate(uri, callback)`. `setDirty` throws if the document is not open.
+- **Workspace** — official file I/O; `ModuleGate` also gates raw `fs`. Prefer `api.workspace`.
+- **Themes** — only `--theme-*` custom properties; injected as `<style>` on `.bifrost.bifrost-theme--<id>`.
+- **Views** — push-only `PluginTreeItem[]`.
+- **`bpmn` / `dmn`** — permission-gated; see the enrichment docs. `dmn` is DRD-only.
 
 #### Static editor document type contributions (`contributes.editorDocumentTypes`)
 
-`registerWebviewDocumentType` above only ever runs from inside `activate()` — so a document type that only *this* plugin provides could never be opened before the plugin activated (opening an unregistered document type throws immediately in `EditorMediator.focusOrOpenEditorDocument`, before any `onDocumentType:`/`onUri:` focus event could fire to trigger lazy activation reactively). `contributes.editorDocumentTypes` closes this gap with a placeholder-and-swap mechanism, the editor-document analogue of `contributes.panes`' `PlaceholderPaneProvider`:
+`registerWebviewDocumentType` only runs inside `activate()`, so a type that only this plugin provides could never be opened first (unregistered URIs throw before `onDocumentType` can fire). The manifest contribution registers a **placeholder** at discovery (File Explorer `includedFilePatterns` apply immediately). Opening a matching file activates the plugin; `activate()` must call `registerWebviewDocumentType` with the same `id`, which replaces the placeholder and reopens the tab.
 
-```json
-{
-  "contributes": {
-    "editorDocumentTypes": [
-      { "id": "markdown", "displayName": "Markdown Editor", "icon": "ph ph-markdown-logo",
-        "uriPattern": "\\.(mdx?|markdown)$", "includedFilePatterns": ["**/*.md", "**/*.mdx"] }
-    ]
-  }
-}
-```
+If the placeholder is still in `ContributionRegistrar.placeholderEditorDocumentTypeIds` after activation settles, the tab shows a terminal state (`activating` / `denied` / `failed` / `mismatch`) instead of hanging. Disabling a plugin unregisters the real type; the placeholder is **not** restored until re-enable. A non-empty `editorDocumentTypes` array is itself a lazy-activation trigger (`hasLazyActivationTrigger`).
 
-**At discovery time** (`ContributionRegistrar.registerEditorDocumentTypePlaceholder`, before any plugin code runs):
-
-1. If `includedFilePatterns` is set, calls `bifrost.solution.registerDefaultIncludedFiles(...)` immediately — matching files are visible in the File Explorer even though the plugin hasn't activated yet.
-2. Registers a placeholder `EditorDocumentTypeDefinition` for `uriMatch: new RegExp(uriPattern)` under the same namespaced id (`plugin.<pluginName>.<id>`) as the real registration would use, with `rendererConstructor` set to `createPlaceholderEditorDocumentRenderer(...)`.
-3. Tracks the id in `ContributionRegistrar.placeholderEditorDocumentTypeIds` (a `Set<string>`), used to tell whether the placeholder is still active.
-
-**When a matching file is opened** (`PlaceholderEditorDocumentRenderer.tsx`, mounted like any other editor document renderer):
-
-1. On mount, calls the `activatePlugin` closure passed in from `ContributionRegistrar` — this reuses `ActivationManager.activatePlugin()` verbatim, including its `pendingActivations` dedupe (so two placeholder tabs opened before activation completes don't double-activate) and its permission-dialog gate.
-2. Once the awaited promise settles, checks `placeholderEditorDocumentTypeIds.has(documentTypeId)`:
-   - **Not in the set** (replaced) — the plugin's `activate()` called `registerWebviewDocumentType()` with the matching id, which used `registerOrReplaceDocumentType` to overwrite the placeholder and (in `PluginHostBridge`) delete the id from `placeholderEditorDocumentTypeIds`. The placeholder closes its own tab and reopens the same uri via `focusOrOpenEditorDocument`, so it re-resolves against the now-real registration (same "force reopen" idiom as `forceReopenBpmnEditors`/`forceReopenDmnEditors`).
-   - **Still in the set** — the placeholder was not replaced, and a terminal state is rendered based on the owning plugin's `PluginInfo.status`. Every branch is terminal by design: without them a broken plugin would leave the tab stuck on "Activating plugin…" forever.
-
-| `PluginInfo.status` | `data-test--editor-doctype-placeholder` | Message |
-|---|---|---|
-| — (activation in flight) | `activating` | "Activating plugin …" |
-| `disabled` | `denied` | Permission dialog was denied; re-enable in the Plugins pane |
-| `error` / `quarantined`, or the activation call itself threw | `failed` | Plugin failed to activate; see the Plugins pane |
-| anything else (e.g. `loaded`) | `mismatch` | Plugin activated but registered no editor for this file — a bug in the plugin |
-
-The plugin's manifest `displayName` (falling back to its package name) is used in all four messages; the entry's own `displayName` labels the document type, not the plugin.
-
-**Disposer** (plugin disabled/reloaded/uninstalled before ever being opened): unregisters `includedFilePatterns` (if set) and, only if the placeholder was never replaced, unregisters the placeholder document type itself. If it *was* replaced, the real registration's own disposer (registered by `PluginHostBridge`) now owns that document type's lifecycle — the manifest disposer is a no-op in that case.
-
-No new `ActivationEvent` variant was needed — a non-empty `contributes.editorDocumentTypes` implies lazy activation on its own (see `hasLazyActivationTrigger` in `PluginHost.ts`), without requiring a redundant `activationEvents` entry.
-
-#### `panes`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerWebviewPane` | `(options) → void` | Registers an iframe-backed pane. Options: `id`, `title`, `area` (`'left'`/`'right'`/`'bottom'`), optional `groupId`, `icon`, `webviewOptions` (`entryPoint`, optional `localResourceRoots`). Pane ID namespaced as `plugin.<pluginName>.<id>`. |
-| `setVisible` | `(paneId, visible) → void` | Show or hide a pane. This is the sole runtime visibility control — newly registered panes default to visible. State persists until changed by another `setVisible` call or until the plugin is disabled. |
-
-**Pane registration flow (plugin → renderer)**:
-
-```
-Plugin code (child process)
-  → api.panes.registerWebviewPane(options)
-  → PH_API_REQUEST { namespace: 'panes', method: 'registerWebviewPane' }
-  → PluginHostBridge.handlePanesApi
-  → createIframePaneProvider(context) → PaneProviderModule
-  → bifrost.panes.getPaneViaPaneProvider(paneId, providerId, module)
-  → bifrost.panes.registerPaneGroup(area, groupId, [paneObject])
-    or bifrost.panes.appendToPaneGroup(area, groupId, [paneObject])
-```
-
-The pane renders a `PluginIframe` with `iframeId = 'pane:<paneId>'`. Messaging works through the same `api.webviews.onMessage()` / `api.webviews.postMessage()` pipeline as editor documents.
-
-**Pane visibility**: `setVisible` is the sole runtime control for plugin pane visibility. The bridge maintains a `paneVisibility: Map<string, boolean>` keyed by fully namespaced pane ID. When `setVisible` is called, the state is stored and `requestPaneLayoutUpdate()` triggers a re-render. The `IframePaneProvider.shouldBeDisplayed` reads this map and defaults to `true` (visible) when no entry exists.
-
-Plugins typically subscribe to events (e.g. `editorFocusChanged`, `settings.onDidChange`) and call `setVisible` in response, giving them full programmatic control over when their panes appear.
-
-**Manifest `visibleWhen`** is a separate, declarative mechanism used **only** by `PlaceholderPaneProvider` as a lazy-load activation trigger. Once the plugin activates and the placeholder is replaced by the real `IframePaneProvider`, `visibleWhen` is no longer evaluated — `setVisible` takes over.
-
-**Cleanup on plugin unload**: The disposer calls `bifrost.panes.unregisterPane(paneId)` and `bifrost.panes.unregisterPaneProvider(providerId)`. All visibility state for the plugin is also cleared from `paneVisibility`.
-
-#### `statusBar`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerStatusBarItem` | `(area, id, items, priority?) → void` | Register items in `'left'`, `'center'`, or `'right'` area. Items are `StatusBarItem[]` POJOs. Optional `priority` controls ordering within the area. |
-| `updateStatusBarItem` | `(id, items) → void` | Replace items for a previously registered status bar item. |
-| `unregisterStatusBarItem` | `(id) → void` | Remove a registered status bar item. |
-| `showProgress` | `(label) → PluginProgressHandle` | Show a progress indicator. Returns a proxy handle with `update(label)` and `done()`. |
-| `isVisible` | `() → boolean` | Returns status bar visibility state. |
-
-**Design principle**: Mirrors `StatusBarMediator` method names and data structures. Closures are replaced with serializable `StatusBarItem[]` POJOs. The bridge translates these into `StatusBarManager` factory function registrations.
-
-**Cleanup on plugin unload**: All registered items are unregistered. Active progress handles are completed via `handle.done()`.
-
-#### `menuBar`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerMenuBarItem` | `(area, items) → void` | Register items in `'left'`, `'center'`, or `'right'` area. |
-| `registerMenuBarItemModifier` | `(config) → void` | Insert items relative to an existing item (`insertAfter` / `insertBefore`). |
-| `isVisible` | `() → boolean` | Returns menu bar visibility state. |
-
-**Design principle**: Mirrors `MenuBarMediator` except `show`, `hide`, `toggleVisibility`, and `updateMenuBarItems` which are Studio-internal layout concerns and not exposed to plugins.
-
-**Modifier flow**: The bridge translates declarative `MenuBarItemModifierConfig` into `insertAfterMenuBarItem()` / `insertBeforeMenuBarItem()` modifier functions from `MenuBarModifierFunctions`.
-
-**Manifest contribution**: Plugins can declare `contributes.paneToggles` in the manifest for lazy-loaded pane toggle buttons. The `ContributionRegistrar` processes these at discovery time using the same modifier functions.
-
-**Cleanup on plugin unload**: All registered items and modifiers are disposed via the disposer tracking in `PluginHostBridge`.
-
-#### `menus`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerMenuModifier` | `(menuId, config) → void` | Inject items into an existing menu or submenu. |
-
-**Config**: `MenuModifierConfig` with `items: MenuItem[]` and optional `position: MenuModifierPosition`. Position types: `'append'` (default), `'prepend'`, `'appendToSubmenu'` (requires `submenuId`), `'prependToSubmenu'` (requires `submenuId`), `'insertAfter'` (requires `id`), `'insertBefore'` (requires `id`).
-
-**Design principle**: Mirrors `MenuMediator.registerMenuModifier()`. The bridge translates declarative configs into modifier functions that the `MenuMediator` invokes when rendering menus.
-
-**Cleanup on plugin unload**: Modifier registrations are disposed.
-
-#### `diagnostics`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `set` | `(uri, diagnostics) → void` | Set diagnostics for a URI. Owner auto-namespaced to `plugin.<pluginName>`. |
-| `clear` | `() → void` | Clear all diagnostics contributed by this plugin. |
-| `get` | `(uri?) → Record<string, PluginDiagnostic[]>` | Get diagnostics, optionally filtered by URI. |
-| `getCount` | `() → { errors, warnings, infos }` | Get aggregate diagnostic counts. |
-| `onDidChange` | `(callback) → void` | Subscribe to diagnostic change events (via `PH_REGISTER_CALLBACK`). |
-
-**Design principle**: Mirrors `DiagnosticsMediator`. The `owner` field is auto-set to `plugin.<pluginName>` by the bridge — plugins cannot interfere with diagnostics from other plugins. `PluginDiagnostic` is `{ severity: 'error' | 'warning' | 'info', message: string }`.
-
-**Cleanup on plugin unload**: `bifrost.diagnostics.clearDiagnostics('plugin.<pluginName>')` removes all diagnostics contributed by the plugin. `onDidChange` subscriptions are disposed via the per-plugin callback map.
-
-#### `dialogs`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `open` | `(options) → PluginDialogResult` | Show a custom modal dialog with form content and action buttons. |
-| `prompt` | `(title, placeholder?) → string \| null` | Show a simple text prompt. Returns entered text or `null` on cancel. |
-| `showOpenFile` | `(options?) → string[] \| null` | Show a native file open dialog (Electron-only). |
-| `showOpenDirectory` | `() → string[] \| null` | Show a native directory picker (Electron-only). |
-| `showSaveFile` | `(options?) → string \| null` | Show a native save file dialog (Electron-only). |
-
-**Design principle**: Mirrors `DialogManager`. All dialog content types (`text_input`, `select`, `checkbox`, `text`, `section`, `divider`, `markdown`, `markdown_container`, `json`, `diff`, `response_link`, `path_list`, `path_picker`) are supported since they are all serializable. Validation callbacks are not supported in v1 — plugins validate on the returned `formData`.
-
-**Active dialog tracking**: The bridge tracks `activeDialogOwner: string | null` so that plugin-initiated dialogs are force-closed on plugin disable.
-
-**Cleanup on plugin unload**: If the plugin being disposed owns the currently active dialog, `bifrost.dialog.close()` is called to force-close it.
-
-#### `workspace`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `readFile` | `(uri) → string` | Reads a text file (UTF-8). Scope check enforced. |
-| `readBinaryFile` | `(uri) → Uint8Array` | Reads a binary file. Base64-encoded over IPC. |
-| `writeFile` | `(uri, content) → void` | Writes a text file. Scope check enforced. |
-| `writeBinaryFile` | `(uri, content: Uint8Array) → void` | Writes a binary file. Base64-encoded over IPC. |
-| `listDirectory` | `(uri) → FileListEntry[]` | Lists entries as `{ name, uri, type }`. |
-| `stat` | `(uri) → FileStat` | Returns `{ isDirectory, isFile, exists }`. |
-| `createDirectory` | `(uri) → void` | Creates a directory (recursive). |
-| `deleteFile` | `(uri) → void` | Deletes a file or directory. |
-| `onDidChangeFile` | `(uri, callback) → { dispose }` | Watches a file or directory with 100ms debounce. Callback receives `{ type: 'created' \| 'changed' \| 'deleted', uri }`. |
-| `onDidChangeSolution` | `(callback) → { dispose }` | Fires when projects are added/removed/changed. Bridges `EVENT_SOLUTION_CHANGED`. |
-| `getProjectFolders` | `() → ProjectFolder[]` | Returns `{ uri, name }` for each project in the solution. |
-
-**Design principle**: Mirrors a scoped subset of `FileHandlingService` (`bifrost.files`). Plugins use `file://` URIs. The bridge converts to local paths via `getLocalFilenameForUri()` as needed.
-
-**Scoping model**: Every file operation validates the target URI is within:
-1. Any project folder from `bifrost.solution.getSolution()?.projects[].baseUri`, or
-2. The plugin's own storage directory (`env.storagePath`, derived from the storage base path + plugin name).
-
-Access outside these scopes is rejected with an error. This is the official file I/O surface; Phase 7 additionally gates raw `require('fs')` in the Worker via `ModuleGate` — plugins should prefer `api.workspace` for portable file access.
-
-**Binary transport**: `readBinaryFile` / `writeBinaryFile` encode `Uint8Array` as base64 strings for IPC transfer. The bridge decodes before calling `bifrost.files.save()`.
-
-**File watchers**: `onDidChangeFile` creates a chokidar watcher via `bifrost.files.watchDirectory()`. Raw chokidar events (`add`, `change`, `unlink`, `addDir`, `unlinkDir`) are mapped to `created` / `changed` / `deleted`. Events are coalesced with a 100ms debounce before forwarding to the plugin callback via `PH_CALLBACK_INVOCATION`.
-
-**Cleanup on plugin unload**: All active file watchers for the plugin are disposed via the per-plugin callback map. `onDidChangeSolution` subscriptions are disposed the same way.
-
-#### `editors` — Dirty State & Save
-
-In addition to the document type registration methods, the `editors` namespace provides:
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `setDirty` | `(uri, isDirty) → void` | Set `hasUnsavedChanges` on a model-less document. Emits `EVENT_EDITOR_DOCUMENT_DATA_UPDATED`. |
-| `onSaveRequest` | `(uri, callback) → { dispose }` | Register a save delegate for Ctrl+S and close-save flows. |
-
-**Save delegate architecture**: `EditorMediator` maintains a `saveDelegates: Map<string, () => Promise<void>>` registry parallel to the model-based save flow. When `doSaveEditorDocument()` encounters a model-less document, it checks for a save delegate. The close-save dialog also routes through `saveChangesBeforeClosingDelegateDocument()` for model-less dirty documents.
-
-**Cleanup on plugin unload**: Save delegates are unregistered. The `unregisterDocumentType` disposer now triggers the close-save dialog (changed from `skipAskUnsavedChanges: true` to `false`).
-
-#### `events` / `env`
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `events.on` | `(eventName, callback) → void` | Subscribe to Studio events. |
-| `events.off` | `(eventName, callback) → void` | Unsubscribe. |
-| `env` | readonly `{pluginPath, pluginName, storagePath, apiVersion}` | Frozen environment. |
-
-**Supported event names**:
-
-| Event | Payload | Source |
-|-------|---------|--------|
-| `editorFocusChanged` | `{ uri: string \| null, documentType: string \| null }` | `EVENT_EDITOR_AREA_FOCUS_UPDATED` via `EditorMediator` |
-
-The bridge registers event subscriptions through `PH_REGISTER_CALLBACK` with `namespace: 'events'`. When the renderer-side event fires, it forwards the payload to the child process via `PH_CALLBACK_INVOCATION`. Event subscriptions are cleaned up via `disposePlugin` alongside all other callbacks.
-
-#### `views` — Tree View API
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerTreeView` | `(options: TreeViewOptions) → void` | Register a tree view pane hosted by the Studio `Tree` component (`studio/src/components/Tree/`). |
-| `updateTreeData` | `(viewId, items: PluginTreeItem[]) → void` | Push new tree data — replaces previous items and triggers re-render. |
-
-**Architecture**: The bridge stores `PluginTreeItem[]` data in a `treeViewData` map keyed by namespaced view ID. A `TreeViewPaneProvider` hosts the Studio `Tree` component, receiving data via a getter function and subscribing to change notifications. When `updateTreeData` is called, all registered listeners for that view ID are notified, causing the React component to re-render with the new data.
-
-**Item mapping**: `PluginTreeItem` is mapped to the host `TreeItem` at render time. `children` → `entries`, `command` → `metadata.command` (resolved and executed via `bifrost.commands` on click), `contextMenuId` → `menuId`, `badges` → `TreeBadge[]`. The `id` field maps to `pathId` for stable reconciliation.
-
-**Click handling**: When a user clicks a tree item with a `command` field, the bridge executes `plugin.<pluginName>.<command>` via `bifrost.commands.executeCommand`, passing the item's `metadata` as the first argument.
-
-**Cleanup on plugin unload**: `bifrost.panes.unregisterPane()` and `unregisterPaneProvider()` are called. The tree data and listeners are cleared from the bridge's maps.
-
-#### `themes` — Theme Contributions
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `register` | `(definition: PluginThemeDefinition) → void` | Register a custom theme with CSS token overrides. |
-| `unregister` | `(themeId) → void` | Remove a previously registered theme. |
-| `getActiveTheme` | `() → string` | Get the currently active theme ID. |
-
-**Architecture**: Plugin themes are registered via `bifrost.theme.registerTheme()` (metadata) + a dynamically injected `<style>` element containing CSS custom property overrides scoped to `.bifrost.bifrost-theme--<themeId>`. This integrates seamlessly with the existing class-swap theme mechanism. Theme IDs are auto-namespaced to `plugin.<pluginName>.<id>`.
-
-**Two registration paths**:
-1. **Manifest** (`contributes.themes`) — processed by `ContributionRegistrar` at discovery time, before plugin activation. Suitable for small themes with few tokens.
-2. **Runtime API** (`api.themes.register()`) — called from `activate()`. Suitable for themes with many tokens or dynamic computation.
-
-**Token normalization**: Token keys may omit the leading `--` prefix — it is auto-prepended if missing (e.g. `theme-background` → `--theme-background`).
-
-**Type-aware fallback**: When a plugin theme is removed while active, the Studio falls back to the matching default theme: **Bifrost Night** (`dark`) or **Bifrost Day** (`light`).
-
-**Cleanup on plugin unload**: All themes registered by the plugin (both manifest and runtime) are unregistered. Injected `<style>` elements are removed. If the active theme was contributed by the disposed plugin, the type-aware fallback activates.
-
-#### `bpmn` — BPMN Editor API
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `setOverlays` | `(uri, overlays[]) → void` | Imperative overlay placement — replaces all overlays for this plugin on the given URI |
-| `clearOverlays` | `(uri, filter?) → void` | Remove overlays for this plugin on the given URI (optionally filtered by elementId) |
-| `getElements` | `(uri) → BpmnElementSnapshot[]` | All elements on the current diagram plane |
-| `getElement` | `(uri, elementId) → BpmnElementDetailSnapshot \| null` | Detail snapshot with properties, incoming, outgoing |
-| `getXml` | `(uri) → string` | Current BPMN XML content |
-| `onElementSelected` | `(uri, callback) → Disposable` | Subscribe to selection changes |
-| `onElementHover` | `(uri, callback) → Disposable` | Subscribe to hover events |
-| `onElementDoubleClick` | `(uri, callback) → Disposable` | Subscribe to double-click events |
-| `onElementContextMenu` | `(uri, callback) → Disposable` | Subscribe to context menu events |
-| `onOverlayContextChanged` | `(uri, callback) → Disposable` | Subscribe to overlay context changes (data-updated, selection-changed, document-opened) |
-| `registerOverlayFactory` | `(factory, options?) → Disposable` | Register a factory callback for auto-rendered overlays (see below) |
-| `requestOverlayRefresh` | `() → void` | Force re-evaluation of all overlay factories (use when plugin state affecting overlays has changed) |
-| `getFocusedDocumentUri` | `() → string \| null` | URI of the currently focused BPMN editor document (convenience for context-free commands) |
-
-**Overlay Factory (auto-render model)**:
-
-`registerOverlayFactory` registers a callback that the Studio invokes on every BPMN overlay refresh cycle (document open, data change, root change, settings change). The factory receives an `OverlayFactoryContext` containing the current element list, document URI, and the overlay chain from previous factories. It returns a `BpmnOverlayDescriptor[]` representing the final overlay set for the next factory in the chain.
-
-Key design decisions:
-- **One factory per plugin** — re-registration replaces the previous factory (logs a console warning).
-- **Priority-ordered chain** — factories are called in ascending priority order (lowest first, highest last). Default priority: 100. Higher priority = called later = more power to override.
-- **Element-scoped, not file-scoped** — factories receive elements, not URIs. A factory works on any BPMN file.
-- **Override chain semantics** — each factory receives `currentOverlays` (output of previous factory) and `originalDefaultOverlays` (Studio's built-in overlays, immutable). A factory can add, remove, or replace overlays.
-- **Performance guards** — per-factory 500ms timeout, input fingerprint caching, sequential processing.
-- **Error isolation** — one factory throwing doesn't break the chain; its input is passed unchanged to the next factory.
-
-Files:
-- `studio/src/bifrost/electron-renderer/plugin-host/PluginOverlayStore.ts` — factory registry, invocation, caching
-- `studio/src/bifrost/electron-renderer/plugin-host/BpmnApiBridge.ts` — callback registration, IPC bridge
-- `studio/src/modules/bpmn-editor/BpmnDocumentModel.ts` — `refreshOverlays()` integration point
-- `studio-sdk/src/plugin-api/BpmnApi.ts` — SDK type definitions
-
-**Modeling sub-namespace** (requires `bpmn.modelling`):
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `modeling.updateProperties` | `(uri, elementId, properties) → void` | Update element properties (undoable) |
-| `modeling.removeElement` | `(uri, elementId) → void` | Remove element (undoable) |
-| `modeling.appendElement` | `(uri, sourceId, descriptor) → { elementId }` | Append connected element (undoable) |
-| `modeling.createConnection` | `(uri, sourceId, targetId, type?) → { connectionId }` | Create sequence flow (undoable) |
-| `modeling.moveElement` | `(uri, elementId, delta) → void` | Move element by delta (undoable) |
-
-**Palette/Context Pad contributions** (requires `bpmn.modelling`):
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerPaletteEntry` | `(entry) → void` | Runtime palette entry registration |
-| `unregisterPaletteEntry` | `(id) → void` | Remove a palette entry |
-| `registerContextPadEntry` | `(entry) → void` | Runtime context pad entry registration |
-| `unregisterContextPadEntry` | `(id) → void` | Remove a context pad entry |
-| `updateContextPadEntry` | `(id, update) → void` | Update elementIds/elementTypes dynamically |
-
-Manifest equivalents: `contributes.bpmnPalette` and `contributes.bpmnContextPad` in `package.json`.
-
-**Renderer module messaging** (requires `bpmn.renderer`):
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `postToRendererModule` | `(data) → void` | Send message to renderer-injected module |
-| `onRendererModuleMessage` | `(callback) → Disposable` | Subscribe to messages from renderer module |
-
-Manifest: `contributes.bpmnModules` declares JS bundles injected into the renderer.
-
-Files:
-- `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts` — per-plugin bidirectional message channel
-- `studio/src/modules/bpmn-core/plugin-modules/PluginModuleLoader.ts` — loads plugin renderer modules
-- `studio/src/modules/bpmn-core/plugin-contributions/PluginBpmnContributionStore.ts` — palette/context pad registry
-- `studio/src/modules/bpmn-core/plugin-contributions/PluginPaletteProvider.ts` — diagram-js palette multiplexer
-- `studio/src/modules/bpmn-core/plugin-contributions/PluginContextPadProvider.ts` — diagram-js context pad multiplexer
-
-See [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) for the full architecture.
-
-#### `dmn` — DMN Editor API (DRD-only)
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `setOverlays` | `(uri, overlays[]) → void` | Imperative overlay placement on the DRD — replaces all overlays for this plugin on the given URI |
-| `clearOverlays` | `(uri, filter?) → void` | Remove overlays for this plugin on the given URI (optionally filtered by elementId) |
-| `getElements` | `(uri) → DmnElementSnapshot[]` | All elements on the DRD plane; `[]` while a non-DRD view is active |
-| `getElement` | `(uri, elementId) → DmnElementDetailSnapshot \| null` | Detail snapshot with properties, incoming, outgoing; `null` while a non-DRD view is active |
-| `getXml` | `(uri) → string` | Current DMN XML content |
-| `onElementSelected` | `(uri, callback) → Disposable` | Subscribe to DRD selection changes |
-| `onElementHover` | `(uri, callback) → Disposable` | Subscribe to DRD hover events |
-| `onElementDoubleClick` | `(uri, callback) → Disposable` | Subscribe to DRD double-click events |
-| `onElementContextMenu` | `(uri, callback) → Disposable` | Subscribe to DRD context menu events |
-| `onOverlayContextChanged` | `(uri, callback) → Disposable` | Subscribe to overlay context changes (data-updated, selection-changed, document-opened, **view-changed**) |
-| `onViewChanged` | `(uri, callback) → Disposable` | Subscribe to active-view changes (DRD ↔ decision table / literal / boxed expression) |
-| `getActiveView` | `(uri) → DmnViewChangedEvent \| null` | Current active view for the document, or `null` if not open |
-| `registerOverlayFactory` | `(factory, options?) → Disposable` | Register a factory callback for auto-rendered DRD overlays (see below) |
-| `requestOverlayRefresh` | `() → void` | Force re-evaluation of all overlay factories on all open DMN documents' DRD views |
-
-Unlike `bpmn`, `dmn` has no `getFocusedDocumentUri` convenience method — plugins use the shared `api.editors.getFocusedDocumentUri()`.
-
-**Overlay Factory (auto-render model)**:
-
-`registerOverlayFactory` registers a callback the Studio invokes on every DRD overlay refresh cycle (document open, XML change, selection change, **view change**). The factory receives a `DmnOverlayFactoryContext` containing the current DRD element list, document URI, and the overlay chain from previous factories. It returns a `DmnOverlayDescriptor[]` representing the final overlay set for the next factory in the chain. `originalDefaultOverlays` is always empty for DMN — there is no Studio-owned built-in overlay layer, kept only for structural parity with the BPMN context shape.
-
-Key design decisions (shared with BPMN, plus one DMN-specific addition):
-- **One factory per plugin** — re-registration replaces the previous factory.
-- **Priority-ordered chain** — factories are called in ascending priority order (lowest first, highest last). Default priority: 100.
-- **View-aware clearing** — when the DRD view is not active, `DmnPluginOverlayManager` clears all rendered overlays without invoking factories, and re-resolves them from scratch when the DRD becomes active again. This is the DMN-specific addition over BPMN's model (BPMN has only one view).
-- **Error isolation** — one factory throwing doesn't break the chain; its input is passed unchanged to the next factory.
-
-Files:
-- `studio/src/modules/dmn-editor/DmnPluginOverlayManager.ts` — factory registry, invocation, direct DRD overlay rendering, view-aware clearing
-- `studio/src/bifrost/electron-renderer/plugin-host/DmnApiBridge.ts` — callback registration, IPC bridge
-- `studio/src/modules/dmn-editor/DmnDocumentModel.ts` — `refreshPluginOverlays()` integration point
-- `studio-sdk/src/plugin-api/DmnApi.ts` — SDK type definitions
-
-**Modeling sub-namespace** (requires `dmn.modelling`):
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `modeling.updateProperties` | `(uri, elementId, properties) → void` | Update element properties (undoable) |
-| `modeling.removeElement` | `(uri, elementId) → void` | Remove element (undoable) |
-| `modeling.createElement` | `(uri, descriptor) → { elementId }` | Create element at an **absolute** canvas position (undoable) |
-| `modeling.appendElement` | `(uri, sourceId, descriptor) → { elementId }` | Create element next to `sourceId` and connect it (undoable; BPMN-style relative append) |
-| `modeling.createConnection` | `(uri, sourceId, targetId, type?) → { connectionId }` | Create a requirement connection; `type` defaults to `dmn:InformationRequirement` (undoable) |
-| `modeling.moveElement` | `(uri, elementId, delta) → void` | Move element by delta (undoable) |
-
-DMN exposes both `createElement` (absolute position) and `appendElement` (relative to a source, BPMN-style) — see `docs/decisions.md` for the rationale.
-
-**Palette/Context Pad contributions** (requires `dmn.modelling`):
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `registerPaletteEntry` | `(entry) → void` | Runtime DRD palette entry registration |
-| `unregisterPaletteEntry` | `(id) → void` | Remove a palette entry |
-| `registerContextPadEntry` | `(entry) → void` | Runtime DRD context pad entry registration |
-| `unregisterContextPadEntry` | `(id) → void` | Remove a context pad entry |
-| `updateContextPadEntry` | `(id, update) → void` | Update elementIds/elementTypes dynamically |
-
-Manifest equivalents: `contributes.dmnPalette` and `contributes.dmnContextPad` in `package.json`.
-
-**Renderer module messaging** (requires `dmn.renderer`):
-
-| Method | Signature | Notes |
-|--------|-----------|-------|
-| `postToRendererModule` | `(data) → void` | Send message to renderer-injected module |
-| `onRendererModuleMessage` | `(callback) → Disposable` | Subscribe to messages from renderer module |
-
-Manifest: `contributes.dmnModules` declares JS bundles injected into the DRD renderer.
-
-Files:
-- `studio/src/modules/dmn-core/plugin-modules/PluginDmnModuleLoader.ts` — loads plugin renderer modules for the DRD
-- `studio/src/modules/dmn-core/PluginDmnContributionStore.ts` — palette/context pad registry
-- `studio/src/modules/dmn-core/dmn-js/Provider/PluginDmnPaletteProvider.ts` — diagram-js palette multiplexer
-- `studio/src/modules/dmn-core/dmn-js/Provider/PluginDmnContextPadProvider.ts` — diagram-js context pad multiplexer
-
-See [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md) for the full architecture.
+See [plugin-manifest.md](plugin-manifest.md) and [common-pitfalls.md](common-pitfalls.md).
 
 ### Command namespacing
 
 Commands registered by plugins are automatically prefixed with `plugin.<pluginName>.` to prevent collisions with module commands.
 
-**Namespace convention (Phase 7)**:
+**Namespace convention**:
 
 - Plugin registers `greet` → public ID becomes `plugin.happy-plugin.greet`
 - Plugin executes `greet` via `api.commands` → resolved to `plugin.happy-plugin.greet`
@@ -783,7 +311,7 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 
 `PluginPermissionDialog` (`showPermissionReviewDialog`) is invoked on all plugin activation paths (eager startup, lazy activation, reload/re-enable, quarantine recovery). The dialog is **skipped** when: (a) the plugin requests zero permissions, (b) the global kill switch `plugins.permissions.showDialogOnEnable` is `false`, or (c) the `PluginPermissionStore` has a trusted record whose permission set matches the current manifest exactly. The dialog includes a "Trust this plugin permanently" checkbox; on acceptance, `PluginPermissionStore` persists the approved permission set and trust flag in local storage (`bifrost.getLocalStorage('PluginPermissions')`). If a trusted plugin's permissions change between versions, the dialog re-appears showing added/removed permissions. `trustAndReEnablePlugin` clears the trust record before reloading so the user always re-confirms after quarantine.
 
-### Settings isolation (Phase 7)
+### Settings isolation
 
 - **Write**: Plugins may only write `plugin.<name>.*` keys (`PermissionGate` / bridge validation)
 - **Read**: Unrestricted (user preferences, not secrets)
@@ -932,62 +460,9 @@ Rapid successive changes (e.g., bulk enable/disable) are coalesced with a 500ms 
 
 ## Plugin Iframe Infrastructure
 
-Plugins can render custom UI inside isolated `<iframe>` containers served by a custom Electron protocol. This infrastructure (Phase 3, Batch 3.1) provides the rendering surface for iframe-backed editor documents and panes.
+Plugins render UI in sandboxed `<iframe>` elements served by `evil-webview://<pluginName>/`. `PluginHost` owns `PluginIframeManager`; `PluginIframe` validates `event.origin`. The iframe bridge is `acquireStudioApi()` (`postMessage` / `onMessage` / theme). Protocol registration, CSP, path traversal checks, and the three surfaces (editor / pane / stub panel) are documented in [webviews.md](webviews.md) — do not duplicate that protocol here.
 
-### Custom Protocol — `evil-webview://`
-
-Registered in `entrypoint-electron-main.ts` via `protocol.registerSchemesAsPrivileged` (before `app.ready`) and `protocol.handle` (inside `app.ready`). The scheme name follows the release channel pattern: `evil-webview` (stable) or `evil-webview-<channel>`.
-
-Each plugin gets a unique origin: `evil-webview://<pluginName>/`. The hostname encodes the plugin name; the pathname is resolved relative to the plugin's install directory (`getPluginsDir()/<pluginName>/`).
-
-**Special path**: `/studio-bridge.js` is served from the app bundle directory (`out/studio-bridge.js`) — not from the plugin's folder.
-
-**Plugin name validation**: The hostname (plugin name) is validated against an allowlist pattern (`/^[@a-z0-9][@a-z0-9._-]*$/`) to reject `.`, `..`, path separators, and other escape sequences before any filesystem access.
-
-**Path validation**: `path.resolve()` + `path.relative()` boundary check prevents path traversal attacks. The resolved path is converted to a relative path from the plugin root; if the relative path starts with `..` or is absolute, the request is rejected with 403.
-
-**Security headers**: Every response carries a `Content-Security-Policy` header (`default-src 'none'`, plugin-scoped `script-src`/`style-src`/`img-src`/`font-src`/`connect-src`). All resource directives are scoped to the plugin's own origin (`evil-webview://<plugin>`), preventing access to external networks or other plugins. `X-Frame-Options` is intentionally omitted because the parent (renderer at `evil-studio://`) and the iframe (`evil-webview://<plugin>`) are cross-origin by design, and clickjacking protection is not applicable for a desktop application.
-
-### PluginIframeManager
-
-Singleton service (`studio/src/components/webview/PluginIframeManager.ts`) tracking all active plugin iframes. Owned by `PluginHost`, not directly accessible from `bifrost.plugins`. Provides:
-
-- `register(iframeId, pluginName, panelRef)` / `unregister(iframeId)` — lifecycle management
-- `handleIframeMessage(iframeId, data)` — routes incoming postMessages from iframes
-- `postMessageToIframe(iframeId, data)` — sends messages to a specific iframe
-- `setMessageHandler(iframeId, handler)` — sets per-iframe callback (used by PluginHostBridge)
-- `setState(iframeId, state)` / `getState(iframeId)` — renderer-side state persistence
-- `broadcastThemeTokens(tokens, themeType)` — broadcasts theme CSS variables to all iframes
-- `disposePlugin(pluginName)` — cleans up all iframes for a plugin (on unload/disable)
-
-### PluginIframe Component
-
-React component (`studio/src/components/webview/PluginIframe.tsx`) wrapping a sandboxed `<iframe>`. Attributes:
-
-- `src`: `evil-webview://<pluginName>/<entryPoint>`
-- `sandbox`: `"allow-scripts allow-same-origin"` (no navigation, popups, modals, or forms)
-
-Validates `event.origin` on every incoming `message` event. Registers/unregisters with `PluginIframeManager` on mount/unmount. Renders a "Plugin UI crashed. Click to reload." fallback on error.
-
-### Bridge Script
-
-`studio/src/components/webview/bridge-script.ts` — compiled as `studio-bridge.js` with `target: 'web'` (separate Rspack entry in `rspack.config.electron-main.js`). Runs in the iframe's main world with no Node.js access. Exposes:
-
-```
-window.acquireStudioApi() → { postMessage, onMessage, setState, getState, getThemeType }
-```
-
-Handles incoming `restore-state` and `theme` messages from the host renderer.
-
-### Protocol Plumbing
-
-The `webviewProtocol` scheme name flows from the Electron main process to the renderer:
-
-1. `entrypoint-electron-main.ts` computes `webviewProtocolName` and includes it in `BifrostAppManager` window args
-2. `BifrostWindow` serializes it into the URL `windowOptions` query param
-3. `entrypoint-electron-renderer.tsx` reads it and passes it to `BifrostOptions.webviewProtocol`
-4. `Bifrost` stores it in `Environment.webviewProtocol`
-5. `PluginHost` reads it from `this.bifrost.env.webviewProtocol`
+`webviewProtocol` is computed in the Electron main process, passed through window args into `Bifrost.env.webviewProtocol`, and read by `PluginHost`.
 
 ## Security Model
 
@@ -1001,7 +476,7 @@ The `webviewProtocol` scheme name flows from the Electron main process to the re
 - **Command namespacing** — Prevents plugins from shadowing module commands.
 - **`CommandDenylist`** — Hard-blocks infrastructure command groups; permission-gates module command namespaces.
 
-### JavaScript sandbox (Phase 7, per plugin)
+### JavaScript sandbox (per plugin)
 
 - **Worker Thread isolation** — One Worker per plugin; crash or infinite loop in one plugin does not tear down the whole host (subject to quarantine policy).
 - **SES `lockdown()`** — Freezes intrinsics to mitigate prototype pollution.

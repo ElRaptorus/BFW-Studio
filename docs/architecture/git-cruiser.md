@@ -545,13 +545,11 @@ The merge editor is opened as a singleton document type (`merge`) at the fixed U
 | File | Purpose |
 |------|---------|
 | `git-cruiser/merge/MergeDocumentModel.ts` | Generic model: file list, blobs, progress, navigation, resolution tracking |
-| `git-cruiser/merge/MergeDocumentRenderer.tsx` | Generic renderer: toolbar, title bar, resolution progress, delegates content to the BPMN or DMN resolver |
-| `bpmn-editor/merge/BpmnMergeResolver.tsx` | BPMN resolver: three-panel layout (ours/theirs viewers + result viewer), diff overlays, element classification, per-element resolution |
-| `bpmn-editor/merge/BpmnMergeResultModeler.tsx` | Read-only result preview: tracks resolution state and rebuilds merged XML via `xmlMergeEngine` on every change |
-| `bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx` | BPMN-specific merge pane: classified elements, per-attribute conflict resolution, auto-applied tracking |
-| `bpmn-editor/merge/autoApplyEngine.ts` | Pure XML-level merge engine: applies non-conflicting changes from apply-side to starting-side DOM |
+| `git-cruiser/merge/MergeDocumentRenderer.tsx` | Generic renderer: toolbar, title bar, resolution progress, delegates content to the registered resolver |
 | `bifrost/common/EditorDocumentMergeResolverManager.ts` | Registry for merge resolver components (key→component map) |
 | `studio/src/bifrost/contracts/MergeTypes.ts` | `MergeResolverProps`, `ElementResolution`, `MergeResolutionProgress` contracts |
+
+BPMN three-panel visualization, `xmlMergeEngine`, and per-attribute resolution: [bpmn-diff.md](bpmn-diff.md) §Merge UI. DMN resolver: [dmn-editor.md](dmn-editor.md).
 
 ### Types
 
@@ -568,8 +566,6 @@ The merge editor is opened as a singleton document type (`merge`) at the fixed U
 | `ElementResolutionStatus` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'auto-applied' \| 'pending' \| 'accepted-ours' \| 'accepted-theirs' \| 'custom'` |
 | `ElementResolution` | `studio/src/bifrost/contracts/MergeTypes.ts` | `{ elementId, status }` |
 | `MergeResolutionProgress` | `studio/src/bifrost/contracts/MergeTypes.ts` | `{ totalConflicts, resolvedConflicts, isComplete }` |
-| `ClassifiedElement` | `BpmnMergeResolver.tsx` | Per-element diff classification (BPMN-specific) |
-| `MergeSideDetail` | `BpmnMergeResolver.tsx` | Per-side change detail (BPMN-specific) |
 
 ### IPC channels
 
@@ -630,98 +626,11 @@ The merge resolution commands receive the `MergeDocumentModel` directly from the
 4. The status bar branch item shows `MERGING`/`REBASING`/`CHERRY-PICKING` suffix and conflict count.
 5. `handlePullResult()` shows a notification with "Open Merge Resolver" action when pull results in conflicts.
 
-### Three-panel BPMN merge layout
+### BPMN / DMN merge visualization
 
-For `content` conflicts in BPMN files, the resolver renders a three-panel layout using nested `SplitterLayout`:
+Three-panel layout, `xmlMergeEngine`, per-attribute resolution, and the BPMN Change Overview pane are documented in [bpmn-diff.md](bpmn-diff.md) §Merge UI. git-cruiser owns the generic model, IPC, commands, and file walk (`.bpmn` / `.dmn` only).
 
-```
-+-------------------+-------------------+
-|  Ours (viewer)    | Theirs (viewer)   |
-|  NavigatedViewer  | NavigatedViewer   |
-|  read-only        | read-only         |
-+---------+---------+---------+---------+
-|           Result (viewer)             |
-|           NavigatedViewer             |
-|           read-only preview           |
-+---------------------------------------+
-```
-
-The outer `SplitterLayout` is vertical (top: viewers, bottom: result viewer). The inner top splitter is horizontal (ours | theirs) — reusing the existing synced viewer infrastructure.
-
-The result panel is a **read-only preview**, not an editor. `BpmnMergeResultModeler` holds both XML strings (starting-side and apply-side) and the resolution map. On every resolution change it re-runs `xmlMergeEngine` with an adjusted skip set and reloads the `BpmnViewerWithSync` with the rebuilt XML.
-
-**Viewer ↔ Result viewer sync**: On result viewer ready, `wireResultModelerSync()` uses `addViewboxSync()` from ours viewer to the result viewer, keeping all three panels' viewports in sync.
-
-### Operation-aware starting side
-
-The merge engine's starting XML depends on the Git operation:
-
-| Operation | Starting side | Apply side |
-|-----------|---------------|------------|
-| merge / cherry-pick | ours (your branch) | theirs (incoming) |
-| rebase | theirs (base branch) | ours (replayed commits) |
-
-The resolver reads `operationKind` from `MergeResolverProps` (which comes from `MergeDocumentModel.getMergeOperationKind()`) and parameterizes `startingSide` and `applySide`. All downstream logic (auto-apply, per-element accept, UI labels) is side-agnostic.
-
-### Auto-apply engine (XML-level merge)
-
-`autoApplyEngine.ts` exports `xmlMergeEngine()`, which merges non-conflicting apply-side changes into the starting-side XML at the **DOM level** using `DOMParser` / `XMLSerializer`. This replaces an earlier modeler-based approach that failed for structural changes (see `common-pitfalls.md` for details).
-
-The function receives the starting-side XML, the apply-side XML, the apply-side diff (`BpmnDiffChangesByAction`), and the set of conflict element IDs. It returns `{ mergedXml, autoAppliedIds }`.
-
-**Algorithm:**
-
-1. Parse both XMLs as DOM documents
-2. Build an index mapping element IDs to semantic nodes and DI nodes in both DOMs
-3. For each non-conflict change in the apply-side diff:
-   - **Deleted**: Remove the semantic element and its DI node (BPMNShape/BPMNEdge) from the starting DOM. Remove any `bpmn:flowNodeRef` entries in lanes.
-   - **Updated**: Replace the semantic element in the starting DOM with the apply-side version (deep clone via `importNode`). Also replace the DI node if present.
-   - **Moved** (layout only): Replace only the DI node.
-   - **Added**: Copy the semantic element from the apply-side DOM into the starting DOM under the same parent (found by ID). Copy the DI node into the BPMNPlane. Add `bpmn:flowNodeRef` entries to lanes.
-4. Serialize the merged DOM back to an XML string
-
-**Ordering**: Deletions run before additions. Within deletions, connections are removed before shapes (to avoid orphaned references). Within additions, shapes are added before connections (so endpoints exist when connections are imported).
-
-The merged XML is loaded into the visible `BpmnViewerWithSync` for display. On every subsequent resolution change, the merge is re-run with an adjusted skip set (see below) and the viewer is reloaded.
-
-### Per-attribute resolution lifecycle
-
-Resolution is tracked at the **conflict key** level, not at the element level. A single BPMN element can produce multiple conflict keys:
-
-| Key format | Scope |
-|---|---|
-| `{elementId}` | Base properties (type, standard attributes, layout) |
-| `{elementId}:cp:{propertyName}` | Individual custom property |
-
-Utilities for constructing and parsing conflict keys are exported from `BpmnMergeResultModeler`: `makeBaseKey()`, `makeCpKey()`, `parseConflictKey()`.
-
-Each conflict key gets a resolution status tracked in `BpmnMergeResultModeler.resolutionMap`:
-
-```
-auto-applied    ← non-conflicting, auto-applied from apply side
-pending         ← conflict, not yet resolved
-accepted-ours   ← user accepted ours
-accepted-theirs ← user accepted theirs
-```
-
-The result viewer exposes key-level imperative methods (`acceptStartingSideForKey`, `acceptApplySideForKey`) alongside element-level batch methods (`acceptStartingSideForElement`, `acceptApplySideForElement`) that resolve all sub-keys of an element at once. Batch methods `acceptAllStartingSide` / `acceptAllApplySide` resolve all pending keys in one pass (single rebuild).
-
-**Resolution → rebuild mechanism**: Instead of surgically modifying a hidden modeler, every resolution change triggers a full XML rebuild via `computeEffectiveSkipIds()` → `xmlMergeEngine()` → viewer reload. The effective skip set is computed from the initial conflict IDs, adjusted as follows:
-
-- Conflict elements where ANY sub-key is resolved to "apply side" are **removed** from the skip set → the engine applies the donor version.
-- Auto-applied elements that were reverted to "pending" are **added** to the skip set → the engine leaves the starting-side version.
-
-This avoids the broken `modeling.updateProperties()` path that failed because diff attribute names are display-formatted (e.g. "Element Type" instead of "$type") and values are stringified.
-
-`revertAutoApplied(elementId)` still operates at the element level, since auto-applied entries are always element-level (no compound keys for non-conflict changes).
-
-Resolution progress (`MergeResolutionProgress`) counts conflict keys for elements classified as `'both'` (actual conflicts), not failed auto-applies. The `totalConflicts` counter therefore reflects the number of individually resolvable conflict units, not the number of elements.
-
-Resolution progress is emitted via the `onResolutionChanged` callback on `MergeResolverProps`, flowing through the renderer to `MergeDocumentModel.updateResolutionProgress()`, which emits `EVENT_RESOLUTION_CHANGED`.
-
-The "Resolve & Stage" button in the toolbar is enabled only when `isCurrentFileFullyResolved()` returns `true`. It calls `getResultXml()` on the resolver, writes to disk, stages, and advances.
-
-Overlay status per element is derived from the compound keys: if any sub-key is `pending`, the element overlay shows `pending`.
+The BPMN Change Overview pane is registered by `bpmn-editor` (`BpmnMergeChangeOverview.tsx`); the DMN pane by `dmn-editor` (`DmnMergeChangeOverview.tsx`). Both read type-specific data through `model.resolverRef` — call type-specific methods with optional chaining (`resolverApi?.getDefinitionsMetadataOurs?.() ?? []`).
 
 ### Toolbar button strategy
 
@@ -730,25 +639,6 @@ When `hasResolutionProgress` is true (BPMN or DMN resolver with content conflict
 ### Whole-file accept with active result modeler
 
 `git.merge.acceptOurs` and `git.merge.acceptTheirs` check for an active resolver API. When one exists, they batch-resolve all pending conflicts via `acceptAllOurs()` / `acceptAllTheirs()`, retrieve the merged XML via `getResultXml()`, and write that instead of the raw blob. This preserves any partial resolution work the user has done. If no resolver is active, the commands fall back to writing the raw blob directly.
-
-### Merge Change Overview panes
-
-Two separate panes cover merge change visualization, following the same separation-of-concerns principle as the rest of the merge subsystem:
-
-**BPMN-specific** (`bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx`): Registered by the `bpmn-editor` module via `initializeBpmnPanes`. Displayed when `model.currentFileType === 'bpmn'`. Provides the full categorized element list with per-attribute conflict resolution. It accesses BPMN-specific data (classified elements, definitions metadata) through the `resolverRef` on the model, which is set by the active resolver component.
-
-**DMN-specific** (`dmn-editor/merge/panes/DmnMergeChangeOverview.tsx`): Registered by the `dmn-editor` module via `initializeDmnPanes`. Displayed when `model.currentFileType === 'dmn'`.
-
-When the BPMN pane is active, its sections are displayed in this order:
-1. **Resolution progress bar** — resolved / total conflict keys (counts compound keys, not elements)
-2. **Conflicts** — grouped by element, with **per-attribute sub-entries** when an element has multiple conflict keys. Each sub-entry has its own "Accept Ours" / "Accept Theirs" buttons and resolution badge. Elements with a single conflict key show buttons directly on the element entry.
-3. **Auto-applied** — elements that were automatically merged, each with a source label (Ours/Theirs) and a "Revert" button to demote back to `'pending'`
-4. **Ours only** — including Definitions metadata changes from ours-vs-base diff
-5. **Theirs only** — including Definitions metadata changes from theirs-vs-base diff
-
-Definitions metadata (exporter name, version, etc.) are shown as non-navigable entries within the Ours/Theirs sections, keeping all side-specific information together rather than in separate "Definitions" sections.
-
-The conflict badge count in the section header reflects the total number of conflict keys (not elements), matching the resolution progress counter.
 
 ### BPMN editor integration
 
@@ -856,10 +746,3 @@ Error detection in `showPushError` and the `git.push` recovery dialog also match
 **File Menu** (`std/application/main`): "Add Git Repo to Solution ..." appears after "Add Folder to Solution ...", visible only when a solution is open and git is active. Triggers `git.cloneRepository`.
 
 **Solution Root Context Menu** (`std/file-explorer/solution-root`): "Add Git Repo to Solution ..." appears after "Add Folder to Solution ..." via `insertAfterMenuItem`. Always visible when git is active.
-
-## Next steps
-
-- Git Config Wizard (local config only → Inherit global config, if set → optional next step after cloning repository, always callable from Git Pane and solution root folder, if the folder is part of a Git Repo)
-- Per-element change history (`git log` per BPMN element)
-- Inline gutter indicators (added/removed lines)
-- recursive git repo and submodule detection

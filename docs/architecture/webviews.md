@@ -1,8 +1,5 @@
 # Webview System
 
-> **Phase**: 3 of the [Extension v2 roadmap](../extensions-v2/extension-v2-roadmap.md)
-> **Status**: Implemented (Batches 3.1–3.6)
-
 ## Overview
 
 The webview system lets external plugins render custom UI inside sandboxed `<iframe>` containers. Each plugin's iframe runs in an isolated origin served by a custom Electron protocol, communicating with the plugin's backend code (in the Plugin Host child process) through a structured `postMessage` pipeline.

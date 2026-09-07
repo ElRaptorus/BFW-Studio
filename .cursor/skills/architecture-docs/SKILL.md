@@ -135,11 +135,20 @@ Every document ends with a table mapping components to their file paths:
 
 ### What does NOT belong
 
-- Step-by-step tutorials (use skills for that)
-- High-level philosophy (that's `docs/philosophie.md`)
-- System-level overviews (that's `docs/systeme.md`)
-- Every internal field name and CSS class — only document what is architecturally significant
-- Redundant explanations of the same concept in multiple sections
+- Step-by-step tutorials (plugin how-to is `docs/plugin-development-guide.md`; other how-tos are skills)
+- High-level philosophy (`docs/philosophie.md`) or subsystem overviews (`docs/systeme.md`)
+- Session diaries, CI logs, named failing tests as headlines, “what we tried”, Phase / Extension-v2 banners
+- Test postmortems — those go in `docs/testing.md` if they are harness rules, otherwise nowhere
+- Copying another architecture file’s method tables; one sentence + link
+- Every internal field name and CSS class — only what is architecturally significant
+
+### Pitfalls vs decisions vs architecture
+
+| File | Belongs | Does not belong |
+|------|---------|-----------------|
+| `architecture/*.md` | Current facts: paths, signatures, flows | History of a bugfix |
+| `common-pitfalls.md` | A mistake someone can make again (3–8 lines) | One-off incidents, test names |
+| `docs/decisions.md` | Dated A-vs-B that still explains the architecture | Diaries, Vitest upgrades, “we added a pane” |
 
 ### Depth calibration
 
@@ -158,28 +167,42 @@ Use this table to determine **which file to update** based on what you changed o
 | Solution/project handling, file explorer, session restore, window management | `workspace.md` |
 | Command registration, execution, cross-module command calls | `commands.md` |
 | Module load order, entry points, dependency graph, new module added | `modules.md` |
-| Engine connectivity, EngineManager, engine events, authentication | `engine.md` |
+| Engine connectivity, debugger, document URIs, GraphQL Model graph | `engine.md` |
 | Dialog queue, dialog content types, native file pickers | `dialogs.md` |
-| Editor document types, model/renderer/inspector contracts | `editor-documents.md` |
+| Editor document types, model/renderer/inspector, data placement | `editor-documents.md` |
 | Rspack config, build targets, loaders, conditional compilation | `build.md` |
 | Icon registration, Phosphor icons, SVG composites | `icons.md` |
 | CSS tokens, theme registration, theme inheritance | `theming.md` |
-| Notification API, notification types, status bar integration | `notifications.md` |
+| Notification API, notification types | `notifications.md` |
+| Status bar items, priority, problems count | `status-bar.md` |
 | Tree component, TreeDataAdapter, HeadlessTreeItem, tree plugins | `tree.md` |
 | Settings registration, persistence, Settings editor UI | `settings.md` |
-| Host CodeMirror wrappers (`MultiLineCodeEditor`, `DiffEditor`), language map, Settings `json5Schema` | `code-editors.md` |
-| FEEL expression editors (`FeelEditor`, `OneLineFeelEditor`), FEEL context | `feel-editor.md` |
+| Host CodeMirror wrappers (`MultiLineCodeEditor`, `DiffEditor`), language map | `code-editors.md` |
+| FEEL widgets, FeelSimulator, `bpmn.feel.getExpressionContext` | `feel-editor.md` |
 | BPMN modeler modules, `registerModule`, diagram-js services | `bpmn-modeler-modules.md` |
 | Token simulator, simulation behaviors, overlays | `bpmn-token-simulator.md` |
 | Workbench layout, split bars, pane areas, menu bar | `workbench-layout.md` |
 | PaneProvider contract, `shouldBeDisplayed` vs renderer, pane registration | `panes.md` |
+| BPMN property pane inventory, element access, command handlers | `bpmn-editor-properties.md` |
+| BPMN linter, scores, Findings pane | `bpmn-linter.md` |
+| BPMN sanitizer (structural integrity) | `bpmn-sanitizer.md` |
+| Subprocess drill-down | `bpmn-drilldown.md` |
+| BPMN diff, history preview, three-panel merge visualization | `bpmn-diff.md` |
+| Git primitives, IPC, Git pane, merge **framework** (not BPMN UI) | `git-cruiser.md` |
+| DMN editor, DRD views, DMN panes, DMN merge resolver | `dmn-editor.md` |
+| Plugin Host, SES, IPC, quarantine, PluginService | `plugin-host.md` |
+| `bifrostStudio` manifest schema, permissions, activation events | `plugin-manifest.md` |
+| Plugin iframe protocol, `evil-webview://`, `acquireStudioApi` | `webviews.md` |
+| Plugin BPMN overlays / palette / modeling / renderer modules | `plugin-bpmn-enrichment.md` |
+| Plugin DMN DRD enrichment | `plugin-dmn-enrichment.md` |
+| How to author/install a plugin (not method tables) | `docs/plugin-development-guide.md` |
 | Import aliases, tsconfig, module resolution | `imports-and-modules.md` |
-| Git integration, GitService, IPC, BPMN diff, protected diagrams | `git-cruiser.md` |
-| ESLint/Prettier config, React Compiler rules, lint suppression | `code-quality.md` |
-| Recurring mistake or non-obvious constraint discovered | `common-pitfalls.md` |
-| Significant design decision made (approach chosen, pattern adopted) | `docs/decisions.md` |
+| ESLint/Prettier config, React Compiler rules | `code-quality.md` |
+| Recurring constraint (gate: would someone hit this again?) | `common-pitfalls.md` |
+| Significant A-vs-B design choice | `docs/decisions.md` |
+| Integration-test / StudioAgent harness gotcha | `docs/testing.md` — **not** pitfalls |
 
-If the change does not fit any existing file, create a new one (see below).
+If the change does not fit any existing file, create a new one (see below). Do not paste a test postmortem into pitfalls.
 
 ## Adding a New Document
 

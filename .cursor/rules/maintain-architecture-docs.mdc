@@ -13,7 +13,7 @@ Update the appropriate file in `docs/architecture/` whenever:
 
 - You modify code that changes the architecture (new types, renamed methods, changed event wiring, new commands, new files, moved responsibilities)
 - You gain significant new understanding of a Studio subsystem through research — even if you did not edit any code
-- You discover that existing documentation is incorrect or incomplete
+- You discover that existing documentation is incorrect, incomplete, duplicated, or one-off history
 
 For a lookup table mapping "what changed" to "which file to update", see the `architecture-docs` skill.
 
@@ -21,6 +21,7 @@ For a lookup table mapping "what changed" to "which file to update", see the `ar
 
 - Concrete, technical content: file paths, type signatures, method tables, event flow diagrams, data model descriptions
 - Keep it factual and reference-oriented — this is not a tutorial, it is a technical reference for agents
+- Overview: 3–4 sentences. Point to other files; do not copy their tables
 - The document is written in English. Maintain that language.
 
 ## Adding new topics
@@ -29,13 +30,15 @@ When documenting a subsystem that does not fit any existing file, create a new f
 
 ## Special-purpose files
 
-Two files in the architecture folder serve as living logs rather than static references:
+- **`common-pitfalls.md`** — Recurring constraints someone could hit **again**. Gate: “Would a competent person hit this without this note?” If no, it does not belong here. Format: title = the constraint; Mistake / Why / Correct approach (3–8 lines); optional short snippet. No dates, no “Fixed (…)”, no named failing tests as headlines, no CI logs, no investigation novels. Test-harness facts go in `docs/testing.md`.
+- **`docs/decisions.md`** (top-level, not in `architecture/`) — Significant A-vs-B choices that still explain the architecture. Format: Context / Options / Decision / short Rationale / `See architecture/….md`. Bugfixes, session diaries, upgrade play-by-plays, and Cursor-rule meta do not belong here. Superseded items are one-line stubs.
 
-- **`common-pitfalls.md`** — Recurring mistakes, gotchas, and non-obvious constraints. When you encounter a bug caused by a subtle architectural constraint, or when you discover a pattern that is easy to get wrong, add an entry here. Each entry should describe the mistake, explain why it happens, and show the correct approach.
-- **`docs/decisions.md`** (top-level, not in `architecture/`) — Technical decision log. When a significant design choice is made (e.g., choosing one approach over another, deprecating a pattern, adopting a new library), add a dated entry explaining the decision and its rationale.
+Plugin **how-to** lives in `docs/plugin-development-guide.md`. Host / sandbox / IPC: `plugin-host.md`. Manifest schema: `plugin-manifest.md`. iframe protocol: `webviews.md`. BPMN/DMN plugin APIs: the enrichment files. Do not reprint those tables in the guide.
 
 ## What NOT to do
 
-- Do not rewrite existing sections unless they are wrong
-- Do not remove content — only add, correct, or restructure
+- Do not delete still-accurate facts
+- Do rewrite, merge, or drop content that is wrong, duplicated across files, or one-off history (incident reports, “what we tried”, Phase banners, dead roadmap links)
+- Do not append a session strip to the bottom of a file
+- Do not paste test postmortems into `common-pitfalls.md`
 - Do not duplicate information already in `docs/systeme.md` or `docs/philosophie.md` (those cover high-level concepts; `docs/architecture/` covers implementation detail)
