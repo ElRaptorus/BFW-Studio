@@ -28,6 +28,7 @@ interface SanitizerBridgeInstance extends SanitizerBridgeApi {
   _debounceTimer: ReturnType<typeof setTimeout> | null;
   _badgeContainer: HTMLDivElement | null;
   _badgeRoot: ReactDOM.Root | null;
+  _boundDocumentUri: string | null;
   _scheduleAnalysis(): void;
   _runAnalysis(): void;
   _renderBadge(): void;
@@ -65,6 +66,7 @@ export function SanitizerBridge(
   this._debounceTimer = null;
   this._badgeContainer = null;
   this._badgeRoot = null;
+  this._boundDocumentUri = null;
 
   this.getFindings = () => this._findings;
   this.getFindingsCount = () => this._findings.length;
@@ -115,14 +117,16 @@ export function SanitizerBridge(
 
       this._renderBadge();
 
-      const doc = studio.editors.getFocusedEditorDocument();
-      if (doc?.uri) {
+      if (!this._boundDocumentUri) {
+        this._boundDocumentUri = studio.editors.getFocusedEditorDocument()?.uri ?? null;
+      }
+      if (this._boundDocumentUri) {
         const items = this._findings.map((issue) => ({
           severity: issue.severity as 'error' | 'warning' | 'info',
           message: issue.label,
           source: DIAGNOSTICS_OWNER,
         }));
-        diagnostics.setDiagnostics(doc.uri, DIAGNOSTICS_OWNER, items);
+        diagnostics.setDiagnostics(this._boundDocumentUri, DIAGNOSTICS_OWNER, items);
       }
     } catch (err) {
       console.error('[bpmn-sanitizer] Analysis failed:', err);
@@ -188,6 +192,9 @@ export function SanitizerBridge(
     if (Array.isArray(event.warnings)) {
       this._parseWarnings = event.warnings;
     }
+    if (!this._boundDocumentUri) {
+      this._boundDocumentUri = studio.editors.getFocusedEditorDocument()?.uri ?? null;
+    }
     this._scheduleAnalysis();
   });
 
@@ -198,10 +205,10 @@ export function SanitizerBridge(
     }
     this._destroyBadge();
 
-    const doc = studio.editors.getFocusedEditorDocument();
-    if (doc?.uri) {
-      diagnostics.setDiagnostics(doc.uri, DIAGNOSTICS_OWNER, []);
+    if (this._boundDocumentUri) {
+      diagnostics.setDiagnostics(this._boundDocumentUri, DIAGNOSTICS_OWNER, []);
     }
+    this._boundDocumentUri = null;
   });
 }
 

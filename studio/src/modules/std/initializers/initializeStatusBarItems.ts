@@ -3,7 +3,7 @@ import { EVENT_DIAGNOSTICS_CHANGED } from '#bifrost/common/DiagnosticsManager';
 import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 
-const FILE_BACKED_DOCUMENT_TYPES = new Set(['bpmn']);
+const FILE_BACKED_DOCUMENT_TYPES = new Set(['bpmn', 'dmn']);
 
 export function initializeStatusBarItems(bifrost: Bifrost): void {
   registerStatusBarItems(bifrost);
@@ -57,38 +57,22 @@ function registerStatusBarItems(bifrost: Bifrost): void {
     'left',
     'std/problems',
     () => {
-      const doc = bifrost.editors.getFocusedEditorDocument();
-      const uri = doc?.uri;
-
-      let errors = 0;
-      let warnings = 0;
-
-      if (uri) {
-        const diagnosticsMap = bifrost.diagnostics.getDiagnostics(uri);
-        const diagnostics = diagnosticsMap.get(uri);
-        if (diagnostics) {
-          for (const diagnostic of diagnostics) {
-            if (diagnostic.severity === 'error') {
-              errors++;
-            } else if (diagnostic.severity === 'warning') {
-              warnings++;
-            }
-          }
-        }
-      }
+      const { errors, warnings } = bifrost.diagnostics.getCount();
+      const errorLabel = errors === 1 ? '1 Error' : `${errors} Errors`;
+      const warningLabel = warnings === 1 ? '1 Warning' : `${warnings} Warnings`;
 
       return [
         {
           type: 'button',
           id: 'problems',
-          tooltip: `${errors} Errors, ${warnings} Warnings`,
+          tooltip: `${errorLabel}, ${warningLabel}`,
           content: [
             { type: 'icon', icon: 'std/status-bar/problems-error' },
-            { type: 'text', label: `${errors}` },
+            { type: 'text', label: String(errors) },
             { type: 'icon', icon: 'std/status-bar/problems-warning' },
-            { type: 'text', label: `${warnings}` },
+            { type: 'text', label: String(warnings) },
           ],
-          command: 'std.noop',
+          command: 'std.workbench.showProblemsPane',
         },
       ];
     },

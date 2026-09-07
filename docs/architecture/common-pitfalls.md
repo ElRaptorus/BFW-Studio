@@ -327,6 +327,26 @@ if (element == null) {
 
 ---
 
+## Status bar: `Array.concat` flattens array-like factory returns
+
+**Mistake**: `result = result.concat(factoryFn())` and treating any object with a `length` as a list of status bar items.
+
+**Why it fails**: `Array.concat` copies own indexed properties of array-like objects (`{ 0: 0, 1: 1, length: n }`). Those become bare `0`/`1` cells. Combined with React keys of `item.id` (undefined) or `text:0` for every zero, plus CSS `span { padding-left }` and inserted space nodes, the bar fills with tooltip-less digits after browsing many documents.
+
+**Correct approach**: Run factory output through `normalizeStatusBarItems` *before* concat. That helper wraps non-arrays as a single candidate (it does not iterate array-likes), keeps only `button`/`divider`/`menu` with a non-empty `id`, and dedupes by id. Render keys must include area + id (ids are unique after normalize). Content pieces with the same label use an occurrence suffix, not `text:${label}` alone. Layout uses `gap`, not padding-left on every span.
+
+---
+
+## Diagnostics: do not clear the focused URI on `diagram.destroy`
+
+**Mistake**: On `diagram.destroy` (or `clearFindings`), call `setDiagnostics(getFocusedEditorDocument().uri, owner, [])`.
+
+**Why it fails**: Destroy often runs after focus has already moved. The new document's URI is cleared; the destroyed document's diagnostics stay in the store. Workspace `getCount()` then grows as the user browses tabs. Pushing with the focused URI has the same leak in the other direction (writing into whoever is focused now).
+
+**Correct approach**: Bind the document URI at `import.done` / first successful push on that modeler instance. Push and destroy/clear always use `_boundDocumentUri`, not the current focus.
+
+---
+
 ## bpmnlint resolver: package name prefixing
 
 **Mistake**: Using `pkg === 'evil-studio'` in a custom bpmnlint resolver and expecting it to match when rules are configured as `evil-studio/rule-name`.

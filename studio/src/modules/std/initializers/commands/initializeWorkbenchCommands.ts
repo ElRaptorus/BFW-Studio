@@ -168,6 +168,15 @@ export function initializeWorkbenchCommands(bifrost: Bifrost): void {
   );
 
   commands.register(
+    'std.workbench.showProblemsPane',
+    () => {
+      bifrost.panes.setActiveGroupInArea('right', 'linter');
+      bifrost.panes.showPaneArea('right');
+    },
+    { visibleInSearch: true },
+  );
+
+  commands.register(
     'std.workbench.focusNotificationInspector',
     () => {
       bifrost.panes.togglePaneAreaByPaneId('inspectors/notification_inspector');

@@ -30,7 +30,7 @@ export default function StatusBar(props: StatusBarProps): React.JSX.Element {
   return (
     <div className="status-bar">
       <div className="status-bar__left">
-        {renderStatusBarItemObjects(props.items.left, bifrost)}
+        {renderStatusBarItemObjects(props.items.left, bifrost, 'left')}
         {props.progressLabel != null && (
           <div className="status-bar__element status-bar__progress">
             <i className="ph-duotone ph-spinner-gap ph-spin" />
@@ -38,16 +38,22 @@ export default function StatusBar(props: StatusBarProps): React.JSX.Element {
           </div>
         )}
       </div>
-      <div className="status-bar__center">{renderStatusBarItemObjects(props.items.center, bifrost)}</div>
-      <div className="status-bar__right">{renderStatusBarItemObjects(props.items.right, bifrost)}</div>
+      <div className="status-bar__center">{renderStatusBarItemObjects(props.items.center, bifrost, 'center')}</div>
+      <div className="status-bar__right">{renderStatusBarItemObjects(props.items.right, bifrost, 'right')}</div>
     </div>
   );
 }
 
-function renderStatusBarItemObjects(items: StatusBarItem[], bifrost: Bifrost): React.JSX.Element[] {
-  return items.map((item: StatusBarItem) => (
-    <ErrorBoundary key={item.id}>{renderStatusBarItemObject(item, bifrost)}</ErrorBoundary>
-  ));
+function renderStatusBarItemObjects(
+  items: StatusBarItem[],
+  bifrost: Bifrost,
+  area: 'left' | 'center' | 'right',
+): React.JSX.Element[] {
+  return items
+    .filter((item): item is StatusBarItem => item != null && typeof item === 'object' && typeof item.id === 'string')
+    .map((item: StatusBarItem) => (
+      <ErrorBoundary key={`${area}:${item.id}`}>{renderStatusBarItemObject(item, bifrost)}</ErrorBoundary>
+    ));
 }
 
 function renderStatusBarItemObject(item: StatusBarItem, bifrost: Bifrost): any {

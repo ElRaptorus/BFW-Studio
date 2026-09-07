@@ -968,11 +968,17 @@ export class PluginHostBridge {
     switch (method) {
       case 'registerStatusBarItem': {
         const pluginName = callerName;
-        const [area, id, items, priority] = args as [StatusBarItemArea, string, StatusBarItem[], number | undefined];
+        const [area, id, rawItems, priority] = args as [StatusBarItemArea, string, unknown, number | undefined];
+        const items = coerceStatusBarItemList(rawItems);
 
         const namespacedId = `plugin.${pluginName}.${id}`;
         const storageKey = `${pluginName}:${id}`;
         this.statusBarItems.set(storageKey, items);
+
+        if (this.registeredCallbacks.get(pluginName)?.has(`statusBarItem:${id}`)) {
+          this.bifrost.statusBar.updateStatusBarItems();
+          return undefined;
+        }
 
         const factoryFn = () => this.statusBarItems.get(storageKey) ?? [];
 
@@ -990,14 +996,14 @@ export class PluginHostBridge {
         return undefined;
       }
       case 'updateStatusBarItem': {
-        const [id, items] = args as [string, StatusBarItem[]];
+        const [id, rawItems] = args as [string, unknown];
         const storageKey = `${callerName}:${id}`;
 
         if (!this.statusBarItems.has(storageKey)) {
           throw new Error(`Status bar item not registered: ${id}`);
         }
 
-        this.statusBarItems.set(storageKey, items);
+        this.statusBarItems.set(storageKey, coerceStatusBarItemList(rawItems));
         this.bifrost.statusBar.updateStatusBarItems();
         return undefined;
       }
@@ -1823,4 +1829,18 @@ export class PluginHostBridge {
         throw new Error(`Unknown settings method: ${method}`);
     }
   }
+}
+
+/**
+ * Keep plugin payloads as a real array. Array-like objects (`{ 0: ..., length }`)
+ * must not be stored as-is — `Array.concat` would flatten them into bare cells.
+ */
+function coerceStatusBarItemList(value: unknown): StatusBarItem[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value == null) {
+    return [];
+  }
+  return [value as StatusBarItem];
 }

@@ -8,6 +8,7 @@ import type {
   StatusBarItemFactoryFn,
   StatusBarSerialized,
 } from '../contracts/StatusBarTypes';
+import { normalizeStatusBarItems } from './normalizeStatusBarItems';
 
 export const EVENT_STATUS_BAR_UPDATED = 'EVENT_STATUS_BAR_UPDATED';
 
@@ -163,10 +164,10 @@ export class StatusBarManager extends AbstractEmitter implements ISerializable {
 
     statusBarItemFactories.forEach((statusBarItemFactory: StatusBarItemFactory): void => {
       const statusBarItems = statusBarItemFactory.factoryFn.apply(null, factoryFnArgs);
-      result = result.concat(statusBarItems);
+      result = result.concat(normalizeStatusBarItems(statusBarItems));
     });
 
-    return result;
+    return normalizeStatusBarItems(result);
   }
 
   private emitProgressUpdate(): void {

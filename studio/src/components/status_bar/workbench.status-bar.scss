@@ -7,7 +7,7 @@
     height: 22px;
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: flex-start;
     align-items: stretch;
     overflow: hidden;
     border-top: 2px solid var(--theme-status-bar-border);
@@ -24,6 +24,7 @@
     display: flex;
     align-items: center;
     white-space: nowrap;
+    gap: 2px;
   }
 
   .status-bar__left {
@@ -33,7 +34,7 @@
 
   .status-bar__center {
     flex: 1 1 auto;
-    justify-content: space-around;
+    justify-content: flex-start;
     min-width: 0;
     overflow: hidden;
   }
@@ -41,14 +42,14 @@
   .status-bar__right {
     flex: 0 0 auto;
     justify-content: flex-end;
+    margin-left: auto;
   }
 
   .status-bar__element {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     padding: 0 4px;
-
-    span {
-      padding-left: 4px;
-    }
 
     .status-bar__icon-clip {
       display: inline-flex;

@@ -82,6 +82,7 @@ interface LintBridgeInstance {
   _highlightedElementId: string | null;
   _diagramOrigin: BpmnDiagramOrigin | null;
   _foreignLintingAllowed: boolean;
+  _boundDocumentUri: string | null;
 
   isActive(): boolean;
   toggle(): void;
@@ -104,6 +105,7 @@ interface LintBridgeInstance {
   _destroyBadge(): void;
   _pushDiagnostics(findings: LintFinding[]): void;
   _getDocumentUri(): string | null;
+  _bindDocumentUri(): string | null;
 }
 
 const DIAGNOSTICS_OWNER = 'bpmn-linter';
@@ -203,6 +205,7 @@ export function LintBridge(
   this._highlightedElementId = null;
   this._diagramOrigin = null;
   this._foreignLintingAllowed = false;
+  this._boundDocumentUri = null;
 
   const applyProfile = () => {
     const profileName = (this.settings.get('bpmnLinter.profile') as string | undefined) ?? 'bpmn-development';
@@ -281,7 +284,7 @@ export function LintBridge(
     this.paneLayout.requestUpdate();
     this._renderBadge();
 
-    const uri = this._getDocumentUri();
+    const uri = this._boundDocumentUri ?? this._getDocumentUri();
     if (uri) {
       this.diagnosticsMediator.setDiagnostics(uri, DIAGNOSTICS_OWNER, []);
     }
@@ -386,6 +389,17 @@ export function LintBridge(
     return doc?.uri ?? null;
   };
 
+  this._bindDocumentUri = () => {
+    if (this._boundDocumentUri) {
+      return this._boundDocumentUri;
+    }
+    const uri = this._getDocumentUri();
+    if (uri) {
+      this._boundDocumentUri = uri;
+    }
+    return this._boundDocumentUri;
+  };
+
   this._scheduleLint = () => {
     if (this._debounceTimer) {
       clearTimeout(this._debounceTimer);
@@ -476,7 +490,7 @@ export function LintBridge(
   };
 
   this._pushDiagnostics = (findings: LintFinding[]) => {
-    const uri = this._getDocumentUri();
+    const uri = this._bindDocumentUri();
     if (!uri) {
       return;
     }
@@ -564,6 +578,7 @@ export function LintBridge(
   eventBus.on('connection.removed', scheduleLintAfterDiagramChange);
 
   eventBus.on('import.done', () => {
+    this._bindDocumentUri();
     const rootShape = canvas.getRootElement();
     const definitions = getDefinitionsBusinessObject(rootShape);
     this._diagramOrigin = definitions ? detectBpmnOrigin(definitions) : null;
@@ -606,10 +621,11 @@ export function LintBridge(
     this.overlayManager.clear();
     this._destroyBadge();
 
-    const uri = this._getDocumentUri();
+    const uri = this._boundDocumentUri;
     if (uri) {
       this.diagnosticsMediator.setDiagnostics(uri, DIAGNOSTICS_OWNER, []);
     }
+    this._boundDocumentUri = null;
   });
 
   const settingsSub = this.settings.onSettingsUpdate((key: string) => {
