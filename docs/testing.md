@@ -33,7 +33,7 @@ Private Engine packages (`@elraptorus/daemonengine_sdk`, `@elraptorus/daemonengi
 
 ## Test Framework
 
-- **Vitest** — Test runner for both unit and integration tests (configured in `studio/vitest.config.mts`). The file is `.mts` so Node loads it as ESM; `studio/package.json` is CommonJS for Electron and must not set `"type": "module"`. `testTimeout` and `hookTimeout` are `120_000` in that config — do not repeat `{ timeout: … }` on `describe` / `it` / hooks. WebDriverIO waits (`ASSERT_VISIBLE_TIMEOUT`, `waitForDisplayed`) are a separate layer.
+- **Vitest 5** — Test runner for both unit and integration tests (configured in `studio/vitest.config.mts`). The file is `.mts` so Node loads it as ESM; `studio/package.json` is CommonJS for Electron and must not set `"type": "module"`. `testTimeout` and `hookTimeout` are `80_000` in that config — do not repeat `{ timeout: … }` on `describe` / `it` / hooks. `sequence.shuffle` is `{ files: true, tests: true }` (same as Vitest 4's boolean `true`: file order and test order both randomize). Opt a lifecycle `describe` out with `{ shuffle: false }`. Do not use `describe.sequential` / `test.sequential` — those APIs were removed in Vitest 5; use `{ concurrent: false }` if a suite must not run concurrently. WebDriverIO waits (`ASSERT_VISIBLE_TIMEOUT`, `waitForDisplayed`) are a separate layer.
 - **WebDriverIO** — Browser automation for integration tests (via `TestDriver`)
 - **ChromeDriver** (`electron-chromedriver`) — Drives the Electron application
 - **assert** (Node built-in) — Assertion library

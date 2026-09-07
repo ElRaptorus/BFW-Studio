@@ -320,7 +320,7 @@ export default function DecisionCatalogRenderer(props: EditorDocumentRendererPro
           <EditorTitleHeroIcon studio={bifrost} icon="ph-duotone ph-scales" />
           <EditorTitleText
             studio={bifrost}
-            label="Decisions"
+            label="Deployed Decisions"
             sublabel={
               <EngineContextBreadcrumb
                 studio={bifrost}

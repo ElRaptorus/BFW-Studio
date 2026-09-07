@@ -1525,6 +1525,14 @@ Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the mod
 
 **Correct approach:** Gate Input Mappings on `hasInputMappings` and Output Mappings on `hasOutputMappings` (Engine GraphQL field table). Message Start Events show the Result Contract pane, not mapping panes.
 
+### P-Studio-14 — Debugger GraphQL `syntax error before: '}'`
+
+**Symptom:** Opening any process instance in the debugger shows `Loading Process Instance failed` with `{ "message": "GraphQL error: syntax error before: '}'" }`. Business key stays on `Loading...`.
+
+**Why it happens:** `EngineAdapter.loadProcessWithModelGraph` calls `client.graphql.getProcessInstanceWithModel`. The JS query builder used to emit empty inline fragments (`... on TaskNode { }`, plus ParallelGateway and EventBasedGateway) for Model-graph types that have no extra fields. GraphQL forbids empty selection sets; Absinthe fails at parse.
+
+**Correct approach:** This is not a Studio query-authoring bug and not an Ash schema gap. The fix lives in `@elraptorus/daemonengine_sdk` (`buildFlowNodeSelection` omits empty `on` entries) and `@elraptorus/daemonengine_client` (`renderSelectionField` skips empty fragments). After pulling those packages, do not hand-write empty `... on Type { }` fragments in `raw()` queries either. See Engine `common-pitfalls.md` §P95.
+
 ---
 
 ## Complex Gateway `activationCondition` on the runtime path comes from the Model graph
@@ -1601,7 +1609,7 @@ Resolved 2026-06-24. `PluginModuleLoader.loadPluginModules()` now evicts the mod
 
 **Symptom**: An integration test suite with several `it()`s that register/update/unregister the same runtime entity (e.g. a context pad entry) passes when run alone or with a fixed seed, but fails intermittently — sometimes an "unregister" test runs before the corresponding "register" test, or an assertion about entry state sees a different order's leftover state.
 
-**Why it happens**: Vitest's default config in this repo shuffles test order within a file (`sequence.shuffle: true`) to catch order-dependent bugs. Most suites are safe because each `it()` is independent, but a `describe` block whose tests mutate shared state through a single `studioAgent`/plugin instance across the whole block relies on an implicit, undeclared execution order. Shuffling silently breaks that assumption.
+**Why it happens**: Vitest's default config in this repo shuffles file order and test order (`sequence.shuffle: { files: true, tests: true }`, equivalent to Vitest 4's `shuffle: true`) to catch order-dependent bugs. Most suites are safe because each `it()` is independent, but a `describe` block whose tests mutate shared state through a single `studioAgent`/plugin instance across the whole block relies on an implicit, undeclared execution order. Shuffling silently breaks that assumption. Vitest 5 still honors `{ shuffle: false }` on a suite; it does **not** provide `describe.sequential`.
 
 **Correct approach**: Pass `{ shuffle: false }` as the second argument to `describe(...)` for any block whose tests have implicit order dependencies on shared mutable state, so they always run in declaration order: `describe('palette and context pad lifecycle', { shuffle: false }, () => { ... })`. Prefer restructuring tests to be order-independent when practical (e.g. `beforeEach` that resets state), but `{ shuffle: false }` is the pragmatic fix when tests are inherently a "lifecycle" sequence (register → assert → update → assert → unregister → assert).
 
@@ -1756,7 +1764,7 @@ The same race exists **inside** `activate()`: kitchen-sink registers `getStatus`
 
 **Why it happens**: `PropertyValueWithSuggestions` used to seed `defaultInputValue` from the selected option, and message/signal `PaneProperty` used `key={element_message_name_${element.message}}`. Opening the menu then filtered by that search text, so a name created on the first element never appeared. Restoring `select.getValue()` into the search input on blur did the same on later opens. The 20s suite timeout was a leftover from when this file was `describe.skip`; it is shorter than `ASSERT_VISIBLE_TIMEOUT`.
 
-**Correct approach**: Keep the search input empty (`defaultValue` only; blur/Escape clear the search box, not refill it). Do not key the field being edited on the value it is editing. Create the name on the first element (`clearSuggestionSelect`, type the name, `commitSuggestionCreateOption` to click `Use "…"`). On the second element, click the control, click `[data-test-option-value="…"]`. Do not clear on the second element. Vitest `testTimeout` / `hookTimeout` live in `studio/vitest.config.mts` (`120_000`); do not set `{ timeout: … }` on `describe` blocks.
+**Correct approach**: Keep the search input empty (`defaultValue` only; blur/Escape clear the search box, not refill it). Do not key the field being edited on the value it is editing. Create the name on the first element (`clearSuggestionSelect`, type the name, `commitSuggestionCreateOption` to click `Use "…"`). On the second element, click the control, click `[data-test-option-value="…"]`. Do not clear on the second element. Vitest `testTimeout` / `hookTimeout` live in `studio/vitest.config.mts` (`80_000`); do not set `{ timeout: … }` on `describe` blocks.
 
 ---
 

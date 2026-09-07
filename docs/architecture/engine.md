@@ -534,6 +534,8 @@ The client's `camelizeKeys` rewrites `__typename` to `_Typename` (`_t` matches t
 
 `loadProcessWithXml` calls `getProcessInstanceWithModel` (PI + `bpmnXml` + `processModel` + FNIs) plus a parallel `queryDataObjectValues`. Missing `processModel` is a hard error. Canvas rendering still uses `bpmnXml`. `parseBpmn()` is not used on this path.
 
+The Model-graph query must not contain empty inline fragments (`... on TaskNode { }`). Types with no extra fields are covered by the `FlowNode` interface selection. A parse failure surfaces as `GraphQL error: syntax error before: '}'` (see **P-Studio-14**).
+
 Flow-node and sequence-flow lookups in `BpmnProcessHelpers.ts` are O(1) via per-process `WeakMap` indexes.
 
 #### Model viewer load

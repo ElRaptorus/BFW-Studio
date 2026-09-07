@@ -272,6 +272,12 @@ export class EngineAdapter {
    * One GraphQL query returns the PI, `bpmnXml`, the parsed Model graph, and
    * every FNI. Missing `processModel` is a hard error — there is no XML-parse
    * path. Canvas rendering still uses `bpmnXml`.
+   *
+   * The query is built by `@elraptorus/daemonengine_client` from SDK
+   * `buildProcessModelSelection` / `buildFlowNodeSelection`. Types with no
+   * extra fields (TaskNode, ParallelGatewayNode, EventBasedGatewayNode) must
+   * not appear as empty `... on Type { }` fragments — Absinthe rejects those
+   * as `syntax error before: '}'`.
    */
   private async loadProcessWithModelGraph(client: DaemonEngineClient): Promise<void> {
     const [record, dataObjectPage] = await Promise.all([

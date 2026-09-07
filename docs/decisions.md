@@ -1501,3 +1501,13 @@ Two corroborating observations: the same commands invoked *inside* the renderer 
 4. **Moddle drops `evil:Payload` and `evil:EventMapping`.** `evil-platform.json` must not declare types the Engine `extensionManifest` no longer lists, or Studio would serialize extensions the Engine ignores.
 
 **Rationale**: Studio must compile against the published SDK without bridges. Runtime debugger/viewer semantics remain the GraphQL Model graph, not the authoring parser. Moddle vocabulary is a subset of the Engine manifest.
+
+---
+
+### 2026-09-07 — Vitest 5 for Studio tests
+
+**Context**: Vitest 5.0.0 is a breaking major. The Studio was on `^4.1.11` with `sequence: { shuffle: true }` (files and tests randomized) and `{ shuffle: false }` opt-outs on lifecycle `describe` blocks. `describe.sequential` was removed; `clearMocks` now defaults to `true`; artifacts moved under `.vitest/`.
+
+**Decision**: Upgrade `studio` to `vitest` `^5.0.0`. Keep the same shuffle as v4 by spelling `sequence.shuffle` as `{ files: true, tests: true }`. Keep `{ shuffle: false }` on order-dependent plugin suites. Do not use the removed sequential APIs. Ignore `.vitest/` in git.
+
+**Rationale**: Boolean `shuffle: true` still means both axes in v5, but the object form is the documented v5 shape and cannot silently drop file shuffle if the boolean default ever changes. Studio tests use Node `assert`, not shared `vi.fn` history, so the new `clearMocks` default is acceptable.

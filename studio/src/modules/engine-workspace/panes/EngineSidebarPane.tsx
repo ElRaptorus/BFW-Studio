@@ -260,7 +260,7 @@ function buildEngineTreeItem(engine: EngineConnection, pendingTaskCount: number)
       },
       {
         type: 'file',
-        label: 'Processes',
+        label: 'Deployed Processes',
         pathId: `engine/${engine.engineId}/processes`,
         labelIcon: 'ph ph-tree-structure',
         menuId: pageMenuId,
@@ -268,7 +268,7 @@ function buildEngineTreeItem(engine: EngineConnection, pendingTaskCount: number)
       },
       {
         type: 'file',
-        label: 'Decisions',
+        label: 'Deployed Decisions',
         pathId: `engine/${engine.engineId}/decisions`,
         labelIcon: 'ph ph-scales',
         menuId: pageMenuId,
@@ -285,7 +285,7 @@ function buildEngineTreeItem(engine: EngineConnection, pendingTaskCount: number)
       },
       {
         type: 'file',
-        label: 'Instances',
+        label: 'Process Instances',
         pathId: `engine/${engine.engineId}/instances`,
         labelIcon: 'ph ph-magnifying-glass',
         menuId: pageMenuId,
@@ -293,7 +293,7 @@ function buildEngineTreeItem(engine: EngineConnection, pendingTaskCount: number)
       },
       {
         type: 'file',
-        label: 'Timers',
+        label: 'Timer Schedules',
         pathId: `engine/${engine.engineId}/timers`,
         labelIcon: 'ph ph-timer',
         menuId: pageMenuId,
