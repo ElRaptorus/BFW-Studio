@@ -2708,11 +2708,17 @@ describe('bpmn/elements', () => {
     await studioAgent.jumpToFileInSolution('process-root.bpmn');
     await studioAgent.waitForInteractiveBpmnDocument();
 
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+    await studioAgent.selectProcessRootById(process);
+
     await studioAgent.assertVisible('#process-correlation-key-property', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.clickOnCodeEditor('#process-correlation-key-property');
     await studioAgent.sendKeyboardInput([...newCorrelationKey.split('')]);
-    await studioAgent.sendKeyboardInput(['Escape']);
+    // Escape closes autocomplete without accepting a suggestion. Enter blurs
+    // OneLineFeelEditor (Escape does not). Canvas select then remounts the pane.
+    await studioAgent.sendKeyboardInput(['Escape', 'enter']);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent, ELEMENT_INFO_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.switchToPaneGroup('property');

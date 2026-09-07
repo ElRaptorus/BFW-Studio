@@ -37,6 +37,7 @@ The single-line variant passes additional CodeMirror extensions to constrain the
 - **Paste newline stripping**: DOM event handler strips `\n`/`\r` from pasted text
 - **Single-line CSS**: `maxHeight: 2rem`, `overflow: hidden`, `whiteSpace: nowrap`
 - **Do not key the host wrapper on the live value.** `onChange` fires on blur. A `key={…${committedValue}}` remounts and destroys CodeMirror during the click that commits, which can leave a FEEL autocomplete overlay on the canvas. `PropertiesProcess` Correlation Key, User Task due date, HTTP auth header / response headers, Sequential MI loop break, and Correlation Retrieval Expression omit that key. Input / Output mapping **rows** use a WeakMap `rowId`, not `${source}->${target}`.
+- **Escape does not blur.** The one-line keymap maps Enter → blur. Escape only closes the autocomplete tooltip. Tests that then click the canvas must send `['Escape', 'enter']`. `StudioAgentBpmnExtension` canvas helpers also blur `document.activeElement` and wait for `.cm-tooltip` to unmount, because `setVariables` (async FEEL context) can reopen the tooltip while the editor is still focused.
 
 ## Props
 

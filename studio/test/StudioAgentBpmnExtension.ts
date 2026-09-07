@@ -33,8 +33,30 @@ export async function createAndStartStudioAgentBpmnExtension(
 }
 
 export class StudioAgentBpmnExtension extends StudioAgent {
-  private async selectBpmnElementById(name: string): Promise<void> {
+  /**
+   * Blur the focused pane editor and wait for CodeMirror FEEL tooltips to
+   * unmount before a canvas pointer action. Escape on OneLineFeelEditor only
+   * closes autocomplete — the editor stays focused, so a leftover `.cm-tooltip`
+   * (or one reopened by async `setVariables`) covers the fitted start event.
+   */
+  private async prepareCanvasPointer(): Promise<void> {
+    await this.testDriver.client!.execute(() => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && active !== document.body) {
+        active.blur();
+      }
+    });
+
+    const tooltips = await this.$$('.cm-tooltip');
+    if ((await tooltips.length) > 0) {
+      await this.waitForNotVisible('.cm-tooltip');
+    }
+
     await this.fitDiagramToViewport();
+  }
+
+  private async selectBpmnElementById(name: string): Promise<void> {
+    await this.prepareCanvasPointer();
     await this.clickOn(`[data-element-id=${name}]`);
   }
 
@@ -77,7 +99,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
   }
 
   async rightClickBpmnElementById(name: string): Promise<void> {
-    await this.fitDiagramToViewport();
+    await this.prepareCanvasPointer();
     await this.rightClickOn(`[data-element-id=${name}]`);
   }
   async fitDiagramToViewport(): Promise<void> {
@@ -89,7 +111,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
    */
   async selectLeakyBpmnElementById(elementId: string): Promise<void> {
     const selector = `[data-element-id=${elementId}]`;
-    await this.fitDiagramToViewport();
+    await this.prepareCanvasPointer();
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
     const element = await this.testDriver.client!.$(selector);
     const elementLocation = await element.getLocation();
@@ -118,7 +140,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
   }
   async selectProcessRootById(elementId: string): Promise<void> {
     const selector = `[data-element-id=${elementId}]`;
-    await this.fitDiagramToViewport();
+    await this.prepareCanvasPointer();
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
     const element = await this.testDriver.client!.$(selector);
     const elementLocation = await element.getLocation();
@@ -147,7 +169,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
   }
   async selectParticipantById(elementId: string): Promise<void> {
     const selector = `[data-element-id=${elementId}]`;
-    await this.fitDiagramToViewport();
+    await this.prepareCanvasPointer();
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
     const element = await this.testDriver.client!.$(selector);
     const elementLocation = await element.getLocation();
@@ -175,7 +197,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
     ]);
   }
   async selectMultipleBpmnElementsByIds(elementIds: string[]): Promise<void> {
-    await this.fitDiagramToViewport();
+    await this.prepareCanvasPointer();
     for (const elementId of elementIds) {
       await this.assertVisible(`[data-element-id=${elementId}]`, ASSERT_VISIBLE_TIMEOUT);
       const element = await this.testDriver.client!.$(`[data-element-id=${elementId}]`);
