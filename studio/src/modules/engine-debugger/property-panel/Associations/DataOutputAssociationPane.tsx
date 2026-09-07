@@ -123,6 +123,7 @@ function DataOutputAssociationProperties(props: AssociationLinksProps): React.JS
         </div>
         <div>
           <MultiLineCodeEditor
+            key={props.association.id}
             studio={props.studio}
             htmlId="debugger-data-output-association-data-source"
             size="medium"

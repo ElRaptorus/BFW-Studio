@@ -60,7 +60,7 @@ function ComplexGatewayActivationConditionPane(props: PaneComponentProps): React
   const activationCondition = readActivationCondition(flowNode);
 
   return (
-    <PaneBody>
+    <PaneBody key={flowNode.id}>
       <MultiLineCodeEditor
         studio={props.studio}
         htmlId="debugger-complex-gateway-activation-condition-property"

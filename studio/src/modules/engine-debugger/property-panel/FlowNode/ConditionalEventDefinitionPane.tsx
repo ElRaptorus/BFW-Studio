@@ -63,7 +63,7 @@ function ConditionalEventDefinitionPane(props: PaneComponentProps): React.JSX.El
   const conditionExpression = getConditionalExpression(conditionalEventModel);
 
   return (
-    <PaneBody>
+    <PaneBody key={flowNode.id}>
       <MultiLineCodeEditor
         studio={props.studio}
         htmlId="debugger-conditional-event-condition-definition-property"

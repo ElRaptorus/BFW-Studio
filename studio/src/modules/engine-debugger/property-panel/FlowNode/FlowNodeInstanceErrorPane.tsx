@@ -63,7 +63,7 @@ function FlowNodeInstanceErrorPane(props: PaneComponentProps): React.JSX.Element
   const selectedFlowNodeInstance = model.getSelectedFlowNodeInstanceByFlowNode(flowNode);
 
   return (
-    <PaneBody>
+    <PaneBody key={selectedFlowNodeInstance.id}>
       <MultiLineCodeEditor
         studio={props.studio}
         htmlId="debugger-flow-node-instance-error-property"

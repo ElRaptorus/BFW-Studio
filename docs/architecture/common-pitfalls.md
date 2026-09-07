@@ -524,7 +524,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 **Why**: `onChange` / `onCommit` fires on blur. The key remounts the control during the click that commits. Autocomplete, radios, and match-all state reset. Mapping rows keyed `${source}->${target}` remount the source editor the same way.
 
-**Correct approach**: No value-based key on the field being edited. Dependents remount on the **parent** id after it commits. Mapping / custom-property rows use a stable `rowId`. Read-only `MultiLineCodeEditor` follows a new `initialValue` without a key. See [`bpmn-editor-properties.md`](bpmn-editor-properties.md) and [`code-editors.md`](code-editors.md).
+**Correct approach**: No value-based key on the field being edited. Dependents remount on the **parent** id after it commits. Mapping / custom-property rows use a stable `rowId`. Debugger JSON panes key `PaneBody` / `MultiLineCodeEditor` on flow-node-instance or element id. See [`bpmn-editor-properties.md`](bpmn-editor-properties.md), [`panes.md`](panes.md), and [`code-editors.md`](code-editors.md).
 
 ---
 

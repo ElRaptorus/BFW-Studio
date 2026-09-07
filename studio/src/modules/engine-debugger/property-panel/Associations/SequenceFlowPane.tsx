@@ -116,6 +116,7 @@ function SequenceFlowCondition(props: SequenceFlowPaneProps): React.JSX.Element 
       </div>
       <div>
         <MultiLineCodeEditor
+          key={sequenceFlow.id}
           studio={props.studio}
           htmlId="debugger-sequence-flow-condition"
           size="small"

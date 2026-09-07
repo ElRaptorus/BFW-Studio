@@ -69,7 +69,7 @@ function ScriptTaskPane(props: PaneComponentProps): React.JSX.Element {
   const flowNodeModel = flowNode.flowNodeModel as BpmnFlowNode;
 
   return (
-    <PaneBody>
+    <PaneBody key={flowNode.id}>
       <MultiLineCodeEditor
         studio={props.studio}
         htmlId="debugger-flow-node-instance-executed-script-property"

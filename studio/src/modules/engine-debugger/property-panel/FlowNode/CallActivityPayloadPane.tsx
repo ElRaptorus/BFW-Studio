@@ -73,7 +73,7 @@ function CallActivityPayload(props: PaneComponentProps): React.JSX.Element {
   const inputTokenText = serializeToken(selectedFlowNodeInstance.inputToken);
 
   return (
-    <PaneBody>
+    <PaneBody key={selectedFlowNodeInstance.id}>
       <MultiLineCodeEditor
         studio={props.studio}
         htmlId="debugger-flow-node-instance-start-token-property"

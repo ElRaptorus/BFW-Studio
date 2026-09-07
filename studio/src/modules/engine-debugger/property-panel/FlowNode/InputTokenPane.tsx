@@ -46,7 +46,7 @@ function InputTokenPane(props: PaneComponentProps): React.JSX.Element {
   const stringifiedInputToken = JSON.stringify(flowNodeInstance.inputToken, null, 2);
 
   return (
-    <PaneBody>
+    <PaneBody key={flowNodeInstance.id}>
       <MultiLineCodeEditor
         studio={props.studio}
         htmlId="debugger-flow-node-instance-input-token"

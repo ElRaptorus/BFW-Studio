@@ -46,7 +46,7 @@ function OutputTokenPane(props: PaneComponentProps): React.JSX.Element {
   const stringifiedOutputToken = JSON.stringify(flowNodeInstance.outputToken, null, 2);
 
   return (
-    <PaneBody>
+    <PaneBody key={flowNodeInstance.id}>
       <MultiLineCodeEditor
         studio={props.studio}
         htmlId="debugger-flow-node-instance-output-token"

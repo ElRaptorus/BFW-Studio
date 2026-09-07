@@ -89,6 +89,7 @@ export function CopyableJsonDataRenderer(props: CopyableJsonDataRendererProps): 
       </div>
       <div>
         <MultiLineCodeEditor
+          key={`${props.id}-${props.propertyName}`}
           studio={props.studio}
           htmlId="debugger-flow-node-instance-json-property"
           size={props.size || 'tall'}

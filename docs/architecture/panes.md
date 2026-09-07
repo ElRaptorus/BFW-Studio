@@ -108,7 +108,7 @@ Model viewer / decision viewer: per-pane `shouldBeDisplayed` in the pane file, u
 
 Panes read working data from the focused `EditorDocumentModel` (cast + public getters), never from `studio.getSharedRessource()` and never from `editorDocument.data.current` for selections or parsed models. See `docs/architecture/editor-documents.md` §Data Placement Rules and the `editor-document-data-placement` rule.
 
-Selection changes re-render panes by incrementing a `selectionRevision` counter in document metadata. `buildSimplePropertyPaneProvider` does **not** remount `PaneContent` when `shouldBeDisplayed` stays true — controlled fields (`PaneProperty value={…}`) update; read-only `MultiLineCodeEditor` follows `initialValue` (see [code-editors.md](code-editors.md)); editable CodeMirror still needs an identity `key`.
+Selection changes re-render panes by incrementing a `selectionRevision` counter in document metadata. `buildSimplePropertyPaneProvider` does **not** remount `PaneContent` when `shouldBeDisplayed` stays true. Controlled fields (`PaneProperty value={…}`) update. Uncontrolled `MultiLineCodeEditor` must remount on **selection identity**: BPMN uses `key={getKeyForPropertiesPane(selection)}`; debugger JSON panes key `PaneBody` or the editor on flow-node-instance / element id. Never key on the live document text.
 
 ### Exception: local mediator state
 
