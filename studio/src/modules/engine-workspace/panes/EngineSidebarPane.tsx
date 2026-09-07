@@ -173,12 +173,12 @@ const PAGE_ACTION_MAP: Record<
   'open-processes': {
     command: 'engine.workspace.openProcessExplorer',
     uriFactory: (id) => `engine://processes/${id}`,
-    title: 'Processes',
+    title: 'Deployed BPMNs',
   },
   'open-decisions': {
     command: 'engine.workspace.openDecisionCatalog',
     uriFactory: (id) => `engine://decisions/${id}`,
-    title: 'Decisions',
+    title: 'Deployed DMNs',
   },
   'open-task-inbox': {
     command: 'engine.workspace.openTaskInbox',
@@ -188,12 +188,12 @@ const PAGE_ACTION_MAP: Record<
   'open-instances': {
     command: 'engine.workspace.openInstanceSearch',
     uriFactory: (id) => `engine://instances/${id}`,
-    title: 'Instances',
+    title: 'Process Instances',
   },
   'open-timers': {
     command: 'engine.workspace.openTimerSchedules',
     uriFactory: (id) => `engine://timers/${id}`,
-    title: 'Timers',
+    title: 'Timer Schedules',
   },
 };
 

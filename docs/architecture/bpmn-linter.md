@@ -478,12 +478,12 @@ Same initializer. Items are **not** gated on `bpmnLinter.enabled`.
 
 | Menu | Id | Label | Anchor |
 |------|----|-------|--------|
-| `std/file-explorer/file` | `bpmn-linter/file/lint` | Lint File | before `compare-to/external-file` (`.bpmn` only) |
-| `std/file-explorer/directory` | `bpmn-linter/directory/lint` | Lint Folder | before `rename` |
-| `std/file-explorer/project` | `bpmn-linter/project/lint` | Lint Folder | before `rename-project` |
-| `std/file-explorer/solution-root` | `bpmn-linter/solution-root/lint` | Lint Folder | before `rename` |
+| `std/file-explorer/file` | `bpmn-linter/file/lint` | Lint File | immediately before `compare-to/external-file` (`.bpmn` only). No extra divider — Lint File shares the Compare group. |
+| `std/file-explorer/directory` | `bpmn-linter/directory/lint` | Lint Folder | immediately before `rename` (no extra divider) |
+| `std/file-explorer/project` | `bpmn-linter/project/lint` | Lint Folder | immediately before `rename-project` (no extra divider) |
+| `std/file-explorer/solution-root` | `bpmn-linter/solution-root/lint` | Lint Folder | immediately before `rename` (no extra divider) |
 | `std/file-explorer/solution` | `bpmn-linter/solution/lint` | Lint Solution | before Reveal |
-| `std/file-explorer/multi-selection` | `bpmn-linter/multi-selection/lint` | Lint N items | before `delete` |
+| `std/file-explorer/multi-selection` | `bpmn-linter/multi-selection/lint` | Lint N items | immediately before `delete` (no extra divider) |
 
 Folder / project / solution walks are recursive (`*.bpmn` only). Deploy-to-engine stays non-recursive.
 

@@ -364,7 +364,7 @@ export default function ProcessExplorerRenderer(props: EditorDocumentRendererPro
           <EditorTitleHeroIcon studio={bifrost} icon="ph-duotone ph-tree-structure" />
           <EditorTitleText
             studio={bifrost}
-            label="Processes"
+            label="Deployed BPMN Models"
             sublabel={
               <EngineContextBreadcrumb
                 studio={bifrost}

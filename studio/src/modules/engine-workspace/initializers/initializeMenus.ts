@@ -11,7 +11,7 @@ import type { AutoRefreshInterval } from '#modules/engine-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Menu } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem_Command } from '@evil/bifrost_fw_sdk';
 
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
 import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';
@@ -220,17 +220,14 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       return menu;
     }
 
-    return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/file/compare-to/external-file', [
-      { type: 'divider' },
-      {
-        type: 'command',
-        label: 'Deploy to Engine',
-        id: 'engine-workspace/file/deploy',
-        icon: 'ph ph-upload',
-        command: 'engine.workspace.deploySelectedFiles',
-        commandArgs: [[metadata.uri]],
-      },
-    ]);
+    return insertDeployGroupAfterDivider(bifrost, menu, 'std/file-explorer/file/divider-before-compare-to', {
+      type: 'command',
+      label: 'Deploy to Engine',
+      id: 'engine-workspace/file/deploy',
+      icon: 'ph ph-upload',
+      command: 'engine.workspace.deploySelectedFiles',
+      commandArgs: [[metadata.uri]],
+    });
   });
 
   bifrost.menus.registerMenuModifier('std/file-explorer/directory', (menu: Menu, metadata: any) => {
@@ -242,17 +239,14 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       return menu;
     }
 
-    return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/directory/rename', [
-      { type: 'divider' },
-      {
-        type: 'command',
-        label: 'Deploy folder to Engine',
-        id: 'engine-workspace/directory/deploy',
-        icon: 'ph ph-upload',
-        command: 'engine.workspace.deployDirectory',
-        commandArgs: [metadata.uri],
-      },
-    ]);
+    return insertDeployGroupAfterDivider(bifrost, menu, 'std/file-explorer/directory/divider-before-rename', {
+      type: 'command',
+      label: 'Deploy folder to Engine',
+      id: 'engine-workspace/directory/deploy',
+      icon: 'ph ph-upload',
+      command: 'engine.workspace.deployDirectory',
+      commandArgs: [metadata.uri],
+    });
   });
 
   bifrost.menus.registerMenuModifier('std/file-explorer/project', (menu: Menu, metadata: any) => {
@@ -264,17 +258,14 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       return menu;
     }
 
-    return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/project/rename-project', [
-      { type: 'divider' },
-      {
-        type: 'command',
-        label: 'Deploy project to Engine',
-        id: 'engine-workspace/project/deploy',
-        icon: 'ph ph-upload',
-        command: 'engine.workspace.deployDirectory',
-        commandArgs: [metadata.uri],
-      },
-    ]);
+    return insertDeployGroupAfterDivider(bifrost, menu, 'std/file-explorer/project/divider-before-rename-project', {
+      type: 'command',
+      label: 'Deploy project to Engine',
+      id: 'engine-workspace/project/deploy',
+      icon: 'ph ph-upload',
+      command: 'engine.workspace.deployDirectory',
+      commandArgs: [metadata.uri],
+    });
   });
 
   bifrost.menus.registerMenuModifier('std/file-explorer/solution-root', (menu: Menu, metadata: any) => {
@@ -286,17 +277,14 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       return menu;
     }
 
-    return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/solution-root/rename', [
-      { type: 'divider' },
-      {
-        type: 'command',
-        label: 'Deploy folder to Engine',
-        id: 'engine-workspace/solution-root/deploy',
-        icon: 'ph ph-upload',
-        command: 'engine.workspace.deployDirectory',
-        commandArgs: [metadata.uri],
-      },
-    ]);
+    return insertDeployGroupAfterDivider(bifrost, menu, 'std/file-explorer/solution-root/divider-before-rename', {
+      type: 'command',
+      label: 'Deploy folder to Engine',
+      id: 'engine-workspace/solution-root/deploy',
+      icon: 'ph ph-upload',
+      command: 'engine.workspace.deployDirectory',
+      commandArgs: [metadata.uri],
+    });
   });
 
   bifrost.menus.registerMenuModifier('std/file-explorer/multi-selection', (menu: Menu, selectedMetadata: any[]) => {
@@ -312,17 +300,14 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       return menu;
     }
 
-    return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/multi-selection/delete', [
-      { type: 'divider' },
-      {
-        type: 'command',
-        label: `Deploy ${deployableUris.length} file${deployableUris.length > 1 ? 's' : ''} to Engine`,
-        id: 'engine-workspace/multi-selection/deploy',
-        icon: 'ph ph-upload',
-        command: 'engine.workspace.deploySelectedFiles',
-        commandArgs: [deployableUris],
-      },
-    ]);
+    return insertDeployGroupAfterDivider(bifrost, menu, 'std/file-explorer/multi-selection/divider-before-delete', {
+      type: 'command',
+      label: `Deploy ${deployableUris.length} file${deployableUris.length > 1 ? 's' : ''} to Engine`,
+      id: 'engine-workspace/multi-selection/deploy',
+      icon: 'ph ph-upload',
+      command: 'engine.workspace.deploySelectedFiles',
+      commandArgs: [deployableUris],
+    });
   });
 
   for (const option of INTERVAL_OPTIONS) {
@@ -558,19 +543,21 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
   });
 }
 
+function insertDeployGroupAfterDivider(
+  bifrost: Bifrost,
+  menu: Menu,
+  dividerId: string,
+  deployItem: MenuItem_Command & { id: string },
+): Menu {
+  return bifrost.menus.insertAfterMenuItem(menu, dividerId, [
+    deployItem,
+    { type: 'divider', id: `${deployItem.id}/trailing-divider` },
+  ]);
+}
+
 function canDeploy(connectionManager: EngineConnectionManager): boolean {
   const activeEngineId = connectionManager.getActiveEngineId();
-  if (!activeEngineId) {
-    return false;
-  }
-  const connection = connectionManager.getConnection(activeEngineId);
-  if (!connection) {
-    return false;
-  }
-  return (
-    connectionManager.identity.hasCapability(connection.url, 'deploy_bpmn') ||
-    connectionManager.identity.hasCapability(connection.url, 'deploy_dmn')
-  );
+  return activeEngineId != null && connectionManager.isConnected(activeEngineId);
 }
 
 const PAGE_URI_MAP: Record<string, { uriFactory: (id: string) => string; title: string }> = {

@@ -1985,3 +1985,23 @@ Disabling or reloading a plugin that already replaced its placeholder does **not
 **Why it fails**: ChromeDriver launches that path as a Chromium/Electron binary. An AppImage is a FUSE self-extractor. GitHub-hosted Ubuntu 24.04 does not provide unprivileged FUSE/libfuse2; Chromium flags such as `--remote-debugging-port` can also be consumed by the AppImage runtime. The window never appears, which looks like a missing display. xvfb is still required, but it cannot fix the wrong binary. `--no-sandbox` stuffed into Studio `appArgs` after `---` is also ignored as a Chromium switch.
 
 **Correct approach**: Drive `dist/electron/linux-unpacked/<product binary>` (already produced next to the AppImage). Pass `--no-sandbox`, `--disable-gpu`, and `--disable-dev-shm-usage` via `goog:chromeOptions.args` when `CI` / `GITHUB_ACTIONS` is set. Install GTK/NSS/GBM libraries in the workflow. Keep `xvfb-run`. Matrix suite names must match `package.json` scripts (`test:integration:core`, `plugins`, not `studio-core` / `plugin-host`).
+
+---
+
+## Explorer menu modifiers must not stack dividers on an existing group break
+
+**Mistake**: A menu modifier inserts `{ type: 'divider' }, { type: 'command', ... }` immediately before an item that already has a divider in front of it (e.g. `std/file-explorer/file/compare-to/external-file`).
+
+**Why it fails**: The base File Explorer file menu already separates the New File group from Compare to with `divider-before-compare-to`. Lint File and Deploy to Engine both used to insert their own leading divider at the same anchor. The context menu renderer does not collapse consecutive dividers, so the user sees an empty double line. When Deploy is hidden, the gap is two dividers with nothing between them.
+
+**Correct approach**: Give the base group-break divider a stable id. Insert deploy **after** that divider (item + trailing divider) so it owns its own group. Insert Lint File **immediately before** Compare to with **no** extra divider. Do not insert a leading divider before an item that already starts a group. Same pattern on directory / project / solution-root / multi-selection (`divider-before-rename`, `divider-before-rename-project`, `divider-before-delete`).
+
+---
+
+## File Explorer "Deploy to Engine" is shown when the active engine is connected, not when JWT deploy claims exist
+
+**Mistake**: Gate the explorer Deploy item on `identity.hasCapability(url, 'deploy_bpmn' | 'deploy_dmn')`.
+
+**Why it fails**: The center menubar Deploy button uses `isConnected(activeEngineId)` only. Local engines and a fresh Connect often have no JWT in settings, so `getClaims` returns an empty capability list and the explorer item stays hidden while the menubar already shows a live engine and a Deploy button. The context menu is rebuilt on each right-click, so this is not a stale-menu cache — it is the wrong predicate.
+
+**Correct approach**: Show explorer deploy when `getActiveEngineId()` is set and `isConnected` is true (same as the menubar). Leave claim enforcement to the engine on the deploy request. Process Explorer on-engine catalog actions may still use `hasCapability` because those already assume a token.

@@ -302,6 +302,24 @@ The engine menubar (center area) contains:
 
 The menubar subscribes to `engine:list-changed`, `engine:state-changed`, `engine:disconnected`, `engine:connected`, and `engine:reconnected` events to trigger automatic rebuilds when engine state changes.
 
+### File Explorer deploy menus
+
+**Path:** `studio/src/modules/engine-workspace/initializers/initializeMenus.ts`
+
+`engine-workspace` registers modifiers on the File Explorer context menus. Visibility uses the same rule as the menubar Deploy button: the **active engine is connected** (`getActiveEngineId()` + `isConnected`). JWT `deploy_bpmn` / `deploy_dmn` claims are **not** required to show the item — local engines often have no token, and the menubar already offers deploy in that case. The engine still enforces claims on the actual deploy call.
+
+| Menu | Id | Label | Placement |
+|------|----|-------|-----------|
+| `std/file-explorer/file` | `engine-workspace/file/deploy` | Deploy to Engine | after `divider-before-compare-to`, own group, then a trailing divider. `.bpmn` / `.dmn` only. |
+| `std/file-explorer/directory` | `engine-workspace/directory/deploy` | Deploy folder to Engine | after `divider-before-rename`, own group |
+| `std/file-explorer/project` | `engine-workspace/project/deploy` | Deploy project to Engine | after `divider-before-rename-project`, own group |
+| `std/file-explorer/solution-root` | `engine-workspace/solution-root/deploy` | Deploy folder to Engine | after `divider-before-rename`, own group |
+| `std/file-explorer/multi-selection` | `engine-workspace/multi-selection/deploy` | Deploy N files to Engine | after `divider-before-delete`, own group |
+
+File-menu order when both linter and deploy apply: New File group → **Deploy to Engine** → **Lint File** + Compare to → copy/rename/delete.
+
+The context menu is rebuilt on every right-click (`getMenu`); no menubar-style event subscription is needed.
+
 ### Configured Start Dialog
 
 **Path:** `studio/src/modules/engine-core/commands/registerConfiguredStartCommands.ts`
@@ -592,6 +610,7 @@ The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop e
 | engine-core entry | `studio/src/modules/engine-core/index.ts` |
 | engine-workspace entry | `studio/src/modules/engine-workspace/index.ts` |
 | engine-workspace menubar | `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts` |
+| engine-workspace explorer menus | `studio/src/modules/engine-workspace/initializers/initializeMenus.ts` |
 | engine-model-viewer entry | `studio/src/modules/engine-model-viewer/index.ts` |
 | engine-decision-viewer entry | `studio/src/modules/engine-decision-viewer/index.ts` |
 | engine-debugger entry | `studio/src/modules/engine-debugger/index.tsx` |

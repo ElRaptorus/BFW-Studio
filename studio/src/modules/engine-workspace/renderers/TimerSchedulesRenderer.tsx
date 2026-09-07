@@ -225,7 +225,7 @@ export default function TimerSchedulesRenderer(props: EditorDocumentRendererProp
           <EditorTitleHeroIcon studio={bifrost} icon="ph-duotone ph-timer" />
           <EditorTitleText
             studio={bifrost}
-            label="Timers"
+            label="Timer Schedules"
             sublabel={
               <EngineContextBreadcrumb
                 studio={bifrost}

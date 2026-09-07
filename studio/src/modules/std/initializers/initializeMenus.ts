@@ -831,6 +831,7 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
       },
       {
         type: 'divider',
+        id: 'std/file-explorer/project/divider-before-rename-project',
       },
       {
         type: 'command',
@@ -904,6 +905,7 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
       },
       {
         type: 'divider',
+        id: 'std/file-explorer/solution-root/divider-before-rename',
       },
       {
         type: 'command',
@@ -975,6 +977,7 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
       },
       {
         type: 'divider',
+        id: 'std/file-explorer/directory/divider-before-rename',
       },
       {
         type: 'command',
@@ -1068,6 +1071,7 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
       },
       {
         type: 'divider',
+        id: 'std/file-explorer/file/divider-before-compare-to',
       },
       {
         type: 'command',
@@ -1179,6 +1183,7 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         },
         {
           type: 'divider',
+          id: 'std/file-explorer/multi-selection/divider-before-delete',
         },
         {
           type: 'command',

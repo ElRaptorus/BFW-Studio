@@ -73,7 +73,7 @@ export function initializeHelpCommands(bifrost: Bifrost): void {
       You can directly compare a BPMN with another by right-clicking a file and choosing <strong>Compare to...</strong>.
     </Fragment>,
     <Fragment key="debugger-menubar">
-      The menubar in the top-right corner allows you to quickly deploy and execute the focused BPMN with the Debugger.
+      The menubar in the center toolbar allows you to quickly deploy and execute the focused BPMN with the Debugger.
     </Fragment>,
     <Fragment key="view-menu">
       Use the &quot;View&quot; Menu to customize your Studio&apos;s appearance and layout.

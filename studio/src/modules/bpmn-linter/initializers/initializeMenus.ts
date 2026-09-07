@@ -45,7 +45,6 @@ export function initializeMenus(bifrost: Bifrost): void {
     }
 
     return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/file/compare-to/external-file', [
-      { type: 'divider' },
       {
         type: 'command',
         label: 'Lint File',
@@ -63,7 +62,6 @@ export function initializeMenus(bifrost: Bifrost): void {
     }
 
     return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/directory/rename', [
-      { type: 'divider' },
       {
         type: 'command',
         label: 'Lint Folder',
@@ -81,7 +79,6 @@ export function initializeMenus(bifrost: Bifrost): void {
     }
 
     return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/project/rename-project', [
-      { type: 'divider' },
       {
         type: 'command',
         label: 'Lint Folder',
@@ -99,7 +96,6 @@ export function initializeMenus(bifrost: Bifrost): void {
     }
 
     return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/solution-root/rename', [
-      { type: 'divider' },
       {
         type: 'command',
         label: 'Lint Folder',
@@ -131,7 +127,6 @@ export function initializeMenus(bifrost: Bifrost): void {
     }
 
     return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/multi-selection/delete', [
-      { type: 'divider' },
       {
         type: 'command',
         label: `Lint ${lintableUris.length} items`,

@@ -373,7 +373,7 @@ export default function InstanceSearchRenderer(props: EditorDocumentRendererProp
           <EditorTitleHeroIcon studio={bifrost} icon="ph-duotone ph-magnifying-glass" />
           <EditorTitleText
             studio={bifrost}
-            label="Instances"
+            label="Process Instances"
             sublabel={
               <EngineContextBreadcrumb
                 studio={bifrost}
