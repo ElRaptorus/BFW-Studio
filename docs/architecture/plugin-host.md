@@ -642,5 +642,5 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio-sdk/src/plugin-api/MenusApi.ts` | SDK | `MenusApi` interface |
 | `studio-sdk/src/contracts/StatusBarTypes.ts` | SDK | `StatusBarItem` types for plugin API |
 | `studio-sdk/src/contracts/MenuBarTypes.ts` | SDK | `MenuBarItem` types for plugin API |
-| `tools/create-evil-plugin/` | Tooling | Scaffold generator CLI for creating new plugin projects |
+| `tools/create-bfw-plugin/` | Tooling | Scaffold generator CLI for creating new plugin projects |
 | `docs/plugin-development-guide.md` | Docs | Comprehensive guide for plugin developers |

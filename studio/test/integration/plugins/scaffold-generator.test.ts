@@ -5,7 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, describe, it } from 'vitest';
 
-const GENERATOR_DIR = path.resolve(__dirname, '../../../../tools/create-evil-plugin');
+const GENERATOR_DIR = path.resolve(__dirname, '../../../../tools/create-bfw-plugin');
 const GENERATOR_SCRIPT = path.join(GENERATOR_DIR, 'src', 'generator.js');
 const SDK_DIR = path.resolve(__dirname, '../../../../studio-sdk');
 
@@ -51,7 +51,7 @@ function patchSdkDependency(pluginDir: string): void {
   }
 }
 
-describe('create-evil-plugin scaffold generator', () => {
+describe('create-bfw-plugin scaffold generator', () => {
   let tempDir: string;
 
   afterEach(() => {

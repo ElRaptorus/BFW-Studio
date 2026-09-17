@@ -1,10 +1,10 @@
 {
-  "name": "create-evil-plugin",
+  "name": "create-bfw-plugin",
   "version": "1.0.0",
-  "description": "Scaffold generator for Evil Studio plugins",
+  "description": "Scaffold generator for Bifrost Forge World plugins",
   "type": "module",
   "bin": {
-    "create-evil-plugin": "./src/cli.js"
+    "create-bfw-plugin": "./src/cli.js"
   },
   "scripts": {
     "start": "node src/cli.js"

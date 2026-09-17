@@ -16,7 +16,7 @@ const { values, positionals } = parseArgs({
 
 if (values.help) {
   console.log(`
-Usage: create-evil-plugin [name] [options]
+Usage: create-bfw-plugin [name] [options]
 
 Options:
   --webview          Include webview template (skip prompt)

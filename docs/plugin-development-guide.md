@@ -12,17 +12,17 @@ How to author, build, and load a plugin. Architecture (sandbox, IPC, quarantine)
 
 ### Create a new plugin
 
-You can use the [Plugin generator](../tools/create-evil-plugin/) to quickly create a scaffold for a new plugin.
+You can use the [Plugin generator](../tools/create-bfw-plugin/) to quickly create a scaffold for a new plugin.
 
 ```bash
 # Interactive mode
-node tools/create-evil-plugin/src/cli.js my-plugin
+node tools/create-bfw-plugin/src/cli.js my-plugin
 
 # Non-interactive — minimal (no webview)
-node tools/create-evil-plugin/src/cli.js my-plugin --minimal
+node tools/create-bfw-plugin/src/cli.js my-plugin --minimal
 
 # Non-interactive — with webview support
-node tools/create-evil-plugin/src/cli.js my-plugin --webview
+node tools/create-bfw-plugin/src/cli.js my-plugin --webview
 ```
 
 ### Project structure (minimal)

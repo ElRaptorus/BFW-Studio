@@ -435,6 +435,8 @@ function convertMultiInstance(raw: Record<string, unknown>): MultiInstance {
     loopBreakCondition: asString(raw.loopBreakCondition),
     loopInterval: asString(raw.loopInterval),
     maxIterations: asNumber(raw.maxIterations),
+    // TODO: GraphQL FieldTable excludes this (deploy is rejected)
+    loopCardinality: asString(raw.loopCardinality),
   };
 }
 

@@ -259,7 +259,7 @@ A process-isolated, permission-gated plugin architecture.
 - Full API bridge for runtime interaction with the Studio
 - The Studio SDK provides fully typed contracts and interfaces, which Plugin developers can use for properly accessing the Studio's Plugin Host
 
-**Plugin Templates:** The [plugin template generator](./tools/create-evil-plugin/) provides users with a way to quickly generate Plugin Scaffolds.
+**Plugin Templates:** The [plugin template generator](./tools/create-bfw-plugin/) provides users with a way to quickly generate Plugin Scaffolds.
 
 See [plugin-development-guide](./docs/plugin-development-guide.md) and [manifest reference](./docs/architecture/plugin-manifest.md) for more information.
 

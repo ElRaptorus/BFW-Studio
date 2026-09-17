@@ -23,10 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Use Node.js 24
+      - name: Use Node.js 26
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
           check-latest: true
 
       - name: Install latest NPM v12
@@ -82,10 +82,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Use Node.js 24
+      - name: Use Node.js 26
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
           check-latest: true
 
       - name: Authenticate GitHub Packages

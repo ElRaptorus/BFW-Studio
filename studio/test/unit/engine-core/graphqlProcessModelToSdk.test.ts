@@ -300,4 +300,70 @@ describe('convertGraphqlProcessModel', () => {
       expect(byId.Sub_1.typeData.resultContract).toEqual({ type: 'object' });
     }
   });
+
+  it('maps MultiInstance fields and defaults omitted GraphQL loopCardinality to null', () => {
+    const converted = convertGraphqlProcessModel({
+      id: 'mi-process',
+      isExecutable: true,
+      flowNodes: [
+        {
+          id: 'Task_mi',
+          type: 'USER_TASK',
+          incoming: [],
+          outgoing: [],
+          boundaryEventRefs: [],
+          isForCompensation: false,
+          multiInstance: {
+            isSequential: true,
+            collectionExpression: 'token.items',
+            elementVariable: 'item',
+            completionCondition: 'done = true',
+            outputCollection: 'processedItems',
+            outputElementVariable: 'processedItem',
+            loopBreakCondition: 'errorCount > 3',
+            loopInterval: 'PT1S',
+            maxIterations: 100,
+          },
+        },
+      ],
+    });
+
+    const multiInstance = converted?.process.flowNodes[0]?.multiInstance;
+    expect(multiInstance).toEqual({
+      isSequential: true,
+      collectionExpression: 'token.items',
+      elementVariable: 'item',
+      completionCondition: 'done = true',
+      outputCollection: 'processedItems',
+      outputElementVariable: 'processedItem',
+      loopBreakCondition: 'errorCount > 3',
+      loopInterval: 'PT1S',
+      maxIterations: 100,
+      loopCardinality: null,
+    });
+  });
+
+  it('stores loopCardinality when the GraphQL payload carries it', () => {
+    const converted = convertGraphqlProcessModel({
+      id: 'mi-cardinality-process',
+      isExecutable: true,
+      flowNodes: [
+        {
+          id: 'Task_mi',
+          type: 'TASK',
+          incoming: [],
+          outgoing: [],
+          boundaryEventRefs: [],
+          isForCompensation: false,
+          multiInstance: {
+            isSequential: false,
+            collectionExpression: 'token.items',
+            loopCardinality: '5',
+          },
+        },
+      ],
+    });
+
+    expect(converted?.process.flowNodes[0]?.multiInstance?.loopCardinality).toBe('5');
+  });
 });
