@@ -194,6 +194,7 @@ function updateOrCreateCallActivity(
   element: ElementLike | undefined,
   newProcessModelId?: string,
   newStartEventId?: string,
+  newCalledProcessVersion?: string,
 ): CmdHelperDescriptor {
   return {
     cmd: 'UpdateCallActivityHandler',
@@ -201,6 +202,7 @@ function updateOrCreateCallActivity(
       element: element,
       newProcessModelId: newProcessModelId,
       newStartEventId: newStartEventId,
+      newCalledProcessVersion: newCalledProcessVersion,
     },
   };
 }

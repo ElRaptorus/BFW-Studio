@@ -14,16 +14,19 @@ export function UpdateCallActivityHandler(this: any, commandStack: CommandStack,
 UpdateCallActivityHandler.$inject = ['commandStack', 'bpmnFactory'];
 
 UpdateCallActivityHandler.prototype.preExecute = function (context: any) {
-  const { element, newProcessModelId, newStartEventId } = context;
+  const { element, newProcessModelId, newStartEventId, newCalledProcessVersion } = context;
 
   const businessObject = getBusinessObject(element);
   const calledElement = businessObject.get(CALLED_ELEMENT_SELECTOR);
   const currentStartEventId = getEvilBodyValue(businessObject, 'evil:StartEventId');
+  const currentCalledProcessVersion = getEvilBodyValue(businessObject, 'evil:CalledProcessVersion');
 
   const calledElementChanged = newProcessModelId !== undefined && newProcessModelId !== calledElement;
   const startEventIdChanged = newStartEventId !== undefined && newStartEventId !== currentStartEventId;
+  const calledProcessVersionChanged =
+    newCalledProcessVersion !== undefined && newCalledProcessVersion !== (currentCalledProcessVersion ?? '');
 
-  if (!calledElementChanged && !startEventIdChanged) {
+  if (!calledElementChanged && !startEventIdChanged && !calledProcessVersionChanged) {
     return;
   }
 
@@ -36,6 +39,18 @@ UpdateCallActivityHandler.prototype.preExecute = function (context: any) {
 
   if (startEventIdChanged) {
     const cmds = setEvilBodyExtension(element, this.bpmnFactory, 'evil:StartEventId', newStartEventId || null);
+    for (const cmd of cmds) {
+      this.commandStack.execute(cmd.cmd, cmd.context);
+    }
+  }
+
+  if (calledProcessVersionChanged) {
+    const cmds = setEvilBodyExtension(
+      element,
+      this.bpmnFactory,
+      'evil:CalledProcessVersion',
+      newCalledProcessVersion || null,
+    );
     for (const cmd of cmds) {
       this.commandStack.execute(cmd.cmd, cmd.context);
     }

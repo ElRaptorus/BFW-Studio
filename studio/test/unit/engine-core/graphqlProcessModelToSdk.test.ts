@@ -233,6 +233,7 @@ describe('convertGraphqlProcessModel', () => {
           isForCompensation: false,
           calledElement: 'child-process',
           startEventId: 'Start_Express',
+          calledProcessVersion: '1.2.0',
           inMappings: [],
           outMappings: [],
         },
@@ -291,6 +292,7 @@ describe('convertGraphqlProcessModel', () => {
     expect(byId.Call_1?.typeData.type).toBe('call_activity');
     if (byId.Call_1?.typeData.type === 'call_activity') {
       expect(byId.Call_1.typeData.calledElement).toBe('child-process');
+      expect(byId.Call_1.typeData.calledProcessVersion).toBe('1.2.0');
       expect('payloadContract' in byId.Call_1.typeData).toBe(false);
     }
 

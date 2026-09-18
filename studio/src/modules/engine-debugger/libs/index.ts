@@ -31,6 +31,7 @@ export {
   getBusinessRuleReference,
   getCallActivityCalledElement,
   getCallActivityStartEventId,
+  getCallActivityCalledProcessVersion,
   getConditionalExpression,
   getCorrelationRetrievalExpression,
   getErrorCode,

@@ -16,7 +16,7 @@
     "npm": ">=12.0.0"
   },
   "allowScripts": {
-    "electron-chromedriver@44.4.1": true,
+    "electron-chromedriver@44.4.2": true,
     "esbuild": false,
     "@parcel/watcher": false,
     "edgedriver": false,
@@ -113,9 +113,9 @@
     "diagram-js-minimap": "^5.4.1",
     "dmn-js": "^17.10.2",
     "dompurify": "^3.4.15",
-    "electron": "44.4.1",
+    "electron": "44.4.2",
     "electron-builder": "27.0.0-alpha.8",
-    "electron-chromedriver": "44.4.1",
+    "electron-chromedriver": "44.4.2",
     "electron-log": "5.4.4",
     "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",

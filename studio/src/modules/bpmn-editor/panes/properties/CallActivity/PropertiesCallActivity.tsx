@@ -21,7 +21,8 @@ import {
 } from '../../PropertiesPaneFunctions';
 import { JumpToSymbolInSolutionLink } from '../../components/JumpToSymbolInSolutionLink';
 
-type CallActivityToUpdate = CallActivityToUpdate_ProcessModelId | CallActivityToUpdate_StartEventId;
+type CallActivityToUpdate =
+  CallActivityToUpdate_ProcessModelId | CallActivityToUpdate_StartEventId | CallActivityToUpdate_CalledProcessVersion;
 
 type CallActivityToUpdate_ProcessModelId = {
   processModelId: string;
@@ -29,6 +30,10 @@ type CallActivityToUpdate_ProcessModelId = {
 
 type CallActivityToUpdate_StartEventId = {
   startEventId: string;
+};
+
+type CallActivityToUpdate_CalledProcessVersion = {
+  calledProcessVersion: string;
 };
 
 type TargetProcessLinkWithLabelProps = {
@@ -78,6 +83,7 @@ export function PropertiesCallActivity(props: PaneComponentProps): React.JSX.Ele
 
   const processModelId = element.processModelId;
   const startEventId = element.startEventId;
+  const calledProcessVersion = element.calledProcessVersion ?? '';
 
   const onCalledProcessChange = (newValue: any): void => {
     updateCallActivityProcess({ processModelId: newValue?.value ?? '' });
@@ -85,6 +91,10 @@ export function PropertiesCallActivity(props: PaneComponentProps): React.JSX.Ele
 
   const onStartEventChange = (newValue: any): void => {
     updateCallActivity({ startEventId: newValue?.value ?? '' });
+  };
+
+  const onCalledProcessVersionChange = (value: string): void => {
+    updateCallActivity({ calledProcessVersion: value });
   };
 
   const updateCallActivity = (newCallActivity: CallActivityToUpdate): void => {
@@ -146,6 +156,15 @@ export function PropertiesCallActivity(props: PaneComponentProps): React.JSX.Ele
         onCommit={onStartEventChange}
         suggestions={allStartEventsForProcessIdPromise}
         isClearable={true}
+      />
+      <PaneProperty
+        key={`element_called_process_version_${calledProcessVersion}`}
+        label="Called process version"
+        type="text"
+        htmlId="call-activity-called-process-version-property"
+        placeholder="Leave empty for newest deployed version"
+        value={calledProcessVersion}
+        onCommit={onCalledProcessVersionChange}
       />
     </PaneBody>
   );

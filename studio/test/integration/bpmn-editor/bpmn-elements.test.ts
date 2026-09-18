@@ -1513,6 +1513,41 @@ describe('bpmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
+  it('bpmn/elements/property-panel/CallActivity: should set, persist, and clear called process version', async () => {
+    const callActivity = 'CallActivity_1';
+    const startEvent = 'StartEvent_1';
+    const newCalledProcessVersion = '1.2.0';
+
+    await studioAgent.jumpToFileInSolution('callactivity-test.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(callActivity, CALL_ACTIVITY_PANE, ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertVisible('#call-activity-called-process-version-property', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clearTextInput('#call-activity-called-process-version-property');
+    await studioAgent.clickOn('#call-activity-called-process-version-property');
+    await studioAgent.sendKeyboardInput([...newCalledProcessVersion.split(''), 'enter']);
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(callActivity, CALL_ACTIVITY_PANE, ASSERT_VISIBLE_TIMEOUT);
+
+    const calledProcessVersion = await studioAgent.getValue('#call-activity-called-process-version-property');
+    assert.strictEqual(calledProcessVersion, newCalledProcessVersion);
+
+    await studioAgent.clearTextInput('#call-activity-called-process-version-property');
+    await studioAgent.sendKeyboardInput(['enter']);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(callActivity, CALL_ACTIVITY_PANE, ASSERT_VISIBLE_TIMEOUT);
+
+    const clearedVersion = await studioAgent.getValue('#call-activity-called-process-version-property');
+    assert.strictEqual(clearedVersion, '');
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
   it('bpmn/elements/property-panel/CallActivity: should change a call activity called process id', async () => {
     const callActivity = 'CallActivity_1';
     const startEvent = 'StartEvent_1';

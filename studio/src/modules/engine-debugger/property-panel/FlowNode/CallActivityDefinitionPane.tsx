@@ -66,6 +66,16 @@ function CallActivityPane(props: CallActivityPaneProps): React.JSX.Element {
           (callActivityModel.typeData.type === 'call_activity' ? callActivityModel.typeData.startEventId : '') ?? ''
         }
       />
+      <PaneProperty
+        type="text"
+        label="Called Process Version"
+        disabled={true}
+        value={
+          (callActivityModel.typeData.type === 'call_activity'
+            ? callActivityModel.typeData.calledProcessVersion
+            : '') ?? ''
+        }
+      />
     </PaneBody>
   );
 }

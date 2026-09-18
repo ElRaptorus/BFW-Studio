@@ -59,6 +59,13 @@ export function getCallActivityStartEventId(flowNode: BpmnFlowNode | undefined):
   return flowNode.typeData.startEventId ?? '';
 }
 
+export function getCallActivityCalledProcessVersion(flowNode: BpmnFlowNode | undefined): string {
+  if (!flowNode || flowNode.typeData.type !== 'call_activity') {
+    return '';
+  }
+  return flowNode.typeData.calledProcessVersion ?? '';
+}
+
 export function getUserTaskAssigneesExpression(flowNode: BpmnFlowNode | undefined): string {
   if (!flowNode || flowNode.typeData.type !== 'user_task') {
     return '';

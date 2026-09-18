@@ -15,6 +15,7 @@ export {
   formatChangeSummaryAsMarkdown,
   formatElementDisplayName,
   formatSummaryValueForDisplay,
+  getCallActivityExtensionChangesForElement,
   getCustomPropertyChangesForElement,
   partitionCustomPropertyDeltas,
   rawDiffFromBpmnDiffBuckets,

@@ -42,14 +42,20 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     readFlowNodeString(props.editorDocumentModel, (flowNode) =>
       flowNode.typeData.type === 'call_activity' ? flowNode.typeData.calledElement : undefined,
     ) ?? '—';
-  const startEventId = readFlowNodeString(props.editorDocumentModel, (flowNode) =>
-    flowNode.typeData.type === 'call_activity' ? flowNode.typeData.startEventId : undefined,
-  );
+  const startEventId =
+    readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+      flowNode.typeData.type === 'call_activity' ? flowNode.typeData.startEventId : undefined,
+    ) ?? '';
+  const calledProcessVersion =
+    readFlowNodeString(props.editorDocumentModel, (flowNode) =>
+      flowNode.typeData.type === 'call_activity' ? flowNode.typeData.calledProcessVersion : undefined,
+    ) ?? '';
 
   return (
     <div className="engine-pane-process-info">
       <PaneProperty type="text" label="Called Element" value={calledElement} disabled />
-      {startEventId != null && <PaneProperty type="text" label="Start Event ID" value={startEventId} disabled />}
+      <PaneProperty type="text" label="Start Event ID" value={startEventId} disabled />
+      <PaneProperty type="text" label="Called Process Version" value={calledProcessVersion} disabled />
     </div>
   );
 }

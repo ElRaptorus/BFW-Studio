@@ -12,10 +12,11 @@ import {
   BpmnViewerWithSync,
   buildAugmentedChangeSummary,
   buildChangeSummary,
+  getCallActivityExtensionChangesForElement as lookupCallActivityExtensionChangesInSummary,
   getCustomPropertyChangesForElement as lookupCustomPropertyChangesInSummary,
   rawDiffFromBpmnDiffBuckets,
 } from '../bpmn-core/diff';
-import type { ChangeSummary, CustomPropertyDelta } from '../bpmn-core/diff';
+import type { AttributeChange, ChangeSummary, CustomPropertyDelta } from '../bpmn-core/diff';
 
 type CurrentAndMaxChanges = {
   currentChangeNumber: number | null;
@@ -224,6 +225,14 @@ export default class BpmnDiffDocumentModel extends EditorDocumentModel {
       return [];
     }
     return lookupCustomPropertyChangesInSummary(summary, elementId);
+  }
+
+  getCallActivityExtensionChangesForElement(elementId: string): AttributeChange[] {
+    const summary = this.getChangeSummary();
+    if (summary == null) {
+      return [];
+    }
+    return lookupCallActivityExtensionChangesInSummary(summary, elementId);
   }
 
   protected async initializeDiffViewers(beforeXml: string, afterXml: string): Promise<void> {

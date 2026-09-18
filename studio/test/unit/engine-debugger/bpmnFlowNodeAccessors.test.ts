@@ -3,6 +3,7 @@ import type { FlowNode } from '@elraptorus/daemonengine_sdk';
 import { describe, expect, it } from 'vitest';
 
 import {
+  getCallActivityCalledProcessVersion,
   getCorrelationRetrievalExpression,
   hasInputMappings,
   hasOutputMappings,
@@ -83,6 +84,7 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
       type: 'call_activity',
       calledElement: 'child',
       startEventId: null,
+      calledProcessVersion: '1.2.0',
       inMappings: [],
       outMappings: [],
     });
@@ -123,6 +125,7 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
 
     expect(hasInputMappings(callActivity)).toBe(true);
     expect(hasOutputMappings(callActivity)).toBe(true);
+    expect(getCallActivityCalledProcessVersion(callActivity)).toBe('1.2.0');
 
     expect(hasInputMappings(subprocess)).toBe(true);
     expect(hasOutputMappings(subprocess)).toBe(true);

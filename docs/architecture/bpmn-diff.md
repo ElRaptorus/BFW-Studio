@@ -63,7 +63,7 @@ The worker parses both XMLs with `createBpmnModdleForDiff()` (BPMN + Camunda + B
 
 Stateless module that transforms raw `bpmn-js-differ` output into structured summary data and markdown. Consumed by the summary dialog command, ChangeOverview, ContentDiff (via the document model), git-cruiser history preview, and the BPMN merge resolver. Applies the same layout-change filter as `BpmnDiff` (rejects `Lane`, `Participant`, `SequenceFlow` from the `layoutChanged` category) so that all consumers produce consistent output regardless of whether they go through the `BpmnDiff` class or use raw diff data directly.
 
-`buildAugmentedChangeSummary(rawDiff, beforeXml, afterXml)` merges semantic buckets with **definitions / file metadata** (`diffDefinitionsMetadata`), **Camunda custom properties** (`diffCustomPropertiesMaps` over moddle-parsed definitions), and **Bifrost Forge World linter ruleset score changes** (`diffLinterScores` from `evilLinterScoreDiff.ts`). Camunda custom property diffing is retained for backward compatibility with legacy diagrams; new diagrams use `evil:` extension elements. Helpers `buildDefinitionsMetadataBetweenXml`, `buildCustomPropertiesSummaryBetweenXml`, and `buildLinterScoreChangesBetweenXml` support merge (base→ours / base→theirs) without a full `ChangeSummary`.
+`buildAugmentedChangeSummary(rawDiff, beforeXml, afterXml)` merges semantic buckets with **definitions / file metadata** (`diffDefinitionsMetadata`), **Camunda custom properties** (`diffCustomPropertiesMaps` over moddle-parsed definitions), **Call Activity body extensions** (`diffCallActivityExtensionMaps` from `callActivityExtensionDiff.ts` — `evil:CalledProcessVersion` and `evil:StartEventId` become named `attributeChanges`), and **Bifrost Forge World linter ruleset score changes** (`diffLinterScores` from `evilLinterScoreDiff.ts`). Camunda custom property diffing is retained for backward compatibility with legacy diagrams; new diagrams use `evil:` extension elements. Helpers `buildDefinitionsMetadataBetweenXml`, `buildCustomPropertiesSummaryBetweenXml`, and `buildLinterScoreChangesBetweenXml` support merge (base→ours / base→theirs) without a full `ChangeSummary`.
 
 Key exports:
 
@@ -75,6 +75,7 @@ Key exports:
 | `formatSummaryValueForDisplay(value)` | Quoted / `(none)` / multiline-safe display for summary lines |
 | `CustomPropertyChangeOverviewGroup` | React: renders **Custom properties → Added / Removed / Changed** under each element (diff + merge panes) |
 | `getCustomPropertyChangesForElement(summary, elementId)` | Resolves merged custom property deltas for the detail pane |
+| `getCallActivityExtensionChangesForElement(summary, elementId)` | Resolves Called Process Version / Start Event ID deltas from modified `attributeChanges` |
 | `changeSummaryHasAnySemanticChange(summary)` | True if any structural, metadata, custom-property, or linter-score change exists |
 | `formatChangeSummaryAsMarkdown(summary, fileName)` | Renders a `ChangeSummary` as markdown for dialog display |
 | `formatBpmnType(bpmnType)` | `bpmn:ServiceTask` → `Service Task` |

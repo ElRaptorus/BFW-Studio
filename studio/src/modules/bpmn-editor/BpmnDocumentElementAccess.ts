@@ -634,9 +634,15 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
 
         const processModelId = propertyValue.processModelId ?? castedElement.processModelId;
         const startEventId = propertyValue.startEventId ?? castedElement.startEventId;
+        const calledProcessVersion =
+          propertyValue.calledProcessVersion !== undefined
+            ? propertyValue.calledProcessVersion
+            : (castedElement.calledProcessVersion ?? '');
 
         const noChangesToApply =
-          processModelId === castedElement.processModelId && startEventId === castedElement.startEventId;
+          processModelId === castedElement.processModelId &&
+          startEventId === castedElement.startEventId &&
+          calledProcessVersion === (castedElement.calledProcessVersion ?? '');
 
         if (noChangesToApply) {
           return;
@@ -644,7 +650,12 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
 
         const commandStack = this.bpmnModelerProxy.getCommandStack();
 
-        const commandToExecute = CmdHelper.updateOrCreateCallActivity(element, processModelId, startEventId);
+        const commandToExecute = CmdHelper.updateOrCreateCallActivity(
+          element,
+          processModelId,
+          startEventId,
+          calledProcessVersion,
+        );
         commandStack.execute(commandToExecute.cmd, commandToExecute.context);
       },
       process: (element: any, propertyName: string, propertyValue: ModelerElementPropertyValue) => {
@@ -1213,10 +1224,12 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       callActivity: (element: any, propertyName: string) => {
         const calledElement = element.businessObject.get(MODDLE_BPMN_CALLED_ELEMENT_SELECTOR);
         const startEventId = getEvilBodyValue(element.businessObject, 'evil:StartEventId');
+        const calledProcessVersion = getEvilBodyValue(element.businessObject, 'evil:CalledProcessVersion');
 
         return {
           processModelId: calledElement,
           startEventId: startEventId,
+          calledProcessVersion: calledProcessVersion,
         };
       },
       subProcess: (element: any, propertyName: string) => {

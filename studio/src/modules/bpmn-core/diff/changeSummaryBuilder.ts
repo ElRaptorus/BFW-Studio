@@ -1,6 +1,12 @@
 import { ATTRIBUTE_LABELS, LAYOUT_CHANGE_REJECTED_TYPES } from './bpmnDiffConstants';
 import { parseBpmnDefinitionsFromXml } from './bpmnModdleForDiff';
 import {
+  CALL_ACTIVITY_DIFF_ATTRIBUTE_LABELS,
+  CALL_ACTIVITY_EXTENSION_LABELS,
+  collectCallActivityExtensionsByElementId,
+  diffCallActivityExtensionMaps,
+} from './callActivityExtensionDiff';
+import {
   type CustomPropertiesSummaryEntry,
   type CustomPropertyChangeKind,
   type CustomPropertyDelta,
@@ -187,11 +193,86 @@ function mergeCustomPropertyBlocksIntoSummary(summary: ChangeSummary, blocks: Cu
   summary.customProperties = [];
 }
 
+function mergeCallActivityExtensionBlocksIntoSummary(
+  summary: ChangeSummary,
+  blocks: CustomPropertiesSummaryEntry[],
+): void {
+  const blockMap = new Map(blocks.map((block) => [block.elementId, block]));
+
+  const toAttributeChanges = (block: CustomPropertiesSummaryEntry): AttributeChange[] =>
+    block.changes.map((change) => ({
+      attribute: CALL_ACTIVITY_EXTENSION_LABELS[change.propertyName] ?? change.propertyName,
+      oldValue: change.oldValue,
+      newValue: change.newValue,
+    }));
+
+  const hideRawExtensionElementsDump = (entry: ModifiedEntry): void => {
+    entry.attributeChanges = entry.attributeChanges.filter(
+      (change) => change.attribute !== ATTRIBUTE_LABELS.extensionElements,
+    );
+  };
+
+  const attachToModified = (entry: ModifiedEntry, extra: AttributeChange[]): void => {
+    hideRawExtensionElementsDump(entry);
+    for (const extraChange of extra) {
+      const existingIndex = entry.attributeChanges.findIndex((change) => change.attribute === extraChange.attribute);
+      if (existingIndex >= 0) {
+        entry.attributeChanges[existingIndex] = extraChange;
+      } else {
+        entry.attributeChanges.push(extraChange);
+      }
+    }
+  };
+
+  for (const entry of summary.modified) {
+    const block = blockMap.get(entry.id);
+    if (block == null) {
+      continue;
+    }
+    attachToModified(entry, toAttributeChanges(block));
+    blockMap.delete(entry.id);
+  }
+
+  const attachLabeledCustomProperties = (entry: ChangeSummaryEntry): void => {
+    const block = blockMap.get(entry.id);
+    if (block == null) {
+      return;
+    }
+    const labeledChanges = block.changes.map((change) => ({
+      ...change,
+      propertyName: CALL_ACTIVITY_EXTENSION_LABELS[change.propertyName] ?? change.propertyName,
+    }));
+    entry.customPropertyChanges = [...(entry.customPropertyChanges ?? []), ...labeledChanges];
+    blockMap.delete(entry.id);
+  };
+
+  for (const entry of summary.added) {
+    attachLabeledCustomProperties(entry);
+  }
+  for (const entry of summary.removed) {
+    attachLabeledCustomProperties(entry);
+  }
+  for (const entry of summary.layoutChanged) {
+    attachLabeledCustomProperties(entry);
+  }
+
+  for (const block of blockMap.values()) {
+    summary.modified.push({
+      id: block.elementId,
+      type: 'Call Activity',
+      label: block.elementId,
+      displayName: block.displayName,
+      attributeChanges: toAttributeChanges(block),
+    });
+  }
+}
+
 export function buildChangeSummary(
   rawDiff: RawDiffResult,
   options?: {
     definitionsMetadata?: DefinitionsMetadataChange[];
     customProperties?: CustomPropertiesSummaryEntry[];
+    callActivityExtensions?: CustomPropertiesSummaryEntry[];
     linterScoreChanges?: LinterScoreChange[];
   },
 ): ChangeSummary {
@@ -235,6 +316,11 @@ export function buildChangeSummary(
     mergeCustomPropertyBlocksIntoSummary(summary, rawCp);
   }
 
+  const callActivityExtensions = options?.callActivityExtensions ?? [];
+  if (callActivityExtensions.length > 0) {
+    mergeCallActivityExtensionBlocksIntoSummary(summary, callActivityExtensions);
+  }
+
   return summary;
 }
 
@@ -256,6 +342,20 @@ export function getCustomPropertyChangesForElement(summary: ChangeSummary, eleme
   return [];
 }
 
+/** Looks up Call Activity pin / start-event-id deltas merged onto modified attribute changes. */
+export function getCallActivityExtensionChangesForElement(
+  summary: ChangeSummary,
+  elementId: string,
+): AttributeChange[] {
+  const modified = summary.modified.find((entry) => entry.id === elementId);
+  if (modified == null) {
+    return [];
+  }
+  return modified.attributeChanges.filter((change) =>
+    (CALL_ACTIVITY_DIFF_ATTRIBUTE_LABELS as readonly string[]).includes(change.attribute),
+  );
+}
+
 /**
  * Semantic diff summary plus definitions-root metadata and custom property deltas
  * (requires XML parse with evil-platform moddle — same stack as {@link parseBpmnDefinitionsFromXml}).
@@ -275,6 +375,10 @@ export async function buildAugmentedChangeSummary(
     collectCustomPropertiesByElementId(defsBefore),
     collectCustomPropertiesByElementId(defsAfter),
   );
+  const callActivityExtensions = diffCallActivityExtensionMaps(
+    collectCallActivityExtensionsByElementId(defsBefore),
+    collectCallActivityExtensionsByElementId(defsAfter),
+  );
 
   let linterScoreChanges: LinterScoreChange[];
   try {
@@ -284,7 +388,12 @@ export async function buildAugmentedChangeSummary(
     linterScoreChanges = [];
   }
 
-  return buildChangeSummary(rawDiff, { definitionsMetadata, customProperties, linterScoreChanges });
+  return buildChangeSummary(rawDiff, {
+    definitionsMetadata,
+    customProperties,
+    callActivityExtensions,
+    linterScoreChanges,
+  });
 }
 
 export async function buildCustomPropertiesSummaryBetweenXml(

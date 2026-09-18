@@ -243,6 +243,13 @@
     },
 
     {
+      "name": "CalledProcessVersion",
+      "superClass": ["Element"],
+      "meta": { "allowedIn": ["bpmn:CallActivity"] },
+      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
+    },
+
+    {
       "name": "ScriptRef",
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:ScriptTask"] },

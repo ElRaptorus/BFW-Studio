@@ -286,6 +286,7 @@ export type BpmnElement_CallActivity = BpmnElementCommonProperties & {
   readonly type: BpmnElementType.CallActivity;
   readonly processModelId: string;
   readonly startEventId?: string;
+  readonly calledProcessVersion?: string;
   readonly inputMappings: BpmnDataMapping[];
   readonly outputMappings: BpmnDataMapping[];
   readonly payloadContract?: string;

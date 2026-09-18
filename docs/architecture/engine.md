@@ -544,7 +544,7 @@ The general PaneProvider contract (`shouldBeDisplayed` vs renderer, `PaneWrapper
 
 - Input mappings: throw-side events (`EndEvent`, `IntermediateThrowEvent`), `SendTask`, and two-sided tasks (`UserTask`, `ServiceTask`, `ScriptTask`, `BusinessRuleTask`, `CallActivity`, `SubProcess`). **Not** StartEvent or ReceiveTask.
 - Output mappings: catch-side events (`IntermediateCatchEvent`, `BoundaryEvent`), `ReceiveTask`, and the same two-sided tasks. **Not** StartEvent or SendTask.
-- Payload / result contracts: SubProcess shells are included; CallActivity is **not** (the Engine `CallActivityNode` has mappings only).
+- Payload / result contracts: SubProcess shells are included; CallActivity is **not** (the Engine `CallActivityNode` has mappings, `calledElement`, `startEventId`, and `calledProcessVersion`).
 - HTTP Service Task debugger panes include `httpResponseHeaders` (definition + evaluated `typeProperties`).
 - Throw-side message events show `correlationRetrievalExpression` in the debugger. SendTask correlation at runtime is the process-level `correlationKey`; GraphQL `SendTaskNode` has no retrieval-expression field.
 

@@ -222,6 +222,7 @@ function convertTypeData(flowNodeType: FlowNodeType, raw: Record<string, unknown
         ...mappings,
         calledElement: asString(raw.calledElement),
         startEventId: asString(raw.startEventId),
+        calledProcessVersion: asString(raw.calledProcessVersion),
       };
     case FlowNodeType.SubProcess:
       return {

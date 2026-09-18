@@ -8,7 +8,7 @@ import { PaneHeader } from '#components/panes/PaneHeader';
 import React from 'react';
 
 import { ATTRIBUTE_LABELS } from '../../bpmn-core/diff';
-import type { CustomPropertyDelta } from '../../bpmn-core/diff';
+import type { AttributeChange, CustomPropertyDelta } from '../../bpmn-core/diff';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,
@@ -69,6 +69,11 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     selectedElementId != null
       ? (props.editorDocumentModel.getCustomPropertiesForElement?.(selectedElementId) ?? [])
       : [];
+  const callActivityExtensionChanges: AttributeChange[] =
+    selectedElementId != null
+      ? (props.editorDocumentModel.getCallActivityExtensionChangesForElement?.(selectedElementId) ?? [])
+      : [];
+  const hideRawExtensionElements = customPropChanges.length > 0 || callActivityExtensionChanges.length > 0;
 
   return (
     <PaneBody>
@@ -111,7 +116,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
             if (attributeName !== 'extensionElements') {
               return true;
             }
-            return customPropChanges.length === 0;
+            return !hideRawExtensionElements;
           })
           .map((attributeName) => {
             const label = ATTRIBUTE_LABELS[attributeName] || captializeAttributeName(attributeName);
@@ -145,6 +150,15 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
               />
             );
           })}
+
+      {callActivityExtensionChanges.map((change) => (
+        <UpdatedAttribute
+          key={`${selectedElementId}_ca_${change.attribute}`}
+          label={change.attribute}
+          beforeValue={change.oldValue}
+          afterValue={change.newValue}
+        />
+      ))}
 
       {customPropChanges.length > 0 && (
         <div className="form-group">
