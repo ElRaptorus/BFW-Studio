@@ -81,7 +81,7 @@ describe('dmn/elements', () => {
     assert.strictEqual(id, 'KitchenSink_Definitions');
 
     const namespace = await studioAgent.getDmnPropertyValue('data-test--dmn-definitions-namespace');
-    assert.strictEqual(namespace, 'https://evilengine.dev/test/kitchen-sink');
+    assert.strictEqual(namespace, 'https://bifrostforge.world/test/kitchen-sink');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
@@ -840,7 +840,7 @@ describe('dmn/elements', () => {
     await studioAgent.waitForPaneVisible(IMPORTS_PANE);
 
     const namespace = await studioAgent.getDmnPropertyValue('data-test--dmn-import-namespace');
-    assert.strictEqual(namespace, 'https://evilengine.dev/test/shared');
+    assert.strictEqual(namespace, 'https://bifrostforge.world/test/shared');
 
     const locationUri = await studioAgent.getDmnPropertyValue('data-test--dmn-import-location');
     assert.strictEqual(locationUri, 'shared-decisions.dmn');

@@ -3,7 +3,7 @@ import { EditorContent } from '#components/editor/EditorContent';
 
 import React, { useEffect, useState } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
 
 import { FeelSimulatorEditor } from '../../../components/feel-simulator';
 
@@ -35,8 +35,7 @@ export default function FeelEditorExamples(props: any): React.JSX.Element {
         <h2 style={{ margin: 0 }}>FEEL Expression Sandbox</h2>
         <p style={{ margin: '0.25rem 0 0', color: 'var(--theme-fg-secondary)' }}>
           Syntax highlighting, autocomplete, linting, and live evaluation for FEEL expressions — the primary scripting
-          language for the ThomasTheDaemonEngine. Use this sandbox to prototype and test expressions without a BPMN
-          diagram.
+          language for the BFW-Engine. Use this sandbox to prototype and test expressions without a BPMN diagram.
         </p>
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>

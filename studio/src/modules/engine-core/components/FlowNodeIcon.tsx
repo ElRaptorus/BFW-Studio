@@ -1,6 +1,6 @@
-import type { EventDefinitionType, FlowNodeType } from '@elraptorus/daemonengine_sdk';
-
 import React from 'react';
+
+import type { EventDefinitionType, FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
 import { resolveFlowNodeIconName } from '../FlowNodeIconResolver';
 

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_4714d4f6-3f05-4d36-b651-fc2e5cb4acc9" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definition_4714d4f6-3f05-4d36-b651-fc2e5cb4acc9" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <bpmn:extensionElements>
-    <evil:properties>
-      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="90" complianceStatus="valid" computedAtIso="2026-06-15T10:42:28.889Z" schemaVersion="1" maxPoints="10" penaltyPoints="1" rawErrorFindings="0" rawWarningFindings="2" />
-    </evil:properties>
+    <bfw:properties>
+      <bfw:linterRulesetScore rulesetId="bpmn-development" scorePercent="90" complianceStatus="valid" computedAtIso="2026-06-15T10:42:28.889Z" schemaVersion="1" maxPoints="10" penaltyPoints="1" rawErrorFindings="0" rawWarningFindings="2" />
+    </bfw:properties>
   </bpmn:extensionElements>
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="Untitled" processRef="Process_5b8efdd1-3840-4532-86be-bdd63055f167" />
   </bpmn:collaboration>
   <bpmn:process id="Process_5b8efdd1-3840-4532-86be-bdd63055f167" name="Untitled" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:version>1.0.0</evil:version>
+      <bfw:version>1.0.0</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet>
       <bpmn:lane id="Lane_1xzf0d3" name="Lane">

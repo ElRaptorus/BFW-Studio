@@ -1,7 +1,7 @@
 {
-  "name": "EvilPlatform",
-  "prefix": "evil",
-  "uri": "https://evilengine.dev/schema/bpmn",
+  "name": "BfwPlatform",
+  "prefix": "bfw",
+  "uri": "https://bifrostforge.world/schema/bpmn",
   "associations": [],
   "xml": {
     "tagAlias": "lowerCase"

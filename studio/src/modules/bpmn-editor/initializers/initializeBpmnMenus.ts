@@ -2,7 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
-import type { Menu, MenuItem } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
 import {
   DataObjectDetailLevel,

@@ -8,7 +8,7 @@
  * FROZEN for Wave 2 parallel execution — do not rename or remove IDs without
  * coordinating all tracks.
  */
-import type { RetryRequest, StartRequest, TriggerOptions } from '@elraptorus/daemonengine_sdk';
+import type { RetryRequest, StartRequest, TriggerOptions } from '@elraptorus/bfw_engine_sdk';
 
 import type { RetryContext } from './registerConfiguredRetryCommands';
 

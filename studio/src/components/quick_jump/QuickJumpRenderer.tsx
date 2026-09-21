@@ -4,7 +4,7 @@ import { AutoScrollContainer } from '#components/AutoScrollContainer';
 
 import React from 'react';
 
-import { FormInput } from '@evil/bifrost_fw_sdk';
+import { FormInput } from '@elraptorus/bfw_studio_sdk';
 
 type QuickJumpRendererProps = {
   iconComponent: IconComponent;

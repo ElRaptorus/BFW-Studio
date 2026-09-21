@@ -4,11 +4,11 @@ import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { getHumanizedDateTime } from '#modules/engine-core';
-import type { ProcessModel } from '@elraptorus/daemonengine_sdk';
 
 import React, { useEffect, useState } from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { ProcessModel } from '@elraptorus/bfw_engine_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type { ProcessExplorerDocumentModel } from '../models/ProcessExplorerDocumentModel';
 

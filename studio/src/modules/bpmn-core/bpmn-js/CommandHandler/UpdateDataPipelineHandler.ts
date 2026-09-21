@@ -3,16 +3,16 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 
 import { CmdHelper } from './Helper/CommmandHelper';
 import {
-  createEvilExtension,
-  findAllEvilExtensions,
-  removeEvilExtension,
-  setEvilBodyExtension,
-} from './Utils/EvilExtensionHelper';
+  createBfwExtension,
+  findAllBfwExtensions,
+  removeBfwExtension,
+  setBfwBodyExtension,
+} from './Utils/BfwExtensionHelper';
 
-const EVIL_INPUT_MAPPING = 'evil:InputMapping';
-const EVIL_OUTPUT_MAPPING = 'evil:OutputMapping';
-const EVIL_PAYLOAD_CONTRACT = 'evil:PayloadContract';
-const EVIL_RESULT_CONTRACT = 'evil:ResultContract';
+const BFW_INPUT_MAPPING = 'bfw:InputMapping';
+const BFW_OUTPUT_MAPPING = 'bfw:OutputMapping';
+const BFW_PAYLOAD_CONTRACT = 'bfw:PayloadContract';
+const BFW_RESULT_CONTRACT = 'bfw:ResultContract';
 
 export function UpdateDataPipelineHandler(this: any, commandStack: CommandStack, bpmnFactory: any): void {
   this.commandStack = commandStack;
@@ -26,9 +26,9 @@ UpdateDataPipelineHandler.prototype.preExecute = function (context: any) {
 
   const addMapping = (args: any): void => {
     const { element, mappingType, source, target } = args;
-    const evilType = mappingType === 'input' ? EVIL_INPUT_MAPPING : EVIL_OUTPUT_MAPPING;
+    const extensionType = mappingType === 'input' ? BFW_INPUT_MAPPING : BFW_OUTPUT_MAPPING;
 
-    const commands = createEvilExtension(element, this.bpmnFactory, evilType, {
+    const commands = createBfwExtension(element, this.bpmnFactory, extensionType, {
       source: source || '',
       target: target || '',
     });
@@ -42,8 +42,8 @@ UpdateDataPipelineHandler.prototype.preExecute = function (context: any) {
   const deleteMapping = (args: any): void => {
     const { element, mappingType, index } = args;
     const businessObject = getBusinessObject(element);
-    const evilType = mappingType === 'input' ? EVIL_INPUT_MAPPING : EVIL_OUTPUT_MAPPING;
-    const allMappings = findAllEvilExtensions(businessObject, evilType);
+    const extensionType = mappingType === 'input' ? BFW_INPUT_MAPPING : BFW_OUTPUT_MAPPING;
+    const allMappings = findAllBfwExtensions(businessObject, extensionType);
 
     if (index < 0 || index >= allMappings.length) {
       return;
@@ -70,8 +70,8 @@ UpdateDataPipelineHandler.prototype.preExecute = function (context: any) {
   const updateMapping = (args: any): void => {
     const { element, mappingType, index, source, target } = args;
     const businessObject = getBusinessObject(element);
-    const evilType = mappingType === 'input' ? EVIL_INPUT_MAPPING : EVIL_OUTPUT_MAPPING;
-    const allMappings = findAllEvilExtensions(businessObject, evilType);
+    const extensionType = mappingType === 'input' ? BFW_INPUT_MAPPING : BFW_OUTPUT_MAPPING;
+    const allMappings = findAllBfwExtensions(businessObject, extensionType);
 
     if (index < 0 || index >= allMappings.length) {
       return;
@@ -94,19 +94,19 @@ UpdateDataPipelineHandler.prototype.preExecute = function (context: any) {
   const reorderMapping = (args: any): void => {
     const { element, mappingType, fromIndex, toIndex } = args;
     const businessObject = getBusinessObject(element);
-    const evilType = mappingType === 'input' ? EVIL_INPUT_MAPPING : EVIL_OUTPUT_MAPPING;
+    const extensionType = mappingType === 'input' ? BFW_INPUT_MAPPING : BFW_OUTPUT_MAPPING;
     const extensionElements = businessObject.extensionElements;
 
     if (extensionElements == null) {
       return;
     }
 
-    const allMappings = findAllEvilExtensions(businessObject, evilType);
+    const allMappings = findAllBfwExtensions(businessObject, extensionType);
     if (fromIndex < 0 || fromIndex >= allMappings.length || toIndex < 0 || toIndex >= allMappings.length) {
       return;
     }
 
-    const otherValues = (extensionElements.values ?? []).filter((value: any) => value.$type !== evilType);
+    const otherValues = (extensionElements.values ?? []).filter((value: any) => value.$type !== extensionType);
     const reorderedMappings = [...allMappings];
     const [moved] = reorderedMappings.splice(fromIndex, 1);
     reorderedMappings.splice(toIndex, 0, moved);
@@ -119,14 +119,14 @@ UpdateDataPipelineHandler.prototype.preExecute = function (context: any) {
 
   const setMappings = (args: any): void => {
     const { element, mappingType, mappings } = args;
-    const evilType = mappingType === 'input' ? EVIL_INPUT_MAPPING : EVIL_OUTPUT_MAPPING;
+    const extensionType = mappingType === 'input' ? BFW_INPUT_MAPPING : BFW_OUTPUT_MAPPING;
     const commands: any[] = [];
 
-    commands.push(...removeEvilExtension(element, evilType));
+    commands.push(...removeBfwExtension(element, extensionType));
 
     for (const mapping of mappings ?? []) {
       commands.push(
-        ...createEvilExtension(element, this.bpmnFactory, evilType, {
+        ...createBfwExtension(element, this.bpmnFactory, extensionType, {
           source: mapping.source || '',
           target: mapping.target || '',
         }),
@@ -141,8 +141,8 @@ UpdateDataPipelineHandler.prototype.preExecute = function (context: any) {
 
   const updateContract = (args: any): void => {
     const { element, contractType, value } = args;
-    const evilType = contractType === 'payload' ? EVIL_PAYLOAD_CONTRACT : EVIL_RESULT_CONTRACT;
-    const commands = setEvilBodyExtension(element, this.bpmnFactory, evilType, value);
+    const extensionType = contractType === 'payload' ? BFW_PAYLOAD_CONTRACT : BFW_RESULT_CONTRACT;
+    const commands = setBfwBodyExtension(element, this.bpmnFactory, extensionType, value);
 
     if (commands.length > 0) {
       const commandToExecute = CmdHelper.executeMultipleCommands(commands);

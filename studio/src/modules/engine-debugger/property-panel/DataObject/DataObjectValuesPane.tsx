@@ -6,12 +6,12 @@ import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { getHumanizedDateTime, getShortId } from '#modules/engine-core/Formatters';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 import Select from 'react-select';
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getFlowNodeById } from '../../libs/BpmnProcessHelpers';

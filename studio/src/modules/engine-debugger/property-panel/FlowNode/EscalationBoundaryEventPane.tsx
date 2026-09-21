@@ -4,11 +4,11 @@ import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTy
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { FlowNode as BpmnFlowNode } from '@elraptorus/bfw_engine_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getEscalationCode } from '../../libs/BpmnFlowNodeAccessors';

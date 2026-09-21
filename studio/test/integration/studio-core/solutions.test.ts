@@ -11,19 +11,19 @@ const TREE_ENTRY_SELECTOR = `${TREE_SELECTOR} .treeview__entry`;
 const PROJECT_ENTRY_SELECTOR = `${TREE_SELECTOR} [data-test--tree-entry-type="project"]`;
 
 const FIXTURES_DIR = path.join(__dirname, '..', '..', 'fixtures');
-const ESSLN_TEMP_PATH = path.join(FIXTURES_DIR, 'test-solution-multi.essln');
+const SOLUTION_FILE_TEMP_PATH = path.join(FIXTURES_DIR, 'test-solution-multi.bfwsln');
 
 function createEsslnFile(folders: { path: string; name?: string }[]): void {
   const content = {
     folders: folders.map((folder) => (folder.name ? { path: folder.path, name: folder.name } : { path: folder.path })),
     settings: {},
   };
-  fs.writeFileSync(ESSLN_TEMP_PATH, JSON.stringify(content, null, 2) + '\n');
+  fs.writeFileSync(SOLUTION_FILE_TEMP_PATH, JSON.stringify(content, null, 2) + '\n');
 }
 
 function removeEsslnFile(): void {
-  if (fs.existsSync(ESSLN_TEMP_PATH)) {
-    fs.unlinkSync(ESSLN_TEMP_PATH);
+  if (fs.existsSync(SOLUTION_FILE_TEMP_PATH)) {
+    fs.unlinkSync(SOLUTION_FILE_TEMP_PATH);
   }
 }
 
@@ -70,7 +70,7 @@ describe('solutions', () => {
     });
   });
 
-  describe('multi-root (.essln file)', () => {
+  describe('multi-root (.bfwsln file)', () => {
     beforeEach(async ({ task }) => {
       createEsslnFile([
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-a') },
@@ -79,21 +79,21 @@ describe('solutions', () => {
       studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
     });
 
-    it('should open a .essln file as multi-root solution', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+    it('should open a .bfwsln file as multi-root solution', async () => {
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       const projectCount = await studioAgent.getSolutionProjectCount();
       assert.strictEqual(projectCount, 2, 'Multi-root solution should have two projects');
 
       const solutionFileUri = await studioAgent.getSolutionFileUri();
       assert.ok(solutionFileUri != null, 'Multi-root solution should have a solutionFileUri');
-      assert.ok(solutionFileUri!.endsWith('.essln'), 'solutionFileUri should end with .essln');
+      assert.ok(solutionFileUri!.endsWith('.bfwsln'), 'solutionFileUri should end with .bfwsln');
 
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
 
     it('should show project entries as top-level sections in multi-root', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       const projectEntries = await studioAgent.getProjectEntryCount();
       assert.strictEqual(projectEntries, 2, 'Should show two project entries');
@@ -102,7 +102,7 @@ describe('solutions', () => {
     });
 
     it('should display files from both projects', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       await studioAgent.assertVisible(`.treeview__label=process_a1.bpmn`, ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.assertVisible(`.treeview__label=process_a2.bpmn`, ASSERT_VISIBLE_TIMEOUT);
@@ -113,7 +113,7 @@ describe('solutions', () => {
     });
 
     it('should open a file from the first project via quick jump', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       await studioAgent.assertVisible(`.treeview__label=process_a1.bpmn`, ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.openViaQuickJump('process_a1.bpmn');
@@ -123,7 +123,7 @@ describe('solutions', () => {
     });
 
     it('should open a file from the second project via quick jump', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       await studioAgent.assertVisible(`.treeview__label=process_b1.bpmn`, ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.openViaQuickJump('process_b1.bpmn');
@@ -133,7 +133,7 @@ describe('solutions', () => {
     });
 
     it('should open files from different projects in sequence', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       await studioAgent.openViaQuickJump('process_a1.bpmn');
       await studioAgent.assertVisible('[data-test--editors--focused-document-type="bpmn"]', ASSERT_VISIBLE_TIMEOUT);
@@ -151,7 +151,7 @@ describe('solutions', () => {
     });
 
     it('should toggle hidden files across all projects', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       const itemCountBefore = await studioAgent.getElementCount(TREE_ENTRY_SELECTOR);
 
@@ -168,7 +168,7 @@ describe('solutions', () => {
     });
 
     it('should search across multiple projects', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       await studioAgent.leftMenuBar.togglePane('pane/left/search');
       await studioAgent.assertPaneVisible('pane/left/search');
@@ -185,7 +185,7 @@ describe('solutions', () => {
     });
   });
 
-  describe('multi-root (.essln with custom names)', () => {
+  describe('multi-root (.bfwsln with custom names)', () => {
     beforeEach(async ({ task }) => {
       createEsslnFile([
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-a'), name: 'Project Alpha' },
@@ -194,8 +194,8 @@ describe('solutions', () => {
       studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
     });
 
-    it('should display custom project names from the .essln file', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+    it('should display custom project names from the .bfwsln file', async () => {
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       await studioAgent.assertVisible(`.treeview__label=Project Alpha`, ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.assertVisible(`.treeview__label=Project Beta`, ASSERT_VISIBLE_TIMEOUT);
@@ -326,7 +326,7 @@ describe('solutions', () => {
     });
 
     it('should show context menu on project root in multi-root', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       const projectEntries = await studioAgent.getProjectEntryCount();
       assert.strictEqual(projectEntries, 2);
@@ -348,7 +348,7 @@ describe('solutions', () => {
     });
 
     it('should rename a project label via API', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       await studioAgent.assertVisible(`.treeview__label=Original Name`, ASSERT_VISIBLE_TIMEOUT);
 
@@ -389,7 +389,7 @@ describe('solutions', () => {
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-b') },
       ]);
 
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       const projectCount = await studioAgent.getSolutionProjectCount();
       assert.strictEqual(projectCount, 2);
@@ -417,28 +417,28 @@ describe('solutions', () => {
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
 
-    it('should be dirty after adding a folder (no .essln file)', async () => {
+    it('should be dirty after adding a folder (no .bfwsln file)', async () => {
       await studioAgent.openFixturesDirectoryAsSolution('test-solution-multi-a');
 
       const folderBUri = studioAgent.getFixturesAbsoluteFileUri('test-solution-multi-b');
       await studioAgent.addFolderToSolutionViaApi(folderBUri);
 
       const isDirty = await studioAgent.isSolutionDirty();
-      assert.strictEqual(isDirty, true, 'Should be dirty after adding a folder without .essln');
+      assert.strictEqual(isDirty, true, 'Should be dirty after adding a folder without .bfwsln');
 
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
 
-    it('should not be dirty for a freshly opened .essln solution', async () => {
+    it('should not be dirty for a freshly opened .bfwsln solution', async () => {
       createEsslnFile([
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-a') },
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-b') },
       ]);
 
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       const isDirty = await studioAgent.isSolutionDirty();
-      assert.strictEqual(isDirty, false, 'Freshly opened .essln should not be dirty');
+      assert.strictEqual(isDirty, false, 'Freshly opened .bfwsln should not be dirty');
 
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
@@ -470,29 +470,29 @@ describe('solutions', () => {
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
 
-    it('should persist changes when saving an existing .essln solution', async () => {
+    it('should persist changes when saving an existing .bfwsln solution', async () => {
       createEsslnFile([
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-a'), name: 'Before Rename' },
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-b') },
       ]);
 
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
       const folderAUri = studioAgent.getFixturesAbsoluteFileUri('test-solution-multi-a');
       await studioAgent.renameSolutionProjectViaApi(folderAUri, 'After Rename');
 
-      const contentAfterRename = JSON.parse(fs.readFileSync(ESSLN_TEMP_PATH, 'utf-8'));
+      const contentAfterRename = JSON.parse(fs.readFileSync(SOLUTION_FILE_TEMP_PATH, 'utf-8'));
       assert.strictEqual(
         contentAfterRename.folders[0].name,
         'After Rename',
-        'Rename should auto-save to the .essln file',
+        'Rename should auto-save to the .bfwsln file',
       );
 
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
   });
 
-  describe('multi-root (.essln file persistence)', () => {
+  describe('multi-root (.bfwsln file persistence)', () => {
     beforeEach(async ({ task }) => {
       createEsslnFile([
         { path: path.join(FIXTURES_DIR, 'test-solution-multi-a') },
@@ -501,23 +501,23 @@ describe('solutions', () => {
       studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
     });
 
-    it('should verify .essln file exists and is valid JSON', async () => {
-      assert.ok(fs.existsSync(ESSLN_TEMP_PATH), '.essln file should exist');
+    it('should verify .bfwsln file exists and is valid JSON', async () => {
+      assert.ok(fs.existsSync(SOLUTION_FILE_TEMP_PATH), '.bfwsln file should exist');
 
-      const content = JSON.parse(fs.readFileSync(ESSLN_TEMP_PATH, 'utf-8'));
+      const content = JSON.parse(fs.readFileSync(SOLUTION_FILE_TEMP_PATH, 'utf-8'));
       assert.ok(Array.isArray(content.folders), 'folders should be an array');
       assert.strictEqual(content.folders.length, 2, 'Should have two folders');
       assert.ok(content.folders[0].path, 'Each folder should have a path');
       assert.ok(content.folders[1].path, 'Each folder should have a path');
     });
 
-    it('should open the .essln file and verify project structure matches', async () => {
-      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+    it('should open the .bfwsln file and verify project structure matches', async () => {
+      await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
-      const content = JSON.parse(fs.readFileSync(ESSLN_TEMP_PATH, 'utf-8'));
+      const content = JSON.parse(fs.readFileSync(SOLUTION_FILE_TEMP_PATH, 'utf-8'));
       const projectCount = await studioAgent.getSolutionProjectCount();
 
-      assert.strictEqual(projectCount, content.folders.length, 'Project count should match folder count in .essln');
+      assert.strictEqual(projectCount, content.folders.length, 'Project count should match folder count in .bfwsln');
 
       await studioAgent.assertNoErrorsPresentAndIdle();
     });

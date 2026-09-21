@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
 
-import { ThemeToken } from '@evil/bifrost_fw_sdk';
+import { ThemeToken } from '@elraptorus/bfw_studio_sdk';
 
 const cssPath = path.resolve(__dirname, '../../../../studio-sdk/src/webview/studio-webview-theme.css');
 

@@ -3,12 +3,12 @@ import type { BpmnDiagramOrigin, ModdleDefinitions } from './types';
 /**
  * Inspects the moddle definitions tree to classify the diagram's platform
  * origin. Foreign namespaces (Camunda, Zeebe, Flowable, Activiti) end up in
- * `$attrs` because they are unknown to the evil-platform moddle extension.
- * Daemon-engine diagrams are identified by `evil:*` extension elements or
+ * `$attrs` because they are unknown to the bfw-platform moddle extension.
+ * BFW-Engine diagrams are identified by `bfw:*` extension elements or
  * by the exporter field written by Bifrost Forge World.
  *
  * `unknown` is treated the same as `foreign` for linting purposes — the
- * linter should not assume a diagram belongs to the DaemonEngine without
+ * linter should not assume a diagram belongs to the Engine without
  * positive evidence.
  */
 export function detectBpmnOrigin(definitions: ModdleDefinitions): BpmnDiagramOrigin {
@@ -17,9 +17,9 @@ export function detectBpmnOrigin(definitions: ModdleDefinitions): BpmnDiagramOri
     for (const val of extValues!.values) {
       if (
         typeof (val as { $type?: string })?.$type === 'string' &&
-        (val as { $type: string }).$type.startsWith('evil:')
+        (val as { $type: string }).$type.startsWith('bfw:')
       ) {
-        return { origin: 'daemon-engine', provider: 'ThomasTheDaemonEngine' };
+        return { origin: 'bfw-engine', provider: 'BFW-Engine' };
       }
     }
   }
@@ -27,8 +27,8 @@ export function detectBpmnOrigin(definitions: ModdleDefinitions): BpmnDiagramOri
   const exporter = (definitions as Record<string, unknown>).exporter;
   if (typeof exporter === 'string') {
     const lower = exporter.toLowerCase();
-    if (lower.includes('bifrost') || lower.includes('evil') || lower.includes('forge world')) {
-      return { origin: 'daemon-engine', provider: 'ThomasTheDaemonEngine' };
+    if (lower.includes('bifrost') || lower.includes('forge world')) {
+      return { origin: 'bfw-engine', provider: 'BFW-Engine' };
     }
   }
 

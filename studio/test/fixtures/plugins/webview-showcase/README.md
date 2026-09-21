@@ -4,7 +4,7 @@ A fully-featured example plugin demonstrating iframe-based editor document types
 
 ## What is this?
 
-This plugin registers a custom **Editor Document Type** and a **Sidebar Pane**, both backed by sandboxed `<iframe>` containers. When you open the showcase editor or expand the sidebar, the Studio loads React applications inside the iframes via the `evil-webview://` custom protocol. The plugin backend (running in the Plugin Host child process) and the iframe UIs communicate bidirectionally through the Studio's messaging bridge.
+This plugin registers a custom **Editor Document Type** and a **Sidebar Pane**, both backed by sandboxed `<iframe>` containers. When you open the showcase editor or expand the sidebar, the Studio loads React applications inside the iframes via the `bifrostfw-webview://` custom protocol. The plugin backend (running in the Plugin Host child process) and the iframe UIs communicate bidirectionally through the Studio's messaging bridge.
 
 It exercises the following APIs:
 

@@ -2,16 +2,14 @@
 
 The Bifrost Forge World SDK for plugin developers. Provides type definitions, reusable UI components, and design tokens for building Bifrost Forge World plugins.
 
-Package name: `@evil/bifrost_fw_sdk` (private `file:` package).
-
 ## What this package is
 
-| Surface | Use it for |
-|---------|------------|
-| `src/plugin-api/` | `StudioPluginApi`, sub-APIs, manifest types, `acquireStudioApi()`, `ThemeToken` |
-| `src/contracts/` | Serializable POJOs already used by the plugin API (`MenuItem`, `SettingDescriptor`, `MenuBarItem`, `StatusBarItem`, property-search helper) |
-| `src/webview/studio-webview-theme.css` | Documentation of `--theme-*` tokens with Bifrost Night fallbacks (not loaded at runtime) |
-| `src/components/` | Webview-safe content controls (see below) |
+| Surface                                | Use it for                                                                                                                                  |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/plugin-api/`                      | `StudioPluginApi`, sub-APIs, manifest types, `acquireStudioApi()`, `ThemeToken`                                                             |
+| `src/contracts/`                       | Serializable POJOs already used by the plugin API (`MenuItem`, `SettingDescriptor`, `MenuBarItem`, `StatusBarItem`, property-search helper) |
+| `src/webview/studio-webview-theme.css` | Documentation of `--theme-*` tokens with Bifrost Night fallbacks (not loaded at runtime)                                                    |
+| `src/components/`                      | Webview-safe content controls (see below)                                                                                                   |
 
 Internal Studio modules do **not** use this package as a host facade. They type `Bifrost` from `#bifrost/Bifrost`. Plugin authors type `StudioPluginApi`.
 

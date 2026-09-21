@@ -23,7 +23,7 @@
   --theme-plugin-overlay-status-fg: #333;
 }
 
-.evil-plugin-overlay {
+.bfw-plugin-overlay {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -34,7 +34,7 @@
   z-index: 200;
 }
 
-.evil-plugin-overlay--badge {
+.bfw-plugin-overlay--badge {
   min-width: 18px;
   height: 18px;
   padding: 2px 6px;
@@ -56,7 +56,7 @@
   }
 }
 
-.evil-plugin-overlay--badge[data-clickable='true'] {
+.bfw-plugin-overlay--badge[data-clickable='true'] {
   cursor: pointer;
 
   &:hover {
@@ -69,7 +69,7 @@
   }
 }
 
-.evil-plugin-overlay--icon {
+.bfw-plugin-overlay--icon {
   width: 20px;
   height: 20px;
   font-size: 14px;
@@ -89,7 +89,7 @@
   }
 }
 
-.evil-plugin-overlay--icon[data-clickable='true'] {
+.bfw-plugin-overlay--icon[data-clickable='true'] {
   cursor: pointer;
 
   &:hover {
@@ -102,70 +102,70 @@
   }
 }
 
-.evil-plugin-overlay--info {
-  &.evil-plugin-overlay--badge {
+.bfw-plugin-overlay--info {
+  &.bfw-plugin-overlay--badge {
     background: var(--theme-plugin-overlay-info-bg);
     color: var(--theme-plugin-overlay-info-fg);
     border-color: var(--theme-plugin-overlay-info-border);
   }
 
-  &.evil-plugin-overlay--icon {
+  &.bfw-plugin-overlay--icon {
     color: var(--theme-plugin-overlay-info-fg);
     background: var(--theme-plugin-overlay-info-bg);
     border-color: var(--theme-plugin-overlay-info-border);
   }
 }
 
-.evil-plugin-overlay--warning {
-  &.evil-plugin-overlay--badge {
+.bfw-plugin-overlay--warning {
+  &.bfw-plugin-overlay--badge {
     background: var(--theme-plugin-overlay-warning-bg);
     color: var(--theme-plugin-overlay-warning-fg);
     border-color: var(--theme-plugin-overlay-warning-border);
   }
 
-  &.evil-plugin-overlay--icon {
+  &.bfw-plugin-overlay--icon {
     color: var(--theme-plugin-overlay-warning-fg);
     background: var(--theme-plugin-overlay-warning-bg);
     border-color: var(--theme-plugin-overlay-warning-border);
   }
 }
 
-.evil-plugin-overlay--error {
-  &.evil-plugin-overlay--badge {
+.bfw-plugin-overlay--error {
+  &.bfw-plugin-overlay--badge {
     background: var(--theme-plugin-overlay-error-bg);
     color: var(--theme-plugin-overlay-error-fg);
     border-color: var(--theme-plugin-overlay-error-border);
   }
 
-  &.evil-plugin-overlay--icon {
+  &.bfw-plugin-overlay--icon {
     color: var(--theme-plugin-overlay-error-fg);
     background: var(--theme-plugin-overlay-error-bg);
     border-color: var(--theme-plugin-overlay-error-border);
   }
 }
 
-.evil-plugin-overlay--success {
-  &.evil-plugin-overlay--badge {
+.bfw-plugin-overlay--success {
+  &.bfw-plugin-overlay--badge {
     background: var(--theme-plugin-overlay-success-bg);
     color: var(--theme-plugin-overlay-success-fg);
     border-color: var(--theme-plugin-overlay-success-border);
   }
 
-  &.evil-plugin-overlay--icon {
+  &.bfw-plugin-overlay--icon {
     color: var(--theme-plugin-overlay-success-fg);
     background: var(--theme-plugin-overlay-success-bg);
     border-color: var(--theme-plugin-overlay-success-border);
   }
 }
 
-.evil-plugin-overlay--neutral {
-  &.evil-plugin-overlay--badge {
+.bfw-plugin-overlay--neutral {
+  &.bfw-plugin-overlay--badge {
     background: var(--theme-plugin-overlay-neutral-bg);
     color: var(--theme-plugin-overlay-neutral-fg);
     border-color: var(--theme-plugin-overlay-neutral-border);
   }
 
-  &.evil-plugin-overlay--icon {
+  &.bfw-plugin-overlay--icon {
     color: var(--theme-plugin-overlay-neutral-fg);
     background: var(--theme-plugin-overlay-neutral-bg);
     border-color: var(--theme-plugin-overlay-neutral-border);
@@ -177,59 +177,59 @@
 // and match the Studio's internal action/status badge designs.
 
 // Action pill color modifiers (override default #607d8b background)
-.bpmn-element-overlay__below-item--action.evil-plugin-action--info {
+.bpmn-element-overlay__below-item--action.bfw-plugin-action--info {
   background-color: var(--theme-plugin-overlay-info-bg);
   color: var(--theme-plugin-overlay-info-fg);
 }
 
-.bpmn-element-overlay__below-item--action.evil-plugin-action--warning {
+.bpmn-element-overlay__below-item--action.bfw-plugin-action--warning {
   background-color: var(--theme-plugin-overlay-warning-bg);
   color: var(--theme-plugin-overlay-warning-fg);
 }
 
-.bpmn-element-overlay__below-item--action.evil-plugin-action--error {
+.bpmn-element-overlay__below-item--action.bfw-plugin-action--error {
   background-color: var(--theme-plugin-overlay-error-bg);
   color: var(--theme-plugin-overlay-error-fg);
 }
 
-.bpmn-element-overlay__below-item--action.evil-plugin-action--success {
+.bpmn-element-overlay__below-item--action.bfw-plugin-action--success {
   background-color: var(--theme-plugin-overlay-success-bg);
   color: var(--theme-plugin-overlay-success-fg);
 }
 
-.bpmn-element-overlay__below-item--action.evil-plugin-action--neutral {
+.bpmn-element-overlay__below-item--action.bfw-plugin-action--neutral {
   background-color: var(--theme-plugin-overlay-neutral-bg);
   color: var(--theme-plugin-overlay-neutral-fg);
 }
 
 // Status pill — inverse color scheme (informational, non-interactive)
-.evil-plugin-status {
+.bfw-plugin-status {
   color: var(--theme-plugin-overlay-status-fg);
   background-color: var(--theme-plugin-overlay-status-bg);
   cursor: default;
 }
 
-.evil-plugin-status--info {
+.bfw-plugin-status--info {
   background-color: var(--theme-plugin-overlay-info-bg);
   color: var(--theme-plugin-overlay-info-fg);
 }
 
-.evil-plugin-status--warning {
+.bfw-plugin-status--warning {
   background-color: var(--theme-plugin-overlay-warning-bg);
   color: var(--theme-plugin-overlay-warning-fg);
 }
 
-.evil-plugin-status--error {
+.bfw-plugin-status--error {
   background-color: var(--theme-plugin-overlay-error-bg);
   color: var(--theme-plugin-overlay-error-fg);
 }
 
-.evil-plugin-status--success {
+.bfw-plugin-status--success {
   background-color: var(--theme-plugin-overlay-success-bg);
   color: var(--theme-plugin-overlay-success-fg);
 }
 
-.evil-plugin-status--neutral {
+.bfw-plugin-status--neutral {
   background-color: var(--theme-plugin-overlay-neutral-bg);
   color: var(--theme-plugin-overlay-neutral-fg);
 }

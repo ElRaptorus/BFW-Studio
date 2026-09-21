@@ -883,14 +883,14 @@ describe('plugin-host/integration', () => {
     });
   });
 
-  describe('BFR_PLUGINS_DIR configuration', () => {
+  describe('BFW_PLUGINS_DIR configuration', () => {
     let studioAgent: StudioAgent;
 
     afterEach(async ({ task }) => {
       await finishPluginHostTest(studioAgent, task);
     });
 
-    it('loads no plugins when BFR_PLUGINS_DIR points to an empty directory', async ({ task }) => {
+    it('loads no plugins when BFW_PLUGINS_DIR points to an empty directory', async ({ task }) => {
       studioAgent = await createAndStartStudioAgentForPluginHost(
         { testName: task.name, testFile: __filename },
         { pluginsDirectory: PLUGINS_EMPTY_DIR },
@@ -899,10 +899,10 @@ describe('plugin-host/integration', () => {
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
 
-    it('loads no plugins when BFR_PLUGINS_DIR points to a non-existent directory', async ({ task }) => {
+    it('loads no plugins when BFW_PLUGINS_DIR points to a non-existent directory', async ({ task }) => {
       studioAgent = await createAndStartStudioAgentForPluginHost(
         { testName: task.name, testFile: __filename },
-        { pluginsDirectory: '/tmp/evil-nonexistent-plugins-dir' },
+        { pluginsDirectory: '/tmp/bfw-nonexistent-plugins-dir' },
       );
 
       await studioAgent.assertNoErrorsPresentAndIdle();
@@ -1775,7 +1775,7 @@ describe('plugin-host/integration', () => {
     it('mismatch: activate() that never registers a matching editor shows a terminal error instead of hanging', async ({
       task,
     }) => {
-      // BFR_SKIP_PERMISSION_DIALOG is set for the whole file by the outer beforeAll,
+      // BFW_SKIP_PERMISSION_DIALOG is set for the whole file by the outer beforeAll,
       // so editor-doctype-broken's `filesystem` permission is auto-approved here.
       studioAgent = await createAndStartStudioAgentForPluginHost(
         { testName: task.name, testFile: __filename },
@@ -1816,7 +1816,7 @@ describe('plugin-host/integration', () => {
         { testName: task.name, testFile: __filename },
         {
           pluginsDirectory: PLUGINS_FIXTURE_DIR,
-          extraEnv: { BFR_FORCE_DENY_PLUGIN_PERMISSIONS: 'editor-doctype-broken' },
+          extraEnv: { BFW_FORCE_DENY_PLUGIN_PERMISSIONS: 'editor-doctype-broken' },
           waitUntilListCountAtLeast: FIXTURE_PLUGIN_COUNT,
         },
       );

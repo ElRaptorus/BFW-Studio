@@ -30,7 +30,7 @@ describe('convertGraphqlProcessModel', () => {
         dataObjectReferences: [],
         associations: [],
         extensions: [],
-        linterScores: [{ rulesetId: 'evil-default', scorePercent: '92.5', complianceStatus: 'compliant' }],
+        linterScores: [{ rulesetId: 'bfw-default', scorePercent: '92.5', complianceStatus: 'compliant' }],
         flowNodes: [
           {
             id: 'Start_1',
@@ -106,7 +106,7 @@ describe('convertGraphqlProcessModel', () => {
     expect(process.associations).toEqual([]);
     expect(definitions.rawXml).toBe('<xml/>');
     expect(definitions.messages).toEqual([{ id: 'Message_payment', name: 'payment-received' }]);
-    expect(process.linterScores[0]?.rulesetId).toBe('evil-default');
+    expect(process.linterScores[0]?.rulesetId).toBe('bfw-default');
     expect(process.linterScores[0]?.score).toBe(92.5);
 
     const start = process.flowNodes.find((node) => node.id === 'Start_1');

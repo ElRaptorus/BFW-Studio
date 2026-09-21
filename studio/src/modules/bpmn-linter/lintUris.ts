@@ -1,5 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import { BFR_LINTER_RULESET_SCORE_COMMAND } from '#modules/bpmn-core/bpmn-js/CommandHandler/UpdateEvilLinterRulesetScoreHandler';
+import { BFW_LINTER_RULESET_SCORE_COMMAND } from '#modules/bpmn-core/bpmn-js/CommandHandler/UpdateBfwLinterRulesetScoreHandler';
 import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 
@@ -137,7 +137,7 @@ async function tryLintOpenBpmnTab(
   }
 
   const origin = detectBpmnOrigin(services.definitions);
-  if (origin.origin !== 'daemon-engine' && !options.alwaysLintForeignDiagrams) {
+  if (origin.origin !== 'bfw-engine' && !options.alwaysLintForeignDiagrams) {
     return 'skipped-foreign';
   }
 
@@ -156,7 +156,7 @@ async function tryLintOpenBpmnTab(
     return 'unchanged';
   }
 
-  services.commandStack.execute(BFR_LINTER_RULESET_SCORE_COMMAND, {
+  services.commandStack.execute(BFW_LINTER_RULESET_SCORE_COMMAND, {
     element: services.rootShape,
     definitions: services.definitions,
     score: newScore,

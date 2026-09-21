@@ -9,7 +9,7 @@ import type { BpmnElementCustomProperty } from '#modules/bpmn-editor/BpmnElement
 
 import React from 'react';
 
-import { FormInput } from '@evil/bifrost_fw_sdk';
+import { FormInput } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 

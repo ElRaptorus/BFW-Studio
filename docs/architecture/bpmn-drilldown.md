@@ -219,7 +219,7 @@ For an Ad-hoc Sub-Process context (`businessObject.$type === 'bpmn:AdHocSubProce
 
 **Path:** `studio/src/modules/engine-model-viewer/panes/SubProcessPane.tsx`
 
-Shown in the inspector when a `bpmn:SubProcess` (or subclass: Transaction, Event Subprocess, Ad-hoc Sub-Process) element is selected on the canvas (as opposed to the context-pane's "no selection inside the plane" state above). `shouldBeDisplayed` matches on `:SubProcess`, `:Transaction`, `:AdHocSubProcess`. For an Ad-hoc Sub-Process, `getPaneTitle` returns "Ad-hoc Sub-Process" and the content additionally renders: Type, Ordering, Completion Condition, Cancel Remaining Instances, Implementation, and Active Elements (`evil:ActiveElements`) — all read-only, sourced directly from the deployed model's `businessObject`.
+Shown in the inspector when a `bpmn:SubProcess` (or subclass: Transaction, Event Subprocess, Ad-hoc Sub-Process) element is selected on the canvas (as opposed to the context-pane's "no selection inside the plane" state above). `shouldBeDisplayed` matches on `:SubProcess`, `:Transaction`, `:AdHocSubProcess`. For an Ad-hoc Sub-Process, `getPaneTitle` returns "Ad-hoc Sub-Process" and the content additionally renders: Type, Ordering, Completion Condition, Cancel Remaining Instances, Implementation, and Active Elements (`bfw:ActiveElements`) — all read-only, sourced directly from the deployed model's `businessObject`.
 
 ### Commands
 

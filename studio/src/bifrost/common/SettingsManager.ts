@@ -7,7 +7,7 @@ import {
 import * as jsonComment from 'comment-json';
 import equal from 'fast-deep-equal';
 
-import type { SettingDescriptor, SettingsValidationResult } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor, SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
 
 import type { ISerializable, SerializedData } from '../contracts/SerializableTypes';
 import { validateSetting, validateSettings } from './SettingsValidator';

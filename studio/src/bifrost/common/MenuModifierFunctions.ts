@@ -1,4 +1,4 @@
-import type { Menu, MenuItem, MenuItem_SubMenu } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem, MenuItem_SubMenu } from '@elraptorus/bfw_studio_sdk';
 
 type TraverseResult = {
   parentMenu: Menu;

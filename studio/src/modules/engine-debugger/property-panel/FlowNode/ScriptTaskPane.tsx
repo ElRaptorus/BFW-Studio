@@ -6,9 +6,10 @@ import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
 import { PaneBody } from '#components/panes/PaneBody';
 import { buildSimplePropertyPaneProvider } from '#components/panes/PaneFunctions';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
-import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
+
+import type { FlowNode as BpmnFlowNode } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/index';

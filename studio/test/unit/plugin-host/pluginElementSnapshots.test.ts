@@ -3,7 +3,7 @@ import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 import assert from 'node:assert';
 import { describe, it } from 'vitest';
 
-import { PluginBpmnElementType, PluginDmnElementType } from '@evil/bifrost_fw_sdk';
+import { PluginBpmnElementType, PluginDmnElementType } from '@elraptorus/bfw_studio_sdk';
 
 import { toBpmnElementDetailSnapshots } from '../../../src/bifrost/electron-renderer/plugin-host/PluginOverlayStore';
 

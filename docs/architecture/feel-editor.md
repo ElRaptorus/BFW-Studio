@@ -121,7 +121,7 @@ The library is ESM-only. The SDK tsconfig uses `"module": "ESNext"` and `"module
 
 **Command ID**: `bpmn.feel.getExpressionContext`
 
-Registered in `studio/src/modules/bpmn-editor/initializers/initializeFeelContextCommands.ts`. Returns a `FeelEditorVariable[]` array representing the ThomasTheDaemonEngine's FEEL expression context.
+Registered in `studio/src/modules/bpmn-editor/initializers/initializeFeelContextCommands.ts`. Returns a `FeelEditorVariable[]` array representing the BFW-Engine's FEEL expression context.
 
 The command is universally callable. It accepts an optional `EditorDocument` parameter:
 

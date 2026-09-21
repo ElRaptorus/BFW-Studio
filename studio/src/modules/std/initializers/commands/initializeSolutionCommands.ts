@@ -60,15 +60,15 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
       let defaultPath: string | undefined;
       if (directories.length > 0) {
-        defaultPath = directories[0] + '/' + solutionName + '.essln';
+        defaultPath = directories[0] + '/' + solutionName + '.bfwsln';
       } else {
-        defaultPath = solutionName + '.essln';
+        defaultPath = solutionName + '.bfwsln';
       }
 
       const solutionFilePath = await bifrost.dialog.showSaveFile({
         title: 'Save Solution as...',
         defaultPath,
-        filters: [{ name: 'Bifrost Forge World Solution', extensions: ['essln'] }],
+        filters: [{ name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] }],
       });
 
       if (solutionFilePath == null) {
@@ -219,7 +219,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       const solutionFilePath = await bifrost.dialog.showSaveFile({
         title: 'Save Solution As',
         defaultPath,
-        filters: [{ name: 'Bifrost Forge World Solution', extensions: ['essln'] }],
+        filters: [{ name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] }],
       });
 
       if (solutionFilePath == null) {
@@ -324,7 +324,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
             const solutionFilePath = await bifrost.dialog.showSaveFile({
               title: 'Save Solution As',
               defaultPath,
-              filters: [{ name: 'Bifrost Forge World Solution', extensions: ['essln'] }],
+              filters: [{ name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] }],
             });
 
             if (solutionFilePath == null) {
@@ -355,7 +355,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       if (solutionFileUri == null) {
         const filenames = await bifrost.dialog.showOpenFile({
           title: 'Open Solution File',
-          filters: [{ name: 'Bifrost Forge World Solution', extensions: ['essln'] }],
+          filters: [{ name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] }],
         });
 
         if (filenames == null || filenames.length === 0) {
@@ -993,7 +993,7 @@ async function promptForOpenAction(
 }
 
 async function openSolutionOrDirectory(bifrost: Bifrost, uri: string, localPath: string): Promise<void> {
-  if (localPath.endsWith('.essln')) {
+  if (localPath.endsWith('.bfwsln')) {
     await bifrost.solution.openSolutionFile(uri);
   } else {
     bifrost.solution.openDirectoryAsSolution(uri);

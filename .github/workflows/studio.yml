@@ -98,7 +98,7 @@ jobs:
 
       - name: Configure Git Identity
         run: |
-          git config --global user.email "ci@evilstudio.dev"
+          git config --global user.email "ci@bifrostforge.world"
           git config --global user.name "CI Runner"
           git config --global init.defaultBranch main
 
@@ -114,6 +114,18 @@ jobs:
       - name: Restore executable bits on unpacked app
         run: |
           find dist/electron/linux-unpacked -maxdepth 1 -type f -exec chmod +x {} \;
+
+      - name: Resolve unpacked Electron binary
+        id: electron_binary
+        run: |
+          binary="$(find dist/electron/linux-unpacked -maxdepth 1 -type f -name 'bfw-studio-*' ! -name '*-launcher' | sort | head -n 1)"
+          if [ -z "$binary" ]; then
+            echo "No bfw-studio Electron binary in dist/electron/linux-unpacked" >&2
+            ls -la dist/electron/linux-unpacked >&2
+            exit 1
+          fi
+          chmod +x "$binary"
+          echo "path=$binary" >> "$GITHUB_OUTPUT"
 
       - name: Install Electron OS dependencies
         run: |
@@ -136,6 +148,8 @@ jobs:
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: 'Run Integration Tests: ${{ matrix.suite }}'
+        env:
+          TEST_APP_PATH: ${{ steps.electron_binary.outputs.path }}
         run: xvfb-run --auto-servernum -s "-screen 0 1920x1080x24" npm run test-prod:electron test:integration:${{ matrix.suite }}
 
       - name: Upload Test Results
@@ -145,5 +159,5 @@ jobs:
           name: test_results_${{ matrix.suite }}
           path: |
             studio/tmp
-            ~/.evil/studio-tests-backup-*
+            ~/.bifrostfw/studio-tests-backup-*
           retention-days: 7

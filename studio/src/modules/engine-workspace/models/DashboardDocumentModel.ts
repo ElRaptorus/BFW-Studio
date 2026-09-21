@@ -2,15 +2,16 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import type { EngineInfoResponse, StatsResponse } from '@elraptorus/daemonengine_sdk';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import type { EngineInfoResponse, StatsResponse } from '@elraptorus/bfw_engine_sdk';
 
 const CONNECTION_GRACE_PERIOD_MS = 60_000;
 
 export class DashboardDocumentModel extends EditorDocumentModel {
   private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
-  private client: DaemonEngineClient | null;
+  private client: BfwEngineClient | null;
   private engineId: string;
   private autoRefresh: EventDrivenRefresh | null = null;
   private authTokenSubscription: { dispose: () => void } | null = null;

@@ -5,7 +5,8 @@ import {
   createProcessNotExecutableOverlay,
 } from '#modules/bpmn-core/overlays';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
-import type { BpmnProcess } from '@elraptorus/daemonengine_sdk';
+
+import type { BpmnProcess } from '@elraptorus/bfw_engine_sdk';
 
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
 import { findFlowNodeById } from '../panes/paneHelpers';

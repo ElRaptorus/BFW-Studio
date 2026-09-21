@@ -647,7 +647,7 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'process-version': {
     category: 'execution-readiness',
-    why: 'The engine requires every process to carry an evil:version before deployment. Without it, deployment will be rejected.',
+    why: 'The engine requires every process to carry an bfw:version before deployment. Without it, deployment will be rejected.',
     suggestion:
       'Set a version on the process (e.g., "1.0.0"). Use the "Bump Version" command or the process properties pane.',
   },
@@ -696,7 +696,7 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     category: 'execution-readiness',
     why: 'Multi-instance activities need an input collection to determine iteration count and input data. The engine does not support loopCardinality.',
     suggestion:
-      'Set an Input Collection (evil:InputCollection) on the multi-instance configuration. Optionally set maxIterations as a safety cap.',
+      'Set an Input Collection (bfw:InputCollection) on the multi-instance configuration. Optionally set maxIterations as a safety cap.',
   },
   'standard-loop-config': {
     category: 'execution-readiness',
@@ -720,7 +720,7 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     category: 'execution-readiness',
     why: 'Ad-hoc sub-processes need a deterministic way to know when to complete and, in sequential engine-managed mode, a deterministic way to choose the next activity.',
     suggestion:
-      'Set a Completion Condition or an implementation, choose an explicit Ordering, and provide an evil:ActiveElements expression for sequential engine-managed sub-processes.',
+      'Set a Completion Condition or an implementation, choose an explicit Ordering, and provide an bfw:ActiveElements expression for sequential engine-managed sub-processes.',
   },
 
   // Naming Quality

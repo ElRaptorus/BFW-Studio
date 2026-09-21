@@ -4,7 +4,7 @@ import { ContextMenuStore } from '#components/ContextMenuStore';
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import type { Menu } from '@evil/bifrost_fw_sdk';
+import type { Menu } from '@elraptorus/bfw_studio_sdk';
 
 import { renderBifrostMenu } from './ContextMenu';
 import { ErrorBoundaryWithMessage } from './ErrorBoundaryWithMessage';

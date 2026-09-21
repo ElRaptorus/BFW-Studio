@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import type { TriggerOptions } from '@elraptorus/daemonengine_sdk';
+
+import type { TriggerOptions } from '@elraptorus/bfw_engine_sdk';
 
 import type { EngineConnectionManager } from '../EngineConnectionManager';
 

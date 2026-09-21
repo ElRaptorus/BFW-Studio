@@ -1,6 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
-const SUGGESTED_PATTERNS = ['# Bifrost Forge World', '*.essln', 'node_modules/', '.env'];
+const SUGGESTED_PATTERNS = ['# Bifrost Forge World', '*.bfwsln', 'node_modules/', '.env'];
 
 export function suggestGitignore(bifrost: Bifrost, repoRoot: string): void {
   if (bifrost.settings.get('gitCruiser.suggest.gitignore') === false) {

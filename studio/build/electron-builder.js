@@ -33,6 +33,9 @@ const buildConfiguration = {
       filter: ['**/*'],
     },
   ],
+  extraMetadata: {
+    desktopName: appId,
+  },
   nsis: {
     perMachine: false,
     oneClick: false,
@@ -42,7 +45,7 @@ const buildConfiguration = {
   win: {
     sign: {
       publisherName: 'ElRaptorus',
-      type: "signtool",
+      type: 'signtool',
     },
     icon: ICON_PATH_WIN,
     target: 'nsis',
@@ -52,8 +55,13 @@ const buildConfiguration = {
         name: 'BPMN',
         description: 'BPMN diagram extension',
       },
+      {
+        ext: ['dmn'],
+        name: 'DMN',
+        description: 'DMN diagram extension',
+      },
     ],
-    artifactName: 'bifrost-forge-world-${version}.${ext}',
+    artifactName: 'bfw-studio-${version}.${ext}',
   },
   mac: {
     icon: ICON_PATH_MAC,
@@ -72,26 +80,37 @@ const buildConfiguration = {
         ext: ['bpmn'],
         name: 'BPMN',
       },
+      {
+        ext: ['dmn'],
+        name: 'DMN',
+        description: 'DMN diagram extension',
+      },
     ],
-    artifactName: 'bifrost-forge-world-${version}-${arch}.${ext}',
+    artifactName: 'bfw-studio-${version}-${arch}.${ext}',
   },
   linux: {
     icon: path.resolve(ICON_PATH_LINUX),
     category: 'Development',
+    executableName: `bfw-studio-${BuildInfo.version}`,
     fileAssociations: [
       {
         ext: 'bpmn',
         name: 'BPMN',
         description: 'BPMN diagram extension',
       },
+      {
+        ext: 'dmn',
+        name: 'DMN',
+        description: 'DMN diagram extension',
+      },
     ],
     target: ['AppImage'],
     vendor: 'ElRaptorus',
   },
   appImage: {
-    artifactName: 'bifrost-forge-world-${version}.${ext}',
-    description: 'A fully integrated development enviroment for modeling and deploying BPMN diagrams.',
-    synopsis: 'Fully integrated editor for developing BPMNs.',
+    artifactName: 'bfw-studio-${version}.${ext}',
+    description: 'BPMN & DMN Editor for the Bifrost Forge World Workflow Engine.',
+    synopsis: 'Fully integrated editor for developing BPMNs and DMNs.',
   },
   publish: {
     provider: 'generic',

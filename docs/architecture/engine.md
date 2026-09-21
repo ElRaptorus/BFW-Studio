@@ -4,11 +4,11 @@
 
 ## Overview
 
-The Studio communicates with one or more external Engines (ThomasTheDaemonEngine instances). The engine is not part of this application — it is accessed remotely via the published `@elraptorus/daemonengine_client` npm package.
+The Studio communicates with one or more external Engines (BFW-Engine instances). The engine is not part of this application — it is accessed remotely via the published `@elraptorus/bfw_engine_client` npm package.
 
 Engine connectivity is split into five modules:
 
-- **`engine-core`** — Shared foundation: `EngineConnectionManager`, `JwtIdentityManager`, `WebSocketBridge`, commands, settings, reusable components, and the `DaemonEngineClient` instance lifecycle. Frozen barrel (`index.ts`) — signature changes require all consumer modules to be coordinated.
+- **`engine-core`** — Shared foundation: `EngineConnectionManager`, `JwtIdentityManager`, `WebSocketBridge`, commands, settings, reusable components, and the `BfwEngineClient` instance lifecycle. Frozen barrel (`index.ts`) — signature changes require all consumer modules to be coordinated.
 - **`engine-workspace`** — Operations hub: Dashboard, Process Explorer (with context menu, multi-select, quick actions), Instance Search, Task Inbox (auto-refresh, sidebar badge), Decision Catalog, Timer Schedules, Engine Sidebar Pane, document type registration, menus, and Run Menu commands.
 - **`engine-model-viewer`** — Read-only BPMN process model inspector: direct `BpmnViewerComponentAdapter` rendering, ~20 type-specific right panes for element metadata/extensions, version browser, `BpmnElementOverlayManager`-based overlays (per-start-event play buttons, Call Activity target links, Business Rule Task DMN drill-down links, not-executable badges via `OverlayFactory`), export suite.
 - **`engine-decision-viewer`** — DMN decision model inspector: `DmnViewerComponentAdapter` (read-only `dmn-js/lib/NavigatedViewer`) rendering with full multi-view support (DRD, Decision Table, Literal Expression, Boxed Expression), BKM/ItemDefinition/DecisionService detail panes, ad-hoc evaluation panel, version browser, import chain visualization, export suite. Theming via shared `dmn.scss` overrides ensures visual parity with the DMN Editor.
@@ -25,9 +25,9 @@ Engine connectivity is split into five modules:
 │                              engine-core (frozen barrel)                              │
 │                    (commands, components, managers, settings)                         │
 │                                          │                                           │
-│                         @elraptorus/daemonengine_client (HTTP + WS)                  │
+│                         @elraptorus/bfw_engine_client (HTTP + WS)                  │
 │                                          │                                           │
-│                         @elraptorus/daemonengine_sdk (types, contracts)               │
+│                         @elraptorus/bfw_engine_sdk (types, contracts)               │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
 │  Engine (external, remote)                                                           │
 └─────────────────────────────────────────────────────────────────────────────────────┘
@@ -72,14 +72,14 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 
 ### SDK Imports
 
-SDK re-exports were removed from the engine-core barrel. All consumer modules import SDK types directly from `@elraptorus/daemonengine_sdk` and client types from `@elraptorus/daemonengine_client`. Engine-core only exports its own types, components, commands, settings, and utilities.
+SDK re-exports were removed from the engine-core barrel. All consumer modules import SDK types directly from `@elraptorus/bfw_engine_sdk` and client types from `@elraptorus/bfw_engine_client`. Engine-core only exports its own types, components, commands, settings, and utilities.
 
 ## EngineConnectionManager
 
 **Path:** `studio/src/modules/engine-core/EngineConnectionManager.ts`
 **Access:** `bifrost.getSharedRessource('engineConnectionManager')`
 
-Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/disconnect/reconnect, active engine selection, `DaemonEngineClient` per engine, JWT identity (`JwtIdentityManager`), health overrides, and persisted connection list.
+Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/disconnect/reconnect, active engine selection, `BfwEngineClient` per engine, JWT identity (`JwtIdentityManager`), health overrides, and persisted connection list.
 
 ### Events
 
@@ -268,7 +268,7 @@ Each event type has its own dedicated confirmation dialog, split from the former
 - **Escalation**: `askEscalationTriggerConfirmation`. Simple confirmation that the inject is engine-wide (waiting boundaries and Event Subprocess starts), not a modeled throw. No payload field. OverlayFactory resolves the path code from `processDefinition.escalations` via `escalationRef` (`resolveEscalationCode`); catch-all boundaries (no ref / blank code) send the non-blank sentinel `__catchall__`.
 - **Timer**: `askTimerTriggerConfirmation`. Simple confirmation stating the timer will be skipped.
 
-**File:** `studio/src/modules/engine-debugger/libs/BpmnCustomPropertyAccessor.ts` — reads `evil:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.
+**File:** `studio/src/modules/engine-debugger/libs/BpmnCustomPropertyAccessor.ts` — reads `bfw:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.
 
 ### Engine-Workspace Commands (Run Menu & Menubar)
 
@@ -447,11 +447,11 @@ DMN trace data in `FlowNodeInstance.typeProperties` uses snake_case keys (not ca
 Engine modules import types and client directly from the published npm packages:
 
 ```typescript
-import type { ProcessInstance } from '@elraptorus/daemonengine_sdk';
-import { DaemonEngineClient } from '@elraptorus/daemonengine_client';
+import type { ProcessInstance } from '@elraptorus/bfw_engine_sdk';
+import { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 ```
 
-The `EngineConnectionManager` creates and manages `DaemonEngineClient` instances per connected engine. Engine-core exports its own types, components, commands, settings, and utilities via its barrel (`index.ts`), but does not re-export SDK or client types.
+The `EngineConnectionManager` creates and manages `BfwEngineClient` instances per connected engine. Engine-core exports its own types, components, commands, settings, and utilities via its barrel (`index.ts`), but does not re-export SDK or client types.
 
 ---
 
@@ -475,15 +475,15 @@ All selection state and working data (parsed models, fetched lists, computed sta
 
 ## Deployment Version Workflow
 
-The engine requires every deployed BPMN process to carry an `evil:version` extension element. The Studio implements a multi-layered assistance workflow to ensure this requirement is met without disrupting the user's flow.
+The engine requires every deployed BPMN process to carry an `bfw:version` extension element. The Studio implements a multi-layered assistance workflow to ensure this requirement is met without disrupting the user's flow.
 
 ### Default Version in Templates
 
-The empty BPMN document template (`bpmn-editor/BpmnEmptyDocument.bpmn`) includes `<evil:version>1.0.0</evil:version>` on the default process. The `bpmn.diagram.resetRelevantIds` command (which processes the template for each new file) uses `BpmnModdle` with the evil moddle extension registered, ensuring the version element survives the `fromXML`/`toXML` roundtrip.
+The empty BPMN document template (`bpmn-editor/BpmnEmptyDocument.bpmn`) includes `<bfw:version>1.0.0</bfw:version>` on the default process. The `bpmn.diagram.resetRelevantIds` command (which processes the template for each new file) uses `BpmnModdle` with the bfw moddle extension registered, ensuring the version element survives the `fromXML`/`toXML` roundtrip.
 
 ### Auto-Version on Pool Creation
 
-`AutoVersionOnPoolBehavior` (`bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts`) is a diagram-js behavior that hooks into `commandStack.shape.create.postExecuted`. When a Participant (pool) is created, it checks whether the referenced process already has an `evil:Version` extension. If not, it injects version `1.0.0` via the command stack, making the operation undo-able.
+`AutoVersionOnPoolBehavior` (`bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts`) is a diagram-js behavior that hooks into `commandStack.shape.create.postExecuted`. When a Participant (pool) is created, it checks whether the referenced process already has an `bfw:Version` extension. If not, it injects version `1.0.0` via the command stack, making the operation undo-able.
 
 ### Version Utility Module
 
@@ -493,7 +493,7 @@ The empty BPMN document template (`bpmn-editor/BpmnEmptyDocument.bpmn`) includes
 |----------|---------|
 | `suggestNextVersion(current)` | Bumps the patch segment of SemVer, increments plain integers, increments trailing numbers, or appends `-1` for non-deterministic strings |
 | `discoverLatestVersion(client, processId)` | Queries the engine via `client.processes.get(processId)` for the latest deployed version; returns `null` on 404 or network error |
-| `ensureProcessVersions(xml, bifrost, client)` | Parses XML, finds processes missing `evil:Version`, runs discovery, shows "Missing Versions" dialog with pre-filled suggestions, injects versions on confirm |
+| `ensureProcessVersions(xml, bifrost, client)` | Parses XML, finds processes missing `bfw:Version`, runs discovery, shows "Missing Versions" dialog with pre-filled suggestions, injects versions on confirm |
 | `resolveVersionConflicts(xml, conflicts, bifrost, client)` | Post-409 handler: runs discovery to find the true latest version, shows "Version Conflict" dialog with accurate suggestions, injects new versions on confirm |
 
 ### Pre-Deploy Version Check
@@ -552,7 +552,7 @@ The general PaneProvider contract (`shouldBeDisplayed` vs renderer, `PaneWrapper
 
 **Path:** `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts`
 
-`evil-platform.json` stays Studio-owned. `verifyModdleConformance` asserts bidirectional vocabulary match against `extensionManifest` from `@elraptorus/daemonengine_sdk`, including `allowedIn ⊆ applicableTo` (the Studio may be stricter, never more permissive). Invoked from `studio/test/unit/bpmn-core/moddleManifestConformance.test.ts`.
+`bfw-platform.json` stays Studio-owned. `verifyModdleConformance` asserts bidirectional vocabulary match against `extensionManifest` from `@elraptorus/bfw_engine_sdk`, including `allowedIn ⊆ applicableTo` (the Studio may be stricter, never more permissive). Invoked from `studio/test/unit/bpmn-core/moddleManifestConformance.test.ts`.
 
 ---
 

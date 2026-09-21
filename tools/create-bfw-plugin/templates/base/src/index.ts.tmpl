@@ -1,4 +1,4 @@
-import type { StudioPluginApi } from '@evil/bifrost_fw_sdk';
+import type { StudioPluginApi } from '@elraptorus/bfw_studio_sdk';
 
 export async function activate(api: StudioPluginApi): Promise<void> {
   await api.commands.register('hello', () => {

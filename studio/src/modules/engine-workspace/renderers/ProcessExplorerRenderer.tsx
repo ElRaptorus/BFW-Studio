@@ -31,9 +31,10 @@ import {
   getHumanizedDateTime,
   resolveHealthState,
 } from '#modules/engine-core';
-import type { ProcessModel, ProcessModelField, SortClause } from '@elraptorus/daemonengine_sdk';
 
 import React, { useCallback, useMemo, useState } from 'react';
+
+import type { ProcessModel, ProcessModelField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
 import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';

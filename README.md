@@ -1,4 +1,4 @@
-# Bifrost Forge World
+# Bifrost Forge World Studio
 
 > Toll the great Bell once! Pull the lever forward, to engage the Piston and Pump!\
 > Toll the great Bell twice! With the push of the Button, fire the Engine and spark the Turbine into life!\
@@ -8,7 +8,7 @@
 
 ## What is this?
 
-A BPMN 2.0 modeling Environment, built with ReactJS and Electron. Used to model BPMN and DMN diagrams, which can be run with the [Daemon Engine](https://github.com/ElRaptorus/ThomasTheDaemonEngine).
+A BPMN 2.0 modeling Environment, built with ReactJS and Electron. Used to model BPMN and DMN diagrams, which can be run with [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine).
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ A BPMN 2.0 modeling Environment, built with ReactJS and Electron. Used to model 
 ```sh
 # --allow-remote=all is required for the extract-zip override.
 # Will be removed, as soon as electron-chromedriver and webdriverio have replaced it or extract-zip's maintainer ever fixes the vulnerabilities (which is unlikely).
-npm ci --allow-remote=all 
+npm ci --allow-remote=all
 ```
 
 ### Development Build

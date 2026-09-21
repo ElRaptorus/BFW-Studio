@@ -8,13 +8,13 @@ import { countScorableElements } from '../../../src/modules/bpmn-linter/scoring/
 const DAEMON_ENGINE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions
   xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-  xmlns:evil="https://evilengine.dev/schema/bpmn"
+  xmlns:bfw="https://bifrostforge.world/schema/bpmn"
   id="Definitions_1"
-  targetNamespace="https://evilengine.dev/schema/bpmn"
+  targetNamespace="https://bifrostforge.world/schema/bpmn"
   exporter="Bifrost Forge World">
   <bpmn:process id="process_1" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:Version>1.0.0</evil:Version>
+      <bfw:Version>1.0.0</bfw:Version>
     </bpmn:extensionElements>
     <bpmn:startEvent id="Start_1">
       <bpmn:outgoing>Flow_1</bpmn:outgoing>
@@ -46,19 +46,19 @@ const CAMUNDA_FOREIGN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 const POOL_LANE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions
   xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-  xmlns:evil="https://evilengine.dev/schema/bpmn"
+  xmlns:bfw="https://bifrostforge.world/schema/bpmn"
   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
   id="Definitions_CaCascadeParentThenAbort"
-  targetNamespace="https://evilengine.dev/schema/bpmn"
+  targetNamespace="https://bifrostforge.world/schema/bpmn"
   exporter="Bifrost Forge World">
   <bpmn:collaboration id="Collaboration_1">
     <bpmn:participant id="Participant_1" name="Pool" processRef="Process_1" />
   </bpmn:collaboration>
   <bpmn:process id="Process_1" name="Process" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:version>1.0.0</evil:version>
+      <bfw:version>1.0.0</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet id="LaneSet_1">
       <bpmn:lane id="Lane_default" name="default">
@@ -111,7 +111,7 @@ const DISK_OPTIONS = {
 const CANVAS_LIKE_POOL_LANE_IDS = ['End_1', 'Flow_1', 'Flow_2', 'Lane_default', 'Participant_1', 'Start_1', 'Task_1'];
 
 describe('lintBpmnXmlOnDisk', () => {
-  it('writes evil:LinterRulesetScore with the active rulesetId', async () => {
+  it('writes bfw:LinterRulesetScore with the active rulesetId', async () => {
     const result = await lintBpmnXmlOnDisk(DAEMON_ENGINE_XML, DISK_OPTIONS);
     assert.strictEqual(result.status, 'updated');
     if (result.status === 'skipped-foreign') {

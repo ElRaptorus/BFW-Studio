@@ -10,8 +10,8 @@ import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 
-import type { PropertyValidationResult, SelectOption } from '@evil/bifrost_fw_sdk';
-import { PaneProperty, validatePropertyMatching, validatePropertyNotEmpty } from '@evil/bifrost_fw_sdk';
+import type { PropertyValidationResult, SelectOption } from '@elraptorus/bfw_studio_sdk';
+import { PaneProperty, validatePropertyMatching, validatePropertyNotEmpty } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 import { getBpmnSelectionForPropertiesPane, getKeyForPropertiesPane } from '../PropertiesPaneFunctions';

@@ -18,8 +18,8 @@ interface PluginIframeProps {
 
 /**
  * React component rendering a sandboxed `<iframe>` served by the
- * `evil-webview://` custom protocol. Each plugin gets a unique origin
- * (`evil-webview://<pluginName>/`), enforcing storage isolation and
+ * `bifrostfw-webview://` custom protocol. Each plugin gets a unique origin
+ * (`bifrostfw-webview://<pluginName>/`), enforcing storage isolation and
  * same-origin policy boundaries.
  *
  * Registers itself with {@link PluginIframeManager} on mount and

@@ -2,8 +2,9 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import type { OffsetPageInfo, ProcessModel, ProcessModelField, SortClause } from '@elraptorus/daemonengine_sdk';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import type { OffsetPageInfo, ProcessModel, ProcessModelField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
 import { bulkRemoveProcesses, bulkToggleProcesses } from '../helpers/workspaceNavigation';
 
@@ -29,7 +30,7 @@ const PROCESS_FIELDS: ProcessModelField[] = ['id', 'processModelId', 'name', 'en
 export class ProcessExplorerDocumentModel extends EditorDocumentModel {
   private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
-  private client: DaemonEngineClient | null;
+  private client: BfwEngineClient | null;
   private engineId: string;
   private selectedModel: ProcessModel | null = null;
   private selectionRevision = 0;

@@ -91,11 +91,11 @@ export const issueDescriptions: Record<SanitizerIssueTypeDiscriminant, Sanitizab
     suggestion: 'Remove the empty extensionElements container.',
   },
 
-  'empty-evil-properties': {
-    message: (issue) => `Empty evil:Properties on ${nameOrId(issue)}`,
-    why: 'An evil:Properties container with no content (no linter scores and no custom properties) — empty wrapper left behind after a merge or cleanup.',
+  'empty-bfw-properties': {
+    message: (issue) => `Empty bfw:Properties on ${nameOrId(issue)}`,
+    why: 'A bfw:Properties container with no content (no linter scores and no custom properties) — empty wrapper left behind after a merge or cleanup.',
     suggestion:
-      'Remove the empty evil:Properties container. If the parent extensionElements also becomes empty, it will be cleaned up too.',
+      'Remove the empty bfw:Properties container. If the parent extensionElements also becomes empty, it will be cleaned up too.',
   },
 
   'zombie-shape': {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:evil="https://evilengine.dev/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:bfw="https://bifrostforge.world/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
   <bpmn2:collaboration id="Collaboration_1wed7s5">
     <bpmn2:participant id="Participant_0recsyu" processRef="Process_1" />
   </bpmn2:collaboration>
@@ -11,8 +11,8 @@
     <bpmn2:boundaryEvent id="ErrorBoundaryEvent_1" name="ErrorBoundaryEvent_1" attachedToRef="Task_09ze2ya">
       <bpmn2:errorEventDefinition id="ErrorEventDefinition_0ihne04" errorRef="Error_cc6sE6i8">
         <bpmn2:extensionElements>
-          <evil:ErrorCode>error code</evil:ErrorCode>
-          <evil:ErrorMessage>error message</evil:ErrorMessage>
+          <bfw:ErrorCode>error code</bfw:ErrorCode>
+          <bfw:ErrorMessage>error message</bfw:ErrorMessage>
         </bpmn2:extensionElements>
       </bpmn2:errorEventDefinition>
     </bpmn2:boundaryEvent>
@@ -20,8 +20,8 @@
       <bpmn2:startEvent id="ErrorStartEvent_1" name="ErrorStartEvent_1">
         <bpmn2:errorEventDefinition id="ErrorEventDefinition_0ktbmcb" errorRef="Error_qUqhxeeh">
           <bpmn2:extensionElements>
-            <evil:ErrorCode>error code</evil:ErrorCode>
-            <evil:ErrorMessage>error message</evil:ErrorMessage>
+            <bfw:ErrorCode>error code</bfw:ErrorCode>
+            <bfw:ErrorMessage>error message</bfw:ErrorMessage>
           </bpmn2:extensionElements>
         </bpmn2:errorEventDefinition>
       </bpmn2:startEvent>
@@ -41,8 +41,8 @@
     <bpmn2:endEvent id="ErrorEndEvent_1" name="ErrorEndEvent_1">
       <bpmn2:errorEventDefinition id="ErrorEventDefinition_1lvgw3j" errorRef="Error_fdXlqX99">
         <bpmn2:extensionElements>
-          <evil:ErrorCode>error code</evil:ErrorCode>
-          <evil:ErrorMessage>error message</evil:ErrorMessage>
+          <bfw:ErrorCode>error code</bfw:ErrorCode>
+          <bfw:ErrorMessage>error message</bfw:ErrorMessage>
         </bpmn2:extensionElements>
       </bpmn2:errorEventDefinition>
     </bpmn2:endEvent>

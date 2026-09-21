@@ -138,13 +138,13 @@ export class SolutionMediator extends AbstractEmitter {
   }
 
   /**
-   * Opens a `.essln` solution file, creating a multi-root solution from its contents.
+   * Opens a `.bfwsln` solution file, creating a multi-root solution from its contents.
    */
   async openSolutionFile(solutionFileUri: string): Promise<void> {
     this.performance.mark(`bifrost:files:open-solution-file ${solutionFileUri} #start`);
 
     const solutionFileContent = await readSolutionFile(solutionFileUri, this.fileHandling);
-    const solutionFileName = this.fileHandling.getFilename(solutionFileUri).replace(/\.essln$/, '');
+    const solutionFileName = this.fileHandling.getFilename(solutionFileUri).replace(/\.bfwsln$/, '');
     const excludedFiles = this.settings.get('std.fileExplorer.exclude');
 
     const foldersWithUris = solutionFileContent.folders.map((folder) => ({
@@ -163,7 +163,7 @@ export class SolutionMediator extends AbstractEmitter {
   }
 
   /**
-   * Saves the current solution to a `.essln` file.
+   * Saves the current solution to a `.bfwsln` file.
    */
   async saveSolutionFile(solutionFileUri: string): Promise<void> {
     const solution = this.solutionManager.getSolution();
@@ -173,12 +173,12 @@ export class SolutionMediator extends AbstractEmitter {
 
     await writeSolutionFile(solutionFileUri, solution, this.fileHandling);
 
-    const solutionName = this.fileHandling.getFilename(solutionFileUri).replace(/\.essln$/, '');
+    const solutionName = this.fileHandling.getFilename(solutionFileUri).replace(/\.bfwsln$/, '');
     this.solutionManager.setSolutionFileUri(solutionFileUri, solutionName);
   }
 
   /**
-   * Adds a folder to the current solution. If the solution has no `.essln` file yet,
+   * Adds a folder to the current solution. If the solution has no `.bfwsln` file yet,
    * the caller must prompt the user to save one first via `saveSolutionFile`.
    */
   addFolderToSolution(directoryUri: string): void {

@@ -1,6 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import type { ProcessModel } from '@elraptorus/daemonengine_sdk';
+
+import type { ProcessModel } from '@elraptorus/bfw_engine_sdk';
 
 import type { InstanceSearchDocumentModel } from '../models/InstanceSearchDocumentModel';
 

@@ -32,9 +32,9 @@ Leave it empty when the called process has a single, obvious starting point. If 
 
 ### Called process version
 
-_Optional._ Pins the child process to a specific `<evil:version>` string of the called process.
+_Optional._ Pins the child process to a specific `<bfw:version>` string of the called process.
 
-Leave the field **empty** so the Engine picks the newest enabled, non-deleted catalog version when this Call Activity runs (newest `deployed_at`, not semver order). The value must match the called process's `<evil:version>` exactly.
+Leave the field **empty** so the Engine picks the newest enabled, non-deleted catalog version when this Call Activity runs (newest `deployed_at`, not semver order). The value must match the called process's `<bfw:version>` exactly.
 
 **Do not type `latest`.** That looks up a version actually named `latest` and fails if none exists. This is not the same as retry, which treats `"version": "latest"` as a keyword.
 

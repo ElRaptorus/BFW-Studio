@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:evil="https://evilengine.dev/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="business-rule-task_Definition" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bfw="https://bifrostforge.world/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="business-rule-task_Definition" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="business-rule-task" processRef="business-rule-task_Process" />
   </bpmn:collaboration>
   <bpmn:process id="business-rule-task_Process" name="business-rule-task" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:version>6.6.6</evil:version>
+      <bfw:version>6.6.6</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet>
       <bpmn:lane id="Lane_1xzf0d3" name="Lane">
@@ -21,10 +21,10 @@
     <bpmn:sequenceFlow id="Flow_10q7bp8" sourceRef="BusinessRuleTask_1" targetRef="Event_0guyal7" />
     <bpmn:businessRuleTask id="BusinessRuleTask_1" name="Business Rule Task" implementation="dmn">
       <bpmn:extensionElements>
-        <evil:decisionRef>discount-rules</evil:decisionRef>
-        <evil:decisionElementId>Decision_Discount</evil:decisionElementId>
-        <evil:traceUnmatchedRules>true</evil:traceUnmatchedRules>
-        <evil:resultVariable>discounterResult</evil:resultVariable>
+        <bfw:decisionRef>discount-rules</bfw:decisionRef>
+        <bfw:decisionElementId>Decision_Discount</bfw:decisionElementId>
+        <bfw:traceUnmatchedRules>true</bfw:traceUnmatchedRules>
+        <bfw:resultVariable>discounterResult</bfw:resultVariable>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_14xbbmt</bpmn:incoming>
       <bpmn:outgoing>Flow_10q7bp8</bpmn:outgoing>

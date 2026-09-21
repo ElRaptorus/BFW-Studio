@@ -5,7 +5,7 @@ import {
   EVENT_SETTINGS_SCHEMA_REGISTERED,
 } from '#bifrost/contracts/internal/SettingsEvents';
 
-import type { SettingDescriptor, SettingsValidationResult } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor, SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
 
 import type { LocalStorageItem } from './LocalStorageItem';
 import { SettingsManager } from './SettingsManager';

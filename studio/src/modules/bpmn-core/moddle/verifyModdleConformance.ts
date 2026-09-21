@@ -1,7 +1,7 @@
 /**
  * Bidirectional conformance between the Engine extension vocabulary
- * (`extensionManifest` from `@elraptorus/daemonengine_sdk`) and the Studio's
- * hand-written moddle descriptor (`evil-platform.json`).
+ * (`extensionManifest` from `@elraptorus/bfw_engine_sdk`) and the Studio's
+ * hand-written moddle descriptor (`bfw-platform.json`).
  *
  * Pure function — no rspack or vitest coupling, so it can later be reused
  * from a watch-mode plugin or a postinstall hook without rewriting.
@@ -82,7 +82,7 @@ export function verifyModdleConformance(
         {
           direction: 'manifest-to-descriptor',
           element: 'extensionManifest',
-          message: '@elraptorus/daemonengine_sdk must export extensionManifest. The Studio does not skip this check.',
+          message: '@elraptorus/bfw_engine_sdk must export extensionManifest. The Studio does not skip this check.',
         },
       ],
     };

@@ -6,7 +6,7 @@ import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
 import * as jsonComment from 'comment-json';
 
-import type { SettingsValidationResult } from '@evil/bifrost_fw_sdk';
+import type { SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
 
 export const EVENT_SETTINGS_RECEIVED_UPDATE = 'EVENT_SETTINGS_RECEIVED_UPDATE';
 

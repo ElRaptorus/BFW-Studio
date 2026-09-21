@@ -1,5 +1,5 @@
-import type { DaemonEngineClient, Subscription } from '@elraptorus/daemonengine_client';
-import type { EngineEventEnvelope } from '@elraptorus/daemonengine_sdk';
+import type { BfwEngineClient, Subscription } from '@elraptorus/bfw_engine_client';
+import type { EngineEventEnvelope } from '@elraptorus/bfw_engine_sdk';
 
 import type { EngineConnectionManager } from './EngineConnectionManager';
 
@@ -77,7 +77,7 @@ export class WebSocketBridge {
    * These fire on raw socket open/close/error and drive the connection manager's
    * state transitions without REST polling.
    */
-  private attachLifecycleCallbacks(engineId: string, client: DaemonEngineClient): void {
+  private attachLifecycleCallbacks(engineId: string, client: BfwEngineClient): void {
     this.disposeLifecycleCallbacks(engineId);
 
     const disposables: Subscription[] = [];

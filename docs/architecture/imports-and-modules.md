@@ -19,7 +19,7 @@ TypeScript resolves these via a matching `paths` entry in `tsconfig.base.json`; 
 - **Cross-boundary imports** (file in `modules/` importing from `bifrost/` or `components/`) **must** use subpath aliases.
 - **Cross-module imports** (file in `modules/A` importing from `modules/B`) **must** use `#modules/B/...`.
 - **Intra-module imports** (file importing from the same module, or within `bifrost/` at shallow depth) **should** stay relative (`./`, `../`).
-- **SDK imports** use the `@evil/bifrost_fw_sdk` package specifier. Internal SDK paths (`../../../studio-sdk/src/...`) cannot use subpath imports (cross-package restriction) and remain relative for now.
+- **SDK imports** use the `@elraptorus/bfw_studio_sdk` package specifier. Internal SDK paths (`../../../studio-sdk/src/...`) cannot use subpath imports (cross-package restriction) and remain relative for now.
 
 ### Examples
 

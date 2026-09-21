@@ -22,7 +22,7 @@ import { promises as fsPromises } from 'fs';
 import os from 'os';
 import path from 'path';
 
-import type { Menu, MenuItem } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
 import { BpmnApiBridge } from './BpmnApiBridge';
 import { DmnApiBridge } from './DmnApiBridge';
@@ -134,8 +134,8 @@ export class PluginHostBridge {
 
   private getPluginStorageBase(): string {
     if (this.pluginStorageBase == null) {
-      if (process.env.BFR_PLUGIN_STORAGE_PATH) {
-        this.pluginStorageBase = path.resolve(process.env.BFR_PLUGIN_STORAGE_PATH);
+      if (process.env.BFW_PLUGIN_STORAGE_PATH) {
+        this.pluginStorageBase = path.resolve(process.env.BFW_PLUGIN_STORAGE_PATH);
       } else {
         const platform = os.platform();
         let cacheBase: string;
@@ -146,7 +146,7 @@ export class PluginHostBridge {
         } else {
           cacheBase = process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), '.cache');
         }
-        const channel = process.env.BFR_STUDIO_CHANNEL ?? 'dev';
+        const channel = process.env.BFW_STUDIO_CHANNEL ?? 'dev';
         this.pluginStorageBase = path.join(cacheBase, `bifrost-forge-world-${channel}`, 'plugin-storage');
       }
     }

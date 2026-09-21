@@ -1,5 +1,9 @@
-import type { SettingArrayItemsDescriptor, SettingDescriptor } from '@evil/bifrost_fw_sdk';
-import { SETTING_COLOR_VALUE_PATTERN, SETTING_DATE_VALUE_PATTERN, resolveSettingEnum } from '@evil/bifrost_fw_sdk';
+import type { SettingArrayItemsDescriptor, SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
+import {
+  SETTING_COLOR_VALUE_PATTERN,
+  SETTING_DATE_VALUE_PATTERN,
+  resolveSettingEnum,
+} from '@elraptorus/bfw_studio_sdk';
 
 type JsonSchema = {
   type: string;

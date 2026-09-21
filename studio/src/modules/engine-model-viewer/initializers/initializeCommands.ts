@@ -4,7 +4,8 @@ import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { ENGINE_COMMANDS } from '#modules/engine-core';
-import type { StartResult } from '@elraptorus/daemonengine_sdk';
+
+import type { StartResult } from '@elraptorus/bfw_engine_sdk';
 
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
 import { downloadBlob, downloadTextFile } from '../helpers/downloadFile';

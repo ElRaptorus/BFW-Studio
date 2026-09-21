@@ -91,7 +91,7 @@ Notable set handlers:
 | `serviceTaskImplementation` | Sets `implementation` attribute via `UpdateServiceTaskHandler` | `UpdateServiceTaskHandler` |
 | `loopConfig` | Creates/updates loop characteristics elements | `UpdateLoopCharacteristicsHandler` |
 | `userTaskResources` | Manages `bpmn:HumanPerformer` / `bpmn:PotentialOwner` | `UpdateUserTaskResourcesHandler` |
-| `correlationRetrievalExpression` | Sets `evil:CorrelationRetrievalExpression` on `MessageEventDefinition` or element | `UpdateCorrelationRetrievalExpressionHandler` |
+| `correlationRetrievalExpression` | Sets `bfw:CorrelationRetrievalExpression` on `MessageEventDefinition` or element | `UpdateCorrelationRetrievalExpressionHandler` |
 | `activationCondition` | Creates/updates/clears the standard `<bpmn:activationCondition>` child (a `bpmn:FormalExpression`) on a Complex Gateway; mirrors the `transformation` handler | `modeling.updateProperties` |
 
 The matching `getHandlers.activationCondition` returns `element.businessObject.activationCondition?.body`. Both handlers follow the same pattern as `transformation`/`conditionExpression`: write creates a `bpmn:FormalExpression { body }` (or `undefined` to remove the child), read returns the child's `body` text. The engine parses this element as trimmed body text (see `docs/architecture/engine.md` §Complex Gateway).
@@ -108,8 +108,8 @@ Handles creation and modification of `bpmn:StandardLoopCharacteristics` and `bpm
 
 | Sub-command | What it updates |
 |-------------|----------------|
-| `updateStandardLoop` | `loopCondition` (FormalExpression body), `loopMaximum`, `testBefore` (standard BPMN attribute), `evil:LoopInterval` (evil extension) |
-| `updateMultiInstance` | `completionCondition` (FormalExpression), `inputDataItem` (DataInput), `outputDataItem` (DataOutput), `evil:ElementVariable`, `evil:OutputElementVariable`, `evil:LoopBreakCondition`, `evil:LoopInterval`, `evil:MaxIterations` (evil extensions). `loopCardinality` is no longer supported. The editor splits these across two panes: `PropertiesSequentialMiSettings` (Break Condition, Loop Interval, Max Iterations — sequential MI only) and `PropertiesParallelMiSettings` (Max Iterations — parallel MI only). |
+| `updateStandardLoop` | `loopCondition` (FormalExpression body), `loopMaximum`, `testBefore` (standard BPMN attribute), `bfw:LoopInterval` (bfw extension) |
+| `updateMultiInstance` | `completionCondition` (FormalExpression), `inputDataItem` (DataInput), `outputDataItem` (DataOutput), `bfw:ElementVariable`, `bfw:OutputElementVariable`, `bfw:LoopBreakCondition`, `bfw:LoopInterval`, `bfw:MaxIterations` (bfw extensions). `loopCardinality` is no longer supported. The editor splits these across two panes: `PropertiesSequentialMiSettings` (Break Condition, Loop Interval, Max Iterations — sequential MI only) and `PropertiesParallelMiSettings` (Max Iterations — parallel MI only). |
 
 #### UpdateUserTaskResourcesHandler
 
@@ -135,7 +135,7 @@ Switches service task implementation type via the `implementation` attribute:
 
 **Path:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateCorrelationRetrievalExpressionHandler.ts`
 
-Persists `evil:CorrelationRetrievalExpression` for catch-side message elements. The handler navigates from the BPMN element to its `MessageEventDefinition` child (for events) or targets the element directly (for `ReceiveTask`), then uses `setEvilBodyExtension` to create/update/clear the extension element.
+Persists `bfw:CorrelationRetrievalExpression` for catch-side message elements. The handler navigates from the BPMN element to its `MessageEventDefinition` child (for events) or targets the element directly (for `ReceiveTask`), then uses `setBfwBodyExtension` to create/update/clear the extension element.
 
 #### UpdateAdHocSubprocessHandler
 
@@ -149,7 +149,7 @@ Persists all `bpmn:AdHocSubProcess`-specific properties. Invoked via `CmdHelper.
 | `cancelRemainingInstances` | Direct boolean attribute on the business object |
 | `implementation` | Direct attribute on the business object (empty/absent = engine-managed mode) |
 | `completionCondition` | `bpmn:FormalExpression` child element (same pattern as Loop/MI completion condition) |
-| `activeElementsExpression` | `evil:ActiveElements` extension element body via `setEvilBodyExtension` |
+| `activeElementsExpression` | `bfw:ActiveElements` extension element body via `setBfwBodyExtension` |
 
 The pane (`PropertiesAdHocSubprocess`, path `studio/src/modules/bpmn-editor/panes/properties/AdHocSubprocess/PropertiesAdHocSubprocess.tsx`) shows all five properties. `activeElementsExpression` uses the standard FEEL expression context (`bpmn.feel.getExpressionContext`). `completionCondition` uses a dedicated, narrower variable set (`ADHOC_COMPLETION_CONDITION_VARIABLES`: `performedActivities`, `activeCount`, `totalActivities`) because the engine evaluates it against `AdHocMode`'s dedicated completion bindings, not the standard token/context/this bindings — mixing in the standard bindings would suggest availability that does not exist at runtime.
 
@@ -203,15 +203,15 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 
 ### scripting group
 
-- Data pipeline: `PropertiesInputMappings`, `PropertiesOutputMappings`, `PropertiesPayloadContract`, `PropertiesResultContract`. Mapping **source** is `OneLineFeelEditor`. Row React keys use a stable `rowId` stamped on the live `evil:InputMapping` / `evil:OutputMapping` moddle object (`BpmnDocumentElementAccess` WeakMap), not `${source}->${target}` (that remounts CodeMirror on blur). `htmlId`s still use the array index (`#data-pipeline-input-source-0`).
-- `PropertiesCorrelationRetrievalExpression` — FEEL editor for **throw-side** message events (`MessageIntermediateThrowEvent`, `MessageEndEvent`, `SendTask`). Catch-side correlation uses the process-level `evil:correlationKey`, not this extension.
+- Data pipeline: `PropertiesInputMappings`, `PropertiesOutputMappings`, `PropertiesPayloadContract`, `PropertiesResultContract`. Mapping **source** is `OneLineFeelEditor`. Row React keys use a stable `rowId` stamped on the live `bfw:InputMapping` / `bfw:OutputMapping` moddle object (`BpmnDocumentElementAccess` WeakMap), not `${source}->${target}` (that remounts CodeMirror on blur). `htmlId`s still use the array index (`#data-pipeline-input-source-0`).
+- `PropertiesCorrelationRetrievalExpression` — FEEL editor for **throw-side** message events (`MessageIntermediateThrowEvent`, `MessageEndEvent`, `SendTask`). Catch-side correlation uses the process-level `bfw:correlationKey`, not this extension.
 - `PropertiesDataOutputAssociationDataSource`
 - `DefaultCustomStartToken`, `PropertiesExamplePayload`, `PropertiesExampleResult`
-- `PropertiesCustomAttributes` — name/value rows for `evil:property`. Names in `getInternalCustomPropertyNames` (e.g. `studio.defaultCustomStartToken` on Start Events) are hidden unless **Show internal custom properties** is on. Row React keys use a stable `rowId` stamped on the live moddle object (`BpmnDocumentElementAccess` WeakMap), not `property.name` (names can be blank or duplicated) and not the `.map` index (`@eslint-react/no-array-index-key` is an error). The empty add-row uses `custom-property-add-row-${elementId}`. Input `htmlId`s still use the full array index including hidden rows. Integration-test fixtures keep only rows that tests assert, Custom Attributes indexes, Timer Start `enabled`, or merge-diff payload. Default Configured Start Payload tests use `untyped-task.bpmn`. ProcessEngine leftovers (`module`/`method`/`params`/`role`, Task-level `enabled`, `payload` on `##external`) and unnamed sample diagrams are not stored in fixtures.
+- `PropertiesCustomAttributes` — name/value rows for `bfw:property`. Names in `getInternalCustomPropertyNames` (e.g. `studio.defaultCustomStartToken` on Start Events) are hidden unless **Show internal custom properties** is on. Row React keys use a stable `rowId` stamped on the live moddle object (`BpmnDocumentElementAccess` WeakMap), not `property.name` (names can be blank or duplicated) and not the `.map` index (`@eslint-react/no-array-index-key` is an error). The empty add-row uses `custom-property-add-row-${elementId}`. Input `htmlId`s still use the full array index including hidden rows. Integration-test fixtures keep only rows that tests assert, Custom Attributes indexes, Timer Start `enabled`, or merge-diff payload. Default Configured Start Payload tests use `untyped-task.bpmn`. ProcessEngine leftovers (`module`/`method`/`params`/`role`, Task-level `enabled`, `payload` on `##external`) and unnamed sample diagrams are not stored in fixtures.
 
 #### Message Event Data Pipeline (D-MSG-1)
 
-Per architectural decision D-MSG-1 / MSG-D1, message events use generic input/output mappings. There is no `evil:payload` or `evil:eventMapping`. Authoring pane visibility matches the live pipeline: Send/throw show Input Mappings; Receive/catch show Output Mappings. Embedded SubProcess mappings are authorable only on Ad-hoc shells.
+Per architectural decision D-MSG-1 / MSG-D1, message events use generic input/output mappings. There is no `bfw:payload` or `bfw:eventMapping`. Authoring pane visibility matches the live pipeline: Send/throw show Input Mappings; Receive/catch show Output Mappings. Embedded SubProcess mappings are authorable only on Ad-hoc shells.
 
 | Element type | Input Mappings | Output Mappings | Payload Contract | Result Contract | Correlation Retrieval |
 |--------------|:-:|:-:|:-:|:-:|:-:|
@@ -223,7 +223,7 @@ Per architectural decision D-MSG-1 / MSG-D1, message events use generic input/ou
 | ReceiveTask | — | yes | — | yes | — |
 | MessageStartEvent | — | — | — | yes | — |
 
-`MessageStartEvent` has **no** output mappings on the Engine model (`StartEventNode` exposes `eventDefinition`, `resultContract`, `isInterrupting` only). Catch-side nodes do not author `evil:correlationRetrievalExpression`.
+`MessageStartEvent` has **no** output mappings on the Engine model (`StartEventNode` exposes `eventDefinition`, `resultContract`, `isInterrupting` only). Catch-side nodes do not author `bfw:correlationRetrievalExpression`.
 
 Per D-MSG-3, contracts on message events are direction-aware: throw-side events (MessageEndEvent, MessageIntermediateThrowEvent, SendTask) show the **Payload Contract** pane, and catch-side events (MessageIntermediateCatchEvent, MessageBoundaryEvent, MessageStartEvent, ReceiveTask) show the **Result Contract** pane. This aligns with task contract semantics where `payloadContract` validates outgoing data and `resultContract` validates incoming data.
 
@@ -253,8 +253,8 @@ The Form Builder provides a visual drag-and-drop editor for configuring User Tas
 
 Form data is stored as two separate extension elements on User Tasks:
 
-- `evil:FormFields` — JSON array of `FormFieldDefinition[]`
-- `evil:FormActions` — JSON array of `FormAction[]`
+- `bfw:FormFields` — JSON array of `FormFieldDefinition[]`
+- `bfw:FormActions` — JSON array of `FormAction[]`
 
 Both are read/written via `BpmnDocumentElementAccess.getFormFieldDefinitions()` / `setFormFieldDefinitions()` / `getFormActions()` / `setFormActions()`.
 
@@ -289,7 +289,7 @@ When no actions are configured, the `FormRenderer` shows a default "OK" button.
 
 The Form Builder opens as a fragment editor tab (no own model). It parses a URI of the form `fragment+bpmn.form-builder:<parentUri>#!fragmentId=<elementId>` and accesses the parent BPMN document model to read/write form data.
 
-Integration tests live in `studio/test/integration/bpmn-editor/form-builder.test.ts` and open `studio/test/fixtures/test-solution-bpmn/form-builder.bpmn` (`UserTask_1` with no form fields). The empty new-document template (`BpmnEmptyDocument.bpmn`) has no user task. `user-task.bpmn` already has `evil:formFields`, so the summary pane shows Edit Form instead of Create Form. Persist tests close only the focused Form Builder tab (`std.editor.closeFocusedDocument`), not `Test: Close all`, so the parent BPMN stays in memory with the written fields.
+Integration tests live in `studio/test/integration/bpmn-editor/form-builder.test.ts` and open `studio/test/fixtures/test-solution-bpmn/form-builder.bpmn` (`UserTask_1` with no form fields). The empty new-document template (`BpmnEmptyDocument.bpmn`) has no user task. `user-task.bpmn` already has `bfw:formFields`, so the summary pane shows Edit Form instead of Create Form. Persist tests close only the focused Form Builder tab (`std.editor.closeFocusedDocument`), not `Test: Close all`, so the parent BPMN stays in memory with the written fields.
 
 There is no `data-test--actions-editor-add-button` and no shared `data-test--form-builder-toolbox-item`. Field kits use `[data-test--form-builder-toolbox-field="<type>"]` (`text`, `number`, `date`, `checkbox`, `select`, `radio`, `textarea`, `file`, `boolean`, `header`). Action presets use `[data-test--form-builder-toolbox-action="<preset>"]` (`confirm`, `ok`, `yes`, `no`, `cancel`, `custom`). Added actions render `[data-test--actions-editor-item]` in `ActionsEditor`.
 
@@ -312,7 +312,7 @@ The engine-debugger uses `DynamicUiComponentAdapter` (`studio/src/modules/engine
 ```
 User edits field → setFields(newFields)
   → model.elements.setFormFieldDefinitions(fragmentId, newFields)
-    → setEvilBodyExtension(element, 'evil:FormFields', JSON.stringify(fields))
+    → setBfwBodyExtension(element, 'bfw:FormFields', JSON.stringify(fields))
       → commandStack.execute('element.updateProperties', ...)
 ```
 
@@ -320,7 +320,7 @@ User edits field → setFields(newFields)
 ```
 Model loads → onceInteractive() → readFromModel()
   → getFormFieldDefinitions(fragmentId)
-    → getEvilBodyValue(element, 'evil:FormFields')
+    → getBfwBodyValue(element, 'bfw:FormFields')
       → JSON.parse(body) → FormFieldDefinition[]
 
 Model changes (undo/redo/external) → EVENT_DATA_UPDATED
@@ -417,13 +417,13 @@ Available on `BpmnElementCommonProperties.loopConfig`.
 
 ## Moddle descriptor conformance
 
-`studio/src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json` is the Studio-owned authoring contract. It is not generated from the Engine.
+`studio/src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json` is the Studio-owned authoring contract. It is not generated from the Engine.
 
-`verifyModdleConformance` (`studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts`) compares it to `extensionManifest` from `@elraptorus/daemonengine_sdk`:
+`verifyModdleConformance` (`studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts`) compares it to `extensionManifest` from `@elraptorus/bfw_engine_sdk`:
 
 | Direction | Rule |
 |-----------|------|
-| manifest → descriptor | every Engine `evil:*` element has a matching moddle type and compatible value type |
+| manifest → descriptor | every Engine `bfw:*` element has a matching moddle type and compatible value type |
 | descriptor → manifest | every non-abstract, non-BPMN-overlay, non-`extensible` moddle type appears in the manifest |
 | `allowedIn` ⊆ `applicableTo` | the Studio may refuse to author an extension the Engine would read; it must not author one the Engine ignores |
 
@@ -464,7 +464,7 @@ Event-definition carriers (`bpmn:ErrorEventDefinition`, `bpmn:MessageEventDefini
 | PropertiesCorrelationRetrievalExpression | `studio/src/modules/bpmn-editor/panes/properties/MessageCorrelation/PropertiesCorrelationRetrievalExpression.tsx` |
 | UpdateCorrelationRetrievalExpressionHandler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateCorrelationRetrievalExpressionHandler.ts` |
 | PropertiesPaneFunctions | `studio/src/modules/bpmn-editor/panes/PropertiesPaneFunctions.ts` |
-| evil-platform.json | `studio/src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json` |
+| bfw-platform.json | `studio/src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json` |
 | verifyModdleConformance | `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts` |
 | BpmnElementCustomPropertiesFunctions | `studio/src/modules/bpmn-editor/panes/BpmnElementCustomPropertiesFunctions.ts` |
 | KeyValueBuilder | `studio/src/components/key-value-builder/KeyValueBuilder.tsx` |

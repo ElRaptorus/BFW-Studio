@@ -2,7 +2,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import prompts from 'prompts';
 
-const DEFAULT_PLUGINS_DIR = join(homedir(), '.evil', 'studio', 'plugins');
+const DEFAULT_PLUGINS_DIR = join(homedir(), '.bifrostfw', 'studio', 'plugins');
 
 /**
  * @typedef {{ pluginName: string, displayName: string, description: string, includeWebview: boolean, outputDir: string }} Answers

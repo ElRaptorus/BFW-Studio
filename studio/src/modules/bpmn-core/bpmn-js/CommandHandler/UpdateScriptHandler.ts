@@ -3,7 +3,7 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
 const MODDLE_BPMN_SCRIPT_SELECTOR = 'script';
 const MODDLE_BPMN_SCRIPT_TASK_TYPE = 'bpmn:ScriptTask';
@@ -41,7 +41,7 @@ UpdateScriptHandler.prototype.preExecute = function (context: any) {
   }
 
   if (newScriptRef !== undefined) {
-    commands.push(...setEvilBodyExtension(element, this.bpmnFactory, 'evil:ScriptRef', newScriptRef || null));
+    commands.push(...setBfwBodyExtension(element, this.bpmnFactory, 'bfw:ScriptRef', newScriptRef || null));
   }
 
   if (commands.length > 0) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_8e109fe3-d225-4f0e-b737-cf57f665b39f" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definition_8e109fe3-d225-4f0e-b737-cf57f665b39f" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="message-flow" processRef="message-flow" />
   </bpmn:collaboration>
@@ -22,7 +22,7 @@
       <bpmn:outgoing>Flow_0p0r3qa</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics isSequential="true">
         <bpmn:extensionElements>
-          <evil:InputCollection>token.orders</evil:InputCollection>
+          <bfw:InputCollection>token.orders</bfw:InputCollection>
         </bpmn:extensionElements>
       </bpmn:multiInstanceLoopCharacteristics>
     </bpmn:task>
@@ -37,10 +37,10 @@
       <bpmn:outgoing>Flow_19fwtwr</bpmn:outgoing>
       <bpmn:multiInstanceLoopCharacteristics>
         <bpmn:extensionElements>
-          <evil:InputCollection>token.items</evil:InputCollection>
-          <evil:OutputCollection>processedItems</evil:OutputCollection>
-          <evil:ElementVariable>item</evil:ElementVariable>
-          <evil:OutputElementVariable>processedItem</evil:OutputElementVariable>
+          <bfw:InputCollection>token.items</bfw:InputCollection>
+          <bfw:OutputCollection>processedItems</bfw:OutputCollection>
+          <bfw:ElementVariable>item</bfw:ElementVariable>
+          <bfw:OutputElementVariable>processedItem</bfw:OutputElementVariable>
         </bpmn:extensionElements>
       </bpmn:multiInstanceLoopCharacteristics>
     </bpmn:task>
@@ -50,7 +50,7 @@
       <bpmn:standardLoopCharacteristics testBefore="false" loopMaximum="10">
         <bpmn:loopCondition xsi:type="bpmn:tFormalExpression">token.counter &lt; 5</bpmn:loopCondition>
         <bpmn:extensionElements>
-          <evil:LoopInterval>PT1S</evil:LoopInterval>
+          <bfw:LoopInterval>PT1S</bfw:LoopInterval>
         </bpmn:extensionElements>
       </bpmn:standardLoopCharacteristics>
     </bpmn:task>

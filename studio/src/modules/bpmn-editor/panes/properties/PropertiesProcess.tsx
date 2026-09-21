@@ -19,7 +19,7 @@ import {
   type PropertyValidationResult,
   validatePropertyMatching,
   validatePropertyNotEmpty,
-} from '@evil/bifrost_fw_sdk';
+} from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../BpmnDocumentModel';
 import { assertBpmnElementIsParticipant } from '../BpmnElementTypeAssertionFunctions';

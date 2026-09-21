@@ -84,7 +84,7 @@ if (process.env.APP_TEST == 'true') {
 }
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-process.env.__BFR_BUNDLE_DIR__ = __dirname;
+process.env.__BFW_BUNDLE_DIR__ = __dirname;
 
 export function startMain(startArgs: Record<string, any>, shellStartTime: number): void {
   app.requestSingleInstanceLock();
@@ -99,13 +99,13 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
       ? 'bifrost-forge-world'
       : `bifrost-forge-world-${releaseChannelName}`;
   const webviewProtocolName =
-    ReleaseChannelName.Stable === releaseChannelName ? 'evil-webview' : `evil-webview-${releaseChannelName}`;
+    ReleaseChannelName.Stable === releaseChannelName ? 'bifrostfw-webview' : `bifrostfw-webview-${releaseChannelName}`;
 
   /**
    * Register custom protocols before the `ready` event.
    *
    * `bifrost-forge-world://` — serves app files from the bundle directory.
-   * `evil-webview://` — serves plugin files from their install directories
+   * `bifrostfw-webview://` — serves plugin files from their install directories
    *   with per-plugin origin isolation and CSP headers.
    */
   protocol.registerSchemesAsPrivileged([
@@ -177,7 +177,7 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
     });
 
     /**
-     * Protocol handler for `evil-webview://`. Serves plugin files from disk
+     * Protocol handler for `bifrostfw-webview://`. Serves plugin files from disk
      * with per-plugin origin isolation. The hostname encodes the plugin name;
      * the pathname is resolved relative to the plugin's install directory.
      *

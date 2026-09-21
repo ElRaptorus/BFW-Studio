@@ -148,7 +148,7 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
 
   commands.register('std.fileExplorer.handleExternalDrop', async (localPaths: string[]) => {
     const bpmnFiles: string[] = [];
-    const esslnFiles: string[] = [];
+    const solutionFiles: string[] = [];
     const folders: string[] = [];
 
     for (const localPath of localPaths) {
@@ -157,8 +157,8 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
         folders.push(localPath);
       } else if (localPath.endsWith('.bpmn')) {
         bpmnFiles.push(localPath);
-      } else if (localPath.endsWith('.essln')) {
-        esslnFiles.push(localPath);
+      } else if (localPath.endsWith('.bfwsln')) {
+        solutionFiles.push(localPath);
       }
     }
 
@@ -167,8 +167,8 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
       bifrost.commands.executeCommand('std.editor.focusOrOpenDocument', [uri]);
     }
 
-    for (const esslnPath of esslnFiles) {
-      const uri = bifrost.files.getUriForFilename(esslnPath);
+    for (const solutionFilePath of solutionFiles) {
+      const uri = bifrost.files.getUriForFilename(solutionFilePath);
       bifrost.commands.executeCommand('std.solution.openSolutionFile', [uri]);
     }
 

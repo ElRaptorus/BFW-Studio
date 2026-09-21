@@ -11,8 +11,8 @@ import { BpmnServiceTaskImplementation } from '#modules/bpmn-editor/BpmnElementT
 
 import React from 'react';
 
-import type { SelectOption } from '@evil/bifrost_fw_sdk';
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { SelectOption } from '@elraptorus/bfw_studio_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsServiceTask } from '../../BpmnElementTypeAssertionFunctions';

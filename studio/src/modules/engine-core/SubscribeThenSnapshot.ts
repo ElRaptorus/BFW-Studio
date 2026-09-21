@@ -1,4 +1,4 @@
-import type { DaemonEngineClient, Subscription } from '@elraptorus/daemonengine_client';
+import type { BfwEngineClient, Subscription } from '@elraptorus/bfw_engine_client';
 import type {
   ActivityCompensated,
   AdHocActivityActivated,
@@ -13,7 +13,7 @@ import type {
   ProcessInstanceStateChanged,
   SubProcessChildStarted,
   TransactionCancelled,
-} from '@elraptorus/daemonengine_sdk';
+} from '@elraptorus/bfw_engine_sdk';
 
 import type { EngineConnectionManager } from './EngineConnectionManager';
 import type { ProcessInstanceSnapshot } from './types';
@@ -52,7 +52,7 @@ export type SnapshotUpdateHandler = (update: SnapshotUpdate) => void;
  * This guarantees zero missed events without overwriting the loaded data.
  */
 export class SubscribeThenSnapshot {
-  private readonly client: DaemonEngineClient;
+  private readonly client: BfwEngineClient;
   private subscription: Subscription | null = null;
   private snapshot: ProcessInstanceSnapshot | null = null;
   private updateHandler: SnapshotUpdateHandler | null = null;

@@ -1,6 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
-import type { Menu } from '@evil/bifrost_fw_sdk';
+import type { Menu } from '@elraptorus/bfw_studio_sdk';
 
 function isBpmnUri(uri: string | undefined): boolean {
   return typeof uri === 'string' && uri.toLowerCase().endsWith('.bpmn');

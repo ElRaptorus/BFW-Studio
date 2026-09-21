@@ -9,7 +9,7 @@ import type { BpmnElement_ErrorBoundaryEvent } from '#modules/bpmn-editor/BpmnEl
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsErrorBoundaryEvent } from '../../BpmnElementTypeAssertionFunctions';

@@ -468,7 +468,7 @@ DMN merge is element-level (one conflict key per DRG element) without custom-pro
 
 ## Engine Alignment
 
-The DMN editor's type system (`DmnElementTypes.ts`) uses moddle-prefixed values (`'dmn:Decision'`, etc.) and camelCase expression types (`'decisionTable'`, `'literalExpression'`). These correspond to the engine's DMN parser output but use different naming conventions: the engine uses atoms (`:decision_table`, `:literal_expression`) while the Studio uses JavaScript-style camelCase. Hit policies use the same string values as the engine's `EvilEngine.DMN.Types.HitPolicy`.
+The DMN editor's type system (`DmnElementTypes.ts`) uses moddle-prefixed values (`'dmn:Decision'`, etc.) and camelCase expression types (`'decisionTable'`, `'literalExpression'`). These correspond to the engine's DMN parser output but use different naming conventions: the engine uses atoms (`:decision_table`, `:literal_expression`) while the Studio uses JavaScript-style camelCase. Hit policies use the same string values as the engine's `BfwEngine.DMN.Types.HitPolicy`.
 
 ---
 

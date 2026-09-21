@@ -92,9 +92,9 @@ export async function createAndStartStudioAgent<T extends StudioAgent>(
 }
 
 export interface PluginHostEnvSnapshot {
-  BFR_PLUGINS_DIR: string | undefined;
-  BFR_SKIP_PERMISSION_DIALOG: string | undefined;
-  BFR_PLUGIN_STORAGE_PATH: string | undefined;
+  BFW_PLUGINS_DIR: string | undefined;
+  BFW_SKIP_PERMISSION_DIALOG: string | undefined;
+  BFW_PLUGIN_STORAGE_PATH: string | undefined;
   extraEnv: Record<string, string | undefined>;
 }
 
@@ -125,17 +125,17 @@ export function capturePluginHostEnv(extraEnvKeys: string[] = []): PluginHostEnv
   }
 
   return {
-    BFR_PLUGINS_DIR: process.env.BFR_PLUGINS_DIR,
-    BFR_SKIP_PERMISSION_DIALOG: process.env.BFR_SKIP_PERMISSION_DIALOG,
-    BFR_PLUGIN_STORAGE_PATH: process.env.BFR_PLUGIN_STORAGE_PATH,
+    BFW_PLUGINS_DIR: process.env.BFW_PLUGINS_DIR,
+    BFW_SKIP_PERMISSION_DIALOG: process.env.BFW_SKIP_PERMISSION_DIALOG,
+    BFW_PLUGIN_STORAGE_PATH: process.env.BFW_PLUGIN_STORAGE_PATH,
     extraEnv,
   };
 }
 
 export function restorePluginHostEnv(snapshot: PluginHostEnvSnapshot): void {
-  restoreEnvKey('BFR_PLUGINS_DIR', snapshot.BFR_PLUGINS_DIR);
-  restoreEnvKey('BFR_SKIP_PERMISSION_DIALOG', snapshot.BFR_SKIP_PERMISSION_DIALOG);
-  restoreEnvKey('BFR_PLUGIN_STORAGE_PATH', snapshot.BFR_PLUGIN_STORAGE_PATH);
+  restoreEnvKey('BFW_PLUGINS_DIR', snapshot.BFW_PLUGINS_DIR);
+  restoreEnvKey('BFW_SKIP_PERMISSION_DIALOG', snapshot.BFW_SKIP_PERMISSION_DIALOG);
+  restoreEnvKey('BFW_PLUGIN_STORAGE_PATH', snapshot.BFW_PLUGIN_STORAGE_PATH);
   for (const [key, value] of Object.entries(snapshot.extraEnv)) {
     restoreEnvKey(key, value);
   }
@@ -149,12 +149,12 @@ export async function createAndStartStudioAgentForPluginHost<T extends StudioAge
 ): Promise<T> {
   const snapshot = capturePluginHostEnv(Object.keys(options.extraEnv ?? {}));
 
-  process.env.BFR_PLUGINS_DIR = options.pluginsDirectory;
+  process.env.BFW_PLUGINS_DIR = options.pluginsDirectory;
   if (options.skipPermissionDialog !== false) {
-    process.env.BFR_SKIP_PERMISSION_DIALOG = '1';
+    process.env.BFW_SKIP_PERMISSION_DIALOG = '1';
   }
   if (options.pluginStoragePath) {
-    process.env.BFR_PLUGIN_STORAGE_PATH = options.pluginStoragePath;
+    process.env.BFW_PLUGIN_STORAGE_PATH = options.pluginStoragePath;
   }
   if (options.extraEnv) {
     Object.assign(process.env, options.extraEnv);
@@ -545,12 +545,12 @@ export class StudioAgent {
     );
   }
 
-  async openSolutionFileFromFixtures(esslnFilename: string): Promise<void> {
-    const esslnUri = 'file://' + path.join(__dirname, 'fixtures', esslnFilename);
+  async openSolutionFileFromFixtures(solutionFilename: string): Promise<void> {
+    const solutionFileUri = 'file://' + path.join(__dirname, 'fixtures', solutionFilename);
     await this.openViaCommandSearch('Test: Open URI as solution');
     await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
 
-    await this.sendKeyboardInput([...esslnUri.split(''), 'enter'], false);
+    await this.sendKeyboardInput([...solutionFileUri.split(''), 'enter'], false);
 
     await this.assertVisible('[data-test--tree="std/file-explorer/open-solution"]', ASSERT_VISIBLE_TIMEOUT);
     await this.waitForNotVisible(
@@ -1199,10 +1199,10 @@ export class StudioAgent {
   }
 
   private async snapshotCurrentTestdata(): Promise<void> {
-    const testFolderPath = path.join(os.homedir(), '.evil', 'studio-tests');
+    const testFolderPath = path.join(os.homedir(), '.bifrostfw', 'studio-tests');
     const backupFolderPath = path.join(
       os.homedir(),
-      '.evil',
+      '.bifrostfw',
       `studio-tests-backup-${this.timeStampForTestDataBackups}`,
     );
 
@@ -1222,7 +1222,7 @@ export class StudioAgent {
   }
 
   private async cleanup(): Promise<void> {
-    const testFolderPath = path.join(os.homedir(), '.evil', 'studio-tests');
+    const testFolderPath = path.join(os.homedir(), '.bifrostfw', 'studio-tests');
 
     if (!fs.existsSync(testFolderPath)) {
       return;

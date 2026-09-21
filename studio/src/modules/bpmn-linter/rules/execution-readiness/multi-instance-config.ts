@@ -39,7 +39,7 @@ export default function () {
       return;
     }
 
-    const hasEvilInputCollection = !!getExtensionBody(loop, 'evil:InputCollection');
+    const hasBfwInputCollection = !!getExtensionBody(loop, 'bfw:InputCollection');
     const hasInputDataItem = !!(loop.inputDataItem as ModdleNode | undefined);
     const hasLoopDataInputRef = !!(loop.loopDataInputRef as ModdleNode | undefined);
     const hasCamundaCollection = !!(
@@ -47,10 +47,10 @@ export default function () {
       (loop.$attrs['camunda:collection'] || loop.$attrs['flowable:collection'])
     );
 
-    if (!hasEvilInputCollection && !hasInputDataItem && !hasLoopDataInputRef && !hasCamundaCollection) {
+    if (!hasBfwInputCollection && !hasInputDataItem && !hasLoopDataInputRef && !hasCamundaCollection) {
       reporter.report(
         node.id,
-        'Multi-instance must define an Input Collection (evil:InputCollection) or a data item / collection reference (EXR-010)',
+        'Multi-instance must define an Input Collection (bfw:InputCollection) or a data item / collection reference (EXR-010)',
       );
     }
 
@@ -62,11 +62,11 @@ export default function () {
       );
     }
 
-    const maxIterationsRaw = getExtensionBody(loop, 'evil:MaxIterations');
+    const maxIterationsRaw = getExtensionBody(loop, 'bfw:MaxIterations');
     if (maxIterationsRaw != null && maxIterationsRaw.trim() !== '') {
       const parsed = parseInt(maxIterationsRaw.trim(), 10);
       if (isNaN(parsed) || parsed <= 0) {
-        reporter.report(node.id, 'evil:maxIterations must be a positive integer (EXR-010)');
+        reporter.report(node.id, 'bfw:maxIterations must be a positive integer (EXR-010)');
       }
     }
   }

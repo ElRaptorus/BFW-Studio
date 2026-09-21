@@ -3,9 +3,10 @@ import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import type { DmnDefinitions, DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import { parseDmn } from '@elraptorus/daemonengine_sdk';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import { parseDmn } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import type { DmnViewerComponentAdapter } from '../../dmn-core/DmnViewerComponentAdapter';
 import type { DmnFlowNodeTypeProperties, DmnTraceFragmentData } from './DmnTraceTypes';
@@ -19,7 +20,7 @@ const EMPTY_DATA: DmnTraceFragmentData = {
 
 export class DmnTraceFragmentModel extends EditorDocumentModel {
   private connectionManager: EngineConnectionManager;
-  private client: DaemonEngineClient | null;
+  private client: BfwEngineClient | null;
   private viewerAdapter: DmnViewerComponentAdapter | null = null;
   private selectedElement: DrgSelection | null = null;
   private selectionRevision = 0;

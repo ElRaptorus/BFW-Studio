@@ -1,3 +1,3 @@
-import type { Menu } from '@evil/bifrost_fw_sdk';
+import type { Menu } from '@elraptorus/bfw_studio_sdk';
 
 export type MenuFactoryFunction = (...args: any[]) => Menu | Promise<Menu>;

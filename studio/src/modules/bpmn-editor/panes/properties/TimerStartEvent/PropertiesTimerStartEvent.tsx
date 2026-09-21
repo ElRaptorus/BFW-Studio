@@ -14,7 +14,7 @@ import { BpmnTimerType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 
-import { PaneProperty, type SelectOption } from '@evil/bifrost_fw_sdk';
+import { PaneProperty, type SelectOption } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsTimerStartEvent } from '../../BpmnElementTypeAssertionFunctions';

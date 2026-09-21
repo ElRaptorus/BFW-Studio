@@ -1,7 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { DialogResult, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
 import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
-import type { StartResult } from '@elraptorus/daemonengine_sdk';
+
+import type { StartResult } from '@elraptorus/bfw_engine_sdk';
 
 import type { EngineConnectionManager } from '../EngineConnectionManager';
 import { ENGINE_COMMANDS } from './CommandContract';

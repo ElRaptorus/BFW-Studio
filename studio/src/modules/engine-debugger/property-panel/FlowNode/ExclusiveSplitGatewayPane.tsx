@@ -5,9 +5,10 @@ import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import type { FlowNode as BpmnFlowNode, SequenceFlow } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
+
+import type { FlowNode as BpmnFlowNode, SequenceFlow } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs';

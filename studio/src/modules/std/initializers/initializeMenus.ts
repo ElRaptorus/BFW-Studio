@@ -2,7 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
-import type { Menu, MenuItem } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
 export function initializeMenus(bifrost: Bifrost): void {
   registerApplicationMenu(bifrost);

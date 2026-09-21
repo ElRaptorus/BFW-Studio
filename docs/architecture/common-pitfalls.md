@@ -10,7 +10,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## BPMN moddle: `extends` on extension payload types
 
-**Mistake**: Declaring an `evil:*` payload under `<extensionElements>` with `"extends": ["bpmn:ExtensionElements"]`.
+**Mistake**: Declaring an `bfw:*` payload under `<extensionElements>` with `"extends": ["bpmn:ExtensionElements"]`.
 
 **Why**: moddle forbids creating that type, so persist commands cannot add children and XML stays empty.
 
@@ -20,7 +20,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## Non-standard attributes need a moddle `extends` entry
 
-**Mistake**: Setting an engine-only attribute on a standard BPMN business object without a matching `extends` block in `evil-platform.json`.
+**Mistake**: Setting an engine-only attribute on a standard BPMN business object without a matching `extends` block in `bfw-platform.json`.
 
 **Why**: In-memory editing works; `moddle.toXML()` silently drops undeclared properties. The pane looks correct until save → reload.
 
@@ -140,7 +140,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## Inline `import()` in type annotations
 
-**Mistake**: `editorDocument: import('@evil/bifrost_fw_sdk').EditorDocument`
+**Mistake**: `editorDocument: import('@elraptorus/bfw_studio_sdk').EditorDocument`
 
 **Why**: Hides dependencies and breaks import sorting.
 
@@ -206,11 +206,11 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## bpmnlint resolver: package name prefixing
 
-**Mistake**: Matching `pkg === 'evil-studio'` in a custom resolver.
+**Mistake**: Matching `pkg === 'bifrost-forge-world'` in a custom resolver.
 
-**Why**: bpmnlint prefixes non-`bpmnlint` packages to `bpmnlint-plugin-evil-studio`.
+**Why**: bpmnlint prefixes non-`bpmnlint` packages to `bpmnlint-plugin-bifrost-forge-world`.
 
-**Correct approach**: Match the prefixed name. Config still uses the shortcut `evil-studio/rule-name`.
+**Correct approach**: Match the prefixed name. Config still uses the shortcut `bifrost-forge-world/rule-name`.
 
 ---
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_1fdc9f25-bce4-4612-928d-330378222b21" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definition_1fdc9f25-bce4-4612-928d-330378222b21" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7">
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="service-task" processRef="service-task" />
   </bpmn:collaboration>
@@ -24,10 +24,10 @@
     </bpmn:serviceTask>
     <bpmn:serviceTask id="ServiceTask_2" name="ServiceTask_2" implementation="http">
       <bpmn:extensionElements>
-        <evil:HttpMethod>post</evil:HttpMethod>
-        <evil:HttpUrl>test url</evil:HttpUrl>
-        <evil:HttpBody>my body</evil:HttpBody>
-        <evil:HttpAuthHeader>authorization</evil:HttpAuthHeader>
+        <bfw:HttpMethod>post</bfw:HttpMethod>
+        <bfw:HttpUrl>test url</bfw:HttpUrl>
+        <bfw:HttpBody>my body</bfw:HttpBody>
+        <bfw:HttpAuthHeader>authorization</bfw:HttpAuthHeader>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_1f21fy8</bpmn:incoming>
       <bpmn:outgoing>Flow_04zcqle</bpmn:outgoing>

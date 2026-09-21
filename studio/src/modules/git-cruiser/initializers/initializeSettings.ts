@@ -42,7 +42,7 @@ export function initializeSettings(bifrost: Bifrost): void {
       type: 'array',
       label: 'Protected Diagram Patterns',
       description:
-        'Glob patterns for protected BPMN diagrams. A warning will be shown before committing changes to matching files. Project-level settings in .evilstudio/git-cruiser.json take precedence.',
+        'Glob patterns for protected BPMN diagrams. A warning will be shown before committing changes to matching files. Project-level settings in .bifrostfw/git-cruiser.json take precedence.',
       default: [],
     },
   });

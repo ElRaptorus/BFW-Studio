@@ -13,7 +13,7 @@ import type {
 } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
 import type { BifrostOperatingSystem } from '#bifrost/contracts/BifrostTypes';
 
-import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
 
 import { pluginBpmnContributionStore } from '../../../../modules/bpmn-core/PluginBpmnContributionStore';
 import { pluginModuleLoader } from '../../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';

@@ -119,22 +119,22 @@ describe('adhoc-subprocess-config', () => {
     assert.ok(reports.some((report) => /empty implementation attribute/i.test(report.message)));
   });
 
-  it('reports missing evil:ActiveElements for sequential engine-managed mode', () => {
+  it('reports missing bfw:ActiveElements for sequential engine-managed mode', () => {
     const node = adHocSubProcess('AdHoc_1', [task('Task_1')], { ordering: 'Sequential' });
     const reports = collectReports(adhocSubprocessConfig, node);
-    assert.ok(reports.some((report) => /requires an evil:ActiveElements expression/i.test(report.message)));
+    assert.ok(reports.some((report) => /requires an bfw:ActiveElements expression/i.test(report.message)));
   });
 
-  it('passes sequential mode when evil:ActiveElements is present', () => {
+  it('passes sequential mode when bfw:ActiveElements is present', () => {
     const node = adHocSubProcess('AdHoc_1', [task('Task_1')], {
       ordering: 'Sequential',
       completionCondition: { $type: 'bpmn:FormalExpression', body: 'activeCount = 0' },
       extensionElements: {
-        values: [{ $type: 'evil:ActiveElements', body: '["Task_1"]' }],
+        values: [{ $type: 'bfw:ActiveElements', body: '["Task_1"]' }],
       },
     });
     const reports = collectReports(adhocSubprocessConfig, node);
-    assert.ok(!reports.some((report) => /requires an evil:ActiveElements expression/i.test(report.message)));
+    assert.ok(!reports.some((report) => /requires an bfw:ActiveElements expression/i.test(report.message)));
   });
 
   it('passes sequential mode when an implementation is set (plugin-managed)', () => {
@@ -144,7 +144,7 @@ describe('adhoc-subprocess-config', () => {
       implementation: 'my-plugin',
     });
     const reports = collectReports(adhocSubprocessConfig, node);
-    assert.ok(!reports.some((report) => /requires an evil:ActiveElements expression/i.test(report.message)));
+    assert.ok(!reports.some((report) => /requires an bfw:ActiveElements expression/i.test(report.message)));
   });
 
   it('warns when ordering is not explicitly set', () => {

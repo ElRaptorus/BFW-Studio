@@ -14,7 +14,7 @@ Key characteristics:
 - **Error Summary Badge** at the bottom of the editor
 - **Findings Pane** (formerly "Problems Pane") with hover-highlighting, click-to-zoom, and bidirectional selection
 - **Palette integration** — live-lint toggle is a palette entry, not a floating button
-- **File Explorer batch lint** — Lint File / Folder / Solution writes `evil:LinterRulesetScore` without requiring live editor lint
+- **File Explorer batch lint** — Lint File / Folder / Solution writes `bfw:LinterRulesetScore` without requiring live editor lint
 - **Pane group label**: "Linter" (pane group icon: `ph-fill ph-highlighter`)
 
 > **Note:** Structural integrity checks (ghost artifacts, dangling references, empty containers) are handled by the separate [BPMN Sanitizer](bpmn-sanitizer.md), not by the linter. The two systems are architecturally independent.
@@ -255,11 +255,11 @@ These rules mirror the engine's Ad-hoc Sub-Process deploy-time validator (AH-D7,
 | Rule | Path | Category | `bpmn-development` | `bpmn-production-ready` | Reports |
 |------|------|----------|---------------------|--------------------------|---------|
 | `adhoc-subprocess-structure` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | Start Events inside an ad-hoc sub-process (BSC-021); End Events inside (BSC-021); zero inner activities (BSC-021); nested `bpmn:AdHocSubProcess` (BSC-021, mirrors the `is_transaction` nesting restriction); an ad-hoc sub-process inside an Event Sub-Process (BSC-021, AH-D15 — a platform decision, not a spec violation) |
-| `adhoc-subprocess-config` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | No `completionCondition` and no `implementation` (EXR-014 — informational: the subprocess auto-completes per AH-D9); an empty `implementation` attribute (EXR-014); `ordering="Sequential"` with no `implementation` and no `evil:ActiveElements` (EXR-014, mirrors the engine's AH-D18 deploy-time rejection); no explicit `ordering` (EXR-014 — advisory, defaults to Parallel per AH-D5) |
+| `adhoc-subprocess-config` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | No `completionCondition` and no `implementation` (EXR-014 — informational: the subprocess auto-completes per AH-D9); an empty `implementation` attribute (EXR-014); `ordering="Sequential"` with no `implementation` and no `bfw:ActiveElements` (EXR-014, mirrors the engine's AH-D18 deploy-time rejection); no explicit `ordering` (EXR-014 — advisory, defaults to Parallel per AH-D5) |
 
 `adhoc-subprocess-structure` uses `is(node, 'bpmn:AdHocSubProcess')` from `bpmnlint-utils`, so it fires on the ad-hoc element itself (not its children) and inspects `node.flowElements` directly — the same pattern as the Event Subprocess structure rules above. `isInsideEventSubprocess` walks `$parent` looking for a `bpmn:SubProcess` with `triggeredByEvent === true`, so a nested ad-hoc-inside-embedded-inside-ESP diagram is still caught regardless of nesting depth.
 
-`adhoc-subprocess-config` reads `evil:ActiveElements` via the shared `extensionElements.values` lookup pattern (same as `evil:LoopInterval`, `evil:CorrelationKey`, etc.) and mirrors the engine's `AdHocMode` deploy-time validation exactly, so a diagram that passes `bpmn-production-ready` linting will also pass the engine's deploy-time validator for these specific checks.
+`adhoc-subprocess-config` reads `bfw:ActiveElements` via the shared `extensionElements.values` lookup pattern (same as `bfw:LoopInterval`, `bfw:CorrelationKey`, etc.) and mirrors the engine's `AdHocMode` deploy-time validation exactly, so a diagram that passes `bpmn-production-ready` linting will also pass the engine's deploy-time validator for these specific checks.
 
 Unit tests: `studio/test/unit/bpmn-linter/adhoc-subprocess-rules.test.ts` (15 assertions across both rules). Integration test: `studio/test/integration/bpmn-linter/adhoc-rules.test.ts` opens `test-solution-bpmn/adhoc-subprocess.bpmn` (config violation) and `adhoc-subprocess-invalid.bpmn` (structure violation) with the linter enabled and `bpmn-production-ready` active, asserting the Findings pane reports both.
 
@@ -493,8 +493,8 @@ Folder / project / solution walks are recursive (`*.bpmn` only). Deploy-to-engin
 
 Per URI:
 
-1. If the URI is an open BPMN document with a ready modeler: `LintEngine.lint` on live definitions, `computeLintScore` with the modeler `elementRegistry`, persist via `evil.platform.updateLinterRulesetScore` + `elements.changed`. Never `files.save` behind the modeler.
-2. Otherwise: `bpmn-moddle` `fromXML` → `LintEngine` → `computeLintScore` with `buildModdleElementRegistry` (BPMNDI shape/edge `bpmnElement` refs, plane `bpmnElement` as `rootElementId`) → upsert `evil:LinterRulesetScore` via `moddle.create` → `toXML({ format: true })` → `files.save`.
+1. If the URI is an open BPMN document with a ready modeler: `LintEngine.lint` on live definitions, `computeLintScore` with the modeler `elementRegistry`, persist via `bfw.platform.updateLinterRulesetScore` + `elements.changed`. Never `files.save` behind the modeler.
+2. Otherwise: `bpmn-moddle` `fromXML` → `LintEngine` → `computeLintScore` with `buildModdleElementRegistry` (BPMNDI shape/edge `bpmnElement` refs, plane `bpmnElement` as `rootElementId`) → upsert `bfw:LinterRulesetScore` via `moddle.create` → `toXML({ format: true })` → `files.save`.
 
 Foreign diagrams (`detectBpmnOrigin`) are skipped unless `bpmnLinter.alwaysLintForeignDiagrams`. The disk registry is built to match the live canvas denominator (`elementRegistry.getAll()` minus `canvas.getRootElement()`, labels excluded). A full moddle walk is **not** used — it would count `bpmn:Collaboration`, `bpmn:Process`, and `bpmn:LaneSet`, which have no canvas shapes. `lintOnDisk` is a private helper, not a public headless API.
 
@@ -540,24 +540,24 @@ Palette entry active state uses `--theme-focus` for the highlight color.
 - **Badge:** `ErrorSummaryBadge` shows `Score: xx.x%` with color by `complianceStatus` (`valid` / `risky` / `failed`).
 - **Pane:** `LinterScorePane` is registered **before** `ProblemsPane` in `initializePanes.ts`. Help id: `bpmn-linter/linter-score`.
 
-### BPMN XML (`evil:` platform extension)
+### BPMN XML (`bfw:` platform extension)
 
 Scores are stored on **`bpmn:Definitions`** so deployable BPMN remains the source of truth for engines.
 
 | Item | Value |
 |------|--------|
-| Moddle descriptor | `studio/src/modules/bpmn-core/moddle/evil-platform.json` |
-| Namespace URI | `https://evil.studio/schema/bpmn/platform/1.0` |
-| Moddle prefix | `evil` (registered in `BpmnModelerComponentAdapter`, `BpmnViewerComponentAdapter`, `BpmnViewerWithSync`) |
-| Container element | `evil:properties` under `bpmn:extensionElements` |
-| Per-ruleset rows | `evil:linterRulesetScore` (many), attributes: `rulesetId`, `scorePercent`, `complianceStatus`, `computedAtIso`, `schemaVersion`, `maxPoints`, `penaltyPoints`, `rawErrorFindings`, `rawWarningFindings` |
+| Moddle descriptor | `studio/src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json` |
+| Namespace URI | `https://bifrostforge.world/schema/bpmn` |
+| Moddle prefix | `bfw` (registered in `BpmnModelerComponentAdapter`, `BpmnViewerComponentAdapter`, `BpmnViewerWithSync`) |
+| Container element | `bfw:properties` under `bpmn:extensionElements` |
+| Per-ruleset rows | `bfw:linterRulesetScore` (many), attributes: `rulesetId`, `scorePercent`, `complianceStatus`, `computedAtIso`, `schemaVersion`, `maxPoints`, `penaltyPoints`, `rawErrorFindings`, `rawWarningFindings` |
 
-`evil:Properties` must be a normal **`Element`** with `meta.allowedIn` (e.g. `["*"]`) for placement inside `bpmn:ExtensionElements.values`. Do **not** set `"extends": ["bpmn:ExtensionElements"]` on that type: moddle rejects `create('evil:Properties', …)` with *cannot create \<evil:Properties\> extending \<bpmn:ExtensionElements\>*, so scores never persist and XML can show an empty `<bpmn:extensionElements />` if another path created the container.
+`bfw:Properties` must be a normal **`Element`** with `meta.allowedIn` (e.g. `["*"]`) for placement inside `bpmn:ExtensionElements.values`. Do **not** set `"extends": ["bpmn:ExtensionElements"]` on that type: moddle rejects `create('bfw:Properties', …)` with *cannot create \<bfw:Properties\> extending \<bpmn:ExtensionElements\>*, so scores never persist and XML can show an empty `<bpmn:extensionElements />` if another path created the container.
 
 ### Command stack
 
-- **Command id:** `evil.platform.updateLinterRulesetScore`
-- **Handler:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateEvilLinterRulesetScoreHandler.ts` (registered via `CommandHandler` map in `CommandHandler/index.ts`).
+- **Command id:** `bfw.platform.updateLinterRulesetScore`
+- **Handler:** `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateBfwLinterRulesetScoreHandler.ts` (registered via `CommandHandler` map in `CommandHandler/index.ts`).
 - **Lint loop guard:** `LintBridge` increments `_lintScheduleSuppressionCount` around `commandStack.execute` for the score command and ignores `commandStack.changed` while the counter is greater than zero, then decrements on a microtask to avoid infinite relint.
 - **Studio XML cache / inspector:** The score command only mutates definitions moddle; diagram-js may not surface a change the way the Studio expects. After a successful persist, `LintBridge` fires `eventBus.fire('elements.changed', { elements: [rootShape] })` so `BpmnModelerComponentAdapter` runs `saveXML` and `BpmnDocumentModel` receives `EVENT_BPMN_MODELER_ADAPTER_XML_CHANGED`. On that event, `BpmnDocumentModel` must assign **`this.xml = xml`** before `updateCurrentData(xml)` — the `currentXml` getter reads `this.xml`, while dirty/save uses base `currentData`; updating only `currentData` leaves the XML inspector and open-in-tab stale. `definitions` is resolved by walking `$parent` from the canvas root business object until `bpmn:Definitions` (correct when the canvas root is not an immediate child of definitions, e.g. subprocess drill-down).
 
@@ -637,8 +637,8 @@ An interface describing the public surface of the `LintBridge` diagram-js servic
 | ProblemsPane | `studio/src/modules/bpmn-linter/panes/ProblemsPane.tsx` |
 | LinterScorePane | `studio/src/modules/bpmn-linter/panes/LinterScorePane.tsx` |
 | Score engine | `studio/src/modules/bpmn-linter/scoring/computeLintScore.ts` |
-| Evil platform moddle | `studio/src/modules/bpmn-core/moddle/evil-platform.json` |
-| Score persist handler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateEvilLinterRulesetScoreHandler.ts` |
+| BFW platform moddle | `studio/src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json` |
+| Score persist handler | `studio/src/modules/bpmn-core/bpmn-js/CommandHandler/UpdateBfwLinterRulesetScoreHandler.ts` |
 | Linter score help | `studio/src/modules/bpmn-linter/texts/linter-score.md` |
 | Settings initializer | `studio/src/modules/bpmn-linter/initializers/initializeSettings.ts` |
 | Commands initializer | `studio/src/modules/bpmn-linter/initializers/initializeCommands.ts` |

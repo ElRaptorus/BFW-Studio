@@ -1,3 +1,9 @@
+import {
+  type LinterScoreChange,
+  type LinterScoreChangeKind,
+  type LinterScorePropertyDelta,
+  diffLinterScores,
+} from './bfwLinterScoreDiff';
 import { ATTRIBUTE_LABELS, LAYOUT_CHANGE_REJECTED_TYPES } from './bpmnDiffConstants';
 import { parseBpmnDefinitionsFromXml } from './bpmnModdleForDiff';
 import {
@@ -14,12 +20,6 @@ import {
   diffCustomPropertiesMaps,
 } from './customPropertiesDiff';
 import { type DefinitionsMetadataChange, diffDefinitionsMetadata } from './definitionsMetadataDiff';
-import {
-  type LinterScoreChange,
-  type LinterScoreChangeKind,
-  type LinterScorePropertyDelta,
-  diffLinterScores,
-} from './evilLinterScoreDiff';
 
 export type { CustomPropertiesSummaryEntry, CustomPropertyChangeKind, CustomPropertyDelta, DefinitionsMetadataChange };
 export type { LinterScoreChange, LinterScoreChangeKind, LinterScorePropertyDelta };
@@ -358,7 +358,7 @@ export function getCallActivityExtensionChangesForElement(
 
 /**
  * Semantic diff summary plus definitions-root metadata and custom property deltas
- * (requires XML parse with evil-platform moddle — same stack as {@link parseBpmnDefinitionsFromXml}).
+ * (requires XML parse with bfw-platform moddle — same stack as {@link parseBpmnDefinitionsFromXml}).
  */
 export async function buildAugmentedChangeSummary(
   rawDiff: RawDiffResult,

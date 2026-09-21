@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
+
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 

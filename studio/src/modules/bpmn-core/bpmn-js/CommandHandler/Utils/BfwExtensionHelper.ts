@@ -7,69 +7,69 @@ const MODDLE_BPMN_EXTENSION_ELEMENT_TYPE = 'bpmn:ExtensionElements';
 const EXTENSION_ELEMENT_SELECTOR = 'extensionElements';
 
 /**
- * Finds the first evil extension element of the given type on a business object.
+ * Finds the first bfw extension element of the given type on a business object.
  * Returns the moddle element or null.
  */
-export function findEvilExtension(businessObject: any, evilType: string): any | null {
+export function findBfwExtension(businessObject: any, extensionType: string): any | null {
   const extensionElements = businessObject.extensionElements ?? businessObject.get?.(EXTENSION_ELEMENT_SELECTOR);
-  return extensionElements?.values?.find((value: any) => value.$type === evilType) ?? null;
+  return extensionElements?.values?.find((value: any) => value.$type === extensionType) ?? null;
 }
 
 /**
- * Finds all evil extension elements of the given type on a business object.
+ * Finds all bfw extension elements of the given type on a business object.
  */
-export function findAllEvilExtensions(businessObject: any, evilType: string): any[] {
+export function findAllBfwExtensions(businessObject: any, extensionType: string): any[] {
   const extensionElements = businessObject.extensionElements ?? businessObject.get?.(EXTENSION_ELEMENT_SELECTOR);
-  return extensionElements?.values?.filter((value: any) => value.$type === evilType) ?? [];
+  return extensionElements?.values?.filter((value: any) => value.$type === extensionType) ?? [];
 }
 
 /**
- * Returns a command descriptor that sets (creates or updates) a body-based evil
+ * Returns a command descriptor that sets (creates or updates) a body-based bfw
  * extension element on an element. If the extension element already exists its body
  * property is updated; if not it is created and attached to the extensionElements.
  *
  * Pass `null` or `undefined` as `value` to remove the extension element.
  */
-export function setEvilBodyExtension(
+export function setBfwBodyExtension(
   element: ModdleElementLike,
   bpmnFactory: any,
-  evilType: string,
+  extensionType: string,
   value: string | null | undefined,
 ): CmdHelperDescriptor[] {
   const businessObject = element.businessObject ?? element;
-  const existingExtension = findEvilExtension(businessObject, evilType);
+  const existingExtension = findBfwExtension(businessObject, extensionType);
 
   if (value == null || value === '') {
     if (existingExtension == null) {
       return [];
     }
-    return removeEvilExtension(element, evilType);
+    return removeBfwExtension(element, extensionType);
   }
 
   if (existingExtension != null) {
     return [CmdHelper.updateBusinessObject(element as any, existingExtension, { body: value })];
   }
 
-  return createEvilExtension(element, bpmnFactory, evilType, { body: value });
+  return createBfwExtension(element, bpmnFactory, extensionType, { body: value });
 }
 
 /**
- * Creates an evil extension element with the given properties and attaches it
+ * Creates a bfw extension element with the given properties and attaches it
  * to the element's extensionElements. Creates the extensionElements container
  * if it does not exist yet.
  *
  * Returns an array of command descriptors.
  */
-export function createEvilExtension(
+export function createBfwExtension(
   element: ModdleElementLike,
   bpmnFactory: any,
-  evilType: string,
+  extensionType: string,
   properties: Record<string, unknown>,
 ): CmdHelperDescriptor[] {
   const businessObject = element.businessObject ?? element;
   let extensionElements = businessObject.get?.(EXTENSION_ELEMENT_SELECTOR) ?? businessObject.extensionElements;
 
-  const newElement = bpmnFactory.create(evilType, properties);
+  const newElement = bpmnFactory.create(extensionType, properties);
 
   if (extensionElements == null) {
     extensionElements = bpmnFactory.create(MODDLE_BPMN_EXTENSION_ELEMENT_TYPE, { values: [] });
@@ -89,11 +89,11 @@ export function createEvilExtension(
 }
 
 /**
- * Removes all evil extension elements of the given type from an element's
+ * Removes all bfw extension elements of the given type from an element's
  * extensionElements. If the extensionElements container becomes empty it is also
  * removed.
  */
-export function removeEvilExtension(element: ModdleElementLike, evilType: string): CmdHelperDescriptor[] {
+export function removeBfwExtension(element: ModdleElementLike, extensionType: string): CmdHelperDescriptor[] {
   const businessObject = element.businessObject ?? element;
   const extensionElements = businessObject.get?.(EXTENSION_ELEMENT_SELECTOR) ?? businessObject.extensionElements;
 
@@ -101,7 +101,7 @@ export function removeEvilExtension(element: ModdleElementLike, evilType: string
     return [];
   }
 
-  const remaining = (extensionElements.values ?? []).filter((value: any) => value.$type !== evilType);
+  const remaining = (extensionElements.values ?? []).filter((value: any) => value.$type !== extensionType);
 
   if (remaining.length === 0) {
     return [CmdHelper.updateBusinessObject(element as any, businessObject, { extensionElements: undefined })];
@@ -111,16 +111,16 @@ export function removeEvilExtension(element: ModdleElementLike, evilType: string
 }
 
 /**
- * Removes all evil extension elements of the given type from an element.
+ * Removes all bfw extension elements of the given type from an element.
  */
-export function removeAllEvilExtensions(element: ModdleElementLike, evilType: string): CmdHelperDescriptor[] {
-  return removeEvilExtension(element, evilType);
+export function removeAllBfwExtensions(element: ModdleElementLike, extensionType: string): CmdHelperDescriptor[] {
+  return removeBfwExtension(element, extensionType);
 }
 
 /**
- * Reads the body value of an evil extension element. Returns undefined if not found.
+ * Reads the body value of a bfw extension element. Returns undefined if not found.
  */
-export function getEvilBodyValue(businessObject: any, evilType: string): string | undefined {
-  const extension = findEvilExtension(businessObject, evilType);
+export function getBfwBodyValue(businessObject: any, extensionType: string): string | undefined {
+  const extension = findBfwExtension(businessObject, extensionType);
   return extension?.body ?? undefined;
 }

@@ -19,10 +19,10 @@ import { BpmnElementType, BpmnTimerType, LoopCharacteristics } from '#modules/bp
 import { getFillColor, getStrokeColor } from 'bpmn-js/lib/draw/BpmnRenderUtil';
 
 import {
-  findAllEvilExtensions,
-  getEvilBodyValue,
-  setEvilBodyExtension,
-} from '../bpmn-core/bpmn-js/CommandHandler/Utils/EvilExtensionHelper';
+  findAllBfwExtensions,
+  getBfwBodyValue,
+  setBfwBodyExtension,
+} from '../bpmn-core/bpmn-js/CommandHandler/Utils/BfwExtensionHelper';
 import {
   getRoot,
   isEventSubprocess,
@@ -47,7 +47,7 @@ import {
 } from './panes/BpmnElementTypeAssertionFunctions';
 
 const MODDLE_BPMN_DOCUMENTATION_TYPE = 'bpmn:Documentation';
-const MODDLE_EVIL_PROPERTIES_TYPE = 'evil:Properties';
+const MODDLE_BFW_PROPERTIES_TYPE = 'bfw:Properties';
 const MODDLE_BPMN_MESSAGE_SELECTOR = 'messageRef';
 const MODDLE_BPMN_CALLED_ELEMENT_SELECTOR = 'calledElement';
 const MODDLE_BPMN_EXTENSION_ELEMENTS_SELECTOR = 'extensionElements';
@@ -145,7 +145,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       return [];
     }
 
-    const formFieldsJson = getEvilBodyValue(element.businessObject, 'evil:FormFields');
+    const formFieldsJson = getBfwBodyValue(element.businessObject, 'bfw:FormFields');
     if (formFieldsJson == null || formFieldsJson.trim() === '') {
       return [];
     }
@@ -171,7 +171,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
     const commandStack = this.bpmnModelerProxy.getCommandStack();
     const bpmnFactory = this.bpmnModelerProxy.getBpmnFactory();
     const serialized = fields.length > 0 ? JSON.stringify(fields) : null;
-    const commands = setEvilBodyExtension(element, bpmnFactory, 'evil:FormFields', serialized);
+    const commands = setBfwBodyExtension(element, bpmnFactory, 'bfw:FormFields', serialized);
     for (const command of commands) {
       commandStack.execute(command.cmd, command.context);
     }
@@ -184,7 +184,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       return [];
     }
 
-    const formActionsJson = getEvilBodyValue(element.businessObject, 'evil:FormActions');
+    const formActionsJson = getBfwBodyValue(element.businessObject, 'bfw:FormActions');
     if (formActionsJson == null || formActionsJson.trim() === '') {
       return [];
     }
@@ -206,7 +206,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
     const commandStack = this.bpmnModelerProxy.getCommandStack();
     const bpmnFactory = this.bpmnModelerProxy.getBpmnFactory();
     const serialized = actions.length > 0 ? JSON.stringify(actions) : null;
-    const commands = setEvilBodyExtension(element, bpmnFactory, 'evil:FormActions', serialized);
+    const commands = setBfwBodyExtension(element, bpmnFactory, 'bfw:FormActions', serialized);
     for (const command of commands) {
       commandStack.execute(command.cmd, command.context);
     }
@@ -331,9 +331,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       return null;
     }
 
-    const customProperties = extensionElements.values?.find(
-      (value: any) => value.$type === MODDLE_EVIL_PROPERTIES_TYPE,
-    );
+    const customProperties = extensionElements.values?.find((value: any) => value.$type === MODDLE_BFW_PROPERTIES_TYPE);
 
     if (customProperties == null || customProperties.values == null || customProperties.values.length === 0) {
       return null;
@@ -908,17 +906,17 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         const bpmnFactory = this.bpmnModelerProxy.getBpmnFactory();
         const entries: { type: string; value: string | null }[] = [];
         if (propertyValue.assignees !== undefined) {
-          entries.push({ type: 'evil:Assignees', value: propertyValue.assignees || null });
+          entries.push({ type: 'bfw:Assignees', value: propertyValue.assignees || null });
         }
         if (propertyValue.dueDate !== undefined) {
-          entries.push({ type: 'evil:DueDate', value: propertyValue.dueDate || null });
+          entries.push({ type: 'bfw:DueDate', value: propertyValue.dueDate || null });
         }
         if (propertyValue.priority !== undefined) {
           const val = propertyValue.priority != null ? String(propertyValue.priority) : null;
-          entries.push({ type: 'evil:Priority', value: val });
+          entries.push({ type: 'bfw:Priority', value: val });
         }
         for (const entry of entries) {
-          const commands = setEvilBodyExtension(element, bpmnFactory, entry.type, entry.value);
+          const commands = setBfwBodyExtension(element, bpmnFactory, entry.type, entry.value);
           for (const cmd of commands) {
             commandStack.execute(cmd.cmd, cmd.context);
           }
@@ -927,10 +925,10 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       manualTask: (element: any, propertyName: string, propertyValue: any) => {
         const commandStack = this.bpmnModelerProxy.getCommandStack();
         const requireConfirmation = propertyValue.requireConfirmation;
-        const commands = setEvilBodyExtension(
+        const commands = setBfwBodyExtension(
           element,
           this.bpmnModelerProxy.getBpmnFactory(),
-          'evil:RequireConfirmation',
+          'bfw:RequireConfirmation',
           requireConfirmation ? 'true' : null,
         );
         for (const cmd of commands) {
@@ -939,10 +937,10 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       },
       dataObject: (element: any, propertyName: string, propertyValue: any) => {
         const commandStack = this.bpmnModelerProxy.getCommandStack();
-        const commands = setEvilBodyExtension(
+        const commands = setBfwBodyExtension(
           element,
           this.bpmnModelerProxy.getBpmnFactory(),
-          'evil:ValueContract',
+          'bfw:ValueContract',
           propertyValue.valueContract || null,
         );
         for (const cmd of commands) {
@@ -1015,7 +1013,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
             testBefore: loopChars.testBefore === true,
             loopCondition: loopChars.loopCondition?.body ?? undefined,
             loopMaximum: loopChars.loopMaximum != null ? String(loopChars.loopMaximum) : undefined,
-            loopInterval: getEvilBodyValue(loopChars, 'evil:LoopInterval'),
+            loopInterval: getBfwBodyValue(loopChars, 'bfw:LoopInterval'),
           };
         }
 
@@ -1026,13 +1024,13 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
             completionCondition: loopChars.completionCondition?.body ?? undefined,
             inputDataItem: loopChars.inputDataItem?.name ?? undefined,
             outputDataItem: loopChars.outputDataItem?.name ?? undefined,
-            elementVariable: getEvilBodyValue(loopChars, 'evil:ElementVariable'),
-            outputElementVariable: getEvilBodyValue(loopChars, 'evil:OutputElementVariable'),
-            inputCollection: getEvilBodyValue(loopChars, 'evil:InputCollection'),
-            outputCollection: getEvilBodyValue(loopChars, 'evil:OutputCollection'),
-            loopBreakCondition: getEvilBodyValue(loopChars, 'evil:LoopBreakCondition'),
-            loopInterval: getEvilBodyValue(loopChars, 'evil:LoopInterval'),
-            maxIterations: getEvilBodyValue(loopChars, 'evil:MaxIterations'),
+            elementVariable: getBfwBodyValue(loopChars, 'bfw:ElementVariable'),
+            outputElementVariable: getBfwBodyValue(loopChars, 'bfw:OutputElementVariable'),
+            inputCollection: getBfwBodyValue(loopChars, 'bfw:InputCollection'),
+            outputCollection: getBfwBodyValue(loopChars, 'bfw:OutputCollection'),
+            loopBreakCondition: getBfwBodyValue(loopChars, 'bfw:LoopBreakCondition'),
+            loopInterval: getBfwBodyValue(loopChars, 'bfw:LoopInterval'),
+            maxIterations: getBfwBodyValue(loopChars, 'bfw:MaxIterations'),
           };
         }
 
@@ -1145,8 +1143,8 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
 
         return {
           errorName: errorEventDefinition?.errorRef?.name,
-          errorCode: getEvilBodyValue(errorEventDefinition, 'evil:ErrorCode'),
-          errorMessage: getEvilBodyValue(errorEventDefinition, 'evil:ErrorMessage'),
+          errorCode: getBfwBodyValue(errorEventDefinition, 'bfw:ErrorCode'),
+          errorMessage: getBfwBodyValue(errorEventDefinition, 'bfw:ErrorMessage'),
         };
       },
       timer: (element: any, propertyName: string) => {
@@ -1218,13 +1216,13 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       script: (element: any, propertyName: string) => {
         return {
           script: element.businessObject.get(MODDLE_BPMN_SCRIPT_SELECTOR),
-          scriptRef: getEvilBodyValue(element.businessObject, 'evil:ScriptRef'),
+          scriptRef: getBfwBodyValue(element.businessObject, 'bfw:ScriptRef'),
         };
       },
       callActivity: (element: any, propertyName: string) => {
         const calledElement = element.businessObject.get(MODDLE_BPMN_CALLED_ELEMENT_SELECTOR);
-        const startEventId = getEvilBodyValue(element.businessObject, 'evil:StartEventId');
-        const calledProcessVersion = getEvilBodyValue(element.businessObject, 'evil:CalledProcessVersion');
+        const startEventId = getBfwBodyValue(element.businessObject, 'bfw:StartEventId');
+        const calledProcessVersion = getBfwBodyValue(element.businessObject, 'bfw:CalledProcessVersion');
 
         return {
           processModelId: calledElement,
@@ -1249,7 +1247,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
               : undefined,
           completionCondition: businessObject.completionCondition?.body ?? undefined,
           implementation: businessObject.implementation ?? undefined,
-          activeElementsExpression: getEvilBodyValue(businessObject, 'evil:ActiveElements'),
+          activeElementsExpression: getBfwBodyValue(businessObject, 'bfw:ActiveElements'),
         };
       },
       /**
@@ -1259,8 +1257,8 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
        */
       process: (element: any, propertyName: string) => {
         const isExecutable = element.businessObject.get(MODDLE_BPMN_IS_EXECUTABLE_SELECTOR) === true;
-        const version = getEvilBodyValue(element.businessObject, 'evil:Version');
-        const correlationKey = getEvilBodyValue(element.businessObject, 'evil:CorrelationKey');
+        const version = getBfwBodyValue(element.businessObject, 'bfw:Version');
+        const correlationKey = getBfwBodyValue(element.businessObject, 'bfw:CorrelationKey');
 
         return {
           isExecutable: isExecutable,
@@ -1327,11 +1325,11 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         const businessObject = element.businessObject;
         return {
           implementation: businessObject.get('implementation'),
-          method: getEvilBodyValue(businessObject, 'evil:HttpMethod'),
-          url: getEvilBodyValue(businessObject, 'evil:HttpUrl'),
-          body: getEvilBodyValue(businessObject, 'evil:HttpBody'),
-          authHeader: getEvilBodyValue(businessObject, 'evil:HttpAuthHeader'),
-          responseHeaders: getEvilBodyValue(businessObject, 'evil:HttpResponseHeaders'),
+          method: getBfwBodyValue(businessObject, 'bfw:HttpMethod'),
+          url: getBfwBodyValue(businessObject, 'bfw:HttpUrl'),
+          body: getBfwBodyValue(businessObject, 'bfw:HttpBody'),
+          authHeader: getBfwBodyValue(businessObject, 'bfw:HttpAuthHeader'),
+          responseHeaders: getBfwBodyValue(businessObject, 'bfw:HttpResponseHeaders'),
         };
       },
       categoryValue: (element: any, propertyName: string) => {
@@ -1340,7 +1338,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         return categoryValue;
       },
       formFieldDefinitions: (element: any, propertyName: string) => {
-        const formFieldsJson = getEvilBodyValue(element.businessObject, 'evil:FormFields');
+        const formFieldsJson = getBfwBodyValue(element.businessObject, 'bfw:FormFields');
         if (formFieldsJson == null || formFieldsJson.trim() === '') {
           return [];
         }
@@ -1355,7 +1353,7 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         }
       },
       formActions: (element: any, propertyName: string) => {
-        const formActionsJson = getEvilBodyValue(element.businessObject, 'evil:FormActions');
+        const formActionsJson = getBfwBodyValue(element.businessObject, 'bfw:FormActions');
         if (formActionsJson == null || formActionsJson.trim() === '') {
           return [];
         }
@@ -1370,25 +1368,25 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
         return {
           implementation: businessObject.get('implementation'),
           script: businessObject.get(MODDLE_BPMN_SCRIPT_SELECTOR),
-          decisionRef: getEvilBodyValue(businessObject, 'evil:DecisionRef'),
-          decisionElementId: getEvilBodyValue(businessObject, 'evil:DecisionElementId'),
-          resultVariable: getEvilBodyValue(businessObject, 'evil:ResultVariable'),
-          traceUnmatchedRules: getEvilBodyValue(businessObject, 'evil:TraceUnmatchedRules') === 'true',
+          decisionRef: getBfwBodyValue(businessObject, 'bfw:DecisionRef'),
+          decisionElementId: getBfwBodyValue(businessObject, 'bfw:DecisionElementId'),
+          resultVariable: getBfwBodyValue(businessObject, 'bfw:ResultVariable'),
+          traceUnmatchedRules: getBfwBodyValue(businessObject, 'bfw:TraceUnmatchedRules') === 'true',
         };
       },
       dataPipeline: (element: any) => {
         const businessObject = element.businessObject;
-        const inputMappings = findAllEvilExtensions(businessObject, 'evil:InputMapping').map((mapping: any) =>
+        const inputMappings = findAllBfwExtensions(businessObject, 'bfw:InputMapping').map((mapping: any) =>
           this.castDataPipelineMapping(mapping),
         );
-        const outputMappings = findAllEvilExtensions(businessObject, 'evil:OutputMapping').map((mapping: any) =>
+        const outputMappings = findAllBfwExtensions(businessObject, 'bfw:OutputMapping').map((mapping: any) =>
           this.castDataPipelineMapping(mapping),
         );
         return {
           inputMappings,
           outputMappings,
-          payloadContract: getEvilBodyValue(businessObject, 'evil:PayloadContract'),
-          resultContract: getEvilBodyValue(businessObject, 'evil:ResultContract'),
+          payloadContract: getBfwBodyValue(businessObject, 'bfw:PayloadContract'),
+          resultContract: getBfwBodyValue(businessObject, 'bfw:ResultContract'),
         };
       },
       correlationRetrievalExpression: (element: any) => {
@@ -1397,12 +1395,12 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
           (def: any) => def.$type === MODDLE_BPMN_MESSAGE_EVENT_DEFINITION_TYPE,
         );
         if (eventDef) {
-          return getEvilBodyValue(eventDef, 'evil:CorrelationRetrievalExpression');
+          return getBfwBodyValue(eventDef, 'bfw:CorrelationRetrievalExpression');
         }
-        return getEvilBodyValue(businessObject, 'evil:CorrelationRetrievalExpression');
+        return getBfwBodyValue(businessObject, 'bfw:CorrelationRetrievalExpression');
       },
       manualTask: (element: any) => {
-        const rawValue = getEvilBodyValue(element.businessObject, 'evil:RequireConfirmation');
+        const rawValue = getBfwBodyValue(element.businessObject, 'bfw:RequireConfirmation');
         return {
           requireConfirmation: rawValue === 'true',
         };
@@ -1415,15 +1413,15 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
       },
       dataObjectExtensions: (element: any) => {
         return {
-          valueContract: getEvilBodyValue(element.businessObject, 'evil:ValueContract'),
+          valueContract: getBfwBodyValue(element.businessObject, 'bfw:ValueContract'),
         };
       },
       userTaskExtensions: (element: any) => {
         return {
-          assignees: getEvilBodyValue(element.businessObject, 'evil:Assignees'),
-          dueDate: getEvilBodyValue(element.businessObject, 'evil:DueDate'),
+          assignees: getBfwBodyValue(element.businessObject, 'bfw:Assignees'),
+          dueDate: getBfwBodyValue(element.businessObject, 'bfw:DueDate'),
           priority: (() => {
-            const raw = getEvilBodyValue(element.businessObject, 'evil:Priority');
+            const raw = getBfwBodyValue(element.businessObject, 'bfw:Priority');
             return raw != null ? parseInt(raw, 10) : undefined;
           })(),
         };
@@ -2060,8 +2058,8 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
     };
 
     const isExecutable = businessObject.get(MODDLE_BPMN_IS_EXECUTABLE_SELECTOR) === true;
-    const version = getEvilBodyValue(businessObject, 'evil:Version');
-    const correlationKey = getEvilBodyValue(businessObject, 'evil:CorrelationKey');
+    const version = getBfwBodyValue(businessObject, 'bfw:Version');
+    const correlationKey = getBfwBodyValue(businessObject, 'bfw:CorrelationKey');
 
     return {
       type: BpmnElementType.Process,

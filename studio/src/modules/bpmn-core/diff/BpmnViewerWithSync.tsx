@@ -12,7 +12,7 @@ import type Selection from 'diagram-js/lib/features/selection/Selection';
 import type { ElementLike, Shape } from 'diagram-js/lib/model/Types';
 import type { Rect } from 'diagram-js/lib/util/Types';
 
-import evilPlatformModdleDescriptor from '../bpmn-js/moddle/evil-platform.json';
+import bfwPlatformModdleDescriptor from '../bpmn-js/moddle/bfw-platform.json';
 
 export class BpmnViewerWithSync extends AbstractEmitter {
   private viewer: BpmnViewer;
@@ -32,7 +32,7 @@ export class BpmnViewerWithSync extends AbstractEmitter {
     this.viewer = new BpmnViewer({
       additionalModules: [minimapModule, OutlineModule],
       moddleExtensions: {
-        evil: evilPlatformModdleDescriptor,
+        bfw: bfwPlatformModdleDescriptor,
       },
       ...bpmnComponentOptions,
     });

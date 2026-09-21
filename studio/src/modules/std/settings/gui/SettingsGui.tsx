@@ -3,7 +3,7 @@ import { EVENT_SETTINGS_CHANGED, EVENT_SETTINGS_SCHEMA_REGISTERED } from '#bifro
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
 
 import { consumePendingCategory, onCategoryNavigationRequested } from '../settingsNavigation';
 import { SettingsCategoryNav } from './SettingsCategoryNav';

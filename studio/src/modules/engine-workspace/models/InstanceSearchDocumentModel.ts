@@ -2,7 +2,8 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { ENGINE_COMMANDS, EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 import type {
   OffsetPageInfo,
   ProcessInstance,
@@ -10,7 +11,7 @@ import type {
   ProcessInstanceFilter,
   RetryRequest,
   SortClause,
-} from '@elraptorus/daemonengine_sdk';
+} from '@elraptorus/bfw_engine_sdk';
 
 import { parseEngineUri } from '../helpers/parseEngineUri';
 
@@ -46,7 +47,7 @@ const INSTANCE_FIELDS = [
 export class InstanceSearchDocumentModel extends EditorDocumentModel {
   private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
-  private client: DaemonEngineClient | null;
+  private client: BfwEngineClient | null;
   private versionToModelIdCache = new Map<string, string>();
   private versionToVersionStringCache = new Map<string, string>();
   private engineId: string;

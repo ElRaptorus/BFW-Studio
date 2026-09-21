@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import type { JwtFactory } from '@elraptorus/daemonengine_client';
+
+import type { JwtFactory } from '@elraptorus/bfw_engine_client';
 
 import { SETTINGS_KEYS } from './settings/registerSettings';
 import type { JwtClaims } from './types';
@@ -18,7 +19,7 @@ export type EngineCapability = (typeof BOOLEAN_GATED_CLAIMS)[number] | (typeof S
 
 /**
  * Manages per-engine JWT tokens stored in the Settings mediator.
- * Provides a JwtFactory closure for DaemonEngineClient construction,
+ * Provides a JwtFactory closure for BfwEngineClient construction,
  * and decodes claims (without validation) for UI capability gating.
  */
 export class JwtIdentityManager {
@@ -49,7 +50,7 @@ export class JwtIdentityManager {
   }
 
   /**
-   * Returns a JwtFactory closure suitable for DaemonEngineClient construction.
+   * Returns a JwtFactory closure suitable for BfwEngineClient construction.
    * The factory resolves the stored token at call time (not at construction time),
    * so token updates are picked up automatically.
    */

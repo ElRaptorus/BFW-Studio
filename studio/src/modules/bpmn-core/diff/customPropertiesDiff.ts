@@ -1,7 +1,7 @@
-const EVIL_PROPERTIES_TYPE = 'evil:Properties';
-const EVIL_PROPERTY_TYPE = 'evil:Property';
+const BFW_PROPERTIES_TYPE = 'bfw:Properties';
+const BFW_PROPERTY_TYPE = 'bfw:Property';
 
-/** How an `evil:Property` entry differs between two diagram versions. */
+/** How an `bfw:Property` entry differs between two diagram versions. */
 export type CustomPropertyChangeKind = 'added' | 'removed' | 'changed';
 
 export type CustomPropertyDelta = {
@@ -40,14 +40,14 @@ function extractCustomPropertiesMap(businessObject: any): Record<string, string>
     return {};
   }
 
-  const propsContainer = extensionElements.values.find((value: any) => value.$type === EVIL_PROPERTIES_TYPE);
+  const propsContainer = extensionElements.values.find((value: any) => value.$type === BFW_PROPERTIES_TYPE);
   if (propsContainer?.values == null) {
     return {};
   }
 
   const map: Record<string, string> = {};
   for (const property of propsContainer.values) {
-    if (property.$type === EVIL_PROPERTY_TYPE && property.name != null) {
+    if (property.$type === BFW_PROPERTY_TYPE && property.name != null) {
       map[String(property.name)] = property.value != null ? String(property.value) : '';
     }
   }

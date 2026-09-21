@@ -6,7 +6,7 @@ import { getHumanizedDateTime } from '#modules/engine-core';
 
 import React, { useCallback } from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type { TaskInboxDocumentModel } from '../models/TaskInboxDocumentModel';
 

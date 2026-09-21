@@ -9,7 +9,7 @@ import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 
 import React, { useCallback, useRef } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
 
 import { FeelSimulatorEditor } from '../../../components/feel-simulator';
 import type { FeelSimulatorEditorRef } from '../../../components/feel-simulator';

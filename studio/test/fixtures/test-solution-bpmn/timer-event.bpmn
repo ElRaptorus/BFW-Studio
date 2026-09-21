@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:evil="https://evilengine.dev/schema/bpmn" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="2.3.0-bloodforge.7" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
   <bpmn2:collaboration id="Collaboration_0xvxwab">
     <bpmn2:participant id="Participant_0hj83h7" processRef="Process_1" />
   </bpmn2:collaboration>
@@ -18,9 +18,9 @@
     </bpmn2:boundaryEvent>
     <bpmn2:startEvent id="CycleTimerStartEvent_1" name="CycleTimerStartEvent_1">
       <bpmn2:extensionElements>
-        <evil:Properties>
-          <evil:Property name="enabled" value="true" />
-        </evil:Properties>
+        <bfw:Properties>
+          <bfw:Property name="enabled" value="true" />
+        </bfw:Properties>
       </bpmn2:extensionElements>
       <bpmn2:timerEventDefinition id="TimerEventDefinition_1j7sp0e">
         <bpmn2:timeCycle xsi:type="bpmn2:tFormalExpression" />

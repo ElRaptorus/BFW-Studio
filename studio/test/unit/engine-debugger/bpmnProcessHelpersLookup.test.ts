@@ -1,6 +1,7 @@
-import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
-import type { BpmnProcess, FlowNode } from '@elraptorus/daemonengine_sdk';
 import { describe, expect, it } from 'vitest';
+
+import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
+import type { BpmnProcess, FlowNode } from '@elraptorus/bfw_engine_sdk';
 
 import {
   getAllFlowNodes,

@@ -100,12 +100,12 @@ Centralized glob pattern matching logic for include/exclude rules. Used both dur
 type Solution = {
   type: 'solution';
   id: string;              // UUID, auto-generated
-  name: string;            // Human-readable name (directory name or .essln filename without extension)
-  baseUri: string;         // file:// URI of the root directory (single-folder) or .essln file URI (multi-folder)
+  name: string;            // Human-readable name (directory name or .bfwsln filename without extension)
+  baseUri: string;         // file:// URI of the root directory (single-folder) or .bfwsln file URI (multi-folder)
   showHiddenFiles: boolean;
   projects: Project[];     // One or more projects
-  solutionFileUri?: string; // URI of the .essln file (undefined for single-folder solutions)
-  isExplicitSolution?: boolean; // true when opened from .essln or promoted via "Add Folder"
+  solutionFileUri?: string; // URI of the .bfwsln file (undefined for single-folder solutions)
+  isExplicitSolution?: boolean; // true when opened from .bfwsln or promoted via "Add Folder"
 };
 
 type Project = {
@@ -122,9 +122,9 @@ type Project = {
 
 ### Single-Folder vs Multi-Folder Solutions
 
-- **Single-folder (default):** When a user opens a directory, a Solution with exactly one Project is created. `baseUri` = the directory URI, `solutionFileUri` = `undefined`, `isExplicitSolution` = `undefined`/`false`. No `.essln` file is needed. This is fully backwards compatible.
-- **Explicit solution (multi-folder or promoted):** When a user adds a folder via "Add Folder to Solution" or opens a `.essln` file, `isExplicitSolution` is set to `true`. This means the tree always shows project root entries, even if only one project remains.
-- **Multi-folder:** When a user opens a `.essln` file, a multi-root solution is created. `solutionFileUri` = the `.essln` file URI, `baseUri` = same as `solutionFileUri`. Each folder becomes a separate Project entry.
+- **Single-folder (default):** When a user opens a directory, a Solution with exactly one Project is created. `baseUri` = the directory URI, `solutionFileUri` = `undefined`, `isExplicitSolution` = `undefined`/`false`. No `.bfwsln` file is needed. This is fully backwards compatible.
+- **Explicit solution (multi-folder or promoted):** When a user adds a folder via "Add Folder to Solution" or opens a `.bfwsln` file, `isExplicitSolution` is set to `true`. This means the tree always shows project root entries, even if only one project remains.
+- **Multi-folder:** When a user opens a `.bfwsln` file, a multi-root solution is created. `solutionFileUri` = the `.bfwsln` file URI, `baseUri` = same as `solutionFileUri`. Each folder becomes a separate Project entry.
 
 ### Dirty Tracking
 
@@ -133,15 +133,15 @@ type Project = {
 - A project is renamed
 - Projects are reordered
 
-The flag is cleared when a solution file is saved (`setSolutionFileUri`) or when a new solution is opened. `isSolutionDirty()` also returns `true` for explicit solutions without a saved `.essln` file.
+The flag is cleared when a solution file is saved (`setSolutionFileUri`) or when a new solution is opened. `isSolutionDirty()` also returns `true` for explicit solutions without a saved `.bfwsln` file.
 
 ### Close Solution
 
 `closeSolution()` on `SolutionMediator` disposes all file watchers and clears the solution state. The `std.solution.closeSolution` command checks for unsaved changes and prompts the user before closing.
 
-### `.essln` Solution File Format
+### `.bfwsln` Solution File Format
 
-The `.essln` ("Bifrost Forge World Solution") file is a JSON file inspired by VS Code's `.code-workspace` format. The read/write functions (`readSolutionFile`, `writeSolutionFile`) and their types (`SolutionFileContent`, `SolutionFileFolder`) are co-located with `SolutionManager` in `studio/src/bifrost/common/SolutionManager.ts`.
+The `.bfwsln` ("Bifrost Forge World Solution") file is a JSON file inspired by VS Code's `.code-workspace` format. The read/write functions (`readSolutionFile`, `writeSolutionFile`) and their types (`SolutionFileContent`, `SolutionFileFolder`) are co-located with `SolutionManager` in `studio/src/bifrost/common/SolutionManager.ts`.
 
 ```json
 {
@@ -166,7 +166,7 @@ Pure state management without I/O. Holds the current `Solution` and provides mut
 | Method | Purpose |
 |--------|---------|
 | `openDirectoryAsSolution(baseUri, name, excludedFiles)` | Creates a new single-folder Solution with one Project |
-| `openSolutionFromFile(solutionFileUri, name, folders[], excludedFiles)` | Creates a multi-folder Solution from `.essln` file data |
+| `openSolutionFromFile(solutionFileUri, name, folders[], excludedFiles)` | Creates a multi-folder Solution from `.bfwsln` file data |
 | `addFolder(baseUri)` | Adds a folder as a new Project, sets `isExplicitSolution = true` |
 | `removeFolder(projectId)` | Removes a Project by ID (minimum 1 project enforced) |
 | `renameProject(projectId, newName)` | Renames a project label |
@@ -202,11 +202,11 @@ Orchestration layer around SolutionManager. Adds:
 | Method | Purpose |
 |--------|---------|
 | `openDirectoryAsSolution(uri)` | Opens single-folder: creates Solution, watcher, records in Recently Opened |
-| `openSolutionFile(solutionFileUri)` | Opens `.essln` file: reads folders, creates multi-root Solution, per-project watchers |
-| `saveSolutionFile(solutionFileUri)` | Writes the current Solution to a `.essln` file |
+| `openSolutionFile(solutionFileUri)` | Opens `.bfwsln` file: reads folders, creates multi-root Solution, per-project watchers |
+| `saveSolutionFile(solutionFileUri)` | Writes the current Solution to a `.bfwsln` file |
 | `addFolderToSolution(directoryUri)` | Adds a folder, sets up its watcher |
-| `removeFolderFromSolution(projectId)` | Removes a folder, disposes its watcher, auto-saves `.essln` |
-| `renameProjectInSolution(projectId, newName)` | Renames a project, auto-saves `.essln` |
+| `removeFolderFromSolution(projectId)` | Removes a folder, disposes its watcher, auto-saves `.bfwsln` |
+| `renameProjectInSolution(projectId, newName)` | Renames a project, auto-saves `.bfwsln` |
 | `isSolutionDirty()` | Whether the solution has unsaved changes |
 | `closeSolution()` | Disposes all watchers, clears solution state |
 | `containsEditorDocumentWithUri(uri)` | Checks whether a URI belongs to the open Solution |
@@ -310,7 +310,7 @@ The `PaneContent` component decides how the file tree is rendered:
 
 - **No Solution:** Shows "Open Folder" button
 - **One project (non-explicit):** Flattens the hierarchy — shows the project's files directly as root entries (without the project as an intermediate level). Entries are sorted: directories first, then alphabetically.
-- **Explicit solution (even with one project) or multiple projects:** Shows each project as a top-level section with a distinct folder-tree icon (`std/tree/project-{closed:open}`). Projects retain their order from the `.essln` file. Entries within each project are sorted independently.
+- **Explicit solution (even with one project) or multiple projects:** Shows each project as a top-level section with a distinct folder-tree icon (`std/tree/project-{closed:open}`). Projects retain their order from the `.bfwsln` file. Entries within each project are sorted independently.
 
 Drag-and-drop `projectRootUri` is set to `null` in multi-root mode (no root-level drops across projects).
 
@@ -345,7 +345,7 @@ External files and folders can be dragged from the OS file manager into the Stud
 |-----------|---------------|----------|
 | Tree item / root area | Yes | Copies all dropped files and folders into the target directory via `std.fileExplorer.copyExternalItems`. Drop on a file resolves to its parent directory. |
 | Root area | Yes (multi-root) | Drop prevented (`canDrop` returns `false` when `projectRootUri` is null) — user must drop onto a specific project folder. |
-| Empty state (nothing open) | No | `.bpmn` files opened as single files, `.essln` files opened as solutions, folders prompt a dialog (create solution or open in separate windows). Other file types silently ignored. |
+| Empty state (nothing open) | No | `.bpmn` files opened as single files, `.bfwsln` files opened as solutions, folders prompt a dialog (create solution or open in separate windows). Other file types silently ignored. |
 | Editor area | Either | Only `.bpmn` files are opened. Folders and other file types silently ignored. |
 
 **Commands:**
@@ -397,7 +397,7 @@ When closing a document, the index is only cleared if the file does not belong t
 `Bifrost.updateWindowTitleIfElectron()` sets the window title:
 - Without Solution: product name
 - With single-folder Solution: `{DocumentName} — {FolderName}`
-- With `.essln` Solution: `{DocumentName} — {SolutionFileName}` (`.essln` extension stripped)
+- With `.bfwsln` Solution: `{DocumentName} — {SolutionFileName}` (`.bfwsln` extension stripped)
 - Without focused document: just the Solution label
 
 ### Session Restore
@@ -405,14 +405,14 @@ When closing a document, the index is only cleared if the file does not belong t
 The Solution is persisted via `LocalStorageItem` (instance scope). On restart:
 
 1. `SolutionMediator` constructor: If `restoreLastSession = true`, calls `deserialize()`
-2. `Bifrost.postInitialize()`: Checks whether the saved Solution exists. For `.essln` solutions, calls `openSolutionFile()`; for single-folder, calls `openDirectoryAsSolution()`.
+2. `Bifrost.postInitialize()`: Checks whether the saved Solution exists. For `.bfwsln` solutions, calls `openSolutionFile()`; for single-folder, calls `openDirectoryAsSolution()`.
 
 The IPC `SOLUTION_CHANGED` message sends `solutionFileUri ?? baseUri` to the main process for window identity tracking.
 
 ### Multi-Window (Electron)
 
 - `std.window.focusOrOpenWithSolution`: Checks whether a Solution is already open in a window; if so, focuses that window; if not, opens a new one
-- `std.solution.openDirectory`: If a solution is already open, shows a dialog ("Cancel" / "Open Here" / "Open in New Window") with an optional "Remember my choice" checkbox. If remembered, the setting `std.solution.openDirectory.remember` / `std.solution.openDirectory.default` persists the preference and skips the dialog on future opens. Detects `.essln` files and routes to `openSolutionFile()`; otherwise opens in-place. The command is decomposed into focused helper functions for validation, window deduplication, user prompting, and opening.
+- `std.solution.openDirectory`: If a solution is already open, shows a dialog ("Cancel" / "Open Here" / "Open in New Window") with an optional "Remember my choice" checkbox. If remembered, the setting `std.solution.openDirectory.remember` / `std.solution.openDirectory.default` persists the preference and skips the dialog on future opens. Detects `.bfwsln` files and routes to `openSolutionFile()`; otherwise opens in-place. The command is decomposed into focused helper functions for validation, window deduplication, user prompting, and opening.
 
 ---
 
@@ -450,7 +450,7 @@ Settings are app-global (not per Solution or window). Relevant settings:
 | Component | Path |
 |-----------|------|
 | Solution/Project types | `studio/src/bifrost/contracts/SolutionTypes.ts` |
-| SolutionManager (+ .essln I/O) | `studio/src/bifrost/common/SolutionManager.ts` |
+| SolutionManager (+ .bfwsln I/O) | `studio/src/bifrost/common/SolutionManager.ts` |
 | SolutionMediator | `studio/src/bifrost/common/SolutionMediator.ts` |
 | SolutionFunctions | `studio/src/bifrost/common/SolutionFunctions.ts` |
 | FileHandlingService (abstract) | `studio/src/bifrost/common/FileHandlingService.ts` |

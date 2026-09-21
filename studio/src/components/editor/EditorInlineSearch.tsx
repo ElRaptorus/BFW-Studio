@@ -5,7 +5,7 @@ import { EVENT_INLINE_SEARCH_UPDATED } from '#bifrost/contracts/internal/SearchE
 
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { FormInput } from '@evil/bifrost_fw_sdk';
+import { FormInput } from '@elraptorus/bfw_studio_sdk';
 
 import { Icon } from '../Icon';
 

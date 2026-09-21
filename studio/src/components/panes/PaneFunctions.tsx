@@ -7,7 +7,7 @@ import { PaneHeader } from '#components/panes/PaneHeader';
 
 import React from 'react';
 
-import { valueMatchesSearchQuery } from '@evil/bifrost_fw_sdk';
+import { valueMatchesSearchQuery } from '@elraptorus/bfw_studio_sdk';
 
 /**
  * Returns a simple `PaneProvider` to export in a Pane file.

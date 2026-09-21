@@ -2,7 +2,7 @@ import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { getEvilBodyValue, setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { getBfwBodyValue, setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
 const CALLED_ELEMENT_SELECTOR = 'calledElement';
 
@@ -18,8 +18,8 @@ UpdateCallActivityHandler.prototype.preExecute = function (context: any) {
 
   const businessObject = getBusinessObject(element);
   const calledElement = businessObject.get(CALLED_ELEMENT_SELECTOR);
-  const currentStartEventId = getEvilBodyValue(businessObject, 'evil:StartEventId');
-  const currentCalledProcessVersion = getEvilBodyValue(businessObject, 'evil:CalledProcessVersion');
+  const currentStartEventId = getBfwBodyValue(businessObject, 'bfw:StartEventId');
+  const currentCalledProcessVersion = getBfwBodyValue(businessObject, 'bfw:CalledProcessVersion');
 
   const calledElementChanged = newProcessModelId !== undefined && newProcessModelId !== calledElement;
   const startEventIdChanged = newStartEventId !== undefined && newStartEventId !== currentStartEventId;
@@ -38,17 +38,17 @@ UpdateCallActivityHandler.prototype.preExecute = function (context: any) {
   }
 
   if (startEventIdChanged) {
-    const cmds = setEvilBodyExtension(element, this.bpmnFactory, 'evil:StartEventId', newStartEventId || null);
+    const cmds = setBfwBodyExtension(element, this.bpmnFactory, 'bfw:StartEventId', newStartEventId || null);
     for (const cmd of cmds) {
       this.commandStack.execute(cmd.cmd, cmd.context);
     }
   }
 
   if (calledProcessVersionChanged) {
-    const cmds = setEvilBodyExtension(
+    const cmds = setBfwBodyExtension(
       element,
       this.bpmnFactory,
-      'evil:CalledProcessVersion',
+      'bfw:CalledProcessVersion',
       newCalledProcessVersion || null,
     );
     for (const cmd of cmds) {

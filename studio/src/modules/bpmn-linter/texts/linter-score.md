@@ -55,10 +55,10 @@ Embedded scores reflect the **last Studio lint** for each persisted ruleset entr
 
 ### XML location (integrators)
 
-- **Namespace URI:** `https://evil.studio/schema/bpmn/platform/1.0`
-- **Prefix:** `evil`
-- **Under** `bpmn:definitions` → `bpmn:extensionElements` → `evil:properties`
-- **Children:** repeating `evil:linterRulesetScore` elements with attributes:
+- **Namespace URI:** `https://bifrostforge.world/schema/bpmn`
+- **Prefix:** `bfw`
+- **Under** `bpmn:definitions` → `bpmn:extensionElements` → `bfw:properties`
+- **Children:** repeating `bfw:linterRulesetScore` elements with attributes:
   - `rulesetId`, `scorePercent`, `complianceStatus`, `computedAtIso`, `schemaVersion`, `maxPoints`, `penaltyPoints`, `rawErrorFindings`, `rawWarningFindings`
 
 Values are plain XML attributes (no nested JSON). See `docs/architecture/bpmn-linter.md` for the full technical contract.

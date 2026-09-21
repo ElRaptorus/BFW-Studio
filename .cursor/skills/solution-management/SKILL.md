@@ -2,8 +2,8 @@
 name: solution-management
 description: >-
   Guide for working with the Studio's Solution and Project system, including
-  single-folder and multi-root (.essln) solutions. Use when modifying solution
-  management, file explorer behavior, project watchers, or the .essln file
+  single-folder and multi-root (.bfwsln) solutions. Use when modifying solution
+  management, file explorer behavior, project watchers, or the .bfwsln file
   format.
 ---
 
@@ -15,10 +15,10 @@ For full architectural reference, see [reference.md](reference.md).
 
 ## Core Concepts
 
-- **Single-folder solution**: One directory opened as a Solution with one Project. No `.essln` file. `solutionFileUri` is `undefined`, `isExplicitSolution` is `false`/`undefined`. This is the default mode.
-- **Explicit solution**: A solution promoted to multi-root via "Add Folder" or opened from `.essln`. `isExplicitSolution = true`. Always shows project root entries in the tree, even with one project.
-- **Multi-folder solution**: Multiple directories managed via a `.essln` file. `solutionFileUri` points to the file. Each directory is a separate Project.
-- **Backwards compatibility**: Single-folder mode must always work identically to how it did before multi-root was added. Never introduce `.essln`-specific logic that breaks the single-folder path.
+- **Single-folder solution**: One directory opened as a Solution with one Project. No `.bfwsln` file. `solutionFileUri` is `undefined`, `isExplicitSolution` is `false`/`undefined`. This is the default mode.
+- **Explicit solution**: A solution promoted to multi-root via "Add Folder" or opened from `.bfwsln`. `isExplicitSolution = true`. Always shows project root entries in the tree, even with one project.
+- **Multi-folder solution**: Multiple directories managed via a `.bfwsln` file. `solutionFileUri` points to the file. Each directory is a separate Project.
+- **Backwards compatibility**: Single-folder mode must always work identically to how it did before multi-root was added. Never introduce `.bfwsln`-specific logic that breaks the single-folder path.
 
 ## Layered Architecture
 
@@ -26,22 +26,22 @@ For full architectural reference, see [reference.md](reference.md).
 SolutionPane (React UI)  →  display and interaction
 FileExplorerView          →  transforms Solution into tree view data
 SolutionMediator          →  orchestration: I/O, watchers, persistence, events
-SolutionManager           →  pure state management + .essln file read/write
+SolutionManager           →  pure state management + .bfwsln file read/write
 ```
 
-The `.essln` I/O functions (`readSolutionFile`, `writeSolutionFile`) are co-located with `SolutionManager` in the same file, since they are exclusively used by `SolutionMediator` and operate on the `Solution` data model.
+The `.bfwsln` I/O functions (`readSolutionFile`, `writeSolutionFile`) are co-located with `SolutionManager` in the same file, since they are exclusively used by `SolutionMediator` and operate on the `Solution` data model.
 
 State mutations always flow through `SolutionManager`. The `SolutionMediator` orchestrates side effects (watchers, persistence, recently opened). Never mutate `Solution` objects directly — use `SolutionManager` methods.
 
 ## Adding a New Solution Operation
 
 1. Add the state mutation method to `SolutionManager` (emits `EVENT_SOLUTION_CHANGED`)
-2. Add the orchestration method to `SolutionMediator` (manages watchers, auto-saves `.essln`)
+2. Add the orchestration method to `SolutionMediator` (manages watchers, auto-saves `.bfwsln`)
 3. Types live on `SolutionMediator` / `SolutionTypes` in Studio (`studio/src/bifrost/common/SolutionMediator.ts`, `studio/src/bifrost/contracts/SolutionTypes.ts`)
 4. Register the command in `initializeSolutionFileCommands.ts` (or `initializeSolutionCommands.ts` for non-multi-root commands, or a dedicated file like `initializeCreateSolutionCommand.ts` for self-contained features)
 5. Add the command to the **File menu** and relevant **context menus** in `initializeMenus.ts` (see `gui-command-design` skill)
 
-## `.essln` File Format
+## `.bfwsln` File Format
 
 ```json
 {
@@ -62,13 +62,13 @@ State mutations always flow through `SolutionManager`. The `SolutionMediator` or
 - Single-root (non-explicit): Project node is flattened away; files appear directly under the solution header
 - Explicit solution (even with one project): Shows project root entries with icon `std/tree/project-{closed:open}` and menu `std/file-explorer/solution-root`
 - Multi-root: Each project is a top-level entry with icon `std/tree/project-{closed:open}` and menu `std/file-explorer/solution-root`
-- Project order matches the `.essln` file order; entries within each project are sorted (directories first, then alphabetical)
+- Project order matches the `.bfwsln` file order; entries within each project are sorted (directories first, then alphabetical)
 - `projectRootUri` for drag-and-drop is `null` for explicit solutions and multi-root mode
-- Start page uses `ph-fill ph-tree-view` icon for `.essln` solutions and strips the `.essln` extension from the label
+- Start page uses `ph-fill ph-tree-view` icon for `.bfwsln` solutions and strips the `.bfwsln` extension from the label
 
 ## Dirty Tracking and Close
 
-- `SolutionManager.isSolutionDirty()` returns `true` when the solution has unsaved structural changes (add/remove/rename/reorder) or is an explicit solution without a saved `.essln` file
+- `SolutionManager.isSolutionDirty()` returns `true` when the solution has unsaved structural changes (add/remove/rename/reorder) or is an explicit solution without a saved `.bfwsln` file
 - `std.solution.closeSolution` prompts the user to save if dirty, then disposes all watchers and clears the solution
 - All solution commands are accessible through both the command search and the File menu / context menus
 
@@ -77,7 +77,7 @@ State mutations always flow through `SolutionManager`. The `SolutionMediator` or
 External files and folders can be dragged from the OS into the Studio:
 
 - **Solution open (File Explorer):** All file types accepted, copied into the target directory via `std.fileExplorer.copyExternalItems`. Uses `resolveTargetDirectory` (drop on file resolves to parent). Multi-root solutions prevent root-area drops — user must target a specific project.
-- **Nothing open (File Explorer):** `.bpmn` files opened as single files, `.essln` files opened as solutions, folders prompt a dialog to create a solution (pre-populates the Solution Wizard via `initialFolders` parameter on `std.solution.createSolution`) or open each in a separate window.
+- **Nothing open (File Explorer):** `.bpmn` files opened as single files, `.bfwsln` files opened as solutions, folders prompt a dialog to create a solution (pre-populates the Solution Wizard via `initialFolders` parameter on `std.solution.createSolution`) or open each in a separate window.
 - **Editor area:** Only `.bpmn` files are opened. Folders and other file types are silently ignored.
 - Path extraction uses `std.internal.getPathsFromFiles` (Electron-only, `webUtils.getPathForFile`). All handlers guard with `bifrost.commands.isRegistered()`.
 
@@ -86,5 +86,5 @@ External files and folders can be dragged from the OS into the Studio:
 - `addFolder()` rejects duplicate URIs and overlapping roots (parent/child relationships)
 - `removeFolder()` prevents removing the last project
 - Opening a solution when one is already open shows Cancel/Open Here/Open in New Window dialog
-- Session restore detects `.essln` by file extension and routes to `openSolutionFile()`
-- Window title strips `.essln` extension for display
+- Session restore detects `.bfwsln` by file extension and routes to `openSolutionFile()`
+- Window title strips `.bfwsln` extension for display

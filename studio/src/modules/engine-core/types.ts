@@ -1,4 +1,4 @@
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 import type {
   DataObjectValue,
   EngineInfoResponse,
@@ -8,7 +8,7 @@ import type {
   FlowNodeInstanceState,
   FlowNodeType,
   ProcessInstanceState,
-} from '@elraptorus/daemonengine_sdk';
+} from '@elraptorus/bfw_engine_sdk';
 
 export type EngineConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 
@@ -18,7 +18,7 @@ export interface EngineConnection {
   readonly displayName: string;
   readonly state: EngineConnectionState;
   readonly info: EngineInfoResponse | null;
-  readonly client: DaemonEngineClient;
+  readonly client: BfwEngineClient;
 }
 
 export interface EngineConnectionConfig {

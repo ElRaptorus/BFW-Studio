@@ -8,6 +8,14 @@ function quoteForShell(filePath: string): string {
 }
 
 async function getBuiltStudioPath(): Promise<string> {
+  const configuredApplicationPath = process.env.TEST_APP_PATH;
+  if (configuredApplicationPath) {
+    if (!fs.existsSync(configuredApplicationPath)) {
+      throw new Error(`TEST_APP_PATH does not exist: ${configuredApplicationPath}`);
+    }
+    return configuredApplicationPath;
+  }
+
   const isWindows = process.platform === 'win32';
   const isLinux = process.platform === 'linux';
 
@@ -56,23 +64,20 @@ function findLinuxUnpackedExecutable(): string {
     throw new Error(`Linux unpacked app directory not found: ${unpackedDirectory}`);
   }
 
-  const excludedNames = new Set(['chrome-sandbox', 'chrome_crashpad_handler']);
   const directoryEntries = fs.readdirSync(unpackedDirectory, { withFileTypes: true });
-  const executableCandidates = directoryEntries.filter((directoryEntry) => {
-    if (!directoryEntry.isFile()) {
-      return false;
-    }
-    if (excludedNames.has(directoryEntry.name)) {
-      return false;
-    }
-    return !directoryEntry.name.includes('.');
-  });
+  const executableCandidates = directoryEntries
+    .filter((directoryEntry) => directoryEntry.isFile())
+    .map((directoryEntry) => directoryEntry.name)
+    .filter((fileName) => fileName.startsWith('bfw-studio-') && !fileName.endsWith('-launcher'))
+    .sort();
 
   if (executableCandidates.length === 0) {
-    throw new Error(`Unable to find the Studio Electron binary in ${unpackedDirectory}`);
+    throw new Error(
+      `Unable to find the Studio Electron binary in ${unpackedDirectory}. Expected bfw-studio-<version>, not the AppImage or the *-launcher script.`,
+    );
   }
 
-  return path.join(unpackedDirectory, executableCandidates[0].name);
+  return path.join(unpackedDirectory, executableCandidates[0]);
 }
 
 async function execCommand(command: string): Promise<string> {

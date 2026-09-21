@@ -13,16 +13,16 @@ import {
 function callActivityXml(options: { calledProcessVersion?: string; startEventId?: string }): string {
   const extensions: string[] = [];
   if (options.calledProcessVersion != null) {
-    extensions.push(`<evil:calledProcessVersion>${options.calledProcessVersion}</evil:calledProcessVersion>`);
+    extensions.push(`<bfw:calledProcessVersion>${options.calledProcessVersion}</bfw:calledProcessVersion>`);
   }
   if (options.startEventId != null) {
-    extensions.push(`<evil:startEventId>${options.startEventId}</evil:startEventId>`);
+    extensions.push(`<bfw:startEventId>${options.startEventId}</bfw:startEventId>`);
   }
   const extensionBlock =
     extensions.length > 0 ? `<bpmn:extensionElements>${extensions.join('')}</bpmn:extensionElements>` : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definitions_1" targetNamespace="https://evilengine.dev/schema/bpmn">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definitions_1" targetNamespace="https://bifrostforge.world/schema/bpmn">
   <bpmn:process id="P" isExecutable="true">
     <bpmn:callActivity id="CA_1" name="Fulfill" calledElement="Child">${extensionBlock}</bpmn:callActivity>
   </bpmn:process>

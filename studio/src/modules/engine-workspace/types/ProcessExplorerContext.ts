@@ -1,4 +1,4 @@
-import type { ProcessModel } from '@elraptorus/daemonengine_sdk';
+import type { ProcessModel } from '@elraptorus/bfw_engine_sdk';
 
 export interface ProcessExplorerContextMetadata {
   engineId: string;

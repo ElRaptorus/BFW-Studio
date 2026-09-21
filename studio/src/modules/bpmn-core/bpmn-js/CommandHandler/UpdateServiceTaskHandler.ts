@@ -2,21 +2,15 @@ import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { removeEvilExtension, setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { removeBfwExtension, setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
-const EVIL_HTTP_URL = 'evil:HttpUrl';
-const EVIL_HTTP_METHOD = 'evil:HttpMethod';
-const EVIL_HTTP_BODY = 'evil:HttpBody';
-const EVIL_HTTP_AUTH_HEADER = 'evil:HttpAuthHeader';
-const EVIL_HTTP_RESPONSE_HEADERS = 'evil:HttpResponseHeaders';
+const BFW_HTTP_URL = 'bfw:HttpUrl';
+const BFW_HTTP_METHOD = 'bfw:HttpMethod';
+const BFW_HTTP_BODY = 'bfw:HttpBody';
+const BFW_HTTP_AUTH_HEADER = 'bfw:HttpAuthHeader';
+const BFW_HTTP_RESPONSE_HEADERS = 'bfw:HttpResponseHeaders';
 
-const HTTP_EVIL_TYPES = [
-  EVIL_HTTP_URL,
-  EVIL_HTTP_METHOD,
-  EVIL_HTTP_BODY,
-  EVIL_HTTP_AUTH_HEADER,
-  EVIL_HTTP_RESPONSE_HEADERS,
-];
+const HTTP_BFW_TYPES = [BFW_HTTP_URL, BFW_HTTP_METHOD, BFW_HTTP_BODY, BFW_HTTP_AUTH_HEADER, BFW_HTTP_RESPONSE_HEADERS];
 
 export function UpdateServiceTaskHandler(this: any, commandStack: CommandStack, bpmnFactory: any): void {
   this.commandStack = commandStack;
@@ -40,8 +34,8 @@ UpdateServiceTaskHandler.prototype.preExecute = function (context: any) {
     );
 
     if (newImplementation !== 'http') {
-      for (const evilType of HTTP_EVIL_TYPES) {
-        commands.push(...removeEvilExtension(element, evilType));
+      for (const extensionType of HTTP_BFW_TYPES) {
+        commands.push(...removeBfwExtension(element, extensionType));
       }
     }
 
@@ -53,11 +47,11 @@ UpdateServiceTaskHandler.prototype.preExecute = function (context: any) {
     const { element, newMethod, newUrl, newBody, newAuthHeader, newResponseHeaders } = args;
     const commands: any[] = [];
 
-    commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_HTTP_URL, newUrl));
-    commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_HTTP_METHOD, newMethod));
-    commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_HTTP_BODY, newBody));
-    commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_HTTP_AUTH_HEADER, newAuthHeader));
-    commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_HTTP_RESPONSE_HEADERS, newResponseHeaders));
+    commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_HTTP_URL, newUrl));
+    commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_HTTP_METHOD, newMethod));
+    commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_HTTP_BODY, newBody));
+    commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_HTTP_AUTH_HEADER, newAuthHeader));
+    commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_HTTP_RESPONSE_HEADERS, newResponseHeaders));
 
     if (commands.length > 0) {
       const commandToExecute = CmdHelper.executeMultipleCommands(commands);

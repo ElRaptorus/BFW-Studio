@@ -3,9 +3,10 @@ import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import { Icon } from '#components/Icon';
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import { OverlayPosition } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
+
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 

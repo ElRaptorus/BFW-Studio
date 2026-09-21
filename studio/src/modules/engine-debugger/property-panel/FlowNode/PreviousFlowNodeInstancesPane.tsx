@@ -3,9 +3,10 @@ import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React, { useMemo } from 'react';
+
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs';

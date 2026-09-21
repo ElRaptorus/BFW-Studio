@@ -112,7 +112,7 @@ function loadProjectConfigForRepos(bifrost: Bifrost, gitService: GitService): vo
   for (const state of gitService.getAllRepoStates()) {
     loadProjectConfig(bifrost, state.repoRoot);
 
-    const configUri = `file://${state.repoRoot}/.evilstudio/git-cruiser.json`;
+    const configUri = `file://${state.repoRoot}/.bifrostfw/git-cruiser.json`;
     try {
       const watcher = bifrost.files.watchFile(configUri, (eventType) => {
         if (eventType === 'change' || eventType === 'add' || eventType === 'unlink') {

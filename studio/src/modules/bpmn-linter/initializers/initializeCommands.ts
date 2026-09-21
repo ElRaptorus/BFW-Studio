@@ -208,7 +208,7 @@ export function initializeCommands(bifrost: Bifrost): void {
       }
 
       const origin = bridge.getDiagramOrigin();
-      if (!origin || origin.origin === 'daemon-engine') {
+      if (!origin || origin.origin === 'bfw-engine') {
         return;
       }
 
@@ -225,7 +225,7 @@ export function initializeCommands(bifrost: Bifrost): void {
             type: 'markdown',
             text:
               `This diagram appears to originate from **${origin.provider}**. ` +
-              "The Studio's linter rules are designed for the DaemonEngine and may produce " +
+              "The Studio's linter rules are designed for the Engine and may produce " +
               'incorrect or misleading results on diagrams from other platforms.\n\n' +
               "Linting will also add Studio-internal metadata to the diagram's XML.",
           },

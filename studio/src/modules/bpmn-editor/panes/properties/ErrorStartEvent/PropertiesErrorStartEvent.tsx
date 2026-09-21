@@ -9,7 +9,7 @@ import type { BpmnElement_ErrorStartEvent } from '#modules/bpmn-editor/BpmnEleme
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { assertBpmnElementIsErrorStartEvent } from '../../BpmnElementTypeAssertionFunctions';

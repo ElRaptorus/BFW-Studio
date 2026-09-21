@@ -9,8 +9,8 @@ import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 
-import type { Suggestion } from '@evil/bifrost_fw_sdk';
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { Suggestion } from '@elraptorus/bfw_studio_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import {

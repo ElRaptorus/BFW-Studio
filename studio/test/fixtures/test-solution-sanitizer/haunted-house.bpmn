@@ -3,7 +3,7 @@
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-                  xmlns:evil="https://evilengine.dev/schema/bpmn"
+                  xmlns:bfw="https://bifrostforge.world/schema/bpmn"
                   id="Definitions_1"
                   targetNamespace="http://bpmn.io/schema/bpmn">
 
@@ -132,10 +132,10 @@
   <bpmn:process id="Process_ghost" />
 
   <!-- ========================================== -->
-  <!-- empty evil:Properties on Definitions -->
+  <!-- empty bfw:Properties on Definitions -->
   <!-- ========================================== -->
   <bpmn:extensionElements>
-    <evil:properties />
+    <bfw:properties />
   </bpmn:extensionElements>
 
   <!-- ========================================== -->

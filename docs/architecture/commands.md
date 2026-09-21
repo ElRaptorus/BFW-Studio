@@ -256,7 +256,7 @@ Example: `engine-core` emits `engine:event` on `EngineConnectionManager` after a
 
 | Command | Purpose |
 |---------|---------|
-| `std.solution.openDirectory` | Opens a directory (or `.essln` file) as a Solution |
+| `std.solution.openDirectory` | Opens a directory (or `.bfwsln` file) as a Solution |
 | `std.solution.refresh` | Triggers a Solution reload |
 | `std.solution.addDirectory` | Creates a new directory within the Solution |
 | `std.solution.newFile` | Creates a new file |
@@ -271,13 +271,13 @@ Example: `engine-core` emits `engine:event` on `EngineConnectionManager` after a
 
 | Command | Purpose |
 |---------|---------|
-| `std.solution.addFolder` | Adds a folder to the Solution; auto-saves `.essln` if one exists |
+| `std.solution.addFolder` | Adds a folder to the Solution; auto-saves `.bfwsln` if one exists |
 | `std.solution.removeFolder` | Removes a folder from the Solution (with confirmation dialog) |
 | `std.solution.renameProjectLabel` | Renames a project's label in the file explorer (via dialog) |
 | `std.solution.closeSolution` | Closes the current solution (prompts to save if dirty) |
-| `std.solution.saveSolution` | Saves the current Solution to its existing `.essln` file; falls back to "Save As" for unnamed solutions |
-| `std.solution.saveSolutionAs` | Saves the current Solution to a new `.essln` file (shows Save dialog) |
-| `std.solution.openSolutionFile` | Opens a `.essln` solution file (via dialog or given URI) |
+| `std.solution.saveSolution` | Saves the current Solution to its existing `.bfwsln` file; falls back to "Save As" for unnamed solutions |
+| `std.solution.saveSolutionAs` | Saves the current Solution to a new `.bfwsln` file (shows Save dialog) |
+| `std.solution.openSolutionFile` | Opens a `.bfwsln` solution file (via dialog or given URI) |
 
 ## Create Solution Command
 
@@ -285,11 +285,11 @@ Example: `engine-core` emits `engine:event` on `EngineConnectionManager` after a
 
 | Command | Purpose |
 |---------|---------|
-| `std.solution.createSolution` | Opens a wizard dialog to create a new `.essln` solution file with selected directories |
+| `std.solution.createSolution` | Opens a wizard dialog to create a new `.bfwsln` solution file with selected directories |
 
-The wizard uses a `text_input` control for the solution name and a `path_list` control for directory selection. After validation, it opens a native "Save As" dialog, writes the `.essln` file, and opens the new solution. Available from the command search, File menu, startpage, and empty state view.
+The wizard uses a `text_input` control for the solution name and a `path_list` control for directory selection. After validation, it opens a native "Save As" dialog, writes the `.bfwsln` file, and opens the new solution. Available from the command search, File menu, startpage, and empty state view.
 
-`std.solution.saveSolution` and `std.solution.saveSolutionAs` are only enabled when `isExplicitSolution` is `true` (i.e., the solution was opened from `.essln` or promoted via "Add Folder").
+`std.solution.saveSolution` and `std.solution.saveSolutionAs` are only enabled when `isExplicitSolution` is `true` (i.e., the solution was opened from `.bfwsln` or promoted via "Add Folder").
 
 ### Opening Behavior
 
@@ -300,7 +300,7 @@ When `std.solution.openDirectory` is called with a solution already open, a dial
 
 The dialog includes a "Remember my choice" checkbox. If checked, the preference is persisted in settings (`std.solution.openDirectory.remember`, `std.solution.openDirectory.default`) and future opens skip the dialog.
 
-The command implementation is decomposed into focused helper functions: `removeStaleRecentEntry` (cleanup for missing paths), `isTargetAlreadyOpenHere` (window dedup), `promptForOpenAction` (dialog/preference logic), and `openSolutionOrDirectory` (dispatches between `.essln` and directory).
+The command implementation is decomposed into focused helper functions: `removeStaleRecentEntry` (cleanup for missing paths), `isTargetAlreadyOpenHere` (window dedup), `promptForOpenAction` (dialog/preference logic), and `openSolutionOrDirectory` (dispatches between `.bfwsln` and directory).
 
 ## File Explorer Commands
 

@@ -15,7 +15,7 @@ A fully configurable static analysis engine for BPMN diagrams.
 - Configurable rule sets with three severity levels: Info, Warning, Error
 - Full-color visualization of findings directly on the canvas
 - Right-area panes: **Score** (aggregate quality score) and **Problems** (detailed issue list)
-- Scores are persisted in the BPMN XML so that downstream tools (e.g. the Daemon Engine's linter gate) can evaluate them at deploy time
+- Scores are persisted in the BPMN XML so that downstream tools (e.g. the Engine's linter gate) can evaluate them at deploy time
 - Can be disabled per-project via settings
 
 See [architecture](./docs/architecture/bpmn-linter.md).
@@ -97,7 +97,7 @@ A complete DMN editor with the same interaction semantics as the BPMN editor:
 - Integrated sanitizer and validation
 - Business Rule Task wiring with drill-down into referenced decisions
 - Git integration (diff, version restore)
-- Built for the Daemon Engine's CL3-compliant DMN evaluation engine
+- Built for the Engine's CL3-compliant DMN evaluation engine
 
 See [architecture](./docs/architecture/dmn-editor.md).
 
@@ -131,7 +131,7 @@ A complete design-to-execution loop without leaving the Studio.
 
 ### Engine Browser
 
-A six-view management panel for connected Daemon Engine instances:
+A six-view management panel for connected Engine instances:
 
 | View | Purpose |
 |------|---------|

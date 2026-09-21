@@ -1,4 +1,4 @@
-import type { EvilLinterRulesetScorePayload } from '#modules/bpmn-core/bpmn-js/CommandHandler/UpdateEvilLinterRulesetScoreHandler';
+import type { BfwLinterRulesetScorePayload } from '#modules/bpmn-core/bpmn-js/CommandHandler/UpdateBfwLinterRulesetScoreHandler';
 import { createBpmnModdleForDiff } from '#modules/bpmn-core/diff/bpmnModdleForDiff';
 
 import { LintEngine } from './LintEngine';
@@ -7,11 +7,11 @@ import { resolveScorePolicy } from './resolveScorePolicy';
 import { computeLintScore } from './scoring/computeLintScore';
 import type { CustomRulesetEntry, LintScoreSnapshot, ModdleDefinitions, RuleSeverityConfig } from './types';
 
-const BFR_PROPERTIES_TYPE = 'evil:Properties';
-const BFR_LINTER_SCORE_TYPE = 'evil:LinterRulesetScore';
+const BFW_PROPERTIES_TYPE = 'bfw:Properties';
+const BFW_LINTER_SCORE_TYPE = 'bfw:LinterRulesetScore';
 const BPMN_EXTENSION_ELEMENTS = 'bpmn:ExtensionElements';
 
-const SCORE_COMPARISON_KEYS: readonly (keyof EvilLinterRulesetScorePayload)[] = [
+const SCORE_COMPARISON_KEYS: readonly (keyof BfwLinterRulesetScorePayload)[] = [
   'rulesetId',
   'scorePercent',
   'complianceStatus',
@@ -70,7 +70,7 @@ export function snapshotToLinterScorePayload(
   snapshot: LintScoreSnapshot,
   rulesetId: string,
   computedAtIso: string = new Date().toISOString(),
-): EvilLinterRulesetScorePayload {
+): BfwLinterRulesetScorePayload {
   return {
     rulesetId,
     scorePercent: String(snapshot.scorePercent),
@@ -90,9 +90,9 @@ export function readExistingScore(definitions: ModdleDefinitions, rulesetId: str
   if (!Array.isArray(values)) {
     return null;
   }
-  const evilProps = values.find((val: unknown) => (val as { $type?: string }).$type === BFR_PROPERTIES_TYPE) as
+  const bfwProps = values.find((val: unknown) => (val as { $type?: string }).$type === BFW_PROPERTIES_TYPE) as
     { linterRulesetScores?: unknown[] } | undefined;
-  const scores = evilProps?.linterRulesetScores;
+  const scores = bfwProps?.linterRulesetScores;
   if (!Array.isArray(scores)) {
     return null;
   }
@@ -112,7 +112,7 @@ export function readExistingScore(definitions: ModdleDefinitions, rulesetId: str
 }
 
 export function scoreMatchesExisting(
-  newScore: EvilLinterRulesetScorePayload,
+  newScore: BfwLinterRulesetScorePayload,
   existing: Record<string, string> | null,
 ): boolean {
   if (!existing) {
@@ -155,7 +155,7 @@ export function buildModdleElementRegistry(definitions: unknown): DiskScoreRegis
 
 export function upsertLinterRulesetScoreOnDefinitions(
   definitions: any,
-  score: EvilLinterRulesetScorePayload,
+  score: BfwLinterRulesetScorePayload,
   moddle: { create: (type: string, properties?: Record<string, unknown>) => any },
 ): void {
   if (definitions == null || score?.rulesetId == null) {
@@ -186,11 +186,11 @@ export function upsertLinterRulesetScoreOnDefinitions(
     }
   }
 
-  let evilProps = values.find((value: any) => value.$type === BFR_PROPERTIES_TYPE);
-  if (evilProps == null) {
-    evilProps = moddle.create(BFR_PROPERTIES_TYPE, { linterRulesetScores: [] });
-    evilProps.$parent = extensionElements;
-    values.push(evilProps);
+  let bfwProps = values.find((value: any) => value.$type === BFW_PROPERTIES_TYPE);
+  if (bfwProps == null) {
+    bfwProps = moddle.create(BFW_PROPERTIES_TYPE, { linterRulesetScores: [] });
+    bfwProps.$parent = extensionElements;
+    values.push(bfwProps);
     if (typeof extensionElements.set === 'function') {
       extensionElements.set('values', values);
     } else {
@@ -198,7 +198,7 @@ export function upsertLinterRulesetScoreOnDefinitions(
     }
   }
 
-  let scores: any[] = evilProps.get?.('linterRulesetScores') ?? evilProps.linterRulesetScores ?? [];
+  let scores: any[] = bfwProps.get?.('linterRulesetScores') ?? bfwProps.linterRulesetScores ?? [];
   if (!Array.isArray(scores)) {
     scores = [];
   }
@@ -207,7 +207,7 @@ export function upsertLinterRulesetScoreOnDefinitions(
     (entry: any) => entry.get?.('rulesetId') === score.rulesetId || entry.rulesetId === score.rulesetId,
   );
 
-  const next = moddle.create(BFR_LINTER_SCORE_TYPE, {
+  const next = moddle.create(BFW_LINTER_SCORE_TYPE, {
     rulesetId: score.rulesetId,
     scorePercent: score.scorePercent,
     complianceStatus: score.complianceStatus,
@@ -218,7 +218,7 @@ export function upsertLinterRulesetScoreOnDefinitions(
     rawErrorFindings: score.rawErrorFindings,
     rawWarningFindings: score.rawWarningFindings,
   });
-  next.$parent = evilProps;
+  next.$parent = bfwProps;
 
   if (existing) {
     const idx = scores.indexOf(existing);
@@ -229,15 +229,15 @@ export function upsertLinterRulesetScoreOnDefinitions(
     scores = [...scores, next];
   }
 
-  if (typeof evilProps.set === 'function') {
-    evilProps.set('linterRulesetScores', scores);
+  if (typeof bfwProps.set === 'function') {
+    bfwProps.set('linterRulesetScores', scores);
   } else {
-    evilProps.linterRulesetScores = scores;
+    bfwProps.linterRulesetScores = scores;
   }
 }
 
 /**
- * Parse BPMN XML, run LintEngine, and upsert evil:LinterRulesetScore. Private helper
+ * Parse BPMN XML, run LintEngine, and upsert bfw:LinterRulesetScore. Private helper
  * for Explorer lint of closed files — not a public extraction API.
  */
 export async function lintBpmnXmlOnDisk(xml: string, options: LintOnDiskOptions): Promise<LintOnDiskResult> {
@@ -245,7 +245,7 @@ export async function lintBpmnXmlOnDisk(xml: string, options: LintOnDiskOptions)
   const { rootElement: definitions } = await moddle.fromXML(xml);
 
   const origin = detectBpmnOrigin(definitions);
-  if (origin.origin !== 'daemon-engine' && !options.alwaysLintForeignDiagrams) {
+  if (origin.origin !== 'bfw-engine' && !options.alwaysLintForeignDiagrams) {
     return { status: 'skipped-foreign' };
   }
 

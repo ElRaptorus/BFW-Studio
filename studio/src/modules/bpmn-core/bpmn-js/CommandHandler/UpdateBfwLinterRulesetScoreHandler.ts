@@ -1,12 +1,12 @@
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
-export const BFR_LINTER_RULESET_SCORE_COMMAND = 'evil.platform.updateLinterRulesetScore';
+export const BFW_LINTER_RULESET_SCORE_COMMAND = 'bfw.platform.updateLinterRulesetScore';
 
-const BFR_PROPERTIES_TYPE = 'evil:Properties';
-const BFR_LINTER_SCORE_TYPE = 'evil:LinterRulesetScore';
+const BFW_PROPERTIES_TYPE = 'bfw:Properties';
+const BFW_LINTER_SCORE_TYPE = 'bfw:LinterRulesetScore';
 const BPMN_EXTENSION_ELEMENTS = 'bpmn:ExtensionElements';
 
-export type EvilLinterRulesetScorePayload = {
+export type BfwLinterRulesetScorePayload = {
   rulesetId: string;
   scorePercent: string;
   complianceStatus: string;
@@ -19,18 +19,18 @@ export type EvilLinterRulesetScorePayload = {
 };
 
 /**
- * Upserts one `evil:LinterRulesetScore` under `definitions.extensionElements` / `evil:Properties`.
+ * Upserts one `bfw:LinterRulesetScore` under `definitions.extensionElements` / `bfw:Properties`.
  */
-export function UpdateEvilLinterRulesetScoreHandler(this: any, bpmnFactory: any): void {
+export function UpdateBfwLinterRulesetScoreHandler(this: any, bpmnFactory: any): void {
   this._bpmnFactory = bpmnFactory;
 }
 
-UpdateEvilLinterRulesetScoreHandler.$inject = ['bpmnFactory'];
+UpdateBfwLinterRulesetScoreHandler.$inject = ['bpmnFactory'];
 
-UpdateEvilLinterRulesetScoreHandler.prototype.execute = function (context: any): ElementLike[] {
+UpdateBfwLinterRulesetScoreHandler.prototype.execute = function (context: any): ElementLike[] {
   const element = context.element as ElementLike;
   const definitions = context.definitions as any;
-  const score = context.score as EvilLinterRulesetScorePayload;
+  const score = context.score as BfwLinterRulesetScorePayload;
   if (definitions == null || score?.rulesetId == null) {
     return [];
   }
@@ -50,15 +50,15 @@ UpdateEvilLinterRulesetScoreHandler.prototype.execute = function (context: any):
     extensionElements.set('values', values);
   }
 
-  let evilProps = values.find((value: any) => value.$type === BFR_PROPERTIES_TYPE);
-  if (evilProps == null) {
-    evilProps = this._bpmnFactory.create(BFR_PROPERTIES_TYPE, { linterRulesetScores: [] });
-    evilProps.$parent = extensionElements;
-    values.push(evilProps);
+  let bfwProps = values.find((value: any) => value.$type === BFW_PROPERTIES_TYPE);
+  if (bfwProps == null) {
+    bfwProps = this._bpmnFactory.create(BFW_PROPERTIES_TYPE, { linterRulesetScores: [] });
+    bfwProps.$parent = extensionElements;
+    values.push(bfwProps);
     extensionElements.set('values', values);
   }
 
-  let scores: any[] = evilProps.get?.('linterRulesetScores') ?? evilProps.linterRulesetScores ?? [];
+  let scores: any[] = bfwProps.get?.('linterRulesetScores') ?? bfwProps.linterRulesetScores ?? [];
   if (!Array.isArray(scores)) {
     scores = [];
   }
@@ -82,7 +82,7 @@ UpdateEvilLinterRulesetScoreHandler.prototype.execute = function (context: any):
   context.removedIndex = existing ? scores.indexOf(existing) : -1;
   context.addedNew = !existing;
 
-  const next = this._bpmnFactory.create(BFR_LINTER_SCORE_TYPE, {
+  const next = this._bpmnFactory.create(BFW_LINTER_SCORE_TYPE, {
     rulesetId: score.rulesetId,
     scorePercent: score.scorePercent,
     complianceStatus: score.complianceStatus,
@@ -93,7 +93,7 @@ UpdateEvilLinterRulesetScoreHandler.prototype.execute = function (context: any):
     rawErrorFindings: score.rawErrorFindings,
     rawWarningFindings: score.rawWarningFindings,
   });
-  next.$parent = evilProps;
+  next.$parent = bfwProps;
 
   if (existing) {
     const idx = scores.indexOf(existing);
@@ -104,33 +104,33 @@ UpdateEvilLinterRulesetScoreHandler.prototype.execute = function (context: any):
     scores = [...scores, next];
   }
 
-  if (typeof evilProps.set === 'function') {
-    evilProps.set('linterRulesetScores', scores);
+  if (typeof bfwProps.set === 'function') {
+    bfwProps.set('linterRulesetScores', scores);
   } else {
-    evilProps.linterRulesetScores = scores;
+    bfwProps.linterRulesetScores = scores;
   }
 
   context.changed = [element];
   return context.changed;
 };
 
-UpdateEvilLinterRulesetScoreHandler.prototype.revert = function (context: any): ElementLike[] {
+UpdateBfwLinterRulesetScoreHandler.prototype.revert = function (context: any): ElementLike[] {
   const definitions = context.definitions as any;
-  const score = context.score as EvilLinterRulesetScorePayload;
+  const score = context.score as BfwLinterRulesetScorePayload;
   const extensionElements = definitions?.get?.('extensionElements') ?? definitions?.extensionElements;
   if (extensionElements == null) {
     return context.changed ?? [];
   }
   const values: any[] = extensionElements.get?.('values') ?? extensionElements.values ?? [];
-  const evilProps = values.find((value: any) => value.$type === BFR_PROPERTIES_TYPE);
-  if (evilProps == null) {
+  const bfwProps = values.find((value: any) => value.$type === BFW_PROPERTIES_TYPE);
+  if (bfwProps == null) {
     return context.changed ?? [];
   }
-  let scores: any[] = evilProps.get?.('linterRulesetScores') ?? evilProps.linterRulesetScores ?? [];
+  let scores: any[] = bfwProps.get?.('linterRulesetScores') ?? bfwProps.linterRulesetScores ?? [];
 
   if (context.previousSerialized) {
-    const restored = this._bpmnFactory.create(BFR_LINTER_SCORE_TYPE, context.previousSerialized);
-    restored.$parent = evilProps;
+    const restored = this._bpmnFactory.create(BFW_LINTER_SCORE_TYPE, context.previousSerialized);
+    restored.$parent = bfwProps;
     if (context.removedIndex >= 0) {
       const copy = [...scores];
       copy[context.removedIndex] = restored;
@@ -140,13 +140,13 @@ UpdateEvilLinterRulesetScoreHandler.prototype.revert = function (context: any): 
     scores = scores.filter((entry: any) => (entry.get?.('rulesetId') ?? entry.rulesetId) !== score.rulesetId);
   }
 
-  if (typeof evilProps.set === 'function') {
-    evilProps.set('linterRulesetScores', scores);
+  if (typeof bfwProps.set === 'function') {
+    bfwProps.set('linterRulesetScores', scores);
   } else {
-    evilProps.linterRulesetScores = scores;
+    bfwProps.linterRulesetScores = scores;
   }
 
   return context.changed ?? [];
 };
 
-export default UpdateEvilLinterRulesetScoreHandler;
+export default UpdateBfwLinterRulesetScoreHandler;

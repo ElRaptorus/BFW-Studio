@@ -2,7 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 
 import React from 'react';
 
-import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
 
 import { SettingRow } from './SettingRow';
 

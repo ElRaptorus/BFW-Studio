@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
 
 import { ColorControl } from './ColorControl';
 import { DateControl } from './DateControl';

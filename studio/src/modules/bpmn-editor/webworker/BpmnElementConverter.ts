@@ -1,6 +1,6 @@
 import { BpmnModdle } from 'bpmn-moddle';
 
-import evilPlatformModdleDescriptor from '../../bpmn-core/bpmn-js/moddle/evil-platform.json';
+import bfwPlatformModdleDescriptor from '../../bpmn-core/bpmn-js/moddle/bfw-platform.json';
 
 /* eslint-disable @typescript-eslint/no-unused-vars, no-var, no-useless-assignment */
 const window: any = self;
@@ -12,7 +12,7 @@ var process: any = process || {
 };
 /* eslint-enable @typescript-eslint/no-unused-vars, no-var, no-useless-assignment */
 
-const moddle = new BpmnModdle({ evil: evilPlatformModdleDescriptor });
+const moddle = new BpmnModdle({ bfw: bfwPlatformModdleDescriptor });
 
 const BPMN_CATERGORY_REF_PROPERTY = 'categoryValueRef';
 const BPMN_DEFINITION_TYPE = 'bpmn:Definitions';
@@ -184,8 +184,8 @@ function getElementsFromDefinitions(definitions: any): any[] {
         }
 
         if (eventDefinition.$type === BPMN_ERROR_EVENT_DEFINITION_TYPE) {
-          const errorCode = getEvilBodyValue(eventDefinition, 'evil:ErrorCode');
-          const errorMessage = getEvilBodyValue(eventDefinition, 'evil:ErrorMessage');
+          const errorCode = getBfwBodyValue(eventDefinition, 'bfw:ErrorCode');
+          const errorMessage = getBfwBodyValue(eventDefinition, 'bfw:ErrorMessage');
           if (errorCode != null || errorMessage != null) {
             const errorRefId = eventDefinition.errorRef?.id;
             if (errorRefId != null) {
@@ -282,8 +282,8 @@ function getElementReferences(element: any): any {
         switch (propertyName) {
           case BPMN_ERROR_REF_PROPERTY:
             additionalProperties = {
-              errorCode: getEvilBodyValue(element, 'evil:ErrorCode'),
-              errorMessage: getEvilBodyValue(element, 'evil:ErrorMessage'),
+              errorCode: getBfwBodyValue(element, 'bfw:ErrorCode'),
+              errorMessage: getBfwBodyValue(element, 'bfw:ErrorMessage'),
             };
             break;
 
@@ -296,7 +296,7 @@ function getElementReferences(element: any): any {
           case BPMN_PROCESS_REF_PROPERTY:
             elementThatReferences = element.id;
             additionalProperties = {
-              version: getEvilBodyValue(referenceObject, 'evil:Version'),
+              version: getBfwBodyValue(referenceObject, 'bfw:Version'),
             };
             break;
 
@@ -448,7 +448,7 @@ function getErrorProperties(element): any {
   return { errorCode };
 }
 
-function getEvilBodyValue(element: any, extensionType: string): string | undefined {
+function getBfwBodyValue(element: any, extensionType: string): string | undefined {
   const values = element.extensionElements?.values;
   if (!Array.isArray(values)) {
     return undefined;

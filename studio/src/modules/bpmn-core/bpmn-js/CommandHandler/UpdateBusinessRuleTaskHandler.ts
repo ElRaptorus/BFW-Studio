@@ -2,19 +2,14 @@ import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { removeEvilExtension, setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { removeBfwExtension, setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
-const EVIL_DECISION_REF = 'evil:DecisionRef';
-const EVIL_DECISION_ELEMENT_ID = 'evil:DecisionElementId';
-const EVIL_RESULT_VARIABLE = 'evil:ResultVariable';
-const EVIL_TRACE_UNMATCHED_RULES = 'evil:TraceUnmatchedRules';
+const BFW_DECISION_REF = 'bfw:DecisionRef';
+const BFW_DECISION_ELEMENT_ID = 'bfw:DecisionElementId';
+const BFW_RESULT_VARIABLE = 'bfw:ResultVariable';
+const BFW_TRACE_UNMATCHED_RULES = 'bfw:TraceUnmatchedRules';
 
-const DMN_COMPANION_TYPES = [
-  EVIL_DECISION_REF,
-  EVIL_DECISION_ELEMENT_ID,
-  EVIL_RESULT_VARIABLE,
-  EVIL_TRACE_UNMATCHED_RULES,
-];
+const DMN_COMPANION_TYPES = [BFW_DECISION_REF, BFW_DECISION_ELEMENT_ID, BFW_RESULT_VARIABLE, BFW_TRACE_UNMATCHED_RULES];
 
 export function UpdateBusinessRuleTaskHandler(this: any, commandStack: CommandStack, bpmnFactory: any): void {
   this.commandStack = commandStack;
@@ -38,8 +33,8 @@ UpdateBusinessRuleTaskHandler.prototype.preExecute = function (context: any) {
     );
 
     if (newImplementation === 'feel') {
-      for (const evilType of DMN_COMPANION_TYPES) {
-        commands.push(...removeEvilExtension(element, evilType));
+      for (const extensionType of DMN_COMPANION_TYPES) {
+        commands.push(...removeBfwExtension(element, extensionType));
       }
     } else if (newImplementation === 'dmn') {
       commands.push(CmdHelper.updateBusinessObject(element, businessObject, { script: undefined }));
@@ -64,17 +59,17 @@ UpdateBusinessRuleTaskHandler.prototype.preExecute = function (context: any) {
     const commands: any[] = [];
 
     if (newDecisionRef !== undefined) {
-      commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_DECISION_REF, newDecisionRef));
+      commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_DECISION_REF, newDecisionRef));
     }
     if (newDecisionElementId !== undefined) {
-      commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_DECISION_ELEMENT_ID, newDecisionElementId));
+      commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_DECISION_ELEMENT_ID, newDecisionElementId));
     }
     if (newResultVariable !== undefined) {
-      commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_RESULT_VARIABLE, newResultVariable));
+      commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_RESULT_VARIABLE, newResultVariable));
     }
     if (newTraceUnmatchedRules !== undefined) {
       const stringValue = newTraceUnmatchedRules != null ? String(newTraceUnmatchedRules) : null;
-      commands.push(...setEvilBodyExtension(element, this.bpmnFactory, EVIL_TRACE_UNMATCHED_RULES, stringValue));
+      commands.push(...setBfwBodyExtension(element, this.bpmnFactory, BFW_TRACE_UNMATCHED_RULES, stringValue));
     }
 
     if (commands.length > 0) {

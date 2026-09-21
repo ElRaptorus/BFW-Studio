@@ -5,7 +5,7 @@
   xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
   id="Definitions_clean"
   name="Clean DMN"
-  namespace="https://evilengine.dev/schema/dmn/clean">
+  namespace="https://bifrostforge.world/schema/dmn/clean">
 
   <decision id="Decision_1" name="Simple Decision">
     <variable id="Var_1" name="result" typeRef="string" />

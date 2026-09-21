@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://evilstudio.dev/schemas/bifrostStudio.json",
-  "title": "Evil Studio Plugin Manifest",
+  "$id": "https://bifrostforge.world/schemas/bifrostStudio.json",
+  "title": "Bifrost Forge World Plugin Manifest",
   "description": "Schema for the 'bifrostStudio' section in a plugin's package.json",
   "type": "object",
   "required": ["apiVersion"],

@@ -2,14 +2,14 @@ import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
 const MODDLE_BPMN_FORMAL_EXPRESSION_TYPE = 'bpmn:FormalExpression';
 const MODDLE_BPMN_ADHOC_SUBPROCESS_TYPE = 'bpmn:AdHocSubProcess';
 
 /**
  * Updates the standard BPMN attributes (`ordering`, `cancelRemainingInstances`, `implementation`),
- * the `<completionCondition>` child element, and the `evil:ActiveElements` extension body
+ * the `<completionCondition>` child element, and the `bfw:ActiveElements` extension body
  * on a `<bpmn:adHocSubProcess>` element.
  */
 export function UpdateAdHocSubprocessHandler(this: any, commandStack: CommandStack, bpmnFactory: any): void {
@@ -68,7 +68,7 @@ UpdateAdHocSubprocessHandler.prototype.preExecute = function (context: any) {
   }
 
   if (activeElementsExpression !== undefined) {
-    commands.push(...setEvilBodyExtension(element, this.bpmnFactory, 'evil:ActiveElements', activeElementsExpression));
+    commands.push(...setBfwBodyExtension(element, this.bpmnFactory, 'bfw:ActiveElements', activeElementsExpression));
   }
 
   if (commands.length > 0) {

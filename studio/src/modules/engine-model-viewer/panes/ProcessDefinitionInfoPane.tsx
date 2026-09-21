@@ -7,7 +7,7 @@ import { getHumanizedDateTime } from '#modules/engine-core/Formatters';
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type { ModelViewerModelData } from '../types';
 import { getSelection, isModelViewerDocument } from './paneHelpers';

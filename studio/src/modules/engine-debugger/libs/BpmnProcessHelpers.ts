@@ -1,5 +1,5 @@
-import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
+import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 import type {
   BpmnDefinitions,
   BpmnProcess,
@@ -10,7 +10,7 @@ import type {
   FlowNode,
   SequenceFlow,
   SubProcessTypeData,
-} from '@elraptorus/daemonengine_sdk';
+} from '@elraptorus/bfw_engine_sdk';
 
 export type { BpmnDefinitions, BpmnProcess, FlowNode, SequenceFlow, DataObjectReference, DataStoreReference };
 

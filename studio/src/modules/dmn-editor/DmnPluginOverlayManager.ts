@@ -1,8 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { type CallbackInvocationPayload, PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
 
-import type { DmnElementDetailSnapshot, DmnOverlayDescriptor, DmnOverlayFactoryContext } from '@evil/bifrost_fw_sdk';
-import { PluginDmnOverlayPosition } from '@evil/bifrost_fw_sdk';
+import type {
+  DmnElementDetailSnapshot,
+  DmnOverlayDescriptor,
+  DmnOverlayFactoryContext,
+} from '@elraptorus/bfw_studio_sdk';
+import { PluginDmnOverlayPosition } from '@elraptorus/bfw_studio_sdk';
 
 import type { PluginHost } from '../../bifrost/electron-renderer/plugin-host/PluginHost';
 import type DmnModelerComponentAdapter from '../dmn-core/DmnModelerComponentAdapter';
@@ -236,30 +240,30 @@ export class DmnPluginOverlayManager {
 
   private createOverlayHtmlElement(descriptor: DmnOverlayDescriptor): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'evil-plugin-overlay';
+    container.className = 'bfw-plugin-overlay';
 
     if (descriptor.style != null) {
-      container.classList.add(`evil-plugin-overlay--${descriptor.style}`);
+      container.classList.add(`bfw-plugin-overlay--${descriptor.style}`);
     }
     if (descriptor.tooltip != null) {
       container.title = descriptor.tooltip;
     }
 
     if (descriptor.type === 'badge') {
-      container.classList.add('evil-plugin-overlay--badge');
+      container.classList.add('bfw-plugin-overlay--badge');
       container.appendChild(document.createTextNode(descriptor.text));
     } else if (descriptor.type === 'icon') {
-      container.classList.add('evil-plugin-overlay--icon');
+      container.classList.add('bfw-plugin-overlay--icon');
       const iconElement = document.createElement('i');
       iconElement.className = descriptor.icon;
       container.appendChild(iconElement);
     } else if (descriptor.type === 'action') {
-      container.classList.add('evil-plugin-overlay--icon');
+      container.classList.add('bfw-plugin-overlay--icon');
       const iconElement = document.createElement('i');
       iconElement.className = descriptor.icon;
       container.appendChild(iconElement);
     } else if (descriptor.type === 'status') {
-      container.classList.add('evil-plugin-overlay--icon');
+      container.classList.add('bfw-plugin-overlay--icon');
       if (descriptor.icon != null) {
         const iconElement = document.createElement('i');
         iconElement.className = descriptor.icon;

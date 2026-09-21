@@ -8,7 +8,7 @@ export default function () {
       return;
     }
     const extensions = (node.extensionElements as { values?: ModdleNode[] } | undefined)?.values;
-    const versionElement = extensions?.find((ext) => ext.$type === 'evil:Version');
+    const versionElement = extensions?.find((ext) => ext.$type === 'bfw:Version');
     if (!(versionElement?.body as string | undefined)?.trim()) {
       reporter.report(node.id, 'Process should have a version (EXR-012)');
     }

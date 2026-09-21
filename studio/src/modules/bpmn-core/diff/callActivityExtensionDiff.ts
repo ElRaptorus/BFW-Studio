@@ -1,7 +1,7 @@
 import type { CustomPropertiesSummaryEntry, CustomPropertyDelta } from './customPropertiesDiff';
 
-const EVIL_CALLED_PROCESS_VERSION_TYPE = 'evil:CalledProcessVersion';
-const EVIL_START_EVENT_ID_TYPE = 'evil:StartEventId';
+const BFW_CALLED_PROCESS_VERSION_TYPE = 'bfw:CalledProcessVersion';
+const BFW_START_EVENT_ID_TYPE = 'bfw:StartEventId';
 const BPMN_CALL_ACTIVITY_TYPE = 'bpmn:CallActivity';
 
 /** Human labels for Call Activity body extensions shown as named attribute diffs. */
@@ -51,13 +51,13 @@ function extractCallActivityExtensionMap(businessObject: any): Record<string, st
 
   const map: Record<string, string> = {};
   for (const value of extensionElements.values) {
-    if (value.$type === EVIL_CALLED_PROCESS_VERSION_TYPE) {
+    if (value.$type === BFW_CALLED_PROCESS_VERSION_TYPE) {
       const body = readBody(value);
       if (body !== '') {
         map.calledProcessVersion = body;
       }
     }
-    if (value.$type === EVIL_START_EVENT_ID_TYPE) {
+    if (value.$type === BFW_START_EVENT_ID_TYPE) {
       const body = readBody(value);
       if (body !== '') {
         map.startEventId = body;

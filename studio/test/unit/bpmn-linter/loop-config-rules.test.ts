@@ -32,10 +32,10 @@ function makeServiceTaskWithMI(opts: {
 }): ModdleNode {
   const extensions: ModdleNode[] = [];
   if (opts.inputCollection != null) {
-    extensions.push(makeExtension('evil:InputCollection', opts.inputCollection));
+    extensions.push(makeExtension('bfw:InputCollection', opts.inputCollection));
   }
   if (opts.maxIterations != null) {
-    extensions.push(makeExtension('evil:MaxIterations', opts.maxIterations));
+    extensions.push(makeExtension('bfw:MaxIterations', opts.maxIterations));
   }
 
   const loop: Record<string, unknown> = {
@@ -92,7 +92,7 @@ describe('multi-instance-config', () => {
     assert.match(reports[0].message, /Input Collection/);
   });
 
-  it('passes with evil:InputCollection', () => {
+  it('passes with bfw:InputCollection', () => {
     const node = makeServiceTaskWithMI({ inputCollection: 'token.items' });
     const reports = collectReports(multiInstanceConfig, node);
     assert.equal(reports.length, 0);

@@ -258,7 +258,7 @@ Button enabled/disabled state is handled entirely by the commands' `enabledPredi
 Glob patterns matching protected BPMN files. When committing, staged `.bpmn` files are checked against patterns using `minimatch`. Matched files trigger a confirmation dialog.
 
 Configuration precedence:
-1. **Project-level**: `.evilstudio/git-cruiser.json` at repo root (watched via `bifrost.files.watchFile`)
+1. **Project-level**: `.bifrostfw/git-cruiser.json` at repo root (watched via `bifrost.files.watchFile`)
 2. **User-level**: `git.protect.diagrams` setting
 
 ```json
@@ -689,7 +689,7 @@ Three-step sequential dialog chain with protocol auto-detection and optional HTT
 **Progress notifications**: Clone progress is streamed from the main process via `IPC_MESSAGE_GIT_CLONE_PROGRESS`. The renderer subscribes via `gitService.onCloneProgress()` and updates a sticky notification with stage + percentage. The notification is closed on completion or error.
 
 **Solution integration** (post-clone):
-- **Explicit `.essln` solution open**: `addFolderToSolution` + `saveSolutionFile` — folder is added to the current solution
+- **Explicit `.bfwsln` solution open**: `addFolderToSolution` + `saveSolutionFile` — folder is added to the current solution
 - **All other cases**: Delegates to `std.solution.openDirectory`, which handles the open-here / open-in-new-window prompt
 
 **UI entry points**: File menu (after "Add Folder to Solution"), command search, Start Page extra renderer, Editor Area Empty State extra action, Git Pane no-repo empty state.
@@ -708,7 +708,7 @@ Uses the same three-step dialog chain as Clone, except Dialog 3 contains the bra
 
 **Clone-to-temp strategy** (implemented as a single composite IPC handler `IPC_INVOKE_GIT_CONNECT_TO_REMOTE` in `registerGitHandlers.ts`):
 
-1. Clone the repo into a temp directory (`os.tmpdir()/evil-studio-connect-<timestamp>`) with progress reporting
+1. Clone the repo into a temp directory (`os.tmpdir()/bifrost-forge-world-connect-<timestamp>`) with progress reporting
 2. *(Optional)* If `newBranch` was specified: check `git branch -a` in the temp clone — if `remotes/origin/<newBranch>` exists, `git checkout <newBranch>`; otherwise `git checkout -b <newBranch>` (creates a local branch from the cloned base branch)
 3. Move the `.git` directory from the temp clone into the target folder (`fs.rename` with `EXDEV` fallback to `fs.cp` + `fs.rm` for cross-filesystem moves)
 4. `git reset HEAD` — resets the index so git sees all local files as working-tree changes rather than staged deletions

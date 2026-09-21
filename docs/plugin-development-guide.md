@@ -1,6 +1,6 @@
 # Bifrost Forge World — Plugin Development Guide
 
-How to author, build, and load a plugin. Architecture (sandbox, IPC, quarantine) lives in [architecture/plugin-host.md](architecture/plugin-host.md). Manifest schema lives in [architecture/plugin-manifest.md](architecture/plugin-manifest.md). Method signatures live on `StudioPluginApi` in `@evil/bifrost_fw_sdk`.
+How to author, build, and load a plugin. Architecture (sandbox, IPC, quarantine) lives in [architecture/plugin-host.md](architecture/plugin-host.md). Manifest schema lives in [architecture/plugin-manifest.md](architecture/plugin-manifest.md). Method signatures live on `StudioPluginApi` in `@elraptorus/bfw_studio_sdk`.
 
 ## Getting Started
 
@@ -77,7 +77,7 @@ npm run build
 Copy or symlink the plugin directory into the Studio plugins folder, or override it:
 
 ```bash
-BFR_PLUGINS_DIR=/path/to/my-plugins-folder ./evil-studio
+BFW_PLUGINS_DIR=/path/to/my-plugins-folder npm start
 ```
 
 ---
@@ -87,7 +87,7 @@ BFR_PLUGINS_DIR=/path/to/my-plugins-folder ./evil-studio
 Every plugin must export two functions from its `main` entry:
 
 ```typescript
-import type { StudioPluginApi } from '@evil/bifrost_fw_sdk';
+import type { StudioPluginApi } from '@elraptorus/bfw_studio_sdk';
 
 export async function activate(api: StudioPluginApi): Promise<void> {
   // Register commands, panes, editors, settings, …
@@ -137,7 +137,7 @@ Example:
 }
 ```
 
-CI can skip the dialog with `BFR_SKIP_PERMISSION_DIALOG=1`.
+CI can skip the dialog with `BFW_SKIP_PERMISSION_DIALOG=1`.
 
 ---
 
@@ -155,7 +155,7 @@ Schema, contribution keys, and cleanup: [architecture/plugin-manifest.md](archit
 
 ## StudioPluginApi (index, not a reprint)
 
-`activate(api)` gives you namespaces that **mirror** the corresponding Bifrost mediators, with serializable POJOs instead of closures. Import types from `@evil/bifrost_fw_sdk`.
+`activate(api)` gives you namespaces that **mirror** the corresponding Bifrost mediators, with serializable POJOs instead of closures. Import types from `@elraptorus/bfw_studio_sdk`.
 
 | Namespace | Typical use |
 |-----------|-------------|
@@ -193,7 +193,7 @@ Permissions, overlay types, palette/context pad, modeling, renderer injection: [
 
 ## Webviews
 
-UI runs in a sandboxed `<iframe>` at `evil-webview://<pluginName>/`. Inside the iframe, `acquireStudioApi()` gives `postMessage` / `onMessage` / theme helpers. Register `onMessage` in `activate()` **before** the iframe mounts. Collapsed panes unmount the iframe. Ctrl+S inside the iframe does not reach the Studio — use `onSaveRequest` / a plugin command. Cross-plugin `postMessage` is blocked.
+UI runs in a sandboxed `<iframe>` at `bifrostfw-webview://<pluginName>/`. Inside the iframe, `acquireStudioApi()` gives `postMessage` / `onMessage` / theme helpers. Register `onMessage` in `activate()` **before** the iframe mounts. Collapsed panes unmount the iframe. Ctrl+S inside the iframe does not reach the Studio — use `onSaveRequest` / a plugin command. Cross-plugin `postMessage` is blocked.
 
 Protocol, CSP, and surfaces: [architecture/webviews.md](architecture/webviews.md).
 
@@ -206,7 +206,7 @@ Theme tokens in CSS: `var(--theme-*)`. Feel editors and `PaneProperty` from the 
 ### Plugin directory override
 
 ```bash
-BFR_PLUGINS_DIR=/path/to/my-plugins ./evil-studio
+BFW_PLUGINS_DIR=/path/to/my-plugins npm start
 ```
 
 ### Per-plugin enable/disable
@@ -267,7 +267,7 @@ TypeScript:
 }
 ```
 
-`@evil/bifrost_fw_sdk` is a `devDependency` for types (and optional webview-safe components). The `StudioPluginApi` instance is injected at runtime. Internal Studio modules type `Bifrost` from `#bifrost/Bifrost`, not `Studio` from the SDK.
+`@elraptorus/bfw_studio_sdk` is a `devDependency` for types (and optional webview-safe components). The `StudioPluginApi` instance is injected at runtime. Internal Studio modules type `Bifrost` from `#bifrost/Bifrost`, not `Studio` from the SDK.
 
 ## Examples
 

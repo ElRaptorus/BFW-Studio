@@ -167,10 +167,10 @@
             "extensions": [
               {
                 "id": "release_durchfuehren",
-                "type": "evil:FormFields"
+                "type": "bfw:FormFields"
               },
               {
-                "type": "evil:Property",
+                "type": "bfw:Property",
                 "name": "preferredControl"
               }
             ],

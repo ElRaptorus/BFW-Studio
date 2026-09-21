@@ -2,9 +2,9 @@ import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
-const EVIL_CORRELATION_RETRIEVAL_EXPRESSION = 'evil:CorrelationRetrievalExpression';
+const BFW_CORRELATION_RETRIEVAL_EXPRESSION = 'bfw:CorrelationRetrievalExpression';
 const MODDLE_BPMN_MESSAGE_EVENT_DEFINITION_TYPE = 'bpmn:MessageEventDefinition';
 
 export function UpdateCorrelationRetrievalExpressionHandler(
@@ -29,7 +29,7 @@ UpdateCorrelationRetrievalExpressionHandler.prototype.preExecute = function (con
   const target = eventDef ?? businessObject;
   const targetElement = eventDef != null ? { ...element, businessObject: target } : element;
 
-  const commands = setEvilBodyExtension(targetElement, this.bpmnFactory, EVIL_CORRELATION_RETRIEVAL_EXPRESSION, value);
+  const commands = setBfwBodyExtension(targetElement, this.bpmnFactory, BFW_CORRELATION_RETRIEVAL_EXPRESSION, value);
 
   if (commands.length > 0) {
     const commandToExecute = CmdHelper.executeMultipleCommands(commands);

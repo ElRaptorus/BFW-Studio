@@ -636,7 +636,7 @@ export class Bifrost {
         throw new Error(`The previously opened solution '${uriToRestore}' could not be located.`);
       }
 
-      if (localPath.endsWith('.essln')) {
+      if (localPath.endsWith('.bfwsln')) {
         await this.solution.openSolutionFile(uriToRestore);
       } else {
         this.solution.openDirectoryAsSolution(uriToRestore);
@@ -765,7 +765,7 @@ export class Bifrost {
       properties,
       filters: [
         { name: 'BPMN', extensions: ['bpmn'] },
-        { name: 'Bifrost Forge World Solution', extensions: ['essln'] },
+        { name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] },
       ],
     };
 
@@ -781,7 +781,7 @@ export class Bifrost {
     for (const filename of localFilenames) {
       const uri = this.files.getUriForFilename(filename);
 
-      if (filename.endsWith('.essln')) {
+      if (filename.endsWith('.bfwsln')) {
         this.commands.executeCommand('std.solution.openDirectory', [uri]);
       } else if (await this.files.isDirectory(uri)) {
         this.commands.executeCommand('std.solution.openDirectory', [uri]);
@@ -793,7 +793,7 @@ export class Bifrost {
 
   /**
    * Internal: Shows a native dialog to open a folder (or, on macOS, also an
-   * `.essln` file) as a solution. macOS supports combined file+directory
+   * `.bfwsln` file) as a solution. macOS supports combined file+directory
    * pickers; Linux and Windows do not, so they get a directory-only dialog.
    */
   async showOpenDirectoryDialogAndOpenDirectoryAsSolution(): Promise<void> {
@@ -803,7 +803,7 @@ export class Bifrost {
       selected = await this.dialog.showOpenFile({
         title: 'Open Solution',
         properties: ['openFile', 'openDirectory'],
-        filters: [{ name: 'Bifrost Forge World Solution', extensions: ['essln'] }],
+        filters: [{ name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] }],
       });
     } else {
       selected = await this.dialog.showOpenDirectory();
@@ -836,7 +836,7 @@ export class Bifrost {
 
       let solutionLabel: string;
       if (solution.solutionFileUri != null) {
-        solutionLabel = this.files.getFilename(solution.solutionFileUri).replace(/\.essln$/, '');
+        solutionLabel = this.files.getFilename(solution.solutionFileUri).replace(/\.bfwsln$/, '');
       } else {
         solutionLabel = this.files.getFilename(solution.baseUri);
       }

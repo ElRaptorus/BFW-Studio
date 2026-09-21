@@ -22,9 +22,9 @@ Tests run via npm scripts defined in `studio/package.json`:
 
 **Important:** Integration tests require a built Electron application. Run `npm run build` before running integration tests. Plugin host tests also compile the TypeScript fixture plugins (`text-file-editors`, `webview-showcase`) first — `npm run test:integration:plugins` and `npm run test:integration:all` invoke `npm run build:plugin-fixtures` automatically because those plugins' `dist/` output is gitignored.
 
-`npm run test-prod:electron <script>` runs the same suites against a packaged build by setting `TEST_APP_PATH`. On Linux that path is the **unpacked** binary under `dist/electron/linux-unpacked/`, not the AppImage. ChromeDriver must launch an Electron/Chromium ELF, not an AppImage wrapper. GitHub Actions workflow `.github/workflows/studio.yml` builds the Linux prod app, uploads `dist/electron/`, then runs matrix suites (`core`, `bpmn-editor`, `dmn-editor`, `plugins`, `git-cruiser`) under `xvfb-run`. `TestDriver` adds `--no-sandbox`, `--disable-gpu`, and `--disable-dev-shm-usage` when `CI`, `GITHUB_ACTIONS`, or `APPVEYOR` is set.
+`npm run test-prod:electron <script>` runs the same suites against a packaged build by setting `TEST_APP_PATH`. On Linux that path is the unpacked ELF `dist/electron/linux-unpacked/bfw-studio-<version>` (`linux.executableName`), not the AppImage and not the `*-launcher` script. The name contains dots, so discovery must not reject filenames that include `.`. If `TEST_APP_PATH` is already set, that path is used as-is. GitHub Actions workflow `.github/workflows/studio.yml` builds the Linux prod app, uploads `dist/electron/`, resolves that binary, then runs matrix suites (`core`, `bpmn-editor`, `dmn-editor`, `plugins`, `git-cruiser`) under `xvfb-run`. `TestDriver` adds `--no-sandbox`, `--disable-gpu`, and `--disable-dev-shm-usage` when `CI`, `GITHUB_ACTIONS`, or `APPVEYOR` is set.
 
-Private Engine packages (`@elraptorus/daemonengine_sdk`, `@elraptorus/daemonengine_client`) are fetched from GitHub Packages. `studio/.npmrc` maps that scope to `https://npm.pkg.github.com` and leaves the default registry as npmjs. CI writes `//npm.pkg.github.com/:_authToken=…` to `~/.npmrc` from repo secret `CI_AUTH` (`read:packages`). Do **not** set `actions/setup-node` `registry-url` to GitHub — that makes GitHub the default registry and breaks public packages.
+Private Engine packages (`@elraptorus/bfw_engine_sdk`, `@elraptorus/bfw_engine_client`) are fetched from GitHub Packages. `studio/.npmrc` maps that scope to `https://npm.pkg.github.com` and leaves the default registry as npmjs. CI writes `//npm.pkg.github.com/:_authToken=…` to `~/.npmrc` from repo secret `CI_AUTH` (`read:packages`). Do **not** set `actions/setup-node` `registry-url` to GitHub — that makes GitHub the default registry and breaks public packages.
 
 ### TypeScript Configuration
 
@@ -134,7 +134,7 @@ afterEach(async ({ task }) => {
 });
 ```
 
-**Plugin Host suites** use `createAndStartStudioAgentForPluginHost` instead of `createAndStartStudioAgent`. It sets `BFR_PLUGINS_DIR` (and optionally `BFR_SKIP_PERMISSION_DIALOG` / `BFR_PLUGIN_STORAGE_PATH`) before boot, then waits for named plugins to reach `PluginInfo.status === 'loaded'`. Call it from `beforeAll` (shared agent) or `beforeEach` (agent per test). `stopPluginHostStudioAgent` stops the app and restores the env snapshot.
+**Plugin Host suites** use `createAndStartStudioAgentForPluginHost` instead of `createAndStartStudioAgent`. It sets `BFW_PLUGINS_DIR` (and optionally `BFW_SKIP_PERMISSION_DIALOG` / `BFW_PLUGIN_STORAGE_PATH`) before boot, then waits for named plugins to reach `PluginInfo.status === 'loaded'`. Call it from `beforeAll` (shared agent) or `beforeEach` (agent per test). `stopPluginHostStudioAgent` stops the app and restores the env snapshot.
 
 ```typescript
 studioAgent = await createAndStartStudioAgentForPluginHost(
@@ -152,7 +152,7 @@ Do not wait for plugin load inside `it()`. Waits that observe an action the test
 | Method | Purpose |
 |---|---|
 | `openFixturesDirectoryAsSolution(name)` | Opens a fixture directory as single-root solution |
-| `openSolutionFileFromFixtures(filename)` | Opens a `.essln` file from fixtures as multi-root solution |
+| `openSolutionFileFromFixtures(filename)` | Opens a `.bfwsln` file from fixtures as multi-root solution |
 | `openDirectoryAsSolution(directory)` | Opens an arbitrary directory as solution |
 | `openViaQuickJump(query)` | Opens a file via the Quick Jump dialog |
 | `openViaCommandSearch(command)` | Executes a command via the command search |
@@ -177,7 +177,7 @@ Do not wait for plugin load inside `it()`. Waits that observe an action the test
 | `getText(selector)` | Gets text content of an element |
 | `waitForSolutionEntryCountChanged(prev)` | Polls until file explorer entry count changes |
 | `getSolutionProjectCount()` | Returns the number of projects in the current solution |
-| `getSolutionFileUri()` | Returns the `.essln` file URI if present |
+| `getSolutionFileUri()` | Returns the `.bfwsln` file URI if present |
 | `getSolutionProjectIds()` | Returns project IDs of the current solution |
 | `addFolderToSolutionViaApi(uri)` | Adds a folder to the solution via test command |
 | `removeFolderFromSolutionViaApi(id)` | Removes a folder from the solution via test command |
@@ -205,7 +205,7 @@ The Studio registers test-only commands in `initializeTestCommands()` (available
 
 | Command ID | Description |
 |---|---|
-| `std.test.openUriAsSolution` | Prompts for a URI, opens it as solution (detects `.essln`) |
+| `std.test.openUriAsSolution` | Prompts for a URI, opens it as solution (detects `.bfwsln`) |
 | `std.test.openUriAsDocument` | Prompts for a URI, opens it as editor document |
 | `std.test.addFolderToSolution` | Prompts for a directory URI, adds it to the solution |
 | `std.test.removeFolderFromSolution` | Prompts for a project ID, removes it from the solution |
@@ -259,25 +259,25 @@ await studioAgent.assertVisible(`[data-test--tab="${uriForSelector}"]`);
 
 ### Static Fixtures
 
-Place static test files in `studio/test/fixtures/<fixture-name>/`. Fixtures are referenced by name in tests (`jumpToFileInSolution`, `readFileSync`, directory copy). Do not keep BPMN/DMN files that no test names. Default Configured Start Payload tests use `untyped-task.bpmn` (`StartEvent_1` + `UntypedTask_1`); there is no dedicated pre/post-script fixture. Form Builder tests open `form-builder.bpmn` (`UserTask_1` with no `evil:formFields` so the summary pane shows Create Form). Do not use `user-task.bpmn` for those tests — it already has form fields and shows Edit Form. Do not create a new untitled BPMN (`Ctrl+N` / `BpmnEmptyDocument.bpmn`); that template is a pool plus a start event and has no user task. `test-solution-simple` is a single-root smoke folder (`call_activity_test.bpmn` plus `hidden-file.fixture` for the hidden-files toggle).
+Place static test files in `studio/test/fixtures/<fixture-name>/`. Fixtures are referenced by name in tests (`jumpToFileInSolution`, `readFileSync`, directory copy). Do not keep BPMN/DMN files that no test names. Default Configured Start Payload tests use `untyped-task.bpmn` (`StartEvent_1` + `UntypedTask_1`); there is no dedicated pre/post-script fixture. Form Builder tests open `form-builder.bpmn` (`UserTask_1` with no `bfw:formFields` so the summary pane shows Create Form). Do not use `user-task.bpmn` for those tests — it already has form fields and shows Edit Form. Do not create a new untitled BPMN (`Ctrl+N` / `BpmnEmptyDocument.bpmn`); that template is a pool plus a start event and has no user task. `test-solution-simple` is a single-root smoke folder (`call_activity_test.bpmn` plus `hidden-file.fixture` for the hidden-files toggle).
 
-### Dynamic Fixtures (`.essln` Files)
+### Dynamic Fixtures (`.bfwsln` Files)
 
-Multi-root solution files (`.essln`) require absolute filesystem paths, so they must be generated at test time:
+Multi-root solution files (`.bfwsln`) require absolute filesystem paths, so they must be generated at test time:
 
 ```typescript
 import * as fs from 'fs';
 import * as path from 'path';
 
 const FIXTURES_DIR = path.join(__dirname, '..', '..', 'fixtures');
-const ESSLN_PATH = path.join(FIXTURES_DIR, 'test-solution-multi.essln');
+const SOLUTION_FILE_PATH = path.join(FIXTURES_DIR, 'test-solution-multi.bfwsln');
 
 function createEsslnFile(folders: { path: string; name?: string }[]): void {
   const content = {
     folders: folders.map(f => f.name ? { path: f.path, name: f.name } : { path: f.path }),
     settings: {},
   };
-  fs.writeFileSync(ESSLN_PATH, JSON.stringify(content, null, 2) + '\n');
+  fs.writeFileSync(SOLUTION_FILE_PATH, JSON.stringify(content, null, 2) + '\n');
 }
 
 // In beforeEach:
@@ -287,7 +287,7 @@ createEsslnFile([
 ]);
 
 // In afterEach: clean up
-if (fs.existsSync(ESSLN_PATH)) fs.unlinkSync(ESSLN_PATH);
+if (fs.existsSync(SOLUTION_FILE_PATH)) fs.unlinkSync(SOLUTION_FILE_PATH);
 ```
 
 ## Test Patterns
@@ -311,7 +311,7 @@ it('should open multi-root solution', async () => {
     { path: path.join(FIXTURES_DIR, 'test-solution-multi-a') },
     { path: path.join(FIXTURES_DIR, 'test-solution-multi-b') },
   ]);
-  await studioAgent.openSolutionFileFromFixtures('test-solution-multi.essln');
+  await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
   const count = await studioAgent.getSolutionProjectCount();
   assert.strictEqual(count, 2);
   await studioAgent.assertNoErrorsPresentAndIdle();
@@ -336,8 +336,8 @@ it('should add folder to solution', async () => {
 
 - Open directory as solution, toggle hidden files, open document via click / quick jump / search, navigation history
 - **Single-root backwards compatibility**: open directory, file flattening, quick jump
-- **Multi-root via `.essln`**: open file, project entries, cross-project search
-- **Custom project names**, add/remove folders, context menus, `.essln` file persistence
+- **Multi-root via `.bfwsln`**: open file, project entries, cross-project search
+- **Custom project names**, add/remove folders, context menus, `.bfwsln` file persistence
 - **Workbench pane toggles** (`workbench-panes.test.ts`): hide/show Property Panel and Sidebar; parked left icons restore the sidebar; property-panel control is a button, not a Layout context menu
 
 ### BPMN Editor (`bpmn-editor/`)
@@ -348,7 +348,7 @@ it('should add folder to solution', async () => {
 
 ### BPMN Linter (`bpmn-linter/`)
 
-- **Explorer lint** (`explorer-lint.test.ts`): live lint off still shows Explorer Lint File and the ruleset selector; closed-file lint writes `evil:LinterRulesetScore`; View → Live Linter checkbox tracks `bpmn.linter.toggle`
+- **Explorer lint** (`explorer-lint.test.ts`): live lint off still shows Explorer Lint File and the ruleset selector; closed-file lint writes `bfw:LinterRulesetScore`; View → Live Linter checkbox tracks `bpmn.linter.toggle`
 
 ### DMN Editor (`dmn-editor/`)
 
@@ -422,7 +422,7 @@ Host editors are CodeMirror 6 (`.cm-content`). Native pane fields are ordinary i
 | `KeyValueJsonEditor` (Default Configured Start Payload, Example Payload, Example Result) | Empty/flat JSON is the key-value builder, not CodeMirror. Click `[data-test--kv-builder-add-button]`, type `[data-test--kv-builder-key-input]` / `[data-test--kv-builder-value-input]`, read with `getValue`. Use `clickOnCodeEditor` only after `[data-test--kv-json-editor-toggle]` or in the open-in-new-tab fragment |
 | DMN native properties | `setDmnPropertyValue` already calls `clearTextInput`. Not for `typeRef` — use suggestion-select helpers |
 
-Do not click a filled field and type a new value. Fixture XML often already has `loopMaximum`, `evil:LoopInterval`, FEEL conditions, and collection expressions.
+Do not click a filled field and type a new value. Fixture XML often already has `loopMaximum`, `bfw:LoopInterval`, FEEL conditions, and collection expressions.
 
 ## Harness gotchas
 
@@ -441,7 +441,7 @@ When adding new functionality:
 1. Place tests in the appropriate feature directory (`bpmn-editor/`, `dmn-editor/`, `git-cruiser/`, `studio-core/`, `plugins/`)
 2. Add `data-test--` attributes to new UI elements that need to be tested
 3. If new fixtures are needed, place them in `studio/test/fixtures/`
-4. For `.essln`-based tests, generate the file in `beforeEach` and clean up in `afterEach`
+4. For `.bfwsln`-based tests, generate the file in `beforeEach` and clean up in `afterEach`
 5. Always end tests with `assertNoErrorsPresentAndIdle()` to catch unexpected errors
 6. For DMN tests, use `StudioAgentDmnExtension` from `test/StudioAgentDmnExtension.ts`
 7. For plugin-host tests, start via `createAndStartStudioAgentForPluginHost` and wait for `loaded` in `beforeAll` / `beforeEach` (`studioAgent.pluginHost.waitUntilStatus`). Do not poll for a command registered mid-`activate()`, and do not `waitUntil` for View-menu entries inside the test — those contributions exist once status is `loaded`.

@@ -5,10 +5,11 @@ import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import { EventDefinitionType } from '@elraptorus/daemonengine_sdk';
-import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 
 import React, { useRef } from 'react';
+
+import { EventDefinitionType } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNode as BpmnFlowNode } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import { getEventDefinition } from '../libs/BpmnProcessHelpers';

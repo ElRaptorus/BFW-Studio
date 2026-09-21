@@ -1,28 +1,28 @@
 import AutoVersionOnPoolBehavior from './AutoVersionOnPoolBehavior';
+import BfwCopyPasteBehavior from './BfwCopyPasteBehavior';
+import BfwEmptyExtensionCleanupBehavior from './BfwEmptyExtensionCleanupBehavior';
+import BfwExtensionOrderBehavior from './BfwExtensionOrderBehavior';
+import BfwMutualExclusionBehavior from './BfwMutualExclusionBehavior';
 import DrilldownBehavior from './DrilldownBehavior';
-import EvilCopyPasteBehavior from './EvilCopyPasteBehavior';
-import EvilEmptyExtensionCleanupBehavior from './EvilEmptyExtensionCleanupBehavior';
-import EvilExtensionOrderBehavior from './EvilExtensionOrderBehavior';
-import EvilMutualExclusionBehavior from './EvilMutualExclusionBehavior';
 import PreserveIsExecutableBehavior from './PreserveIsExecutableBehavior';
 
-const evilPlatformBehaviorsModule = {
+const bfwPlatformBehaviorsModule = {
   __init__: [
     'autoVersionOnPoolBehavior',
     'drilldownBehavior',
-    'evilCopyPasteBehavior',
-    'evilMutualExclusionBehavior',
-    'evilEmptyExtensionCleanupBehavior',
-    'evilExtensionOrderBehavior',
+    'bfwCopyPasteBehavior',
+    'bfwMutualExclusionBehavior',
+    'bfwEmptyExtensionCleanupBehavior',
+    'bfwExtensionOrderBehavior',
     'preserveIsExecutableBehavior',
   ],
   autoVersionOnPoolBehavior: ['type', AutoVersionOnPoolBehavior],
   drilldownBehavior: ['type', DrilldownBehavior],
-  evilCopyPasteBehavior: ['type', EvilCopyPasteBehavior],
-  evilMutualExclusionBehavior: ['type', EvilMutualExclusionBehavior],
-  evilEmptyExtensionCleanupBehavior: ['type', EvilEmptyExtensionCleanupBehavior],
-  evilExtensionOrderBehavior: ['type', EvilExtensionOrderBehavior],
+  bfwCopyPasteBehavior: ['type', BfwCopyPasteBehavior],
+  bfwMutualExclusionBehavior: ['type', BfwMutualExclusionBehavior],
+  bfwEmptyExtensionCleanupBehavior: ['type', BfwEmptyExtensionCleanupBehavior],
+  bfwExtensionOrderBehavior: ['type', BfwExtensionOrderBehavior],
   preserveIsExecutableBehavior: ['type', PreserveIsExecutableBehavior],
 };
 
-export default evilPlatformBehaviorsModule;
+export default bfwPlatformBehaviorsModule;

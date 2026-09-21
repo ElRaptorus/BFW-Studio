@@ -1,16 +1,16 @@
 import type EventBus from 'diagram-js/lib/core/EventBus';
 
-const EVIL_PREFIX = 'evil:';
+const BFW_PREFIX = 'bfw:';
 
 /**
- * Filters `evil:` extension properties during copy-paste so that task-specific
+ * Filters `bfw:` extension properties during copy-paste so that task-specific
  * extensions do not leak onto incompatible target element types.
  *
  * The moddle descriptor's `meta.allowedIn` is used as the source of truth:
  * if the pasted target element's type is not in the property's `allowedIn`
  * list, the property is dropped.
  */
-function EvilCopyPasteBehavior(this: any, eventBus: EventBus, moddle: any) {
+function BfwCopyPasteBehavior(this: any, eventBus: EventBus, moddle: any) {
   eventBus.on('moddleCopy.canCopyProperty', (event: any) => {
     const property = event.property;
     if (property == null || typeof property !== 'object') {
@@ -18,7 +18,7 @@ function EvilCopyPasteBehavior(this: any, eventBus: EventBus, moddle: any) {
     }
 
     const propertyType: string | undefined = property.$type;
-    if (propertyType == null || !propertyType.startsWith(EVIL_PREFIX)) {
+    if (propertyType == null || !propertyType.startsWith(BFW_PREFIX)) {
       return;
     }
 
@@ -49,7 +49,7 @@ function resolveHostType(moddleElement: any): string | null {
   let current = moddleElement;
   while (current != null) {
     const type: string | undefined = current.$type;
-    if (type != null && !type.endsWith('ExtensionElements') && !type.startsWith('evil:')) {
+    if (type != null && !type.endsWith('ExtensionElements') && !type.startsWith('bfw:')) {
       return type;
     }
     current = current.$parent;
@@ -57,6 +57,6 @@ function resolveHostType(moddleElement: any): string | null {
   return null;
 }
 
-(EvilCopyPasteBehavior as any).$inject = ['eventBus', 'moddle'];
+(BfwCopyPasteBehavior as any).$inject = ['eventBus', 'moddle'];
 
-export default EvilCopyPasteBehavior;
+export default BfwCopyPasteBehavior;

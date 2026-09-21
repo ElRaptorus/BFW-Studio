@@ -3,7 +3,7 @@ import { ContextMenuStore } from '#components/ContextMenuStore';
 
 import React, { Fragment, useLayoutEffect, useState } from 'react';
 
-import { type Menu, type MenuItem } from '@evil/bifrost_fw_sdk';
+import { type Menu, type MenuItem } from '@elraptorus/bfw_studio_sdk';
 
 import { Icon } from './Icon';
 

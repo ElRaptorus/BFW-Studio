@@ -148,8 +148,8 @@ const directoryPaths: string[] | null = await bifrost.dialog.showOpenDirectory()
 
 const savePath: string | null = await bifrost.dialog.showSaveFile({
   title: 'Save Solution as...',
-  defaultPath: '/home/user/my-project.essln',
-  filters: [{ name: 'Bifrost Forge World Solution', extensions: ['essln'] }],
+  defaultPath: '/home/user/my-project.bfwsln',
+  filters: [{ name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] }],
 });
 ```
 

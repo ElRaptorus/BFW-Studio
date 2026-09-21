@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
 
 import type DmnDocumentModel from '../DmnDocumentModel';
 import { DMN_DOCUMENT_TYPE } from '../index';

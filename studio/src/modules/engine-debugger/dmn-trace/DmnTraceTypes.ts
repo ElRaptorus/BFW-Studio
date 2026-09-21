@@ -1,5 +1,6 @@
 import type { DmnDefinitions, DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
+
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 /**
  * Snake-case trace data as stored in BRT `typeProperties`.

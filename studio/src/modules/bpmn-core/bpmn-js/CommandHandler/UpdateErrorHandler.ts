@@ -3,7 +3,7 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 import { generateRandomId, getRoot } from './Utils/Utils';
 
 const MODDLE_BPMN_ERROR_TYPE = 'bpmn:Error';
@@ -70,10 +70,8 @@ UpdateErrorHandler.prototype.preExecute = function (context: any) {
   }
 
   const eventDefElement = { businessObject: errorEventDefinition };
-  commands.push(...setEvilBodyExtension(eventDefElement, this.bpmnFactory, 'evil:ErrorCode', newErrorCode || null));
-  commands.push(
-    ...setEvilBodyExtension(eventDefElement, this.bpmnFactory, 'evil:ErrorMessage', newErrorMessage || null),
-  );
+  commands.push(...setBfwBodyExtension(eventDefElement, this.bpmnFactory, 'bfw:ErrorCode', newErrorCode || null));
+  commands.push(...setBfwBodyExtension(eventDefElement, this.bpmnFactory, 'bfw:ErrorMessage', newErrorMessage || null));
 
   const commandToExecute = CmdHelper.executeMultipleCommands(commands);
   this.commandStack.execute(commandToExecute.cmd, commandToExecute.context);

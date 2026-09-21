@@ -13,7 +13,7 @@ import type {
   OverlayFactoryOptions,
   PluginBpmnElementType,
   PluginBpmnOverlay,
-} from '@evil/bifrost_fw_sdk';
+} from '@elraptorus/bfw_studio_sdk';
 
 import { EVENT_BPMN_MODELER_ADAPTER_SELECTION_CHANGED } from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
 import type BpmnModelerComponentAdapter from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
@@ -501,10 +501,10 @@ export class BpmnApiBridge {
 
   private createOverlayHtmlElement(descriptor: PluginBpmnOverlay, pluginName: string): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'evil-plugin-overlay';
+    container.className = 'bfw-plugin-overlay';
 
     if (descriptor.style != null) {
-      container.classList.add(`evil-plugin-overlay--${descriptor.style}`);
+      container.classList.add(`bfw-plugin-overlay--${descriptor.style}`);
     }
 
     if (descriptor.tooltip != null) {
@@ -512,11 +512,11 @@ export class BpmnApiBridge {
     }
 
     if (descriptor.type === 'badge') {
-      container.classList.add('evil-plugin-overlay--badge');
+      container.classList.add('bfw-plugin-overlay--badge');
       const textNode = document.createTextNode(descriptor.text);
       container.appendChild(textNode);
     } else if (descriptor.type === 'icon') {
-      container.classList.add('evil-plugin-overlay--icon');
+      container.classList.add('bfw-plugin-overlay--icon');
       const iconElement = document.createElement('i');
       iconElement.className = descriptor.icon;
       container.appendChild(iconElement);

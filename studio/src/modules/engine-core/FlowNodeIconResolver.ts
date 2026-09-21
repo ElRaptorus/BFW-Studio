@@ -1,4 +1,4 @@
-import { EventDefinitionType, FlowNodeType } from '@elraptorus/daemonengine_sdk';
+import { EventDefinitionType, FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
 /**
  * Maps an SDK FlowNodeType + optional EventDefinitionType to the bpmn-js

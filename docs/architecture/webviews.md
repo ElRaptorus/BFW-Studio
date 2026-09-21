@@ -42,7 +42,7 @@ Three integration surfaces are available to plugins:
 │  ┌───────────────────┴──────────────────────────────────┐    │
 │  │ PluginIframe (React component)                       │    │
 │  │  <iframe sandbox="allow-scripts allow-same-origin">  │    │
-│  │  src="evil-webview://<pluginName>/<entryPoint>"      │    │
+│  │  src="bifrostfw-webview://<pluginName>/<entryPoint>"      │    │
 │  └───────────────────┬──────────────────────────────────┘    │
 │                      │ contentWindow.postMessage             │
 └──────────────────────┼───────────────────────────────────────┘
@@ -59,7 +59,7 @@ Three integration surfaces are available to plugins:
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## Custom Protocol — `evil-webview://`
+## Custom Protocol — `bifrostfw-webview://`
 
 ### Registration
 
@@ -68,11 +68,11 @@ The protocol is registered in `entrypoint-electron-main.ts` in two stages:
 1. **Before `app.ready`**: `protocol.registerSchemesAsPrivileged` declares the scheme as privileged with `standard: true`, `secure: true`, `supportFetchAPI: true`.
 2. **Inside `app.ready`**: `protocol.handle` serves files from plugin directories.
 
-The scheme name follows the release channel pattern: `evil-webview` (stable) or `evil-webview-<channel>` (dev/beta).
+The scheme name follows the release channel pattern: `bifrostfw-webview` (stable) or `bifrostfw-webview-<channel>` (dev/beta).
 
 ### Origin model
 
-Each plugin gets a unique origin: `evil-webview://<pluginName>/`. The hostname encodes the plugin name; the pathname is resolved relative to the plugin's install directory (`getPluginsDir()/<pluginName>/`).
+Each plugin gets a unique origin: `bifrostfw-webview://<pluginName>/`. The hostname encodes the plugin name; the pathname is resolved relative to the plugin's install directory (`getPluginsDir()/<pluginName>/`).
 
 ### Path resolution
 
@@ -332,7 +332,7 @@ webview/build.mjs → webview/dist/index.html + main.js + styles.css
 
 | Layer | Protection |
 |-------|------------|
-| **Origin isolation** | Each plugin at `evil-webview://<name>/`, preventing cross-plugin DOM/storage access |
+| **Origin isolation** | Each plugin at `bifrostfw-webview://<name>/`, preventing cross-plugin DOM/storage access |
 | **Iframe sandbox** | `allow-scripts allow-same-origin` only; top navigation, popups, modals, forms blocked |
 | **CSP headers** | Per-response Content-Security-Policy; `connect-src` scoped to plugin's own origin (no external network) |
 | **Path traversal** | `path.relative()` + boundary check rejects `../` escape sequences |

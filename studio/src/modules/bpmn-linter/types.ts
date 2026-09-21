@@ -84,7 +84,7 @@ export type BpmnlintResolver = {
 // Diagram Origin Detection
 // ---------------------------------------------------------------------------
 
-export type BpmnOriginKind = 'daemon-engine' | 'foreign' | 'unknown';
+export type BpmnOriginKind = 'bfw-engine' | 'foreign' | 'unknown';
 
 export interface BpmnDiagramOrigin {
   readonly origin: BpmnOriginKind;

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_bbd3f991-cf4a-4cd4-a8fc-9cf699c6cab2" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definition_bbd3f991-cf4a-4cd4-a8fc-9cf699c6cab2" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <bpmn:extensionElements>
-    <evil:properties>
-      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="50" complianceStatus="failed" computedAtIso="2026-06-14T20:52:58.666Z" schemaVersion="1" maxPoints="6" penaltyPoints="3" rawErrorFindings="3" rawWarningFindings="2" />
-      <evil:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="50" complianceStatus="failed" computedAtIso="2026-06-14T20:53:07.287Z" schemaVersion="1" maxPoints="6" penaltyPoints="3" rawErrorFindings="3" rawWarningFindings="2" />
-    </evil:properties>
+    <bfw:properties>
+      <bfw:linterRulesetScore rulesetId="bpmn-development" scorePercent="50" complianceStatus="failed" computedAtIso="2026-06-14T20:52:58.666Z" schemaVersion="1" maxPoints="6" penaltyPoints="3" rawErrorFindings="3" rawWarningFindings="2" />
+      <bfw:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="50" complianceStatus="failed" computedAtIso="2026-06-14T20:53:07.287Z" schemaVersion="1" maxPoints="6" penaltyPoints="3" rawErrorFindings="3" rawWarningFindings="2" />
+    </bfw:properties>
   </bpmn:extensionElements>
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="manual-task" processRef="manual-task" />

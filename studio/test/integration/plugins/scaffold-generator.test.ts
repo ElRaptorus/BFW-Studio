@@ -10,7 +10,7 @@ const GENERATOR_SCRIPT = path.join(GENERATOR_DIR, 'src', 'generator.js');
 const SDK_DIR = path.resolve(__dirname, '../../../../studio-sdk');
 
 function createTempDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'evil-plugin-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bifrost-plugin-test-'));
 }
 
 function removeDir(dir: string): void {
@@ -38,15 +38,15 @@ function runGenerator(
 }
 
 /**
- * The template uses `@evil/bifrost_fw_sdk: "^1.0.0"` for distribution.
+ * The template uses `@elraptorus/bfw_studio_sdk: "^1.0.0"` for distribution.
  * Since the SDK isn't published yet, patch the generated package.json
  * to use a `file:` reference to the local SDK for build tests.
  */
 function patchSdkDependency(pluginDir: string): void {
   const packageJsonPath = path.join(pluginDir, 'package.json');
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-  if (packageJson.devDependencies?.['@evil/bifrost_fw_sdk']) {
-    packageJson.devDependencies['@evil/bifrost_fw_sdk'] = `file:${SDK_DIR}`;
+  if (packageJson.devDependencies?.['@elraptorus/bfw_studio_sdk']) {
+    packageJson.devDependencies['@elraptorus/bfw_studio_sdk'] = `file:${SDK_DIR}`;
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf-8');
   }
 }
@@ -105,7 +105,7 @@ describe('create-bfw-plugin scaffold generator', () => {
       });
 
       const pkg = JSON.parse(fs.readFileSync(path.join(tempDir, 'sdk-version-check', 'package.json'), 'utf-8'));
-      assert.strictEqual(pkg.devDependencies['@evil/bifrost_fw_sdk'], '^1.0.0');
+      assert.strictEqual(pkg.devDependencies['@elraptorus/bfw_studio_sdk'], '^1.0.0');
     });
 
     it('generates a buildable plugin', () => {
@@ -138,7 +138,7 @@ describe('create-bfw-plugin scaffold generator', () => {
 
       const src = fs.readFileSync(path.join(tempDir, 'type-check', 'src', 'index.ts'), 'utf-8');
       assert.ok(src.includes('StudioPluginApi'));
-      assert.ok(src.includes('@evil/bifrost_fw_sdk'));
+      assert.ok(src.includes('@elraptorus/bfw_studio_sdk'));
       assert.ok(src.includes('activate'));
       assert.ok(src.includes('deactivate'));
     });
@@ -207,7 +207,7 @@ describe('create-bfw-plugin scaffold generator', () => {
       const app = fs.readFileSync(path.join(tempDir, 'webview-api-check', 'webview', 'src', 'App.tsx'), 'utf-8');
       assert.ok(app.includes('StudioWebviewApi'));
       assert.ok(app.includes('getThemeType(): StudioThemeType'));
-      assert.ok(app.includes('@evil/bifrost_fw_sdk'));
+      assert.ok(app.includes('@elraptorus/bfw_studio_sdk'));
     });
 
     it('generates a buildable webview plugin', () => {

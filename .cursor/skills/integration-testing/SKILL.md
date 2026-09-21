@@ -16,7 +16,7 @@ Guide agents on writing, maintaining, and verifying integration tests for the St
 
 1. **Use StudioAgent, never raw WebDriverIO** — All test interactions go through `StudioAgent` methods. If a needed method doesn't exist, add it to `StudioAgent.ts`.
 2. **Prefer `data-test--` attributes** — Never rely on CSS classes for test selectors unless no alternative exists. Add `data-test--` attributes to new UI elements that need testing.
-3. **Always clean up** — Dynamic fixtures (like `.essln` files) must be created in `beforeEach` and removed in `afterEach`.
+3. **Always clean up** — Dynamic fixtures (like `.bfwsln` files) must be created in `beforeEach` and removed in `afterEach`.
 4. **End with error assertion** — Every test should end with `assertNoErrorsPresentAndIdle()` to catch unintended errors.
 5. **Insiders = smoke, Stable = thorough** — Put basic "does it load" tests in `insiders/`, put comprehensive behavioral tests in `stable/`.
 
@@ -76,25 +76,25 @@ For tree entries, `data-test--tree-entry-type` and `data-test--tree-entry-uri` a
 
 ## Multi-Root Testing Pattern
 
-### Dynamic `.essln` File Creation
+### Dynamic `.bfwsln` File Creation
 
 ```typescript
 const FIXTURES_DIR = path.join(__dirname, '..', '..', 'fixtures');
-const ESSLN_PATH = path.join(FIXTURES_DIR, 'my-test.essln');
+const SOLUTION_FILE_PATH = path.join(FIXTURES_DIR, 'my-test.bfwsln');
 
 function createEsslnFile(folders: { path: string; name?: string }[]): void {
   const content = {
     folders: folders.map(f => f.name ? { path: f.path, name: f.name } : { path: f.path }),
     settings: {},
   };
-  fs.writeFileSync(ESSLN_PATH, JSON.stringify(content, null, 2) + '\n');
+  fs.writeFileSync(SOLUTION_FILE_PATH, JSON.stringify(content, null, 2) + '\n');
 }
 ```
 
 ### Opening Multi-Root Solutions
 
 ```typescript
-await studioAgent.openSolutionFileFromFixtures('my-test.essln');
+await studioAgent.openSolutionFileFromFixtures('my-test.bfwsln');
 ```
 
 ### Verifying Multi-Root State
@@ -107,7 +107,7 @@ const projectEntries = await studioAgent.getProjectEntryCount();
 assert.strictEqual(projectEntries, 2);
 
 const solutionFileUri = await studioAgent.getSolutionFileUri();
-assert.ok(solutionFileUri?.endsWith('.essln'));
+assert.ok(solutionFileUri?.endsWith('.bfwsln'));
 ```
 
 ### Manipulating Solutions via Commands

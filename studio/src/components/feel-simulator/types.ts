@@ -2,7 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 
 import type { Ref } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
 
 export type FeelWarning = {
   type: string;

@@ -63,7 +63,7 @@ The worker parses both XMLs with `createBpmnModdleForDiff()` (BPMN + Camunda + B
 
 Stateless module that transforms raw `bpmn-js-differ` output into structured summary data and markdown. Consumed by the summary dialog command, ChangeOverview, ContentDiff (via the document model), git-cruiser history preview, and the BPMN merge resolver. Applies the same layout-change filter as `BpmnDiff` (rejects `Lane`, `Participant`, `SequenceFlow` from the `layoutChanged` category) so that all consumers produce consistent output regardless of whether they go through the `BpmnDiff` class or use raw diff data directly.
 
-`buildAugmentedChangeSummary(rawDiff, beforeXml, afterXml)` merges semantic buckets with **definitions / file metadata** (`diffDefinitionsMetadata`), **Camunda custom properties** (`diffCustomPropertiesMaps` over moddle-parsed definitions), **Call Activity body extensions** (`diffCallActivityExtensionMaps` from `callActivityExtensionDiff.ts` — `evil:CalledProcessVersion` and `evil:StartEventId` become named `attributeChanges`), and **Bifrost Forge World linter ruleset score changes** (`diffLinterScores` from `evilLinterScoreDiff.ts`). Camunda custom property diffing is retained for backward compatibility with legacy diagrams; new diagrams use `evil:` extension elements. Helpers `buildDefinitionsMetadataBetweenXml`, `buildCustomPropertiesSummaryBetweenXml`, and `buildLinterScoreChangesBetweenXml` support merge (base→ours / base→theirs) without a full `ChangeSummary`.
+`buildAugmentedChangeSummary(rawDiff, beforeXml, afterXml)` merges semantic buckets with **definitions / file metadata** (`diffDefinitionsMetadata`), **Camunda custom properties** (`diffCustomPropertiesMaps` over moddle-parsed definitions), **Call Activity body extensions** (`diffCallActivityExtensionMaps` from `callActivityExtensionDiff.ts` — `bfw:CalledProcessVersion` and `bfw:StartEventId` become named `attributeChanges`), and **Bifrost Forge World linter ruleset score changes** (`diffLinterScores` from `bfwLinterScoreDiff.ts`). Camunda custom property diffing is retained for backward compatibility with legacy diagrams; new diagrams use `bfw:` extension elements. Helpers `buildDefinitionsMetadataBetweenXml`, `buildCustomPropertiesSummaryBetweenXml`, and `buildLinterScoreChangesBetweenXml` support merge (base→ours / base→theirs) without a full `ChangeSummary`.
 
 Key exports:
 
@@ -85,7 +85,7 @@ Key types:
 | Type | Description |
 |------|-------------|
 | `ChangeSummary` | `{ added, removed, modified, layoutChanged, definitionsMetadata, linterScoreChanges, customProperties }` — `customProperties` is always `[]` after build; use `customPropertyChanges` on entries |
-| `ChangeSummaryEntry` | `{ id, type, label, displayName, customPropertyChanges? }` — optional Camunda `camunda:Property` deltas with `kind: 'added' \| 'removed' \| 'changed'` (legacy diagrams only; new diagrams use `evil:` extensions) |
+| `ChangeSummaryEntry` | `{ id, type, label, displayName, customPropertyChanges? }` — optional Camunda `camunda:Property` deltas with `kind: 'added' \| 'removed' \| 'changed'` (legacy diagrams only; new diagrams use `bfw:` extensions) |
 | `ModifiedEntry` | Extends `ChangeSummaryEntry` with `attributeChanges: AttributeChange[]` |
 | `CustomPropertyDelta` | `{ propertyName, oldValue, newValue, kind }` from `camundaPropertiesDiff.ts` |
 | `AttributeChange` | `{ attribute, oldValue, newValue }` |
@@ -220,8 +220,8 @@ Paths: `studio/src/modules/bpmn-editor/merge/` (`BpmnMergeResolver.tsx`, `BpmnMe
 | History preview model (extends diff) | `studio/src/modules/bpmn-diff/history/BpmnHistoryPreviewDocumentModel.ts` |
 | History preview renderer | `studio/src/modules/bpmn-diff/history/BpmnHistoryPreviewDocumentRenderer.tsx` |
 | Change summary builder | `studio/src/modules/bpmn-core/diff/changeSummaryBuilder.ts` (re-exported from `bpmn-diff/changeSummaryBuilder.ts`) |
-| Moddle stack for diff (BPMN + Camunda + Evil) | `studio/src/modules/bpmn-core/diff/bpmnModdleWithCamunda.ts` |
-| Evil linter score diff | `studio/src/modules/bpmn-core/diff/evilLinterScoreDiff.ts` |
+| Moddle stack for diff (BPMN + Camunda + BFW) | `studio/src/modules/bpmn-core/diff/bpmnModdleWithCamunda.ts` |
+| BFW linter score diff | `studio/src/modules/bpmn-core/diff/bfwLinterScoreDiff.ts` |
 | ChangeOverview pane | `studio/src/modules/bpmn-diff/panes/ChangeOverview.tsx` |
 | ContentDiff pane | `studio/src/modules/bpmn-diff/panes/ContentDiff.tsx` |
 | Styles | `studio/src/modules/bpmn-diff/styles/component.bpmn-diff.scss` |

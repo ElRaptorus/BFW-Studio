@@ -5,9 +5,10 @@ import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
 import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
 import { PaneBody } from '#components/panes/PaneBody';
 import { buildSimplePropertyPaneProvider } from '#components/panes/PaneFunctions';
-import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
+
+import type { FlowNode as BpmnFlowNode } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import { getConditionalExpression } from '../../libs/BpmnFlowNodeAccessors';

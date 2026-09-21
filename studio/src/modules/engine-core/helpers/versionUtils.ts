@@ -5,9 +5,10 @@ import type {
   DialogValidationError,
   DialogValidationResult,
 } from '#bifrost/contracts/DialogTypes';
-import evilPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
+import bfwPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
 import { BpmnModdle } from 'bpmn-moddle';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 
 const SEMVER_REGEX = /^(v?)(\d+)\.(\d+)\.(\d+)(.*)$/;
 const PREFIXED_INTEGER_REGEX = /^(v?)(\d+)$/;
@@ -79,7 +80,7 @@ export function suggestNextVersion(current: string): string {
  * Queries the engine for the latest deployed version of a process.
  * Returns `null` if the process has never been deployed or on any error.
  */
-export async function discoverLatestVersion(client: DaemonEngineClient, processId: string): Promise<string | null> {
+export async function discoverLatestVersion(client: BfwEngineClient, processId: string): Promise<string | null> {
   try {
     const model = await client.processes.get(processId);
     return model?.version ?? null;
@@ -89,29 +90,29 @@ export async function discoverLatestVersion(client: DaemonEngineClient, processI
 }
 
 function createModdle(): InstanceType<typeof BpmnModdle> {
-  return new BpmnModdle({ evil: evilPlatformModdleDescriptor });
+  return new BpmnModdle({ bfw: bfwPlatformModdleDescriptor });
 }
 
-function findEvilVersion(processElement: any): string | undefined {
+function findBfwVersion(processElement: any): string | undefined {
   const extensions = processElement.extensionElements?.values;
   if (!Array.isArray(extensions)) {
     return undefined;
   }
-  const versionElement = extensions.find((ext: any) => ext.$type === 'evil:Version');
+  const versionElement = extensions.find((ext: any) => ext.$type === 'bfw:Version');
   return versionElement?.body ?? undefined;
 }
 
-function injectEvilVersion(processElement: any, moddle: InstanceType<typeof BpmnModdle>, version: string): void {
+function injectBfwVersion(processElement: any, moddle: InstanceType<typeof BpmnModdle>, version: string): void {
   if (!processElement.extensionElements) {
     processElement.extensionElements = moddle.create('bpmn:ExtensionElements', { values: [] });
     processElement.extensionElements.$parent = processElement;
   }
 
-  const existing = processElement.extensionElements.values?.find((ext: any) => ext.$type === 'evil:Version');
+  const existing = processElement.extensionElements.values?.find((ext: any) => ext.$type === 'bfw:Version');
   if (existing) {
     existing.body = version;
   } else {
-    const versionElement = moddle.create('evil:Version', { body: version });
+    const versionElement = moddle.create('bfw:Version', { body: version });
     versionElement.$parent = processElement.extensionElements;
     processElement.extensionElements.values = [...(processElement.extensionElements.values ?? []), versionElement];
   }
@@ -126,7 +127,7 @@ interface ProcessInfo {
 function findProcessesMissingVersion(definitions: any): ProcessInfo[] {
   const missing: ProcessInfo[] = [];
   for (const rootElement of definitions.rootElements ?? []) {
-    if (rootElement.$type === 'bpmn:Process' && !findEvilVersion(rootElement)) {
+    if (rootElement.$type === 'bpmn:Process' && !findBfwVersion(rootElement)) {
       missing.push({
         element: rootElement,
         processId: rootElement.id ?? '',
@@ -144,7 +145,7 @@ function findProcessById(definitions: any, processId: string): any | undefined {
 }
 
 /**
- * Checks whether the XML contains processes without `evil:Version`.
+ * Checks whether the XML contains processes without `bfw:Version`.
  * If any are found, shows a dialog for the user to provide versions.
  *
  * Returns `null` if the user cancelled. Otherwise returns the (possibly modified) XML.
@@ -152,7 +153,7 @@ function findProcessById(definitions: any, processId: string): any | undefined {
 export async function ensureProcessVersions(
   xml: string,
   bifrost: Bifrost,
-  client: DaemonEngineClient | null,
+  client: BfwEngineClient | null,
 ): Promise<{ xml: string; modified: boolean } | null> {
   const moddle = createModdle();
   const { rootElement: definitions } = await moddle.fromXML(xml);
@@ -221,7 +222,7 @@ export async function ensureProcessVersions(
   for (const process of missing) {
     const version = dialogResult.formData?.[`version_${process.processId}`] as string;
     if (version) {
-      injectEvilVersion(process.element, moddle, version);
+      injectBfwVersion(process.element, moddle, version);
     }
   }
 
@@ -242,7 +243,7 @@ export async function resolveVersionConflicts(
   xml: string,
   conflicts: { processModelId: string; version: string }[],
   bifrost: Bifrost,
-  client: DaemonEngineClient | null,
+  client: BfwEngineClient | null,
   options?: { allowRunExisting?: boolean },
 ): Promise<{ xml: string } | { runExisting: true; processModelId: string } | null> {
   const moddle = createModdle();
@@ -278,7 +279,7 @@ export async function resolveVersionConflicts(
       continue;
     }
 
-    const localVersion = findEvilVersion(processElement) ?? conflict.version;
+    const localVersion = findBfwVersion(processElement) ?? conflict.version;
     const latestDeployed = discoveredVersions.get(conflict.processModelId) ?? null;
 
     const referenceVersion =
@@ -353,7 +354,7 @@ export async function resolveVersionConflicts(
   for (const conflict of resolvedConflicts) {
     const newVersion = dialogResult.formData?.[`version_${conflict.processId}`] as string;
     if (newVersion) {
-      injectEvilVersion(conflict.element, moddle, newVersion);
+      injectBfwVersion(conflict.element, moddle, newVersion);
     }
   }
 

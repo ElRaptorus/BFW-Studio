@@ -39,7 +39,7 @@ References that point to definitions which no longer exist. These occur when a M
 Extension element wrappers left behind after their content was cleared — typically from a merge or from clearing linter scores.
 
 - **Empty extensionElements** — An `<extensionElements>` container with no child elements.
-- **Empty evil:Properties** — An `<evil:Properties>` container with no content (e.g. after linter scores were cleared).
+- **Empty bfw:Properties** — An `<bfw:Properties>` container with no content (e.g. after linter scores were cleared).
 
 &nbsp;
 

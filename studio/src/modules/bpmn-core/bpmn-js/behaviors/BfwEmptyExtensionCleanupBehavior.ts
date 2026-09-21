@@ -3,14 +3,14 @@ import type EventBus from 'diagram-js/lib/core/EventBus';
 const EXTENSION_ELEMENTS_TYPE = 'bpmn:ExtensionElements';
 
 /**
- * Removes empty `evil:` container elements after property edits.
+ * Removes empty `bfw:` container elements after property edits.
  *
- * When the last child of an `evil:` container (e.g., the last `evil:InputMapping`)
+ * When the last child of an `bfw:` container (e.g., the last `bfw:InputMapping`)
  * is deleted, the empty parent container becomes stale XML noise. This behavior
  * cleans it up to prevent Sanitizer `empty-extension-elements` warnings and
  * to keep exported XML clean.
  */
-function EvilEmptyExtensionCleanupBehavior(this: any, eventBus: EventBus) {
+function BfwEmptyExtensionCleanupBehavior(this: any, eventBus: EventBus) {
   eventBus.on('commandStack.element.updateProperties.postExecuted', (event: any) => {
     cleanupEmptyExtensions(event.context?.element);
   });
@@ -39,7 +39,7 @@ function cleanupEmptyExtensions(element: any): void {
 
   for (let index = values.length - 1; index >= 0; index--) {
     const extension = values[index];
-    if (isEmptyEvilContainer(extension)) {
+    if (isEmptyBfwContainer(extension)) {
       values.splice(index, 1);
     }
   }
@@ -49,9 +49,9 @@ function cleanupEmptyExtensions(element: any): void {
   }
 }
 
-function isEmptyEvilContainer(extension: any): boolean {
+function isEmptyBfwContainer(extension: any): boolean {
   const type: string | undefined = extension?.$type;
-  if (type == null || !type.startsWith('evil:')) {
+  if (type == null || !type.startsWith('bfw:')) {
     return false;
   }
 
@@ -72,6 +72,6 @@ function isEmptyEvilContainer(extension: any): boolean {
   });
 }
 
-(EvilEmptyExtensionCleanupBehavior as any).$inject = ['eventBus'];
+(BfwEmptyExtensionCleanupBehavior as any).$inject = ['eventBus'];
 
-export default EvilEmptyExtensionCleanupBehavior;
+export default BfwEmptyExtensionCleanupBehavior;

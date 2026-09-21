@@ -219,10 +219,10 @@ function RecentItems({ bifrost }: { bifrost: Bifrost }): React.JSX.Element {
   return (
     <ul className="unstyled">
       {recentSolutions.map((solution) => {
-        const isEssln = solution.uri.endsWith('.essln');
-        const iconId = `${isEssln ? 'ph-fill ph-tree-view' : 'ph-fill ph-folder'} treeview__icon--ph-folder`;
+        const isSolutionFile = solution.uri.endsWith('.bfwsln');
+        const iconId = `${isSolutionFile ? 'ph-fill ph-tree-view' : 'ph-fill ph-folder'} treeview__icon--ph-folder`;
         const label = bifrostInternal.files.getFilename(solution.uri);
-        const displayLabel = isEssln && label.endsWith('.essln') ? label.slice(0, -6) : label;
+        const displayLabel = isSolutionFile && label.endsWith('.bfwsln') ? label.slice(0, -'.bfwsln'.length) : label;
 
         return (
           <li key={solution.uri}>

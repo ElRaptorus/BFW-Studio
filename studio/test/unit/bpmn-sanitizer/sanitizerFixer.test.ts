@@ -2,7 +2,7 @@ import { BpmnModdle } from 'bpmn-moddle';
 import { readFileSync } from 'fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import evilPlatformModdleDescriptor from '../../../src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
+import bfwPlatformModdleDescriptor from '../../../src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
 import {
   type ModdleParseWarning,
   type SanitizableIssue,
@@ -23,7 +23,7 @@ describe('BpmnSanitizerFixer', () => {
 
   beforeAll(async () => {
     const xml = readFileSync('test/fixtures/test-solution-sanitizer/haunted-house.bpmn', 'utf-8');
-    const moddle = new BpmnModdle({ evil: evilPlatformModdleDescriptor });
+    const moddle = new BpmnModdle({ bfw: bfwPlatformModdleDescriptor });
     const result = await moddle.fromXML(xml);
     definitions = result.rootElement;
     parseWarnings = (result.warnings ?? []) as ModdleParseWarning[];

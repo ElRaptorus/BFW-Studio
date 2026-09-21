@@ -77,7 +77,7 @@ Issue types use a **flattened discriminated union** — each type tightly couple
 | `dangling-signal-ref` | `dangling-reference` | `warning` |
 | `dangling-escalation-ref` | `dangling-reference` | `warning` |
 | `empty-extension-elements` | `empty-container` | `warning` |
-| `empty-evil-properties` | `empty-container` | `warning` |
+| `empty-bfw-properties` | `empty-container` | `warning` |
 
 The compiler enforces that a `'shapeless-flow-node'` is always `severity: 'error'` and `category: 'ghost-element'` — no runtime mapping needed.
 
@@ -103,7 +103,7 @@ Pure function on the `bpmn:Definitions` moddle tree. Detection algorithms:
 
 3. **Dangling references** — Extracted from `bpmn-moddle` parse warnings (`unresolved reference <...>`). When moddle encounters a `messageRef="Message_DELETED"` targeting a non-existent element, it drops the reference and emits a warning. The analyzer walks up the `$parent` chain from the event definition to find the owning BPMN element.
 
-4. **Empty containers** — Flag `extensionElements` where `values` is undefined or empty. Also detect `evil:Properties` with no `linterRulesetScores`.
+4. **Empty containers** — Flag `extensionElements` where `values` is undefined or empty. Also detect `bfw:Properties` with no `linterRulesetScores`.
 
 ### Fixer (`BpmnSanitizerFixer.ts`)
 
@@ -123,7 +123,7 @@ Builds `CmdHelper` commands wrapped in `executeMultipleCommands` for a single un
 | Zombie shape / edge | `removeElementsFromList` from `diagram.plane.planeElement` — finds the DI element by its own `id` (the semantic `bpmnElement` is unresolved) |
 | Dangling reference | Dismissed via `SanitizerBridge.dismissDanglingRefWarnings()` — the ref is already `undefined` in the moddle tree (bpmn-moddle drops unresolved refs on parse); clearing the stale parse warning is sufficient |
 | Empty extension elements | `updateBusinessObject` to remove `extensionElements` |
-| Empty evil:Properties | `removeElementsFromList` from `extensionElements.values`, chain-remove parent if empty |
+| Empty bfw:Properties | `removeElementsFromList` from `extensionElements.values`, chain-remove parent if empty |
 
 ---
 
@@ -220,7 +220,7 @@ A hand-crafted BPMN containing one instance of every detectable issue type, plus
 
 **Path:** `studio/test/unit/bpmn-sanitizer/sanitizerAnalyzer.test.ts`
 
-Loads the fixture via `bpmn-moddle` (with evil platform descriptor), runs `analyzeSanitizableIssues`, and asserts:
+Loads the fixture via `bpmn-moddle` (with bfw platform descriptor), runs `analyzeSanitizableIssues`, and asserts:
 - Exact issue count (18 — includes 2 subprocess-nested ghosts + 2 zombies)
 - Each expected issue found with correct `type`, `elementId`, `elementName`, `elementType`, `category`, `severity`
 - No false positives on clean elements

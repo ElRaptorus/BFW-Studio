@@ -7,7 +7,7 @@ import type { FileOrDirectory } from '#bifrost/contracts/FileSystemTypes';
 import { renderBpmnToPng, renderBpmnToSvg } from '#modules/bpmn-core/BpmnExportFunctions';
 import type { ProjectProcess } from '#modules/bpmn-core/BpmnSpecificSolutionAndProjectTypes';
 import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
-import evilPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
+import bfwPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
 import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 import type {
   BpmnElementColor,
@@ -332,7 +332,7 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
     const processId = qNameId ? `${qNameId}_Process` : `${bifrost.getGuid()}_Process`;
     const processName = qNameId ? `${filename}` : 'Untitled Process';
 
-    const moddle = new BpmnModdle({ evil: evilPlatformModdleDescriptor });
+    const moddle = new BpmnModdle({ bfw: bfwPlatformModdleDescriptor });
     const { rootElement: definitions } = await moddle.fromXML(xml);
     definitions.set('id', definitionId);
 

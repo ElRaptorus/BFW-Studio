@@ -4,7 +4,7 @@ export type GitCruiserProjectConfig = {
   protectedDiagrams?: string[];
 };
 
-const CONFIG_FILENAME = '.evilstudio/git-cruiser.json';
+const CONFIG_FILENAME = '.bifrostfw/git-cruiser.json';
 
 let projectConfig: GitCruiserProjectConfig | null = null;
 

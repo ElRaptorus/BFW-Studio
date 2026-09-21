@@ -1,4 +1,4 @@
-import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
+import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 import type {
   BpmnDefinitions,
   BpmnProcess,
@@ -20,7 +20,7 @@ import type {
   SequenceFlow,
   SignalDefinition,
   StandardLoop,
-} from '@elraptorus/daemonengine_sdk';
+} from '@elraptorus/bfw_engine_sdk';
 
 type Association = BpmnProcess['associations'][number];
 

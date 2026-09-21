@@ -1,4 +1,4 @@
-import type { ProcessInstance } from '@elraptorus/daemonengine_sdk';
+import type { ProcessInstance } from '@elraptorus/bfw_engine_sdk';
 
 export interface InstanceSearchContextMetadata {
   engineId: string;

@@ -13,7 +13,7 @@ import { PaneHeader } from '#components/panes/PaneHeader';
 
 import React, { Component } from 'react';
 
-import { FormInput } from '@evil/bifrost_fw_sdk';
+import { FormInput } from '@elraptorus/bfw_studio_sdk';
 
 import { Icon } from '../../../Icon';
 

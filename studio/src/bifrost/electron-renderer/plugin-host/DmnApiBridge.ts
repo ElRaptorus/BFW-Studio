@@ -15,7 +15,7 @@ import type {
   DmnViewType,
   PluginDmnElementType,
   PluginDmnOverlay,
-} from '@evil/bifrost_fw_sdk';
+} from '@elraptorus/bfw_studio_sdk';
 
 import type DmnModelerComponentAdapter from '../../../modules/dmn-core/DmnModelerComponentAdapter';
 import {
@@ -609,10 +609,10 @@ export class DmnApiBridge {
 
   private createOverlayHtmlElement(descriptor: PluginDmnOverlay, pluginName: string): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'evil-plugin-overlay';
+    container.className = 'bfw-plugin-overlay';
 
     if (descriptor.style != null) {
-      container.classList.add(`evil-plugin-overlay--${descriptor.style}`);
+      container.classList.add(`bfw-plugin-overlay--${descriptor.style}`);
     }
 
     if (descriptor.tooltip != null) {
@@ -620,16 +620,16 @@ export class DmnApiBridge {
     }
 
     if (descriptor.type === 'badge') {
-      container.classList.add('evil-plugin-overlay--badge');
+      container.classList.add('bfw-plugin-overlay--badge');
       const textNode = document.createTextNode(descriptor.text);
       container.appendChild(textNode);
     } else if (descriptor.type === 'icon' || descriptor.type === 'action') {
-      container.classList.add('evil-plugin-overlay--icon');
+      container.classList.add('bfw-plugin-overlay--icon');
       const iconElement = document.createElement('i');
       iconElement.className = descriptor.icon;
       container.appendChild(iconElement);
     } else if (descriptor.type === 'status') {
-      container.classList.add('evil-plugin-overlay--icon');
+      container.classList.add('bfw-plugin-overlay--icon');
       if (descriptor.icon != null) {
         const iconElement = document.createElement('i');
         iconElement.className = descriptor.icon;

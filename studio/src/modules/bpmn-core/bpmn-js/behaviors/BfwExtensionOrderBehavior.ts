@@ -3,24 +3,24 @@ import type EventBus from 'diagram-js/lib/core/EventBus';
 const EXTENSION_ELEMENTS_TYPE = 'bpmn:ExtensionElements';
 
 const TYPE_ORDER: Record<string, number> = {
-  'evil:Version': 0,
-  'evil:CorrelationKey': 1,
-  'evil:InputMapping': 10,
-  'evil:OutputMapping': 11,
-  'evil:PayloadContract': 12,
-  'evil:ResultContract': 13,
-  'evil:DataContract': 14,
+  'bfw:Version': 0,
+  'bfw:CorrelationKey': 1,
+  'bfw:InputMapping': 10,
+  'bfw:OutputMapping': 11,
+  'bfw:PayloadContract': 12,
+  'bfw:ResultContract': 13,
+  'bfw:DataContract': 14,
 };
 
 const DEFAULT_ORDER = 50;
 
 /**
- * Keeps `evil:` extension elements in a consistent order within
- * `<bpmn:extensionElements>`. Primarily ensures `evil:InputMapping` elements
- * appear before `evil:OutputMapping`, which makes exported XML diffs cleaner
+ * Keeps `bfw:` extension elements in a consistent order within
+ * `<bpmn:extensionElements>`. Primarily ensures `bfw:InputMapping` elements
+ * appear before `bfw:OutputMapping`, which makes exported XML diffs cleaner
  * and more predictable.
  */
-function EvilExtensionOrderBehavior(this: any, eventBus: EventBus) {
+function BfwExtensionOrderBehavior(this: any, eventBus: EventBus) {
   eventBus.on('commandStack.element.updateProperties.postExecuted', (event: any) => {
     sortExtensions(event.context?.element);
   });
@@ -54,6 +54,6 @@ function sortExtensions(element: any): void {
   });
 }
 
-(EvilExtensionOrderBehavior as any).$inject = ['eventBus'];
+(BfwExtensionOrderBehavior as any).$inject = ['eventBus'];
 
-export default EvilExtensionOrderBehavior;
+export default BfwExtensionOrderBehavior;

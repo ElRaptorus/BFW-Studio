@@ -57,8 +57,8 @@ function buildFixForIssue(
     case 'empty-extension-elements':
       return fixEmptyExtensionElements(issue, definitions, elementRegistry);
 
-    case 'empty-evil-properties':
-      return fixEmptyEvilProperties(issue, definitions, elementRegistry);
+    case 'empty-bfw-properties':
+      return fixEmptyBfwProperties(issue, definitions, elementRegistry);
 
     default:
       return [];
@@ -237,7 +237,7 @@ function fixEmptyExtensionElements(
   return [CmdHelper.updateBusinessObject(element, ownerElement, { extensionElements: undefined })];
 }
 
-function fixEmptyEvilProperties(
+function fixEmptyBfwProperties(
   issue: SanitizableIssue,
   definitions: any,
   elementRegistry: ElementRegistryLike,
@@ -247,19 +247,17 @@ function fixEmptyEvilProperties(
     return [];
   }
 
-  const evilProps = ownerElement.extensionElements.values.find((val: any) => val.$type === 'evil:Properties');
-  if (!evilProps) {
+  const bfwProps = ownerElement.extensionElements.values.find((val: any) => val.$type === 'bfw:Properties');
+  if (!bfwProps) {
     return [];
   }
 
   const element = elementRegistry.get(issue.elementId) ?? { id: issue.elementId };
   const cmds: CmdHelperDescriptor[] = [];
 
-  cmds.push(
-    CmdHelper.removeElementsFromList(element, ownerElement.extensionElements, 'values', undefined, [evilProps]),
-  );
+  cmds.push(CmdHelper.removeElementsFromList(element, ownerElement.extensionElements, 'values', undefined, [bfwProps]));
 
-  const remainingAfterRemoval = ownerElement.extensionElements.values.filter((val: any) => val !== evilProps);
+  const remainingAfterRemoval = ownerElement.extensionElements.values.filter((val: any) => val !== bfwProps);
   if (remainingAfterRemoval.length === 0) {
     cmds.push(CmdHelper.updateBusinessObject(element, ownerElement, { extensionElements: undefined }));
   }

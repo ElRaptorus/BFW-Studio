@@ -2,7 +2,7 @@ import { buildJsonSchema } from '#modules/std/settings/validation/schemaToJsonSc
 import assert from 'node:assert';
 import { describe, it } from 'vitest';
 
-import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
 
 describe('buildJsonSchema', () => {
   it('rejects unregistered top-level keys so the editor can warn on leftovers', () => {

@@ -2,7 +2,7 @@ import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps } from '#bifrost/contracts/PaneTypes';
 
-import type { Suggestion } from '@evil/bifrost_fw_sdk';
+import type { Suggestion } from '@elraptorus/bfw_studio_sdk';
 
 import type { DmnViewType } from '../../dmn-core/DmnModelerComponentAdapter';
 import type DmnDocumentModel from '../DmnDocumentModel';

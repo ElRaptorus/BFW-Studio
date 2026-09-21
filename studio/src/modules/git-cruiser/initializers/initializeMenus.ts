@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
-import type { Menu } from '@evil/bifrost_fw_sdk';
+import type { Menu } from '@elraptorus/bfw_studio_sdk';
 
 import type { GitService } from '../GitService';
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="collapsed-pools_Definition" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="collapsed-pools_Definition" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="collapsed-pools" processRef="collapsed-pools_Process" />
     <bpmn:participant id="collapsed_pool_1" name="Collapsed Pool" />
@@ -8,7 +8,7 @@
   </bpmn:collaboration>
   <bpmn:process id="collapsed-pools_Process" name="collapsed-pools" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:version>1.2.3</evil:version>
+      <bfw:version>1.2.3</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet>
       <bpmn:lane id="Lane_1xzf0d3" name="Lane">

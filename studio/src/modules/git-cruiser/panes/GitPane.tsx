@@ -16,7 +16,7 @@ import * as path from 'path';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { PaneProperty, type SelectOption } from '@evil/bifrost_fw_sdk';
+import { PaneProperty, type SelectOption } from '@elraptorus/bfw_studio_sdk';
 
 import type { GitService } from '../GitService';
 import type { GitFileStatus, GitRepoState } from '../GitTypes';

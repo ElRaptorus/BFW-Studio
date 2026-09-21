@@ -2,11 +2,11 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
 import { OpenInNewTabButton } from '#components/OpenInNewTabButton';
-import type { ErrorInfo } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { ErrorInfo } from '@elraptorus/bfw_engine_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 export type CopyableJsonDataRendererProps = {
   editorDocument: EditorDocument;

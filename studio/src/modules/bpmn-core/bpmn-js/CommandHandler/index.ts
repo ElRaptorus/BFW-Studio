@@ -1,6 +1,10 @@
 import { CustomPropertyHandler } from './CustomPropertyHandler';
 import { MultiCommandHandler } from './MultiCommandHandler';
 import { UpdateAdHocSubprocessHandler } from './UpdateAdHocSubprocessHandler';
+import {
+  BFW_LINTER_RULESET_SCORE_COMMAND,
+  UpdateBfwLinterRulesetScoreHandler,
+} from './UpdateBfwLinterRulesetScoreHandler';
 import { UpdateBusinessObjectHandler } from './UpdateBusinessObject';
 import { UpdateBusinessObjectListHandler } from './UpdateBusinessObjectList';
 import { UpdateBusinessRuleTaskHandler } from './UpdateBusinessRuleTaskHandler';
@@ -12,10 +16,6 @@ import { UpdateDataPipelineHandler } from './UpdateDataPipelineHandler';
 import { UpdateDefinitionHandler } from './UpdateDefinitionHandler';
 import { UpdateErrorHandler } from './UpdateErrorHandler';
 import { UpdateEscalationHandler } from './UpdateEscalationHandler';
-import {
-  BFR_LINTER_RULESET_SCORE_COMMAND,
-  UpdateEvilLinterRulesetScoreHandler,
-} from './UpdateEvilLinterRulesetScoreHandler';
 import { UpdateLinkHandler } from './UpdateLinkHandler';
 import { UpdateLoopCharacteristicsHandler } from './UpdateLoopCharacteristicsHandler';
 import { UpdateMessageHandler } from './UpdateMessageHandler';
@@ -28,7 +28,7 @@ import { UpdateUserTaskHandler } from './UpdateUserTaskHandler';
 import { UpdateUserTaskResourcesHandler } from './UpdateUserTaskResourcesHandler';
 
 export const CommandHandler = {
-  [BFR_LINTER_RULESET_SCORE_COMMAND]: UpdateEvilLinterRulesetScoreHandler,
+  [BFW_LINTER_RULESET_SCORE_COMMAND]: UpdateBfwLinterRulesetScoreHandler,
   UpdateAdHocSubprocessHandler: UpdateAdHocSubprocessHandler,
   CustomPropertyHandler: CustomPropertyHandler,
   MultiCommandHandler: MultiCommandHandler,

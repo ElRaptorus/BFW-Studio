@@ -1,5 +1,6 @@
-import type { EventDefinitionType, FlowNodeType } from '@elraptorus/daemonengine_sdk';
 import dayjs from 'dayjs';
+
+import type { EventDefinitionType, FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
 export function getEngineLabel(engineUrl: string, engineName?: string, connected?: boolean): string {
   const prefix = connected === false ? '[OFFLINE] \u2022 ' : '';

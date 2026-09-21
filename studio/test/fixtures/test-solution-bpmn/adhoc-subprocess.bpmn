@@ -3,9 +3,10 @@
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:bfw="https://bifrostforge.world/schema/bpmn"
                   id="Definitions_AdHocSubprocess"
                   targetNamespace="http://bpmn.io/schema/bpmn"
-                  exporter="Evil Studio"
+                  exporter="Bifrost Forge World"
                   exporterVersion="test-fixture">
   <bpmn:process id="Process_Main" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1" name="Start">

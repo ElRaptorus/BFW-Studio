@@ -6,7 +6,7 @@ import { PaneHeader } from '#components/panes/PaneHeader';
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import {
   getSelectedEventDefinition,

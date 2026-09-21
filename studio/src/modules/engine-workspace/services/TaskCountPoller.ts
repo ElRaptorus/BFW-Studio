@@ -1,6 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import { FlowNodeInstanceState, FlowNodeType } from '@elraptorus/daemonengine_sdk';
+
+import { FlowNodeInstanceState, FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
 import { TASK_INBOX_PENDING_COUNTS_KEY } from '../constants/sharedResourceKeys';
 

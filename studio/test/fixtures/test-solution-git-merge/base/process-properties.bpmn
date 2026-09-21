@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definitions_Props" targetNamespace="http://bpmn.io/schema/bpmn">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definitions_Props" targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="Process_Props" name="Properties Process" isExecutable="true">
     <bpmn:startEvent id="Start_1">
       <bpmn:outgoing>Flow_1</bpmn:outgoing>
     </bpmn:startEvent>
     <bpmn:userTask id="UserTask_1" name="Enter Data">
       <bpmn:extensionElements>
-        <evil:FormFields>[{"id":"field_name","label":"Name","type":"string","defaultValue":"John"},{"id":"field_email","label":"Email","type":"string","defaultValue":"john@example.com"}]</evil:FormFields>
-        <evil:Properties>
-          <evil:Property name="payload" value="initial-value" />
-          <evil:Property name="category" value="default" />
-        </evil:Properties>
+        <bfw:FormFields>[{"id":"field_name","label":"Name","type":"string","defaultValue":"John"},{"id":"field_email","label":"Email","type":"string","defaultValue":"john@example.com"}]</bfw:FormFields>
+        <bfw:Properties>
+          <bfw:Property name="payload" value="initial-value" />
+          <bfw:Property name="category" value="default" />
+        </bfw:Properties>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>

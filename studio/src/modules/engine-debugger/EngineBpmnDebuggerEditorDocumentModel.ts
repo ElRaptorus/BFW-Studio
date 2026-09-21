@@ -10,13 +10,14 @@ import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOv
 import type { CompensatedActivitySnapshot, EngineConnectionManager } from '#modules/engine-core';
 import { getShortId } from '#modules/engine-core';
 import type { BpmnDiagramShape } from '#modules/engine-debugger/types/BpmnDiagramShape';
-import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
-import type { DataObjectValue, FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
-import type { BpmnDefinitions, FlowNode as BpmnFlowNode, BpmnProcess } from '@elraptorus/daemonengine_sdk';
 import ContextPadModule from 'bpmn-js/lib/features/context-pad';
 import type { CanvasViewbox } from 'diagram-js/lib/core/Canvas';
 import type { ElementLike, Shape } from 'diagram-js/lib/model/Types';
 import debounce from 'lodash.debounce';
+
+import { FlowNodeType, ProcessInstanceState } from '@elraptorus/bfw_engine_sdk';
+import type { DataObjectValue, FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
+import type { BpmnDefinitions, FlowNode as BpmnFlowNode, BpmnProcess } from '@elraptorus/bfw_engine_sdk';
 
 import {
   BpmnViewerComponentAdapter,

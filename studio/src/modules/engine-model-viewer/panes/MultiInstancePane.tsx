@@ -4,11 +4,11 @@ import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
 import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import type { MultiInstance, StandardLoop } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
 
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { MultiInstance, StandardLoop } from '@elraptorus/bfw_engine_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import { getSelectedBpmnFlowNode, getSelection, isModelViewerDocument } from './paneHelpers';
 

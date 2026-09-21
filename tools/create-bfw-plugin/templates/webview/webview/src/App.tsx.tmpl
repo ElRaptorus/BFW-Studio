@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 /**
- * Iframe bridge shape. Same contract as `StudioWebviewApi` from `@evil/bifrost_fw_sdk`.
+ * Iframe bridge shape. Same contract as `StudioWebviewApi` from `@elraptorus/bfw_studio_sdk`.
  * The host injects live `--theme-*` values (see `ThemeToken` in the SDK). Do not use
  * `--studio-color-*` — those are not forwarded into plugin iframes.
  */
@@ -40,7 +40,7 @@ export default function App(): React.JSX.Element {
         Edit <code>webview/src/App.tsx</code> to build your UI. Host chrome widgets
         (Icon, Table, Checkbox, ColorPicker) are not in the SDK; style with{' '}
         <code>--theme-*</code> tokens, or import Feel / PaneProperty / FormInput from{' '}
-        <code>@evil/bifrost_fw_sdk</code> if you add it to this webview package.
+        <code>@elraptorus/bfw_studio_sdk</code> if you add it to this webview package.
       </p>
     </div>
   );

@@ -1,6 +1,7 @@
 import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
-import type { BpmnProcess, DataObject, EventDefinition, FlowNode, SequenceFlow } from '@elraptorus/daemonengine_sdk';
+
+import type { BpmnProcess, DataObject, EventDefinition, FlowNode, SequenceFlow } from '@elraptorus/bfw_engine_sdk';
 
 import type { ModelViewerDocumentModel } from '../models/ModelViewerDocumentModel';
 import type { ModelViewerSelection } from '../types';

@@ -20,7 +20,7 @@ import MoveCanvasModule from 'diagram-js/lib/navigation/movecanvas';
 import ZoomScrollModule from 'diagram-js/lib/navigation/zoomscroll';
 import type { Rect } from 'diagram-js/lib/util/Types';
 
-import evilPlatformModdleDescriptor from './bpmn-js/moddle/evil-platform.json';
+import bfwPlatformModdleDescriptor from './bpmn-js/moddle/bfw-platform.json';
 
 export const EVENT_BPMN_VIEWER_ADAPTER_ATTACHED_TO_HTML = 'EVENT_BPMN_VIEWER_ADAPTER_ATTACHED_TO_HTML';
 export const EVENT_BPMN_VIEWER_ADAPTER_READY_FOR_INTERACTION = 'EVENT_BPMN_ADAPTER_READY_FOR_INTERACTION';
@@ -55,7 +55,7 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
     this.viewer = new BpmnViewer({
       additionalModules: [ZoomScrollModule, MoveCanvasModule, minimapModule, OutlineModule, ...additionalModules],
       moddleExtensions: {
-        evil: evilPlatformModdleDescriptor,
+        bfw: bfwPlatformModdleDescriptor,
       },
       ...DEFAULT_VIEWER_OPTIONS,
       ...bpmnComponentOptions,

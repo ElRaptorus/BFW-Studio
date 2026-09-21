@@ -2,8 +2,8 @@ import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
 
 import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
-import { FeelEditor, OneLineFeelEditor } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
+import { FeelEditor, OneLineFeelEditor } from '@elraptorus/bfw_studio_sdk';
 
 import { ExecuteButton } from './ExecuteButton';
 import { FeelEvaluator } from './FeelEvaluator';

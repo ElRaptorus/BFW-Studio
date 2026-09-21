@@ -7,7 +7,7 @@ import { EVENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
 
 import BpmnDocumentModel from '../BpmnDocumentModel';
 

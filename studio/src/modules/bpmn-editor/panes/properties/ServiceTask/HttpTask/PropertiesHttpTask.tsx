@@ -12,8 +12,8 @@ import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React, { useEffect, useState } from 'react';
 
-import type { FeelEditorVariable, SelectOption } from '@evil/bifrost_fw_sdk';
-import { FeelEditor, OneLineFeelEditor, PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable, SelectOption } from '@elraptorus/bfw_studio_sdk';
+import { FeelEditor, OneLineFeelEditor, PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../../BpmnDocumentModel';
 import { assertBpmnElementIsHttpServiceTask } from '../../../BpmnElementTypeAssertionFunctions';

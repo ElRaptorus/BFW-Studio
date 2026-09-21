@@ -3,11 +3,11 @@ import type { DialogContent } from '#bifrost/contracts/DialogTypes';
 import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
 import type { EngineConnectionManager, RetryContext } from '#modules/engine-core';
 import { ENGINE_COMMANDS, formatDeployErrorMessage } from '#modules/engine-core';
-import type { RetryRequest } from '@elraptorus/daemonengine_sdk';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Menu } from '@evil/bifrost_fw_sdk';
+import type { RetryRequest } from '@elraptorus/bfw_engine_sdk';
+import type { Menu } from '@elraptorus/bfw_studio_sdk';
 
 import {
   openDecisionViewer,

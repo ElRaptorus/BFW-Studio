@@ -1,4 +1,4 @@
-import type { ProcessInstance } from '@elraptorus/daemonengine_sdk';
+import type { ProcessInstance } from '@elraptorus/bfw_engine_sdk';
 
 /** Debugger-local view of a process instance including the loaded BPMN XML. */
 export type DebuggerProcessInstance = ProcessInstance & {

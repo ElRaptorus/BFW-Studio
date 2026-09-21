@@ -9,8 +9,8 @@ import type {
   BpmnOverlayDescriptor,
   OverlayFactoryContext,
   PluginBpmnElementType,
-} from '@evil/bifrost_fw_sdk';
-import { PluginBpmnOverlayPosition } from '@evil/bifrost_fw_sdk';
+} from '@elraptorus/bfw_studio_sdk';
+import { PluginBpmnOverlayPosition } from '@elraptorus/bfw_studio_sdk';
 
 import type { Overlay } from '../../../modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import {
@@ -367,11 +367,11 @@ export class PluginOverlayStore {
               bifrost.commands.executeCommand(desc.onClickCommand!, (desc.onClickCommandArgs ?? []) as any[]);
             }
           : undefined;
-        const styleClass = desc.style ? `evil-plugin-overlay--${desc.style}` : '';
+        const styleClass = desc.style ? `bfw-plugin-overlay--${desc.style}` : '';
         return React.createElement(
           'div',
           {
-            className: `evil-plugin-overlay evil-plugin-overlay--badge ${styleClass}`.trim(),
+            className: `bfw-plugin-overlay bfw-plugin-overlay--badge ${styleClass}`.trim(),
             title: desc.tooltip ?? undefined,
             'data-clickable': hasClickCommand ? 'true' : undefined,
             onClick: handleClick,
@@ -388,11 +388,11 @@ export class PluginOverlayStore {
               bifrost.commands.executeCommand(desc.onClickCommand!, (desc.onClickCommandArgs ?? []) as any[]);
             }
           : undefined;
-        const styleClass = desc.style ? `evil-plugin-overlay--${desc.style}` : '';
+        const styleClass = desc.style ? `bfw-plugin-overlay--${desc.style}` : '';
         return React.createElement(
           'div',
           {
-            className: `evil-plugin-overlay evil-plugin-overlay--icon ${styleClass}`.trim(),
+            className: `bfw-plugin-overlay bfw-plugin-overlay--icon ${styleClass}`.trim(),
             title: desc.tooltip ?? undefined,
             'data-clickable': hasClickCommand ? 'true' : undefined,
             onClick: handleClick,
@@ -406,7 +406,7 @@ export class PluginOverlayStore {
           event.stopPropagation();
           bifrost.commands.executeCommand(desc.onClickCommand, (desc.onClickCommandArgs ?? []) as any[]);
         };
-        const styleModifier = desc.style ? ` evil-plugin-action--${desc.style}` : '';
+        const styleModifier = desc.style ? ` bfw-plugin-action--${desc.style}` : '';
         const hoverIcon = desc.iconHover ?? deriveFilledVariant(desc.icon);
         return React.createElement(
           'div',
@@ -430,7 +430,7 @@ export class PluginOverlayStore {
       }
 
       if (desc.type === 'status') {
-        const styleModifier = desc.style ? ` evil-plugin-status--${desc.style}` : '';
+        const styleModifier = desc.style ? ` bfw-plugin-status--${desc.style}` : '';
         const innerChildren: React.ReactNode[] = [];
         if (desc.icon) {
           innerChildren.push(React.createElement('i', { className: desc.icon, key: 'icon' }));
@@ -442,7 +442,7 @@ export class PluginOverlayStore {
         return React.createElement(
           'div',
           {
-            className: `bpmn-element-overlay__below-item evil-plugin-status${styleModifier}`,
+            className: `bpmn-element-overlay__below-item bfw-plugin-status${styleModifier}`,
             title: desc.tooltip ?? undefined,
             'data-bs-toggle': desc.tooltip ? 'tooltip' : undefined,
           },

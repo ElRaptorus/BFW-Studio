@@ -552,15 +552,15 @@ function walkForEmptyContainers(node: any, visited: Set<any>, issues: Sanitizabl
       });
     } else {
       for (const val of extValues) {
-        if (val.$type === 'evil:Properties') {
+        if (val.$type === 'bfw:Properties') {
           const hasScores = Array.isArray(val.linterRulesetScores) && val.linterRulesetScores.length > 0;
           const hasProperties = Array.isArray(val.values) && val.values.length > 0;
           if (!hasScores && !hasProperties) {
             issues.push({
-              type: 'empty-evil-properties',
+              type: 'empty-bfw-properties',
               category: 'empty-container',
               severity: 'warning',
-              label: `Empty evil:Properties on ${node.name ?? node.id ?? 'element'}`,
+              label: `Empty bfw:Properties on ${node.name ?? node.id ?? 'element'}`,
               elementId: node.id ?? 'unknown',
               elementName: node.name ?? undefined,
               elementType: node.$type,

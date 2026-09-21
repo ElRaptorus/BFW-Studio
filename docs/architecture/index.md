@@ -35,7 +35,7 @@ Each file owns one topic. Point to other files; do not copy their tables.
 - **[status-bar.md](status-bar.md)** — Status bar infrastructure: priority-based ordering, progress indicators, solution badge, encoding/line-ending items, diagnostics service and problems count
 - **[table.md](table.md)** — Host Table widget around TanStack Table v9: column definitions, pagination, column-header filters, theming tokens
 - **[plugin-host.md](plugin-host.md)** — Process-isolated Plugin Host: `PluginService`, SES workers, permissions, quarantine, PH protocol, management UI
-- **[webviews.md](webviews.md)** — Plugin iframes: `evil-webview://`, postMessage bridge, editor/pane surfaces, CSP
+- **[webviews.md](webviews.md)** — Plugin iframes: `bifrostfw-webview://`, postMessage bridge, editor/pane surfaces, CSP
 - **[feel-editor.md](feel-editor.md)** — FEEL expression editor: CodeMirror 6 components (`FeelEditor`, `OneLineFeelEditor`), theming tokens, FEEL context command, variable structure, dependency chain
 - **[code-editors.md](code-editors.md)** — Host CodeMirror 6 wrappers (`MultiLineCodeEditor`, `DiffEditor`), shared kit, language map, Settings `json5Schema`, rainbow brackets, test selectors
 - **[plugin-manifest.md](plugin-manifest.md)** — `bifrostStudio` schema: contributions, activation events, permissions (`filesystem`, `commands.*`, `bpmn` / `bpmn.modelling` / `bpmn.renderer`, same for `dmn`; `renderer-modules` is a legacy alias of `bpmn.renderer`)

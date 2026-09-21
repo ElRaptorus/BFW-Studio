@@ -1,4 +1,4 @@
-import type { parseDmn } from '@elraptorus/daemonengine_sdk';
+import type { parseDmn } from '@elraptorus/bfw_engine_sdk';
 
 /** Parsed DMN model returned by SDK {@link parseDmn}. */
 export type DmnDefinitions = ReturnType<typeof parseDmn>;

@@ -6,7 +6,7 @@
 
 Host multi-line source editing uses CodeMirror 6. Two React wrappers — `MultiLineCodeEditor` and `DiffEditor` — keep the class + inner-function pattern, blur-to-commit `onChange` (except Machine Sanctum live playgrounds), and the existing import paths. A small kit under `studio/src/components/code-editor/` supplies theme, language map, default extensions, rainbow brackets, and JSON parse lint.
 
-These wrappers are **host-only**. They are never exported from `@evil/bifrost_fw_sdk`. FEEL editing stays a separate SDK widget (`FeelEditor` / `OneLineFeelEditor` wrapping `@bpmn-io/feel-editor`). Markdown documentation stays on `@mdxeditor/editor` (Lexical WYSIWYG). Plugin `text-file-editors` owns its own CodeMirror instance inside a webview.
+These wrappers are **host-only**. They are never exported from `@elraptorus/bfw_studio_sdk`. FEEL editing stays a separate SDK widget (`FeelEditor` / `OneLineFeelEditor` wrapping `@bpmn-io/feel-editor`). Markdown documentation stays on `@mdxeditor/editor` (Lexical WYSIWYG). Plugin `text-file-editors` owns its own CodeMirror instance inside a webview.
 
 ---
 

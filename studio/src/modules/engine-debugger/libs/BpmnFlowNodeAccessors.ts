@@ -1,5 +1,5 @@
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
-import type { FlowNode as BpmnFlowNode, EventDefinition } from '@elraptorus/daemonengine_sdk';
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNode as BpmnFlowNode, EventDefinition } from '@elraptorus/bfw_engine_sdk';
 
 import { getEventDefinition } from './BpmnProcessHelpers';
 

@@ -3,8 +3,8 @@ import equal from 'fast-deep-equal';
 
 import React from 'react';
 
-import type { SettingDescriptor } from '@evil/bifrost_fw_sdk';
-import { resolveSettingEnum } from '@evil/bifrost_fw_sdk';
+import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
+import { resolveSettingEnum } from '@elraptorus/bfw_studio_sdk';
 
 import { ArrayControl } from './controls/ArrayControl';
 import { BooleanControl } from './controls/BooleanControl';

@@ -139,7 +139,7 @@ Full Git integration for Bifrost Forge World. Detects repos, visualizes file sta
 
 ### Engine
 
-All engine modules interact with an external ThomasTheDaemonEngine instance via `@elraptorus/daemonengine_client`. The engine is not part of this application. Connectivity is managed through `EngineConnectionManager`, a shared resource registered by `engine-core` and consumed by all other engine modules via `bifrost.getSharedRessource('engineConnectionManager')`.
+All engine modules interact with an external BFW-Engine instance via `@elraptorus/bfw_engine_client`. The engine is not part of this application. Connectivity is managed through `EngineConnectionManager`, a shared resource registered by `engine-core` and consumed by all other engine modules via `bifrost.getSharedRessource('engineConnectionManager')`.
 
 #### engine-core
 
@@ -147,7 +147,7 @@ Foundation layer for all engine UI. Provides multi-engine connection management 
 
 - **Entry:** `studio/src/modules/engine-core/index.ts`
 - **Dependencies (commands):** `std`
-- **Dependencies (npm):** `@elraptorus/daemonengine_client`, `@elraptorus/daemonengine_sdk`
+- **Dependencies (npm):** `@elraptorus/bfw_engine_client`, `@elraptorus/bfw_engine_sdk`
 - **Shared resources registered:** `engineConnectionManager`, `engineWebSocketBridge`
 - **Depended on by:** `engine-workspace`, `engine-model-viewer`, `engine-decision-viewer`, `engine-debugger`
 - **Commands registered:** `engine.connect`, `engine.connectWithDialog`, `engine.disconnect`, `engine.removeFromHistory`, `engine.setAuthToken`, `engine.deploy`, `engine.deployBatch`, `engine.startProcess`, `engine.abortProcessInstance`, `engine.retryProcessInstance`, `engine.deleteProcessInstance`, `engine.configuredStartProcess`, `engine.startProcessAndOpenDebugger`, `engine.configuredStartProcessAndOpenDebugger`, `engine.triggerMessage`, `engine.triggerSignal`, `engine.triggerEscalation`, `engine.triggerTimerEvent`

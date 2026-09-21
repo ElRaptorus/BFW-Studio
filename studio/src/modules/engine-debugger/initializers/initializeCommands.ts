@@ -13,9 +13,10 @@ import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
 import type { EngineConnectionManager, RetryContext, RetryResult } from '#modules/engine-core';
 import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
-import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/daemonengine_sdk';
-import { FlowNodeType, ProcessInstanceState } from '@elraptorus/daemonengine_sdk';
 import * as json5 from 'json5';
+
+import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/bfw_engine_sdk';
+import { FlowNodeType, ProcessInstanceState } from '@elraptorus/bfw_engine_sdk';
 
 import { DataObjectDetailLevel } from '../../bpmn-core/DataObjectDetailsSettings';
 import { DMN_TRACE_DOCUMENT_TYPE, ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';

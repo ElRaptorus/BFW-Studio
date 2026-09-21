@@ -1,14 +1,14 @@
 import type EventBus from 'diagram-js/lib/core/EventBus';
 
 import { CmdHelper } from '../CommandHandler/Helper/CommmandHelper';
-import { findEvilExtension, setEvilBodyExtension } from '../CommandHandler/Utils/EvilExtensionHelper';
+import { findBfwExtension, setBfwBodyExtension } from '../CommandHandler/Utils/BfwExtensionHelper';
 
 const LOW_PRIORITY = 250;
-const EVIL_VERSION_TYPE = 'evil:Version';
+const BFW_VERSION_TYPE = 'bfw:Version';
 const DEFAULT_VERSION = '1.0.0';
 
 /**
- * Automatically assigns `evil:Version` "1.0.0" to the process referenced by a
+ * Automatically assigns `bfw:Version` "1.0.0" to the process referenced by a
  * newly created Participant (pool), if the process does not already have one.
  *
  * Only fires for `shape.create` — existing diagrams and undo/redo are unaffected.
@@ -25,12 +25,12 @@ function AutoVersionOnPoolBehavior(this: any, eventBus: EventBus, bpmnFactory: a
       return;
     }
 
-    if (findEvilExtension(processRef, EVIL_VERSION_TYPE) != null) {
+    if (findBfwExtension(processRef, BFW_VERSION_TYPE) != null) {
       return;
     }
 
     const processElement = { businessObject: processRef };
-    const commands = setEvilBodyExtension(processElement, bpmnFactory, EVIL_VERSION_TYPE, DEFAULT_VERSION);
+    const commands = setBfwBodyExtension(processElement, bpmnFactory, BFW_VERSION_TYPE, DEFAULT_VERSION);
     if (commands.length === 0) {
       return;
     }

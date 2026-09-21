@@ -4,8 +4,12 @@ import type {
   SettingDescriptorObject,
   SettingValidationError,
   SettingsValidationResult,
-} from '@evil/bifrost_fw_sdk';
-import { SETTING_COLOR_VALUE_PATTERN, SETTING_DATE_VALUE_PATTERN, resolveSettingEnum } from '@evil/bifrost_fw_sdk';
+} from '@elraptorus/bfw_studio_sdk';
+import {
+  SETTING_COLOR_VALUE_PATTERN,
+  SETTING_DATE_VALUE_PATTERN,
+  resolveSettingEnum,
+} from '@elraptorus/bfw_studio_sdk';
 
 const colorValueRegex = new RegExp(SETTING_COLOR_VALUE_PATTERN);
 const dateValueRegex = new RegExp(SETTING_DATE_VALUE_PATTERN);

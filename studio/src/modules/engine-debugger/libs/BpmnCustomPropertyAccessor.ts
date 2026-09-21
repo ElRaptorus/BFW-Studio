@@ -1,7 +1,7 @@
 import type { BpmnViewerComponentAdapter } from '../../bpmn-core/BpmnViewerComponentAdapter';
 
 /**
- * Reads an `evil:Property` value from the raw moddle business object
+ * Reads an `bfw:Property` value from the raw moddle business object
  * of a BPMN element in the viewer. This bypasses the SDK-parsed model
  * and accesses the underlying bpmn-moddle data directly, which is the
  * only way to reach studio-internal custom properties like
@@ -27,9 +27,9 @@ export function getCustomPropertyFromViewer(
   }
 
   for (const extension of businessObject.extensionElements.values) {
-    if (extension.$type === 'evil:Properties' && Array.isArray(extension.values)) {
+    if (extension.$type === 'bfw:Properties' && Array.isArray(extension.values)) {
       for (const property of extension.values) {
-        if (property.$type === 'evil:Property' && property.name === propertyName) {
+        if (property.$type === 'bfw:Property' && property.name === propertyName) {
           return typeof property.value === 'string' ? property.value : null;
         }
       }

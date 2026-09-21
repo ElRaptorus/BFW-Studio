@@ -2,7 +2,7 @@ import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
 const MODDLE_BPMN_FORMAL_EXPRESSION_TYPE = 'bpmn:FormalExpression';
 
@@ -61,7 +61,7 @@ UpdateLoopCharacteristicsHandler.prototype.preExecute = function (context: any) 
 
     const loopCharsElement = { businessObject: loopCharacteristics };
     if (loopInterval !== undefined) {
-      commands.push(...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:LoopInterval', loopInterval));
+      commands.push(...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:LoopInterval', loopInterval));
     }
 
     if (commands.length > 0) {
@@ -144,41 +144,32 @@ UpdateLoopCharacteristicsHandler.prototype.preExecute = function (context: any) 
 
     const loopCharsElement = { businessObject: loopCharacteristics };
     if (inputCollection !== undefined) {
-      commands.push(
-        ...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:InputCollection', inputCollection),
-      );
+      commands.push(...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:InputCollection', inputCollection));
     }
     if (outputCollection !== undefined) {
       commands.push(
-        ...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:OutputCollection', outputCollection),
+        ...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:OutputCollection', outputCollection),
       );
     }
     if (elementVariable !== undefined) {
-      commands.push(
-        ...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:ElementVariable', elementVariable),
-      );
+      commands.push(...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:ElementVariable', elementVariable));
     }
     if (outputElementVariable !== undefined) {
       commands.push(
-        ...setEvilBodyExtension(
-          loopCharsElement,
-          this.bpmnFactory,
-          'evil:OutputElementVariable',
-          outputElementVariable,
-        ),
+        ...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:OutputElementVariable', outputElementVariable),
       );
     }
     if (loopBreakCondition !== undefined) {
       commands.push(
-        ...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:LoopBreakCondition', loopBreakCondition),
+        ...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:LoopBreakCondition', loopBreakCondition),
       );
     }
     if (loopInterval !== undefined) {
-      commands.push(...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:LoopInterval', loopInterval));
+      commands.push(...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:LoopInterval', loopInterval));
     }
     if (maxIterations !== undefined) {
       const stringValue = maxIterations != null && maxIterations !== '' ? String(maxIterations) : null;
-      commands.push(...setEvilBodyExtension(loopCharsElement, this.bpmnFactory, 'evil:MaxIterations', stringValue));
+      commands.push(...setBfwBodyExtension(loopCharsElement, this.bpmnFactory, 'bfw:MaxIterations', stringValue));
     }
 
     if (commands.length > 0) {

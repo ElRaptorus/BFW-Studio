@@ -21,7 +21,7 @@ import {
   PaneProperty,
   type SelectOption,
   type Suggestion,
-} from '@evil/bifrost_fw_sdk';
+} from '@elraptorus/bfw_studio_sdk';
 
 import { assertBpmnElementIsBusinessRuleTask } from '../../BpmnElementTypeAssertionFunctions';
 import {

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_4d7c0c15-7834-4256-9f0b-8e53b0d66cb9" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definition_4d7c0c15-7834-4256-9f0b-8e53b0d66cb9" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <bpmn:extensionElements>
-    <evil:properties>
-      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="68.75" complianceStatus="risky" computedAtIso="2026-06-14T20:52:59.535Z" schemaVersion="1" maxPoints="8" penaltyPoints="2.5" rawErrorFindings="2" rawWarningFindings="2" />
-      <evil:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="68.75" complianceStatus="failed" computedAtIso="2026-06-14T20:53:07.294Z" schemaVersion="1" maxPoints="8" penaltyPoints="2.5" rawErrorFindings="2" rawWarningFindings="2" />
-    </evil:properties>
+    <bfw:properties>
+      <bfw:linterRulesetScore rulesetId="bpmn-development" scorePercent="68.75" complianceStatus="risky" computedAtIso="2026-06-14T20:52:59.535Z" schemaVersion="1" maxPoints="8" penaltyPoints="2.5" rawErrorFindings="2" rawWarningFindings="2" />
+      <bfw:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="68.75" complianceStatus="failed" computedAtIso="2026-06-14T20:53:07.294Z" schemaVersion="1" maxPoints="8" penaltyPoints="2.5" rawErrorFindings="2" rawWarningFindings="2" />
+    </bfw:properties>
   </bpmn:extensionElements>
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="linkevent-test" processRef="linkevent-test" />
   </bpmn:collaboration>
   <bpmn:process id="linkevent-test" name="linkevent-test" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:version>1</evil:version>
+      <bfw:version>1</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet>
       <bpmn:lane id="Lane_1xzf0d3" name="Lane">

@@ -6,8 +6,9 @@ import BpmnElementOverlayManager from '#modules/bpmn-core/overlays/BpmnElementOv
 import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { convertGraphqlProcessModel } from '#modules/engine-core';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import type { BpmnProcess, ProcessModel, ProcessVersion } from '@elraptorus/daemonengine_sdk';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import type { BpmnProcess, ProcessModel, ProcessVersion } from '@elraptorus/bfw_engine_sdk';
 
 import { createModelViewerFlowNodeOverlays, createModelViewerProcessOverlays } from '../overlays/OverlayFactory';
 import type { ModelViewerModelData, ModelViewerSelection } from '../types';
@@ -32,7 +33,7 @@ const EMPTY_DATA: ModelViewerModelData = {
 export class ModelViewerDocumentModel extends EditorDocumentModel {
   private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
-  private client: DaemonEngineClient | null;
+  private client: BfwEngineClient | null;
   private engineId: string;
   private processModelId: string;
   private activeVersion: string | null = null;

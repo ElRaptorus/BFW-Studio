@@ -1,5 +1,6 @@
-import type { BpmnDefinitions } from '@elraptorus/daemonengine_sdk';
 import { describe, expect, it } from 'vitest';
+
+import type { BpmnDefinitions } from '@elraptorus/bfw_engine_sdk';
 
 import {
   resolveEscalationCode,

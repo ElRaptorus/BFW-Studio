@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_96341a80-b67f-4fea-8b0a-a4e67525662a" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definition_96341a80-b67f-4fea-8b0a-a4e67525662a" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <bpmn:extensionElements>
-    <evil:properties>
-      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="100" complianceStatus="valid" computedAtIso="2026-06-15T10:04:47.545Z" schemaVersion="1" maxPoints="7" penaltyPoints="0" rawErrorFindings="0" rawWarningFindings="0" />
-    </evil:properties>
+    <bfw:properties>
+      <bfw:linterRulesetScore rulesetId="bpmn-development" scorePercent="100" complianceStatus="valid" computedAtIso="2026-06-15T10:04:47.545Z" schemaVersion="1" maxPoints="7" penaltyPoints="0" rawErrorFindings="0" rawWarningFindings="0" />
+    </bfw:properties>
   </bpmn:extensionElements>
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="callactivity-test" processRef="callactivity-test" />
   </bpmn:collaboration>
   <bpmn:process id="callactivity-test" name="callactivity-test" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:version>124</evil:version>
+      <bfw:version>124</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet>
       <bpmn:lane id="Lane_1xzf0d3" name="Lane">
@@ -29,7 +29,7 @@
     <bpmn:sequenceFlow id="Flow_18ppysq" sourceRef="CallActivity_1" targetRef="EndEvent_0eie6q6" />
     <bpmn:callActivity id="CallActivity_1" name="CallActivity_1" calledElement="linkevent-test">
       <bpmn:extensionElements>
-        <evil:startEventId>StartEvent_1</evil:startEventId>
+        <bfw:startEventId>StartEvent_1</bfw:startEventId>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_01qwgcr</bpmn:incoming>
       <bpmn:outgoing>Flow_18ppysq</bpmn:outgoing>

@@ -1,7 +1,7 @@
 import {
-  BFR_LINTER_RULESET_SCORE_COMMAND,
-  type EvilLinterRulesetScorePayload,
-} from '#modules/bpmn-core/bpmn-js/CommandHandler/UpdateEvilLinterRulesetScoreHandler';
+  BFW_LINTER_RULESET_SCORE_COMMAND,
+  type BfwLinterRulesetScorePayload,
+} from '#modules/bpmn-core/bpmn-js/CommandHandler/UpdateBfwLinterRulesetScoreHandler';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type Canvas from 'diagram-js/lib/core/Canvas';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
@@ -111,7 +111,7 @@ interface LintBridgeInstance {
 const DIAGNOSTICS_OWNER = 'bpmn-linter';
 const DEFAULT_DEBOUNCE_MS = 300;
 
-const SCORE_COMPARISON_KEYS: readonly (keyof EvilLinterRulesetScorePayload)[] = [
+const SCORE_COMPARISON_KEYS: readonly (keyof BfwLinterRulesetScorePayload)[] = [
   'rulesetId',
   'scorePercent',
   'complianceStatus',
@@ -138,9 +138,9 @@ function readExistingScore(definitions: ModdleDefinitions, rulesetId: string): R
   if (!Array.isArray(values)) {
     return null;
   }
-  const evilProps = values.find((val: unknown) => (val as { $type?: string }).$type === 'evil:Properties') as
+  const bfwProps = values.find((val: unknown) => (val as { $type?: string }).$type === 'bfw:Properties') as
     { linterRulesetScores?: unknown[] } | undefined;
-  const scores = evilProps?.linterRulesetScores;
+  const scores = bfwProps?.linterRulesetScores;
   if (!Array.isArray(scores)) {
     return null;
   }
@@ -160,7 +160,7 @@ function readExistingScore(definitions: ModdleDefinitions, rulesetId: string): R
 }
 
 function scoreMatchesExisting(
-  newScore: EvilLinterRulesetScorePayload,
+  newScore: BfwLinterRulesetScorePayload,
   existing: Record<string, string> | null,
 ): boolean {
   if (!existing) {
@@ -350,7 +350,7 @@ export function LintBridge(
     if (!this._diagramOrigin) {
       return false;
     }
-    if (this._diagramOrigin.origin === 'daemon-engine') {
+    if (this._diagramOrigin.origin === 'bfw-engine') {
       return false;
     }
     if (this._foreignLintingAllowed) {
@@ -371,7 +371,7 @@ export function LintBridge(
     if (!this._diagramOrigin) {
       return true;
     }
-    if (this._diagramOrigin.origin === 'daemon-engine') {
+    if (this._diagramOrigin.origin === 'bfw-engine') {
       return true;
     }
     if (this._foreignLintingAllowed) {
@@ -448,7 +448,7 @@ export function LintBridge(
       });
       this._lastScoreSnapshot = snapshot;
 
-      const newScore: EvilLinterRulesetScorePayload = {
+      const newScore: BfwLinterRulesetScorePayload = {
         rulesetId: this.getActiveProfile(),
         scorePercent: String(snapshot.scorePercent),
         complianceStatus: snapshot.complianceStatus,
@@ -464,7 +464,7 @@ export function LintBridge(
       if (!scoreMatchesExisting(newScore, existingScore)) {
         try {
           this._lintScheduleSuppressionCount += 1;
-          this.commandStack.execute(BFR_LINTER_RULESET_SCORE_COMMAND, {
+          this.commandStack.execute(BFW_LINTER_RULESET_SCORE_COMMAND, {
             element: rootShape,
             definitions,
             score: newScore,
@@ -586,7 +586,7 @@ export function LintBridge(
 
     if (this._active) {
       if (shouldLintCurrentDiagram()) {
-        if (this._diagramOrigin && this._diagramOrigin.origin !== 'daemon-engine') {
+        if (this._diagramOrigin && this._diagramOrigin.origin !== 'bfw-engine') {
           console.info(`[bpmn-linter] Linting foreign diagram (origin: ${this._diagramOrigin.provider})`);
         }
         this._scheduleLint();

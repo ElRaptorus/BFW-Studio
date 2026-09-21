@@ -1,12 +1,13 @@
 import type { BpmnDiagramShape, BpmnProcessRef } from '#modules/engine-debugger/types/BpmnDiagramShape';
-import type { DataObjectValue, FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
+
+import type { DataObjectValue, FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 import type {
   FlowNode as BpmnFlowNode,
   BpmnProcess,
   SequenceFlow as BpmnSequenceFlow,
   DataAssociation,
   DataObjectReference,
-} from '@elraptorus/daemonengine_sdk';
+} from '@elraptorus/bfw_engine_sdk';
 
 import type { DebuggerProcessInstance } from '../types/DebuggerTypes';
 import { isSequentialMultiInstance, isStandardLoop } from './BpmnProcessHelpers';

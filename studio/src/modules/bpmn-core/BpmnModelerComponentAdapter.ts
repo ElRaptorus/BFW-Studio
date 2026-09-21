@@ -27,12 +27,9 @@ import CustomPopupProvider from './bpmn-js/Provider/CustomPopupProvider';
 import { PluginContextPadProvider } from './bpmn-js/Provider/PluginContextPadProvider';
 import { PluginPaletteProvider } from './bpmn-js/Provider/PluginPaletteProvider';
 import CustomResizeRule from './bpmn-js/Rules/CustomResizeRule';
-import evilPlatformBehaviorsModule from './bpmn-js/behaviors';
-import evilPlatformModdleDescriptor from './bpmn-js/moddle/evil-platform.json';
+import bfwPlatformBehaviorsModule from './bpmn-js/behaviors';
+import bfwPlatformModdleDescriptor from './bpmn-js/moddle/bfw-platform.json';
 import { createSanitizerModule } from './sanitizer/SanitizerBridge';
-
-const EVIL_NS_CURRENT_URI = 'https://evilengine.dev/schema/bpmn';
-const EVIL_NS_LEGACY_URIS = ['https://evil.studio/schema/bpmn/platform/1.0'];
 
 export const EVENT_BPMN_MODELER_ADAPTER_READY_FOR_INTERACTION = 'EVENT_BPMN_ADAPTER_READY_FOR_INTERACTION';
 export const EVENT_BPMN_MODELER_ADAPTER_ATTACHED_TO_HTML = 'EVENT_BPMN_ADAPTER_ATTACHED_TO_HTML';
@@ -71,7 +68,7 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
 
     this.modeler = new BpmnModeler({
       additionalModules: [
-        evilPlatformBehaviorsModule,
+        bfwPlatformBehaviorsModule,
         CustomResizeRule,
         CustomPaletteProvider,
         CustomPopupProvider,
@@ -83,7 +80,7 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
         ...additionalModules,
       ],
       moddleExtensions: {
-        evil: evilPlatformModdleDescriptor,
+        bfw: bfwPlatformModdleDescriptor,
       },
       exporter: {
         name: studio.env.productName,
@@ -203,15 +200,13 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
 
   async setXml(currentXml: string): Promise<string> {
     try {
-      const normalizedXml = this.migrateNamespaceUris(currentXml);
-
-      const result = await this.modeler.importXML(normalizedXml);
+      const result = await this.modeler.importXML(currentXml);
       const { warnings } = result;
       if (warnings.length !== 0) {
         console.warn(warnings);
       }
 
-      return normalizedXml;
+      return currentXml;
     } catch (error) {
       if (MERGE_CONFLICT_MARKER_REGEX.test(currentXml)) {
         throw new Error(
@@ -224,29 +219,6 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
         { cause: error },
       );
     }
-  }
-
-  /**
-   * Replace legacy evil namespace URIs with the current one so that moddle
-   * recognises evil:* extension elements as typed rather than falling back to
-   * generic handling (which loses the URI and produces "no namespace uri given
-   * for prefix <ns0>" during serialization).
-   *
-   * Foreign vendor namespaces (camunda, zeebe, flowable, etc.) are left
-   * untouched — bpmn-moddle already handles them correctly as generic elements
-   * with their original URIs intact.
-   */
-  private migrateNamespaceUris(xml: string): string {
-    let migrated = xml;
-    for (const legacyUri of EVIL_NS_LEGACY_URIS) {
-      migrated = migrated.replace(`xmlns:evil="${legacyUri}"`, `xmlns:evil="${EVIL_NS_CURRENT_URI}"`);
-    }
-
-    if (migrated !== xml) {
-      this.log('Migrated legacy evil namespace URI to %s', EVIL_NS_CURRENT_URI);
-    }
-
-    return migrated;
   }
 
   async getXml(): Promise<string> {

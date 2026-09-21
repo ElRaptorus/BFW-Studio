@@ -2,10 +2,11 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import type { DmnDefinitions, DrgSelection } from '#modules/engine-decision-viewer/types/dmnModelTypes';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import { parseDmn } from '@elraptorus/daemonengine_sdk';
-import type { EvaluationResult } from '@elraptorus/daemonengine_sdk';
-import type { DecisionDefinition } from '@elraptorus/daemonengine_sdk';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import { parseDmn } from '@elraptorus/bfw_engine_sdk';
+import type { EvaluationResult } from '@elraptorus/bfw_engine_sdk';
+import type { DecisionDefinition } from '@elraptorus/bfw_engine_sdk';
 
 import type { DmnViewerComponentAdapter } from '../../dmn-core/DmnViewerComponentAdapter';
 
@@ -50,7 +51,7 @@ const EMPTY_DATA: DecisionViewerModelData = {
 export class DecisionViewerDocumentModel extends EditorDocumentModel {
   private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
-  private client: DaemonEngineClient | null;
+  private client: BfwEngineClient | null;
   private engineId: string;
   private decisionModelId: string;
   private selectedElement: DrgSelection | null = null;

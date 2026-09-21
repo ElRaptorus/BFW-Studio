@@ -13,7 +13,7 @@ The Plugin Host is a process-isolated runtime for external plugins. Each rendere
 
 Plugins never execute in the renderer process. They communicate with Bifrost through a typed message protocol. Plugins have **no access** to the DOM, Electron APIs, or shared memory with the renderer — all interaction flows through serializable IPC messages. Caller identity on API requests is **attested** by `SandboxManager` (see _IPC caller attestation_ below); plugin code cannot forge `pluginName`.
 
-**Host vs plugin types:** Internal Studio modules type `import type { Bifrost } from '#bifrost/Bifrost'`. Plugin authors type `StudioPluginApi` from `@evil/bifrost_fw_sdk`. The SDK is the plugin toolkit (API contract, POJO contracts, `ThemeToken` + documentation CSS, content controls). It is not a chrome kit — tab strips, pane shells, Tree, and host CodeMirror wrappers stay in the host. Plugins fill a hole in host chrome via `registerWebviewPane`, `registerWebviewDocumentType`, and `views.registerTreeView`.
+**Host vs plugin types:** Internal Studio modules type `import type { Bifrost } from '#bifrost/Bifrost'`. Plugin authors type `StudioPluginApi` from `@elraptorus/bfw_studio_sdk`. The SDK is the plugin toolkit (API contract, POJO contracts, `ThemeToken` + documentation CSS, content controls). It is not a chrome kit — tab strips, pane shells, Tree, and host CodeMirror wrappers stay in the host. Plugins fill a hole in host chrome via `registerWebviewPane`, `registerWebviewDocumentType`, and `views.registerTreeView`.
 
 ```
 Renderer (PluginHost + PluginHostBridge + PermissionGate)
@@ -232,7 +232,7 @@ export async function activate(api: StudioPluginApi): Promise<void> {
 | `themes` | `bifrost.theme` (ThemeMediator / ThemeManager) via `PluginHostBridge` + CSS injection |
 | `env` | Frozen environment object |
 
-Method signatures live on `StudioPluginApi` in `@evil/bifrost_fw_sdk`. How-to examples: [plugin-development-guide.md](../plugin-development-guide.md). iframe protocol: [webviews.md](webviews.md). BPMN/DMN enrichment: [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) / [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md).
+Method signatures live on `StudioPluginApi` in `@elraptorus/bfw_studio_sdk`. How-to examples: [plugin-development-guide.md](../plugin-development-guide.md). iframe protocol: [webviews.md](webviews.md). BPMN/DMN enrichment: [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) / [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md).
 
 Host-only facts:
 
@@ -330,8 +330,8 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 ### Discovery
 
 Plugins are discovered in the configured plugins directory:
-1. `BFR_PLUGINS_DIR` environment variable (if set)
-2. Fallback: `~/.evil/<channel>/plugins/` (via `getBifrostHomeDir()`)
+1. `BFW_PLUGINS_DIR` environment variable (if set)
+2. Fallback: `~/.bifrostfw/studio/plugins/` (via `getBifrostHomeDir()`; `studio-dev` / `studio-bloodforge` / `studio-tests` per channel)
 
 Each subdirectory with a `package.json` is treated as a plugin candidate. On child-process startup, `SandboxManager.initialize()` loads persisted quarantine state from `quarantine.json` under the plugin storage base path. Quarantined plugins are skipped during `loadPlugin` until the user calls `trustAndReEnablePlugin`.
 
@@ -350,7 +350,7 @@ Unload/reload terminates the Worker; there is no shared activation state between
 
 ### TypeScript test fixtures
 
-`studio/test/fixtures/plugins/` is the integration-test plugin directory (`BFR_PLUGINS_DIR`). Most fixtures are plain `index.js`. Two fixtures ship TypeScript source only (`dist/` is gitignored via `**/dist`):
+`studio/test/fixtures/plugins/` is the integration-test plugin directory (`BFW_PLUGINS_DIR`). Most fixtures are plain `index.js`. Two fixtures ship TypeScript source only (`dist/` is gitignored via `**/dist`):
 
 | Fixture | Backend | Webview |
 |---------|---------|---------|
@@ -378,11 +378,11 @@ Plugin storage uses OS-specific cache directories:
 
 | OS | Base path |
 |----|-----------|
-| Linux | `~/.cache/evil-studio-<channel>/plugin-storage/<pluginName>/` |
-| macOS | `~/Library/Caches/evil-studio-<channel>/plugin-storage/<pluginName>/` |
-| Windows | `%LOCALAPPDATA%\evil-studio-<channel>\Cache\plugin-storage\<pluginName>\` |
+| Linux | `~/.cache/bifrost-forge-world-<channel>/plugin-storage/<pluginName>/` |
+| macOS | `~/Library/Caches/bifrost-forge-world-<channel>/plugin-storage/<pluginName>/` |
+| Windows | `%LOCALAPPDATA%\bifrost-forge-world-<channel>\Cache\plugin-storage\<pluginName>\` |
 
-Override with `EVIL_PLUGIN_STORAGE_PATH` environment variable.
+Override with `BFW_PLUGIN_STORAGE_PATH` environment variable.
 
 ## Crash Recovery
 
@@ -460,7 +460,7 @@ Rapid successive changes (e.g., bulk enable/disable) are coalesced with a 500ms 
 
 ## Plugin Iframe Infrastructure
 
-Plugins render UI in sandboxed `<iframe>` elements served by `evil-webview://<pluginName>/`. `PluginHost` owns `PluginIframeManager`; `PluginIframe` validates `event.origin`. The iframe bridge is `acquireStudioApi()` (`postMessage` / `onMessage` / theme). Protocol registration, CSP, path traversal checks, and the three surfaces (editor / pane / stub panel) are documented in [webviews.md](webviews.md) — do not duplicate that protocol here.
+Plugins render UI in sandboxed `<iframe>` elements served by `bifrostfw-webview://<pluginName>/`. `PluginHost` owns `PluginIframeManager`; `PluginIframe` validates `event.origin`. The iframe bridge is `acquireStudioApi()` (`postMessage` / `onMessage` / theme). Protocol registration, CSP, path traversal checks, and the three surfaces (editor / pane / stub panel) are documented in [webviews.md](webviews.md) — do not duplicate that protocol here.
 
 `webviewProtocol` is computed in the Electron main process, passed through window args into `Bifrost.env.webviewProtocol`, and read by `PluginHost`.
 
@@ -488,11 +488,11 @@ Plugins render UI in sandboxed `<iframe>` elements served by `evil-webview://<pl
 
 ### Webview / iframe boundary
 
-- **Per-plugin iframe origin isolation** — Each plugin's iframe runs at `evil-webview://<name>/`, preventing cross-plugin DOM/storage access and parent DOM access.
+- **Per-plugin iframe origin isolation** — Each plugin's iframe runs at `bifrostfw-webview://<name>/`, preventing cross-plugin DOM/storage access and parent DOM access.
 - **Iframe sandbox** — `allow-scripts allow-same-origin` only; top navigation, popups, modals, and forms are blocked.
 - **CSP response headers** — External script loading and network exfiltration blocked via `Content-Security-Policy`.
 - **Path traversal protection** — Protocol handler validates all resolved paths against the plugin's root directory.
-- **`ScopedPluginName`** — Maps npm scoped names (`@scope/name`) to safe hostname segments for `evil-webview://` origins.
+- **`ScopedPluginName`** — Maps npm scoped names (`@scope/name`) to safe hostname segments for `bifrostfw-webview://` origins.
 
 ## Plugins Module (Management UI)
 
@@ -624,7 +624,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/common/plugin-host/manifest/ApiVersionCheck.ts` | Shared | Semver compatibility check between plugin and Studio API versions |
 | `studio/src/bifrost/contracts/PluginApiVersion.ts` | Shared | `STUDIO_PLUGIN_API_VERSION` constant |
 | `studio-sdk/src/webview/studio-webview-theme.css` | Reference | Documentation-only CSS listing available `--theme-*` tokens |
-| `studio/test/fixtures/plugins/` | Tests | Integration-test plugin directory (`BFR_PLUGINS_DIR`); 39 discoverable packages |
+| `studio/test/fixtures/plugins/` | Tests | Integration-test plugin directory (`BFW_PLUGINS_DIR`); 39 discoverable packages |
 | `studio/test/fixtures/plugins/build-ts-fixtures.mjs` | Tests | Compiles `text-file-editors` and `webview-showcase` (`tsc` + webview esbuild); invoked by `npm run build:plugin-fixtures` |
 | `studio/src/modules/plugins/index.ts` | Renderer | Plugins module entry, registers pane/commands/settings/document type |
 | `studio/src/modules/plugins/PluginsPaneRenderer.tsx` | Renderer | Pane UI with refresh header icon, subscribes to `bifrost.plugins.on(EVENT_PLUGIN_LIST_CHANGED)` |

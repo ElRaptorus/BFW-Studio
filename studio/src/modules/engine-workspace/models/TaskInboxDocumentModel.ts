@@ -2,15 +2,16 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import { FlowNodeInstanceState, FlowNodeType } from '@elraptorus/daemonengine_sdk';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import { FlowNodeInstanceState, FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 import type {
   FlowNodeInstance,
   FlowNodeInstanceField,
   FlowNodeInstanceFilter,
   OffsetPageInfo,
   SortClause,
-} from '@elraptorus/daemonengine_sdk';
+} from '@elraptorus/bfw_engine_sdk';
 
 import { TASK_INBOX_PENDING_COUNTS_KEY } from '../constants/sharedResourceKeys';
 
@@ -46,7 +47,7 @@ const PAGE_SIZE = 50;
 export class TaskInboxDocumentModel extends EditorDocumentModel {
   private studio: Bifrost;
   private connectionManager: EngineConnectionManager;
-  private client: DaemonEngineClient | null;
+  private client: BfwEngineClient | null;
   private engineId: string;
   private selectedTask: FlowNodeInstance | null = null;
   private selectionRevision = 0;

@@ -8,8 +8,8 @@ import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
 import React, { useCallback, useState } from 'react';
 
-import type { SelectOption } from '@evil/bifrost_fw_sdk';
-import { PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { SelectOption } from '@elraptorus/bfw_studio_sdk';
+import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
 import { DMN_AGGREGATIONS, DMN_HIT_POLICIES, type DmnAggregation, type DmnHitPolicy } from '../../../DmnElementTypes';

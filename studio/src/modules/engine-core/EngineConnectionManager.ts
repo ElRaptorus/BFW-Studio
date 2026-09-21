@@ -1,7 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
-import { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import type { EngineInfoResponse } from '@elraptorus/daemonengine_sdk';
+
+import { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import type { EngineInfoResponse } from '@elraptorus/bfw_engine_sdk';
 
 import { JwtIdentityManager } from './JwtIdentityManager';
 import { SETTINGS_KEYS } from './settings/registerSettings';
@@ -21,7 +22,7 @@ interface ManagedEngine {
   url: string;
   displayName: string;
   state: EngineConnectionState;
-  client: DaemonEngineClient;
+  client: BfwEngineClient;
   info: EngineInfoResponse | null;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
   reconnectAttempts: number;
@@ -53,7 +54,7 @@ export class EngineConnectionManager extends AbstractEmitter {
     const engineId = existingEngine?.engineId ?? config.engineId ?? generateEngineId();
     const displayName = config.displayName ?? url;
 
-    const client = new DaemonEngineClient(url, this.identity.createTokenFactory(url));
+    const client = new BfwEngineClient(url, this.identity.createTokenFactory(url));
 
     const managed: ManagedEngine = {
       engineId,
@@ -139,11 +140,11 @@ export class EngineConnectionManager extends AbstractEmitter {
     return Array.from(this.engines.values()).map((engine) => this.toPublicConnection(engine));
   }
 
-  getClient(engineId: string): DaemonEngineClient | null {
+  getClient(engineId: string): BfwEngineClient | null {
     return this.engines.get(engineId)?.client ?? null;
   }
 
-  getClientByUrl(url: string): DaemonEngineClient | null {
+  getClientByUrl(url: string): BfwEngineClient | null {
     const managed = this.findByUrl(normalizeUrl(url));
     return managed?.client ?? null;
   }

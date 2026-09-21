@@ -4,7 +4,7 @@ import { join, resolve } from 'path';
 import * as BuildInfo from '../../generatedBuildAndProductInfo';
 import { ReleaseChannelName } from '../common/Environment';
 
-const HOME_DIRNAME = '.evil';
+const HOME_DIRNAME = '.bifrostfw';
 
 export const BIFROST_APP_STORAGE_FILENAME = 'app.json';
 
@@ -26,14 +26,14 @@ export function getBifrostAppStorageFilename(): string {
 
 /**
  * Returns the directory where plugins are stored.
- * If `BFR_PLUGINS_DIR` is set, that value takes precedence (no
+ * If `BFW_PLUGINS_DIR` is set, that value takes precedence (no
  * channel-awareness needed because the user is explicitly overriding).
  * Otherwise falls back to `<bifrostHomeDir>/plugins`, which is
  * release-channel aware via {@link getBifrostHomeDir}.
  */
 export function getPluginsDir(): string {
-  if (process.env.BFR_PLUGINS_DIR) {
-    return resolve(process.env.BFR_PLUGINS_DIR);
+  if (process.env.BFW_PLUGINS_DIR) {
+    return resolve(process.env.BFW_PLUGINS_DIR);
   }
   return join(getBifrostHomeDir(), 'plugins');
 }

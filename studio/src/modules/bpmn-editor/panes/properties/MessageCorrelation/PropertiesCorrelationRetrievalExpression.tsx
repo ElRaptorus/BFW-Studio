@@ -9,8 +9,8 @@ import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
 import React, { useEffect, useState } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
-import { OneLineFeelEditor } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
+import { OneLineFeelEditor } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import {

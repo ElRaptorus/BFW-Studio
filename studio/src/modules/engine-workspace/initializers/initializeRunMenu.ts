@@ -11,7 +11,7 @@ import {
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Menu, MenuItem } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
 const DEPLOYABLE_EXTENSIONS = ['.bpmn', '.dmn'];
 

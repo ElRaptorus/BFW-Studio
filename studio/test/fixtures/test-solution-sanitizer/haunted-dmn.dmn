@@ -6,7 +6,7 @@
   xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
   id="Definitions_haunted"
   name="Haunted DMN"
-  namespace="https://evilengine.dev/schema/dmn/haunted">
+  namespace="https://bifrostforge.world/schema/dmn/haunted">
 
   <!-- Unreferenced import: never used by any requirement href -->
   <import id="Import_unused" name="UnusedImport" namespace="https://example.com/unused-model" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />

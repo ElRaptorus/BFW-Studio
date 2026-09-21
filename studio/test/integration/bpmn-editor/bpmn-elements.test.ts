@@ -2888,8 +2888,8 @@ describe('bpmn/elements', () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.assertVisible('[data-test--mi-evil-input-collection-input]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.clickOnCodeEditor('[data-test--mi-evil-input-collection-input]');
+    await studioAgent.assertVisible('[data-test--mi-bfw-input-collection-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnCodeEditor('[data-test--mi-bfw-input-collection-input]');
     await studioAgent.sendKeyboardInput([...newInputCollection.split('')]);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
@@ -2899,7 +2899,7 @@ describe('bpmn/elements', () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const inputCollection = await studioAgent.getCodeEditorText('[data-test--mi-evil-input-collection-input]');
+    const inputCollection = await studioAgent.getCodeEditorText('[data-test--mi-bfw-input-collection-input]');
     assert.strictEqual(inputCollection, newInputCollection);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -2922,8 +2922,8 @@ describe('bpmn/elements', () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    await studioAgent.assertVisible('[data-test--mi-evil-output-collection-input]', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.clickOnCodeEditor('[data-test--mi-evil-output-collection-input]');
+    await studioAgent.assertVisible('[data-test--mi-bfw-output-collection-input]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnCodeEditor('[data-test--mi-bfw-output-collection-input]');
     await studioAgent.sendKeyboardInput([...newOutputCollection.split('')]);
 
     await studioAgent.selectBpmnElementByIdAndWaitForElement(startEvent);
@@ -2933,7 +2933,7 @@ describe('bpmn/elements', () => {
       ASSERT_VISIBLE_TIMEOUT,
     );
 
-    const outputCollection = await studioAgent.getCodeEditorText('[data-test--mi-evil-output-collection-input]');
+    const outputCollection = await studioAgent.getCodeEditorText('[data-test--mi-bfw-output-collection-input]');
     assert.strictEqual(outputCollection, newOutputCollection);
 
     await studioAgent.assertNoErrorsPresentAndIdle();

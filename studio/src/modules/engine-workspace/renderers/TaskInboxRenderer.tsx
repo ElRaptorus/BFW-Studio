@@ -34,9 +34,10 @@ import {
   resolveHealthState,
 } from '#modules/engine-core';
 import type { AutoRefreshInterval } from '#modules/engine-core';
-import type { FlowNodeInstance, FlowNodeInstanceField, SortClause } from '@elraptorus/daemonengine_sdk';
 
 import React, { useCallback, useMemo, useState } from 'react';
+
+import type { FlowNodeInstance, FlowNodeInstanceField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
 import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';

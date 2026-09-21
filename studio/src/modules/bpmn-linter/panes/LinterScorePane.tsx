@@ -114,7 +114,7 @@ function LinterScorePaneContent(props: PaneComponentProps): React.JSX.Element | 
   }
 
   const policyUsed = snapshot.scorePolicyUsed;
-  const isForeignButAllowed = diagramOrigin != null && diagramOrigin.origin !== 'daemon-engine' && !foreignBlocked;
+  const isForeignButAllowed = diagramOrigin != null && diagramOrigin.origin !== 'bfw-engine' && !foreignBlocked;
 
   return (
     <PaneBody>

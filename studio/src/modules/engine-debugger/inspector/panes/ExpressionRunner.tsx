@@ -2,12 +2,12 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import { FeelSimulatorEditor } from '#components/feel-simulator';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
-import type { FlowNode as BpmnFlowNode } from '@elraptorus/daemonengine_sdk';
 
 import React, { useMemo } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNode as BpmnFlowNode } from '@elraptorus/bfw_engine_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/SelectableElement';

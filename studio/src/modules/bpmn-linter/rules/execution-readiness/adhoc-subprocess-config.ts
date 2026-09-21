@@ -19,7 +19,7 @@ function getExtensionBody(parent: ModdleNode, type: string): string | undefined 
 /**
  * Execution-readiness checks for Ad-hoc Sub-Processes. Mirrors the engine's
  * deploy-time validator (AH-D18: sequential engine-managed ad-hoc requires
- * evil:ActiveElements to establish a deterministic execution order).
+ * bfw:ActiveElements to establish a deterministic execution order).
  */
 export default function () {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
@@ -33,7 +33,7 @@ export default function () {
     const implementation = node.implementation != null ? String(node.implementation).trim() : '';
     const hasImplementationAttr = node.implementation != null;
 
-    const activeElements = getExtensionBody(node, 'evil:ActiveElements');
+    const activeElements = getExtensionBody(node, 'bfw:ActiveElements');
     const hasActiveElements = activeElements != null && activeElements.trim() !== '';
 
     if (completionConditionBody === '' && implementation === '') {
@@ -52,7 +52,7 @@ export default function () {
     if (ordering === 'Sequential' && implementation === '' && !hasActiveElements) {
       reporter.report(
         node.id,
-        'Sequential ad-hoc subprocess requires an evil:ActiveElements expression to determine execution order (or set an implementation for plugin-managed mode) (EXR-014)',
+        'Sequential ad-hoc subprocess requires an bfw:ActiveElements expression to determine execution order (or set an implementation for plugin-managed mode) (EXR-014)',
       );
     }
 

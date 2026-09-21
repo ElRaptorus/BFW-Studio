@@ -10,8 +10,8 @@ import { LoopCharacteristics } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React, { useEffect, useState } from 'react';
 
-import type { FeelEditorVariable } from '@evil/bifrost_fw_sdk';
-import { FeelEditor, PaneProperty } from '@evil/bifrost_fw_sdk';
+import type { FeelEditorVariable } from '@elraptorus/bfw_studio_sdk';
+import { FeelEditor, PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type BpmnDocumentModel from '../../../BpmnDocumentModel';
 import { getLoopCharacteristicType, isActivityType } from '../../PropertiesPaneFunctions';
@@ -100,7 +100,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           fontSize={12}
           onChange={(value) => changeInputCollection(value)}
           variables={feelVariables}
-          htmlAttributes={{ 'data-test--mi-evil-input-collection-input': true }}
+          htmlAttributes={{ 'data-test--mi-bfw-input-collection-input': true }}
         />
       </div>
       <PaneProperty

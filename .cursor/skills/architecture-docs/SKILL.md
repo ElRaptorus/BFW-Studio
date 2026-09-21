@@ -192,7 +192,7 @@ Use this table to determine **which file to update** based on what you changed o
 | DMN editor, DRD views, DMN panes, DMN merge resolver | `dmn-editor.md` |
 | Plugin Host, SES, IPC, quarantine, PluginService | `plugin-host.md` |
 | `bifrostStudio` manifest schema, permissions, activation events | `plugin-manifest.md` |
-| Plugin iframe protocol, `evil-webview://`, `acquireStudioApi` | `webviews.md` |
+| Plugin iframe protocol, `bifrostfw-webview://`, `acquireStudioApi` | `webviews.md` |
 | Plugin BPMN overlays / palette / modeling / renderer modules | `plugin-bpmn-enrichment.md` |
 | Plugin DMN DRD enrichment | `plugin-dmn-enrichment.md` |
 | How to author/install a plugin (not method tables) | `docs/plugin-development-guide.md` |

@@ -45,8 +45,8 @@ type IssueType_EmptyExtensionElements = {
   category: 'empty-container';
   severity: 'warning';
 };
-type IssueType_EmptyEvilProperties = {
-  type: 'empty-evil-properties';
+type IssueType_EmptyBfwProperties = {
+  type: 'empty-bfw-properties';
   category: 'empty-container';
   severity: 'warning';
 };
@@ -71,7 +71,7 @@ export type SanitizerIssueType =
   | IssueType_DanglingSignalRef
   | IssueType_DanglingEscalationRef
   | IssueType_EmptyExtensionElements
-  | IssueType_EmptyEvilProperties;
+  | IssueType_EmptyBfwProperties;
 
 // --- Derived helper types ---
 

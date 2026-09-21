@@ -1,9 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
+
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import { DynamicUiComponentAdapter } from './DynamicUiComponentAdapter';
 

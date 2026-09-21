@@ -8,10 +8,10 @@ const SCRIPT_TASK_TYPE = 'bpmn:ScriptTask';
  *
  * - BusinessRuleTask: switching `implementation` between `"feel"` and `"dmn"`
  *   clears the properties belonging to the other mode.
- * - ScriptTask: setting `evil:scriptRef` clears the inline `<bpmn:script>`
+ * - ScriptTask: setting `bfw:scriptRef` clears the inline `<bpmn:script>`
  *   body, and vice versa.
  */
-function EvilMutualExclusionBehavior(this: any, eventBus: EventBus) {
+function BfwMutualExclusionBehavior(this: any, eventBus: EventBus) {
   function handlePostExecuted(event: any): void {
     const context = event.context;
     const element = context?.element;
@@ -44,7 +44,7 @@ function handleBusinessRuleTaskModeSwitch(businessObject: any, newImplementation
   }
 
   if (newImplementation === 'feel') {
-    removeExtensionsByType(extensionElements, ['evil:DecisionRef', 'evil:DecisionElementId']);
+    removeExtensionsByType(extensionElements, ['bfw:DecisionRef', 'bfw:DecisionElementId']);
   } else if (newImplementation === 'dmn') {
     if (businessObject.script != null) {
       businessObject.script = undefined;
@@ -56,10 +56,10 @@ function handleScriptTaskExclusion(businessObject: any, properties: Record<strin
   const extensionElements = businessObject.extensionElements?.values;
 
   if (properties.script != null && properties.script !== '' && extensionElements != null) {
-    removeExtensionsByType(extensionElements, ['evil:ScriptRef']);
+    removeExtensionsByType(extensionElements, ['bfw:ScriptRef']);
   }
 
-  const hasScriptRefSet = extensionElements?.some((extension: any) => extension.$type === 'evil:ScriptRef');
+  const hasScriptRefSet = extensionElements?.some((extension: any) => extension.$type === 'bfw:ScriptRef');
   if (hasScriptRefSet && businessObject.script != null) {
     businessObject.script = undefined;
   }
@@ -73,6 +73,6 @@ function removeExtensionsByType(extensionValues: any[], typesToRemove: string[])
   }
 }
 
-(EvilMutualExclusionBehavior as any).$inject = ['eventBus'];
+(BfwMutualExclusionBehavior as any).$inject = ['eventBus'];
 
-export default EvilMutualExclusionBehavior;
+export default BfwMutualExclusionBehavior;

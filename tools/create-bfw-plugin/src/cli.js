@@ -21,7 +21,7 @@ Usage: create-bfw-plugin [name] [options]
 Options:
   --webview          Include webview template (skip prompt)
   --minimal          No webview (skip prompt)
-  -o, --output DIR   Output directory (default: ~/.evil/studio/plugins)
+  -o, --output DIR   Output directory (default: ~/.bifrostfw/studio/plugins)
   -h, --help         Show this help message
 `);
   process.exit(0);

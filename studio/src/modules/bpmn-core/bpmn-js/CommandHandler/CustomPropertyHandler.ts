@@ -6,8 +6,8 @@ import { CmdHelper } from './Helper/CommmandHelper';
 
 const EXTENSION_ELEMENT_SELECTOR = 'extensionElements';
 const MODDLE_BPMN_EXTENSION_ELEMENT_TYPE = 'bpmn:ExtensionElements';
-const MODDLE_PROPERTIES_TYPE = 'evil:Properties';
-const MODDLE_PROPERTY_TYPE = 'evil:Property';
+const MODDLE_PROPERTIES_TYPE = 'bfw:Properties';
+const MODDLE_PROPERTY_TYPE = 'bfw:Property';
 
 export function CustomPropertyHandler(this: any, commandStack: CommandStack, bpmnFactory: any): void {
   this.commandStack = commandStack;

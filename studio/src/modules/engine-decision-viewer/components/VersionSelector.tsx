@@ -1,6 +1,6 @@
-import type { DecisionDefinition } from '@elraptorus/daemonengine_sdk';
-
 import React from 'react';
+
+import type { DecisionDefinition } from '@elraptorus/bfw_engine_sdk';
 
 import './VersionSelector.scss';
 

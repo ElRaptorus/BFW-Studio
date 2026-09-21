@@ -35,8 +35,8 @@ const connection = new PluginHostConnection((msg) => {
 });
 
 function getPluginStoragePath(): string {
-  if (process.env.BFR_PLUGIN_STORAGE_PATH) {
-    return path.resolve(process.env.BFR_PLUGIN_STORAGE_PATH);
+  if (process.env.BFW_PLUGIN_STORAGE_PATH) {
+    return path.resolve(process.env.BFW_PLUGIN_STORAGE_PATH);
   }
 
   const platform = os.platform();
@@ -50,7 +50,7 @@ function getPluginStoragePath(): string {
     cacheBase = process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), '.cache');
   }
 
-  const channel = process.env.BFR_STUDIO_CHANNEL ?? 'dev';
+  const channel = process.env.BFW_STUDIO_CHANNEL ?? 'dev';
   return path.join(cacheBase, `bifrost-forge-world-${channel}`, 'plugin-storage');
 }
 

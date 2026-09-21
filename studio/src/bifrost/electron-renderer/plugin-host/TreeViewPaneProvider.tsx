@@ -7,7 +7,7 @@ import { PaneHeader } from '#components/panes/PaneHeader';
 
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { type PluginTreeBadge, type PluginTreeItem } from '@evil/bifrost_fw_sdk';
+import { type PluginTreeBadge, type PluginTreeItem } from '@elraptorus/bfw_studio_sdk';
 
 export interface TreeViewPaneProviderContext {
   pluginName: string;

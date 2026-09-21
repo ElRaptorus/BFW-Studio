@@ -323,15 +323,15 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
     this.disposed = false;
     this.ready = false;
 
-    const hostScript = path.resolve(process.env.__BFR_BUNDLE_DIR__!, 'plugin-host.js');
+    const hostScript = path.resolve(process.env.__BFW_BUNDLE_DIR__!, 'plugin-host.js');
 
     this.childProcess = fork(hostScript, [], {
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
-        BFR_PLUGINS_DIR: process.env.BFR_PLUGINS_DIR ?? '',
-        BFR_PLUGIN_STORAGE_PATH: process.env.BFR_PLUGIN_STORAGE_PATH ?? '',
+        BFW_PLUGINS_DIR: process.env.BFW_PLUGINS_DIR ?? '',
+        BFW_PLUGIN_STORAGE_PATH: process.env.BFW_PLUGIN_STORAGE_PATH ?? '',
       },
     });
 

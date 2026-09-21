@@ -1,6 +1,6 @@
 import type { EngineConnectionManager } from '#modules/engine-core';
 
-/** Timer Start Event schedule (REST `/timer-schedules` — not yet on DaemonEngineClient). */
+/** Timer Start Event schedule (REST `/timer-schedules` — not yet on BfwEngineClient). */
 export interface TimerSchedule {
   id: string;
   processModelId: string;

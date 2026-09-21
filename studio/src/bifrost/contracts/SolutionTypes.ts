@@ -19,13 +19,13 @@ export type Solution = {
   projects: Project[];
 
   /**
-   * URI of the `.essln` file that defines this solution.
+   * URI of the `.bfwsln` file that defines this solution.
    * `undefined` for single-folder solutions that have not been saved to a file.
    */
   solutionFileUri?: string;
 
   /**
-   * `true` when this solution was opened from an `.essln` file or promoted
+   * `true` when this solution was opened from an `.bfwsln` file or promoted
    * to multi-root via "Add Folder". Explicit solutions always show project
    * root entries in the tree, even when only one project remains.
    */

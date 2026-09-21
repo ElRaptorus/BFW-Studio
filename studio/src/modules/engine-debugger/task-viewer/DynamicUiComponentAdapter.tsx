@@ -4,9 +4,10 @@ import { EditorContent } from '#components/editor/EditorContent';
 import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
 import { FormActionPreset, FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import type { FlowNodeInstance } from '@elraptorus/daemonengine_sdk';
 
 import React from 'react';
+
+import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import { FormRenderer } from '../../bpmn-core/form-renderer';
 import './DynamicUiComponentAdapter.scss';

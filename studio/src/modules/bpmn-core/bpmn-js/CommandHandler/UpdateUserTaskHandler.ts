@@ -3,13 +3,13 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { findEvilExtension, setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { findBfwExtension, setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 import { generateRandomId } from './Utils/Utils';
 
-const EVIL_FORM_FIELDS_TYPE = 'evil:FormFields';
+const BFW_FORM_FIELDS_TYPE = 'bfw:FormFields';
 
 /**
- * Internal form field shape stored as JSON inside evil:FormFields.
+ * Internal form field shape stored as JSON inside bfw:FormFields.
  */
 type FormFieldEntry = {
   id: string;
@@ -22,7 +22,7 @@ type FormFieldEntry = {
 
 function readFormFields(element: ElementLike): FormFieldEntry[] {
   const businessObject = getBusinessObject(element);
-  const extension = findEvilExtension(businessObject, EVIL_FORM_FIELDS_TYPE);
+  const extension = findBfwExtension(businessObject, BFW_FORM_FIELDS_TYPE);
   if (extension?.body == null || extension.body.trim() === '') {
     return [];
   }
@@ -35,7 +35,7 @@ function readFormFields(element: ElementLike): FormFieldEntry[] {
 
 function writeFormFieldsCommands(element: ElementLike, bpmnFactory: any, formFields: FormFieldEntry[]): any[] {
   const serialized = formFields.length > 0 ? JSON.stringify(formFields) : null;
-  return setEvilBodyExtension(element, bpmnFactory, EVIL_FORM_FIELDS_TYPE, serialized);
+  return setBfwBodyExtension(element, bpmnFactory, BFW_FORM_FIELDS_TYPE, serialized);
 }
 
 export function UpdateUserTaskHandler(this: any, commandStack: CommandStack, bpmnFactory: any): void {

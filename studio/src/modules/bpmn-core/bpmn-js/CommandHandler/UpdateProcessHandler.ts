@@ -3,7 +3,7 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type Modeling from 'diagram-js/lib/features/modeling/Modeling';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { setEvilBodyExtension } from './Utils/EvilExtensionHelper';
+import { setBfwBodyExtension } from './Utils/BfwExtensionHelper';
 
 const MODDLE_BPMN_PARTICIPANT_TYPE = 'bpmn:Participant';
 const MODDLE_BPMN_PROCESS_SELECTOR = 'processRef';
@@ -46,11 +46,11 @@ UpdateProcessHandler.prototype.preExecute = function (context: any) {
   const processElement = element.type === MODDLE_BPMN_PARTICIPANT_TYPE ? { businessObject: businessObject } : element;
 
   if (newVersion !== undefined) {
-    commands.push(...setEvilBodyExtension(processElement, this.bpmnFactory, 'evil:Version', newVersion));
+    commands.push(...setBfwBodyExtension(processElement, this.bpmnFactory, 'bfw:Version', newVersion));
   }
 
   if (newCorrelationKey !== undefined) {
-    commands.push(...setEvilBodyExtension(processElement, this.bpmnFactory, 'evil:CorrelationKey', newCorrelationKey));
+    commands.push(...setBfwBodyExtension(processElement, this.bpmnFactory, 'bfw:CorrelationKey', newCorrelationKey));
   }
 
   const commandToExecute = CmdHelper.executeMultipleCommands(commands);

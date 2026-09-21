@@ -5,10 +5,11 @@ import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
-import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/daemonengine_sdk';
 
 import React, { useEffect, useState } from 'react';
+
+import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs/index';

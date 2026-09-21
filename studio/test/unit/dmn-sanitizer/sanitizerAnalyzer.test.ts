@@ -137,7 +137,7 @@ describe('DmnSanitizerAnalyzer', () => {
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
   xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
   xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
-  id="Definitions_clean" name="Clean DMN" namespace="https://evilengine.dev/test">
+  id="Definitions_clean" name="Clean DMN" namespace="https://bifrostforge.world/test">
   <decision id="Decision_1" name="Simple Decision">
     <variable id="Var_1" name="result" typeRef="string" />
     <literalExpression id="LE_1"><text>"ok"</text></literalExpression>

@@ -9,8 +9,8 @@ import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
 import React, { useMemo } from 'react';
 
-import type { PropertyValidationResult } from '@evil/bifrost_fw_sdk';
-import { PaneProperty, validatePropertyNotEmpty } from '@evil/bifrost_fw_sdk';
+import type { PropertyValidationResult } from '@elraptorus/bfw_studio_sdk';
+import { PaneProperty, validatePropertyNotEmpty } from '@elraptorus/bfw_studio_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
 import { DmnElementType } from '../../../DmnElementTypes';

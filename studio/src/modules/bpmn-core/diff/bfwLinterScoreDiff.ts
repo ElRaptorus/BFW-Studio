@@ -1,5 +1,5 @@
-const BFR_PROPERTIES_TYPE = 'evil:Properties';
-const BFR_LINTER_SCORE_TYPE = 'evil:LinterRulesetScore';
+const BFW_PROPERTIES_TYPE = 'bfw:Properties';
+const BFW_LINTER_SCORE_TYPE = 'bfw:LinterRulesetScore';
 
 export type LinterScoreChangeKind = 'added' | 'removed' | 'changed';
 
@@ -16,7 +16,7 @@ export type LinterScoreChange = {
   propertyChanges: LinterScorePropertyDelta[];
 };
 
-/** Properties compared per `evil:LinterRulesetScore` entry. */
+/** Properties compared per `bfw:LinterRulesetScore` entry. */
 const DIFFED_PROPERTIES: readonly { key: string; label: string }[] = [
   { key: 'scorePercent', label: 'Score (%)' },
   { key: 'complianceStatus', label: 'Compliance' },
@@ -37,16 +37,16 @@ function extractLinterScoresFromDefinitions(definitions: any): ScoresByRuleset {
     return {};
   }
 
-  const evilProps = extensionElements.values.find((value: any) => value.$type === BFR_PROPERTIES_TYPE);
-  if (evilProps == null) {
+  const bfwProps = extensionElements.values.find((value: any) => value.$type === BFW_PROPERTIES_TYPE);
+  if (bfwProps == null) {
     return {};
   }
 
   const scores: ScoresByRuleset = {};
-  const scoreEntries = evilProps.linterRulesetScores ?? evilProps.values ?? [];
+  const scoreEntries = bfwProps.linterRulesetScores ?? bfwProps.values ?? [];
 
   for (const entry of scoreEntries) {
-    if (entry.$type !== BFR_LINTER_SCORE_TYPE || entry.rulesetId == null) {
+    if (entry.$type !== BFW_LINTER_SCORE_TYPE || entry.rulesetId == null) {
       continue;
     }
 

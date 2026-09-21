@@ -7,16 +7,17 @@ import type {
   FniSnapshot,
   ProcessInstanceSnapshot,
 } from '#modules/engine-core';
-import type { DaemonEngineClient } from '@elraptorus/daemonengine_client';
-import { FlowNodeType } from '@elraptorus/daemonengine_sdk';
+import debounce from 'lodash.debounce';
+
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 import type {
   DataObjectValue,
   FlowNodeInstance,
   FlowNodeInstanceField,
   ProcessInstanceField,
-} from '@elraptorus/daemonengine_sdk';
-import type { BpmnDefinitions, BpmnProcess } from '@elraptorus/daemonengine_sdk';
-import debounce from 'lodash.debounce';
+} from '@elraptorus/bfw_engine_sdk';
+import type { BpmnDefinitions, BpmnProcess } from '@elraptorus/bfw_engine_sdk';
 
 import type { DebuggerBaseError, DebuggerProcessInstance } from '../types/DebuggerTypes';
 
@@ -256,7 +257,7 @@ export class EngineAdapter {
     this.compensatedActivities = currentSnapshot.compensatedActivities;
   }
 
-  private async loadProcessWithXml(client: DaemonEngineClient): Promise<void> {
+  private async loadProcessWithXml(client: BfwEngineClient): Promise<void> {
     await this.loadProcessWithModelGraph(client);
     await this.loadEmbeddedSubprocessChildFnis(client);
 
@@ -273,13 +274,13 @@ export class EngineAdapter {
    * every FNI. Missing `processModel` is a hard error — there is no XML-parse
    * path. Canvas rendering still uses `bpmnXml`.
    *
-   * The query is built by `@elraptorus/daemonengine_client` from SDK
+   * The query is built by `@elraptorus/bfw_engine_client` from SDK
    * `buildProcessModelSelection` / `buildFlowNodeSelection`. Types with no
    * extra fields (TaskNode, ParallelGatewayNode, EventBasedGatewayNode) must
    * not appear as empty `... on Type { }` fragments — Absinthe rejects those
    * as `syntax error before: '}'`.
    */
-  private async loadProcessWithModelGraph(client: DaemonEngineClient): Promise<void> {
+  private async loadProcessWithModelGraph(client: BfwEngineClient): Promise<void> {
     const [record, dataObjectPage] = await Promise.all([
       client.graphql.getProcessInstanceWithModel(this.processInstanceId, {
         fields: [...PROCESS_INSTANCE_MODEL_FIELDS],
@@ -545,7 +546,7 @@ export class EngineAdapter {
    * Returns the list of newly added FNIs so callers can trigger
    * incremental overlay refresh instead of a full rebuild.
    */
-  private async loadEmbeddedSubprocessChildFnis(client: DaemonEngineClient): Promise<FlowNodeInstance[]> {
+  private async loadEmbeddedSubprocessChildFnis(client: BfwEngineClient): Promise<FlowNodeInstance[]> {
     const loadedPiIds = new Set(this.flowNodeInstances.map((fni) => fni.processInstanceId));
     let childPiIds = this.collectSubprocessChildPiIds(this.flowNodeInstances).filter((id) => !loadedPiIds.has(id));
     const allNewFnis: FlowNodeInstance[] = [];

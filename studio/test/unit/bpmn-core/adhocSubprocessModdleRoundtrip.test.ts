@@ -1,12 +1,12 @@
 import { BpmnModdle } from 'bpmn-moddle';
 import { describe, expect, it } from 'vitest';
 
-import evilPlatformModdleDescriptor from '../../../src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
+import bfwPlatformModdleDescriptor from '../../../src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
 
 // Regression coverage for the Ad-hoc Sub-Process moddle schema. `ordering` and
 // `cancelRemainingInstances` are declared by upstream bpmn-moddle, but `implementation`
 // is an engine-specific addition that is NOT part of the standard BPMN AdHocSubProcess
-// schema. Without an explicit "extends" entry in evil-platform.json, setting
+// schema. Without an explicit "extends" entry in bfw-platform.json, setting
 // `businessObject.implementation` in the editor is silently dropped by the XML writer —
 // the property survives in memory for the current session but is lost on save, and never
 // comes back on the next load. This test parses -> serializes -> re-parses to catch that
@@ -14,13 +14,13 @@ import evilPlatformModdleDescriptor from '../../../src/modules/bpmn-core/bpmn-js
 const XML = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions
   xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-  xmlns:evil="https://evilengine.dev/schema/bpmn"
+  xmlns:bfw="https://bifrostforge.world/schema/bpmn"
   id="Definitions_1"
-  targetNamespace="https://evilengine.dev/schema/bpmn">
+  targetNamespace="https://bifrostforge.world/schema/bpmn">
   <bpmn:process id="process_1" isExecutable="true">
     <bpmn:adHocSubProcess id="AdHoc_1" name="Toolbox" ordering="Sequential" cancelRemainingInstances="false">
       <bpmn:extensionElements>
-        <evil:ActiveElements>["Task_1", "Task_2"]</evil:ActiveElements>
+        <bfw:ActiveElements>["Task_1", "Task_2"]</bfw:ActiveElements>
       </bpmn:extensionElements>
       <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">activeCount = 0</bpmn:completionCondition>
       <bpmn:task id="Task_1" />
@@ -30,11 +30,11 @@ const XML = `<?xml version="1.0" encoding="UTF-8"?>
 </bpmn:definitions>`;
 
 function createModdle(): InstanceType<typeof BpmnModdle> {
-  return new BpmnModdle({ evil: evilPlatformModdleDescriptor });
+  return new BpmnModdle({ bfw: bfwPlatformModdleDescriptor });
 }
 
 describe('Ad-hoc Sub-Process moddle roundtrip', () => {
-  it('parses every standard and evil: property from XML', async () => {
+  it('parses every standard and bfw: property from XML', async () => {
     const moddle = createModdle();
     const { rootElement } = await moddle.fromXML(XML);
     const adHoc = rootElement.rootElements[0].flowElements[0];
@@ -43,7 +43,7 @@ describe('Ad-hoc Sub-Process moddle roundtrip', () => {
     expect(adHoc.cancelRemainingInstances).toBe(false);
     expect(adHoc.completionCondition?.body).toBe('activeCount = 0');
 
-    const activeElements = adHoc.extensionElements?.values?.find((value: any) => value.$type === 'evil:ActiveElements');
+    const activeElements = adHoc.extensionElements?.values?.find((value: any) => value.$type === 'bfw:ActiveElements');
     expect(activeElements?.body).toBe('["Task_1", "Task_2"]');
   });
 
@@ -70,14 +70,14 @@ describe('Ad-hoc Sub-Process moddle roundtrip', () => {
     expect(reparsedAdHoc.completionCondition?.body).toBe('activeCount = 0');
   });
 
-  it('round-trips ordering, cancelRemainingInstances, and evil:ActiveElements changes', async () => {
+  it('round-trips ordering, cancelRemainingInstances, and bfw:ActiveElements changes', async () => {
     const moddle = createModdle();
     const { rootElement } = await moddle.fromXML(XML);
     const adHoc = rootElement.rootElements[0].flowElements[0];
 
     adHoc.ordering = 'Parallel';
     adHoc.cancelRemainingInstances = true;
-    const activeElements = adHoc.extensionElements.values.find((value: any) => value.$type === 'evil:ActiveElements');
+    const activeElements = adHoc.extensionElements.values.find((value: any) => value.$type === 'bfw:ActiveElements');
     activeElements.body = '["Task_2"]';
 
     const { xml } = await moddle.toXML(rootElement);
@@ -88,7 +88,7 @@ describe('Ad-hoc Sub-Process moddle roundtrip', () => {
     expect(reparsedAdHoc.ordering).toBe('Parallel');
     expect(reparsedAdHoc.cancelRemainingInstances).toBe(true);
     const reparsedActiveElements = reparsedAdHoc.extensionElements.values.find(
-      (value: any) => value.$type === 'evil:ActiveElements',
+      (value: any) => value.$type === 'bfw:ActiveElements',
     );
     expect(reparsedActiveElements?.body).toBe('["Task_2"]');
   });

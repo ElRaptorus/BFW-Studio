@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:evil="https://evilengine.dev/schema/bpmn" id="Definition_e8b5c94a-c3e9-473c-ac41-5a58fb85edf0" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definition_e8b5c94a-c3e9-473c-ac41-5a58fb85edf0" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <bpmn:extensionElements>
-    <evil:properties>
-      <evil:linterRulesetScore rulesetId="bpmn-development" scorePercent="100" complianceStatus="valid" computedAtIso="2026-06-14T20:51:08.629Z" schemaVersion="1" maxPoints="5" penaltyPoints="0" rawErrorFindings="0" rawWarningFindings="0" />
-      <evil:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="100" complianceStatus="valid" computedAtIso="2026-06-14T20:51:12.712Z" schemaVersion="1" maxPoints="5" penaltyPoints="0" rawErrorFindings="0" rawWarningFindings="0" />
-    </evil:properties>
+    <bfw:properties>
+      <bfw:linterRulesetScore rulesetId="bpmn-development" scorePercent="100" complianceStatus="valid" computedAtIso="2026-06-14T20:51:08.629Z" schemaVersion="1" maxPoints="5" penaltyPoints="0" rawErrorFindings="0" rawWarningFindings="0" />
+      <bfw:linterRulesetScore rulesetId="bpmn-production-ready" scorePercent="100" complianceStatus="valid" computedAtIso="2026-06-14T20:51:12.712Z" schemaVersion="1" maxPoints="5" penaltyPoints="0" rawErrorFindings="0" rawWarningFindings="0" />
+    </bfw:properties>
   </bpmn:extensionElements>
   <bpmn:collaboration id="Collaboration_1cidyxu" name="">
     <bpmn:participant id="Participant_0px403d" name="custom-properties-test" processRef="custom-properties-test" />
   </bpmn:collaboration>
   <bpmn:process id="custom-properties-test" name="custom-properties-test" isExecutable="true">
     <bpmn:extensionElements>
-      <evil:version>1</evil:version>
+      <bfw:version>1</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet>
       <bpmn:lane id="Lane_1xzf0d3" name="Lane">
@@ -21,13 +21,13 @@
     </bpmn:laneSet>
     <bpmn:startEvent id="StartEvent_1" name="Start Event">
       <bpmn:extensionElements>
-        <evil:properties>
-          <evil:property name="name1" value="value1" />
-          <evil:property name="name2" value="value2" />
-          <evil:property name="empty value" value="" />
-          <evil:property name="" value="empty name" />
-          <evil:property name="studio.defaultCustomStartToken" value="{&#10;  &#34;hamlo&#34;: &#34;i bims&#34;,&#10;  &#34;wurst&#34;: &#34;wasser&#34;&#10;}" />
-        </evil:properties>
+        <bfw:properties>
+          <bfw:property name="name1" value="value1" />
+          <bfw:property name="name2" value="value2" />
+          <bfw:property name="empty value" value="" />
+          <bfw:property name="" value="empty name" />
+          <bfw:property name="studio.defaultCustomStartToken" value="{&#10;  &#34;hamlo&#34;: &#34;i bims&#34;,&#10;  &#34;wurst&#34;: &#34;wasser&#34;&#10;}" />
+        </bfw:properties>
       </bpmn:extensionElements>
       <bpmn:outgoing>SequenceFlow_1jdocur</bpmn:outgoing>
     </bpmn:startEvent>

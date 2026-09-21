@@ -11,7 +11,7 @@ import type { AutoRefreshInterval } from '#modules/engine-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Menu, MenuItem_Command } from '@evil/bifrost_fw_sdk';
+import type { Menu, MenuItem_Command } from '@elraptorus/bfw_studio_sdk';
 
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
 import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';

@@ -1,17 +1,13 @@
-import * as daemonSdk from '@elraptorus/daemonengine_sdk';
 import { describe, expect, it } from 'vitest';
 
-import evilPlatformModdleDescriptor from '../../../src/modules/bpmn-core/bpmn-js/moddle/evil-platform.json';
+import { extensionManifest } from '@elraptorus/bfw_engine_sdk';
+
+import bfwPlatformModdleDescriptor from '../../../src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
 import {
   type ExtensionManifest,
   type ModdleDescriptor,
   verifyModdleConformance,
 } from '../../../src/modules/bpmn-core/moddle/verifyModdleConformance';
-
-function loadManifest(): ExtensionManifest | null {
-  const candidate = (daemonSdk as { extensionManifest?: ExtensionManifest }).extensionManifest;
-  return candidate ?? null;
-}
 
 describe('moddle ↔ extension-manifest conformance', () => {
   it('fails when the SDK has no manifest', () => {
@@ -124,13 +120,10 @@ describe('moddle ↔ extension-manifest conformance', () => {
   });
 
   it('asserts bidirectional conformance against the shipped SDK manifest', () => {
-    const manifest = loadManifest();
-    expect(manifest).not.toBeNull();
+    expect(extensionManifest).toBeDefined();
+    expect(Array.isArray(extensionManifest.elements)).toBe(true);
 
-    const result = verifyModdleConformance(
-      manifest as ExtensionManifest,
-      evilPlatformModdleDescriptor as ModdleDescriptor,
-    );
+    const result = verifyModdleConformance(extensionManifest, bfwPlatformModdleDescriptor as ModdleDescriptor);
     if (!result.ok) {
       const report = result.violations
         .map((violation) => `[${violation.direction}] ${violation.element}: ${violation.message}`)
