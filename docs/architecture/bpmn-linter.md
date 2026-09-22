@@ -174,7 +174,7 @@ type LintFinding = {
 bpmnlint's `reporter.report(id, message)` only supports a string message. The three-tier metadata is added post-lint by `LintEngine`, which looks up `why` and `suggestion` from:
 
 - `builtinRuleMetadata` (for built-in bpmnlint rules)
-- Co-exported metadata maps (for custom rules, future phases)
+- Co-exported metadata maps (for custom rules)
 
 ---
 
@@ -232,7 +232,7 @@ The engine executes Event Subprocesses (ESPs) and validates them at deploy time.
 
 | Rule | Path | Mirrors engine rule | Reports |
 |------|------|---------------------|---------|
-| `event-subprocess-no-flows` | `bpmn-spec/event-subprocess-no-flows.ts` | `event_subprocess_has_sequence_flow` | An ESP shell with any incoming/outgoing sequence flow (BSC-005). Previously `off`; now enabled in both profiles. |
+| `event-subprocess-no-flows` | `bpmn-spec/event-subprocess-no-flows.ts` | `event_subprocess_has_sequence_flow` | An ESP shell with any incoming/outgoing sequence flow (BSC-005). Enabled in both profiles. |
 | `event-subprocess-single-start-event` | `bpmn-spec/event-subprocess-single-start-event.ts` | `event_subprocess_no_start_event` + `event_subprocess_multiple_start_events` | An ESP with zero or more than one Start Event (BSC-013). |
 | `event-subprocess-start-event-type` | `bpmn-spec/event-subprocess-start-event-type.ts` | `event_subprocess_untyped_start` + `event_subprocess_error_start_must_interrupt` | An ESP Start Event whose trigger type is not in the allow-list (Message, Timer, Signal, Conditional, Error, Escalation) — e.g. Compensation (BSC-014); and a non-interrupting Error start (BSC-015). |
 
@@ -245,17 +245,17 @@ These `bpmn-spec` rules backstop the modeler's replace-menu gating for BPMN file
 | Rule | Path | Reports |
 |------|------|---------|
 | `escalation-boundary-host` | `bpmn-spec/escalation-boundary-host.ts` | A Boundary Event carrying `bpmn:EscalationEventDefinition` whose host is not a Call Activity or Sub-Process (BSC-016). `is(host, 'bpmn:SubProcess')` covers Transaction / Ad-Hoc sub-processes via moddle inheritance. Mirrors the escalation-boundary host restriction in `CustomPopupProvider.ts`. |
-| `cancel-event-transaction-scope` | `bpmn-spec/cancel-event-transaction-scope.ts` | A Cancel End Event whose parent is not a `bpmn:Transaction` (BSC-017), and a Cancel Boundary Event whose host is not a `bpmn:Transaction` (BSC-018). Because transaction sub-processes are not yet supported by the engine (and `bpmn:Transaction` was removed from the modeler whitelist), this effectively forbids all cancel events today; the transaction check keeps the rule forward-compatible so cancel events become valid automatically once transaction support lands. |
+| `cancel-event-transaction-scope` | `bpmn-spec/cancel-event-transaction-scope.ts` | A Cancel End Event whose parent is not a `bpmn:Transaction` (BSC-017), and a Cancel Boundary Event whose host is not a `bpmn:Transaction` (BSC-018). |
 | `top-level-start-event-type` | `bpmn-spec/top-level-start-event-type.ts` | A Start Event directly under a `bpmn:Process` whose trigger type is Error, Escalation, or Compensation (BSC-019). These require a surrounding scope instance and are only valid inside an Event Sub-Process. Conditional is intentionally **not** flagged (its top-level semantics are left unchanged for now). Defense-in-depth: redundant with the engine validator and the stock replace menu, useful mainly for imports. |
 
 ### Ad-hoc Sub-Process rules
 
-These rules mirror the engine's Ad-hoc Sub-Process deploy-time validator (AH-D7, AH-D15, AH-D18) plus advisory execution-readiness checks. Both are registered in `customRuleFactories`.
+These rules mirror the engine's Ad-hoc Sub-Process deploy-time validator, plus advisory execution-readiness checks. Both are registered in `customRuleFactories`.
 
 | Rule | Path | Category | `bpmn-development` | `bpmn-production-ready` | Reports |
 |------|------|----------|---------------------|--------------------------|---------|
-| `adhoc-subprocess-structure` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | Start Events inside an ad-hoc sub-process (BSC-021); End Events inside (BSC-021); zero inner activities (BSC-021); nested `bpmn:AdHocSubProcess` (BSC-021, mirrors the `is_transaction` nesting restriction); an ad-hoc sub-process inside an Event Sub-Process (BSC-021, AH-D15 — a platform decision, not a spec violation) |
-| `adhoc-subprocess-config` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | No `completionCondition` and no `implementation` (EXR-014 — informational: the subprocess auto-completes per AH-D9); an empty `implementation` attribute (EXR-014); `ordering="Sequential"` with no `implementation` and no `bfw:ActiveElements` (EXR-014, mirrors the engine's AH-D18 deploy-time rejection); no explicit `ordering` (EXR-014 — advisory, defaults to Parallel per AH-D5) |
+| `adhoc-subprocess-structure` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | Start Events inside an ad-hoc sub-process (BSC-021); End Events inside (BSC-021); zero inner activities (BSC-021); nested `bpmn:AdHocSubProcess` (BSC-021, mirrors the `is_transaction` nesting restriction); an ad-hoc sub-process inside an Event Sub-Process (BSC-021; a platform restriction, not a spec violation) |
+| `adhoc-subprocess-config` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | No `completionCondition` and no `implementation` (EXR-014 — informational: the subprocess auto-completes when every activity has been performed); an empty `implementation` attribute (EXR-014); `ordering="Sequential"` with no `implementation` and no `bfw:ActiveElements` (EXR-014; the engine rejects this at deploy time); no explicit `ordering` (EXR-014 — advisory, defaults to Parallel) |
 
 `adhoc-subprocess-structure` uses `is(node, 'bpmn:AdHocSubProcess')` from `bpmnlint-utils`, so it fires on the ad-hoc element itself (not its children) and inspects `node.flowElements` directly — the same pattern as the Event Subprocess structure rules above. `isInsideEventSubprocess` walks `$parent` looking for a `bpmn:SubProcess` with `triggeredByEvent === true`, so a nested ad-hoc-inside-embedded-inside-ESP diagram is still caught regardless of nesting depth.
 

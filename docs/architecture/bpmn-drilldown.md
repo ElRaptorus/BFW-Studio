@@ -241,7 +241,7 @@ The Engine Debugger combines bpmn-js drill-down with recursive child-PI FNI load
 The Engine creates a child Process Instance for each embedded subprocess activation (same pattern as Call Activity). The child PI's FNIs have `flowNodeId` values that match inner subprocess flow nodes in the parent BPMN diagram. The debugger leverages this by:
 
 1. Loading child-PI FNIs at startup (recursive, handles nested subprocesses)
-2. Receiving child-PI FNI events in real time via root-PI WebSocket fan-out (SP-13)
+2. Receiving child-PI FNI events in real time via root-PI WebSocket fan-out
 3. Rendering execution overlays on inner subprocess flow nodes alongside parent flow nodes
 
 ### Data Flow
@@ -258,7 +258,7 @@ Initial load:
     → Emit to document model
 
 Real-time updates:
-  Root PI WebSocket channel (SP-13 fan-out)
+  Root PI WebSocket channel (root-PI fan-out)
     → SubscribeThenSnapshot receives child FNI events
     → handleFniStarted/handleFniFinished (ID-based, PI-agnostic)
     → SubProcessChildStarted → handleSubProcessChild()

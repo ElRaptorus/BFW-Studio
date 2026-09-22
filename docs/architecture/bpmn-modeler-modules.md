@@ -169,13 +169,9 @@ These are diagram-js modules registered internally (not by plugins) that act as 
 `CustomPopupProvider` registers with the `bpmn-replace` popup menu and post-processes the replace/morph entries that stock bpmn-js offers for a selected element. It runs a pipeline in `getPopupMenuEntries`:
 
 1. `injectEventSubProcessEntry` — adds a direct "Event Sub-Process" morph entry for activity source types.
-2. `filterEntriesBySupportedBpmnElements` — drops entries whose target type/event-definition is not in the `SupportedBpmnElements` whitelist (`studio/src/modules/bpmn-core/bpmn-js/SupportedBpmnElements.ts`).
-3. `filterEventSubProcessDowngrades` — enforces the one-way trip: an Event Sub-Process cannot be morphed back down to a task / plain subprocess.
-4. `filterBoundaryEventHostRestrictions` — drops the escalation-boundary morph entries (`replace-with-escalation-boundary`, `replace-with-non-interrupting-escalation-boundary`) when the boundary event's host is not a Call Activity or Sub-Process. The host type is resolved via `element.host?.type ?? element.businessObject?.get('attachedToRef')?.$type`. Escalations bubble up from an inner scope, so an escalation boundary is only meaningful on those hosts.
-
-Each filter honours the `showUnsupportedElements` escape hatch: when the toggle is on, entries are returned unchanged.
-
-**Whitelist note:** `bpmn:Transaction` is intentionally **absent** from `SupportedBpmnElements`, because the engine does not support transaction sub-processes. As a consequence the Transaction morph entry is dropped, and — since stock bpmn-js only offers Cancel End / Cancel Boundary entries inside/on a Transaction scope — cancel events are unreachable in the menu today. If transaction support is added later, re-add `bpmn:Transaction` to the whitelist and to `ESCALATION_BOUNDARY_ALLOWED_HOST_TYPES` in `CustomPopupProvider.ts`.
+2. `filterEventSubProcessDowngrades` — an Event Sub-Process cannot be morphed back down to a task or a plain subprocess.
+3. `filterBoundaryEventHostRestrictions` — drops the escalation-boundary morph entries (`replace-with-escalation-boundary`, `replace-with-non-interrupting-escalation-boundary`) unless the boundary event's host is a Call Activity, Sub-Process, Transaction, or Ad-hoc Sub-Process. The host type is resolved via `element.host?.type ?? element.businessObject?.get('attachedToRef')?.$type`.
+4. `filterStartEventEntries` — drops none-start, compensation-start, and non-interrupting error-start replacements from the start-event menu.
 
 These menu restrictions are backstopped by the `bpmn-linter` rules `escalation-boundary-host`, `cancel-event-transaction-scope`, and `top-level-start-event-type` for BPMN files that never pass through the menu (imports, hand-edits, merges). See [bpmn-linter.md](bpmn-linter.md) §Event-type placement rules.
 
@@ -202,4 +198,3 @@ These menu restrictions are backstopped by the `bpmn-linter` rules `escalation-b
 | PluginContextPadProvider | `studio/src/modules/bpmn-core/plugin-contributions/PluginContextPadProvider.ts` |
 | PluginBpmnContributionStore | `studio/src/modules/bpmn-core/plugin-contributions/PluginBpmnContributionStore.ts` |
 | CustomPopupProvider (replace menu) | `studio/src/modules/bpmn-core/bpmn-js/Provider/CustomPopupProvider.ts` |
-| SupportedBpmnElements (morph whitelist) | `studio/src/modules/bpmn-core/bpmn-js/SupportedBpmnElements.ts` |

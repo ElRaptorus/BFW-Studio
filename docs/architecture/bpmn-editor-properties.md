@@ -209,9 +209,9 @@ Uses `bifrost.panes.prependToPaneGroup(area, groupId, panes[])`. Pane order with
 - `DefaultCustomStartToken`, `PropertiesExamplePayload`, `PropertiesExampleResult`
 - `PropertiesCustomAttributes` — name/value rows for `bfw:property`. Names in `getInternalCustomPropertyNames` (e.g. `studio.defaultCustomStartToken` on Start Events) are hidden unless **Show internal custom properties** is on. Row React keys use a stable `rowId` stamped on the live moddle object (`BpmnDocumentElementAccess` WeakMap), not `property.name` (names can be blank or duplicated) and not the `.map` index (`@eslint-react/no-array-index-key` is an error). The empty add-row uses `custom-property-add-row-${elementId}`. Input `htmlId`s still use the full array index including hidden rows. Integration-test fixtures keep only rows that tests assert, Custom Attributes indexes, Timer Start `enabled`, or merge-diff payload. Default Configured Start Payload tests use `untyped-task.bpmn`. ProcessEngine leftovers (`module`/`method`/`params`/`role`, Task-level `enabled`, `payload` on `##external`) and unnamed sample diagrams are not stored in fixtures.
 
-#### Message Event Data Pipeline (D-MSG-1)
+#### Message Event Data Pipeline
 
-Per architectural decision D-MSG-1 / MSG-D1, message events use generic input/output mappings. There is no `bfw:payload` or `bfw:eventMapping`. Authoring pane visibility matches the live pipeline: Send/throw show Input Mappings; Receive/catch show Output Mappings. Embedded SubProcess mappings are authorable only on Ad-hoc shells.
+Message events use generic input/output mappings. There is no `bfw:payload` or `bfw:eventMapping`. Authoring pane visibility matches the live pipeline: Send/throw show Input Mappings; Receive/catch show Output Mappings. Embedded SubProcess mappings are authorable only on Ad-hoc shells.
 
 | Element type | Input Mappings | Output Mappings | Payload Contract | Result Contract | Correlation Retrieval |
 |--------------|:-:|:-:|:-:|:-:|:-:|
@@ -225,7 +225,7 @@ Per architectural decision D-MSG-1 / MSG-D1, message events use generic input/ou
 
 `MessageStartEvent` has **no** output mappings on the Engine model (`StartEventNode` exposes `eventDefinition`, `resultContract`, `isInterrupting` only). Catch-side nodes do not author `bfw:correlationRetrievalExpression`.
 
-Per D-MSG-3, contracts on message events are direction-aware: throw-side events (MessageEndEvent, MessageIntermediateThrowEvent, SendTask) show the **Payload Contract** pane, and catch-side events (MessageIntermediateCatchEvent, MessageBoundaryEvent, MessageStartEvent, ReceiveTask) show the **Result Contract** pane. This aligns with task contract semantics where `payloadContract` validates outgoing data and `resultContract` validates incoming data.
+Contracts on message events are direction-aware: throw-side events (MessageEndEvent, MessageIntermediateThrowEvent, SendTask) show the **Payload Contract** pane, and catch-side events (MessageIntermediateCatchEvent, MessageBoundaryEvent, MessageStartEvent, ReceiveTask) show the **Result Contract** pane. This aligns with task contract semantics where `payloadContract` validates outgoing data and `resultContract` validates incoming data.
 
 Signal events do not support contracts (the engine has no signal contract capability). Payload Contract and Input Mapping visibility were split into separate type lists (`DATA_PIPELINE_PAYLOAD_CONTRACT_TYPES` and `DATA_PIPELINE_INPUT_MAPPING_TYPES` in `PropertiesPaneFunctions.ts`) so that signal throw-side events show Input Mappings (which the engine supports) without showing the Payload Contract pane (which would be dead data).
 
