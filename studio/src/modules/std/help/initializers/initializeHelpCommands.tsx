@@ -88,8 +88,10 @@ export function initializeHelpCommands(bifrost: Bifrost): void {
       Instance.
     </Fragment>,
   ];
-  const tipIndex = Math.floor(tips.length * Math.random());
-  const tip = tips[tipIndex];
 
-  bifrost.commands.register<React.JSX.Element>('std.help.getDidYouKnowText', () => tip);
+  bifrost.commands.register<React.JSX.Element>('std.help.getDidYouKnowText', () => {
+    const tipIndex = Math.floor(tips.length * Math.random());
+    const tip = tips[tipIndex];
+    return tip;
+  });
 }
