@@ -18,10 +18,11 @@ A BPMN 2.0 modeling Environment, built with ReactJS and Electron. Used to model 
 ## Installation
 
 ```sh
-# --allow-remote=all is required for the extract-zip override.
-# Will be removed, as soon as electron-chromedriver and webdriverio have replaced it or extract-zip's maintainer ever fixes the vulnerabilities (which is unlikely).
 npm ci --allow-remote=all
 ```
+
+`--allow-remote=all` is required for the extract-zip override (I use a [drop-in replacement](https://github.com/ElRaptorus/zippogryph)).
+Will be removed, as soon as the vulnerabilities are fixed (which is unlikely, given extract-zip is pretty much dead), or other libs have replaced it.
 
 ### Development Build
 

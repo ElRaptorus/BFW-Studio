@@ -1,9 +1,23 @@
 const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
 const RELEASE_CHANNEL_NAME_bloodforge = 'bloodforge';
 const RELEASE_CHANNEL_NAME_STABLE = 'stable';
 const RELEASE_CHANNEL_NAME_UNKNOWN = 'unknown';
+
+function readInstalledPackageVersion(packageName) {
+  try {
+    const manifestPath = path.join(__dirname, '..', '..', 'node_modules', packageName, 'package.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    if (typeof manifest.version !== 'string' || manifest.version.trim() === '') {
+      return 'NA';
+    }
+    return manifest.version;
+  } catch {
+    return 'NA';
+  }
+}
 
 function getReleaseChannelName(version, isProductionBuild) {
   if (!isProductionBuild) {
@@ -80,6 +94,8 @@ module.exports = function generateBuildInfo(isProductionBuild) {
     productName,
     productNameWithReleaseChannel,
     packageName,
+    bpmnJsVersion: readInstalledPackageVersion('bpmn-js'),
+    dmnJsVersion: readInstalledPackageVersion('dmn-js'),
   };
 
   const lines = [

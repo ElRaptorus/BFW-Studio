@@ -24,7 +24,7 @@ The Studio uses **Rspack** (a Rust-based, webpack 5-compatible bundler) for all 
 
 | File | Purpose |
 |------|---------|
-| `build/rspack/generate-build-info.js` | Generates `src/generatedBuildAndProductInfo.js` with version, commit hash, build date, release channel |
+| `build/rspack/generate-build-info.js` | Generates `src/generatedBuildAndProductInfo.js` with version, commit hash, build date, release channel, and the installed `bpmn-js` and `dmn-js` versions (`bpmnJsVersion`, `dmnJsVersion`; missing package is `NA`) |
 
 ## Build Targets
 

@@ -1,24 +1,12 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
-import ProductNameHeadline from '#components/ProductNameHeadline';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
 
 import React from 'react';
 
 import * as BuildInfo from '../../../generatedBuildAndProductInfo';
-
-type AboutInformation = {
-  studioInfo: {
-    productName: string;
-    version: string;
-    releaseChannelName: string;
-    commit: string;
-    date: string;
-  };
-  modules: string[];
-  settings: any;
-};
+import AboutPageView from './AboutPageView';
 
 export default function AboutpageRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const bifrost = Bifrost.cast(props.studio);
@@ -26,54 +14,20 @@ export default function AboutpageRenderer(props: EditorDocumentRendererProps): R
   return (
     <Editor>
       <EditorContent>
-        <InformationContainer
-          studioInfo={{
-            productName: BuildInfo.productName,
-            version: BuildInfo.version,
-            releaseChannelName: BuildInfo.releaseChannelName,
-            commit: BuildInfo.commit,
-            date: BuildInfo.date,
-          }}
-          modules={bifrost.modules.getLoadedModules().map((studioModule) => studioModule.name)}
-          settings={bifrost.settings.UNSAFE_getSerializedData()}
-        />
+        <div className="about-page">
+          <AboutPageView
+            productName={BuildInfo.productName}
+            releaseChannelName={BuildInfo.releaseChannelName}
+            identityParts={[BuildInfo.version, BuildInfo.releaseChannelName, BuildInfo.commit, BuildInfo.date]}
+            editorFacts={[
+              { label: 'bpmn-js', value: BuildInfo.bpmnJsVersion },
+              { label: 'dmn-js', value: BuildInfo.dmnJsVersion },
+            ]}
+            moduleNames={bifrost.modules.getLoadedModules().map((studioModule) => studioModule.name)}
+            settings={bifrost.settings.UNSAFE_getSerializedData()}
+          />
+        </div>
       </EditorContent>
     </Editor>
-  );
-}
-
-function InformationContainer(props: AboutInformation): React.JSX.Element {
-  return (
-    <div className="about-page">
-      <div className="container-fluid">
-        <div className="row">
-          <div className="col-md-12">
-            <ProductNameHeadline
-              productName={props.studioInfo.productName}
-              releaseChannelName={props.studioInfo.releaseChannelName}
-            />
-            <ul className="list-unstyled">
-              <li className="list-item">Version: {props.studioInfo.version}</li>
-              <li className="list-item">Commit: {props.studioInfo.commit}</li>
-              <li className="list-item">Date: {props.studioInfo.date}</li>
-            </ul>
-
-            <h4>Loaded modules</h4>
-            <ul className="list-unstyled">
-              {props.modules.map((moduleName) => {
-                return (
-                  <li className="list-item" key={moduleName}>
-                    {moduleName}
-                  </li>
-                );
-              })}
-            </ul>
-
-            <h4>User settings</h4>
-            <pre>{JSON.stringify(props.settings, null, 2)}</pre>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

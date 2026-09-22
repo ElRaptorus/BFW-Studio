@@ -3,63 +3,26 @@ import type { StudioModule } from '#bifrost/common/ModuleManager';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
 import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
-import ProductNameHeadline from '#components/ProductNameHeadline';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
-import log from 'electron-log';
 
 import React, { useEffect, useState } from 'react';
 
 import * as BuildInfo from '../../../../generatedBuildAndProductInfo';
+import AboutPageView from '../AboutPageView';
 
-type StudioElectronProps = {
-  productName: string;
-  version: string;
-  releaseChannelName: string;
-  arch: string;
-  commit: string;
-  date: string;
-  chrome: string;
-  node: string;
-  v8: string;
-  electron: string;
-};
-
-type AboutInformationPropsElectron = {
-  bifrost: Bifrost;
-  studioInfo: StudioElectronProps;
-  modules: StudioModule[];
-  plugins: PluginInfo[];
-  hostSystem: {
-    os: string;
-    cpu: string;
-    storage: string;
-    memory: string;
-    graphics: string;
-    docker: string;
-  };
-  settings: any;
-  logPath: string;
-};
-
-type CopyBoxPropsElectron = {
-  studioInfo: StudioElectronProps;
-  modules: StudioModule[];
-  plugins: PluginInfo[];
-  hostSystem: {
-    os: string;
-    cpu: string;
-    storage: string;
-    memory: string;
-    graphics: string;
-    docker: string;
-  };
-  settings: any;
+type HostSystemInformation = {
+  os: string;
+  cpu: string;
+  storage: string;
+  memory: string;
+  graphics: string;
+  docker: string;
 };
 
 const loadingStateInfo = 'Loading ...';
 
-const initialHostSystem = {
+const initialHostSystem: HostSystemInformation = {
   os: loadingStateInfo,
   cpu: loadingStateInfo,
   storage: loadingStateInfo,
@@ -101,99 +64,45 @@ export default function AboutpageRendererElectron(props: EditorDocumentRendererP
   return (
     <Editor>
       <EditorContent>
-        <InformationContainer
-          bifrost={bifrost}
-          studioInfo={{
-            productName: BuildInfo.productName,
-            version: BuildInfo.version,
-            releaseChannelName: BuildInfo.releaseChannelName,
-            commit: BuildInfo.commit,
-            date: BuildInfo.date,
-            arch: process.arch,
-            chrome: process.versions.chrome,
-            node: process.versions.node,
-            v8: process.versions.v8,
-            electron: process.versions.electron,
-          }}
-          modules={bifrost.modules.getLoadedModules()}
-          plugins={plugins}
-          logPath={log.transports.file?.getFile().path ?? ''}
-          hostSystem={hostSystem}
-          settings={bifrost.settings.UNSAFE_getSerializedData()}
-        />
+        <div className="about-page">
+          <AboutPageView
+            productName={BuildInfo.productName}
+            releaseChannelName={BuildInfo.releaseChannelName}
+            identityParts={[
+              BuildInfo.version,
+              BuildInfo.releaseChannelName,
+              BuildInfo.commit,
+              BuildInfo.date,
+              process.arch,
+            ]}
+            runtimeFacts={[
+              { label: 'Electron', value: process.versions.electron ?? 'NA' },
+              { label: 'Chrome', value: process.versions.chrome ?? 'NA' },
+              { label: 'Node', value: process.versions.node ?? 'NA' },
+              { label: 'V8', value: process.versions.v8 ?? 'NA' },
+            ]}
+            computerFacts={[
+              { label: 'Operating system', value: hostSystem.os },
+              { label: 'CPU', value: hostSystem.cpu },
+              { label: 'Memory', value: hostSystem.memory },
+              { label: 'Storage', value: hostSystem.storage },
+              { label: 'Graphics', value: hostSystem.graphics },
+              { label: 'Docker', value: hostSystem.docker },
+            ]}
+            editorFacts={[
+              { label: 'bpmn-js', value: BuildInfo.bpmnJsVersion },
+              { label: 'dmn-js', value: BuildInfo.dmnJsVersion },
+            ]}
+            moduleNames={bifrost.modules.getLoadedModules().map((studioModule: StudioModule) => studioModule.name)}
+            plugins={plugins.map((plugin) => ({
+              name: plugin.name,
+              version: plugin.version,
+              status: plugin.status,
+            }))}
+            settings={bifrost.settings.UNSAFE_getSerializedData()}
+          />
+        </div>
       </EditorContent>
     </Editor>
   );
-}
-
-function InformationContainer(props: AboutInformationPropsElectron): React.JSX.Element {
-  return (
-    <div className="about-page">
-      <div className="container-fluid">
-        <div className="row">
-          <div className="col-md-12">
-            <ProductNameHeadline
-              productName={props.studioInfo.productName}
-              releaseChannelName={props.studioInfo.releaseChannelName}
-            />
-            <p>
-              <strong>Version:</strong> {props.studioInfo.version}
-            </p>
-            <p>You can provide the text below when reporting a problem to help us identify possible solutions.</p>
-          </div>
-        </div>
-      </div>
-      <CopyBox
-        studioInfo={props.studioInfo}
-        hostSystem={props.hostSystem}
-        modules={props.modules}
-        plugins={props.plugins}
-        settings={props.settings}
-      />
-    </div>
-  );
-}
-
-function CopyBox(props: CopyBoxPropsElectron): React.JSX.Element {
-  const content = `# ${props.studioInfo.productName}
-
-Version: ${props.studioInfo.version}
-Release Channel: ${props.studioInfo.releaseChannelName}
-Architecture: ${props.studioInfo.arch}
-Commit: ${props.studioInfo.commit}
-Date: ${props.studioInfo.date}
-
-# Host system
-
-Operating System: ${props.hostSystem.os}
-CPU: ${props.hostSystem.cpu}
-Storage: ${props.hostSystem.storage}
-Memory: ${props.hostSystem.memory}
-Graphics: ${props.hostSystem.graphics}
-Docker: ${props.hostSystem.docker}
-
-# Components
-
-Electron: ${props.studioInfo.electron}
-Chrome: ${props.studioInfo.chrome}
-Node: ${props.studioInfo.node}
-V8: ${props.studioInfo.v8}
-
-# Loaded modules
-
-${props.modules.map((studioModule) => `- ${studioModule.name}\n`).join('')}
-
-# Loaded plugins
-
-${props.plugins.map((plugin) => `- ${plugin.name} - v${plugin.version} [${plugin.status}]\n`).join('')}
-
-# User settings
-
-\`\`\`
-${JSON.stringify(props.settings, null, 2)}
-\`\`\`
-
-`;
-
-  return <textarea value={content} className="about-page__textarea" readOnly />;
 }
