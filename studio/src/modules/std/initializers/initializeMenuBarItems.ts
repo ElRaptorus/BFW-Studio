@@ -24,6 +24,15 @@ function createPaneAreaToggleButton(options: {
 export function initializeMenuBarItems(bifrost: Bifrost): void {
   bifrost.menuBar.registerMenuBarItem('left', () => {
     const items: MenuBarItem[] = [
+      createPaneAreaToggleButton({
+        id: 'menu-bar-toggle-sidebar',
+        command: 'std.workbench.toggleSidebar',
+        areaVisible: bifrost.panes.getPaneAreaVisibility('left'),
+        hideDirection: 'left',
+        hideTooltip: 'Hide Sidebar',
+        showTooltip: 'Show Sidebar',
+      }),
+      { type: 'divider', visible: bifrost.panes.getPaneAreaVisibility('left') },
       {
         type: 'pane_content_toggle',
         id: 'pane/left/explorer',
@@ -51,15 +60,6 @@ export function initializeMenuBarItems(bifrost: Bifrost): void {
         menu: 'std/menubar/left-overflow',
         tooltip: 'More...',
       },
-      { type: 'divider', visible: bifrost.panes.getPaneAreaVisibility('left') },
-      createPaneAreaToggleButton({
-        id: 'menu-bar-toggle-sidebar',
-        command: 'std.workbench.toggleSidebar',
-        areaVisible: bifrost.panes.getPaneAreaVisibility('left'),
-        hideDirection: 'left',
-        hideTooltip: 'Hide Sidebar',
-        showTooltip: 'Show Sidebar',
-      }),
     ];
 
     return items;
