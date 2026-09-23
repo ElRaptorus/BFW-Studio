@@ -74,7 +74,9 @@ cd webview && npm install && cd ..
 npm run build
 ```
 
-Copy or symlink the plugin directory into the Studio plugins folder, or override it:
+Install it from the Plugins pane with **Install Plugin** (`plugins.installPlugin`). Link a development folder when you want the Studio to use that directory in place, or copy a built plugin folder into the plugins directory. The destination is `package.json` `name` (`plugins/<name>` or `plugins/@scope/<name>`). Uninstall removes a link and leaves the development folder in place; a copied folder is moved to the trash.
+
+You can still point discovery at another directory:
 
 ```bash
 BFW_PLUGINS_DIR=/path/to/my-plugins-folder npm start

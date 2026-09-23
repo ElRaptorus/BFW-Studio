@@ -5,6 +5,7 @@ import { IPC_INVOKE_UNINSTALL_PLUGIN, IPC_MESSAGE_PLUGIN_STATE_CHANGED } from '#
 import type { IPluginHost } from '#bifrost/contracts/PluginHostTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
 import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
+import * as fsPromises from 'fs/promises';
 
 export const EVENT_PLUGIN_HOST_LOG = 'EVENT_PLUGIN_HOST_LOG';
 
@@ -158,9 +159,19 @@ export class PluginService extends AbstractEmitter {
   }
 
   async uninstallPlugin(plugin: PluginInfo): Promise<void> {
+    let removalSentence = 'This will move the plugin folder to trash.';
+    try {
+      const pathStat = await fsPromises.lstat(plugin.path);
+      if (pathStat.isSymbolicLink()) {
+        removalSentence = 'This will remove the link. The folder it points at is left in place.';
+      }
+    } catch {
+      // Missing path still uses the trash sentence; uninstall itself reports the failure.
+    }
+
     const dialogResult = await this.bifrost.dialog.open({
       title: 'Uninstall Plugin',
-      content: `Uninstall plugin '${plugin.displayName}'? This will move the plugin folder to trash.`,
+      content: `Uninstall plugin '${plugin.displayName}'? ${removalSentence}`,
       actions: [
         { label: 'Cancel', response: 'cancel', cancel: true },
         { label: 'Uninstall', response: 'uninstall', dangerous: true, default: true },

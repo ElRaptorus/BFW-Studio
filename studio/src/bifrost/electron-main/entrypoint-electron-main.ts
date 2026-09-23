@@ -20,12 +20,18 @@ import * as BuildInfo from '../../generatedBuildAndProductInfo';
 import { ReleaseChannelName } from '../common/Environment';
 import { Performance } from '../common/Performance';
 import {
+  isResolvedPathInsideDirectory,
+  isSafePluginPackageName,
+  resolvePluginInstallDestination,
+} from '../common/plugin-host/permissions/pluginInstallDestination';
+import {
   IPC_INVOKE_COPY_FILE_OR_DIRECTORY,
   IPC_INVOKE_CREATE_DIR,
   IPC_INVOKE_EXISTS,
   IPC_INVOKE_FETCH,
   IPC_INVOKE_GET_APP_PATH,
   IPC_INVOKE_GET_SYSTEMINFORMATION,
+  IPC_INVOKE_INSTALL_PLUGIN,
   IPC_INVOKE_IS_DIRECTORY,
   IPC_INVOKE_OPEN_PATH,
   IPC_INVOKE_READ_DIR,
@@ -581,10 +587,80 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
     },
   );
 
+  ipcMain.handle(IPC_INVOKE_INSTALL_PLUGIN, async (_event, payload: { sourcePath: string; mode: 'link' | 'copy' }) => {
+    if (payload?.mode !== 'link' && payload?.mode !== 'copy') {
+      throw new Error('Unknown install mode.');
+    }
+    const pluginsDirectory = path.resolve(getPluginsDir());
+    const sourcePath = path.resolve(payload.sourcePath);
+    const sourceStat = await fsPromises.stat(sourcePath);
+    if (!sourceStat.isDirectory()) {
+      throw new Error('The selected path is not a folder.');
+    }
+    if (isResolvedPathInsideDirectory(pluginsDirectory, sourcePath) || sourcePath === pluginsDirectory) {
+      throw new Error('Choose a folder outside the plugins directory.');
+    }
+
+    let packageJson: { name?: unknown };
+    try {
+      packageJson = JSON.parse(await fsPromises.readFile(path.join(sourcePath, 'package.json'), 'utf8')) as {
+        name?: unknown;
+      };
+    } catch {
+      throw new Error('The selected folder has no readable package.json.');
+    }
+    if (typeof packageJson.name !== 'string' || !isSafePluginPackageName(packageJson.name)) {
+      throw new Error(`Plugin package name '${String(packageJson.name ?? '')}' is not a safe install name.`);
+    }
+
+    const destination = resolvePluginInstallDestination(pluginsDirectory, packageJson.name);
+    if (!isResolvedPathInsideDirectory(pluginsDirectory, destination)) {
+      throw new Error('Cannot install: destination is outside the plugins directory.');
+    }
+
+    try {
+      await fsPromises.lstat(destination);
+      throw new Error('A plugin is already installed at this location.');
+    } catch (error) {
+      if (error instanceof Error && error.message === 'A plugin is already installed at this location.') {
+        throw error;
+      }
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
+    }
+
+    await fsPromises.mkdir(path.dirname(destination), { recursive: true });
+
+    if (payload.mode === 'link') {
+      try {
+        await fsPromises.symlink(sourcePath, destination, 'dir');
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EPERM') {
+          throw new Error('Could not create a link. Copy the folder instead.', { cause: error });
+        }
+        throw error;
+      }
+    } else {
+      await fsPromises.cp(sourcePath, destination, {
+        recursive: true,
+        dereference: false,
+        errorOnExist: true,
+      });
+    }
+
+    return { packageName: packageJson.name, destination };
+  });
+
   ipcMain.handle(IPC_INVOKE_UNINSTALL_PLUGIN, async (_event, pluginPath: string) => {
     const pluginsDir = getPluginsDir();
     if (!path.resolve(pluginPath).startsWith(path.resolve(pluginsDir))) {
       throw new Error('Cannot uninstall: path is outside the plugins directory');
+    }
+    const pathStat = await fsPromises.lstat(pluginPath);
+    if (pathStat.isSymbolicLink()) {
+      await fsPromises.unlink(pluginPath);
+      return;
     }
     await shell.trashItem(pluginPath);
   });

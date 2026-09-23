@@ -2,7 +2,7 @@
 
 Bifrost Forge World is a ReactJS / Electron application for modelling, deploying, and debugging BPMN 2.0 process models. It connects to one or more external Engines for deployment and runtime interaction.
 
-The Studio is designed around extensibility. Following the "eat your own dogfood" principle, its core functionality is delivered through internal modules — the same patterns available to third-party plugin developers.
+The Studio is designed around extensibility. It comes with a base set of internal modules and provides a powerful plugin system, which allows users to enhance and customize most aspects of the Studio.
 
 ## Folder Structure
 

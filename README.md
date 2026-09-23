@@ -53,3 +53,7 @@ These are placed in the `./studio/dist` folder.
 ### Documentation
 
 See [here](./docs/introduction.md).
+
+### License
+
+MIT

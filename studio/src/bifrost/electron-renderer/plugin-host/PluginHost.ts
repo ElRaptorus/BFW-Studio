@@ -32,6 +32,7 @@ import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 import { getPluginsDir } from '#bifrost/node/BifrostPathFunctions';
 import { PluginIframeManager } from '#components/webview/PluginIframeManager';
 import { type ChildProcess, fork } from 'child_process';
+import type { Dirent } from 'fs';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -186,6 +187,22 @@ async function discoverSinglePlugin(pluginPath: string): Promise<DiscoveredPlugi
   }
 }
 
+/** A real directory, or a symlink whose target is a directory. A broken link is skipped. */
+async function isPluginDirectoryEntry(entry: Dirent, parentDirectory: string): Promise<boolean> {
+  if (entry.isDirectory()) {
+    return true;
+  }
+  if (!entry.isSymbolicLink()) {
+    return false;
+  }
+  try {
+    const targetStat = await fs.stat(path.join(parentDirectory, entry.name));
+    return targetStat.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 async function discoverPlugins(): Promise<DiscoveredPlugin[]> {
   const pluginsDir = getPluginsDir();
   console.log(`[PluginHost] Discovering plugins in: ${pluginsDir}`);
@@ -195,7 +212,7 @@ async function discoverPlugins(): Promise<DiscoveredPlugin[]> {
     const plugins: DiscoveredPlugin[] = [];
 
     for (const entry of entries) {
-      if (!entry.isDirectory()) {
+      if (!(await isPluginDirectoryEntry(entry, pluginsDir))) {
         continue;
       }
 
@@ -205,7 +222,7 @@ async function discoverPlugins(): Promise<DiscoveredPlugin[]> {
           const scopeDir = path.join(pluginsDir, entry.name);
           const scopeEntries = await fs.readdir(scopeDir, { withFileTypes: true });
           for (const scopeEntry of scopeEntries) {
-            if (!scopeEntry.isDirectory()) {
+            if (!(await isPluginDirectoryEntry(scopeEntry, scopeDir))) {
               continue;
             }
             const plugin = await discoverSinglePlugin(path.join(scopeDir, scopeEntry.name));

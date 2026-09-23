@@ -55,6 +55,20 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
       >
         <PaneHeaderIcon
           studio={props.studio}
+          icon="ph ph-plus"
+          tooltip="Install Plugin"
+          command="plugins.installPlugin"
+          dataTestId="plugins-install-paneheader"
+        />
+        <PaneHeaderIcon
+          studio={props.studio}
+          icon="ph ph-folder-open"
+          tooltip="Open Plugin Folder"
+          command="plugins.openPluginFolder"
+          dataTestId="plugins-open-folder-paneheader"
+        />
+        <PaneHeaderIcon
+          studio={props.studio}
           icon="ph ph-arrow-clockwise"
           tooltip="Refresh Plugins"
           command="plugins.refreshPluginList"
@@ -99,6 +113,15 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
         <div className="plugins-pane__empty" data-test--plugins-pane-empty>
           <span className="plugins-pane__empty-icon ph ph-puzzle-piece" />
           <p>No plugins installed.</p>
+          <button
+            type="button"
+            className="plugins-pane__open-folder"
+            data-test--plugins-install
+            onClick={() => props.studio.commands.executeCommand('plugins.installPlugin')}
+          >
+            <span className="ph ph-plus" />
+            Install Plugin
+          </button>
           <button
             type="button"
             className="plugins-pane__open-folder"

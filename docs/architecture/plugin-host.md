@@ -333,7 +333,9 @@ Plugins are discovered in the configured plugins directory:
 1. `BFW_PLUGINS_DIR` environment variable (if set)
 2. Fallback: `~/.bifrostfw/studio/plugins/` (via `getBifrostHomeDir()`; `studio-dev` / `studio-bloodforge` / `studio-tests` per channel)
 
-Each subdirectory with a `package.json` is treated as a plugin candidate. On child-process startup, `SandboxManager.initialize()` loads persisted quarantine state from `quarantine.json` under the plugin storage base path. Quarantined plugins are skipped during `loadPlugin` until the user calls `trustAndReEnablePlugin`.
+Each subdirectory with a `package.json` is treated as a plugin candidate. A symlink whose target is a directory counts as a subdirectory; a broken symlink is skipped. The same rule applies inside an `@scope` directory, and when the `@scope` directory itself is a symlink. On child-process startup, `SandboxManager.initialize()` loads persisted quarantine state from `quarantine.json` under the plugin storage base path. Quarantined plugins are skipped during `loadPlugin` until the user calls `trustAndReEnablePlugin`.
+
+`plugins.installPlugin` asks the main process (`IPC_INVOKE_INSTALL_PLUGIN`) to link or copy a chosen folder. The destination is `resolvePluginInstallDestination`: `plugins/<name>` or `plugins/@scope/<name>` from `package.json` `name`. The source must be a directory outside the plugins directory, the name must be that safe form, and an existing destination (including a broken symlink) is refused. Link mode creates an absolute directory symlink. Copy mode uses `fs.cp` with `dereference: false`. Success calls `refreshFromHost()`, which restarts the host and then runs the existing permission dialog on activation.
 
 ### Worker load pipeline
 
@@ -508,7 +510,7 @@ The pane subscribes to `bifrost.plugins.on(EVENT_PLUGIN_LIST_CHANGED, ...)` to r
 
 Clicking a plugin card opens its README as an editor tab (`about:plugin-readme/<pluginName>`). The README detail view shows a header with the plugin logo, name, version, description, deprecation status, and a metadata sidebar (author, website link, keyword tags), followed by the rendered README content.
 
-The pane header includes a **Refresh** button (`PaneHeaderIcon` wired to `plugins.refreshPluginList`) that triggers a full Plugin Host restart via `bifrost.plugins.refreshFromHost()`.
+The pane header includes **Install Plugin** (`plugins.installPlugin`), **Open Plugin Folder** (`plugins.openPluginFolder`), and **Refresh** (`plugins.refreshPluginList`). Refresh triggers a full Plugin Host restart via `bifrost.plugins.refreshFromHost()`. The empty state offers Install Plugin and Open Plugin Folder.
 
 ### Wrench context menu
 
@@ -518,7 +520,7 @@ Each plugin card has a wrench icon button (top-right corner of the header row). 
 |-------|----------|
 | **Enable / Disable** | Calls `bifrost.plugins.togglePlugin(name)`. For disabled or errored plugins, this calls `reloadPlugin()` which re-validates the manifest from disk and either recovers or preserves the error state. For running plugins, it disables via `unloadPlugin()`. Updates `plugins.disabledPlugins` setting accordingly. Disabling also closes the plugin's README tab if open. Does not clear quarantine — use **Trust & Re-enable** when `status === 'quarantined'`. |
 | **Settings** | Opens the Settings GUI (`about:settings`). If the plugin registered settings whose `category` (explicit or inferred from the first key segment) matches the plugin's `displayName`, auto-scrolls to that category via `std.settings.openUserSettingsAtCategory`. Otherwise opens the GUI without scrolling. |
-| **Uninstall** | Calls `bifrost.plugins.uninstallPlugin(info)`. Opens a confirmation dialog. On confirmation, the enabled plugin is unloaded via the host, the README tab is closed, the plugin directory is moved to trash via `IPC_INVOKE_UNINSTALL_PLUGIN` (main process `shell.trashItem`), and the plugin is removed from `disabledPlugins` and the in-memory list. Uses `suppressHostSync` to prevent intermediate UI flashes. |
+| **Uninstall** | Calls `bifrost.plugins.uninstallPlugin(info)`. Opens a confirmation dialog. A symlink says the link will be removed and the target left in place; a real directory says the folder will be moved to the trash. On confirmation, the enabled plugin is unloaded via the host, the README tab is closed, and `IPC_INVOKE_UNINSTALL_PLUGIN` `unlink`s a symlink or `shell.trashItem`s a directory. The plugin is removed from `disabledPlugins` and the in-memory list. Uses `suppressHostSync` to prevent intermediate UI flashes. |
 
 The menu closes on outside click or after any action is selected. All menu button clicks call `stopPropagation()` to prevent the card's click handler (open README) from firing.
 
@@ -533,7 +535,7 @@ The menu closes on outside click or after any action is selected. All menu butto
 **Selective operations** (toggle enable/disable, uninstall):
 
 - **Toggle** calls `bifrost.plugins.togglePlugin(name)`, which delegates to `pluginHost.unloadPlugin()` or `pluginHost.reloadPlugin()` to affect only the target plugin. Errored plugins are retried via `reloadPlugin()` (which re-validates the manifest from disk). Other plugins retain their registered commands, settings listeners, and state. The logo cache entry for the toggled plugin is cleared via `clearLogoCacheEntry()`.
-- **Uninstall** calls `bifrost.plugins.uninstallPlugin(info)`. Uses `suppressHostSync` to suppress intermediate host events during the multi-step operation (unload + trash + list update), then emits a single `EVENT_PLUGIN_LIST_CHANGED` after the operation completes.
+- **Uninstall** calls `bifrost.plugins.uninstallPlugin(info)`. Uses `suppressHostSync` to suppress intermediate host events during the multi-step operation (unload + unlink or trash + list update), then emits a single `EVENT_PLUGIN_LIST_CHANGED` after the operation completes. A symlinked install is `fs.unlink`; a copied directory is `shell.trashItem`.
 
 ### Plugin Host Console Pane
 
@@ -560,6 +562,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `plugins.focusPluginsPane` | Opens the Plugins pane |
 | `plugins.showConsole` | Opens the Plugin Host Console pane |
 | `plugins.refreshPluginList` | Full Plugin Host restart + re-discovery |
+| `plugins.installPlugin` | Link or copy a plugin folder into the plugins directory, then full refresh |
 | `plugins.openPluginFolder` | Opens the plugins directory in the system file manager |
 
 ### Settings
@@ -593,7 +596,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/components/webview/types.ts` | Shared | Type definitions for iframe postMessage protocol |
 | `studio/src/bifrost/contracts/PluginHostConnection.ts` | Shared | Promise-based request/response wrapper |
 | `studio/src/bifrost/contracts/PluginHostProtocol.ts` | Shared | Message type definitions and constants |
-| `studio/src/bifrost/contracts/IpcEvents.ts` | Shared | `IPC_INVOKE_UNINSTALL_PLUGIN`, `IPC_MESSAGE_PLUGIN_STATE_CHANGED` constants |
+| `studio/src/bifrost/contracts/IpcEvents.ts` | Shared | `IPC_INVOKE_INSTALL_PLUGIN`, `IPC_INVOKE_UNINSTALL_PLUGIN`, `IPC_MESSAGE_PLUGIN_STATE_CHANGED` constants |
 | `studio/src/bifrost/common/plugin-host/plugin-host-main.ts` | Host | Child process entry point; owns `SandboxManager`, IPC dispatch |
 | `studio/src/bifrost/common/plugin-host/sandbox/SandboxManager.ts` | Host | Per-plugin Worker orchestration, API attestation, quarantine integration |
 | `studio/src/bifrost/common/plugin-host/sandbox/PluginSandbox.ts` | Host | Single Worker Thread wrapper (`start` / `stop` / `terminate`) |
@@ -608,6 +611,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts` | Renderer | Per-plugin bidirectional message channel for renderer modules |
 | `studio/src/modules/bpmn-core/plugin-modules/PluginModuleLoader.ts` | Renderer | Loads plugin-provided diagram-js module bundles into the renderer |
 | `studio/src/bifrost/common/plugin-host/permissions/ScopedPluginName.ts` | Shared | Scoped npm name normalization (`@scope/name` → `scope--name`); used at discovery time and for webview hostname mapping |
+| `studio/src/bifrost/common/plugin-host/permissions/pluginInstallDestination.ts` | Shared | Safe `package.json` name check and install destination (`plugins/<name>` or `plugins/@scope/<name>`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/PluginPermissionDialog.ts` | Renderer | Permission review dialog on enable/reload |
 | `studio/src/bifrost/common/plugin-host/PluginPermissionStore.ts` | Shared | Local-storage-backed permission trust records (per plugin) |
 | `studio/src/bifrost/common/plugin-host/callbackRegistry.ts` | Worker | Per-worker O(1) callback lookup inside `sandbox-worker.ts` |
