@@ -10,6 +10,20 @@
 
 A BPMN 2.0 modeling Environment, built with ReactJS and Electron. Used to model BPMN and DMN diagrams, which can be run with [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine).
 
+> Current Status: Beta. The Omnissiahs great work is never done.
+
+## Key Features
+
+- Full BPMN 2.0 and DMN 1.5 Coverage
+- Extensive BPMN Tooling, including a fully featured Linter, Token Simulator, FEEL Expression Builder, Visual User Task Form Builders and much more
+- Integrated Git Support
+- Visual Merge Conflict Resolver for BPMN and DMN
+- Guided BPMN Version Management, in conjunction with the Engine
+- Integrated Engine Workspace, tailored to the [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine)
+- Extensive Plugin Capabilities
+
+See [here](./CHANGELOG.md) to get a better picture of what's in store for v1.
+
 ## Prerequisites
 
 - Node `>= 24.20.0`
@@ -50,10 +64,10 @@ npm run build-prod:electron:windows # .exe
 
 These are placed in the `./studio/dist` folder.
 
-### Documentation
+## Documentation
 
 See [here](./docs/introduction.md).
 
-### License
+## License
 
 MIT

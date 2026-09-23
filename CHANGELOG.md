@@ -6,7 +6,7 @@ A curated overview of the Studio's standout capabilities for the v1 release.
 
 ## BPMN Modeling
 
-Apart from a Fully featured BPMN 2.0 Editor, covering the entire Spec, there are several additional tools to help you build coherent and powerful BPMNs. 
+Apart from a Fully featured BPMN 2.0 Editor, covering the entire Spec, there are several additional tools to help you build coherent and powerful BPMNs.
 
 ### BPMN Linter
 
@@ -188,29 +188,13 @@ A modal fuzzy finder for navigating the Studio:
 - **Go to Symbol in Solution** (Cmd/Ctrl+Shift+J) — find BPMN/DMN elements by name across all files, backed by a Web Worker symbol index
 - **Go to Symbol in Document** (Cmd/Ctrl+Shift+O) — jump to elements within the active diagram
 
-### Global Search
-
-Project-wide text search with:
-
-- Include/Exclude glob patterns
-- Toggle to search only within open files
-- Instant results on keystroke (no Enter required)
-
-### File Explorer
-
-- Drag and drop to move files and folders (Ctrl+click to copy)
-- Multi-selection with bulk drag-and-drop
-- External files and folders can be dropped onto the explorer to add them to the solution (as root items or copies)
-- Folders/solutions can be opened in a new window or replace the current one
-- Individual folders can be hidden via context menu (by name glob or project-relative path), persisted in settings
-
 ---
 
 ## Editor Infrastructure
 
 ### Theming System
 
-A comprehensive semantic token-based theming system. Themes are fully inheritable and can be contributed by modules and plugins. Ships with 10+ built-in themes including Forge World Day/Night, VS Code Light/Dark, Zed Light/Dark, Tomb World, Fenris, Medusa, and The Dark City.
+A comprehensive semantic token-based theming system. Themes are fully inheritable and can be contributed by plugins. Ships with 10+ built-in themes including Forge World Day/Night, VS Code Light/Dark, Zed Light/Dark, Tomb World, Fenris, Medusa, and The Dark City.
 
 See [architecture](./docs/architecture/theming.md).
 
@@ -219,7 +203,7 @@ See [architecture](./docs/architecture/theming.md).
 A dual-mode settings system with both a GUI editor and a raw JSON editor.
 
 - All settings are registered with typed descriptors at the Settings Manager
-- Modules and plugins declare their own settings sections
+- Plugins can declare their own settings sections, for use with the GUI
 
 See [architecture](./docs/architecture/settings.md).
 
@@ -230,7 +214,7 @@ See [architecture](./docs/architecture/settings.md).
 | **Left** | Explorer panes, toggled via the menu bar above |
 | **Center** | Editor area |
 | **Bottom** | Inspector — analysis and debugging tools for the active editor tab |
-| **Right** | Toolbox — grouped panes: Property, Scripting, Dataflow, Documentation (plus Linter and plugin-contributed groups) |
+| **Right** | Toolbox — For Properties, Scripting, Documentation, Linting and more |
 
 See [architecture](./docs/architecture/workbench-layout.md).
 
@@ -242,6 +226,7 @@ A dynamic status bar at the bottom of the application:
 - Progress indicator system (views can fill a shared progress bar)
 - Diagnostics badges: extensions can surface errors and warnings per view
 - Standard items: encoding, line ending, solution badge, Git status
+- Plugins contribute to each of the pre-existing categories and also register their own Status Bar Items
 
 See [architecture](./docs/architecture/status-bar.md).
 
