@@ -58,7 +58,6 @@ export function createDefaultEditorExtensions(options: DefaultEditorExtensionOpt
     options.lineNumbers === true ? lineNumbers() : [],
     options.lintGutter === true ? lintGutter() : [],
     EditorState.readOnly.of(readOnly),
-    EditorView.editable.of(!readOnly),
     EditorView.theme({
       '&': { fontSize: `${fontSize}px` },
     }),

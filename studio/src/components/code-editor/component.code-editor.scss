@@ -49,11 +49,31 @@
   --theme-cm-bracket-5: #4078f2;
 }
 
+// CodeMirror draws `.cm-selectionBackground` behind the text, and its built-in
+// theme replaces that layer while focused (`#d7d4f0` in light, `#233` in dark).
+// `highlightActiveLine` then paints an opaque row over that layer, so a partial
+// selection disappears into the row. `::selection` paints on the glyphs themselves;
+// these rules beat `drawSelection`'s `Highlight` / transparent native selection.
+.bifrost .cm-editor {
+  .cm-scroller .cm-line::selection,
+  .cm-scroller .cm-line ::selection,
+  .cm-content:focus::selection,
+  .cm-content:focus ::selection {
+    background-color: var(--theme-feel-selection-bg) !important;
+  }
+
+  &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+  .cm-selectionLayer .cm-selectionBackground {
+    background-color: var(--theme-feel-selection-bg) !important;
+  }
+}
+
 [data-code-editor] {
   .cm-editor {
     height: 100%;
     background-color: var(--theme-feel-bg);
     color: var(--theme-feel-fg);
+    user-select: text;
   }
 
   // Stylesheet backup for `classHighlighter` spans. `color: var(--theme-feel-*)`
