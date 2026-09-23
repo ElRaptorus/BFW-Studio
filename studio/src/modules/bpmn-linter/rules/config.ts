@@ -25,7 +25,12 @@ import type {
 import type { ProcessModelAnalyzer } from './ProcessModelAnalyzer';
 // --- Custom: BPMN Spec ---
 
-import adhocSubprocessStructure from './bpmn-spec/adhoc-subprocess-structure';
+import {
+  adhocSubprocessActivities,
+  adhocSubprocessEventScope,
+  adhocSubprocessFlowEvents,
+  adhocSubprocessNesting,
+} from './bpmn-spec/adhoc-subprocess-structure';
 import boundaryEventNoIncoming from './bpmn-spec/boundary-event-no-incoming';
 import cancelEventTransactionScope from './bpmn-spec/cancel-event-transaction-scope';
 import compensationBoundaryNoOutgoing from './bpmn-spec/compensation-boundary-no-outgoing';
@@ -45,7 +50,7 @@ import transactionCancelNoBoundary from './bpmn-spec/transaction-cancel-no-bound
 import transactionCancelNoCompensable from './bpmn-spec/transaction-cancel-no-compensable';
 // --- Custom: Execution Readiness ---
 
-import adhocSubprocessConfig from './execution-readiness/adhoc-subprocess-config';
+import { adhocSubprocessCompletion, adhocSubprocessOrdering } from './execution-readiness/adhoc-subprocess-config';
 import callActivityTarget from './execution-readiness/call-activity-target';
 import complexGatewaySplitConditions from './execution-readiness/complex-gateway-split-conditions';
 import errorEventConfig from './execution-readiness/error-event-config';
@@ -144,7 +149,10 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'transaction-cancel-no-boundary': transactionCancelNoBoundary,
   'transaction-cancel-no-compensable': transactionCancelNoCompensable,
   'top-level-start-event-type': topLevelStartEventType,
-  'adhoc-subprocess-structure': adhocSubprocessStructure,
+  'adhoc-subprocess-flow-events': adhocSubprocessFlowEvents,
+  'adhoc-subprocess-activities': adhocSubprocessActivities,
+  'adhoc-subprocess-nesting': adhocSubprocessNesting,
+  'adhoc-subprocess-event-scope': adhocSubprocessEventScope,
   // Structure
   'service-task-error-boundary': serviceTaskErrorBoundary,
   'timer-definition': timerDefinition,
@@ -169,7 +177,8 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'standard-loop-config': standardLoopConfig,
   'xor-gateway-conditions': xorGatewayConditions,
   'complex-gateway-split-conditions': complexGatewaySplitConditions,
-  'adhoc-subprocess-config': adhocSubprocessConfig,
+  'adhoc-subprocess-completion': adhocSubprocessCompletion,
+  'adhoc-subprocess-ordering': adhocSubprocessOrdering,
   // Naming Quality
   'task-name-verb-pattern': taskNameVerbPattern,
   'end-event-generic-label': endEventGenericLabel,
@@ -264,7 +273,10 @@ export const profiles: Record<string, LintProfileConfig> = {
       'transaction-cancel-no-boundary': 'warn',
       'transaction-cancel-no-compensable': 'info',
       'top-level-start-event-type': 'warn',
-      'adhoc-subprocess-structure': 'warn',
+      'adhoc-subprocess-flow-events': 'warn',
+      'adhoc-subprocess-activities': 'warn',
+      'adhoc-subprocess-nesting': 'warn',
+      'adhoc-subprocess-event-scope': 'warn',
       // Structure (AST)
       'service-task-error-boundary': 'warn',
       'timer-definition': 'error',
@@ -289,7 +301,8 @@ export const profiles: Record<string, LintProfileConfig> = {
       'standard-loop-config': 'off',
       'xor-gateway-conditions': 'warn',
       'complex-gateway-split-conditions': 'warn',
-      'adhoc-subprocess-config': 'off',
+      'adhoc-subprocess-completion': 'off',
+      'adhoc-subprocess-ordering': 'off',
       // Naming Quality
       'task-name-verb-pattern': 'info',
       'end-event-generic-label': 'info',
@@ -360,7 +373,10 @@ export const profiles: Record<string, LintProfileConfig> = {
       'transaction-cancel-no-boundary': 'error',
       'transaction-cancel-no-compensable': 'warn',
       'top-level-start-event-type': 'error',
-      'adhoc-subprocess-structure': 'error',
+      'adhoc-subprocess-flow-events': 'error',
+      'adhoc-subprocess-activities': 'error',
+      'adhoc-subprocess-nesting': 'error',
+      'adhoc-subprocess-event-scope': 'error',
       // Structure (AST)
       'service-task-error-boundary': 'error',
       'timer-definition': 'error',
@@ -385,7 +401,8 @@ export const profiles: Record<string, LintProfileConfig> = {
       'standard-loop-config': 'error',
       'xor-gateway-conditions': 'error',
       'complex-gateway-split-conditions': 'error',
-      'adhoc-subprocess-config': 'error',
+      'adhoc-subprocess-completion': 'error',
+      'adhoc-subprocess-ordering': 'error',
       // Naming Quality
       'task-name-verb-pattern': 'warn',
       'end-event-generic-label': 'warn',
@@ -590,11 +607,25 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     suggestion:
       'Use a None, Message, Timer, or Signal start event at the process level, or move the trigger into an event sub-process.',
   },
-  'adhoc-subprocess-structure': {
+  'adhoc-subprocess-flow-events': {
     category: 'bpmn-spec',
-    why: 'Ad-hoc sub-processes have no sequence flows between their inner activities, so Start/End Events are meaningless, nesting is unsupported, and the engine has nothing to activate if the sub-process is empty.',
-    suggestion:
-      'Remove Start/End Events from the ad-hoc sub-process, add at least one activity, and flatten any nested ad-hoc sub-process into the parent.',
+    why: 'Activities inside an ad-hoc subprocess are not connected by sequence flows, so a Start or End Event inside it has nothing to anchor.',
+    suggestion: 'Remove Start and End Events from the ad-hoc subprocess.',
+  },
+  'adhoc-subprocess-activities': {
+    category: 'bpmn-spec',
+    why: 'An ad-hoc subprocess with no activities has nothing for the engine to activate.',
+    suggestion: 'Add at least one activity inside the ad-hoc subprocess.',
+  },
+  'adhoc-subprocess-nesting': {
+    category: 'bpmn-spec',
+    why: 'An ad-hoc subprocess cannot contain another ad-hoc subprocess.',
+    suggestion: 'Move the inner activities into the outer ad-hoc subprocess.',
+  },
+  'adhoc-subprocess-event-scope': {
+    category: 'bpmn-spec',
+    why: 'An ad-hoc subprocess is not supported inside an event subprocess.',
+    suggestion: 'Move the ad-hoc subprocess out of the event subprocess.',
   },
 
   // Structure
@@ -716,11 +747,17 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     suggestion:
       'Add a FEEL condition to every non-default outgoing flow, or mark one unmarked flow as the default. A default does not excuse other unmarked flows.',
   },
-  'adhoc-subprocess-config': {
+  'adhoc-subprocess-completion': {
     category: 'execution-readiness',
-    why: 'Ad-hoc sub-processes need a deterministic way to know when to complete and, in sequential engine-managed mode, a deterministic way to choose the next activity.',
+    why: 'Without a completion condition or an implementation, the engine completes the ad-hoc subprocess only after every inner activity has been performed.',
     suggestion:
-      'Set a Completion Condition or an implementation, choose an explicit Ordering, and provide an bfw:ActiveElements expression for sequential engine-managed sub-processes.',
+      'Set a completion condition, or set an implementation for plugin-managed completion. An implementation attribute must not be empty.',
+  },
+  'adhoc-subprocess-ordering': {
+    category: 'execution-readiness',
+    why: 'Ordering selects parallel or sequential activation. Omitted ordering defaults to Parallel. Sequential engine-managed mode needs bfw:ActiveElements so the engine knows which activity runs first.',
+    suggestion:
+      'Set ordering to Parallel or Sequential. For Sequential without an implementation, set a bfw:ActiveElements expression.',
   },
 
   // Naming Quality

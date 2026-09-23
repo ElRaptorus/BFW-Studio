@@ -16,12 +16,15 @@ function getExtensionBody(parent: ModdleNode, type: string): string | undefined 
   return String(body);
 }
 
+function implementationText(node: ModdleNode): string {
+  return node.implementation != null ? String(node.implementation).trim() : '';
+}
+
 /**
- * Execution-readiness checks for Ad-hoc Sub-Processes. Mirrors the engine's
- * deploy-time validator (AH-D18: sequential engine-managed ad-hoc requires
- * bfw:ActiveElements to establish a deterministic execution order).
+ * Completion of an ad-hoc subprocess: a completion condition, or an implementation
+ * for plugin-managed completion. An empty implementation attribute is rejected.
  */
-export default function () {
+export function adhocSubprocessCompletion() {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
     if (!is(node, 'bpmn:AdHocSubProcess')) {
       return;
@@ -29,12 +32,7 @@ export default function () {
 
     const completionCondition = node.completionCondition as ModdleNode | undefined;
     const completionConditionBody = completionCondition?.body != null ? String(completionCondition.body).trim() : '';
-
-    const implementation = node.implementation != null ? String(node.implementation).trim() : '';
-    const hasImplementationAttr = node.implementation != null;
-
-    const activeElements = getExtensionBody(node, 'bfw:ActiveElements');
-    const hasActiveElements = activeElements != null && activeElements.trim() !== '';
+    const implementation = implementationText(node);
 
     if (completionConditionBody === '' && implementation === '') {
       reporter.report(
@@ -43,10 +41,27 @@ export default function () {
       );
     }
 
-    if (hasImplementationAttr && implementation === '') {
+    if (node.implementation != null && implementation === '') {
       reporter.report(node.id, 'Ad-hoc subprocess has an empty implementation attribute (EXR-014)');
     }
+  }
 
+  return { check };
+}
+
+/**
+ * Activation order of an ad-hoc subprocess. Omitted ordering defaults to Parallel.
+ * Sequential engine-managed mode needs bfw:ActiveElements.
+ */
+export function adhocSubprocessOrdering() {
+  function check(node: ModdleNode, reporter: BpmnlintReporter) {
+    if (!is(node, 'bpmn:AdHocSubProcess')) {
+      return;
+    }
+
+    const implementation = implementationText(node);
+    const activeElements = getExtensionBody(node, 'bfw:ActiveElements');
+    const hasActiveElements = activeElements != null && activeElements.trim() !== '';
     const ordering = node.ordering != null ? String(node.ordering) : undefined;
 
     if (ordering === 'Sequential' && implementation === '' && !hasActiveElements) {

@@ -13,50 +13,46 @@ function isInsideEventSubprocess(node: ModdleNode): boolean {
   return false;
 }
 
-/**
- * Ad-hoc sub-processes have no sequence flows between their inner activities, so
- * Start/End Events (which only make sense as flow anchors) are meaningless inside
- * one, nesting is not supported, and an ad-hoc sub-process must contain at least
- * one activity to have anything to activate.
- */
-export default function () {
-  function check(node: ModdleNode, reporter: BpmnlintReporter) {
-    if (!is(node, 'bpmn:AdHocSubProcess')) {
-      return;
+function adHocRule(report: (node: ModdleNode, reporter: BpmnlintReporter, flowElements: ModdleNode[]) => void) {
+  return function () {
+    function check(node: ModdleNode, reporter: BpmnlintReporter) {
+      if (!is(node, 'bpmn:AdHocSubProcess')) {
+        return;
+      }
+      report(node, reporter, node.flowElements ?? []);
     }
-
-    const flowElements = node.flowElements ?? [];
-
-    const startEvents = flowElements.filter((element) => is(element, 'bpmn:StartEvent'));
-    if (startEvents.length > 0) {
-      reporter.report(node.id, 'Ad-hoc sub-processes must not contain Start Events (BSC-021)');
-    }
-
-    const endEvents = flowElements.filter((element) => is(element, 'bpmn:EndEvent'));
-    if (endEvents.length > 0) {
-      reporter.report(node.id, 'Ad-hoc sub-processes must not contain End Events (BSC-021)');
-    }
-
-    const activities = flowElements.filter(
-      (element) =>
-        !is(element, 'bpmn:SequenceFlow') &&
-        !is(element, 'bpmn:StartEvent') &&
-        !is(element, 'bpmn:EndEvent') &&
-        !is(element, 'bpmn:BoundaryEvent'),
-    );
-    if (activities.length === 0) {
-      reporter.report(node.id, 'Ad-hoc sub-process must contain at least one activity (BSC-021)');
-    }
-
-    const nestedAdHoc = flowElements.filter((element) => is(element, 'bpmn:AdHocSubProcess'));
-    if (nestedAdHoc.length > 0) {
-      reporter.report(node.id, 'Ad-hoc sub-processes cannot be nested (BSC-021)');
-    }
-
-    if (isInsideEventSubprocess(node)) {
-      reporter.report(node.id, 'Ad-hoc sub-processes are not supported inside event sub-processes (BSC-021)');
-    }
-  }
-
-  return { check };
+    return { check };
+  };
 }
+
+export const adhocSubprocessFlowEvents = adHocRule((node, reporter, flowElements) => {
+  const hasStartOrEnd = flowElements.some((element) => is(element, 'bpmn:StartEvent') || is(element, 'bpmn:EndEvent'));
+  if (hasStartOrEnd) {
+    reporter.report(node.id, 'Ad-hoc subprocess must not contain Start or End Events (BSC-021)');
+  }
+});
+
+export const adhocSubprocessActivities = adHocRule((node, reporter, flowElements) => {
+  const activities = flowElements.filter(
+    (element) =>
+      !is(element, 'bpmn:SequenceFlow') &&
+      !is(element, 'bpmn:StartEvent') &&
+      !is(element, 'bpmn:EndEvent') &&
+      !is(element, 'bpmn:BoundaryEvent'),
+  );
+  if (activities.length === 0) {
+    reporter.report(node.id, 'Ad-hoc subprocess must contain at least one activity (BSC-021)');
+  }
+});
+
+export const adhocSubprocessNesting = adHocRule((node, reporter, flowElements) => {
+  if (flowElements.some((element) => is(element, 'bpmn:AdHocSubProcess'))) {
+    reporter.report(node.id, 'Ad-hoc subprocesses cannot be nested (BSC-021)');
+  }
+});
+
+export const adhocSubprocessEventScope = adHocRule((node, reporter) => {
+  if (isInsideEventSubprocess(node)) {
+    reporter.report(node.id, 'Ad-hoc subprocesses are not supported inside an event subprocess (BSC-021)');
+  }
+});
