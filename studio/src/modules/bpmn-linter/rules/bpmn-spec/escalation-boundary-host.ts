@@ -2,11 +2,19 @@ import { is } from 'bpmnlint-utils';
 
 import type { BpmnlintReporter, ModdleNode } from '../../types';
 
+function humanizeElementType(elementType: string): string {
+  return elementType
+    .replace(/^bpmn:/, '')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .toLowerCase();
+}
+
 /**
- * Flags an Escalation Boundary Event attached to a host that cannot raise an
- * escalation from an inner scope. Escalations bubble up from a child scope, so
- * an escalation boundary is only meaningful on a Call Activity or a Sub-Process
- * (which includes Transaction and Ad-Hoc sub-processes via moddle inheritance).
+ * Hints at an Escalation Boundary Event attached to a host other than a Call
+ * Activity or a Sub-Process (which includes Transaction and Ad-Hoc sub-processes
+ * via moddle inheritance). Modeled escalations bubble up only from a child scope,
+ * so on other hosts the boundary fires only on an escalation injected through the
+ * REST API or a plugin.
  */
 export default function () {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
@@ -20,11 +28,14 @@ export default function () {
     }
 
     const host = node.attachedToRef;
-    if (host && (is(host, 'bpmn:CallActivity') || is(host, 'bpmn:SubProcess'))) {
+    if (!host || is(host, 'bpmn:CallActivity') || is(host, 'bpmn:SubProcess')) {
       return;
     }
 
-    reporter.report(node.id, 'Escalation boundary events are only allowed on a call activity or sub-process (BSC-016)');
+    reporter.report(
+      node.id,
+      `Escalation boundary on a ${humanizeElementType(host.$type)} can only be fired by an escalation injected through the REST API or a plugin (BSC-016)`,
+    );
   }
 
   return { check };

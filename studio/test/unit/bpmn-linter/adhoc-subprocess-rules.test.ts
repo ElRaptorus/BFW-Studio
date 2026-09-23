@@ -9,6 +9,7 @@ import {
 } from '../../../src/modules/bpmn-linter/rules/bpmn-spec/adhoc-subprocess-structure';
 import {
   adhocSubprocessCompletion,
+  adhocSubprocessDefaultOrdering,
   adhocSubprocessOrdering,
 } from '../../../src/modules/bpmn-linter/rules/execution-readiness/adhoc-subprocess-config';
 import type { BpmnlintRuleFactory, ModdleNode } from '../../../src/modules/bpmn-linter/types';
@@ -140,12 +141,6 @@ describe('adhoc-subprocess-completion', () => {
     assert.equal(collectReports(adhocSubprocessOrdering, node).length, 0);
   });
 
-  it('reports an empty implementation attribute', () => {
-    const node = adHocSubProcess('AdHoc_1', [task('Task_1')], { ordering: 'Parallel', implementation: '' });
-    const reports = collectReports(adhocSubprocessCompletion, node);
-    assert.ok(reports.some((report) => /empty implementation attribute/i.test(report.message)));
-  });
-
   it('ignores non-ad-hoc subprocesses', () => {
     const node = { $type: 'bpmn:SubProcess', id: 'SP_1' } as unknown as ModdleNode;
     assert.equal(collectReports(adhocSubprocessCompletion, node).length, 0);
@@ -182,18 +177,37 @@ describe('adhoc-subprocess-ordering', () => {
     assert.ok(!reports.some((report) => /requires an bfw:ActiveElements expression/i.test(report.message)));
   });
 
-  it('reports when ordering is not explicitly set', () => {
-    const node = adHocSubProcess('AdHoc_1', [task('Task_1')], {
-      completionCondition: { $type: 'bpmn:FormalExpression', body: 'activeCount = 0' },
-    });
+  it('reports an empty implementation attribute', () => {
+    const node = adHocSubProcess('AdHoc_1', [task('Task_1')], { ordering: 'Parallel', implementation: '' });
     const reports = collectReports(adhocSubprocessOrdering, node);
     assert.equal(reports.length, 1);
-    assert.ok(reports.some((report) => /no explicit ordering/i.test(report.message)));
-    assert.equal(collectReports(adhocSubprocessCompletion, node).length, 0);
+    assert.match(reports[0].message, /empty implementation attribute/i);
+    assert.ok(
+      !collectReports(adhocSubprocessCompletion, node).some((report) => /empty implementation/i.test(report.message)),
+    );
+  });
+
+  it('passes when ordering is not explicitly set', () => {
+    const node = adHocSubProcess('AdHoc_1', [task('Task_1')]);
+    assert.equal(collectReports(adhocSubprocessOrdering, node).length, 0);
   });
 
   it('ignores non-ad-hoc subprocesses', () => {
     const node = { $type: 'bpmn:SubProcess', id: 'SP_1' } as unknown as ModdleNode;
     assert.equal(collectReports(adhocSubprocessOrdering, node).length, 0);
+  });
+});
+
+describe('adhoc-subprocess-default-ordering', () => {
+  it('reports when ordering is not explicitly set', () => {
+    const node = adHocSubProcess('AdHoc_1', [task('Task_1')]);
+    const reports = collectReports(adhocSubprocessDefaultOrdering, node);
+    assert.equal(reports.length, 1);
+    assert.match(reports[0].message, /no explicit ordering/i);
+  });
+
+  it('passes with an explicit ordering', () => {
+    const node = adHocSubProcess('AdHoc_1', [task('Task_1')], { ordering: 'Parallel' });
+    assert.equal(collectReports(adhocSubprocessDefaultOrdering, node).length, 0);
   });
 });

@@ -42,12 +42,16 @@ function withParent(child: ModdleNode, parentType?: string): ModdleNode {
 }
 
 describe('escalation-boundary-host', () => {
-  it('reports an escalation boundary attached to a plain task', () => {
-    const boundary = withHost(node('bpmn:BoundaryEvent', 'Boundary_1', 'bpmn:EscalationEventDefinition'), 'bpmn:Task');
+  it('hints that an escalation boundary on a user task fires only on an injected escalation', () => {
+    const boundary = withHost(
+      node('bpmn:BoundaryEvent', 'Boundary_1', 'bpmn:EscalationEventDefinition'),
+      'bpmn:UserTask',
+    );
     const reports = collectReports(escalationBoundaryHost, boundary);
     assert.equal(reports.length, 1);
     assert.equal(reports[0].id, 'Boundary_1');
-    assert.match(reports[0].message, /call activity or sub-process/i);
+    assert.match(reports[0].message, /^Escalation boundary on a user task can only be fired by an escalation injected/);
+    assert.match(reports[0].message, /\(BSC-016\)$/);
   });
 
   it('passes for an escalation boundary attached to a call activity', () => {
@@ -124,6 +128,7 @@ describe('top-level-start-event-type', () => {
     const reports = collectReports(topLevelStartEventType, start);
     assert.equal(reports.length, 1);
     assert.match(reports[0].message, /unsupported trigger type/i);
+    assert.match(reports[0].message, /\(BSC-022\)$/);
   });
 
   it('reports an escalation start event at the process root', () => {
@@ -141,7 +146,7 @@ describe('top-level-start-event-type', () => {
     assert.equal(collectReports(topLevelStartEventType, start).length, 0);
   });
 
-  it('does not flag a conditional start event at the process root (excluded)', () => {
+  it('passes for a conditional start event at the process root', () => {
     const start = withParent(node('bpmn:StartEvent', 'Start_1', 'bpmn:ConditionalEventDefinition'), 'bpmn:Process');
     assert.equal(collectReports(topLevelStartEventType, start).length, 0);
   });

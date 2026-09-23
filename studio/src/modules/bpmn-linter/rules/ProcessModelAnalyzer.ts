@@ -187,7 +187,7 @@ export class ProcessModelAnalyzer {
 
   hasCompensationBoundary(elementId: string): boolean {
     return this.getBoundaryEvents(elementId).some((be) =>
-      (be.eventDefinitions ?? []).some((ed: ModdleEventDefinition) => is(ed, 'bpmn:CompensationEventDefinition')),
+      (be.eventDefinitions ?? []).some((ed: ModdleEventDefinition) => is(ed, 'bpmn:CompensateEventDefinition')),
     );
   }
 

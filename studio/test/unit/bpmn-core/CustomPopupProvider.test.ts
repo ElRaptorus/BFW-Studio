@@ -40,51 +40,16 @@ function runEntries(element: unknown, entries: PopupEntries, bpmnReplace?): Popu
   return provider.getPopupMenuEntries(element)(entries);
 }
 
-describe('CustomPopupProvider — event subprocess start whitelist', () => {
-  const startMenuEntries: PopupEntries = {
-    'replace-with-none-start': { label: 'Start Event' },
-    'replace-with-message-start': { label: 'Message Start Event' },
-    'replace-with-timer-start': { label: 'Timer Start Event' },
-    'replace-with-conditional-start': { label: 'Conditional Start Event' },
-    'replace-with-signal-start': { label: 'Signal Start Event' },
-    'replace-with-error-start': { label: 'Error Start Event' },
-    'replace-with-escalation-start': { label: 'Escalation Start Event' },
-    'replace-with-compensation-start': { label: 'Compensation Start Event' },
-    'replace-with-non-interrupting-message-start': { label: 'Message Start Event (non-interrupting)' },
-    'replace-with-non-interrupting-timer-start': { label: 'Timer Start Event (non-interrupting)' },
-    'replace-with-non-interrupting-conditional-start': { label: 'Conditional Start Event (non-interrupting)' },
-    'replace-with-non-interrupting-signal-start': { label: 'Signal Start Event (non-interrupting)' },
-    'replace-with-non-interrupting-escalation-start': { label: 'Escalation Start Event (non-interrupting)' },
-    'replace-with-non-interrupting-error-start': { label: 'Error Start Event (non-interrupting)' },
-  };
-
-  it('shows exactly the decision-B interrupting + non-interrupting start events', () => {
-    // The start-event replace menu targets the ESP's start event, not the ESP shell.
+describe('CustomPopupProvider — start events', () => {
+  it('keeps the None start entry so a typed top-level start can become a None start again', () => {
     const startElement = { type: 'bpmn:StartEvent', businessObject: { get: () => undefined } };
-    const result = runEntries(startElement, { ...startMenuEntries });
-    const keys = Object.keys(result).sort();
+    const entries: PopupEntries = {
+      'replace-with-none-start': { label: 'Start Event' },
+      'replace-with-timer-start': { label: 'Timer Start Event' },
+    };
+    const result = runEntries(startElement, entries);
 
-    assert.deepEqual(keys, [
-      'replace-with-conditional-start',
-      'replace-with-error-start',
-      'replace-with-escalation-start',
-      'replace-with-message-start',
-      'replace-with-non-interrupting-conditional-start',
-      'replace-with-non-interrupting-escalation-start',
-      'replace-with-non-interrupting-message-start',
-      'replace-with-non-interrupting-signal-start',
-      'replace-with-non-interrupting-timer-start',
-      'replace-with-signal-start',
-      'replace-with-timer-start',
-    ]);
-  });
-
-  it('hides compensation, blank/none, and non-interrupting error starts', () => {
-    const startElement = { type: 'bpmn:StartEvent', businessObject: { get: () => undefined } };
-    const result = runEntries(startElement, { ...startMenuEntries });
-    assert.equal(Object.hasOwn(result, 'replace-with-compensation-start'), false);
-    assert.equal(Object.hasOwn(result, 'replace-with-none-start'), false);
-    assert.equal(Object.hasOwn(result, 'replace-with-non-interrupting-error-start'), false);
+    assert.deepEqual(Object.keys(result).sort(), ['replace-with-none-start', 'replace-with-timer-start']);
   });
 });
 
@@ -113,6 +78,24 @@ describe('CustomPopupProvider — direct activity→ESP entry', () => {
     const entries: PopupEntries = { 'replace-with-transaction': { label: 'Transaction' } };
     const result = runEntries(eventSubProcessElement(), entries);
     assert.equal(Object.hasOwn(result, 'replace-with-event-subprocess'), false);
+  });
+});
+
+describe('CustomPopupProvider — boundary events', () => {
+  it('keeps escalation boundary entries on a plain task host', () => {
+    const boundaryElement = {
+      type: 'bpmn:BoundaryEvent',
+      host: { type: 'bpmn:Task' },
+      businessObject: { get: () => undefined },
+    };
+    const entries: PopupEntries = {
+      'replace-with-escalation-boundary': { label: 'Escalation Boundary Event' },
+      'replace-with-non-interrupting-escalation-boundary': { label: 'Escalation Boundary Event (non-interrupting)' },
+    };
+    const result = runEntries(boundaryElement, entries);
+
+    assert.equal(Object.hasOwn(result, 'replace-with-escalation-boundary'), true);
+    assert.equal(Object.hasOwn(result, 'replace-with-non-interrupting-escalation-boundary'), true);
   });
 });
 

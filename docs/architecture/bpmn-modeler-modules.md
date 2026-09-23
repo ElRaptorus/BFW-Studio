@@ -170,10 +170,10 @@ These are diagram-js modules registered internally (not by plugins) that act as 
 
 1. `injectEventSubProcessEntry` — adds a direct "Event Sub-Process" morph entry for activity source types.
 2. `filterEventSubProcessDowngrades` — an Event Sub-Process cannot be morphed back down to a task or a plain subprocess.
-3. `filterBoundaryEventHostRestrictions` — drops the escalation-boundary morph entries (`replace-with-escalation-boundary`, `replace-with-non-interrupting-escalation-boundary`) unless the boundary event's host is a Call Activity, Sub-Process, Transaction, or Ad-hoc Sub-Process. The host type is resolved via `element.host?.type ?? element.businessObject?.get('attachedToRef')?.$type`.
-4. `filterStartEventEntries` — drops none-start, compensation-start, and non-interrupting error-start replacements from the start-event menu.
 
-These menu restrictions are backstopped by the `bpmn-linter` rules `escalation-boundary-host`, `cancel-event-transaction-scope`, and `top-level-start-event-type` for BPMN files that never pass through the menu (imports, hand-edits, merges). See [bpmn-linter.md](bpmn-linter.md) §Event-type placement rules.
+Start-event entries pass through unchanged: stock bpmn-js already hides the same-type entry and never offers a non-interrupting Error start, so a typed top-level start can be turned back into a None start.
+
+Escalation boundary entries stay available on every host: the Engine fires them on any host when an escalation is injected through the REST API or a plugin. The `bpmn-linter` rule `escalation-boundary-host` hints at hosts where a modeled escalation can never reach the boundary. The `cancel-event-transaction-scope` and `top-level-start-event-type` rules backstop the placement constraints for BPMN files that never pass through the menu (imports, hand-edits, merges). See [bpmn-linter.md](bpmn-linter.md) §Event-type placement rules.
 
 ## Design Constraints
 

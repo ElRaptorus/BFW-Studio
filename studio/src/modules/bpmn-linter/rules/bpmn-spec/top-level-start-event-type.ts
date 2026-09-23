@@ -3,9 +3,8 @@ import { is } from 'bpmnlint-utils';
 import type { BpmnlintReporter, ModdleNode } from '../../types';
 
 // Start-event trigger types that are invalid at the top level of a process.
-// Conditional is intentionally excluded here: its top-level semantics are still
-// open and left unchanged for now. These three are only valid inside an Event
-// Sub-Process, where a scope instance exists.
+// Conditional is a valid top-level start in the Engine. These three are only
+// valid inside an Event Sub-Process, where a scope instance exists.
 const FORBIDDEN_TOP_LEVEL_START_TYPES: ReadonlySet<string> = new Set([
   'bpmn:ErrorEventDefinition',
   'bpmn:EscalationEventDefinition',
@@ -44,7 +43,7 @@ export default function () {
         node.id,
         `Top-level process start event uses an unsupported trigger type "${humanizeEventDefinitionType(
           definitionType,
-        )}" (BSC-019)`,
+        )}" (BSC-022)`,
       );
     }
   }

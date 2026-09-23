@@ -2,7 +2,9 @@ import assert from 'node:assert';
 import { describe, it } from 'vitest';
 
 import multiInstanceConfig from '../../../src/modules/bpmn-linter/rules/execution-readiness/multi-instance-config';
-import standardLoopConfig from '../../../src/modules/bpmn-linter/rules/execution-readiness/standard-loop-config';
+import standardLoopConfig, {
+  standardLoopMaximum,
+} from '../../../src/modules/bpmn-linter/rules/execution-readiness/standard-loop-config';
 import type { BpmnlintRuleFactory, ModdleNode } from '../../../src/modules/bpmn-linter/types';
 
 type CapturedReport = { id: string; message: string };
@@ -98,22 +100,28 @@ describe('multi-instance-config', () => {
     assert.equal(reports.length, 0);
   });
 
-  it('passes with inputDataItem', () => {
+  it('reports with only inputDataItem, which names the element variable but no collection', () => {
     const node = makeServiceTaskWithMI({ inputDataItem: true });
     const reports = collectReports(multiInstanceConfig, node);
-    assert.equal(reports.length, 0);
+    assert.equal(reports.length, 1);
   });
 
-  it('passes with loopDataInputRef', () => {
+  it('reports with only loopDataInputRef', () => {
     const node = makeServiceTaskWithMI({ loopDataInputRef: true });
     const reports = collectReports(multiInstanceConfig, node);
-    assert.equal(reports.length, 0);
+    assert.equal(reports.length, 1);
   });
 
-  it('passes with camunda:collection', () => {
+  it('reports with only camunda:collection', () => {
     const node = makeServiceTaskWithMI({ camundaCollection: '${items}' });
     const reports = collectReports(multiInstanceConfig, node);
-    assert.equal(reports.length, 0);
+    assert.equal(reports.length, 1);
+  });
+
+  it('reports with a blank bfw:InputCollection', () => {
+    const node = makeServiceTaskWithMI({ inputCollection: '   ' });
+    const reports = collectReports(multiInstanceConfig, node);
+    assert.equal(reports.length, 1);
   });
 
   it('reports deprecation when loopCardinality is present', () => {
@@ -135,6 +143,38 @@ describe('multi-instance-config', () => {
     const reports = collectReports(multiInstanceConfig, node);
     assert.equal(reports.length, 1);
     assert.match(reports[0].message, /maxIterations/);
+  });
+
+  it('reports a blank completionCondition', () => {
+    const node = makeServiceTaskWithMI({ inputCollection: 'token.items' });
+    (node.loopCharacteristics as Record<string, unknown>).completionCondition = {
+      $type: 'bpmn:FormalExpression',
+      body: ' ',
+    };
+    const reports = collectReports(multiInstanceConfig, node);
+    assert.deepEqual(
+      reports.map((report) => report.message),
+      ['Multi-instance completionCondition must not be empty (EXR-010)'],
+    );
+  });
+
+  it('reports a blank bfw:LoopBreakCondition', () => {
+    const node = makeServiceTaskWithMI({ inputCollection: 'token.items' });
+    const loop = node.loopCharacteristics as { extensionElements: { values: ModdleNode[] } };
+    loop.extensionElements.values.push(makeExtension('bfw:LoopBreakCondition', ''));
+    const reports = collectReports(multiInstanceConfig, node);
+    assert.deepEqual(
+      reports.map((report) => report.message),
+      ['Multi-instance bfw:loopBreakCondition must not be empty (EXR-010)'],
+    );
+  });
+
+  it('passes a non-blank completionCondition and bfw:LoopBreakCondition', () => {
+    const node = makeServiceTaskWithMI({ inputCollection: 'token.items' });
+    const loop = node.loopCharacteristics as Record<string, unknown> & { extensionElements: { values: ModdleNode[] } };
+    loop.completionCondition = { $type: 'bpmn:FormalExpression', body: 'loop.completed >= 2' };
+    loop.extensionElements.values.push(makeExtension('bfw:LoopBreakCondition', 'errorCount > 3'));
+    assert.equal(collectReports(multiInstanceConfig, node).length, 0);
   });
 
   it('passes with a valid maxIterations value', () => {
@@ -189,11 +229,9 @@ describe('standard-loop-config', () => {
     assert.equal(conditionReport, undefined, 'Should not report missing loop condition');
   });
 
-  it('reports advisory when loopMaximum is absent', () => {
+  it('does not report a missing loopMaximum; standard-loop-maximum owns that advice', () => {
     const node = makeServiceTaskWithStandardLoop({ loopCondition: 'loop.completed < 5' });
-    const reports = collectReports(standardLoopConfig, node);
-    const maxReport = reports.find((report) => report.message.includes('maximum iteration limit'));
-    assert.ok(maxReport, 'Expected an advisory about missing loopMaximum');
+    assert.equal(collectReports(standardLoopConfig, node).length, 0);
   });
 
   it('passes with a valid loopMaximum', () => {
@@ -233,5 +271,19 @@ describe('standard-loop-config', () => {
     } as unknown as ModdleNode;
     const reports = collectReports(standardLoopConfig, node);
     assert.equal(reports.length, 0);
+  });
+});
+
+describe('standard-loop-maximum', () => {
+  it('reports advisory when loopMaximum is absent', () => {
+    const node = makeServiceTaskWithStandardLoop({ loopCondition: 'loop.completed < 5' });
+    const reports = collectReports(standardLoopMaximum, node);
+    assert.equal(reports.length, 1);
+    assert.match(reports[0].message, /maximum iteration limit/);
+  });
+
+  it('passes with a loopMaximum', () => {
+    const node = makeServiceTaskWithStandardLoop({ loopCondition: 'loop.completed < 5', loopMaximum: '10' });
+    assert.equal(collectReports(standardLoopMaximum, node).length, 0);
   });
 });

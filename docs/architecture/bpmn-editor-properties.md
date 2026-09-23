@@ -419,6 +419,8 @@ Available on `BpmnElementCommonProperties.loopConfig`.
 
 `studio/src/modules/bpmn-core/bpmn-js/moddle/bfw-platform.json` is the Studio-owned authoring contract. It is not generated from the Engine.
 
+`BusinessRuleTaskScript` declares its property as `bpmn:script`, so the Business Rule Task FEEL body serializes as `<bpmn:script>`, the form the Engine documents (`tBusinessRuleTask` has no such child in the BPMN 2.0 XSD, hence the extension). `<bfw:script>` is not read and is dropped on save.
+
 `verifyModdleConformance` (`studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts`) compares it to `extensionManifest` from `@elraptorus/bfw_engine_sdk`:
 
 | Direction | Rule |

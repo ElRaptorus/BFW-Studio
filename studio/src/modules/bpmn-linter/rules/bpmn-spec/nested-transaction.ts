@@ -4,11 +4,8 @@ import type { BpmnlintReporter, ModdleNode } from '../../types';
 
 export default function () {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
-    if (!is(node, 'bpmn:Process')) {
-      return;
-    }
-    if ((node.isExecutable as boolean | undefined) === false) {
-      reporter.report(node.id, 'Process is marked as not executable (EXR-001)');
+    if (is(node, 'bpmn:Transaction') && node.$parent && is(node.$parent, 'bpmn:Transaction')) {
+      reporter.report(node.id, 'Transactions must not be nested directly inside another transaction (BSC-023)');
     }
   }
 

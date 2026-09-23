@@ -93,8 +93,12 @@ describe('event-subprocess-start-event-type', () => {
     );
   });
 
-  it('reports an unsupported trigger type (compensation)', () => {
-    const reports = collectReports(eventSubprocessStartEventType, espStart('bpmn:CompensateEventDefinition'));
+  it('passes for a compensation start', () => {
+    assert.equal(collectReports(eventSubprocessStartEventType, espStart('bpmn:CompensateEventDefinition')).length, 0);
+  });
+
+  it('reports an unsupported trigger type (link)', () => {
+    const reports = collectReports(eventSubprocessStartEventType, espStart('bpmn:LinkEventDefinition'));
     assert.equal(reports.length, 1);
     assert.match(reports[0].message, /unsupported trigger type/i);
   });

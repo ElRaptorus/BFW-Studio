@@ -2,21 +2,22 @@ import { is } from 'bpmnlint-utils';
 
 import type { BpmnlintReporter, ModdleNode } from '../../types';
 
+function getExtensionBody(parent: ModdleNode, type: string): string | undefined {
+  const extensions = (parent.extensionElements as { values?: ModdleNode[] } | undefined)?.values;
+  const body = extensions?.find((extension) => extension.$type === type)?.body;
+  return body == null ? undefined : String(body);
+}
+
 export default function () {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
     if (!is(node, 'bpmn:ScriptTask')) {
       return;
     }
-    const parts: string[] = [];
-    if (!(node.scriptFormat as string | undefined)) {
-      parts.push('scriptFormat');
+    const script = node.script as string | undefined;
+    if (script?.trim() || getExtensionBody(node, 'bfw:ScriptRef')?.trim()) {
+      return;
     }
-    if (!(node.script as string | undefined)) {
-      parts.push('script');
-    }
-    if (parts.length) {
-      reporter.report(node.id, `Script task should declare ${parts.join(' and ')} (EXR-008)`);
-    }
+    reporter.report(node.id, 'Script task must declare a script or a bfw:scriptRef (EXR-008)');
   }
 
   return { check };

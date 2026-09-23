@@ -26,9 +26,9 @@ export default function checkRetryAntiPattern(
           elementId: task.id,
           elementName: task.name,
           message: `Service task "${task.name ?? task.id}" has a BPMN-level retry loop via gateway (AST-215)`,
-          why: 'BPMN-level retry loops duplicate engine retry capabilities (e.g., job retries) and clutter the diagram.',
+          why: 'BPMN-level loops for technical retries clutter the diagram. The Engine has no automatic task retries: a failed task makes the process instance fatal, and a retry is a manual process-instance retry.',
           suggestion:
-            "Use the engine's built-in job retry mechanism with configurable retry count and backoff. Reserve BPMN retry loops for business-level retries with different logic between attempts.",
+            'Retry technical failures inside the service task handler. Reserve BPMN retry loops for business-level retries.',
           category: 'logic-patterns',
         });
         break;

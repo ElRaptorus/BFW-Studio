@@ -21,8 +21,8 @@ function implementationText(node: ModdleNode): string {
 }
 
 /**
- * Completion of an ad-hoc subprocess: a completion condition, or an implementation
- * for plugin-managed completion. An empty implementation attribute is rejected.
+ * Advice: without a completion condition or an implementation for plugin-managed
+ * completion, the ad-hoc subprocess completes only after every activity ran.
  */
 export function adhocSubprocessCompletion() {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
@@ -40,18 +40,14 @@ export function adhocSubprocessCompletion() {
         'Ad-hoc subprocess has no completion condition and no implementation — it will complete when all activities have been performed (EXR-014)',
       );
     }
-
-    if (node.implementation != null && implementation === '') {
-      reporter.report(node.id, 'Ad-hoc subprocess has an empty implementation attribute (EXR-014)');
-    }
   }
 
   return { check };
 }
 
 /**
- * Activation order of an ad-hoc subprocess. Omitted ordering defaults to Parallel.
- * Sequential engine-managed mode needs bfw:ActiveElements.
+ * Ad-hoc settings the Engine rejects at deploy time: an empty implementation
+ * attribute, and Sequential engine-managed mode without bfw:ActiveElements.
  */
 export function adhocSubprocessOrdering() {
   function check(node: ModdleNode, reporter: BpmnlintReporter) {
@@ -64,14 +60,27 @@ export function adhocSubprocessOrdering() {
     const hasActiveElements = activeElements != null && activeElements.trim() !== '';
     const ordering = node.ordering != null ? String(node.ordering) : undefined;
 
+    if (node.implementation != null && implementation === '') {
+      reporter.report(node.id, 'Ad-hoc subprocess has an empty implementation attribute (EXR-014)');
+    }
+
     if (ordering === 'Sequential' && implementation === '' && !hasActiveElements) {
       reporter.report(
         node.id,
         'Sequential ad-hoc subprocess requires an bfw:ActiveElements expression to determine execution order (or set an implementation for plugin-managed mode) (EXR-014)',
       );
     }
+  }
 
-    if (ordering == null) {
+  return { check };
+}
+
+/**
+ * Advice: an omitted ordering defaults to Parallel.
+ */
+export function adhocSubprocessDefaultOrdering() {
+  function check(node: ModdleNode, reporter: BpmnlintReporter) {
+    if (is(node, 'bpmn:AdHocSubProcess') && node.ordering == null) {
       reporter.report(node.id, 'Ad-hoc subprocess has no explicit ordering — defaults to Parallel (EXR-014)');
     }
   }

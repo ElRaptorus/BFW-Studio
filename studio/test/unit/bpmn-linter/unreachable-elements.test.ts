@@ -78,6 +78,18 @@ describe('unreachable-elements', () => {
     );
   });
 
+  it('does not report a compensation handler without sequence flows', () => {
+    const start = startEvent('Start_1');
+    const end = endEvent('End_1');
+    const handler = { $type: 'bpmn:Task', id: 'Task_handler', isForCompensation: true } as unknown as ModdleNode;
+    const reports = collectReports(
+      unreachableElements,
+      process([start, end, handler, sequenceFlow('Flow_1', start, end)]),
+    );
+
+    assert.deepEqual(reports, []);
+  });
+
   it('still reports an activity inside an embedded subprocess that the inner scope cannot reach', () => {
     const innerTask = task('Task_inner');
     const start = startEvent('Start_1');

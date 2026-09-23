@@ -37,12 +37,14 @@ import compensationBoundaryNoOutgoing from './bpmn-spec/compensation-boundary-no
 import defaultFlowNoCondition from './bpmn-spec/default-flow-no-condition';
 import escalationBoundaryHost from './bpmn-spec/escalation-boundary-host';
 import eventGatewayMinOutgoing from './bpmn-spec/event-gateway-min-outgoing';
+import eventGatewayReceiveTaskBoundary from './bpmn-spec/event-gateway-receive-task-boundary';
 import eventGatewayTargetTypes from './bpmn-spec/event-gateway-target-types';
 import eventGatewayTargetsNoExtraIncoming from './bpmn-spec/event-gateway-targets-no-extra-incoming';
 import eventSubprocessNoFlows from './bpmn-spec/event-subprocess-no-flows';
 import eventSubprocessSingleStartEvent from './bpmn-spec/event-subprocess-single-start-event';
 import eventSubprocessStartEventType from './bpmn-spec/event-subprocess-start-event-type';
 import gatewayDirectionConsistency from './bpmn-spec/gateway-direction-consistency';
+import nestedTransaction from './bpmn-spec/nested-transaction';
 import noCrossBoundaryFlows from './bpmn-spec/no-cross-boundary-flows';
 import startEventNoConditions from './bpmn-spec/start-event-no-conditions';
 import topLevelStartEventType from './bpmn-spec/top-level-start-event-type';
@@ -50,17 +52,30 @@ import transactionCancelNoBoundary from './bpmn-spec/transaction-cancel-no-bound
 import transactionCancelNoCompensable from './bpmn-spec/transaction-cancel-no-compensable';
 // --- Custom: Execution Readiness ---
 
-import { adhocSubprocessCompletion, adhocSubprocessOrdering } from './execution-readiness/adhoc-subprocess-config';
+import {
+  adhocSubprocessCompletion,
+  adhocSubprocessDefaultOrdering,
+  adhocSubprocessOrdering,
+} from './execution-readiness/adhoc-subprocess-config';
+import businessRuleTaskConfig from './execution-readiness/business-rule-task-config';
 import callActivityTarget from './execution-readiness/call-activity-target';
+import { complexGatewayJoinCondition, complexGatewayRegion } from './execution-readiness/complex-gateway-join';
 import complexGatewaySplitConditions from './execution-readiness/complex-gateway-split-conditions';
 import errorEventConfig from './execution-readiness/error-event-config';
+import {
+  conditionalEventCondition,
+  intermediateTimerCycle,
+  linkEventName,
+  linkEventPairing,
+  signalEventReference,
+} from './execution-readiness/event-definition-config';
 import messageEventReference from './execution-readiness/message-event-reference';
 import multiInstanceConfig from './execution-readiness/multi-instance-config';
 import processExecutable from './execution-readiness/process-executable';
 import processVersion from './execution-readiness/process-version';
 import scriptTaskConfig from './execution-readiness/script-task-config';
 import serviceTaskImplementation from './execution-readiness/service-task-implementation';
-import standardLoopConfig from './execution-readiness/standard-loop-config';
+import standardLoopConfig, { standardLoopMaximum } from './execution-readiness/standard-loop-config';
 import timerFormat from './execution-readiness/timer-format';
 import userTaskAssignment from './execution-readiness/user-task-assignment';
 import validProcessId from './execution-readiness/valid-process-id';
@@ -105,6 +120,7 @@ import checkTechnicalConditions from './pda-compliance/technical-conditions';
 import conditionalFlowsNoGateway from './structure/conditional-flows-no-gateway';
 import gatewayTypeMismatch from './structure/gateway-type-mismatch';
 import multipleEventDefinitions from './structure/multiple-event-definitions';
+import noDeadEnd from './structure/no-dead-end';
 import orphanEndEvent from './structure/orphan-end-event';
 import processErrorEvents from './structure/process-error-events';
 import serviceTaskErrorBoundary from './structure/service-task-error-boundary';
@@ -153,8 +169,11 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'adhoc-subprocess-activities': adhocSubprocessActivities,
   'adhoc-subprocess-nesting': adhocSubprocessNesting,
   'adhoc-subprocess-event-scope': adhocSubprocessEventScope,
+  'nested-transaction': nestedTransaction,
+  'event-gateway-receive-task-boundary': eventGatewayReceiveTaskBoundary,
   // Structure
   'service-task-error-boundary': serviceTaskErrorBoundary,
+  'no-dead-end': noDeadEnd,
   'timer-definition': timerDefinition,
   'process-error-events': processErrorEvents,
   'unreachable-elements': unreachableElements,
@@ -175,10 +194,20 @@ export const customRuleFactories: Record<string, BpmnlintRuleFactory> = {
   'call-activity-target': callActivityTarget,
   'multi-instance-config': multiInstanceConfig,
   'standard-loop-config': standardLoopConfig,
+  'standard-loop-maximum': standardLoopMaximum,
   'xor-gateway-conditions': xorGatewayConditions,
   'complex-gateway-split-conditions': complexGatewaySplitConditions,
+  'complex-gateway-join-condition': complexGatewayJoinCondition,
+  'complex-gateway-region': complexGatewayRegion,
   'adhoc-subprocess-completion': adhocSubprocessCompletion,
   'adhoc-subprocess-ordering': adhocSubprocessOrdering,
+  'adhoc-subprocess-default-ordering': adhocSubprocessDefaultOrdering,
+  'signal-event-reference': signalEventReference,
+  'conditional-event-condition': conditionalEventCondition,
+  'link-event-name': linkEventName,
+  'link-event-pairing': linkEventPairing,
+  'intermediate-timer-cycle': intermediateTimerCycle,
+  'business-rule-task-config': businessRuleTaskConfig,
   // Naming Quality
   'task-name-verb-pattern': taskNameVerbPattern,
   'end-event-generic-label': endEventGenericLabel,
@@ -244,7 +273,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'start-event-required': 'error',
       'end-event-required': 'error',
       'fake-join': 'warn',
-      'no-implicit-split': 'error',
+      'no-implicit-split': 'warn',
       'no-disconnected': 'off',
       'no-gateway-join-fork': 'off',
       'single-blank-start-event': 'warn',
@@ -253,14 +282,14 @@ export const profiles: Record<string, LintProfileConfig> = {
       'label-required': 'warn',
       'sub-process-blank-start-event': 'warn',
       'event-sub-process-typed-start-event': 'warn',
-      'no-complex-gateway': 'error',
+      'no-complex-gateway': 'off',
       'no-inclusive-gateway': 'off',
       // BPMN Spec (BSC)
       'default-flow-no-condition': 'error',
       'start-event-no-conditions': 'off',
-      'event-subprocess-no-flows': 'warn',
-      'event-subprocess-single-start-event': 'warn',
-      'event-subprocess-start-event-type': 'warn',
+      'event-subprocess-no-flows': 'error',
+      'event-subprocess-single-start-event': 'error',
+      'event-subprocess-start-event-type': 'error',
       'event-gateway-min-outgoing': 'error',
       'event-gateway-target-types': 'error',
       'event-gateway-targets-no-extra-incoming': 'error',
@@ -268,17 +297,20 @@ export const profiles: Record<string, LintProfileConfig> = {
       'no-cross-boundary-flows': 'error',
       'compensation-boundary-no-outgoing': 'error',
       'gateway-direction-consistency': 'warn',
-      'escalation-boundary-host': 'warn',
-      'cancel-event-transaction-scope': 'warn',
+      'escalation-boundary-host': 'info',
+      'cancel-event-transaction-scope': 'error',
       'transaction-cancel-no-boundary': 'warn',
       'transaction-cancel-no-compensable': 'info',
-      'top-level-start-event-type': 'warn',
-      'adhoc-subprocess-flow-events': 'warn',
-      'adhoc-subprocess-activities': 'warn',
-      'adhoc-subprocess-nesting': 'warn',
-      'adhoc-subprocess-event-scope': 'warn',
+      'top-level-start-event-type': 'error',
+      'adhoc-subprocess-flow-events': 'error',
+      'adhoc-subprocess-activities': 'error',
+      'adhoc-subprocess-nesting': 'error',
+      'adhoc-subprocess-event-scope': 'error',
+      'nested-transaction': 'error',
+      'event-gateway-receive-task-boundary': 'error',
       // Structure (AST)
       'service-task-error-boundary': 'warn',
+      'no-dead-end': 'warn',
       'timer-definition': 'error',
       'process-error-events': 'off',
       'unreachable-elements': 'error',
@@ -286,23 +318,33 @@ export const profiles: Record<string, LintProfileConfig> = {
       'multiple-event-definitions': 'warn',
       'conditional-flows-no-gateway': 'info',
       'gateway-type-mismatch': 'info',
-      // Execution Readiness (all off for bpmn-development, except process-version)
+      // Execution Readiness (off for bpmn-development unless the Engine rejects the deployment)
       'process-executable': 'off',
       'process-version': 'error',
       'valid-process-id': 'off',
-      'service-task-implementation': 'off',
+      'service-task-implementation': 'error',
       'user-task-assignment': 'off',
       'timer-format': 'off',
-      'error-event-config': 'off',
-      'message-event-reference': 'off',
-      'script-task-config': 'off',
-      'call-activity-target': 'off',
-      'multi-instance-config': 'off',
-      'standard-loop-config': 'off',
+      'error-event-config': 'info',
+      'message-event-reference': 'error',
+      'script-task-config': 'error',
+      'call-activity-target': 'error',
+      'multi-instance-config': 'error',
+      'standard-loop-config': 'error',
+      'standard-loop-maximum': 'off',
       'xor-gateway-conditions': 'warn',
       'complex-gateway-split-conditions': 'warn',
+      'complex-gateway-join-condition': 'error',
+      'complex-gateway-region': 'error',
       'adhoc-subprocess-completion': 'off',
-      'adhoc-subprocess-ordering': 'off',
+      'adhoc-subprocess-ordering': 'error',
+      'adhoc-subprocess-default-ordering': 'off',
+      'signal-event-reference': 'error',
+      'conditional-event-condition': 'error',
+      'link-event-name': 'error',
+      'link-event-pairing': 'warn',
+      'intermediate-timer-cycle': 'warn',
+      'business-rule-task-config': 'error',
       // Naming Quality
       'task-name-verb-pattern': 'info',
       'end-event-generic-label': 'info',
@@ -353,7 +395,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'label-required': 'warn',
       'sub-process-blank-start-event': 'error',
       'event-sub-process-typed-start-event': 'error',
-      'no-complex-gateway': 'error',
+      'no-complex-gateway': 'off',
       'no-inclusive-gateway': 'off',
       // BPMN Spec (BSC)
       'default-flow-no-condition': 'error',
@@ -368,7 +410,7 @@ export const profiles: Record<string, LintProfileConfig> = {
       'no-cross-boundary-flows': 'error',
       'compensation-boundary-no-outgoing': 'error',
       'gateway-direction-consistency': 'error',
-      'escalation-boundary-host': 'error',
+      'escalation-boundary-host': 'warn',
       'cancel-event-transaction-scope': 'error',
       'transaction-cancel-no-boundary': 'error',
       'transaction-cancel-no-compensable': 'warn',
@@ -377,8 +419,11 @@ export const profiles: Record<string, LintProfileConfig> = {
       'adhoc-subprocess-activities': 'error',
       'adhoc-subprocess-nesting': 'error',
       'adhoc-subprocess-event-scope': 'error',
+      'nested-transaction': 'error',
+      'event-gateway-receive-task-boundary': 'error',
       // Structure (AST)
       'service-task-error-boundary': 'error',
+      'no-dead-end': 'error',
       'timer-definition': 'error',
       'process-error-events': 'off',
       'unreachable-elements': 'error',
@@ -390,19 +435,29 @@ export const profiles: Record<string, LintProfileConfig> = {
       'process-executable': 'error',
       'process-version': 'error',
       'valid-process-id': 'error',
-      'service-task-implementation': 'warn',
+      'service-task-implementation': 'error',
       'user-task-assignment': 'warn',
       'timer-format': 'error',
-      'error-event-config': 'error',
+      'error-event-config': 'warn',
       'message-event-reference': 'error',
-      'script-task-config': 'warn',
+      'script-task-config': 'error',
       'call-activity-target': 'error',
       'multi-instance-config': 'error',
       'standard-loop-config': 'error',
+      'standard-loop-maximum': 'error',
       'xor-gateway-conditions': 'error',
       'complex-gateway-split-conditions': 'error',
+      'complex-gateway-join-condition': 'error',
+      'complex-gateway-region': 'error',
       'adhoc-subprocess-completion': 'error',
       'adhoc-subprocess-ordering': 'error',
+      'adhoc-subprocess-default-ordering': 'error',
+      'signal-event-reference': 'error',
+      'conditional-event-condition': 'error',
+      'link-event-name': 'error',
+      'link-event-pairing': 'error',
+      'intermediate-timer-cycle': 'error',
+      'business-rule-task-config': 'error',
       // Naming Quality
       'task-name-verb-pattern': 'warn',
       'end-event-generic-label': 'warn',
@@ -461,7 +516,7 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'no-implicit-split': {
     category: 'structure',
-    why: 'When a task has multiple outgoing sequence flows without an explicit gateway, the branching semantics are ambiguous.',
+    why: 'When an element other than a gateway has multiple outgoing sequence flows, the Engine fails the instance with implicit_split.',
     suggestion: 'Add an explicit gateway (exclusive, parallel, or inclusive) after the element.',
   },
   'no-disconnected': {
@@ -506,7 +561,7 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'no-complex-gateway': {
     category: 'structure',
-    why: 'Complex gateways are rarely supported by execution engines and difficult to understand.',
+    why: 'The Engine executes Complex gateways; enable this rule only when the diagram must also run on engines without Complex gateway support.',
     suggestion: 'Replace with a combination of exclusive, parallel, or inclusive gateways.',
   },
   'no-inclusive-gateway': {
@@ -538,9 +593,9 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'event-subprocess-start-event-type': {
     category: 'bpmn-spec',
-    why: 'The engine only executes event sub-processes triggered by Message, Timer, Signal, Conditional, Error, or Escalation start events, and an Error start must be interrupting.',
+    why: 'The engine only executes event sub-processes triggered by Message, Timer, Signal, Conditional, Error, Escalation, or Compensation start events, and an Error start must be interrupting.',
     suggestion:
-      'Use a supported start-event trigger (Message, Timer, Signal, Conditional, Error, or Escalation). Make Error starts interrupting via the modeler.',
+      'Use a supported start-event trigger (Message, Timer, Signal, Conditional, Error, Escalation, or Compensation). Make Error starts interrupting via the modeler.',
   },
   'event-gateway-min-outgoing': {
     category: 'bpmn-spec',
@@ -574,14 +629,13 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'gateway-direction-consistency': {
     category: 'bpmn-spec',
-    why: 'A converging gateway should have at most one outgoing flow, and a diverging gateway at most one incoming.',
+    why: 'A gateway that both joins and forks fails the instance at runtime, and the Engine rejects the deployment of a mixed complex gateway.',
     suggestion: 'Separate the gateway into distinct converging and diverging gateways.',
   },
   'escalation-boundary-host': {
     category: 'bpmn-spec',
-    why: 'Escalations bubble up from an inner scope, so an escalation boundary event only makes sense on a call activity or sub-process.',
-    suggestion:
-      'Attach the escalation boundary event to a call activity or sub-process, or use a different boundary event type.',
+    why: 'Escalations raised inside the model reach a boundary only through a call activity or sub-process. On other hosts the boundary fires only on an external escalation injection.',
+    suggestion: 'Keep it if external injection is intended; otherwise attach it to a call activity or sub-process.',
   },
   'cancel-event-transaction-scope': {
     category: 'bpmn-spec',
@@ -605,12 +659,22 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     category: 'bpmn-spec',
     why: 'Error, Escalation, and Compensation start events require a surrounding scope instance and are only valid inside an event sub-process.',
     suggestion:
-      'Use a None, Message, Timer, or Signal start event at the process level, or move the trigger into an event sub-process.',
+      'Use a None, Message, Timer, Signal, or Conditional start event at the process level, or move the trigger into an event sub-process.',
   },
   'adhoc-subprocess-flow-events': {
     category: 'bpmn-spec',
     why: 'Activities inside an ad-hoc subprocess are not connected by sequence flows, so a Start or End Event inside it has nothing to anchor.',
     suggestion: 'Remove Start and End Events from the ad-hoc subprocess.',
+  },
+  'nested-transaction': {
+    category: 'bpmn-spec',
+    why: 'The Engine rejects the deployment of a transaction nested directly inside another transaction.',
+    suggestion: 'Move the inner transaction out, or turn it into an embedded sub-process.',
+  },
+  'event-gateway-receive-task-boundary': {
+    category: 'bpmn-spec',
+    why: 'The Engine rejects the deployment of a receive task after an event-based gateway that has boundary events, because cancelling the losing branch would be ambiguous.',
+    suggestion: 'Remove the boundary events, or replace the receive task with a message intermediate catch event.',
   },
   'adhoc-subprocess-activities': {
     category: 'bpmn-spec',
@@ -634,6 +698,11 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     why: 'Service tasks can fail at runtime. Without a boundary error event, failures are unhandled.',
     suggestion: 'Add a boundary error event to the service task.',
   },
+  'no-dead-end': {
+    category: 'structure',
+    why: 'When an element other than an end event completes without an outgoing sequence flow, the Engine fails the instance.',
+    suggestion: 'Connect the element to the next step, or end the path with an end event.',
+  },
   'timer-definition': {
     category: 'structure',
     why: 'A timer event without a time definition (date, duration, or cycle) will not trigger.',
@@ -656,13 +725,13 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'multiple-event-definitions': {
     category: 'structure',
-    why: 'Events with multiple event definitions are rarely intended and often unsupported by engines.',
+    why: 'The Engine keeps only the last event definition of an event and ignores the others.',
     suggestion: 'Split the event into separate events, each with a single event definition.',
   },
   'conditional-flows-no-gateway': {
     category: 'structure',
-    why: 'Conditions on flows directly from tasks make the branching logic implicit and harder to read.',
-    suggestion: 'Use an explicit gateway after the task to control the branching.',
+    why: 'The Engine ignores conditions on flows that do not leave a split gateway and always follows them, so the condition has no effect.',
+    suggestion: 'Move the condition to a flow leaving a split gateway, or remove it.',
   },
   'gateway-type-mismatch': {
     category: 'structure',
@@ -673,8 +742,8 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   // Execution Readiness
   'process-executable': {
     category: 'execution-readiness',
-    why: 'The process must be marked as executable for the engine to run it.',
-    suggestion: 'Set isExecutable="true" on the process element.',
+    why: 'The Engine skips processes with isExecutable="false"; a missing attribute counts as executable.',
+    suggestion: 'Remove isExecutable="false" or set it to true.',
   },
   'process-version': {
     category: 'execution-readiness',
@@ -690,13 +759,13 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'service-task-implementation': {
     category: 'execution-readiness',
-    why: 'A service task without an implementation type cannot be executed by the engine.',
-    suggestion: 'Set the implementation type (e.g., external, delegate, expression).',
+    why: 'The Engine rejects the deployment of a service task without an implementation attribute; its value selects the service task handler plugin.',
+    suggestion: 'Set implementation to the key of a registered service task handler (e.g. http).',
   },
   'user-task-assignment': {
     category: 'execution-readiness',
-    why: 'A user task without assignment will not appear in any task list.',
-    suggestion: 'Set an assignee, candidate users, or candidate group.',
+    why: 'A user task without bfw:assignees gets an empty assignee list at runtime, so no one is named as responsible for it. The Engine ignores humanPerformer, potentialOwner, and vendor assignment attributes.',
+    suggestion: 'Set bfw:assignees to a FEEL expression that resolves the responsible users or groups.',
   },
   'timer-format': {
     category: 'execution-readiness',
@@ -705,18 +774,18 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'error-event-config': {
     category: 'execution-readiness',
-    why: 'Error events need an error reference for the engine to match thrown errors to catch events.',
-    suggestion: 'Set the errorRef on the error event definition.',
+    why: 'An error end event without an inline bfw:errorCode, and without an errorRef to a global error that has an errorCode, throws an error without a code, which only catch-all boundary events and event sub-processes catch.',
+    suggestion: 'Set an errorRef to a global error with an errorCode, or an inline bfw:errorCode.',
   },
   'message-event-reference': {
     category: 'execution-readiness',
-    why: 'Message events need a message reference for the engine to correlate messages.',
-    suggestion: 'Set the messageRef on the message event definition.',
+    why: 'The Engine rejects the deployment of a message event, send task, or receive task without a message reference; the message name routes the message.',
+    suggestion: 'Set the messageRef to a global message.',
   },
   'script-task-config': {
     category: 'execution-readiness',
-    why: 'A script task needs both a script format and script body to execute.',
-    suggestion: 'Set the scriptFormat and provide the script content.',
+    why: 'A script task needs an inline script or a named script plugin (bfw:scriptRef) to execute.',
+    suggestion: 'Provide the script content, or set bfw:scriptRef to a registered named script.',
   },
   'call-activity-target': {
     category: 'execution-readiness',
@@ -725,15 +794,20 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'multi-instance-config': {
     category: 'execution-readiness',
-    why: 'Multi-instance activities need an input collection to determine iteration count and input data. The engine does not support loopCardinality.',
+    why: 'Multi-instance activities need an input collection to determine iteration count and input data. The engine does not support loopCardinality. Data items only name the element variable; without bfw:InputCollection (or a FEEL expression as the loopDataInput body, which the modeler cannot author) the Engine rejects the deployment, as it does for an empty completionCondition or bfw:loopBreakCondition.',
     suggestion:
       'Set an Input Collection (bfw:InputCollection) on the multi-instance configuration. Optionally set maxIterations as a safety cap.',
   },
   'standard-loop-config': {
     category: 'execution-readiness',
-    why: 'Standard loops need a loop condition to control iteration and should have a maximum iteration limit as a safety guard.',
+    why: 'The Engine rejects the deployment of a standard loop without a loop condition, or with a loopMaximum that is not a positive integer.',
     suggestion:
-      'Set a loop condition (FEEL expression that returns true to continue). Add loopMaximum to prevent runaway loops.',
+      'Set a loop condition (FEEL expression that returns true to continue) and a positive integer loopMaximum.',
+  },
+  'standard-loop-maximum': {
+    category: 'execution-readiness',
+    why: 'A standard loop without loopMaximum has no safety cap and can run indefinitely if its condition never turns false.',
+    suggestion: 'Add loopMaximum to prevent runaway loops.',
   },
   'xor-gateway-conditions': {
     category: 'execution-readiness',
@@ -747,17 +821,63 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     suggestion:
       'Add a FEEL condition to every non-default outgoing flow, or mark one unmarked flow as the default. A default does not excuse other unmarked flows.',
   },
+  'complex-gateway-join-condition': {
+    category: 'execution-readiness',
+    why: 'The Engine rejects the deployment of a complex join without an activationCondition; the condition decides when the join fires.',
+    suggestion: 'Set an activationCondition, e.g. activatedCount >= 2 or activatedCount = incomingCount.',
+  },
+  'complex-gateway-region': {
+    category: 'execution-readiness',
+    why: 'The Engine rejects the deployment unless every complex join pairs with a dominating complex split and the elements between them form a single-entry, single-exit region that is disjoint from or nested in other regions. The join cancels the rest of that region when it fires.',
+    suggestion:
+      'Open the branches with a complex split, route every branch back into the join, and do not let flows enter or leave the region in between.',
+  },
   'adhoc-subprocess-completion': {
     category: 'execution-readiness',
     why: 'Without a completion condition or an implementation, the engine completes the ad-hoc subprocess only after every inner activity has been performed.',
-    suggestion:
-      'Set a completion condition, or set an implementation for plugin-managed completion. An implementation attribute must not be empty.',
+    suggestion: 'Set a completion condition, or set an implementation for plugin-managed completion.',
   },
   'adhoc-subprocess-ordering': {
     category: 'execution-readiness',
-    why: 'Ordering selects parallel or sequential activation. Omitted ordering defaults to Parallel. Sequential engine-managed mode needs bfw:ActiveElements so the engine knows which activity runs first.',
+    why: 'The Engine rejects the deployment of an ad-hoc subprocess with an empty implementation attribute, or with Sequential engine-managed ordering and no bfw:ActiveElements to pick the first activity.',
     suggestion:
-      'Set ordering to Parallel or Sequential. For Sequential without an implementation, set a bfw:ActiveElements expression.',
+      'Remove the empty implementation attribute or fill it in. For Sequential without an implementation, set a bfw:ActiveElements expression.',
+  },
+  'adhoc-subprocess-default-ordering': {
+    category: 'execution-readiness',
+    why: 'An omitted ordering defaults to Parallel, so every inner activity may run at once.',
+    suggestion: 'Set ordering to Parallel or Sequential explicitly.',
+  },
+  'signal-event-reference': {
+    category: 'execution-readiness',
+    why: 'The Engine rejects the deployment of a signal event without a signal reference; the signal name routes the broadcast.',
+    suggestion: 'Set the signalRef to a global signal with a name.',
+  },
+  'conditional-event-condition': {
+    category: 'execution-readiness',
+    why: 'The Engine rejects the deployment of a conditional event without a condition.',
+    suggestion: 'Set a FEEL condition on the conditional event definition.',
+  },
+  'link-event-name': {
+    category: 'execution-readiness',
+    why: 'The Engine rejects the deployment of a link event without a name; the name pairs a link throw with its link catch.',
+    suggestion: 'Give the link event a name that matches its counterpart.',
+  },
+  'link-event-pairing': {
+    category: 'execution-readiness',
+    why: 'When a link throw is reached, the Engine fails the instance unless exactly one link catch with the same name exists in the same scope.',
+    suggestion: 'Add one link catch with the same name in the same process or sub-process, or rename duplicates.',
+  },
+  'intermediate-timer-cycle': {
+    category: 'execution-readiness',
+    why: 'The Engine fails the instance when an intermediate timer catch event with a timeCycle is reached; cycles are only supported on start and boundary events.',
+    suggestion:
+      'Use timeDuration or timeDate, or model the repetition with a loop or a non-interrupting timer boundary.',
+  },
+  'business-rule-task-config': {
+    category: 'execution-readiness',
+    why: 'The Engine rejects the deployment of a business rule task unless implementation is "feel" with a script, or "dmn" with a bfw:decisionRef.',
+    suggestion: 'Set implementation to "feel" and provide a script, or to "dmn" and set bfw:decisionRef.',
   },
 
   // Naming Quality
@@ -839,7 +959,7 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
     category: 'logic-patterns',
     why: 'A cycle without an exit condition can loop indefinitely, consuming engine resources and blocking process completion.',
     suggestion:
-      'Add a conditional exit via an exclusive gateway with a termination condition. Alternatively, add a timer boundary event for automatic abort after a timeout.',
+      'Add a conditional exit via an exclusive, inclusive, or complex gateway, or a boundary event (e.g. a timer or error boundary) that leaves the cycle.',
   },
   'process-complexity': {
     category: 'logic-patterns',
@@ -879,18 +999,18 @@ export const builtinRuleMetadata: Record<string, RuleMetadata> = {
   },
   'retry-anti-pattern': {
     category: 'logic-patterns',
-    why: 'BPMN-level retry loops duplicate engine retry capabilities (e.g., job retries) and clutter the diagram.',
+    why: 'BPMN-level loops for technical retries clutter the diagram. The Engine has no automatic task retries: a failed task makes the process instance fatal, and a retry is a manual process-instance retry.',
     suggestion:
-      "Use the engine's built-in job retry mechanism with configurable retry count and backoff. Reserve BPMN retry loops for business-level retries.",
+      'Retry technical failures inside the service task handler. Reserve BPMN retry loops for business-level retries.',
   },
   'parallel-end-without-join': {
     category: 'logic-patterns',
-    why: "When parallel branches each reach their own end event without synchronization, the engine's behavior depends on token semantics. Explicit synchronization removes ambiguity.",
+    why: 'When parallel branches each reach their own end event, the process finishes only after the last one, which is easy to misread. Explicit synchronization makes that visible.',
     suggestion: 'Add a parallel join gateway to synchronize all branches before a single end event.',
   },
   'terminate-end-event-warning': {
     category: 'logic-patterns',
-    why: 'A terminate end event kills all tokens in the current scope immediately — no compensation, no cleanup, no graceful shutdown.',
+    why: 'A terminate end event interrupts every other token in the current scope immediately; running activities are cancelled without compensation.',
     suggestion:
       'Prefer normal end events or error end events for controlled shutdown. Use terminate end events only for deliberate hard-abort scenarios.',
   },

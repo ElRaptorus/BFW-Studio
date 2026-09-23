@@ -1,7 +1,14 @@
-import { type LintFinding, type RuleSeverityConfig, mapToLintSeverity } from '../../types';
+import { is } from 'bpmnlint-utils';
+
+import { type LintFinding, type ModdleEventDefinition, type RuleSeverityConfig, mapToLintSeverity } from '../../types';
 import type { ProcessModelAnalyzer } from '../ProcessModelAnalyzer';
 
-const EXIT_GATEWAY_TYPES = new Set(['bpmn:ExclusiveGateway', 'bpmn:InclusiveGateway', 'bpmn:EventBasedGateway']);
+const EXIT_GATEWAY_TYPES = new Set([
+  'bpmn:ExclusiveGateway',
+  'bpmn:InclusiveGateway',
+  'bpmn:ComplexGateway',
+  'bpmn:EventBasedGateway',
+]);
 
 export default function checkInfiniteLoop(analyzer: ProcessModelAnalyzer, severity: RuleSeverityConfig): LintFinding[] {
   const findings: LintFinding[] = [];
@@ -21,12 +28,23 @@ export default function checkInfiniteLoop(analyzer: ProcessModelAnalyzer, severi
       message: `Cycle detected without exit condition (${cycle.length} elements) (AST-208)`,
       why: 'A cycle without an exit condition can loop indefinitely, consuming engine resources and blocking process completion.',
       suggestion:
-        'Add a conditional exit via an exclusive gateway with a termination condition. Alternatively, add a timer boundary event for automatic abort after a timeout, or enforce a maximum loop count.',
+        'Add a conditional exit via an exclusive, inclusive, or complex gateway, or a boundary event (e.g. a timer or error boundary) that leaves the cycle.',
       category: 'logic-patterns',
     });
   }
 
   return findings;
+}
+
+function hasExitBoundary(analyzer: ProcessModelAnalyzer, nodeId: string): boolean {
+  return analyzer
+    .getBoundaryEvents(nodeId)
+    .some(
+      (boundaryEvent) =>
+        !(boundaryEvent.eventDefinitions ?? []).some((eventDefinition: ModdleEventDefinition) =>
+          is(eventDefinition, 'bpmn:CompensateEventDefinition'),
+        ),
+    );
 }
 
 function hasExitCondition(analyzer: ProcessModelAnalyzer, cycle: string[]): boolean {
@@ -42,7 +60,7 @@ function hasExitCondition(analyzer: ProcessModelAnalyzer, cycle: string[]): bool
       }
     }
 
-    if (analyzer.hasTimerBoundary(nodeId)) {
+    if (hasExitBoundary(analyzer, nodeId)) {
       return true;
     }
   }

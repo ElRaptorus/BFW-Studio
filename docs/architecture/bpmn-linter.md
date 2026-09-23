@@ -228,25 +228,25 @@ When adding new rules that walk `flowElements` of a `bpmn:Process` or `bpmn:SubP
 
 ### Event Subprocess validation rules
 
-The engine executes Event Subprocesses (ESPs) and validates them at deploy time. The linter mirrors those deploy-time checks so authors see violations before deployment. Severities are `warn` in `bpmn-development` and `error` in `bpmn-production-ready`.
+The engine executes Event Subprocesses (ESPs) and validates them at deploy time. The linter mirrors those deploy-time checks so authors see violations before deployment. Severities are `error` in both profiles.
 
 | Rule | Path | Mirrors engine rule | Reports |
 |------|------|---------------------|---------|
 | `event-subprocess-no-flows` | `bpmn-spec/event-subprocess-no-flows.ts` | `event_subprocess_has_sequence_flow` | An ESP shell with any incoming/outgoing sequence flow (BSC-005). Enabled in both profiles. |
 | `event-subprocess-single-start-event` | `bpmn-spec/event-subprocess-single-start-event.ts` | `event_subprocess_no_start_event` + `event_subprocess_multiple_start_events` | An ESP with zero or more than one Start Event (BSC-013). |
-| `event-subprocess-start-event-type` | `bpmn-spec/event-subprocess-start-event-type.ts` | `event_subprocess_untyped_start` + `event_subprocess_error_start_must_interrupt` | An ESP Start Event whose trigger type is not in the allow-list (Message, Timer, Signal, Conditional, Error, Escalation) — e.g. Compensation (BSC-014); and a non-interrupting Error start (BSC-015). |
+| `event-subprocess-start-event-type` | `bpmn-spec/event-subprocess-start-event-type.ts` | `event_subprocess_untyped_start` + `event_subprocess_error_start_must_interrupt` | An ESP Start Event whose trigger type is not in the allow-list (Message, Timer, Signal, Conditional, Error, Escalation, Compensation) — e.g. Link (BSC-014); and a non-interrupting Error start (BSC-015). |
 
-The allowed trigger set matches the modeler replace-menu whitelist in `bpmn-core/bpmn-js/Provider/CustomPopupProvider.ts` (interrupting: Message/Timer/Signal/Conditional/Error/Escalation; non-interrupting: the same minus Error). The blank/untyped start case is left to the built-in `event-sub-process-typed-start-event` rule so it is not double-reported by `event-subprocess-start-event-type`; the cross-boundary case remains covered by `no-cross-boundary-flows`.
+The allowed trigger set matches the Engine validator, which also accepts Compensation starts (always run as interrupting), and the modeler replace menu in `bpmn-core/bpmn-js/Provider/CustomPopupProvider.ts` (interrupting: Message/Timer/Signal/Conditional/Error/Escalation/Compensation; non-interrupting: the same minus Error and Compensation). The blank/untyped start case is left to the built-in `event-sub-process-typed-start-event` rule so it is not double-reported by `event-subprocess-start-event-type`; the cross-boundary case remains covered by `no-cross-boundary-flows`.
 
 ### Event-type placement rules
 
-These `bpmn-spec` rules backstop the modeler's replace-menu gating for BPMN files that arrive by import, hand-editing, or merge (i.e. never pass through the menu). Severities are `warn` in `bpmn-development` and `error` in `bpmn-production-ready`.
+These `bpmn-spec` rules backstop the modeler's replace-menu gating for BPMN files that arrive by import, hand-editing, or merge (i.e. never pass through the menu). `cancel-event-transaction-scope` and `top-level-start-event-type` are `error` in both profiles because the Engine rejects the deployment; `escalation-boundary-host` is `info` / `warn`.
 
 | Rule | Path | Reports |
 |------|------|---------|
-| `escalation-boundary-host` | `bpmn-spec/escalation-boundary-host.ts` | A Boundary Event carrying `bpmn:EscalationEventDefinition` whose host is not a Call Activity or Sub-Process (BSC-016). `is(host, 'bpmn:SubProcess')` covers Transaction / Ad-Hoc sub-processes via moddle inheritance. Mirrors the escalation-boundary host restriction in `CustomPopupProvider.ts`. |
+| `escalation-boundary-host` | `bpmn-spec/escalation-boundary-host.ts` | A Boundary Event carrying `bpmn:EscalationEventDefinition` whose host is not a Call Activity or Sub-Process (BSC-016). `is(host, 'bpmn:SubProcess')` covers Transaction / Ad-Hoc sub-processes via moddle inheritance. A hint, not a restriction: modeled escalations reach a boundary only from a child scope, but the Engine fires an escalation boundary on any host when an escalation is injected through the REST API or a plugin. The modeler menu therefore offers escalation boundaries on every host. |
 | `cancel-event-transaction-scope` | `bpmn-spec/cancel-event-transaction-scope.ts` | A Cancel End Event whose parent is not a `bpmn:Transaction` (BSC-017), and a Cancel Boundary Event whose host is not a `bpmn:Transaction` (BSC-018). |
-| `top-level-start-event-type` | `bpmn-spec/top-level-start-event-type.ts` | A Start Event directly under a `bpmn:Process` whose trigger type is Error, Escalation, or Compensation (BSC-019). These require a surrounding scope instance and are only valid inside an Event Sub-Process. Conditional is intentionally **not** flagged (its top-level semantics are left unchanged for now). Defense-in-depth: redundant with the engine validator and the stock replace menu, useful mainly for imports. |
+| `top-level-start-event-type` | `bpmn-spec/top-level-start-event-type.ts` | A Start Event directly under a `bpmn:Process` whose trigger type is Error, Escalation, or Compensation (BSC-022). These require a surrounding scope instance and are only valid inside an Event Sub-Process. Conditional is a valid top-level start in the Engine and is not flagged. Defense-in-depth: redundant with the engine validator and the stock replace menu, useful mainly for imports. |
 
 ### Ad-hoc Sub-Process rules
 
@@ -254,18 +254,19 @@ These rules mirror the engine's Ad-hoc Sub-Process deploy-time validator, plus a
 
 | Rule | Path | Category | `bpmn-development` | `bpmn-production-ready` | Reports |
 |------|------|----------|---------------------|--------------------------|---------|
-| `adhoc-subprocess-flow-events` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | Start or End Events inside an ad-hoc subprocess (BSC-021) |
-| `adhoc-subprocess-activities` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | Zero inner activities (BSC-021) |
-| `adhoc-subprocess-nesting` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | Nested `bpmn:AdHocSubProcess` (BSC-021) |
-| `adhoc-subprocess-event-scope` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | warn | error | An ad-hoc subprocess inside an Event Sub-Process (BSC-021) |
-| `adhoc-subprocess-completion` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | No `completionCondition` and no `implementation` (EXR-014 — the subprocess completes when every activity has been performed); an empty `implementation` attribute (EXR-014) |
-| `adhoc-subprocess-ordering` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | No explicit `ordering` (EXR-014 — defaults to Parallel); `ordering="Sequential"` with no `implementation` and no `bfw:ActiveElements` (EXR-014; the engine rejects this at deploy time) |
+| `adhoc-subprocess-flow-events` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | error | error | Start or End Events inside an ad-hoc subprocess (BSC-021) |
+| `adhoc-subprocess-activities` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | error | error | Zero inner activities (BSC-021) |
+| `adhoc-subprocess-nesting` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | error | error | Nested `bpmn:AdHocSubProcess` (BSC-021) |
+| `adhoc-subprocess-event-scope` | `bpmn-spec/adhoc-subprocess-structure.ts` | bpmn-spec | error | error | An ad-hoc subprocess inside an Event Sub-Process (BSC-021) |
+| `adhoc-subprocess-completion` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | Advice: no `completionCondition` and no `implementation` (EXR-014 — the subprocess completes when every activity has been performed) |
+| `adhoc-subprocess-ordering` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | error | error | Engine deploy rejections: an empty `implementation` attribute; `ordering="Sequential"` with no `implementation` and no `bfw:ActiveElements` (EXR-014) |
+| `adhoc-subprocess-default-ordering` | `execution-readiness/adhoc-subprocess-config.ts` | execution-readiness | off | error | Advice: no explicit `ordering` (EXR-014 — defaults to Parallel) |
 
 Each structure check is its own rule, so the findings pane shows only the explanation for that check. `adhoc-subprocess-event-scope` walks `$parent` looking for a `bpmn:SubProcess` with `triggeredByEvent === true`, so an ad-hoc subprocess nested inside an embedded subprocess that is itself inside an event subprocess is still caught.
 
 `unreachable-elements` does not descend into a `bpmn:AdHocSubProcess`. Elements inside it are not connected by sequence flows. The ad-hoc shell is still reported when it is unreachable in its parent scope. Embedded subprocesses are still walked.
 
-`adhoc-subprocess-completion` and `adhoc-subprocess-ordering` are separate rules so each finding carries its own explanation. `adhoc-subprocess-ordering` reads `bfw:ActiveElements` via the shared `extensionElements.values` lookup pattern (same as `bfw:LoopInterval`, `bfw:CorrelationKey`, etc.). A sequential engine-managed ad-hoc subprocess that passes `bpmn-production-ready` also passes the engine's deploy-time check for `bfw:ActiveElements`. The score still charges one penalty per element when both rules report the same subprocess.
+The three config rules are separate so each finding carries its own explanation, and so `adhoc-subprocess-ordering` holds only Engine rejections while the two advice rules stay off in `bpmn-development`. `adhoc-subprocess-ordering` reads `bfw:ActiveElements` via the shared `extensionElements.values` lookup pattern (same as `bfw:LoopInterval`, `bfw:CorrelationKey`, etc.). A sequential engine-managed ad-hoc subprocess that passes `bpmn-production-ready` also passes the engine's deploy-time check for `bfw:ActiveElements`. The score still charges one penalty per element when both rules report the same subprocess.
 
 Unit tests: `studio/test/unit/bpmn-linter/adhoc-subprocess-rules.test.ts`. Integration test: `studio/test/integration/bpmn-linter/adhoc-rules.test.ts` opens `test-solution-bpmn/adhoc-subprocess.bpmn` (config violation) and `adhoc-subprocess-invalid.bpmn` (structure violation) with the linter enabled and `bpmn-production-ready` active, asserting the Findings pane reports both.
 
@@ -276,9 +277,35 @@ These execution-readiness rules catch unmarked non-default outgoing flows on Exc
 | Rule | Path | Category | `bpmn-development` | `bpmn-production-ready` | Reports |
 |------|------|----------|---------------------|--------------------------|---------|
 | `xor-gateway-conditions` | `execution-readiness/xor-gateway-conditions.ts` | execution-readiness | warn | error | Each non-default outgoing of an Exclusive Gateway with `outgoing.length > 1` that lacks `conditionExpression` (EXR-011) |
-| `complex-gateway-split-conditions` | `execution-readiness/complex-gateway-split-conditions.ts` | execution-readiness | warn | error | Same check on a Complex Gateway split (EXR-015). `no-complex-gateway` is `error` in both built-in profiles, so this rule mainly applies when a custom ruleset turns that restriction off |
+| `complex-gateway-split-conditions` | `execution-readiness/complex-gateway-split-conditions.ts` | execution-readiness | warn | error | Same check on a Complex Gateway split (EXR-015) |
 
 Unit tests: `studio/test/unit/bpmn-linter/gateway-split-conditions.test.ts`.
+
+`conditional-flows-no-gateway` (`structure/conditional-flows-no-gateway.ts`, info / error, AST-019) reports a sequence-flow condition unless the flow leaves an Exclusive, Inclusive, or Complex gateway with at most one incoming flow. The Engine evaluates conditions only on those split flows and follows every other flow unconditionally, including flows leaving Parallel and Event-Based gateways and gateway joins.
+
+`infinite-loop` (post-processing, AST-208) treats a cycle as having an exit when an Exclusive, Inclusive, Complex, or Event-Based gateway in the cycle has an outgoing flow that leaves it, or when any element in the cycle has a boundary event other than a compensation boundary.
+
+### Engine rejection rules
+
+These rules mirror checks the Engine performs at deploy time (the validator rejects the diagram) or at runtime (the instance fails when the element is reached). Deploy rejections are `error` in both profiles; runtime failures are `warn` in `bpmn-development` and `error` in `bpmn-production-ready`. Paths are relative to `studio/src/modules/bpmn-linter/rules/`.
+
+| Rule | Path | Category | `bpmn-development` | `bpmn-production-ready` | Reports |
+|------|------|----------|---------------------|--------------------------|---------|
+| `signal-event-reference` | `execution-readiness/event-definition-config.ts` | execution-readiness | error | error | A signal event without `signalRef` (EXR-016) |
+| `conditional-event-condition` | `execution-readiness/event-definition-config.ts` | execution-readiness | error | error | A conditional event with a blank `condition` (EXR-017) |
+| `link-event-name` | `execution-readiness/event-definition-config.ts` | execution-readiness | error | error | A link event with a blank `name` (EXR-018) |
+| `link-event-pairing` | `execution-readiness/event-definition-config.ts` | execution-readiness | warn | error | Runtime: a link throw without exactly one link catch of the same name among the direct `flowElements` of its Process / Sub-Process; reported on the throw (EXR-022) |
+| `intermediate-timer-cycle` | `execution-readiness/event-definition-config.ts` | execution-readiness | warn | error | Runtime: `timeCycle` on an intermediate timer catch event (EXR-023) |
+| `business-rule-task-config` | `execution-readiness/business-rule-task-config.ts` | execution-readiness | error | error | `implementation` other than exactly `feel` / `dmn` (untrimmed, like the Engine); `feel` without `script`; `dmn` without `bfw:DecisionRef` (EXR-019) |
+| `complex-gateway-join-condition` | `execution-readiness/complex-gateway-join.ts` | execution-readiness | error | error | A Complex join (more than one incoming, at most one outgoing) without `activationCondition` (EXR-020) |
+| `complex-gateway-region` | `execution-readiness/complex-gateway-join.ts` | execution-readiness | error | error | Port of the Engine's `ComplexRegionAnalysis`, per Process, Sub-Process, Transaction, and Ad-hoc Sub-Process: a Complex join without a dominating Complex split, a flow entering or leaving the split/join region, and partially overlapping regions; reported on the join (EXR-021) |
+| `nested-transaction` | `bpmn-spec/nested-transaction.ts` | bpmn-spec | error | error | A Transaction whose direct parent is a Transaction (BSC-023) |
+| `event-gateway-receive-task-boundary` | `bpmn-spec/event-gateway-receive-task-boundary.ts` | bpmn-spec | error | error | A Receive Task after an Event-Based Gateway with a boundary event attached (BSC-024) |
+| `no-dead-end` | `structure/no-dead-end.ts` | structure | warn | error | Runtime: an activity, event, or gateway without an outgoing flow. End events, link throws, `isForCompensation` activities, compensation boundaries, event sub-processes, and children of an ad-hoc sub-process are exempt. Outgoing flows are counted from the parent's `flowElements`, because moddle leaves `outgoing` empty when the XML omits `<bpmn:outgoing>` (AST-021) |
+
+These existing execution-readiness rules are also `error` in both profiles because the Engine rejects the deployment: `service-task-implementation`, `script-task-config`, `message-event-reference` (which also covers Send and Receive Task `messageRef`), `call-activity-target`, `multi-instance-config` (which also reports a blank `completionCondition` or `bfw:loopBreakCondition`), and `standard-loop-config`. The advice split out of `standard-loop-config` is `standard-loop-maximum` (off / error). `error-event-config` is `info` / `warn`: an Error End Event without a code is valid, but only catch-all catchers catch it; an `errorRef` counts as a code only when the referenced error has a non-blank `errorCode`.
+
+Unit tests: `studio/test/unit/bpmn-linter/engine-alignment-rules.test.ts`.
 
 ### Profiles and Custom Rulesets
 
@@ -286,7 +313,7 @@ Two built-in profiles are immutable and defined in `rules/config.ts`:
 
 | Profile | Purpose | Characteristics |
 |---------|---------|-----------------|
-| `bpmn-development` | Standard BPMN 2.0 validation for active development | Execution-readiness rules off, gateway restriction rules off |
+| `bpmn-development` | Standard BPMN 2.0 validation for active development | Execution-readiness rules off unless the Engine rejects the deployment, gateway restriction rules off |
 | `bpmn-production-ready` | Stricter rules for deployment-ready processes | Execution-readiness rules active, stricter severities across all categories |
 
 Users can create **custom rulesets** in addition to the built-in profiles. Each custom ruleset has a structured JSON shape:
@@ -298,7 +325,7 @@ Users can create **custom rulesets** in addition to the built-in profiles. Each 
       "base": "bpmn-development",
       "rules": {
         "label-required": "error",
-        "no-complex-gateway": "off"
+        "no-inclusive-gateway": "warn"
       }
     }
   }
@@ -316,7 +343,7 @@ The `bpmn.linter.createCustomRuleset` command opens a dialog with three inputs: 
 
 ### Built-in Rules
 
-The full rule configuration includes 14 rules from the `bpmnlint` package plus many custom rules across all categories (BPMN Spec, Structure, Execution Readiness, Naming Quality, Logic Patterns, PDA Compliance). Severity levels differ between profiles — `bpmn-development` disables execution-readiness and some gateway rules, while `bpmn-production-ready` activates all categories at stricter severities. See `rules/config.ts` for the complete per-profile rule configuration.
+The full rule configuration includes 14 rules from the `bpmnlint` package plus many custom rules across all categories (BPMN Spec, Structure, Execution Readiness, Naming Quality, Logic Patterns, PDA Compliance). Severity levels differ between profiles — `bpmn-development` disables execution-readiness rules (except those mirroring an Engine deploy rejection, which are `error` in both profiles) and some gateway rules, while `bpmn-production-ready` activates all categories at stricter severities. See `rules/config.ts` for the complete per-profile rule configuration.
 
 The 14 **bpmnlint-provided** rules (resolved via the custom bpmnlint resolver):
 
@@ -325,7 +352,7 @@ The 14 **bpmnlint-provided** rules (resolved via the custom bpmnlint resolver):
 | `start-event-required` | error | error | bpmn-spec |
 | `end-event-required` | error | error | bpmn-spec |
 | `fake-join` | warn | error | structure |
-| `no-implicit-split` | error | error | structure |
+| `no-implicit-split` | warn | error | structure |
 | `no-disconnected` | off | off | structure |
 | `no-gateway-join-fork` | off | off | structure |
 | `single-blank-start-event` | warn | error | structure |
@@ -334,7 +361,7 @@ The 14 **bpmnlint-provided** rules (resolved via the custom bpmnlint resolver):
 | `label-required` | warn | warn | naming-quality |
 | `sub-process-blank-start-event` | warn | error | structure |
 | `event-sub-process-typed-start-event` | warn | error | structure |
-| `no-complex-gateway` | error | error | structure |
+| `no-complex-gateway` | off | off | structure |
 | `no-inclusive-gateway` | off | off | structure |
 
 ---

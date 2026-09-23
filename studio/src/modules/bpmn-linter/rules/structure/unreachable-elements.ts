@@ -134,6 +134,10 @@ function lintScope(container: ModdleNode, reporter: BpmnlintReporter) {
     if (is(fn, 'bpmn:SubProcess') && fn.triggeredByEvent) {
       continue;
     }
+    // Compensation handlers are reached through a compensation boundary association, never a sequence flow.
+    if (fn.isForCompensation) {
+      continue;
+    }
     if (!reachable.has(fn.id)) {
       reporter.report(fn.id, 'Element is not reachable from any start event in this scope (AST-008)');
     }

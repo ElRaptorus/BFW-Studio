@@ -265,7 +265,7 @@
     {
       "name": "BusinessRuleTaskScript",
       "extends": ["bpmn:BusinessRuleTask"],
-      "properties": [{ "name": "script", "type": "String" }]
+      "properties": [{ "name": "bpmn:script", "type": "String" }]
     },
 
     {

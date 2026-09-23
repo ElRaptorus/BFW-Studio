@@ -22,30 +22,6 @@ const EVENT_SUB_PROCESS_DOWNGRADE_ENTRY_IDS: ReadonlySet<string> = new Set([
   'replace-with-subprocess',
 ]);
 
-const ESCALATION_BOUNDARY_ENTRY_IDS: ReadonlySet<string> = new Set([
-  'replace-with-escalation-boundary',
-  'replace-with-non-interrupting-escalation-boundary',
-]);
-
-// Start event types that must never appear in the "replace start event" menu.
-// None-start: replacing with the same type is not a replacement.
-// Compensation-start: not supported by the Engine.
-// Non-interrupting-error-start: invalid per BPMN 2.0 (error starts must always interrupt).
-const START_EVENT_BLOCKED_ENTRY_IDS: ReadonlySet<string> = new Set([
-  'replace-with-none-start',
-  'replace-with-compensation-start',
-  'replace-with-non-interrupting-error-start',
-]);
-
-// Escalation boundary events are only meaningful on activities
-// that can raise an escalation from an inner scope.
-const ESCALATION_BOUNDARY_ALLOWED_HOST_TYPES: ReadonlySet<string> = new Set([
-  'bpmn:Transaction',
-  'bpmn:CallActivity',
-  'bpmn:SubProcess',
-  'bpmn:AdHocSubProcess',
-]);
-
 class CustomPopupProvider {
   static $inject: string[];
 
@@ -63,12 +39,7 @@ class CustomPopupProvider {
   getPopupMenuEntries(element: ElementLike) {
     return (entries) => {
       const entriesWithEventSubProcess = this.injectEventSubProcessEntry(element, entries);
-      const oneWayEnforcedEntries = this.filterEventSubProcessDowngrades(element, entriesWithEventSubProcess);
-      const hostRestrictedEntries = this.filterBoundaryEventHostRestrictions(element, oneWayEnforcedEntries);
-      const startEventFilteredEntries = this.filterStartEventEntries(element, hostRestrictedEntries);
-      return {
-        ...startEventFilteredEntries,
-      };
+      return this.filterEventSubProcessDowngrades(element, entriesWithEventSubProcess);
     };
   }
 
@@ -132,30 +103,6 @@ class CustomPopupProvider {
       (entry) => !EVENT_SUB_PROCESS_DOWNGRADE_ENTRY_IDS.has(entry[0]),
     );
 
-    return Object.fromEntries(filteredEntries);
-  }
-
-  private filterBoundaryEventHostRestrictions(element: ElementLike, entries: object): object {
-    if (element.type !== 'bpmn:BoundaryEvent') {
-      return entries;
-    }
-
-    const hostType = element.host?.type ?? element.businessObject?.get?.('attachedToRef')?.$type;
-    if (hostType != null && ESCALATION_BOUNDARY_ALLOWED_HOST_TYPES.has(hostType)) {
-      return entries;
-    }
-
-    const filteredEntries = Object.entries(entries).filter((entry) => !ESCALATION_BOUNDARY_ENTRY_IDS.has(entry[0]));
-
-    return Object.fromEntries(filteredEntries);
-  }
-
-  private filterStartEventEntries(element: ElementLike, entries: object): object {
-    if (element.type !== 'bpmn:StartEvent') {
-      return entries;
-    }
-
-    const filteredEntries = Object.entries(entries).filter((entry) => !START_EVENT_BLOCKED_ENTRY_IDS.has(entry[0]));
     return Object.fromEntries(filteredEntries);
   }
 

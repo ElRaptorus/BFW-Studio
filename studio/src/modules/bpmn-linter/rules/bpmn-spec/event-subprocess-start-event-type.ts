@@ -2,8 +2,8 @@ import { is } from 'bpmnlint-utils';
 
 import type { BpmnlintReporter, ModdleNode } from '../../types';
 
-// Start-event trigger types permitted inside an Event Sub-Process (decision
-// S-B / engine `event_subprocess_untyped_start`). Compensation is excluded.
+// Start-event trigger types permitted inside an Event Sub-Process (engine
+// `event_subprocess_untyped_start`).
 const ALLOWED_EVENT_DEFINITION_TYPES: ReadonlySet<string> = new Set([
   'bpmn:MessageEventDefinition',
   'bpmn:TimerEventDefinition',
@@ -11,6 +11,7 @@ const ALLOWED_EVENT_DEFINITION_TYPES: ReadonlySet<string> = new Set([
   'bpmn:ConditionalEventDefinition',
   'bpmn:ErrorEventDefinition',
   'bpmn:EscalationEventDefinition',
+  'bpmn:CompensateEventDefinition',
 ]);
 
 function humanizeEventDefinitionType(definitionType: string): string {
@@ -19,7 +20,7 @@ function humanizeEventDefinitionType(definitionType: string): string {
 
 /**
  * Flags an Event Sub-Process Start Event whose trigger type is not supported
- * (e.g. Compensation) and a non-interrupting Error start (an Error start must
+ * (e.g. Link or Terminate) and a non-interrupting Error start (an Error start must
  * interrupt). Mirrors engine `event_subprocess_untyped_start` +
  * `event_subprocess_error_start_must_interrupt`.
  *

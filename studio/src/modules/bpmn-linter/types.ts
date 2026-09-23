@@ -32,6 +32,7 @@ export interface ModdleNode {
 
   readonly flowElements?: ModdleNode[];
   readonly triggeredByEvent?: boolean;
+  readonly isForCompensation?: boolean;
 
   readonly sourceRef?: ModdleNode;
   readonly targetRef?: ModdleNode;
