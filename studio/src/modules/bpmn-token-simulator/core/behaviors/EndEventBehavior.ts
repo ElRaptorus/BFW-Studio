@@ -1,22 +1,26 @@
 import type { Scope } from '../Scope';
 import type { SimulationEngine } from '../SimulationEngine';
 import {
-  getMessageFlows,
-  hasEventDefinition,
+  getCompensateActivityRef,
+  getErrorCode,
+  getEscalationCode,
+  isCancelEvent,
+  isCompensateEvent,
   isErrorEvent,
   isEscalationEvent,
   isMessageEvent,
   isSignalEvent,
   isTerminateEvent,
 } from '../eventDefUtils';
+import { resolveError, resolveEscalation } from '../eventResolver';
 import type { Behavior } from './index';
 
 export class EndEventBehavior implements Behavior {
   enter(element: any, scope: Scope, engine: SimulationEngine): void {
     if (isTerminateEvent(element)) {
       if (scope.parent) {
-        scope.destroy();
-        engine.exit(scope.element, scope.parent);
+        engine.interruptAllInScope(scope, new Set([element.id]));
+        engine.consumeToken(element, scope);
       } else {
         scope.destroy();
         engine.signalTerminated(scope);
@@ -25,75 +29,72 @@ export class EndEventBehavior implements Behavior {
     }
 
     if (isErrorEvent(element)) {
-      if (scope.parent) {
-        const errorBoundary = this.findBoundaryEvent(scope, 'bpmn:ErrorEventDefinition');
-        if (errorBoundary) {
-          scope.destroy();
-          engine.routeToOutgoing(errorBoundary, scope.parent);
-        } else {
-          engine.tryCompleteScope(scope);
-        }
-      } else {
-        scope.destroy();
-        engine.signalErrorTerminated(scope, element);
+      const errorCatch = resolveError(scope, getErrorCode(element), engine.elementRegistry);
+      if (errorCatch) {
+        engine.enterCatch(errorCatch, new Set([element.id]));
+        engine.consumeToken(element, scope);
+        return;
       }
+      this.terminateWithError(element, scope, engine);
       return;
     }
 
     if (isEscalationEvent(element)) {
-      if (scope.parent) {
-        const escalationBoundary = this.findBoundaryEvent(scope, 'bpmn:EscalationEventDefinition');
-        if (escalationBoundary) {
-          const isInterrupting = escalationBoundary.businessObject?.cancelActivity !== false;
-          if (isInterrupting) {
-            scope.destroy();
-            engine.routeToOutgoing(escalationBoundary, scope.parent);
-          } else {
-            engine.routeToOutgoing(escalationBoundary, scope.parent);
-            engine.tryCompleteScope(scope);
-          }
-        } else {
-          engine.tryCompleteScope(scope);
-        }
-      } else {
-        engine.tryCompleteScope(scope);
+      const escalationCatches = resolveEscalation(scope, getEscalationCode(element), engine.elementRegistry);
+      for (const escalationCatch of escalationCatches) {
+        engine.enterCatch(escalationCatch);
       }
+      // Siblings go after the catches are entered, so the scope cannot complete before an event subprocess of its own holds a token.
+      engine.interruptAllInScope(
+        scope,
+        new Set([element.id, ...escalationCatches.map((escalationCatch) => escalationCatch.element.id)]),
+      );
+      engine.consumeToken(element, scope);
+      return;
+    }
+
+    if (isCompensateEvent(element)) {
+      engine.runCompensation(scope, getCompensateActivityRef(element), () => engine.consumeToken(element, scope));
+      return;
+    }
+
+    if (isCancelEvent(element) && scope.parent && scope.element.type === 'bpmn:Transaction') {
+      const parentScope = scope.parent;
+      engine.interruptAllInScope(scope, new Set([element.id]));
+      engine.runCompensation(scope, undefined, () => {
+        const cancelBoundary = (scope.element.attachers || []).find(
+          (attacher: any) => attacher.type === 'bpmn:BoundaryEvent' && isCancelEvent(attacher),
+        );
+        if (!cancelBoundary) {
+          this.terminateWithError(element, scope, engine);
+          return;
+        }
+        engine.enterCatch({ element: cancelBoundary, scope: parentScope, host: scope.element, interrupting: true });
+      });
       return;
     }
 
     if (isMessageEvent(element)) {
-      engine.emitMessageSend(element, scope, getMessageFlows(element));
-      engine.tryCompleteScope(scope);
+      engine.deliverMessage(element, scope);
+      engine.consumeToken(element, scope);
       return;
     }
 
     if (isSignalEvent(element)) {
       engine.broadcastSignal(element, scope);
-      engine.tryCompleteScope(scope);
+      engine.consumeToken(element, scope);
       return;
     }
 
-    engine.tryCompleteScope(scope);
+    engine.consumeToken(element, scope);
   }
 
-  private findBoundaryEvent(scope: Scope, eventDefinitionType: string): any | null {
-    const subProcessElement = scope.element;
-    if (!scope.parent) {
-      return null;
+  private terminateWithError(element: any, scope: Scope, engine: SimulationEngine): void {
+    let rootScope = scope;
+    while (rootScope.parent) {
+      rootScope = rootScope.parent;
     }
-
-    const parentChildren: any[] = scope.parent.element?.children || [];
-    return (
-      parentChildren.find((child: any) => {
-        if (child.type !== 'bpmn:BoundaryEvent') {
-          return false;
-        }
-        const attachedTo = child.businessObject?.attachedToRef;
-        if (!attachedTo || attachedTo.id !== subProcessElement.businessObject?.id) {
-          return false;
-        }
-        return hasEventDefinition(child, eventDefinitionType);
-      }) ?? null
-    );
+    rootScope.destroy();
+    engine.signalErrorTerminated(rootScope, element);
   }
 }

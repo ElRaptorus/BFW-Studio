@@ -1,5 +1,6 @@
-import { Scope } from '../Scope';
+import type { Scope } from '../Scope';
 import type { SimulationEngine } from '../SimulationEngine';
+import { selectStartEvents } from '../eventDefUtils';
 import { getIterationCount, getLoopType } from '../loopUtils';
 import type { Behavior } from './index';
 
@@ -60,37 +61,35 @@ export class SubProcessBehavior implements Behavior {
     engine.exit(element, scope);
   }
 
-  private enterSingle(element: any, scope: Scope, engine: SimulationEngine): void {
-    const children: any[] = element.children || [];
-    const startEvents = children.filter((child: any) => child.type === 'bpmn:StartEvent');
-
-    if (startEvents.length === 0) {
-      if (this.isCollapsed(element)) {
-        if (engine.mode === 'step') {
-          engine.signalWaiting(element, scope);
-        } else {
-          engine.scheduleDelay(() => {
-            engine.exit(element, scope);
-          }, engine.getTaskDelay() * 2);
-        }
-      } else {
-        engine.exit(element, scope);
-      }
-      return;
-    }
-
-    if (this.isCollapsed(element)) {
-      if (engine.mode === 'step') {
-        engine.signalWaiting(element, scope);
-      } else {
-        engine.scheduleDelay(() => {
+  /** Runs a collapsed subprocess as a black-box delay, or waits for the user in step mode. */
+  protected enterCollapsed(element: any, scope: Scope, engine: SimulationEngine): void {
+    if (engine.mode === 'step') {
+      engine.signalWaiting(element, scope);
+    } else {
+      engine.scheduleElementDelay(
+        element,
+        scope,
+        () => {
           engine.exit(element, scope);
-        }, engine.getTaskDelay() * 2);
-      }
+        },
+        engine.getTaskDelay() * 2,
+      );
+    }
+  }
+
+  private enterSingle(element: any, scope: Scope, engine: SimulationEngine): void {
+    if (this.isCollapsed(element)) {
+      this.enterCollapsed(element, scope, engine);
       return;
     }
 
-    const childScope = new Scope(element, scope);
+    const startEvents = selectStartEvents(element);
+    if (startEvents.length === 0) {
+      engine.exit(element, scope);
+      return;
+    }
+
+    const childScope = engine.createScope(element, scope);
     for (const startEvent of startEvents) {
       engine.enter(startEvent, childScope);
     }
@@ -111,8 +110,7 @@ export class SubProcessBehavior implements Behavior {
 
   private startParallelExpandedScopes(element: any, scope: Scope, engine: SimulationEngine): void {
     const iterationCount = getIterationCount(element, engine);
-    const children: any[] = element.children || [];
-    const startEvents = children.filter((child: any) => child.type === 'bpmn:StartEvent');
+    const startEvents = selectStartEvents(element);
 
     scope.setParallelMiExpected(element.id, iterationCount);
 
@@ -121,7 +119,7 @@ export class SubProcessBehavior implements Behavior {
     }
 
     for (let i = 0; i < iterationCount; i++) {
-      const childScope = new Scope(element, scope);
+      const childScope = engine.createScope(element, scope);
       for (const startEvent of startEvents) {
         engine.enter(startEvent, childScope);
       }
@@ -134,16 +132,21 @@ export class SubProcessBehavior implements Behavior {
 
     for (let i = 0; i < iterationCount; i++) {
       const delay = engine.getTaskDelay() * 2 * (1 + Math.random() * 0.5);
-      engine.scheduleDelay(() => {
-        completed++;
-        if (completed === iterationCount) {
-          engine.exit(element, scope);
-        }
-      }, delay);
+      engine.scheduleElementDelay(
+        element,
+        scope,
+        () => {
+          completed++;
+          if (completed === iterationCount) {
+            engine.exit(element, scope);
+          }
+        },
+        delay,
+      );
     }
   }
 
-  private isCollapsed(element: any): boolean {
+  protected isCollapsed(element: any): boolean {
     if (element.collapsed === true) {
       return true;
     }

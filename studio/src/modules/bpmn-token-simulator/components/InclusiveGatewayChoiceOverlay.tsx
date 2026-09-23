@@ -5,28 +5,36 @@ import { getFlowLabel } from './flowLabel';
 export interface InclusiveGatewayChoiceOverlayProps {
   outgoingFlows: any[];
   onChoose: (flows: any[]) => void;
-  initialSelected?: Set<string>;
+  initialSelected: Set<string>;
+  defaultFlowId?: string;
 }
 
 export function InclusiveGatewayChoiceOverlay(props: InclusiveGatewayChoiceOverlayProps): React.ReactElement {
-  const { outgoingFlows, onChoose, initialSelected } = props;
-  const [selected, setSelected] = useState<Set<string>>(
-    () => initialSelected ?? new Set(outgoingFlows.map((flow) => flow.id)),
-  );
+  const { outgoingFlows, onChoose, initialSelected, defaultFlowId } = props;
+  const [selected, setSelected] = useState<Set<string>>(initialSelected);
 
-  const toggle = useCallback((flowId: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(flowId)) {
-        if (next.size > 1) {
-          next.delete(flowId);
+  const toggle = useCallback(
+    (flowId: string) => {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(flowId)) {
+          if (next.size > 1) {
+            next.delete(flowId);
+          }
+          return next;
         }
-      } else {
+        // The default flow is taken only when no other flow is.
+        if (flowId === defaultFlowId) {
+          next.clear();
+        } else if (defaultFlowId) {
+          next.delete(defaultFlowId);
+        }
         next.add(flowId);
-      }
-      return next;
-    });
-  }, []);
+        return next;
+      });
+    },
+    [defaultFlowId],
+  );
 
   const confirm = useCallback(() => {
     const chosen = outgoingFlows.filter((flow) => selected.has(flow.id));

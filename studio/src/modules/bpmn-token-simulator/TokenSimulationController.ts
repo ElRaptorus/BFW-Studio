@@ -13,9 +13,20 @@ import {
   SimulationToolbar,
   type SimulationToolbarProps,
 } from './components/SimulationToolbar';
-import { SimulationEngine, type SimulationEvent, type SimulationMode } from './core/SimulationEngine';
+import { SimulationEngine, type SimulationEvent, type SimulationMode, type Wait } from './core/SimulationEngine';
 import { registerAllBehaviors } from './core/behaviors';
-import { isErrorEvent, isEscalationEvent } from './core/eventDefUtils';
+import {
+  findEventSubProcessStart,
+  isConditionalEvent,
+  isEventSubProcess,
+  isInterruptingStart,
+  isMessageEvent,
+  isSignalEvent,
+  isSubProcessType,
+  isTimerEvent,
+} from './core/eventDefUtils';
+import { selectInclusiveFlows } from './core/graphUtils';
+import { getIterationCount, getLoopType } from './core/loopUtils';
 import type { TokenSimSettingsAccessor } from './index';
 import { ElementHighlighter } from './visual/ElementHighlighter';
 import { FlowAnimator } from './visual/FlowAnimator';
@@ -37,6 +48,13 @@ interface OverlayEntry {
 
 type StartContext = { type: 'global' } | { type: 'element'; processElement: any; startEvent: any };
 
+const waitOverlayTypes: Record<Wait['kind'], string> = {
+  catch: 'token-sim-play',
+  boundary: 'token-sim-boundary',
+  'event-subprocess-start': 'token-sim-play',
+  'event-gateway': 'token-sim-event-gw',
+};
+
 export class TokenSimulationController {
   private canvas: any;
   private elementRegistry: any;
@@ -55,6 +73,7 @@ export class TokenSimulationController {
   private toolbarRoot: ReactDOM.Root | null = null;
   private toolbarContainer: HTMLDivElement | null = null;
   private activeOverlays: OverlayEntry[] = [];
+  private stepOverlayCounter = 0;
   private startEventOverlays: OverlayEntry[] = [];
   private gatewayConfigOverlays: OverlayEntry[] = [];
   private gatewayPreferences = new Map<string, any>();
@@ -69,6 +88,7 @@ export class TokenSimulationController {
   private showCounters = false;
 
   private multiInstanceConfig = new Map<string, number>();
+  private complexJoinThresholds = new Map<string, number>();
   private multiInstanceConfigOverlays: OverlayEntry[] = [];
 
   private simulationLog: SimulationLogEntry[] = [];
@@ -153,6 +173,7 @@ export class TokenSimulationController {
     this.eventGatewayFlows.clear();
     this.elementVisitCounts.clear();
     this.multiInstanceConfig.clear();
+    this.complexJoinThresholds.clear();
     this.simulationLog = [];
     this.showLog = false;
     this.showCounters = false;
@@ -180,13 +201,12 @@ export class TokenSimulationController {
   private handleSimulationEvent = (event: SimulationEvent): void => {
     switch (event.type) {
       case 'token:enter': {
-        if (event.element.type === 'bpmn:SubProcess' && event.element.collapsed !== true) {
+        if (isSubProcessType(event.element) && event.element.collapsed !== true) {
           this.clearSubProcessVisuals(event.element);
         } else {
           this.tokenRenderer.addToken(event.element);
         }
         this.highlighter.markActive(event.element);
-        this.showBoundaryEventOverlays(event.element, event.scope);
 
         const parallelMiCount = this.getParallelMiIterations(event.element);
         if (parallelMiCount > 0) {
@@ -211,13 +231,43 @@ export class TokenSimulationController {
         this.highlighter.markCompleted(event.element);
         this.highlighter.markVisited(event.element);
         this.removeOverlaysForElement(event.element.id);
-        this.removeBoundaryPlayOverlays(event.element);
+        this.removeStepOverlays(event.element.id, event.scope.id);
         this.appendLog('token:exit', event.element);
         break;
       }
 
+      case 'wait:armed':
+        if (this.engine.mode === 'step') {
+          this.addWaitPlayButton(event.wait);
+        }
+        break;
+
+      case 'wait:disarmed':
+        this.removeOverlaysForElement(`wait_${event.wait.id}`);
+        break;
+
+      case 'element:interrupted':
+        this.tokenRenderer.removeTokensForElement(event.element.id);
+        this.highlighter.clearActive(event.element);
+        this.removeOverlaysForElement(event.element.id);
+        this.removeStepOverlays(event.element.id, event.scope.id);
+        if (isSubProcessType(event.element)) {
+          this.clearSubProcessVisuals(event.element);
+        }
+        break;
+
+      case 'flows:cancelled':
+        this.flowAnimator.cancelAnimations(event.animationIds);
+        break;
+
       case 'flow:animate':
-        this.flowAnimator.animate(event.connection, this.engine.getFlowDuration(event.connection), event.done);
+        this.flowAnimator.animate(
+          event.connection,
+          this.engine.getFlowDuration(event.connection),
+          event.done,
+          undefined,
+          event.animationId,
+        );
         this.highlighter.markFlowVisited(event.connection);
         break;
 
@@ -260,16 +310,15 @@ export class TokenSimulationController {
         }
         break;
 
-      case 'gateway:event-based': {
-        this.appendLog('gateway:event-based', event.element);
+      case 'event-gateway:chosen': {
+        this.appendLog('event-gateway:chosen', event.element);
         this.highlighter.clearFlows();
-        const prevFlow = this.eventGatewayFlows.get(event.element.id);
-        if (prevFlow) {
-          this.highlighter.clearPreferredFlow(prevFlow);
-          this.eventGatewayFlows.delete(event.element.id);
+        const previousFlow = this.eventGatewayFlows.get(event.element.id);
+        if (previousFlow) {
+          this.highlighter.clearPreferredFlow(previousFlow);
         }
-        this.tokenRenderer.addToken(event.element);
-        this.addEventBasedGatewayOverlays(event.element, event.scope, event.catchEvents);
+        this.highlighter.markPreferredFlow(event.flow);
+        this.eventGatewayFlows.set(event.element.id, event.flow);
         break;
       }
 
@@ -287,6 +336,9 @@ export class TokenSimulationController {
             'token-sim-message-flow-token',
           );
         }
+        for (const target of event.targets) {
+          this.highlighter.pulseElement(target);
+        }
         this.appendLog('message:send', event.element);
         break;
       }
@@ -295,9 +347,6 @@ export class TokenSimulationController {
         this.flowAnimator.showRipple(event.element, 800);
         for (const target of event.targets) {
           this.highlighter.pulseElement(target);
-          if (target.type === 'bpmn:BoundaryEvent') {
-            this.cleanupSignalBoundaryHost(target);
-          }
         }
         this.appendLog('signal:broadcast', event.element);
         break;
@@ -365,11 +414,9 @@ export class TokenSimulationController {
     this.cleanup();
     this.lastStartContext = { type: 'global' };
 
-    const rootElement = this.canvas.getRootElement();
-    const processElements = this.getProcessElements(rootElement);
-
-    if (processElements.length > 0) {
-      this.engine.start(processElements[0]);
+    const processElement = this.findGlobalStartProcess();
+    if (processElement) {
+      this.engine.start(processElement);
     }
   };
 
@@ -397,10 +444,9 @@ export class TokenSimulationController {
     if (ctx.type === 'element') {
       this.engine.startFromElement(ctx.processElement, ctx.startEvent);
     } else {
-      const rootElement = this.canvas.getRootElement();
-      const processElements = this.getProcessElements(rootElement);
-      if (processElements.length > 0) {
-        this.engine.start(processElements[0]);
+      const processElement = this.findGlobalStartProcess();
+      if (processElement) {
+        this.engine.start(processElement);
       }
     }
 
@@ -434,6 +480,11 @@ export class TokenSimulationController {
   private setMode = (mode: SimulationMode): void => {
     this.engine.setMode(mode);
     this.settings.set('tokenSimulator.toolbar.mode', mode);
+    if (mode === 'step') {
+      for (const wait of this.engine.getArmedWaits()) {
+        this.addWaitPlayButton(wait);
+      }
+    }
     this.renderToolbar();
   };
 
@@ -544,6 +595,13 @@ export class TokenSimulationController {
     return children.filter((child: any) => child.type === 'bpmn:StartEvent');
   }
 
+  private findGlobalStartProcess(): any | undefined {
+    const processElements = this.getProcessElements(this.canvas.getRootElement());
+    return (
+      processElements.find((processElement) => this.getStartEvents(processElement).length > 0) ?? processElements[0]
+    );
+  }
+
   // --- Gateway path pre-configuration ---
 
   private showGatewayConfigOverlays(): void {
@@ -553,7 +611,11 @@ export class TokenSimulationController {
 
     for (const processEl of processElements) {
       this.forEachFlowElement(processEl, (child) => {
-        if (child.type !== 'bpmn:ExclusiveGateway' && child.type !== 'bpmn:InclusiveGateway') {
+        if (
+          child.type !== 'bpmn:ExclusiveGateway' &&
+          child.type !== 'bpmn:InclusiveGateway' &&
+          child.type !== 'bpmn:ComplexGateway'
+        ) {
           return;
         }
         const outgoing = (child.outgoing || []).filter((connection: any) => connection.type === 'bpmn:SequenceFlow');
@@ -618,16 +680,18 @@ export class TokenSimulationController {
       onDone();
     };
 
-    const isInclusive = gateway.type === 'bpmn:InclusiveGateway';
+    const isInclusive = gateway.type !== 'bpmn:ExclusiveGateway';
     const existingPref = this.gatewayPreferences.get(gateway.id);
     const reactElement = isInclusive
       ? React.createElement(InclusiveGatewayChoiceOverlay, {
           outgoingFlows: outgoing,
           onChoose: (flows: any[]) => applyAndClose({ type: 'inclusive', flows }, flows),
-          initialSelected:
-            existingPref?.type === 'inclusive'
-              ? new Set<string>(existingPref.flows.map((flow: any) => flow.id))
-              : undefined,
+          initialSelected: new Set<string>(
+            (existingPref?.type === 'inclusive' ? existingPref.flows : selectInclusiveFlows(gateway, outgoing)).map(
+              (flow: any) => flow.id,
+            ),
+          ),
+          defaultFlowId: gateway.businessObject?.default?.id,
         })
       : React.createElement(GatewayChoiceOverlay, {
           outgoingFlows: outgoing,
@@ -681,36 +745,52 @@ export class TokenSimulationController {
 
     for (const processEl of processElements) {
       this.forEachFlowElement(processEl, (child) => {
-        const boundaryEvents = this.getBoundaryEvents(child);
-        for (const be of boundaryEvents) {
-          if (isErrorEvent(be) || isEscalationEvent(be)) {
+        const eventSubProcessStart = isEventSubProcess(child)
+          ? findEventSubProcessStart(child, this.elementRegistry)
+          : undefined;
+        const triggerEvents = eventSubProcessStart ? [eventSubProcessStart] : this.getBoundaryEvents(child);
+        for (const triggerEvent of triggerEvents) {
+          if (!(
+            isTimerEvent(triggerEvent) ||
+            isMessageEvent(triggerEvent) ||
+            isSignalEvent(triggerEvent) ||
+            isConditionalEvent(triggerEvent)
+          )) {
             continue;
           }
-          this.addBoundaryConfigOverlay(be);
+          this.engine.setBoundaryAutoFire(triggerEvent.id, this.boundaryPreferences.get(triggerEvent.id) === true);
+          this.addBoundaryConfigOverlay(
+            triggerEvent,
+            eventSubProcessStart && child.collapsed === true ? child : triggerEvent,
+          );
         }
       });
     }
   }
 
-  private addBoundaryConfigOverlay(boundaryEvent: any): void {
+  private addBoundaryConfigOverlay(triggerEvent: any, overlayTarget: any): void {
     const container = document.createElement('div');
     container.style.pointerEvents = 'all';
 
-    const isInterrupting = boundaryEvent.businessObject?.cancelActivity !== false;
+    const isInterrupting =
+      triggerEvent.type === 'bpmn:BoundaryEvent'
+        ? triggerEvent.businessObject?.cancelActivity !== false
+        : isInterruptingStart(triggerEvent);
     const root = ReactDOM.createRoot(container);
 
     const renderCheckbox = () => {
       root.render(
         React.createElement(BoundaryEventCheckbox, {
-          enabled: this.boundaryPreferences.get(boundaryEvent.id) === true,
+          enabled: this.boundaryPreferences.get(triggerEvent.id) === true,
           interrupting: isInterrupting,
           onToggle: () => {
-            const current = this.boundaryPreferences.get(boundaryEvent.id) === true;
+            const current = this.boundaryPreferences.get(triggerEvent.id) === true;
             if (current) {
-              this.boundaryPreferences.delete(boundaryEvent.id);
+              this.boundaryPreferences.delete(triggerEvent.id);
             } else {
-              this.boundaryPreferences.set(boundaryEvent.id, true);
+              this.boundaryPreferences.set(triggerEvent.id, true);
             }
+            this.engine.setBoundaryAutoFire(triggerEvent.id, !current);
             renderCheckbox();
           },
         }),
@@ -719,11 +799,11 @@ export class TokenSimulationController {
     renderCheckbox();
 
     try {
-      const overlayId = this.overlays.add(boundaryEvent, 'token-sim-boundary-config', {
+      const overlayId = this.overlays.add(overlayTarget, 'token-sim-boundary-config', {
         position: { top: -26, left: -2 },
         html: container,
       });
-      this.boundaryConfigOverlays.push({ overlayId, elementId: boundaryEvent.id, root });
+      this.boundaryConfigOverlays.push({ overlayId, elementId: triggerEvent.id, root });
     } catch {
       root.unmount();
     }
@@ -750,6 +830,13 @@ export class TokenSimulationController {
 
     for (const processEl of processElements) {
       this.forEachFlowElement(processEl, (child) => {
+        const incomingCount = (child.incoming || []).filter(
+          (connection: any) => connection.type === 'bpmn:SequenceFlow',
+        ).length;
+        if (child.type === 'bpmn:ComplexGateway' && incomingCount > 1) {
+          this.addComplexJoinThresholdOverlay(child, incomingCount);
+          return;
+        }
         const lc = child.businessObject?.loopCharacteristics;
         if (!lc) {
           return;
@@ -790,6 +877,45 @@ export class TokenSimulationController {
     }
   }
 
+  private addComplexJoinThresholdOverlay(gateway: any, incomingCount: number): void {
+    const container = document.createElement('div');
+    container.style.pointerEvents = 'all';
+    const root = ReactDOM.createRoot(container);
+
+    const renderButton = () => {
+      const threshold = this.complexJoinThresholds.get(gateway.id) ?? incomingCount;
+      root.render(
+        React.createElement(MultiInstanceConfigButton, {
+          count: threshold,
+          badgeText: [
+            React.createElement('span', { key: 'threshold' }, threshold),
+            React.createElement('span', { key: 'of', className: 'token-sim-multi-instance-badge-muted' }, 'of'),
+            React.createElement('span', { key: 'incoming' }, incomingCount),
+          ],
+          description: `Complex join: fires after ${threshold} of ${incomingCount} branches`,
+          heading: 'Branches',
+          maximum: incomingCount,
+          onChangeCount: (newThreshold: number) => {
+            this.complexJoinThresholds.set(gateway.id, newThreshold);
+            this.engine.setComplexJoinThreshold(gateway.id, newThreshold);
+            renderButton();
+          },
+        }),
+      );
+    };
+    renderButton();
+
+    try {
+      const overlayId = this.overlays.add(gateway, 'token-sim-mi-config', {
+        position: { top: -14, left: -20 },
+        html: container,
+      });
+      this.multiInstanceConfigOverlays.push({ overlayId, elementId: gateway.id, root });
+    } catch {
+      root.unmount();
+    }
+  }
+
   private clearMultiInstanceConfigOverlays(): void {
     for (const entry of this.multiInstanceConfigOverlays) {
       entry.root?.unmount();
@@ -805,6 +931,9 @@ export class TokenSimulationController {
   private syncMultiInstanceConfigToEngine(): void {
     for (const [elementId, count] of this.multiInstanceConfig) {
       this.engine.setMultiInstanceCount(elementId, count);
+    }
+    for (const [elementId, threshold] of this.complexJoinThresholds) {
+      this.engine.setComplexJoinThreshold(elementId, threshold);
     }
   }
 
@@ -838,8 +967,8 @@ export class TokenSimulationController {
       if (defaultFlow) {
         this.highlighter.markPreferredFlow(defaultFlow);
       }
-    } else if (gateway.type === 'bpmn:InclusiveGateway') {
-      for (const flow of outgoing) {
+    } else {
+      for (const flow of selectInclusiveFlows(gateway, outgoing)) {
         this.highlighter.markPreferredFlow(flow);
       }
     }
@@ -852,7 +981,7 @@ export class TokenSimulationController {
     }
 
     cancelAutoRoute?.();
-    this.engine.emitTokenExit(element, scope);
+    this.engine.emitTokenExit(element, scope, 1);
     this.highlighter.markFlow(pref.flow);
     this.engine.animateFlow(pref.flow, scope, () => {
       this.engine.enter(pref.flow.target, scope, pref.flow);
@@ -867,10 +996,7 @@ export class TokenSimulationController {
     }
 
     cancelAutoRoute?.();
-    const flowIds = new Set(pref.flows.map((flow: any) => flow.id));
-    scope.setActivatedBranches(element.id, flowIds);
-
-    this.engine.emitTokenExit(element, scope);
+    this.engine.emitTokenExit(element, scope, 1);
     for (const flow of pref.flows) {
       this.engine.animateFlow(flow, scope, () => {
         this.engine.enter(flow.target, scope, flow);
@@ -882,21 +1008,24 @@ export class TokenSimulationController {
   // --- Runtime overlays (play buttons, gateway choices) ---
 
   private addPlayButtonOverlay(element: any, scope: any): void {
+    const overlayKey = this.nextStepOverlayKey(element, scope);
     this.createOverlay(
       element,
       'token-sim-play',
       { top: -10, right: 5 },
       React.createElement(ElementPlayButton, {
         onContinue: () => {
-          this.removeOverlaysForElement(element.id);
+          this.removeOverlaysForElement(overlayKey);
           this.engine.trigger(element, scope);
         },
       }),
       this.activeOverlays,
+      overlayKey,
     );
   }
 
   private addGatewayStepOverlay(element: any, scope: any, outgoing: any[]): void {
+    const overlayKey = this.nextStepOverlayKey(element, scope);
     this.createOverlay(
       element,
       'token-sim-step',
@@ -905,153 +1034,58 @@ export class TokenSimulationController {
         onContinue: () => {
           const pref = this.gatewayPreferences.get(element.id);
           const chosenFlow = pref?.type === 'exclusive' ? pref.flow : this.getDefaultExclusiveFlow(element, outgoing);
-          this.removeOverlaysForElement(element.id);
+          this.removeOverlaysForElement(overlayKey);
           this.engine.trigger(element, scope, { chosenFlow });
         },
       }),
       this.activeOverlays,
+      overlayKey,
     );
+  }
+
+  private addWaitPlayButton(wait: Wait): void {
+    const overlayKey = `wait_${wait.id}`;
+    this.removeOverlaysForElement(overlayKey);
+    const collapsedEventSubProcess =
+      wait.kind === 'event-subprocess-start' && wait.host.collapsed === true ? wait.host : undefined;
+    for (const target of wait.candidates ?? [wait.element]) {
+      this.createOverlay(
+        collapsedEventSubProcess ?? target,
+        waitOverlayTypes[wait.kind],
+        { top: -10, right: 5 },
+        React.createElement(ElementPlayButton, {
+          onContinue: () => this.engine.fireWait(wait.id, target),
+        }),
+        this.activeOverlays,
+        overlayKey,
+      );
+    }
   }
 
   // --- Boundary event overlays ---
-
-  private showBoundaryEventOverlays(hostElement: any, scope: any): void {
-    const boundaryEvents = this.getBoundaryEvents(hostElement);
-    if (boundaryEvents.length === 0) {
-      return;
-    }
-
-    if (this.engine.mode === 'auto') {
-      this.applyBoundaryPreferences(hostElement, boundaryEvents, scope);
-    } else {
-      for (const boundaryEvent of boundaryEvents) {
-        this.addBoundaryPlayOverlay(boundaryEvent, hostElement, scope);
-      }
-    }
-  }
-
-  private applyBoundaryPreferences(hostElement: any, boundaryEvents: any[], scope: any): void {
-    for (const boundaryEvent of boundaryEvents) {
-      if (!this.boundaryPreferences.get(boundaryEvent.id)) {
-        continue;
-      }
-
-      const isInterrupting = boundaryEvent.businessObject?.cancelActivity !== false;
-
-      this.engine.scheduleDelay(() => {
-        if (isInterrupting) {
-          this.engine.cancelElement(hostElement, scope);
-          this.tokenRenderer.removeTokensForElement(hostElement.id);
-          this.removeOverlaysForElement(hostElement.id);
-          this.removeBoundaryPlayOverlays(hostElement);
-          if (hostElement.type === 'bpmn:SubProcess') {
-            this.clearSubProcessVisuals(hostElement);
-          }
-        }
-
-        const outgoing = (boundaryEvent.outgoing || []).filter(
-          (connection: any) => connection.type === 'bpmn:SequenceFlow',
-        );
-        for (const connection of outgoing) {
-          this.engine.animateFlow(connection, scope, () => {
-            this.engine.enter(connection.target, scope, connection);
-          });
-        }
-      }, this.engine.getTaskDelay());
-    }
-  }
-
-  private addBoundaryPlayOverlay(boundaryEvent: any, hostElement: any, scope: any): void {
-    const isInterrupting = boundaryEvent.businessObject?.cancelActivity !== false;
-
-    this.createOverlay(
-      boundaryEvent,
-      'token-sim-boundary',
-      { top: -10, right: 5 },
-      React.createElement(ElementPlayButton, {
-        onContinue: () => {
-          this.removeBoundaryPlayOverlays(hostElement);
-
-          if (isInterrupting) {
-            this.engine.cancelElement(hostElement, scope);
-            this.tokenRenderer.removeTokensForElement(hostElement.id);
-            this.removeOverlaysForElement(hostElement.id);
-            if (hostElement.type === 'bpmn:SubProcess') {
-              this.clearSubProcessVisuals(hostElement);
-            }
-          }
-
-          const outgoing = (boundaryEvent.outgoing || []).filter(
-            (connection: any) => connection.type === 'bpmn:SequenceFlow',
-          );
-          for (const connection of outgoing) {
-            this.engine.animateFlow(connection, scope, () => {
-              this.engine.enter(connection.target, scope, connection);
-            });
-          }
-        },
-      }),
-      this.activeOverlays,
-    );
-  }
-
-  private removeBoundaryPlayOverlays(hostElement: any): void {
-    const boundaryEvents = this.getBoundaryEvents(hostElement);
-    for (const be of boundaryEvents) {
-      this.removeOverlaysForElement(be.id);
-    }
-  }
 
   private getBoundaryEvents(element: any): any[] {
     const attachers: any[] = element.attachers || [];
     return attachers.filter((attacher: any) => attacher.type === 'bpmn:BoundaryEvent');
   }
 
-  private cleanupSignalBoundaryHost(boundaryEvent: any): void {
-    const isInterrupting = boundaryEvent.businessObject?.cancelActivity !== false;
-    if (!isInterrupting) {
-      return;
-    }
-
-    const hostRef = boundaryEvent.businessObject?.attachedToRef;
-    if (!hostRef) {
-      return;
-    }
-
-    const hostElement = this.elementRegistry.get(hostRef.id);
-    if (!hostElement) {
-      return;
-    }
-
-    this.tokenRenderer.removeTokensForElement(hostElement.id);
-    this.removeOverlaysForElement(hostElement.id);
-    this.removeBoundaryPlayOverlays(hostElement);
-    if (hostElement.type === 'bpmn:SubProcess') {
-      this.clearSubProcessVisuals(hostElement);
-    }
-  }
-
   private clearSubProcessVisuals(element: any): void {
-    const childIds = new Set<string>();
     const childElements: any[] = [];
-    this.collectDescendants(element, childIds, childElements);
+    this.collectDescendants(element, childElements);
 
     for (const child of childElements) {
       this.tokenRenderer.removeTokensForElement(child.id);
       this.removeOverlaysForElement(child.id);
       this.highlighter.clearElement(child);
     }
-
-    this.flowAnimator.cancelForElements(childIds);
   }
 
-  private collectDescendants(element: any, ids: Set<string>, elements: any[]): void {
+  private collectDescendants(element: any, elements: any[]): void {
     const children: any[] = element.children || [];
     for (const child of children) {
-      ids.add(child.id);
       elements.push(child);
       if (child.children) {
-        this.collectDescendants(child, ids, elements);
+        this.collectDescendants(child, elements);
       }
     }
   }
@@ -1059,6 +1093,7 @@ export class TokenSimulationController {
   // --- Inclusive gateway step overlay ---
 
   private addInclusiveGatewayStepOverlay(element: any, scope: any, outgoing: any[]): void {
+    const overlayKey = this.nextStepOverlayKey(element, scope);
     this.createOverlay(
       element,
       'token-sim-inclusive-step',
@@ -1066,82 +1101,32 @@ export class TokenSimulationController {
       React.createElement(ElementPlayButton, {
         onContinue: () => {
           const pref = this.gatewayPreferences.get(element.id);
-          const chosenFlows = pref?.type === 'inclusive' ? pref.flows : outgoing;
-          this.removeOverlaysForElement(element.id);
+          const chosenFlows = pref?.type === 'inclusive' ? pref.flows : selectInclusiveFlows(element, outgoing);
+          this.removeOverlaysForElement(overlayKey);
           this.engine.trigger(element, scope, { chosenFlows });
         },
       }),
       this.activeOverlays,
+      overlayKey,
     );
-  }
-
-  // --- Event-based gateway overlays ---
-
-  private addEventBasedGatewayOverlays(gatewayElement: any, scope: any, catchEvents: any[]): void {
-    const allCatchIds = catchEvents.map((e: any) => e.id);
-    const outgoingFlows: any[] = (gatewayElement.outgoing || []).filter(
-      (connection: any) => connection.type === 'bpmn:SequenceFlow',
-    );
-    let cancelled = false;
-
-    const cleanupAll = () => {
-      for (const id of allCatchIds) {
-        this.removeOverlaysForElement(id);
-      }
-      this.removeOverlaysForElement(gatewayElement.id);
-    };
-
-    const highlightChosenPath = (chosenCatchEvent: any) => {
-      const flow = outgoingFlows.find((outgoingFlow: any) => outgoingFlow.target?.id === chosenCatchEvent.id);
-      if (flow) {
-        this.highlighter.markPreferredFlow(flow);
-        this.eventGatewayFlows.set(gatewayElement.id, flow);
-      }
-    };
-
-    const triggerCatchEvent = (catchEvent: any) => {
-      cancelled = true;
-      cleanupAll();
-      this.tokenRenderer.removeTokensForElement(gatewayElement.id);
-      highlightChosenPath(catchEvent);
-      this.tokenRenderer.addToken(catchEvent);
-      this.highlighter.markActive(catchEvent);
-      this.incrementVisitCount(catchEvent);
-      this.engine.scheduleDelay(() => {
-        if (scope.state !== 'running') {
-          return;
-        }
-        this.tokenRenderer.removeTokensForElement(catchEvent.id);
-        this.highlighter.markCompleted(catchEvent);
-        this.engine.routeToOutgoing(catchEvent, scope);
-      }, this.engine.getTaskDelay());
-    };
-
-    if (this.engine.mode === 'step') {
-      for (const catchEvent of catchEvents) {
-        this.createOverlay(
-          catchEvent,
-          'token-sim-event-gw',
-          { top: -10, right: 5 },
-          React.createElement(ElementPlayButton, {
-            onContinue: () => triggerCatchEvent(catchEvent),
-          }),
-          this.activeOverlays,
-        );
-      }
-    } else {
-      const randomIndex = Math.floor(Math.random() * catchEvents.length);
-      this.engine.scheduleDelay(() => {
-        if (cancelled) {
-          return;
-        }
-        triggerCatchEvent(catchEvents[randomIndex]);
-      }, this.engine.getTaskDelay());
-    }
   }
 
   private removeOverlaysForElement(elementId: string): void {
-    const toRemove = this.activeOverlays.filter((overlayEntry) => overlayEntry.elementId === elementId);
+    this.removeOverlaysWhere((overlayKey) => overlayKey === elementId);
+  }
+
+  /** Every token waiting in step mode gets its own button, so a click continues exactly that token. */
+  private nextStepOverlayKey(element: any, scope: any): string {
+    return `step:${scope.id}:${element.id}:${++this.stepOverlayCounter}`;
+  }
+
+  private removeStepOverlays(elementId: string, scopeId: string): void {
+    const prefix = `step:${scopeId}:${elementId}:`;
+    this.removeOverlaysWhere((overlayKey) => overlayKey.startsWith(prefix));
+  }
+
+  private removeOverlaysWhere(predicate: (overlayKey: string) => boolean): void {
+    const toRemove = this.activeOverlays.filter((overlayEntry) => predicate(overlayEntry.elementId));
     for (const entry of toRemove) {
       entry.root?.unmount();
       try {
@@ -1150,7 +1135,7 @@ export class TokenSimulationController {
         // overlay may already be removed
       }
     }
-    this.activeOverlays = this.activeOverlays.filter((overlayEntry) => overlayEntry.elementId !== elementId);
+    this.activeOverlays = this.activeOverlays.filter((overlayEntry) => !predicate(overlayEntry.elementId));
   }
 
   private clearOverlays(): void {
@@ -1413,10 +1398,13 @@ export class TokenSimulationController {
       'bpmn:BusinessRuleTask': 'Business Rule Task',
       'bpmn:CallActivity': 'Call Activity',
       'bpmn:SubProcess': 'Sub-Process',
+      'bpmn:AdHocSubProcess': 'Ad-hoc Sub-Process',
+      'bpmn:Transaction': 'Transaction',
       'bpmn:ExclusiveGateway': 'Exclusive Gateway',
       'bpmn:ParallelGateway': 'Parallel Gateway',
       'bpmn:InclusiveGateway': 'Inclusive Gateway',
       'bpmn:EventBasedGateway': 'Event-Based Gateway',
+      'bpmn:ComplexGateway': 'Complex Gateway',
       'bpmn:IntermediateThrowEvent': 'Intermediate Throw Event',
       'bpmn:IntermediateCatchEvent': 'Intermediate Catch Event',
       'bpmn:BoundaryEvent': 'Boundary Event',
@@ -1477,11 +1465,10 @@ export class TokenSimulationController {
   }
 
   private getParallelMiIterations(element: any): number {
-    const lc = element.businessObject?.loopCharacteristics;
-    if (!lc || lc.$type !== 'bpmn:MultiInstanceLoopCharacteristics' || lc.isSequential) {
+    if (element.type === 'bpmn:AdHocSubProcess' || getLoopType(element) !== 'parallel') {
       return 0;
     }
-    return this.multiInstanceConfig.get(element.id) ?? 3;
+    return getIterationCount(element, this.engine);
   }
 
   // --- Process discovery ---
@@ -1490,7 +1477,7 @@ export class TokenSimulationController {
     const children: any[] = container.children || [];
     for (const child of children) {
       callback(child);
-      if (child.type === 'bpmn:SubProcess' && child.children?.length > 0) {
+      if (child.children?.length > 0) {
         this.forEachFlowElement(child, callback);
       }
     }

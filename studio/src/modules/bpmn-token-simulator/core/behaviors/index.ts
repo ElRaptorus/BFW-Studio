@@ -1,5 +1,7 @@
 import type { Scope } from '../Scope';
 import type { SimulationEngine } from '../SimulationEngine';
+import { AdHocSubProcessBehavior } from './AdHocSubProcessBehavior';
+import { ComplexGatewayBehavior } from './ComplexGatewayBehavior';
 import { EndEventBehavior } from './EndEventBehavior';
 import { EventBasedGatewayBehavior } from './EventBasedGatewayBehavior';
 import { ExclusiveGatewayBehavior } from './ExclusiveGatewayBehavior';
@@ -28,10 +30,13 @@ export {
   InclusiveGatewayBehavior,
   SubProcessBehavior,
   EventBasedGatewayBehavior,
+  ComplexGatewayBehavior,
+  AdHocSubProcessBehavior,
 };
 
 export function registerAllBehaviors(engine: SimulationEngine): void {
   engine.registerBehavior('bpmn:StartEvent', new StartEventBehavior());
+  engine.registerBehavior('bpmn:BoundaryEvent', new StartEventBehavior());
   engine.registerBehavior('bpmn:EndEvent', new EndEventBehavior());
   engine.registerBehavior('bpmn:Task', new TaskBehavior());
   engine.registerBehavior('bpmn:ExclusiveGateway', new ExclusiveGatewayBehavior());
@@ -40,6 +45,8 @@ export function registerAllBehaviors(engine: SimulationEngine): void {
   engine.registerBehavior('bpmn:IntermediateCatchEvent', new IntermediateCatchEventBehavior());
   engine.registerBehavior('bpmn:InclusiveGateway', new InclusiveGatewayBehavior());
   engine.registerBehavior('bpmn:SubProcess', new SubProcessBehavior());
+  engine.registerBehavior('bpmn:Transaction', new SubProcessBehavior());
+  engine.registerBehavior('bpmn:AdHocSubProcess', new AdHocSubProcessBehavior());
   engine.registerBehavior('bpmn:EventBasedGateway', new EventBasedGatewayBehavior());
-  engine.registerBehavior('bpmn:ComplexGateway', new ExclusiveGatewayBehavior());
+  engine.registerBehavior('bpmn:ComplexGateway', new ComplexGatewayBehavior());
 }

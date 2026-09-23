@@ -1,6 +1,6 @@
 import type { Scope } from '../Scope';
 import type { SimulationEngine } from '../SimulationEngine';
-import { hasUpstreamToken } from '../graphUtils';
+import { hasUpstreamToken, selectInclusiveFlows } from '../graphUtils';
 import type { Behavior } from './index';
 
 export class InclusiveGatewayBehavior implements Behavior {
@@ -8,40 +8,15 @@ export class InclusiveGatewayBehavior implements Behavior {
     const incoming = this.getIncomingFlows(element);
     const outgoing = this.getOutgoingFlows(element);
 
-    const isFork = incoming.length <= 1;
-    const isJoin = incoming.length > 1;
-
-    if (isFork || (!isJoin && outgoing.length > 0)) {
-      this.handleFork(element, scope, engine, outgoing);
+    if (incoming.length <= 1) {
+      this.fork(element, scope, engine, outgoing);
       return;
     }
 
     if (viaFlow) {
       scope.addSatisfiedJoinFlow(element.id, viaFlow.id);
     }
-
-    const satisfied = scope.getSatisfiedJoinFlows(element.id);
-    const allSatisfied = incoming.every((incomingFlow: any) => satisfied.has(incomingFlow.id));
-
-    if (allSatisfied) {
-      scope.resetSatisfiedJoinFlows(element.id);
-      this.handleFork(element, scope, engine, outgoing);
-      return;
-    }
-
-    const unsatisfied = incoming.filter((incomingFlow: any) => !satisfied.has(incomingFlow.id));
-    const anyReachable = unsatisfied.some((incomingFlow: any) => hasUpstreamToken(incomingFlow, scope, element.id));
-
-    if (!anyReachable) {
-      if (engine.isEngineIdle()) {
-        scope.resetSatisfiedJoinFlows(element.id);
-        this.handleFork(element, scope, engine, outgoing);
-      } else {
-        this.waitForJoin(element, scope, engine, outgoing, incoming);
-      }
-    } else {
-      this.waitForJoin(element, scope, engine, outgoing, incoming);
-    }
+    this.tryJoin(element, scope, engine, incoming, outgoing);
   }
 
   signal(element: any, scope: Scope, engine: SimulationEngine, data?: any): void {
@@ -50,10 +25,7 @@ export class InclusiveGatewayBehavior implements Behavior {
       return;
     }
 
-    const flowIds = new Set(chosenFlows.map((chosenFlow: any) => chosenFlow.id));
-    scope.setActivatedBranches(element.id, flowIds);
-
-    engine.emitTokenExit(element, scope);
+    engine.emitTokenExit(element, scope, 1);
     for (const flow of chosenFlows) {
       engine.animateFlow(flow, scope, () => {
         engine.enter(flow.target, scope, flow);
@@ -61,44 +33,10 @@ export class InclusiveGatewayBehavior implements Behavior {
     }
   }
 
-  private waitForJoin(element: any, scope: Scope, engine: SimulationEngine, outgoing: any[], incoming: any[]): void {
-    engine.scheduleDelay(
-      () => {
-        if (scope.state !== 'running') {
-          return;
-        }
-
-        const satisfied = scope.getSatisfiedJoinFlows(element.id);
-        if (satisfied.size === 0) {
-          return;
-        }
-
-        const allSatisfied = incoming.every((incomingFlow: any) => satisfied.has(incomingFlow.id));
-        if (allSatisfied) {
-          scope.resetSatisfiedJoinFlows(element.id);
-          this.handleFork(element, scope, engine, outgoing);
-          return;
-        }
-
-        const unsatisfied = incoming.filter((incomingFlow: any) => !satisfied.has(incomingFlow.id));
-        const anyReachable = unsatisfied.some((incomingFlow: any) => hasUpstreamToken(incomingFlow, scope, element.id));
-
-        if (!anyReachable && engine.isEngineIdle()) {
-          scope.resetSatisfiedJoinFlows(element.id);
-          this.handleFork(element, scope, engine, outgoing);
-        } else {
-          this.waitForJoin(element, scope, engine, outgoing, incoming);
-        }
-      },
-      500,
-      true,
-    );
-  }
-
-  private handleFork(element: any, scope: Scope, engine: SimulationEngine, outgoing: any[]): void {
+  /** Routes one token of the gateway; every other token stays on it. */
+  fork(element: any, scope: Scope, engine: SimulationEngine, outgoing: any[]): void {
     if (outgoing.length === 0) {
-      engine.emitTokenExit(element, scope);
-      engine.tryCompleteScope(scope);
+      engine.consumeToken(element, scope);
       return;
     }
 
@@ -108,21 +46,23 @@ export class InclusiveGatewayBehavior implements Behavior {
     }
 
     if (engine.mode === 'auto') {
-      const flowIds = new Set(outgoing.map((outgoingFlow: any) => outgoingFlow.id));
-      scope.setActivatedBranches(element.id, flowIds);
-
       let cancelled = false;
-      const timerId = engine.scheduleDelay(() => {
-        if (cancelled) {
-          return;
-        }
-        engine.emitTokenExit(element, scope);
-        for (const flow of outgoing) {
-          engine.animateFlow(flow, scope, () => {
-            engine.enter(flow.target, scope, flow);
-          });
-        }
-      }, engine.getTaskDelay());
+      const timerId = engine.scheduleElementDelay(
+        element,
+        scope,
+        () => {
+          if (cancelled) {
+            return;
+          }
+          engine.emitTokenExit(element, scope, 1);
+          for (const flow of selectInclusiveFlows(element, outgoing)) {
+            engine.animateFlow(flow, scope, () => {
+              engine.enter(flow.target, scope, flow);
+            });
+          }
+        },
+        engine.getTaskDelay(),
+      );
 
       const cancel = () => {
         cancelled = true;
@@ -133,6 +73,30 @@ export class InclusiveGatewayBehavior implements Behavior {
     } else {
       engine.signalInclusiveGatewayChoice(element, scope, outgoing);
     }
+  }
+
+  private tryJoin(element: any, scope: Scope, engine: SimulationEngine, incoming: any[], outgoing: any[]): void {
+    const arrivals = scope.getSatisfiedJoinFlows(element.id);
+    if (arrivals.length === 0) {
+      return;
+    }
+
+    const unsatisfied = incoming.filter((incomingFlow: any) => !arrivals.includes(incomingFlow.id));
+    if (unsatisfied.some((incomingFlow: any) => hasUpstreamToken(incomingFlow, scope, element.id))) {
+      engine.scheduleDelay(() => {
+        if (scope.state === 'running') {
+          this.tryJoin(element, scope, engine, incoming, outgoing);
+        }
+      }, 500);
+      return;
+    }
+
+    const consumedArrivals = scope.consumeSatisfiedJoinFlows(element.id);
+    for (let i = 1; i < consumedArrivals; i++) {
+      scope.removeToken(element.id);
+    }
+    this.fork(element, scope, engine, outgoing);
+    this.tryJoin(element, scope, engine, incoming, outgoing);
   }
 
   private getIncomingFlows(element: any): any[] {

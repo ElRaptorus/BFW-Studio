@@ -4,7 +4,7 @@ import { getIterationCount, getLoopType } from '../loopUtils';
 import type { Behavior } from './index';
 
 export class TaskBehavior implements Behavior {
-  enter(element: any, scope: Scope, engine: SimulationEngine): void {
+  enter(element: any, scope: Scope, engine: SimulationEngine, viaFlow?: any): void {
     const loopType = getLoopType(element);
 
     if (loopType === 'parallel') {
@@ -16,16 +16,28 @@ export class TaskBehavior implements Behavior {
       scope.setLoopCounter(element.id, 0);
     }
 
-    if (engine.mode === 'step') {
+    const isReceiveTask = element.type === 'bpmn:ReceiveTask';
+    if (isReceiveTask && viaFlow?.source?.type !== 'bpmn:EventBasedGateway') {
+      engine.armWait({ kind: 'catch', element, scope, repeatable: false });
+    } else if (engine.mode === 'step' && !isReceiveTask) {
       engine.signalWaiting(element, scope);
     } else {
-      engine.scheduleDelay(() => {
-        engine.exit(element, scope);
-      }, engine.getTaskDelay());
+      engine.scheduleElementDelay(
+        element,
+        scope,
+        () => {
+          engine.exit(element, scope);
+        },
+        engine.getTaskDelay(),
+      );
     }
   }
 
   exit(element: any, scope: Scope, engine: SimulationEngine): void {
+    if (element.type === 'bpmn:SendTask') {
+      engine.deliverMessage(element, scope);
+    }
+
     const loopType = getLoopType(element);
 
     if (loopType === 'sequential' || loopType === 'loop') {
@@ -64,12 +76,17 @@ export class TaskBehavior implements Behavior {
 
     for (let i = 0; i < iterationCount; i++) {
       const delay = engine.getTaskDelay() * (1 + Math.random() * 0.5);
-      engine.scheduleDelay(() => {
-        completed++;
-        if (completed === iterationCount) {
-          engine.exit(element, scope);
-        }
-      }, delay);
+      engine.scheduleElementDelay(
+        element,
+        scope,
+        () => {
+          completed++;
+          if (completed === iterationCount) {
+            engine.exit(element, scope);
+          }
+        },
+        delay,
+      );
     }
   }
 }

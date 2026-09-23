@@ -1,21 +1,29 @@
 import type { Scope } from '../Scope';
 import type { SimulationEngine } from '../SimulationEngine';
 import {
+  getCompensateActivityRef,
+  getEscalationCode,
   getLinkName,
-  getMessageFlows,
-  hasEventDefinition,
+  isCompensateEvent,
   isEscalationEvent,
   isLinkEvent,
   isMessageEvent,
   isSignalEvent,
 } from '../eventDefUtils';
+import { resolveEscalation } from '../eventResolver';
 import type { Behavior } from './index';
 
 export class IntermediateThrowEventBehavior implements Behavior {
   enter(element: any, scope: Scope, engine: SimulationEngine): void {
     if (isLinkEvent(element)) {
       const name = getLinkName(element);
-      const matchingCatch = name != null ? this.findMatchingLinkCatch(name, scope) : null;
+      const matchingCatch =
+        name != null
+          ? (scope.element.children || []).find(
+              (child: any) =>
+                child.type === 'bpmn:IntermediateCatchEvent' && isLinkEvent(child) && getLinkName(child) === name,
+            )
+          : undefined;
 
       engine.emitTokenExit(element, scope);
 
@@ -28,7 +36,7 @@ export class IntermediateThrowEventBehavior implements Behavior {
     }
 
     if (isMessageEvent(element)) {
-      engine.emitMessageSend(element, scope, getMessageFlows(element));
+      engine.deliverMessage(element, scope);
       engine.exit(element, scope);
       return;
     }
@@ -40,8 +48,15 @@ export class IntermediateThrowEventBehavior implements Behavior {
     }
 
     if (isEscalationEvent(element)) {
-      this.handleEscalationThrow(element, scope, engine);
+      for (const escalationCatch of resolveEscalation(scope, getEscalationCode(element), engine.elementRegistry)) {
+        engine.enterCatch(escalationCatch);
+      }
       engine.exit(element, scope);
+      return;
+    }
+
+    if (isCompensateEvent(element)) {
+      engine.runCompensation(scope, getCompensateActivityRef(element), () => engine.exit(element, scope));
       return;
     }
 
@@ -50,87 +65,5 @@ export class IntermediateThrowEventBehavior implements Behavior {
 
   exit(element: any, scope: Scope, engine: SimulationEngine): void {
     engine.routeToOutgoing(element, scope);
-  }
-
-  private handleEscalationThrow(_element: any, scope: Scope, engine: SimulationEngine): void {
-    if (!scope.parent) {
-      return;
-    }
-
-    const boundary = this.findEscalationBoundary(scope);
-    if (!boundary) {
-      return;
-    }
-
-    const isInterrupting = boundary.businessObject?.cancelActivity !== false;
-    const parentScope = scope.parent;
-    const hostElement = scope.element;
-
-    if (isInterrupting) {
-      engine.scheduleDelay(() => {
-        engine.cancelElement(hostElement, parentScope);
-        const outgoing = (boundary.outgoing || []).filter((connection: any) => connection.type === 'bpmn:SequenceFlow');
-        for (const connection of outgoing) {
-          engine.animateFlow(connection, parentScope, () => {
-            engine.enter(connection.target, parentScope, connection);
-          });
-        }
-      }, 0);
-    } else {
-      const outgoing = (boundary.outgoing || []).filter((connection: any) => connection.type === 'bpmn:SequenceFlow');
-      for (const connection of outgoing) {
-        engine.animateFlow(connection, parentScope, () => {
-          engine.enter(connection.target, parentScope, connection);
-        });
-      }
-    }
-  }
-
-  private findEscalationBoundary(scope: Scope): any | null {
-    const subProcessElement = scope.element;
-    if (!scope.parent) {
-      return null;
-    }
-
-    const parentChildren: any[] = scope.parent.element?.children || [];
-    return (
-      parentChildren.find((child: any) => {
-        if (child.type !== 'bpmn:BoundaryEvent') {
-          return false;
-        }
-        const attachedTo = child.businessObject?.attachedToRef;
-        if (!attachedTo || attachedTo.id !== subProcessElement.businessObject?.id) {
-          return false;
-        }
-        return hasEventDefinition(child, 'bpmn:EscalationEventDefinition');
-      }) ?? null
-    );
-  }
-
-  private findMatchingLinkCatch(linkName: string, scope: Scope): any | null {
-    let processScope = scope;
-    while (processScope.parent) {
-      processScope = processScope.parent;
-    }
-
-    return this.scanForLinkCatch(linkName, processScope.element) ?? null;
-  }
-
-  private scanForLinkCatch(linkName: string, container: any): any | undefined {
-    const children: any[] = container.children || [];
-    for (const child of children) {
-      if (child.type === 'bpmn:IntermediateCatchEvent') {
-        if (isLinkEvent(child) && getLinkName(child) === linkName) {
-          return child;
-        }
-      }
-      if (child.children?.length > 0) {
-        const found = this.scanForLinkCatch(linkName, child);
-        if (found) {
-          return found;
-        }
-      }
-    }
-    return undefined;
   }
 }

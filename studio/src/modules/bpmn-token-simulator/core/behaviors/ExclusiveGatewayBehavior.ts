@@ -16,15 +16,20 @@ export class ExclusiveGatewayBehavior implements Behavior {
       const chosenFlow = defaultFlow || outgoing[0];
 
       let cancelled = false;
-      const timerId = engine.scheduleDelay(() => {
-        if (cancelled) {
-          return;
-        }
-        engine.emitTokenExit(element, scope);
-        engine.animateFlow(chosenFlow, scope, () => {
-          engine.enter(chosenFlow.target, scope, chosenFlow);
-        });
-      }, engine.getTaskDelay());
+      const timerId = engine.scheduleElementDelay(
+        element,
+        scope,
+        () => {
+          if (cancelled) {
+            return;
+          }
+          engine.emitTokenExit(element, scope, 1);
+          engine.animateFlow(chosenFlow, scope, () => {
+            engine.enter(chosenFlow.target, scope, chosenFlow);
+          });
+        },
+        engine.getTaskDelay(),
+      );
 
       const cancel = () => {
         cancelled = true;
@@ -44,7 +49,7 @@ export class ExclusiveGatewayBehavior implements Behavior {
   signal(element: any, scope: Scope, engine: SimulationEngine, data?: any): void {
     const chosenFlow = data?.chosenFlow;
     if (chosenFlow) {
-      engine.emitTokenExit(element, scope);
+      engine.emitTokenExit(element, scope, 1);
       engine.animateFlow(chosenFlow, scope, () => {
         engine.enter(chosenFlow.target, scope, chosenFlow);
       });

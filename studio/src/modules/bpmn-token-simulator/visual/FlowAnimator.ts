@@ -9,6 +9,8 @@ interface ActiveAnimation {
   pausedElapsed: number;
   done: () => void;
   connection: any;
+  /** Set for sequence-flow tokens, whose cancellation the engine announces by this id */
+  engineAnimationId?: number;
   segments: { from: { x: number; y: number }; to: { x: number; y: number }; length: number }[];
   totalLength: number;
 }
@@ -22,7 +24,13 @@ export class FlowAnimator {
     this.canvas = canvas;
   }
 
-  animate(connection: any, durationMs: number, done: () => void, tokenClass?: string): void {
+  animate(
+    connection: any,
+    durationMs: number,
+    done: () => void,
+    tokenClass?: string,
+    engineAnimationId?: number,
+  ): void {
     const waypoints: { x: number; y: number }[] = connection.waypoints;
     if (!waypoints || waypoints.length < 2) {
       done();
@@ -53,6 +61,7 @@ export class FlowAnimator {
       pausedElapsed: 0,
       done,
       connection,
+      engineAnimationId,
       segments,
       totalLength,
     };
@@ -97,26 +106,20 @@ export class FlowAnimator {
     this.activeAnimations = [];
   }
 
-  cancelForElements(elementIds: Set<string>): void {
-    const toCancel: ActiveAnimation[] = [];
-    const remaining: ActiveAnimation[] = [];
-
-    for (const entry of this.activeAnimations) {
-      const srcId = entry.connection?.source?.id;
-      const tgtId = entry.connection?.target?.id;
-      if ((srcId && elementIds.has(srcId)) || (tgtId && elementIds.has(tgtId))) {
-        toCancel.push(entry);
-      } else {
-        remaining.push(entry);
-      }
-    }
-
-    for (const entry of toCancel) {
+  /**
+   * Stops the animations with the given engine animation ids without calling their `done`:
+   * the engine has already taken those tokens back. Animations of other scopes on the same
+   * connection keep running.
+   */
+  cancelAnimations(engineAnimationIds: number[]): void {
+    const cancelledIds = new Set(engineAnimationIds);
+    const isCancelled = (entry: ActiveAnimation) =>
+      entry.engineAnimationId !== undefined && cancelledIds.has(entry.engineAnimationId);
+    for (const entry of this.activeAnimations.filter(isCancelled)) {
       cancelAnimationFrame(entry.animationId);
       entry.circle.remove();
     }
-
-    this.activeAnimations = remaining;
+    this.activeAnimations = this.activeAnimations.filter((entry) => !isCancelled(entry));
   }
 
   showRipple(element: any, durationMs: number): void {

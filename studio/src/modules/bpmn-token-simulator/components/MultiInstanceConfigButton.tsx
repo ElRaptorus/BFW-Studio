@@ -5,10 +5,21 @@ import { MultiInstanceCountOverlay } from './MultiInstanceCountOverlay';
 export interface MultiInstanceConfigButtonProps {
   count: number;
   onChangeCount: (newCount: number) => void;
+  badgeText?: React.ReactNode;
+  description?: string;
+  heading?: string;
+  maximum?: number;
 }
 
 export function MultiInstanceConfigButton(props: MultiInstanceConfigButtonProps): React.ReactElement {
-  const { count, onChangeCount } = props;
+  const {
+    count,
+    onChangeCount,
+    badgeText = `${count}x`,
+    description = `Multi-instance: ${count} iterations`,
+    heading,
+    maximum,
+  } = props;
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,15 +27,17 @@ export function MultiInstanceConfigButton(props: MultiInstanceConfigButtonProps)
       <button
         className="token-sim-multi-instance-badge"
         onClick={() => setOpen(!open)}
-        title={`Multi-instance: ${count} iterations (click to change)`}
-        aria-label={`Multi-instance: ${count} iterations`}
+        title={`${description} (click to change)`}
+        aria-label={description}
       >
-        {count}x
+        {badgeText}
       </button>
 
       {open && (
         <MultiInstanceCountOverlay
           count={count}
+          heading={heading}
+          maximum={maximum}
           onConfirm={(newCount) => {
             onChangeCount(newCount);
             setOpen(false);

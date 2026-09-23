@@ -34,6 +34,11 @@ export class ElementHighlighter {
     this.completedElements.delete(element.id);
   }
 
+  clearActive(element: any): void {
+    this.getGraphics(element)?.classList.remove(ACTIVE_CLASS);
+    this.activeElements.delete(element.id);
+  }
+
   markCompleted(element: any): void {
     const gfx = this.getGraphics(element);
     if (!gfx) {
