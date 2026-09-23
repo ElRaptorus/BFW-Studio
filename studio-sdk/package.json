@@ -1,10 +1,13 @@
 {
   "name": "@elraptorus/bfw_studio_sdk",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
   "description": "The Bifrost Forge World SDK for plugin developers. Provides type definitions, reusable UI components, and design tokens for building Bifrost Forge World plugins.",
   "main": "./out/index.js",
   "typings": "./out/index.d.ts",
-  "private": true,
   "sideEffects": false,
   "files": [
     "out/**/*.{ts,js,css,scss}"

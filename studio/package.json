@@ -2,7 +2,7 @@
   "author": "ElRaptorus",
   "description": "Development Studio for modeling BPMN and DMN diagrams for BFW-Engine.",
   "name": "@elraptorus/bfw_studio",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "main": "out/bundle-electron-main.js",
   "imports": {

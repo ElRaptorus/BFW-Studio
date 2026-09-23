@@ -1,0 +1,62 @@
+name: Publish Studio SDK
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry Run?'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-studio-sdk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: studio-sdk
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 26
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          check-latest: true
+
+      - name: Install latest NPM v12
+        run: npm install -g npm@12
+
+      - name: Authenticate GitHub Packages
+        run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Set release version
+        if: github.event_name == 'release'
+        run: npm pkg set version=${{ github.event.release.tag_name }}
+
+      - name: Publish (Dry Run)
+        if: inputs.dry_run
+        run: npm publish --dry-run
+
+      - name: Publish
+        if: inputs.dry_run == false
+        run: npm publish
