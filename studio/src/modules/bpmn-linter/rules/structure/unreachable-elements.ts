@@ -140,7 +140,12 @@ function lintScope(container: ModdleNode, reporter: BpmnlintReporter) {
   }
 
   for (const el of elements) {
-    if (isAny(el, ['bpmn:SubProcess', 'bpmn:AdHocSubProcess']) && !el.triggeredByEvent) {
+    // Inner ad-hoc elements have no sequence flows, so this scope is not walked.
+    // The ad-hoc shell is still checked for reachability in its parent scope.
+    if (is(el, 'bpmn:AdHocSubProcess')) {
+      continue;
+    }
+    if (is(el, 'bpmn:SubProcess') && !el.triggeredByEvent) {
       lintScope(el, reporter);
     }
   }
