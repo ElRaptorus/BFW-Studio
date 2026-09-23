@@ -9,8 +9,6 @@ const { TsCheckerRspackPlugin } = require('ts-checker-rspack-plugin');
 const MODE = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = MODE === 'production';
 
-const configCss = require('./rspack.config.css');
-
 const optimization = {};
 
 if (IS_PRODUCTION) {
@@ -171,15 +169,14 @@ const configElectronRenderer = {
     {
       message: /Can\'t resolve \'macos-temperature-sensor\'/,
     },
-    {
-      message: /Can\'t resolve \'canvas\'/,
-    },
-    {
-      message: /export \'Studio\' (reexported as \'Studio\') was not found in \'.\/types\/Studio\'/,
-    },
   ],
 };
 
 generateBuildInfo(IS_PRODUCTION);
 
-module.exports = [configCss, ...require('./rspack.config.electron-main'), configPluginHost, configElectronRenderer];
+module.exports = [
+  require('./rspack.config.css'),
+  ...require('./rspack.config.electron-main'),
+  configPluginHost,
+  configElectronRenderer,
+];

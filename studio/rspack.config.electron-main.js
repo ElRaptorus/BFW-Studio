@@ -17,9 +17,6 @@ const warningsToIgnore = [
   {
     message: /Can\'t resolve \'macos-temperature-sensor\'/,
   },
-  {
-    message: /export \'Studio\' (reexported as \'Studio\') was not found in \'.\/types\/Studio\'/,
-  },
 ];
 
 const configElectronMain = {

@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.base",
-  "compilerOptions": {
-    "lib": ["WebWorker", "WebWorker.ImportScripts", "Webworker.Iterable", "WebWorker.AsyncIterable", "ES2017.SharedMemory", "esnext", "ScriptHost"]
-  },
-  "include": ["src/packages.d.ts", "src/bifrost/sharedworker", "src/modules/*/sharedworker"],
-  "exclude": ["src/bifrost/sharedworker/**/*.test.ts"]
-}

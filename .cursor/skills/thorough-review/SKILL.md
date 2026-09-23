@@ -39,7 +39,7 @@ All three must exit 0. If `lint:fix` reports errors that cannot be auto-fixed, l
 ## 2. TypeScript Compilation
 
 ```bash
-cd studio && npx tsc --noEmit -p tsconfig.components.json
+cd studio && npx tsc --noEmit -p tsconfig.electron-renderer.json && npx tsc --noEmit -p tsconfig.electron-main.json
 ```
 
 Must exit 0 with no type errors.

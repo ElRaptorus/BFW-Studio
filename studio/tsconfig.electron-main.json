@@ -8,8 +8,6 @@
   "exclude": [
     "studio-sdk",
     "src/**/*.test.ts",
-    "src/bifrost/webworker",
-    "src/bifrost/nodeworker",
     "src/bifrost/electron-renderer"
   ]
 }

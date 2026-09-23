@@ -53,8 +53,7 @@ Bootstrap 5 CSS is loaded via `import 'bootstrap/dist/css/bootstrap.min.css'` in
 | Script | Command |
 |--------|---------|
 | `npm run build` | Build SDK + Electron app |
-| `npm run build:electron` | Clean + Rspack Electron build |
-| `npm run build:electron:watch` | Rspack watch mode (no large heap flag needed — Rust core manages its own memory) |
+| `npm run build:studio` | Clean + Rspack Electron build |
 | `npm start` | Launch `electron out/bundle-electron-main.js` |
 
 ## Loaders

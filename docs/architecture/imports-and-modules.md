@@ -88,9 +88,8 @@ Key settings for module resolution:
 
 | Config | Scope | Notes |
 |--------|-------|-------|
-| `tsconfig.electron-renderer.json` | `src/` minus main/worker dirs | Renderer type checking |
-| `tsconfig.electron-main.json` | `src/` minus renderer/worker dirs | Main process type checking |
-| `tsconfig.webworker.json` | Web worker sources | Includes `packages.d.ts` explicitly |
-| `tsconfig.sharedworker.json` | Shared worker sources | Includes `packages.d.ts` explicitly |
-| `tsconfig.components.json` | Shared component type checking | Extends the base config with `dom` + `esnext` libs |
+| `tsconfig.electron-renderer.json` | `src/` except `src/bifrost/electron-main` and tests | Renderer checker. `src/tsconfig.json` extends it, so the editor uses the same project. Web workers are included. |
+| `tsconfig.electron-main.json` | `src/` except `src/bifrost/electron-renderer` and tests | Main-process and plugin-host checker. `src/bifrost/electron-main/tsconfig.json` extends it. |
 | `studio-sdk/tsconfig.json` | SDK sources | Emits `.d.ts` declarations to `out/` |
+
+`src/bifrost/electron-renderer/tsconfig.json` is a one-line extend of the renderer config so the editor does not stop at `src/tsconfig.json`. Web workers are type-checked by these two projects. `src/packages.d.ts` is part of `include: ["src"]`.

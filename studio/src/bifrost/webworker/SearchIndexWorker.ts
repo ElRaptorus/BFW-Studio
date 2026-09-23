@@ -32,12 +32,9 @@ const FUSE_OPTIONS = {
   ignoreLocation: true,
   includeScore: true,
   isCaseSensitive: false,
-  matchAllTokens: true,
-  maxPatternLength: 32,
   minMatchCharLength: 2,
   shouldSort: true,
   threshold: 0.1,
-  tokenize: true,
   keys: [
     {
       name: 'prio1',

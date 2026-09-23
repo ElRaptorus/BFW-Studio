@@ -4,5 +4,5 @@
     "lib": ["dom", "esnext"]
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/bifrost/webworker", "src/bifrost/nodeworker", "src/bifrost/electron-main"]
+  "exclude": ["src/**/*.test.ts", "src/bifrost/electron-main"]
 }
