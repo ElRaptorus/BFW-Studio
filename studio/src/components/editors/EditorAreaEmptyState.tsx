@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 
 import { useBifrost } from '../../bifrostContext';
 
@@ -6,10 +6,11 @@ export function EditorAreaEmptyState(): React.JSX.Element {
   const bifrost = useBifrost();
   const cmd = bifrost.commands.getClickHandler();
   const keystroke = (command: string): string => bifrost.keybindings.getFormattedKeystrokeForCommand(command);
-  const tip = bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText');
   const extraActions = bifrost.commands.isRegistered('std.editorEmptyState.getExtraActions')
     ? bifrost.commands.executeCommand<React.JSX.Element[]>('std.editorEmptyState.getExtraActions')
     : undefined;
+    
+  const [tip] = useState<React.JSX.Element | null>(bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText'));
 
   return (
     <div className="editor-area-empty-state">

@@ -25,7 +25,8 @@ export default function StartpageRenderer(props: EditorDocumentRendererProps): R
     bifrost.settings.set('startpage.general.openOnStartupIfEmpty', event.target.checked);
   };
 
-  const tip = bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText');
+  const [tip] = useState<React.JSX.Element | null>(bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText'));
+
   const heroCards = bifrost.commands.executeCommand<StartpageCardDescriptor[]>('std.startpage.getHeroCards');
   const actionCards = bifrost.commands.executeCommand<StartpageCardDescriptor[]>('std.startpage.getActionCards');
   const legacyExtraComponents = bifrost.commands.executeCommand<React.JSX.Element[]>('std.startpage.getExtraRenderer');
