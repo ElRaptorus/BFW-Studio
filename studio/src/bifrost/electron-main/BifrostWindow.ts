@@ -4,7 +4,6 @@ import { pathToFileURL } from 'node:url';
 import os from 'os';
 import path from 'path';
 
-import * as BuildInfo from '../../generatedBuildAndProductInfo';
 import type { BifrostWindowSerialized } from '../contracts/BifrostTypes';
 import { IPC_MESSAGE_WINDOW_NAVIGATE_TO_URL } from '../contracts/IpcEvents';
 
@@ -41,10 +40,7 @@ export default class BifrostWindow extends AbstractEmitter {
 
     // Only necessary for linux, because "AppImage" instances don't implicitly use the App Icon as favicon, like windows and macOS apps do.
     if (os.platform() === 'linux') {
-      const releaseChannel = BuildInfo.releaseChannelName === 'unknown' ? 'bloodforge' : BuildInfo.releaseChannelName;
-      const iconPath = path.join(__dirname, `${releaseChannel}.png`);
-
-      this.browserWindow.setIcon(iconPath);
+      this.browserWindow.setIcon(path.join(__dirname, `app.png`));
     }
 
     const bifrostWindowOptionsWithInstanceKey = { ...bifrostWindowOptions, instanceKey: this.instanceKey };
