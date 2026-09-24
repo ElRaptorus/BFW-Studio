@@ -166,6 +166,26 @@ describe('SettingsLayerManager', () => {
     assert.strictEqual(files.loadCount, loadsAfterOpen);
   });
 
+  it('does not try to load a project settings file that does not exist', async () => {
+    const files = memoryFiles();
+    files.files.set('file:///tmp/Demo.bfwsln', JSON.stringify({ folders: [], settings: {} }));
+    const loadedUris: string[] = [];
+    const load = files.load.bind(files);
+    files.load = async (uri: string) => {
+      loadedUris.push(uri);
+      return load(uri);
+    };
+
+    const store = new SettingsLayerManager(files, () => openSolution());
+    await store.reconcile();
+    assert.strictEqual(await store.readRawText({ scope: 'project', projectBaseUri: 'file:///tmp/a' }), '{}\n');
+
+    assert.deepStrictEqual(
+      loadedUris.filter((uri) => uri.includes('.bifrostfw')),
+      [],
+    );
+  });
+
   it('keeps going when watchFile is unavailable', async () => {
     const files = memoryFiles(true);
     files.files.set(

@@ -79,6 +79,9 @@ export class SettingsLayerManager extends AbstractEmitter {
     }
     if (target.scope === 'project') {
       const fileUri = projectSettingsFileUri(target.projectBaseUri);
+      if (!(await this.fileExists(fileUri))) {
+        return '{}\n';
+      }
       try {
         return await this.fileHandling.load(fileUri);
       } catch {
@@ -248,7 +251,19 @@ export class SettingsLayerManager extends AbstractEmitter {
     }
   }
 
+  /** Unknown (the web build cannot check) counts as present, so the load decides. */
+  private async fileExists(fileUri: string): Promise<boolean> {
+    try {
+      return await this.fileHandling.doesFileOrDirectoryExist(this.fileHandling.getLocalFilenameForUri(fileUri));
+    } catch {
+      return true;
+    }
+  }
+
   private async readProjectDocument(fileUri: string): Promise<Record<string, unknown>> {
+    if (!(await this.fileExists(fileUri))) {
+      return {};
+    }
     try {
       const raw = await this.fileHandling.load(fileUri);
       const parsed = jsonComment.parse(raw);
@@ -268,6 +283,9 @@ export class SettingsLayerManager extends AbstractEmitter {
     fileUri: string,
     select: (parsed: unknown) => Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    if (!(await this.fileExists(fileUri))) {
+      return {};
+    }
     let raw: string;
     try {
       raw = await this.fileHandling.load(fileUri);
