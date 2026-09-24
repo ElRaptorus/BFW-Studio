@@ -1,8 +1,7 @@
 const path = require('path');
 const BuildInfo = require('../src/generatedBuildAndProductInfo');
 
-const ICON_NAME = BuildInfo.releaseChannelName === 'unknown' ? 'bloodforge' : BuildInfo.releaseChannelName;
-const ICON_PATH = path.join(__dirname, '..', 'assets', 'icons', ICON_NAME);
+const ICON_PATH = path.join(__dirname, '..', 'assets', 'icons', 'app');
 const ICON_PATH_MAC = `${ICON_PATH}.icns`;
 const ICON_PATH_WIN = `${ICON_PATH}.ico`;
 const ICON_PATH_LINUX = `${ICON_PATH}.png`;

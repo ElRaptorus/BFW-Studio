@@ -8,9 +8,9 @@
 
 ## What is this?
 
-A BPMN 2.0 modeling Environment, built with ReactJS and Electron. Used to model BPMN and DMN diagrams, which can be run with [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine).
+A BPMN 2.0 modeling Environment, built with ReactJS and Electron and the holy greases, cogs and oils sanctioned by the [Cult Mechanicus](https://wh40k.lexicanum.com/wiki/Cult_Mechanicus). Used to model BPMN and DMN diagrams, which can be run with [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine).
 
-> Current Status: Beta. The Omnissiahs great work is never done.
+> Current Status: Beta. The [Omnissiah's](https://wh40k.lexicanum.com/wiki/Omnissiah) great work is never done.
 
 ## Key Features
 
@@ -28,6 +28,8 @@ See [here](./CHANGELOG.md) to get a better picture of what's in store for v1.
 
 - Node `>= 24.20.0`
 - NPM `>= 12.0.0`
+- Binary Cant
+- A Noospheric Connection
 
 ## Installation
 
