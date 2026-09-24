@@ -60,6 +60,7 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
   constructor(
     uri: string,
     studio: Bifrost,
+    documentUri: () => string,
     bpmnComponentOptions: Record<string, unknown> = {},
     additionalModules: unknown[] = [],
   ) {
@@ -77,6 +78,7 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
         minimapModule,
         AddExporter,
         createSanitizerModule(studio),
+        { bifrostSettings: ['value', studio.settings], documentUri: ['value', documentUri] },
         ...additionalModules,
       ],
       moddleExtensions: {
@@ -113,7 +115,7 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
     this.modeler.on('import.done', importDoneCallback);
 
     const colorContextPadProvider = this.getColorContextProvider();
-    colorContextPadProvider.setStudio(studio);
+    colorContextPadProvider.setSettings(studio.settings, documentUri);
 
     PluginPaletteProvider.setStudio(studio);
     PluginContextPadProvider.setStudio(studio);

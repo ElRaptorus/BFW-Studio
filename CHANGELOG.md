@@ -198,12 +198,14 @@ A comprehensive semantic token-based theming system. Themes are fully inheritabl
 
 See [architecture](./docs/architecture/theming.md).
 
-### Settings
+### Scoped Settings
 
 A dual-mode settings system with both a GUI editor and a raw JSON editor.
 
 - All settings are registered with typed descriptors at the Settings Manager
+- Settings for BPMN and DMN Editors can be defined globally and overwritten per Solution or per Project
 - Plugins can declare their own settings sections, for use with the GUI
+- An unreadable solution file is no longer overwritten. The Studio offers to repair it and keeps a backup of the broken file
 
 See [architecture](./docs/architecture/settings.md).
 
@@ -254,6 +256,7 @@ See [plugin-development-guide](./docs/plugin-development-guide.md) and [manifest
 
 Ideas under consideration for future development:
 
+- Webapp Build for using the Studio directly in the browser
 - Process Landscape Map as a solution-level feature
 - Project organization tools (grouping, tagging, folder organization by tags) — potentially combined with the landscape map
 - Cross-process data and message flow visualization ("Flow Chart") with optional debugger integration

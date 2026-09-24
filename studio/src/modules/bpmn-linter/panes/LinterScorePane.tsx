@@ -30,7 +30,7 @@ function shouldBeDisplayed(editorDocument: EditorDocument, _editorDocumentModel:
   if (!studio) {
     return false;
   }
-  return studio.settings.get('bpmnLinter.enabled') === true;
+  return studio.settings.get('bpmnLinter.enabled', editorDocument.uri) === true;
 }
 
 function LinterScorePaneFull(props: PaneComponentProps): React.JSX.Element {

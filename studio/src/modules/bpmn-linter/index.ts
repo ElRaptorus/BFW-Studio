@@ -28,12 +28,6 @@ export function onLoad(bifrost: Bifrost): void {
     'bpmn-linter/badge/info': 'ph ph-info',
   });
 
-  const settingsAccessor = {
-    get: (key: string): unknown => bifrost.settings.get(key),
-    set: (key: string, value: unknown) => bifrost.settings.set(key, value),
-    onSettingsUpdate: (handler: (key: string, value: unknown) => void) => bifrost.events.on('settingsUpdate', handler),
-  };
-
   const diagnosticsAccessor = {
     setDiagnostics: (
       uri: string,
@@ -62,7 +56,6 @@ export function onLoad(bifrost: Bifrost): void {
       __init__: ['lintBridge', 'linterPaletteProvider'],
       lintBridge: ['type', LintBridge],
       linterPaletteProvider: ['type', LinterPaletteProvider],
-      lintBridgeSettings: ['value', settingsAccessor],
       lintBridgeDiagnostics: ['value', diagnosticsAccessor],
       lintBridgeEditors: ['value', editorsAccessor],
       lintBridgePaneLayout: ['value', paneLayoutAccessor],

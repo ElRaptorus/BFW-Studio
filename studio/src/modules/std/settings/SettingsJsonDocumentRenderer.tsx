@@ -13,21 +13,33 @@ import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 
 import React, { useEffect, useRef, useState } from 'react';
 
+import type { SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
+
+import type ScopedSettingsDocumentModel from './ScopedSettingsDocumentModel';
+import { parseSettingsScopeUri } from './ScopedSettingsDocumentModel';
 import type UserSettingsDocumentModel from './UserSettingsDocumentModel';
-import { EVENT_SETTINGS_RECEIVED_UPDATE } from './UserSettingsDocumentModel';
+import { EVENT_SETTINGS_RECEIVED_UPDATE, EVENT_SETTINGS_SAVE_VALIDATED } from './UserSettingsDocumentModel';
 import { buildJsonSchema } from './validation/schemaToJsonSchema';
+
+type SettingsJsonModel = UserSettingsDocumentModel | ScopedSettingsDocumentModel;
+
+function formatValidationResult(result: SettingsValidationResult): string {
+  return result.errors.map((error) => (error.key === '' ? error.message : `${error.key}: ${error.message}`)).join('; ');
+}
 
 export default function SettingsJsonDocumentRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const studio = props.studio as Bifrost;
-  const [model, setModel] = useState<UserSettingsDocumentModel | null>(null);
+  const [model, setModel] = useState<SettingsJsonModel | null>(null);
+  const scopeTarget = parseSettingsScopeUri(props.editorDocument.uri);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [jsonSchema, setJsonSchema] = useState(() => buildJsonSchema(studio.settings.getSchemas()));
   const editorRef = useRef<MultiLineCodeEditor | null>(null);
+  const modelRef = useRef<SettingsJsonModel | null>(null);
   const subscriptionsRef = useRef<AbstractSubscription[]>([]);
 
   useEffect(() => {
     const sub = studio.settings.on(EVENT_SETTINGS_SCHEMA_REGISTERED, () => {
-      const nextSchema = buildJsonSchema(studio.settings.getSchemas());
+      const nextSchema = modelRef.current?.getJsonSchema() ?? buildJsonSchema(studio.settings.getSchemas());
       setJsonSchema(nextSchema);
       editorRef.current?.updateJsonSchema(nextSchema);
     });
@@ -38,19 +50,24 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
     let mounted = true;
 
     async function initialize(): Promise<void> {
-      const documentModel = await props.studio.editors.getEditorDocumentModel<UserSettingsDocumentModel>(
-        props.editorDocument,
-      );
+      const documentModel = await props.studio.editors.getEditorDocumentModel<SettingsJsonModel>(props.editorDocument);
 
       if (!mounted) {
         return;
       }
 
+      modelRef.current = documentModel;
       setModel(documentModel);
+      const nextSchema = documentModel.getJsonSchema();
+      setJsonSchema(nextSchema);
+      editorRef.current?.updateJsonSchema(nextSchema);
 
       subscriptionsRef.current = [
         documentModel.on(EVENT_SETTINGS_RECEIVED_UPDATE, () => {
           setValidationMessage(null);
+        }),
+        documentModel.on(EVENT_SETTINGS_SAVE_VALIDATED, (result: SettingsValidationResult) => {
+          setValidationMessage(result.valid ? null : formatValidationResult(result));
         }),
       ];
 
@@ -61,6 +78,7 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
 
     return () => {
       mounted = false;
+      modelRef.current = null;
       subscriptionsRef.current.forEach((subscription: AbstractSubscription) => subscription.dispose());
     };
   }, [props.studio, props.editorDocument]);
@@ -92,15 +110,18 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
             icon="settings/editor-toolbar/open-gui"
             label="Open GUI Editor"
             tooltip="Open GUI Editor"
-            command="std.settings.openUserSettings"
+            command="std.settings.openSettingsAtScope"
+            commandArgs={[scopeTarget ?? { scope: 'user' }]}
           />
-          <EditorToolbarButton
-            studio={props.studio}
-            icon="settings/editor-toolbar/reset"
-            label="Reset settings"
-            tooltip="Reset settings"
-            command="std.settings.resetToDefault"
-          />
+          {scopeTarget == null && (
+            <EditorToolbarButton
+              studio={props.studio}
+              icon="settings/editor-toolbar/reset"
+              label="Reset settings"
+              tooltip="Reset settings"
+              command="std.settings.resetToDefault"
+            />
+          )}
         </EditorToolbarRight>
       </EditorToolbar>
       <EditorContent>

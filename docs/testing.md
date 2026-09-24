@@ -85,6 +85,18 @@ studio/test/
 
 `StudioAgent` is the primary test API. It wraps WebDriverIO with domain-specific methods for interacting with the Studio.
 
+Scoped-settings helpers:
+
+| Helper | Purpose |
+|---|---|
+| `getSolutionProjects()` | `{ name, baseUri }[]` of the open solution — use `baseUri` instead of building `file://` URIs by hand |
+| `getMenuBarSelectValue(itemId)` | Value of the menu-bar `select` with `data-menu-bar-item-id="itemId"` |
+| `selectMenuBarOption(itemId, value)` | Sets that `select` and dispatches `change` (React-controlled) |
+| `clickSettingsScope('user' \| 'solution' \| 'project')` | Clicks `[data-test-settings-scope=…]` in the Settings GUI scope bar |
+| `waitForJsonFileValue(filePath, key, expected, timeoutMs?)` | Polls a JSON file until the top-level `key` deep-equals `expected`; use instead of fixed pauses after async settings writes |
+
+Setting rows carry `data-test-setting-key="<key>"`.
+
 ### Lifecycle
 
 **Pattern A: shared agent across tests** (most integration suites):

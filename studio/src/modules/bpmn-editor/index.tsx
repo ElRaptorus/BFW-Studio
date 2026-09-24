@@ -149,6 +149,7 @@ export function onLoad(bifrost: Bifrost): void {
   bifrost.settings.register({
     'bpmn.editor.showGrid': {
       category: 'BPMN Editor',
+      scope: 'project',
       type: 'boolean',
       label: 'Show Grid',
       description: 'Display a grid overlay on the BPMN canvas.',
@@ -156,6 +157,7 @@ export function onLoad(bifrost: Bifrost): void {
     },
     'bpmn.editor.showInternalCustomProperties': {
       category: 'BPMN Editor',
+      scope: 'project',
       type: 'boolean',
       label: 'Show Internal Custom Properties',
       description: 'Display internal custom extension properties on BPMN elements.',
@@ -163,6 +165,7 @@ export function onLoad(bifrost: Bifrost): void {
     },
     'bpmn.editor.showDocumentationMarker': {
       category: 'BPMN Editor',
+      scope: 'project',
       type: 'boolean',
       label: 'Show Documentation Marker',
       description: 'Display a visual marker on elements that have documentation attached.',
@@ -170,6 +173,7 @@ export function onLoad(bifrost: Bifrost): void {
     },
     'bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers': {
       category: 'BPMN Editor',
+      scope: 'project',
       type: 'boolean',
       label: 'Show Multiple Outgoing Sequence Flows Markers',
       description: 'Show error markers on flow nodes with multiple outgoing sequence flows.',
@@ -177,6 +181,7 @@ export function onLoad(bifrost: Bifrost): void {
     },
     'bpmn.editor.dataObjectDetailLevel': {
       category: 'BPMN Editor',
+      scope: 'project',
       type: 'string',
       label: 'Data Object Detail Level',
       description: 'Controls how much detail is shown for data objects on the canvas.',
@@ -196,6 +201,7 @@ export function onLoad(bifrost: Bifrost): void {
     },
     'bpmn.editor.customColors': {
       category: 'BPMN Editor',
+      scope: 'project',
       type: 'array',
       label: 'Custom Colors',
       description: 'Named fill and border colors available in the BPMN element color picker.',

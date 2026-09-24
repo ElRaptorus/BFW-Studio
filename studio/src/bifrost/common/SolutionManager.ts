@@ -3,63 +3,8 @@ import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 import type { ISerializable, SerializedData } from '../contracts/SerializableTypes';
 import type { Project, Solution } from '../contracts/SolutionTypes';
-import type { FileHandlingService } from './FileHandlingService';
 
 export const EVENT_SOLUTION_CHANGED = 'EVENT_SOLUTION_CHANGED';
-
-export type SolutionFileContent = {
-  folders: SolutionFileFolder[];
-  settings: Record<string, any>;
-};
-
-export type SolutionFileFolder = {
-  path: string;
-  name?: string;
-};
-
-export async function readSolutionFile(
-  solutionFileUri: string,
-  fileHandling: FileHandlingService,
-): Promise<SolutionFileContent> {
-  const rawContent = await fileHandling.load(solutionFileUri);
-  const parsed = JSON.parse(rawContent);
-
-  if (!Array.isArray(parsed.folders)) {
-    throw new Error(`Invalid solution file: ${solutionFileUri} — "folders" array is missing`);
-  }
-
-  return {
-    folders: parsed.folders.map((folder: any) => ({
-      path: folder.path,
-      name: folder.name || undefined,
-    })),
-    settings: parsed.settings || {},
-  };
-}
-
-export async function writeSolutionFile(
-  solutionFileUri: string,
-  solution: Solution,
-  fileHandling: FileHandlingService,
-): Promise<void> {
-  const content: SolutionFileContent = {
-    folders: solution.projects.map((project) => {
-      const localPath = fileHandling.getLocalFilenameForUri(project.baseUri);
-      const entry: SolutionFileFolder = { path: localPath };
-
-      const defaultName = localPath.split('/').filter(Boolean).pop() || localPath;
-      if (project.name !== defaultName) {
-        entry.name = project.name;
-      }
-
-      return entry;
-    }),
-    settings: {},
-  };
-
-  const serialized = JSON.stringify(content, null, 2) + '\n';
-  await fileHandling.save(solutionFileUri, serialized);
-}
 
 export class SolutionManager extends AbstractEmitter implements ISerializable {
   public solution: Solution | null;

@@ -8,7 +8,16 @@ import * as jsonComment from 'comment-json';
 
 import type { SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
 
+import { buildJsonSchema } from './validation/schemaToJsonSchema';
+
 export const EVENT_SETTINGS_RECEIVED_UPDATE = 'EVENT_SETTINGS_RECEIVED_UPDATE';
+/** Emitted with a `SettingsValidationResult` after every save attempt of a settings JSON document. */
+export const EVENT_SETTINGS_SAVE_VALIDATED = 'EVENT_SETTINGS_SAVE_VALIDATED';
+
+export const INVALID_JSON_VALIDATION_RESULT: SettingsValidationResult = {
+  valid: false,
+  errors: [{ key: '', message: 'Please provide valid JSON.', expected: 'JSON', actual: 'invalid' }],
+};
 
 export default class UserSettingsDocumentModel extends EditorDocumentModel {
   private subscriptions: AbstractSubscription[] = [];
@@ -43,6 +52,10 @@ export default class UserSettingsDocumentModel extends EditorDocumentModel {
     return new UserSettingsDocumentModel(uri, bifrost.settings, restoredCurrentData);
   }
 
+  getJsonSchema(): ReturnType<typeof buildJsonSchema> {
+    return buildJsonSchema(this.settings.getSchemas());
+  }
+
   getSettingsAsString(): string {
     return this.getCurrentData();
   }
@@ -68,20 +81,21 @@ export default class UserSettingsDocumentModel extends EditorDocumentModel {
 
   async saveEditorDocument(): Promise<boolean> {
     if (this.isInvalidJSON()) {
-      return false;
+      return this.finishSave(INVALID_JSON_VALIDATION_RESULT);
     }
 
     const currentData = this.getSettingsAsString();
     const result = this.settings.merge(jsonComment.parse(currentData) as any);
-    this.lastValidationResult = result;
-
-    if (!result.valid) {
-      return false;
+    if (result.valid) {
+      this.updateOriginalAndCurrentData(currentData, currentData);
     }
+    return this.finishSave(result);
+  }
 
-    this.updateOriginalAndCurrentData(currentData, currentData);
-
-    return true;
+  private finishSave(result: SettingsValidationResult): boolean {
+    this.lastValidationResult = result;
+    this.emit(EVENT_SETTINGS_SAVE_VALIDATED, [result]);
+    return result.valid;
   }
 
   resetToDefault(): void {

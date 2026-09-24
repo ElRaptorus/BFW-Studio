@@ -44,11 +44,12 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'bpmn.editor.showDocumentationMarker',
-    () =>
-      bifrost.settings.set(
+    () => {
+      void bifrost.settings.set(
         'bpmn.editor.showDocumentationMarker',
         !bifrost.settings.get('bpmn.editor.showDocumentationMarker'),
-      ),
+      );
+    },
     {
       visibleInSearch: true,
       description: ['Editor: Toggle Show Documentation Marker', 'Editor: Toggle display of Documentation Marker'],
@@ -57,7 +58,9 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'bpmn.editor.toggleShowGrid',
-    () => bifrost.settings.set('bpmn.editor.showGrid', !bifrost.settings.get('bpmn.editor.showGrid')),
+    () => {
+      void bifrost.settings.set('bpmn.editor.showGrid', !bifrost.settings.get('bpmn.editor.showGrid'));
+    },
     {
       visibleInSearch: true,
       description: ['Editor: Toggle Show BPMN Grid'],
@@ -125,11 +128,12 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'bpmn.editor.toggleShowInternalCustomProperties',
-    () =>
-      bifrost.settings.set(
+    () => {
+      void bifrost.settings.set(
         'bpmn.editor.showInternalCustomProperties',
         !bifrost.settings.get('bpmn.editor.showInternalCustomProperties'),
-      ),
+      );
+    },
     {
       visibleInSearch: true,
       description: ['Editor: Toggle Show internal custom properties'],
@@ -138,11 +142,12 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers',
-    () =>
-      bifrost.settings.set(
+    () => {
+      void bifrost.settings.set(
         'bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers',
         !bifrost.settings.get('bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers'),
-      ),
+      );
+    },
     {
       visibleInSearch: true,
       description: [
@@ -194,7 +199,7 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
   });
 
   bifrost.commands.register('bpmn.editor.setDataObjectDetailLevel', (newLevel) => {
-    bifrost.settings.set('bpmn.editor.dataObjectDetailLevel', newLevel);
+    void bifrost.settings.set('bpmn.editor.dataObjectDetailLevel', newLevel);
   });
 
   bifrost.commands.register(
@@ -1063,7 +1068,8 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
   );
 
   bifrost.commands.register('bpmn.editor.addCustomColor', async (color: BpmnElementColor) => {
-    const customColors: BpmnElementColor[] = bifrost.settings.get('bpmn.editor.customColors') ?? [];
+    const customColors: BpmnElementColor[] =
+      (bifrost.settings.get('bpmn.editor.customColors') as BpmnElementColor[]) ?? [];
     const dialogOptions: DialogOptions = {
       type: 'custom',
       title: 'Save Custom Color',
@@ -1106,7 +1112,7 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
       existingColor.backgroundColor !== newColor.backgroundColor || existingColor.borderColor !== newColor.borderColor;
 
     const newCustomColors = customColors.filter(hasUniqueLabel).filter(hasUniqueValue).concat(newColor);
-    bifrost.settings.set('bpmn.editor.customColors', newCustomColors);
+    void bifrost.settings.set('bpmn.editor.customColors', newCustomColors);
   });
 
   // --- BPMN merge resolver commands ---

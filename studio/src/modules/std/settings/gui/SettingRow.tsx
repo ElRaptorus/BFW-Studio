@@ -1,6 +1,3 @@
-import type { Bifrost } from '#bifrost/Bifrost';
-import equal from 'fast-deep-equal';
-
 import React from 'react';
 
 import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
@@ -16,21 +13,21 @@ import { ObjectControl } from './controls/ObjectControl';
 import { StringControl } from './controls/StringControl';
 
 type SettingRowProps = {
-  studio: Bifrost;
   settingKey: string;
   descriptor: SettingDescriptor;
   value: unknown;
+  isModified: boolean;
+  resetTooltip: string;
+  overriddenIn: string | null;
+  onChange: (value: unknown) => void;
+  onReset: () => void;
   onOpenJsonEditor: () => void;
 };
 
 export function SettingRow(props: SettingRowProps): React.JSX.Element {
-  const { studio, settingKey, descriptor, value, onOpenJsonEditor } = props;
-  const isModified = !equal(value, descriptor.default);
+  const { settingKey, descriptor, value, isModified, resetTooltip, overriddenIn, onChange, onReset, onOpenJsonEditor } =
+    props;
   const isDeprecated = descriptor.deprecated != null;
-
-  const resetToDefault = (): void => {
-    studio.settings.set(settingKey, descriptor.default);
-  };
 
   const labelClassName = [
     'settings-gui__row-label',
@@ -52,21 +49,18 @@ export function SettingRow(props: SettingRowProps): React.JSX.Element {
 
   if (isBoolean) {
     return (
-      <div className={rowClassName}>
+      <div className={rowClassName} data-test-setting-key={settingKey}>
         <div className="settings-gui__row-header">
           <span className={labelClassName}>{descriptor.label}</span>
           {isModified && (
-            <button className="settings-gui__reset-btn" onClick={resetToDefault} title="Reset to default">
+            <button className="settings-gui__reset-btn" onClick={onReset} title={resetTooltip}>
               <i className="ph ph-arrow-counter-clockwise" />
             </button>
           )}
         </div>
+        {overriddenIn != null && <div className="settings-gui__overridden-in">Overridden in: {overriddenIn}</div>}
         <div className="settings-gui__row-boolean-control">
-          <BooleanControl
-            settingKey={settingKey}
-            value={value as boolean}
-            onChange={(newValue) => studio.settings.set(settingKey, newValue)}
-          />
+          <BooleanControl settingKey={settingKey} value={value as boolean} onChange={onChange} />
           <span className="settings-gui__row-description">{descriptor.description}</span>
         </div>
         {isDeprecated && <div className="settings-gui__row-deprecation">{descriptor.deprecated}</div>}
@@ -75,35 +69,32 @@ export function SettingRow(props: SettingRowProps): React.JSX.Element {
   }
 
   return (
-    <div className={rowClassName}>
+    <div className={rowClassName} data-test-setting-key={settingKey}>
       <div className="settings-gui__row-header">
         <span className={labelClassName}>{descriptor.label}</span>
         {isModified && (
-          <button className="settings-gui__reset-btn" onClick={resetToDefault} title="Reset to default">
+          <button className="settings-gui__reset-btn" onClick={onReset} title={resetTooltip}>
             <i className="ph ph-arrow-counter-clockwise" />
           </button>
         )}
       </div>
+      {overriddenIn != null && <div className="settings-gui__overridden-in">Overridden in: {overriddenIn}</div>}
       <div className="settings-gui__row-description">{descriptor.description}</div>
       {isDeprecated && <div className="settings-gui__row-deprecation">{descriptor.deprecated}</div>}
       <div className="settings-gui__row-control">
-        {renderControl(studio, settingKey, descriptor, value, onOpenJsonEditor)}
+        {renderControl(settingKey, descriptor, value, onChange, onOpenJsonEditor)}
       </div>
     </div>
   );
 }
 
 function renderControl(
-  studio: Bifrost,
   key: string,
   descriptor: Exclude<SettingDescriptor, { type: 'boolean' }>,
   value: unknown,
+  onChange: (value: unknown) => void,
   onOpenJsonEditor: () => void,
 ): React.JSX.Element {
-  const onChange = (newValue: any): void => {
-    studio.settings.set(key, newValue);
-  };
-
   switch (descriptor.type) {
     case 'color':
       return <ColorControl value={value as string} onChange={onChange} />;

@@ -1,12 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
+import type { SettingsScopeTarget } from '#bifrost/contracts/SettingsScopeTypes';
 
 import DefaultSettingsRenderer from './DefaultSettingsDocumentRenderer';
 import KeyBindingsDocumentRenderer from './KeyBindingsDocumentRenderer';
+import ScopedSettingsDocumentModel, { settingsJsonUriForTarget } from './ScopedSettingsDocumentModel';
 import SettingsGuiDocumentRenderer from './SettingsGuiDocumentRenderer';
 import SettingsJsonDocumentRenderer from './SettingsJsonDocumentRenderer';
 import UserSettingsDocumentModel from './UserSettingsDocumentModel';
-import { requestCategoryNavigation } from './settingsNavigation';
+import { requestCategoryNavigation, requestScopeNavigation } from './settingsNavigation';
 
 export function loadSettings(bifrost: Bifrost): void {
   bifrost.editors.registerDocumentType('settings-gui', {
@@ -16,6 +18,15 @@ export function loadSettings(bifrost: Bifrost): void {
     rendererKey: 'SettingsGuiRenderer',
     rendererConstructor: SettingsGuiDocumentRenderer,
     icon: 'settings/editor-tab/user-settings',
+  });
+
+  bifrost.editors.registerDocumentType('settings-json-scoped', {
+    uriMatch: /^about:settings-json\?scope=/,
+    modelKey: 'ScopedSettingsDocumentModel',
+    modelConstructor: ScopedSettingsDocumentModel,
+    rendererKey: 'ScopedSettingsJsonRenderer',
+    rendererConstructor: SettingsJsonDocumentRenderer,
+    icon: 'settings/editor-tab/user-settings-json',
   });
 
   bifrost.editors.registerDocumentType('settings-json', {
@@ -122,6 +133,51 @@ export function loadSettings(bifrost: Bifrost): void {
     requestCategoryNavigation(category);
   });
 
+  bifrost.commands.register(
+    'std.settings.openSolutionSettings',
+    () => {
+      requestScopeNavigation({ scope: 'solution' });
+      bifrost.editors.focusOrOpenEditorDocument('about:settings', 'Settings');
+    },
+    {
+      visibleInSearch: true,
+      description: 'View: Solution Settings',
+      enabledWhen: () => bifrost.solution.getSolution()?.solutionFileUri != null,
+    },
+  );
+
+  bifrost.commands.register(
+    'std.settings.openProjectSettings',
+    (projectBaseUri?: string) => {
+      const solution = bifrost.solution.getSolution();
+      const focusedUri = bifrost.editors.getFocusedEditorDocument()?.uri ?? null;
+      const focusedProjectBaseUri = bifrost.settings.getProjectBaseUriForResource(focusedUri);
+      const resolvedBaseUri = projectBaseUri ?? focusedProjectBaseUri ?? solution?.projects[0]?.baseUri;
+      if (resolvedBaseUri == null) {
+        return;
+      }
+      requestScopeNavigation({ scope: 'project', projectBaseUri: resolvedBaseUri });
+      bifrost.editors.focusOrOpenEditorDocument('about:settings', 'Settings');
+    },
+    {
+      visibleInSearch: true,
+      description: 'View: Project Settings',
+      enabledWhen: () => bifrost.solution.hasOpenSolution(),
+    },
+  );
+
+  bifrost.commands.register('std.settings.openSettingsJson', (target?: SettingsScopeTarget) => {
+    openSettingsJson(bifrost, target ?? { scope: 'user' });
+  });
+
+  bifrost.commands.register('std.settings.openSettingsAtScope', (target?: SettingsScopeTarget) => {
+    const resolved = target ?? { scope: 'user' };
+    if (resolved.scope !== 'user') {
+      requestScopeNavigation(resolved);
+    }
+    bifrost.editors.focusOrOpenEditorDocument('about:settings', 'Settings');
+  });
+
   bifrost.commands.register('std.settings.resetToDefault', async () => {
     const dialogOptions: DialogOptions = {
       title: 'Reset settings',
@@ -153,10 +209,37 @@ export function loadSettings(bifrost: Bifrost): void {
       },
       {
         type: 'command',
+        id: 'view/solution-settings',
+        label: 'Solution Settings',
+        command: 'std.settings.openSolutionSettings',
+      },
+      {
+        type: 'command',
+        id: 'view/project-settings',
+        label: 'Project Settings',
+        command: 'std.settings.openProjectSettings',
+      },
+      {
+        type: 'command',
         id: 'view/default-settings',
         label: 'Default Settings',
         command: 'std.settings.openDefaults',
       },
     ]);
   });
+}
+
+function openSettingsJson(bifrost: Bifrost, target: SettingsScopeTarget): void {
+  if (target.scope === 'user') {
+    bifrost.editors.focusOrOpenEditorDocument('about:settings-json', 'Settings (JSON)');
+    return;
+  }
+  if (target.scope === 'solution') {
+    bifrost.editors.focusOrOpenEditorDocument(settingsJsonUriForTarget(target), 'Settings (JSON) — Solution');
+    return;
+  }
+  const projectName =
+    bifrost.solution.getSolution()?.projects.find((project) => project.baseUri === target.projectBaseUri)?.name ??
+    'Project';
+  bifrost.editors.focusOrOpenEditorDocument(settingsJsonUriForTarget(target), `Settings (JSON) — ${projectName}`);
 }

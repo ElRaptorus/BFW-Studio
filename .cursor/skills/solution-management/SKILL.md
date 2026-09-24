@@ -18,6 +18,7 @@ For full architectural reference, see [reference.md](reference.md).
 - **Single-folder solution**: One directory opened as a Solution with one Project. No `.bfwsln` file. `solutionFileUri` is `undefined`, `isExplicitSolution` is `false`/`undefined`. This is the default mode.
 - **Explicit solution**: A solution promoted to multi-root via "Add Folder" or opened from `.bfwsln`. `isExplicitSolution = true`. Always shows project root entries in the tree, even with one project.
 - **Multi-folder solution**: Multiple directories managed via a `.bfwsln` file. `solutionFileUri` points to the file. Each directory is a separate Project.
+- **`.bfwsln` access**: every read and write goes through `studio/src/bifrost/common/SolutionFile.ts`. Callers of `saveSolutionFile` get `false` when the file is unreadable and the user declines the repair dialog. The solution stays dirty.
 - **Backwards compatibility**: Single-folder mode must always work identically to how it did before multi-root was added. Never introduce `.bfwsln`-specific logic that breaks the single-folder path.
 
 ## Layered Architecture
@@ -29,7 +30,7 @@ SolutionMediator          →  orchestration: I/O, watchers, persistence, events
 SolutionManager           →  pure state management + .bfwsln file read/write
 ```
 
-The `.bfwsln` I/O functions (`readSolutionFile`, `writeSolutionFile`) are co-located with `SolutionManager` in the same file, since they are exclusively used by `SolutionMediator` and operate on the `Solution` data model.
+The `.bfwsln` I/O functions (`readSolutionFile`, `writeSolutionFolders`, `updateSolutionSettings`, `readSolutionSettings`, `readSolutionSettingsText`, `repairSolutionFile`) live in `SolutionFile.ts`. `SolutionManager` holds state only and has no file I/O.
 
 State mutations always flow through `SolutionManager`. The `SolutionMediator` orchestrates side effects (watchers, persistence, recently opened). Never mutate `Solution` objects directly — use `SolutionManager` methods.
 
@@ -55,7 +56,7 @@ State mutations always flow through `SolutionManager`. The `SolutionMediator` or
 
 - Paths are always absolute filesystem paths
 - `name` is optional; defaults to the last path segment
-- `settings` is reserved for future per-solution settings
+- `settings` holds solution-scoped settings and is preserved when the solution file is rewritten
 
 ## Multi-Root UI Conventions
 

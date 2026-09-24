@@ -380,13 +380,16 @@ async function startRenderer(bifrostWindowOptions: any): Promise<void> {
   function initializeBifrostWindowSettingsPropagation(bifrost: Bifrost): void {
     let reloadWasTriggeredByThisWindow = false;
 
-    bifrost.settings.on(EVENT_SETTINGS_CHANGED, (name: string, value: any) => {
-      if (reloadWasTriggeredByThisWindow) {
-        return;
-      }
+    bifrost.settings.on(
+      EVENT_SETTINGS_CHANGED,
+      (name: string, value: any, _addedValue?: unknown, scopeTarget?: unknown) => {
+        if (reloadWasTriggeredByThisWindow || scopeTarget != null) {
+          return;
+        }
 
-      ipcRenderer.send(IPC_MESSAGE_RELOAD_SETTINGS, bifrost.env.appKey, bifrost.env.instanceKey, name, value);
-    });
+        ipcRenderer.send(IPC_MESSAGE_RELOAD_SETTINGS, bifrost.env.appKey, bifrost.env.instanceKey, name, value);
+      },
+    );
 
     ipcRenderer.on(
       IPC_MESSAGE_RELOAD_SETTINGS,

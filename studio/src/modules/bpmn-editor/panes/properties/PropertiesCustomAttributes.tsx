@@ -99,9 +99,16 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     (presentCustomProperty) => !knownInternalProperties.includes(presentCustomProperty),
   );
 
-  const showInternalCustomProperties = bifrost.settings.get('bpmn.editor.showInternalCustomProperties');
+  const showInternalCustomProperties = bifrost.settings.get(
+    'bpmn.editor.showInternalCustomProperties',
+    editorDocument.uri,
+  );
   const toggleInternalCustomProperties = () =>
-    bifrost.settings.set('bpmn.editor.showInternalCustomProperties', !showInternalCustomProperties);
+    void bifrost.settings.set(
+      'bpmn.editor.showInternalCustomProperties',
+      !showInternalCustomProperties,
+      editorDocument.uri,
+    );
 
   const shownProperties = showInternalCustomProperties
     ? properties
@@ -126,7 +133,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
         return null;
       })}
       <Checkbox
-        checked={showInternalCustomProperties}
+        checked={showInternalCustomProperties === true}
         onChange={toggleInternalCustomProperties}
         label="Show internal custom properties"
       />

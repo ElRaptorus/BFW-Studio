@@ -4,6 +4,7 @@ export function initializeSettings(bifrost: Bifrost): void {
   bifrost.settings.register({
     'bpmnLinter.enabled': {
       category: 'BPMN Linter',
+      scope: 'project',
       type: 'boolean',
       label: 'Enable live linting in the BPMN editor',
       description:
@@ -12,6 +13,7 @@ export function initializeSettings(bifrost: Bifrost): void {
     },
     'bpmnLinter.autoLintDelay': {
       category: 'BPMN Linter',
+      scope: 'project',
       type: 'number',
       label: 'Auto-Lint Delay (ms)',
       description: 'Debounce delay in milliseconds before auto-lint runs after a model change.',
@@ -19,6 +21,7 @@ export function initializeSettings(bifrost: Bifrost): void {
     },
     'bpmnLinter.profile': {
       category: 'BPMN Linter',
+      scope: 'project',
       type: 'string',
       label: 'Active Ruleset',
       description:
@@ -27,6 +30,7 @@ export function initializeSettings(bifrost: Bifrost): void {
     },
     'bpmnLinter.customRulesets': {
       category: 'BPMN Linter',
+      scope: 'project',
       type: 'object',
       label: 'Custom Rulesets',
       description:
@@ -35,6 +39,7 @@ export function initializeSettings(bifrost: Bifrost): void {
     },
     'bpmnLinter.alwaysLintForeignDiagrams': {
       category: 'BPMN Linter',
+      scope: 'project',
       type: 'boolean',
       label: 'Always run the linter on diagrams from other platforms',
       description:

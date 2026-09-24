@@ -235,11 +235,12 @@ export default class FileHandlingServiceElectron extends FileHandlingService {
   watchFile(
     fileUri: string,
     callbackFn: (eventType: EventName, filePath: string, stats?: fs.Stats) => void | Promise<void>,
+    options?: { depth?: number },
   ): WatcherDisposable {
     const filename = this.getLocalFilenameForUri(fileUri);
 
     const watcher = chokidar
-      .watch(filename, { ignoreInitial: true } as chokidar.ChokidarOptions)
+      .watch(filename, { ignoreInitial: true, depth: options?.depth } as chokidar.ChokidarOptions)
       .on('all', (eventType: EventName, filePath: string, stats?: fs.Stats) => callbackFn(eventType, filePath, stats));
 
     const watcherDisposable = {

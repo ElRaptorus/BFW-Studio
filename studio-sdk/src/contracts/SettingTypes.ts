@@ -1,5 +1,18 @@
 export type SettingType = 'boolean' | 'string' | 'number' | 'integer' | 'array' | 'object' | 'color' | 'date';
 
+/**
+ * Which settings layers may store this descriptor.
+ *
+ * The scopes are hierarchical:
+ * - `'application'` (the default) — User only.
+ * - `'solution'` — User and Solution.
+ * - `'project'` — User, Solution and Project.
+ *
+ * Plugin descriptors are application-only in v1: plugin setting reads are not scope-aware,
+ * and a plugin-supplied `scope` is ignored.
+ */
+export type SettingScope = 'application' | 'solution' | 'project';
+
 /** CSS hex color (`#RGB`, `#RRGGBB`, or `#RRGGBBAA`). Used for `type: 'color'` validation and JSON Schema. */
 export const SETTING_COLOR_VALUE_PATTERN = '^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$';
 
@@ -25,6 +38,12 @@ interface SettingDescriptorBase {
    * Falls back to `description` when not set.
    */
   markdownDescription?: string;
+  /**
+   * Which layers may store this setting. Hierarchical: `'solution'` includes User,
+   * `'project'` includes User and Solution. Defaults to `'application'` (User only).
+   * Plugin descriptors are treated as `'application'` in v1.
+   */
+  scope?: SettingScope;
 }
 
 export type SettingDescriptorBoolean = SettingDescriptorBase & {

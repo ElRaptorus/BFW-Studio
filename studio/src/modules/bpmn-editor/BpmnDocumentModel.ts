@@ -97,6 +97,7 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
     this.bpmnComponentAdapter = new BpmnModelerComponentAdapter(
       uri,
       this.studio,
+      () => this.getUri(),
       bpmnComponentOptions,
       bpmnModelerModuleRegistry.getAll(),
     );
@@ -125,19 +126,22 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
       this.selection.on(EVENT_BPMN_SELECTION_ELEMENTS_UPDATED, (selectedElements: BpmnElementObject[]) =>
         this.updateMetadata({ selection: selectedElements, hasSelection: selectedElements.length > 0 }),
       ),
-      studio.events.on('settingsUpdate', (settingName, _value) => {
-        if (settingName === 'bpmn.editor.showGrid') {
-          this.toggleGrid();
-        } else if (
-          settingName === 'bpmn.editor.showDocumentationMarker' ||
-          settingName === 'bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers'
-        ) {
-          this.refreshOverlays();
-        } else if (settingName === 'bpmn.editor.dataObjectDetailLevel') {
-          this.toggleDataObjectElementsVisibilityIfNecessary();
-          this.refreshOverlays();
-        }
-      }),
+      this.studio.settings.onDidChange(
+        (settingName) => {
+          if (settingName === 'bpmn.editor.showGrid') {
+            this.toggleGrid();
+          } else if (
+            settingName === 'bpmn.editor.showDocumentationMarker' ||
+            settingName === 'bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers'
+          ) {
+            this.refreshOverlays();
+          } else if (settingName === 'bpmn.editor.dataObjectDetailLevel') {
+            this.toggleDataObjectElementsVisibilityIfNecessary();
+            this.refreshOverlays();
+          }
+        },
+        () => this.getUri(),
+      ),
       studio.events.on('pluginOverlayFactoriesChanged', () => {
         this.refreshOverlays();
       }),
@@ -167,7 +171,7 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
   }
 
   get dataObjectDetailLevel(): string {
-    return this.studio.settings.get('bpmn.editor.dataObjectDetailLevel');
+    return this.studio.settings.get('bpmn.editor.dataObjectDetailLevel', this.getUri()) as string;
   }
 
   get modelerAdapter(): BpmnModelerComponentAdapter {
@@ -175,15 +179,15 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
   }
 
   get showDocumentationMarker(): boolean {
-    return this.studio.settings.get('bpmn.editor.showDocumentationMarker');
+    return this.studio.settings.get('bpmn.editor.showDocumentationMarker', this.getUri()) === true;
   }
 
   get showGrid(): boolean {
-    return this.studio.settings.get('bpmn.editor.showGrid');
+    return this.studio.settings.get('bpmn.editor.showGrid', this.getUri()) === true;
   }
 
   get showMultipleOutgoingSequenceFlowsMarkers(): boolean {
-    return this.studio.settings.get('bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers');
+    return this.studio.settings.get('bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers', this.getUri()) === true;
   }
 
   static async create(

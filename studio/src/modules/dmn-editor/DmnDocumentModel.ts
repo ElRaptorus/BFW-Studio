@@ -81,7 +81,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
     this.selection = new DmnDocumentSelection(this.dmnComponentAdapter, this.elements);
     this.validationManager = new DmnValidationOverlayManager(this.dmnComponentAdapter);
 
-    const autoValidateSetting = this.studio.settings.get('dmn.editor.autoValidate');
+    const autoValidateSetting = this.studio.settings.get('dmn.editor.autoValidate', this.getUri());
     this.validationManager.setEnabled(autoValidateSetting !== false);
 
     this.subscriptions.push(
@@ -113,13 +113,20 @@ export default class DmnDocumentModel extends EditorDocumentModel {
           this.refreshPluginOverlays();
         },
       ),
-      studio.events.on('settingsUpdate', (settingName: string) => {
-        if (settingName === 'dmn.editor.showGrid') {
-          this.toggleGrid();
-        } else if (settingName === 'dmn.editor.showMinimap') {
-          this.toggleMinimap();
-        }
-      }),
+      this.studio.settings.onDidChange(
+        (settingName: string) => {
+          if (settingName === 'dmn.editor.showGrid') {
+            this.toggleGrid();
+          } else if (settingName === 'dmn.editor.showMinimap') {
+            this.toggleMinimap();
+          } else if (settingName === 'dmn.editor.autoValidate') {
+            this.validationManager.setEnabled(
+              this.studio.settings.get('dmn.editor.autoValidate', this.getUri()) !== false,
+            );
+          }
+        },
+        () => this.getUri(),
+      ),
       studio.events.on('pluginDmnOverlayFactoriesChanged', () => {
         this.refreshPluginOverlays();
       }),
@@ -322,11 +329,11 @@ export default class DmnDocumentModel extends EditorDocumentModel {
   }
 
   get showGrid(): boolean {
-    return this.studio.settings.get('dmn.editor.showGrid') ?? true;
+    return this.studio.settings.get('dmn.editor.showGrid', this.getUri()) !== false;
   }
 
   private get showMinimap(): boolean {
-    return this.studio.settings.get('dmn.editor.showMinimap') ?? false;
+    return this.studio.settings.get('dmn.editor.showMinimap', this.getUri()) === true;
   }
 
   private toggleGrid(): void {

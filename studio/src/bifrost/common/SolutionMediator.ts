@@ -8,7 +8,13 @@ import type { LocalStorageItem } from './LocalStorageItem';
 import type { Performance } from './Performance';
 import type { RecentlyOpenedMediator } from './RecentlyOpenedMediator';
 import type { SettingsMediator } from './SettingsMediator';
-import { EVENT_SOLUTION_CHANGED, SolutionManager, readSolutionFile, writeSolutionFile } from './SolutionManager';
+import {
+  SolutionFileUnreadableError,
+  readSolutionFile,
+  repairSolutionFile,
+  writeSolutionFolders,
+} from './SolutionFile';
+import { EVENT_SOLUTION_CHANGED, SolutionManager } from './SolutionManager';
 import type { FileExplorerView } from './activities';
 import { EVENT_FILE_EXPLORER_OPENED_SOLUTION } from './activities';
 
@@ -27,6 +33,7 @@ export class SolutionMediator extends AbstractEmitter {
   private watchSolutionTimeoutId: number | null = null;
 
   private solutionEntryUris: Set<string> = new Set();
+  private offerSolutionFileRepair: (error: SolutionFileUnreadableError) => Promise<boolean>;
 
   constructor(
     fileHandling: FileHandlingService,
@@ -35,6 +42,7 @@ export class SolutionMediator extends AbstractEmitter {
     settings: SettingsMediator,
     fileExplorerView: FileExplorerView,
     localStorage: LocalStorageItem,
+    offerSolutionFileRepair: (error: SolutionFileUnreadableError) => Promise<boolean>,
   ) {
     super();
     this.fileHandling = fileHandling;
@@ -44,6 +52,7 @@ export class SolutionMediator extends AbstractEmitter {
     this.fileExplorerView = fileExplorerView;
     this.solutionManager = new SolutionManager();
     this.solutionStorage = localStorage;
+    this.offerSolutionFileRepair = offerSolutionFileRepair;
 
     this.solutionManager.on(EVENT_SOLUTION_CHANGED, (solution: Solution) => {
       const solutionDatas = this.solutionManager.serialize();
@@ -165,16 +174,28 @@ export class SolutionMediator extends AbstractEmitter {
   /**
    * Saves the current solution to a `.bfwsln` file.
    */
-  async saveSolutionFile(solutionFileUri: string): Promise<void> {
+  async saveSolutionFile(solutionFileUri: string): Promise<boolean> {
     const solution = this.solutionManager.getSolution();
     if (solution == null) {
-      return;
+      return false;
     }
 
-    await writeSolutionFile(solutionFileUri, solution, this.fileHandling);
+    const saved = await this.persistSolutionFolders(solutionFileUri);
+    if (!saved) {
+      return false;
+    }
 
     const solutionName = this.fileHandling.getFilename(solutionFileUri).replace(/\.bfwsln$/, '');
     this.solutionManager.setSolutionFileUri(solutionFileUri, solutionName);
+    return true;
+  }
+
+  async repairSolutionFile(solutionFileUri: string): Promise<string | null> {
+    const solution = this.solutionManager.getSolution();
+    if (solution == null) {
+      throw new Error('No solution is open.');
+    }
+    return repairSolutionFile(solutionFileUri, solution, this.fileHandling);
   }
 
   /**
@@ -187,12 +208,11 @@ export class SolutionMediator extends AbstractEmitter {
     this.setupWatcherForDirectory(directoryUri);
   }
 
-  renameProjectInSolution(projectId: string, newName: string): void {
+  async renameProjectInSolution(projectId: string, newName: string): Promise<void> {
     this.solutionManager.renameProject(projectId, newName);
 
     const solution = this.solutionManager.getSolution();
-    if (solution?.solutionFileUri != null) {
-      writeSolutionFile(solution.solutionFileUri, solution, this.fileHandling);
+    if (solution?.solutionFileUri != null && (await this.persistSolutionFolders(solution.solutionFileUri))) {
       this.solutionManager.clearDirty();
     }
   }
@@ -200,7 +220,7 @@ export class SolutionMediator extends AbstractEmitter {
   /**
    * Removes a folder (project) from the current solution by its project ID.
    */
-  removeFolderFromSolution(projectId: string): void {
+  async removeFolderFromSolution(projectId: string): Promise<void> {
     const solution = this.solutionManager.getSolution();
     const project = solution?.projects.find((existingProject) => existingProject.id === projectId);
     if (project != null) {
@@ -209,12 +229,24 @@ export class SolutionMediator extends AbstractEmitter {
 
     this.solutionManager.removeFolder(projectId);
 
-    if (solution?.solutionFileUri != null) {
-      const updatedSolution = this.solutionManager.getSolution();
-      if (updatedSolution != null) {
-        writeSolutionFile(solution.solutionFileUri, updatedSolution, this.fileHandling);
-        this.solutionManager.clearDirty();
+    if (solution?.solutionFileUri != null && (await this.persistSolutionFolders(solution.solutionFileUri))) {
+      this.solutionManager.clearDirty();
+    }
+  }
+
+  private async persistSolutionFolders(solutionFileUri: string): Promise<boolean> {
+    const solution = this.solutionManager.getSolution();
+    if (solution == null) {
+      return false;
+    }
+    try {
+      await writeSolutionFolders(solutionFileUri, solution, this.fileHandling);
+      return true;
+    } catch (error) {
+      if (!(error instanceof SolutionFileUnreadableError)) {
+        throw error;
       }
+      return this.offerSolutionFileRepair(error);
     }
   }
 

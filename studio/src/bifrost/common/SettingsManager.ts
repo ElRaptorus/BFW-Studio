@@ -155,6 +155,17 @@ export class SettingsManager extends AbstractEmitter implements ISerializable {
     this.emit(EVENT_SETTINGS_CHANGED, [key, undefined]);
   }
 
+  /** Drops a user override and keeps the registered descriptor. */
+  clearOverride(key: string): void {
+    if (this.config[key] === undefined) {
+      return;
+    }
+
+    delete this.config[key];
+    const descriptor = this.schemaRegistry.get(key);
+    this.emit(EVENT_SETTINGS_CHANGED, [key, descriptor?.default]);
+  }
+
   deserialize(dump: SerializedData): SettingsValidationResult {
     if (dump == null) {
       return { valid: true, errors: [] };

@@ -29,7 +29,7 @@ export function initializeCommands(bifrost: Bifrost): void {
     'bpmn.linter.toggle',
     () => {
       const currentlyEnabled = bifrost.settings.get('bpmnLinter.enabled') === true;
-      bifrost.settings.set('bpmnLinter.enabled', !currentlyEnabled);
+      void bifrost.settings.set('bpmnLinter.enabled', !currentlyEnabled);
     },
     {
       visibleInSearch: true,
@@ -56,7 +56,7 @@ export function initializeCommands(bifrost: Bifrost): void {
   );
 
   bifrost.commands.register('bpmn.linter.setProfile', (profile: string) => {
-    bifrost.settings.set('bpmnLinter.profile', profile);
+    void bifrost.settings.set('bpmnLinter.profile', profile);
   });
 
   bifrost.commands.register(
@@ -133,12 +133,13 @@ export function initializeCommands(bifrost: Bifrost): void {
         base: template,
         rules: copyRules ? { ...profiles[template]?.rules } : {},
       };
-      bifrost.settings.add('bpmnLinter.customRulesets', {
-        [name]: rulesetEntry,
-      });
-
-      bifrost.settings.set('bpmnLinter.profile', name);
-      bifrost.commands.executeCommand('std.settings.openUserSettingsJson');
+      const existing =
+        (bifrost.settings.get('bpmnLinter.customRulesets') as Record<string, CustomRulesetEntry> | undefined) ?? {};
+      const target = await bifrost.settings.set('bpmnLinter.customRulesets', { ...existing, [name]: rulesetEntry });
+      if (target == null || (await bifrost.settings.set('bpmnLinter.profile', name)) == null) {
+        return;
+      }
+      bifrost.commands.executeCommand('std.settings.openSettingsJson', [target]);
     },
     {
       visibleInSearch: true,
@@ -247,7 +248,7 @@ export function initializeCommands(bifrost: Bifrost): void {
       }
 
       if (result.formData?.rememberChoice) {
-        bifrost.settings.set('bpmnLinter.alwaysLintForeignDiagrams', true);
+        void bifrost.settings.set('bpmnLinter.alwaysLintForeignDiagrams', true);
       }
 
       bridge.allowForeignLinting();

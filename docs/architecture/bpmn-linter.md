@@ -48,16 +48,15 @@ Live editor lint (overlays, Findings pane, badge, auto-lint) is gated by `bpmnLi
 
 **Path:** `studio/src/modules/bpmn-linter/LintBridge.ts`
 
-A diagram-js module registered via `bpmn.modeler.registerModule`. Injected services: `eventBus`, `canvas`, `elementRegistry`, `overlays`, `selection`. Additionally receives four `value` injections from the module entry:
+A diagram-js module registered via `bpmn.modeler.registerModule`. Injected services: `eventBus`, `canvas`, `elementRegistry`, `overlays`, `selection`, `commandStack`, `bifrostSettings` (the `SettingsMediator`), and `documentUri` (`() => string`). Both value modules come from `BpmnModelerComponentAdapter`. Additionally receives three `value` injections from the module entry:
 
 | DI Token | Source | Purpose |
 |----------|--------|---------|
-| `lintBridgeSettings` | Bifrost settings accessor | Read/write/observe settings |
 | `lintBridgeDiagnostics` | Bifrost diagnostics accessor | Push findings to diagnostics store |
 | `lintBridgeEditors` | Bifrost editors accessor | Retrieve the active document URI |
 | `lintBridgePaneLayout` | Bifrost pane/command accessor | Update finding counts for the dynamic group icon, trigger pane re-renders, and show the Problems pane group |
 
-The settings accessor includes `onSettingsUpdate()` which forwards `bifrost.events.on('settingsUpdate', ...)` for profile and rule override changes.
+`LintBridge` reads and writes through `bifrostSettings.get` / `set` / `onDidChange`, passing `documentUri()`. The menu-bar profile selector lists the effective rulesets for the focused editor document and suffixes its tooltip with `(Project: <name>)` or `(Solution)` when that layer defines the profile.
 
 The pane layout accessor bridges from the diagram-js world into the Bifrost pane system:
 

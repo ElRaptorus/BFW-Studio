@@ -132,6 +132,8 @@ export class EditorMediator extends AbstractEmitter {
     this.editorDocumentModelManager.on(
       EVENT_EDITOR_DOCUMENT_URI_UPDATED,
       (editorDocumentUriBefore: string, editorDocumentUriAfter: string) => {
+        this.bifrost.settings.resourceMoved(editorDocumentUriBefore, editorDocumentUriAfter);
+
         const editorDocument = this.editorAreaManager.getEditorDocumentByUri(editorDocumentUriBefore);
         if (editorDocument == null) {
           return;

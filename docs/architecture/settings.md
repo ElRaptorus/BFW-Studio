@@ -6,7 +6,7 @@
 
 The Studio's settings system provides a **schema-based**, flat key/value store for customizable behavior. Every setting must be registered with a `SettingDescriptor` that defines its type, default value, label, description, and validation rules.
 
-Settings are **app-wide** (not per-window), persisted in JSON format via `localStorage`, and propagated across Electron windows via IPC.
+User settings are **app-wide** (not per-window), persisted in JSON format via `localStorage`, and propagated across Electron windows via IPC. Eligible settings can also be overridden per solution and per project. See [Scopes](#scopes-user--solution--project).
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -22,6 +22,75 @@ Settings are **app-wide** (not per-window), persisted in JSON format via `localS
 │    key: "${appKey}/Settings"  (default: "chrn/Settings")         │
 └──────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Scopes (User / Solution / Project)
+
+Resolution order is Default, then User (`localStorage`), then Solution (the `settings` object in the open `.bfwsln`), then Project (`<project>/.bifrostfw/settings.json`). The most specific defined, eligible, and valid value wins. Arrays and objects are replaced as a whole.
+
+A descriptor field `scope` (`'application' | 'solution' | 'project'`, default `'application'`) is hierarchical: `'solution'` may be stored on User and Solution, `'project'` on User, Solution, and Project. Ineligible or invalid layer entries are ignored and left in the file. There is no Solution layer unless `solution.solutionFileUri` is set. `buffer:` URIs and files outside the solution resolve as User only. A resource belongs to the project whose `baseUri` is a prefix of its URI on a `/` boundary.
+
+A resource and a project base URI are compared after `normalizeResourceUri` (`decodeURI`, no trailing `/`), so percent-encoded document URIs match unencoded project URIs.
+
+### Reading and writing
+
+Callers use only `bifrost.settings`. Application keys ignore the resource argument. Scoped keys resolve as follows: omit the resource to use the focused editor document (any type), pass `null` for User, or pass a string for that resource.
+
+| Method | Behaviour |
+|---|---|
+| `get(key, resourceUri?)` | Application keys return User or the default. Scoped keys use the resource rule above. |
+| `inspect(key, resourceUri?)` | `{ value, definedIn }` with the same resource rule. |
+| `set(key, value, resourceUri?)` | `Promise<SettingsScopeTarget \| null>`. Application keys are written to User before the promise resolves; an invalid value returns `null` and `console.warn`. Scoped keys write to the most specific layer that already defines a valid entry, otherwise User. `null` means the value was invalid or the write failed. |
+| `onDidChange(handler, resourceUri?)` | Without a resource, every change. With `string` or `() => string \| null`, User changes, layer changes that affect that resource, and a move of that resource. |
+
+Code bound to a document or file passes its URI (`this.getUri()`, `editorDocument.uri`, or the batch URI). Menus and commands omit it. diagram-js services receive `bifrostSettings` (the mediator) and `documentUri` (`() => string`) from `BpmnModelerComponentAdapter` and call the same methods.
+
+`set` returns `null` when a scoped write fails; the reason has already been reported. When a Solution or Project entry exists but is invalid, the write goes to User; the invalid entry stays in the file and wins again once corrected.
+
+The Settings GUI still writes an explicit layer with `setInScope(target, key, value)` and `removeFromScope(target, key)`. Both return `Promise<boolean>`. Reset in User scope removes the override (`SettingsManager.clearOverride`). Other GUI helpers: `inspectForTarget`, `getScopeValues`, `listOverridingScopes`, `getAvailableScopeTargets`, `readScopeText` / `writeScopeText`, `isEligibleForScope`, `getProjectBaseUriForResource`.
+
+`Bifrost.ts` calls `attachWorkspace({ fileHandling, readSolution, solutionEvents, readFocusedEditorDocument, reportError })`. The mediator creates `SettingsLayerManager`. Until that runs, scoped keys resolve as User and errors go to `console.warn`. The reporter opens an error notification with source `Settings`.
+
+### Caller, mediator, managers
+
+| File | Role | Imported by |
+|---|---|---|
+| `SettingsMediator.ts` | The only public entry point. Also holds the scope resolution rules as module-private functions (precedence, eligibility, write target, project matching) | Everyone |
+| `SettingsManager.ts` | User layer | Mediator |
+| `SettingsLayerManager.ts` | Solution and project layer files | Mediator and unit tests |
+| `SettingsValidator.ts` | Runtime validation | Mediator and managers |
+
+The resolution rules are not exported, so they can only be reached through the mediator. Their unit tests go through `get`, `inspect`, `set` and `getProjectBaseUriForResource`.
+
+### Events and moves
+
+`EVENT_SETTINGS_CHANGED` is `(key, value, addedValue?, scopeTarget?)`. User changes leave `scopeTarget` undefined. Layer changes set `value` to `get(key)` for the focused document and set `scopeTarget`. Layer entries for unregistered keys or application keys are not emitted, because they never resolve from a layer. Cross-window IPC in `initializeBifrostWindowSettingsPropagation` returns early when `scopeTarget` is defined, because each window watches the layer files itself. `settingsUpdate` still forwards every `EVENT_SETTINGS_CHANGED`, including layer changes.
+
+When a document model changes its URI, `EditorMediator` calls `settings.resourceMoved(before, after)` before any tab bookkeeping, so models without a tab are covered too. It notifies `onDidChange` subscribers whose resource is now `after` when the effective value differs.
+
+### Store and file watching
+
+`SettingsLayerManager` owns the Solution layer and the project layers. It talks to the mediator with the file-local event `EVENT_SETTINGS_LAYER_CHANGED`. `readLayer(target)` returns a copy of a layer.
+
+- The `.bfwsln` is JSONC. Solution settings writes go through `SolutionFile.updateSolutionSettings`, and the Solution JSON editor round-trips the raw `settings` text including comments. An unreadable solution file opens `std.solution.offerSolutionFileRepair`. Accepting repairs the file (with a backup) and the write is retried once. Declining resolves `set` to `null` and `setInScope` / `removeFromScope` to `false` without a second error notification; `writeScopeText` rethrows so the JSON editor shows the error.
+- chokidar cannot observe a file whose parent directory does not exist. A project without `.bifrostfw/` is watched with `watchFile(baseUri, cb, { depth: 0 })` until `.bifrostfw` appears, then the settings file is watched. The watcher is re-armed after every project write.
+- Watch failures are ignored (the web build loads once).
+- When a project leaves the solution, the manager emits a project-target event for every key of that project layer and of the Solution layer. The mediator matches project targets by path prefix, so documents of the removed project are notified.
+
+### JSON editors
+
+- `about:settings-json` edits User settings. `about:settings-json?scope=solution` and `?scope=project&project=<encoded baseUri>` edit a layer through `ScopedSettingsDocumentModel`.
+- Both models expose `getJsonSchema()`. The scoped schema marks registered but ineligible keys as deprecated with "Not eligible for <scope> scope. This entry is ignored and blocks saving.". Unregistered keys still show "Unknown setting.". Hidden eligible keys are editable, as in the User editor.
+- Both models emit `EVENT_SETTINGS_SAVE_VALIDATED` with a `SettingsValidationResult` after every save attempt. The renderer shows the errors in the toolbar hint.
+- `std.settings.openSettingsAtScope(target)` opens the GUI at a scope (used by the JSON editor's "Open GUI Editor" button).
+- The scoped JSON model reloads on `EVENT_SETTINGS_CHANGED` only when the fourth argument matches its target.
+
+### Scope
+
+v1 project-scoped keys are the BPMN Editor settings, the BPMN Linter settings, and the DMN Editor settings. Plugin descriptors have `scope` stripped because plugin reads are not scope-aware. The plugin bridge reads with `get(key, null)` and does not forward layer events to plugin `onDidChange` callbacks.
+
+Layer values are validated on every read; there is no validation cache. Per read this is a handful of `validateSetting` calls on small layers, and a cache would have to track in-place mutation of the User layer (`SettingsManager.config`), which risks stale results for no measured gain.
 
 ---
 
@@ -293,7 +362,7 @@ Both editors can be open simultaneously. Each has a toolbar button to open the o
 - **Command search**: `View: Settings`, `View: Settings (JSON)`, `View: Default Settings`, `View: Key Bindings`
 - **Programmatic**: `bifrost.commands.executeCommand('std.settings.openUserSettingsAtCategory', ['Category Name'])` opens the GUI and scrolls to the specified category. Used by modules like `engine-debugger` and `engine-decision-viewer` for their "Open Settings" commands.
 - **Keyboard shortcut**: `Ctrl+,` / `Cmd+,` for Settings (GUI)
-- **Application menu**: Settings, Settings (JSON), and Default Settings in the main menu
+- **Application menu**: Settings, Settings (JSON), Solution Settings, Project Settings, and Default Settings in the main menu
 
 ### Hidden settings
 
@@ -308,15 +377,19 @@ Settings marked with `hidden: true` are validated but not shown in the GUI. Thes
 | `studio-sdk/src/contracts/SettingTypes.ts` | `SettingDescriptor` discriminated union, `SettingsValidationResult` |
 | `studio/src/bifrost/contracts/internal/SettingsEvents.ts` | Internal event constants |
 | `studio/src/bifrost/common/SettingsManager.ts` | In-memory settings model (config + schemaRegistry) |
-| `studio/src/bifrost/common/SettingsMediator.ts` | Public API layer, persistence wiring |
+| `studio/src/bifrost/common/SettingsMediator.ts` | Public settings API: User, Solution, and Project; module-private scope resolution |
+| `studio/src/bifrost/common/SettingsLayerManager.ts` | Solution and project layer files |
+| `studio/src/bifrost/contracts/SettingsScopeTypes.ts` | `SettingsScopeTarget`, `SettingInspection` |
 | `studio/src/bifrost/common/SettingsValidator.ts` | Runtime validation engine |
 | `studio/src/bifrost/common/LocalStorageItem.ts` | Single-key read/write over BifrostLocalStorage |
 | `studio/src/modules/std/settings/index.ts` | Settings sub-feature of `std`: document types, commands, menus, keybindings (loaded via `loadSettings()`) |
-| `studio/src/modules/std/settings/settingsNavigation.ts` | Shared state for programmatic category navigation (open settings at category) |
+| `studio/src/modules/std/settings/settingsNavigation.ts` | Shared state for programmatic navigation: category (`requestCategoryNavigation`, `consumePendingCategory`, `onCategoryNavigationRequested`) and scope (`requestScopeNavigation`, `peekPendingScope`, `clearPendingScope`, `onScopeNavigationRequested`) |
 | `studio/src/modules/std/settings/UserSettingsDocumentModel.ts` | JSON Settings editor model (save → validate → merge) |
 | `studio/src/modules/std/settings/SettingsGuiDocumentRenderer.tsx` | GUI Settings editor (about:settings) |
 | `studio/src/modules/std/settings/SettingsJsonDocumentRenderer.tsx` | JSON Settings editor (about:settings-json); passes `jsonSchema` into `MultiLineCodeEditor` |
-| `studio/src/modules/std/settings/gui/SettingsGui.tsx` | Main GUI container with search, category sidebar, and domain grouping |
+| `studio/src/modules/std/settings/gui/SettingsGui.tsx` | Main GUI container with scope bar, search, category sidebar, and domain grouping |
+| `studio/src/modules/std/settings/gui/SettingsScopeBar.tsx` | User / Solution / Project scope bar |
+| `studio/src/modules/std/settings/ScopedSettingsDocumentModel.ts` | JSON editor for a solution or project layer |
 | `studio/src/modules/std/settings/gui/SettingsCategoryNav.tsx` | Category sidebar with active highlight and click-to-scroll |
 | `studio/src/modules/std/settings/gui/SettingsGroup.tsx` | Renders a group of settings under a domain label |
 | `studio/src/modules/std/settings/gui/SettingRow.tsx` | Individual setting row with label, description, and control |

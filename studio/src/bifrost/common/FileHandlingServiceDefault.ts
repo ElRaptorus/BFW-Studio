@@ -65,7 +65,7 @@ export class FileHandlingServiceDefault extends FileHandlingService {
     throw new Error(`watchDirectory not implemented for: ${directoryUri}`);
   }
 
-  watchFile(fileUri: string, _callbackFn: FileWatcherCallback): WatcherDisposable {
+  watchFile(fileUri: string, _callbackFn: FileWatcherCallback, _options?: { depth?: number }): WatcherDisposable {
     throw new Error(`watchFile not implemented for: ${fileUri}`);
   }
 

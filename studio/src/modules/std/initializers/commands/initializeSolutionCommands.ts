@@ -8,6 +8,48 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;
 
   commands.register(
+    'std.solution.offerSolutionFileRepair',
+    async (solutionFileUri: string, reason: string): Promise<boolean> => {
+      const fileName = bifrost.files.getFilename(solutionFileUri);
+      const dialogResult = await bifrost.dialog.open({
+        title: 'Solution file cannot be read',
+        content: [
+          {
+            type: 'markdown',
+            text: [
+              `**${fileName}** could not be read: ${reason}.`,
+              '',
+              'Changes to folders or Solution settings cannot be saved until the file is readable.',
+              '',
+              'Repair keeps a backup of the broken file and rewrites it from the open solution. Solution settings start empty; the previous settings remain in the backup.',
+            ].join('\n'),
+          },
+        ],
+        actions: [
+          { label: 'Cancel', response: 'cancel', cancel: true },
+          { label: 'Repair', response: 'repair', default: true },
+        ],
+      });
+      if (dialogResult.wasCancelled || dialogResult.response !== 'repair') {
+        return false;
+      }
+
+      const backupUri = await bifrost.solution.repairSolutionFile(solutionFileUri);
+      const backupName = backupUri == null ? null : bifrost.files.getFilename(backupUri);
+      bifrost.notifications.open({
+        type: 'info',
+        source: 'Solution',
+        content:
+          backupName == null
+            ? `Repaired ${fileName}.`
+            : `Repaired ${fileName}. The broken file was saved as ${backupName}.`,
+      });
+      return true;
+    },
+    { visibleInSearch: false },
+  );
+
+  commands.register(
     'std.solution.createSolution',
     async (initialFolders?: string[]) => {
       const wizardOptions: DialogOptions = {
@@ -168,7 +210,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
         return;
       }
 
-      bifrost.solution.removeFolderFromSolution(projectId);
+      await bifrost.solution.removeFolderFromSolution(projectId);
     },
     {
       visibleInSearch: true,
@@ -280,7 +322,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
         return;
       }
 
-      bifrost.solution.renameProjectInSolution(project.id, newName);
+      await bifrost.solution.renameProjectInSolution(project.id, newName);
     },
     {
       visibleInSearch: true,
@@ -317,7 +359,9 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
         if (dialogResult.response === 'yes') {
           if (solution.solutionFileUri != null) {
-            await bifrost.solution.saveSolutionFile(solution.solutionFileUri);
+            if (!(await bifrost.solution.saveSolutionFile(solution.solutionFileUri))) {
+              return;
+            }
           } else {
             const defaultPath = (await bifrost.files.getLocalDirectory(solution.projects[0].baseUri)) ?? undefined;
 
@@ -332,7 +376,9 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
             }
 
             const solutionFileUri = bifrost.files.getUriForFilename(solutionFilePath);
-            await bifrost.solution.saveSolutionFile(solutionFileUri);
+            if (!(await bifrost.solution.saveSolutionFile(solutionFileUri))) {
+              return;
+            }
           }
         }
       }

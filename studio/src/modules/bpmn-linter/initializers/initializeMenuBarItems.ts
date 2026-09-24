@@ -21,19 +21,34 @@ function listLinterProfileEntries(
   return { entries, activeProfile };
 }
 
+function profileOriginSuffix(bifrost: Bifrost): string {
+  const definedIn = bifrost.settings.inspect('bpmnLinter.profile').definedIn;
+  if (definedIn === 'solution') {
+    return ' (Solution)';
+  }
+  if (definedIn === 'project') {
+    const focusedUri = bifrost.editors.getFocusedEditorDocument()?.uri ?? null;
+    const projectBaseUri = bifrost.settings.getProjectBaseUriForResource(focusedUri);
+    const project = bifrost.solution.getSolution()?.projects.find((candidate) => candidate.baseUri === projectBaseUri);
+    return ` (Project: ${project?.name ?? 'Project'})`;
+  }
+  return '';
+}
+
 export function initializeMenuBarItems(bifrost: Bifrost): void {
   bifrost.menuBar.registerMenuBarItemModifier((menuBarItems: MenuBarItemMap) => {
     const profileName = bifrost.settings.get('bpmnLinter.profile') as string | undefined;
     const customRulesets =
       (bifrost.settings.get('bpmnLinter.customRulesets') as Record<string, CustomRulesetEntry> | undefined) ?? {};
     const { entries, activeProfile } = listLinterProfileEntries(profileName, customRulesets);
+    const originSuffix = profileOriginSuffix(bifrost);
 
     return bifrost.menuBar.insertBeforeMenuBarItem(menuBarItems, 'menu-bar-menu-layout', () => [
       {
         type: 'icon',
         id: 'bpmn-linter-rule-selection-icon',
         icon: 'ph ph-fill ph-highlighter',
-        tooltip: 'Current Linter Ruleset',
+        tooltip: `Current Linter Ruleset${originSuffix}`,
       },
       {
         type: 'select',
@@ -41,7 +56,7 @@ export function initializeMenuBarItems(bifrost: Bifrost): void {
         command: 'bpmn.linter.setProfile',
         entries,
         value: activeProfile,
-        tooltip: 'Select Linter Ruleset',
+        tooltip: `Select Linter Ruleset${originSuffix}`,
       },
     ]);
   });

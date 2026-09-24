@@ -18,14 +18,14 @@ export function initializeDmnMenus(bifrost: Bifrost): void {
             {
               type: 'command',
               label: 'Show Grid',
-              checked: bifrost.settings.get('dmn.editor.showGrid'),
+              checked: bifrost.settings.get('dmn.editor.showGrid') === true,
               id: 'view/dmn-editor/show-grid',
               command: 'dmn.editor.toggleShowGrid',
             },
             {
               type: 'command',
               label: 'Show Minimap',
-              checked: bifrost.settings.get('dmn.editor.showMinimap'),
+              checked: bifrost.settings.get('dmn.editor.showMinimap') === true,
               id: 'view/dmn-editor/show-minimap',
               command: 'dmn.editor.toggleShowMinimap',
             },

@@ -6,6 +6,7 @@ import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
+import type { BpmnElementColor } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 
@@ -126,6 +127,10 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       <hr />
 
       <BpmnElementColorPicker
+        customColors={
+          props.studio.settings.get('bpmn.editor.customColors', props.editorDocument.uri) as
+            BpmnElementColor[] | undefined
+        }
         initialColor={initialColor}
         onElementColorChange={onElementColorChange}
         setBorderColor={setBorderColor}

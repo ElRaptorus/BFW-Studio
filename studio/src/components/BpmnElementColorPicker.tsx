@@ -41,6 +41,7 @@ const EMPTY_COLORS: BpmnElementColor[] = [];
 
 export type BpmnElementColorPickerProps = {
   studio: Bifrost;
+  customColors: BpmnElementColor[] | undefined;
   initialColor?: BpmnElementColor | null;
   placeholder?: string;
   onElementColorChange: (newValue: SelectOption) => void;
@@ -50,7 +51,7 @@ export type BpmnElementColorPickerProps = {
 
 export function BpmnElementColorPicker(props: BpmnElementColorPickerProps): React.JSX.Element {
   const { studio, initialColor, placeholder, onElementColorChange, setBorderColor, setBackgroundColor } = props;
-  const customColors: BpmnElementColor[] = studio.settings.get('bpmn.editor.customColors') ?? EMPTY_COLORS;
+  const customColors = props.customColors ?? EMPTY_COLORS;
 
   const defaultColorOptions = useMemo(() => predefinedColorsCopy.map((color) => colorToSelectOption(color)), []);
   const customColorOptions = useMemo(

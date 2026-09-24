@@ -275,8 +275,8 @@ export class PluginHostBridge {
 
       const subscription: AbstractSubscription = this.bifrost.settings.on(
         EVENT_SETTINGS_CHANGED,
-        (changedKey: string, newValue: unknown) => {
-          if (changedKey !== key) {
+        (changedKey: string, newValue: unknown, _addedValue: unknown, scopeTarget?: unknown) => {
+          if (changedKey !== key || scopeTarget != null) {
             return;
           }
           this.pluginHost.getConnection()!.request(PH_CALLBACK_INVOCATION, {
@@ -1756,7 +1756,8 @@ export class PluginHostBridge {
             }
           }
         }
-        this.bifrost.settings.register(descriptors as any);
+        // Plugin setting reads are not scope-aware.
+        this.bifrost.settings.register(stripSettingScope(descriptors) as any);
         return undefined;
       }
       case 'has': {
@@ -1765,7 +1766,7 @@ export class PluginHostBridge {
       }
       case 'get': {
         const [key] = args as [string];
-        return this.bifrost.settings.get(key);
+        return this.bifrost.settings.get(key, null);
       }
       case 'getSchema': {
         const [key] = args as [string];
@@ -1835,6 +1836,20 @@ export class PluginHostBridge {
  * Keep plugin payloads as a real array. Array-like objects (`{ 0: ..., length }`)
  * must not be stored as-is — `Array.concat` would flatten them into bare cells.
  */
+function stripSettingScope(descriptors: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, descriptor] of Object.entries(descriptors ?? {})) {
+    if (descriptor == null || typeof descriptor !== 'object') {
+      sanitized[key] = descriptor;
+      continue;
+    }
+    const copy = { ...(descriptor as Record<string, unknown>) };
+    delete copy.scope;
+    sanitized[key] = copy;
+  }
+  return sanitized;
+}
+
 function coerceStatusBarItemList(value: unknown): StatusBarItem[] {
   if (Array.isArray(value)) {
     return value;

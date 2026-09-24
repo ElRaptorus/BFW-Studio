@@ -9,7 +9,8 @@ Key file paths:
 | Component | Path |
 |-----------|------|
 | Solution/Project types | `studio/src/bifrost/contracts/SolutionTypes.ts` |
-| SolutionManager (+ .bfwsln I/O) | `studio/src/bifrost/common/SolutionManager.ts` |
+| SolutionManager | `studio/src/bifrost/common/SolutionManager.ts` |
+| SolutionFile (`.bfwsln` format) | `studio/src/bifrost/common/SolutionFile.ts` |
 | SolutionMediator | `studio/src/bifrost/common/SolutionMediator.ts` |
 | FileExplorerView | `studio/src/bifrost/common/activities/FileExplorerView.ts` |
 | SolutionPane (UI) | `studio/src/components/panes/activities/files/SolutionPane.tsx` |

@@ -192,7 +192,7 @@ export abstract class FileHandlingService {
     ignoredPatterns?: string[],
   ): WatcherDisposable;
 
-  abstract watchFile(fileUri: string, callbackFn: FileWatcherCallback): WatcherDisposable;
+  abstract watchFile(fileUri: string, callbackFn: FileWatcherCallback, options?: { depth?: number }): WatcherDisposable;
 
   abstract createDirectory(directoryUri: string): Promise<boolean>;
 

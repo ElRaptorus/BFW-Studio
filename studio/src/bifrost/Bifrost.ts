@@ -45,6 +45,7 @@ import { RecentlyClosedMediator } from './common/RecentlyClosedMediator';
 import { RecentlyOpenedMediator } from './common/RecentlyOpenedMediator';
 import { SearchIndexStub } from './common/SearchIndexStub';
 import { SettingsMediator } from './common/SettingsMediator';
+import type { SolutionFileUnreadableError } from './common/SolutionFile';
 import { EVENT_SOLUTION_CHANGED } from './common/SolutionManager';
 import { SolutionMediator } from './common/SolutionMediator';
 import { StatusBarManager } from './common/StatusBarManager';
@@ -392,6 +393,13 @@ export class Bifrost {
     this.fileExplorerView = new FileExplorerView(this, this.files);
 
     const solutionStorage = this.getLocalStorage('Solution', BifrostLocalStorageScope.Instance);
+    const offerSolutionFileRepair = async (error: SolutionFileUnreadableError): Promise<boolean> => {
+      const repaired = await this.commands.executeCommand('std.solution.offerSolutionFileRepair', [
+        error.solutionFileUri,
+        error.reason,
+      ]);
+      return repaired === true;
+    };
     this.solution = new SolutionMediator(
       this.files,
       this.performance,
@@ -399,8 +407,17 @@ export class Bifrost {
       this.settings,
       this.fileExplorerView,
       solutionStorage,
+      offerSolutionFileRepair,
     );
 
+    this.settings.attachWorkspace({
+      fileHandling: this.files,
+      readSolution: () => this.solution.getSolution(),
+      solutionEvents: this.solution,
+      readFocusedEditorDocument: () => this.editors.getFocusedEditorDocument(),
+      reportError: (message) => this.notifications.open({ type: 'error', content: message, source: 'Settings' }),
+      offerSolutionFileRepair,
+    });
     this.solution.on(EVENT_SOLUTION_CHANGED, async (solution) => {
       if (solution != null) {
         await this.fileExplorerView.setSolution(solution);

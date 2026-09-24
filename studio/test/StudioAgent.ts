@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as assert from 'node:assert';
 import * as os from 'os';
 import * as path from 'path';
+import { isDeepStrictEqual } from 'util';
 import type { ChainablePromiseArray } from 'webdriverio';
 import { Key } from 'webdriverio';
 
@@ -432,6 +433,64 @@ export class StudioAgent {
     }))) as { value: any };
 
     return envelope.value;
+  }
+
+  async getSolutionProjects(): Promise<{ name: string; baseUri: string }[]> {
+    const envelope = (await this.testDriver.client!.execute(() => ({
+      value: ((window as any).bifrost.solution.getSolution()?.projects ?? []).map((project: any) => ({
+        name: project.name,
+        baseUri: project.baseUri,
+      })),
+    }))) as { value: { name: string; baseUri: string }[] };
+    return envelope.value;
+  }
+
+  async getMenuBarSelectValue(itemId: string): Promise<string> {
+    const selector = `[data-menu-bar-item-id="${itemId}"] select`;
+    await this.assertVisible(selector);
+    return this.getValue(selector);
+  }
+
+  async selectMenuBarOption(itemId: string, value: string): Promise<void> {
+    await this.testDriver.client!.execute(
+      (menuBarItemId: string, nextValue: string) => {
+        const select = document.querySelector(
+          `[data-menu-bar-item-id="${menuBarItemId}"] select`,
+        ) as HTMLSelectElement | null;
+        if (select == null) {
+          throw new Error(`Menu bar select not found: ${menuBarItemId}`);
+        }
+        const valueProperty = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value');
+        valueProperty?.set?.call(select, nextValue);
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      itemId,
+      value,
+    );
+  }
+
+  async clickSettingsScope(scope: 'user' | 'solution' | 'project'): Promise<void> {
+    await this.clickOn(`[data-test-settings-scope="${scope}"]`);
+  }
+
+  /** Waits until the plain-JSON file at `filePath` has `expected` under the top-level `key`. Tolerates a missing or half-written file. */
+  async waitForJsonFileValue(
+    filePath: string,
+    key: string,
+    expected: unknown,
+    timeoutMs: number = 5000,
+  ): Promise<void> {
+    await this.waitUntil(
+      () => {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          return isDeepStrictEqual(parsed?.[key], expected);
+        } catch {
+          return false;
+        }
+      },
+      { timeout: timeoutMs, timeoutMsg: `${filePath} did not get ${key} = ${JSON.stringify(expected)}` },
+    );
   }
 
   async getMenuBarViewData(): Promise<any> {

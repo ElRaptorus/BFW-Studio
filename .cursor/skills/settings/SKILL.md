@@ -8,7 +8,13 @@ description: >-
 
 # Settings System
 
-Settings are flat key/value pairs stored in JSON. Every key a module reads must be registered with a `SettingDescriptor` that defines its type, default value, label, and description. Settings are app-wide and propagated across Electron windows automatically.
+Settings are flat key/value pairs stored in JSON. Every key a module reads must be registered with a `SettingDescriptor` that defines its type, default value, label, and description. User settings are app-wide and propagated across Electron windows automatically. A descriptor may set `scope` to `'solution'` or `'project'` (default `'application'`); that flag is the only thing needed to make a setting scopable.
+
+For scoped settings, always use `bifrost.settings`:
+
+- Omit the resource in menus and commands. The value follows the focused editor document.
+- Pass `this.getUri()`, `editorDocument.uri`, or the batch URI in code bound to a document or file.
+- `set` may resolve to `null` when the write failed (already reported to the user); check it before continuing with dependent steps.
 
 For architectural details (storage internals, SettingsManager/SettingsMediator, validation, persistence), see `docs/architecture/settings.md`.
 

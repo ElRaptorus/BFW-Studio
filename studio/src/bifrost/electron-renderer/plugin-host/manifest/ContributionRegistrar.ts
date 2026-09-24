@@ -460,7 +460,8 @@ export class ContributionRegistrar {
       descriptors[key] = descriptor;
     }
 
-    this.bifrost.settings.register(descriptors);
+    // Plugin setting reads are not scope-aware.
+    this.bifrost.settings.register(stripSettingScope(descriptors));
 
     return () => {
       this.bifrost.settings.unregisterSettings(keys);
@@ -769,4 +770,14 @@ export class ContributionRegistrar {
       }
     };
   }
+}
+
+function stripSettingScope(descriptors: Record<string, SettingDescriptor>): Record<string, SettingDescriptor> {
+  const sanitized: Record<string, SettingDescriptor> = {};
+  for (const [key, descriptor] of Object.entries(descriptors)) {
+    const copy = { ...descriptor };
+    delete (copy as { scope?: unknown }).scope;
+    sanitized[key] = copy;
+  }
+  return sanitized;
 }

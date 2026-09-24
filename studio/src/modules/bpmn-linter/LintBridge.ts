@@ -1,3 +1,4 @@
+import type { SettingsMediator } from '#bifrost/common/SettingsMediator';
 import {
   BFW_LINTER_RULESET_SCORE_COMMAND,
   type BfwLinterRulesetScorePayload,
@@ -32,12 +33,6 @@ import type {
 
 const HIGHLIGHT_MARKER = 'lint-highlight';
 
-interface LintBridgeSettings {
-  get(key: string): unknown;
-  set(key: string, value: unknown): void;
-  onSettingsUpdate(handler: (key: string, value: unknown) => void): { dispose(): void };
-}
-
 interface LintBridgeDiagnostics {
   setDiagnostics(
     uri: string,
@@ -64,7 +59,8 @@ interface LintBridgeInstance {
   overlays: Overlays;
   selection: Selection;
   commandStack: CommandStack;
-  settings: LintBridgeSettings;
+  settings: SettingsMediator;
+  documentUri: () => string;
   diagnosticsMediator: LintBridgeDiagnostics;
   editorsMediator: LintBridgeEditors;
   paneLayout: LintBridgePaneLayout;
@@ -177,7 +173,8 @@ export function LintBridge(
   overlays: Overlays,
   selection: Selection,
   commandStack: CommandStack,
-  lintBridgeSettings: LintBridgeSettings,
+  bifrostSettings: SettingsMediator,
+  documentUri: () => string,
   lintBridgeDiagnostics: LintBridgeDiagnostics,
   lintBridgeEditors: LintBridgeEditors,
   lintBridgePaneLayout: LintBridgePaneLayout,
@@ -188,13 +185,14 @@ export function LintBridge(
   this.overlays = overlays;
   this.selection = selection;
   this.commandStack = commandStack;
-  this.settings = lintBridgeSettings;
+  this.settings = bifrostSettings;
+  this.documentUri = documentUri;
   this.diagnosticsMediator = lintBridgeDiagnostics;
   this.editorsMediator = lintBridgeEditors;
   this.paneLayout = lintBridgePaneLayout;
   this.engine = new LintEngine();
   this.overlayManager = new LintOverlayManager(canvas, elementRegistry);
-  this._active = (this.settings.get('bpmnLinter.enabled') as boolean | undefined) ?? true;
+  this._active = (this.settings.get('bpmnLinter.enabled', this.documentUri()) as boolean | undefined) ?? true;
   this._debounceTimer = null;
   this._badgeContainer = null;
   this._badgeRoot = null;
@@ -208,9 +206,11 @@ export function LintBridge(
   this._boundDocumentUri = null;
 
   const applyProfile = () => {
-    const profileName = (this.settings.get('bpmnLinter.profile') as string | undefined) ?? 'bpmn-development';
+    const profileName =
+      (this.settings.get('bpmnLinter.profile', this.documentUri()) as string | undefined) ?? 'bpmn-development';
     const customRulesets =
-      (this.settings.get('bpmnLinter.customRulesets') as Record<string, CustomRulesetEntry> | undefined) ?? {};
+      (this.settings.get('bpmnLinter.customRulesets', this.documentUri()) as
+        Record<string, CustomRulesetEntry> | undefined) ?? {};
     this._resolvedScorePolicy = resolveScorePolicy(profileName, customRulesets);
     const customRuleset = customRulesets[profileName];
 
@@ -237,7 +237,8 @@ export function LintBridge(
 
   this.isActive = () => this._active;
 
-  this.getActiveProfile = () => (this.settings.get('bpmnLinter.profile') as string | undefined) ?? 'bpmn-development';
+  this.getActiveProfile = () =>
+    (this.settings.get('bpmnLinter.profile', this.documentUri()) as string | undefined) ?? 'bpmn-development';
 
   this.getAvailableProfiles = () => {
     const builtIn = [
@@ -245,7 +246,8 @@ export function LintBridge(
       { id: 'bpmn-production-ready', label: 'Production Ready', isCustom: false },
     ];
     const customRulesets =
-      (this.settings.get('bpmnLinter.customRulesets') as Record<string, CustomRulesetEntry> | undefined) ?? {};
+      (this.settings.get('bpmnLinter.customRulesets', this.documentUri()) as
+        Record<string, CustomRulesetEntry> | undefined) ?? {};
     const custom = Object.keys(customRulesets).map((name) => ({
       id: name,
       label: name,
@@ -256,7 +258,7 @@ export function LintBridge(
 
   this.toggle = () => {
     this._active = !this._active;
-    this.settings.set('bpmnLinter.enabled', this._active);
+    void this.settings.set('bpmnLinter.enabled', this._active, this.documentUri());
     if (this._active) {
       if (shouldLintCurrentDiagram()) {
         this._scheduleLint();
@@ -356,7 +358,7 @@ export function LintBridge(
     if (this._foreignLintingAllowed) {
       return false;
     }
-    return this.settings.get('bpmnLinter.alwaysLintForeignDiagrams') !== true;
+    return this.settings.get('bpmnLinter.alwaysLintForeignDiagrams', this.documentUri()) !== true;
   };
 
   this.allowForeignLinting = () => {
@@ -377,7 +379,7 @@ export function LintBridge(
     if (this._foreignLintingAllowed) {
       return true;
     }
-    return this.settings.get('bpmnLinter.alwaysLintForeignDiagrams') === true;
+    return this.settings.get('bpmnLinter.alwaysLintForeignDiagrams', this.documentUri()) === true;
   };
 
   eventBus.on('selection.changed', (event: { newSelection?: { id?: string }[] }) => {
@@ -404,7 +406,8 @@ export function LintBridge(
     if (this._debounceTimer) {
       clearTimeout(this._debounceTimer);
     }
-    const delay = (this.settings.get('bpmnLinter.autoLintDelay') as number | undefined) ?? DEFAULT_DEBOUNCE_MS;
+    const delay =
+      (this.settings.get('bpmnLinter.autoLintDelay', this.documentUri()) as number | undefined) ?? DEFAULT_DEBOUNCE_MS;
     this._debounceTimer = setTimeout(() => {
       this._debounceTimer = null;
       this._runLint();
@@ -628,9 +631,9 @@ export function LintBridge(
     this._boundDocumentUri = null;
   });
 
-  const settingsSub = this.settings.onSettingsUpdate((key: string) => {
+  const settingsSub = this.settings.onDidChange((key: string) => {
     if (key === 'bpmnLinter.enabled') {
-      const newState = this.settings.get('bpmnLinter.enabled') as boolean;
+      const newState = this.settings.get('bpmnLinter.enabled', this.documentUri()) as boolean;
       if (newState !== this._active) {
         this._active = newState;
         if (this._active) {
@@ -657,7 +660,7 @@ export function LintBridge(
       }
       this.paneLayout.requestUpdate();
     }
-  });
+  }, this.documentUri);
 
   eventBus.on('diagram.destroy', () => {
     settingsSub.dispose();
@@ -672,7 +675,8 @@ export function LintBridge(
   'overlays',
   'selection',
   'commandStack',
-  'lintBridgeSettings',
+  'bifrostSettings',
+  'documentUri',
   'lintBridgeDiagnostics',
   'lintBridgeEditors',
   'lintBridgePaneLayout',

@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { Checkbox } from '#components/Checkbox';
@@ -45,6 +46,7 @@ export default class DmnDocumentRenderer extends React.Component<
   DmnDocumentRendererState
 > {
   private dmnDocumentModel: DmnDocumentModel | null;
+  private settingsSubscription: AbstractSubscription | null = null;
   private refDmnModeler: React.RefObject<HTMLDivElement | null>;
   private refLoadingIndicator: React.RefObject<HTMLDivElement | null>;
 
@@ -89,16 +91,28 @@ export default class DmnDocumentRenderer extends React.Component<
         },
       );
 
-      this.props.studio.events.on('settingsUpdate', (settingName: string) => {
-        if (settingName === 'dmn.editor.showGrid') {
-          this.forceUpdate();
-        }
-      });
+      const model = this.dmnDocumentModel;
+      this.settingsSubscription =
+        model == null
+          ? null
+          : this.props.studio.settings.onDidChange(
+              (settingName: string) => {
+                if (settingName === 'dmn.editor.showGrid') {
+                  this.forceUpdate();
+                }
+              },
+              () => model.getUri(),
+            );
 
       this.attachDmnDocument();
     } catch (error) {
       this.setState({ errorWhileLoading: error as Error });
     }
+  }
+
+  componentWillUnmount(): void {
+    this.settingsSubscription?.dispose();
+    this.settingsSubscription = null;
   }
 
   render(): React.JSX.Element {

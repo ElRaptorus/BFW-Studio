@@ -302,7 +302,9 @@ export function initializeDmnCommands(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'dmn.editor.toggleShowGrid',
-    () => bifrost.settings.set('dmn.editor.showGrid', !bifrost.settings.get('dmn.editor.showGrid')),
+    () => {
+      void bifrost.settings.set('dmn.editor.showGrid', !bifrost.settings.get('dmn.editor.showGrid'));
+    },
     {
       visibleInSearch: true,
       description: ['DMN: Toggle Grid', 'DMN: Show Grid', 'DMN: Hide Grid'],
@@ -311,7 +313,9 @@ export function initializeDmnCommands(bifrost: Bifrost): void {
 
   bifrost.commands.register(
     'dmn.editor.toggleShowMinimap',
-    () => bifrost.settings.set('dmn.editor.showMinimap', !bifrost.settings.get('dmn.editor.showMinimap')),
+    () => {
+      void bifrost.settings.set('dmn.editor.showMinimap', !bifrost.settings.get('dmn.editor.showMinimap'));
+    },
     {
       visibleInSearch: true,
       description: ['DMN: Toggle Minimap', 'DMN: Show Minimap', 'DMN: Hide Minimap'],

@@ -4,6 +4,7 @@ export function initializeDmnSettings(bifrost: Bifrost): void {
   bifrost.settings.register({
     'dmn.editor.showGrid': {
       category: 'DMN Editor',
+      scope: 'project',
       type: 'boolean',
       label: 'Show Grid',
       description: 'Display a grid overlay on the DMN DRD canvas.',
@@ -11,6 +12,7 @@ export function initializeDmnSettings(bifrost: Bifrost): void {
     },
     'dmn.editor.showMinimap': {
       category: 'DMN Editor',
+      scope: 'project',
       type: 'boolean',
       label: 'Show Minimap',
       description: 'Display a minimap on the DMN DRD canvas.',
@@ -18,6 +20,7 @@ export function initializeDmnSettings(bifrost: Bifrost): void {
     },
     'dmn.editor.defaultHitPolicy': {
       category: 'DMN Editor',
+      scope: 'project',
       type: 'string',
       label: 'Default Hit Policy',
       description: 'The default hit policy for new decision tables.',
@@ -35,6 +38,7 @@ export function initializeDmnSettings(bifrost: Bifrost): void {
     },
     'dmn.editor.autoValidate': {
       category: 'DMN Editor',
+      scope: 'project',
       type: 'boolean',
       label: 'Auto-Validate',
       description: 'Automatically run client-side validation when the DMN model changes.',

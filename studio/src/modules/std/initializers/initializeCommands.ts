@@ -292,7 +292,7 @@ export function initializeCommands(bifrost: Bifrost): void {
         if (projectId == null || projectId.trim() === '') {
           return;
         }
-        bifrost.solution.removeFolderFromSolution(projectId);
+        await bifrost.solution.removeFolderFromSolution(projectId);
       },
       { visibleInSearch: true, description: 'Test: Remove folder from solution' },
     );
@@ -311,7 +311,7 @@ export function initializeCommands(bifrost: Bifrost): void {
         const solution = bifrost.solution.getSolution();
         const project = solution?.projects.find((solutionProject) => solutionProject.baseUri === baseUri);
         if (project != null) {
-          bifrost.solution.renameProjectInSolution(project.id, newName);
+          await bifrost.solution.renameProjectInSolution(project.id, newName);
         }
       },
       { visibleInSearch: true, description: 'Test: Rename project in solution' },

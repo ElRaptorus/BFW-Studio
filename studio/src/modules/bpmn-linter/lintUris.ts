@@ -34,7 +34,6 @@ export async function lintUris(bifrost: Bifrost, uris: string | string[] | undef
     return;
   }
 
-  const options = readLintSettings(bifrost);
   const counts: Record<LintFileOutcome, number> = {
     updated: 0,
     unchanged: 0,
@@ -44,7 +43,7 @@ export async function lintUris(bifrost: Bifrost, uris: string | string[] | undef
 
   for (const uri of bpmnUris) {
     try {
-      const outcome = await lintSingleUri(bifrost, uri, options);
+      const outcome = await lintSingleUri(bifrost, uri, readLintSettings(bifrost, uri));
       counts[outcome] += 1;
     } catch (error) {
       console.error('[bpmn-linter] Explorer lint failed for', uri, error);
@@ -101,16 +100,19 @@ async function collectBpmnUris(bifrost: Bifrost, uris: string[]): Promise<string
   return [...unique];
 }
 
-function readLintSettings(bifrost: Bifrost): {
+function readLintSettings(
+  bifrost: Bifrost,
+  uri: string,
+): {
   profileName: string;
   customRulesets: Record<string, CustomRulesetEntry>;
   alwaysLintForeignDiagrams: boolean;
 } {
   return {
-    profileName: (bifrost.settings.get('bpmnLinter.profile') as string | undefined) ?? 'bpmn-development',
+    profileName: (bifrost.settings.get('bpmnLinter.profile', uri) as string | undefined) ?? 'bpmn-development',
     customRulesets:
-      (bifrost.settings.get('bpmnLinter.customRulesets') as Record<string, CustomRulesetEntry> | undefined) ?? {},
-    alwaysLintForeignDiagrams: bifrost.settings.get('bpmnLinter.alwaysLintForeignDiagrams') === true,
+      (bifrost.settings.get('bpmnLinter.customRulesets', uri) as Record<string, CustomRulesetEntry> | undefined) ?? {},
+    alwaysLintForeignDiagrams: bifrost.settings.get('bpmnLinter.alwaysLintForeignDiagrams', uri) === true,
   };
 }
 

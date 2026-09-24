@@ -746,7 +746,27 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
     const uri = metadata.uri;
     assertNotNull(uri, 'uri');
 
+    const solution = bifrost.solution.getSolution();
+    const settingsItems: Menu = [];
+    if (solution?.solutionFileUri != null) {
+      settingsItems.push({
+        type: 'command',
+        label: 'Solution Settings',
+        id: 'std/file-explorer/solution/solution-settings',
+        command: 'std.settings.openSolutionSettings',
+      });
+    } else if (solution?.projects.length === 1) {
+      settingsItems.push({
+        type: 'command',
+        label: 'Project Settings',
+        id: 'std/file-explorer/solution/project-settings',
+        command: 'std.settings.openProjectSettings',
+        commandArgs: [solution.projects[0].baseUri],
+      });
+    }
+
     return [
+      ...settingsItems,
       {
         type: 'command',
         label: 'Add Directory to Solution ...',
@@ -868,6 +888,16 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
     const project = solution?.projects.find((project) => project.baseUri === uri);
 
     return [
+      {
+        type: 'command',
+        label: 'Project Settings',
+        id: 'std/file-explorer/solution-root/project-settings',
+        command: 'std.settings.openProjectSettings',
+        commandArgs: [uri],
+      },
+      {
+        type: 'divider',
+      },
       {
         type: 'command',
         label: 'New File ...',

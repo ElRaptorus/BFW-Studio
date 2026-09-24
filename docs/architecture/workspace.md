@@ -141,7 +141,7 @@ The flag is cleared when a solution file is saved (`setSolutionFileUri`) or when
 
 ### `.bfwsln` Solution File Format
 
-The `.bfwsln` ("Bifrost Forge World Solution") file is a JSON file inspired by VS Code's `.code-workspace` format. The read/write functions (`readSolutionFile`, `writeSolutionFile`) and their types (`SolutionFileContent`, `SolutionFileFolder`) are co-located with `SolutionManager` in `studio/src/bifrost/common/SolutionManager.ts`.
+The `.bfwsln` ("Bifrost Forge World Solution") file is a JSONC file (JSON with comments) inspired by VS Code's `.code-workspace` format. Every read and write goes through `studio/src/bifrost/common/SolutionFile.ts` (`readSolutionFile`, `writeSolutionFolders`, `updateSolutionSettings`, `readSolutionSettingsText`, `repairSolutionFile`). `SolutionManager` has no file I/O.
 
 ```json
 {
@@ -154,8 +154,13 @@ The `.bfwsln` ("Bifrost Forge World Solution") file is a JSON file inspired by V
 ```
 
 - `folders[].path`: Absolute filesystem path. `name` is optional (defaults to the directory name).
-- `settings`: Reserved for future per-solution settings. Currently written as `{}`.
-- Read by `readSolutionFile()`, written by `writeSolutionFile()`.
+- `settings`: Solution-scoped settings (see [settings.md](settings.md) §Scopes).
+- `readSolutionFile()` parses with `comment-json`. Opening an unreadable file throws `SolutionFileUnreadableError` (`The solution file "<name>" could not be read: <reason>`) and offers no repair, because nothing has been written yet.
+- Folder writes (`writeSolutionFolders`) and Solution settings writes (`updateSolutionSettings`) are read-modify-write. Only the touched part changes, so comments and unknown keys survive. A missing file is created by a folder write (Save As) and rejected by a settings write.
+- A file that exists but cannot be read or parsed is never overwritten. The write throws `SolutionFileUnreadableError`. `std.solution.offerSolutionFileRepair` then opens a dialog. Repair copies the broken text to `<file>.broken` (or `.broken.1` … `.broken.99`, never overwriting an existing backup) and rewrites the file from the open solution with empty Solution settings. If an existing file cannot be read for the backup, the repair aborts and nothing is written. Declining leaves the file untouched and the solution dirty; `std.solution.closeSolution` then stays open instead of discarding the changes.
+- A `save` that returns `false` is an error, not a successful write.
+- The settings layer reads only the `settings` block (`readSolutionSettings`), so a file without `folders` still provides its settings.
+- Writes to one file are queued inside the process. Two windows with the same solution open can still interleave; a file lock would be the upgrade.
 
 ### SolutionManager
 
@@ -203,10 +208,11 @@ Orchestration layer around SolutionManager. Adds:
 |--------|---------|
 | `openDirectoryAsSolution(uri)` | Opens single-folder: creates Solution, watcher, records in Recently Opened |
 | `openSolutionFile(solutionFileUri)` | Opens `.bfwsln` file: reads folders, creates multi-root Solution, per-project watchers |
-| `saveSolutionFile(solutionFileUri)` | Writes the current Solution to a `.bfwsln` file |
+| `saveSolutionFile(solutionFileUri)` | Writes the current Solution. Returns `false` when the file is unreadable and the repair dialog is declined; the solution stays dirty |
+| `repairSolutionFile(solutionFileUri)` | Backs up the broken file, then rewrites it from the open solution. Returns the backup URI, or `null` when there was nothing to back up |
 | `addFolderToSolution(directoryUri)` | Adds a folder, sets up its watcher |
-| `removeFolderFromSolution(projectId)` | Removes a folder, disposes its watcher, auto-saves `.bfwsln` |
-| `renameProjectInSolution(projectId, newName)` | Renames a project, auto-saves `.bfwsln` |
+| `removeFolderFromSolution(projectId)` | Removes a folder, disposes its watcher, auto-saves `.bfwsln`. Clears the dirty flag only after the save succeeds |
+| `renameProjectInSolution(projectId, newName)` | Renames a project and auto-saves `.bfwsln`. Clears the dirty flag only after the save succeeds |
 | `isSolutionDirty()` | Whether the solution has unsaved changes |
 | `closeSolution()` | Disposes all watchers, clears solution state |
 | `containsEditorDocumentWithUri(uri)` | Checks whether a URI belongs to the open Solution |
@@ -436,7 +442,7 @@ Persisted via `LocalStorageItem` in app scope (shared across windows).
 
 ## Settings
 
-Settings are app-global (not per Solution or window). Relevant settings:
+File Explorer settings below stay application-wide. Solution and project overrides for editor and linter settings are described in [settings.md](settings.md). Relevant application settings:
 
 | Setting | Default | Purpose |
 |---------|---------|---------|
@@ -450,7 +456,8 @@ Settings are app-global (not per Solution or window). Relevant settings:
 | Component | Path |
 |-----------|------|
 | Solution/Project types | `studio/src/bifrost/contracts/SolutionTypes.ts` |
-| SolutionManager (+ .bfwsln I/O) | `studio/src/bifrost/common/SolutionManager.ts` |
+| SolutionManager | `studio/src/bifrost/common/SolutionManager.ts` |
+| SolutionFile (`.bfwsln` format) | `studio/src/bifrost/common/SolutionFile.ts` |
 | SolutionMediator | `studio/src/bifrost/common/SolutionMediator.ts` |
 | SolutionFunctions | `studio/src/bifrost/common/SolutionFunctions.ts` |
 | FileHandlingService (abstract) | `studio/src/bifrost/common/FileHandlingService.ts` |

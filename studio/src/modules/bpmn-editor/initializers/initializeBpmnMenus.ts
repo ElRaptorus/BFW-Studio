@@ -30,14 +30,14 @@ export function initializeBpmnMenus(bifrost: Bifrost): void {
             {
               type: 'command',
               label: 'Show BPMN Grid',
-              checked: bifrost.settings.get('bpmn.editor.showGrid'),
+              checked: bifrost.settings.get('bpmn.editor.showGrid') === true,
               id: 'view/bpmn-editor/show-grid',
               command: 'bpmn.editor.toggleShowGrid',
             },
             {
               type: 'command',
               label: 'Show internal custom properties',
-              checked: bifrost.settings.get('bpmn.editor.showInternalCustomProperties'),
+              checked: bifrost.settings.get('bpmn.editor.showInternalCustomProperties') === true,
               id: 'view/bpmn-editor/show-internal-custom-properties',
               command: 'bpmn.editor.toggleShowInternalCustomProperties',
             },
@@ -53,14 +53,14 @@ export function initializeBpmnMenus(bifrost: Bifrost): void {
                   type: 'command',
                   label: 'Documentation',
                   id: 'view/bpmn-editor/documentation-marker',
-                  checked: bifrost.settings.get('bpmn.editor.showDocumentationMarker'),
+                  checked: bifrost.settings.get('bpmn.editor.showDocumentationMarker') === true,
                   command: 'bpmn.editor.showDocumentationMarker',
                 },
                 {
                   type: 'command',
                   label: 'Multiple Outgoing Sequence Flows',
                   id: 'view/bpmn-editor/multiple-outgoing-sequence-flows-markers',
-                  checked: bifrost.settings.get('bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers'),
+                  checked: bifrost.settings.get('bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers') === true,
                   command: 'bpmn.editor.showMultipleOutgoingSequenceFlowsMarkers',
                 },
               ],
@@ -73,7 +73,9 @@ export function initializeBpmnMenus(bifrost: Bifrost): void {
                 {
                   type: 'command',
                   label: 'Show everything',
-                  checked: showAllDataObjectDetails(bifrost.settings.get('bpmn.editor.dataObjectDetailLevel')),
+                  checked: showAllDataObjectDetails(
+                    bifrost.settings.get('bpmn.editor.dataObjectDetailLevel') as string,
+                  ),
                   id: 'view/bpmn-editor/data-object-details-editor/show-everything',
                   command: 'bpmn.editor.setDataObjectDetailLevel',
                   commandArgs: [DataObjectDetailLevel.showAll],
@@ -81,7 +83,7 @@ export function initializeBpmnMenus(bifrost: Bifrost): void {
                 {
                   type: 'command',
                   label: 'Hide input associations',
-                  checked: hideReadingAssociations(bifrost.settings.get('bpmn.editor.dataObjectDetailLevel')),
+                  checked: hideReadingAssociations(bifrost.settings.get('bpmn.editor.dataObjectDetailLevel') as string),
                   id: 'view/bpmn-editor/data-object-details-editor/hide-input-associations',
                   command: 'bpmn.editor.setDataObjectDetailLevel',
                   commandArgs: [DataObjectDetailLevel.hideInputAssociations],
@@ -89,7 +91,7 @@ export function initializeBpmnMenus(bifrost: Bifrost): void {
                 {
                   type: 'command',
                   label: 'Hide all associations',
-                  checked: hideAllAssociations(bifrost.settings.get('bpmn.editor.dataObjectDetailLevel')),
+                  checked: hideAllAssociations(bifrost.settings.get('bpmn.editor.dataObjectDetailLevel') as string),
                   id: 'view/bpmn-editor/data-object-details-editor/hide-all-associations',
                   command: 'bpmn.editor.setDataObjectDetailLevel',
                   commandArgs: [DataObjectDetailLevel.hideAllAssociations],
@@ -97,7 +99,9 @@ export function initializeBpmnMenus(bifrost: Bifrost): void {
                 {
                   type: 'command',
                   label: 'Hide everything',
-                  checked: hideAllDataObjectDetails(bifrost.settings.get('bpmn.editor.dataObjectDetailLevel')),
+                  checked: hideAllDataObjectDetails(
+                    bifrost.settings.get('bpmn.editor.dataObjectDetailLevel') as string,
+                  ),
                   id: 'view/bpmn-editor/data-object-details-editor/hide-everything',
                   command: 'bpmn.editor.setDataObjectDetailLevel',
                   commandArgs: [DataObjectDetailLevel.hideAll],

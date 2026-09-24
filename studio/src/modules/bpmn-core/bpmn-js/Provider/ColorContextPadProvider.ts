@@ -1,4 +1,4 @@
-import type { Bifrost } from '#bifrost/Bifrost';
+import type { SettingsMediator } from '#bifrost/common/SettingsMediator';
 import { PREDEFINED_COLORS } from '#components/BpmnElementColorPicker';
 import type { BpmnElementColor } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
@@ -8,11 +8,11 @@ const noColor = {
   backgroundColor: undefined,
   borderColor: undefined,
 };
-const colors = [noColor, ...PREDEFINED_COLORS];
 
 class ColorContextPadProvider {
   static $inject = ['contextPad', 'modeling'];
-  private studio: Bifrost | null = null;
+  private settings: SettingsMediator | null = null;
+  private documentUri: () => string = () => '';
 
   private contextPad: any;
   private modeling;
@@ -24,8 +24,9 @@ class ColorContextPadProvider {
     contextPad.registerProvider(this);
   }
 
-  setStudio(studio: Bifrost) {
-    this.studio = studio;
+  setSettings(settings: SettingsMediator, documentUri: () => string) {
+    this.settings = settings;
+    this.documentUri = documentUri;
   }
 
   getContextPadEntries(element: ElementLike) {
@@ -50,19 +51,19 @@ class ColorContextPadProvider {
       return;
     }
 
-    if (this.studio) {
-      const customColors: BpmnElementColor[] = this.studio.settings.get('bpmn.editor.customColors') ?? [];
-      customColors.forEach((color) => {
-        if (!colors.some((col) => col.label === color.label)) {
-          colors.push(color);
-        }
-      });
+    const availableColors: BpmnElementColor[] = [noColor, ...PREDEFINED_COLORS];
+    const customColors =
+      (this.settings?.get('bpmn.editor.customColors', this.documentUri()) as BpmnElementColor[] | undefined) ?? [];
+    for (const color of customColors) {
+      if (!availableColors.some((existing) => existing.label === color.label)) {
+        availableColors.push(color);
+      }
     }
 
     this.panel = document.createElement('div');
     this.panel.classList.add('color-picker-panel');
 
-    colors.forEach((color) => {
+    availableColors.forEach((color) => {
       const btn = document.createElement('div');
       btn.classList.add('color-option');
       btn.style.backgroundColor = color.backgroundColor!;

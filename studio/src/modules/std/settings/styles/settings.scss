@@ -36,6 +36,32 @@
 
 // -- Settings GUI --
 
+.settings-gui__scope-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px 0;
+}
+
+.settings-gui__scope-button,
+.settings-gui__scope-select {
+  border: 1px solid var(--theme-input-border);
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.settings-gui__scope-button.is-active {
+  font-weight: 600;
+}
+
+.settings-gui__overridden-in {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
 .settings-gui {
   display: flex;
   flex-direction: column;
