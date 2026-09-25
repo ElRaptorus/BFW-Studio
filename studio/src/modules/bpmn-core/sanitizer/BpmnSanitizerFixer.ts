@@ -11,20 +11,93 @@ export function buildSanitizerFixCommands(
   elementRegistry: ElementRegistryLike,
 ): CmdHelperDescriptor {
   const commands: CmdHelperDescriptor[] = [];
+  // Cascading removals take connected elements with them; their own issues must not remove them twice.
+  const removedElements = new Set<any>();
 
   for (const issue of issues) {
-    const cmds = buildFixForIssue(issue, definitions, elementRegistry);
+    const cmds = buildFixForIssue(issue, definitions, elementRegistry, removedElements);
     commands.push(...cmds);
   }
 
+  commands.push(...removeConnectionsToRemovedElements(definitions, elementRegistry, removedElements));
+  commands.push(...removeDiOfRemovedElements(definitions, elementRegistry, removedElements));
   return CmdHelper.executeMultipleCommands(commands);
+}
+
+// bpmn-js cannot import a connection whose end is gone; message flows go first so associations attached to them are caught too.
+function removeConnectionsToRemovedElements(
+  definitions: any,
+  elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
+): CmdHelperDescriptor[] {
+  const rootElements: any[] = Array.isArray(definitions.rootElements) ? definitions.rootElements : [];
+  const cmds: CmdHelperDescriptor[] = [];
+  const removeDangling = (owner: any, propertyName: string, candidates: any[]): void => {
+    const dangling = candidates.filter(
+      (connection: any) =>
+        !removedElements.has(connection) &&
+        (removedElements.has(connection.sourceRef) || removedElements.has(connection.targetRef)),
+    );
+    if (dangling.length > 0) {
+      dangling.forEach((connection) => removedElements.add(connection));
+      const ownerShape = elementRegistry.get(owner.id) ?? { id: owner.id };
+      cmds.push(CmdHelper.removeElementsFromList(ownerShape, owner, propertyName, undefined, dangling));
+    }
+  };
+
+  for (const collaboration of rootElements.filter((element: any) => element.$type === 'bpmn:Collaboration')) {
+    removeDangling(collaboration, 'messageFlows', collaboration.messageFlows ?? []);
+  }
+
+  const visitArtifactsOwner = (owner: any): void => {
+    if (removedElements.has(owner)) {
+      return;
+    }
+    removeDangling(
+      owner,
+      'artifacts',
+      (owner.artifacts ?? []).filter((artifact: any) => artifact.$type === 'bpmn:Association'),
+    );
+    for (const child of owner.flowElements ?? []) {
+      if (Array.isArray(child.flowElements)) {
+        visitArtifactsOwner(child);
+      }
+    }
+  };
+  rootElements
+    .filter((element: any) => element.$type === 'bpmn:Process' || element.$type === 'bpmn:Collaboration')
+    .forEach(visitArtifactsOwner);
+  return cmds;
+}
+
+// A cascade can remove elements that still have DI (e.g. a drawn boundary on a shapeless host); that DI would become a zombie.
+function removeDiOfRemovedElements(
+  definitions: any,
+  elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
+): CmdHelperDescriptor[] {
+  const cmds: CmdHelperDescriptor[] = [];
+  for (const diagram of Array.isArray(definitions.diagrams) ? definitions.diagrams : []) {
+    const plane = diagram.plane;
+    const orphans = (plane?.planeElement ?? []).filter((diElement: any) => removedElements.has(diElement.bpmnElement));
+    if (orphans.length > 0) {
+      const planeShape = elementRegistry.get(plane.id ?? plane.bpmnElement?.id) ?? { id: plane.id ?? 'plane' };
+      cmds.push(CmdHelper.removeElementsFromList(planeShape, plane, 'planeElement', undefined, orphans));
+    }
+  }
+  return cmds;
 }
 
 function buildFixForIssue(
   issue: SanitizableIssue,
   definitions: any,
   elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
 ): CmdHelperDescriptor[] {
+  if (issue.manualFixOnly) {
+    return [];
+  }
+
   switch (issue.type) {
     case 'unreferenced-message':
     case 'unreferenced-error':
@@ -33,26 +106,27 @@ function buildFixForIssue(
       return fixUnreferencedGlobal(issue, definitions, elementRegistry);
 
     case 'shapeless-flow-node':
-      return fixShapelessFlowNode(issue, definitions, elementRegistry);
+      return fixShapelessFlowNode(issue, definitions, elementRegistry, removedElements);
 
     case 'shapeless-participant':
-      return fixShapelessParticipant(issue, definitions, elementRegistry);
+      return fixShapelessParticipant(issue, definitions, elementRegistry, removedElements);
 
     case 'shapeless-sequence-flow':
-      return fixShapelessSequenceFlow(issue, definitions, elementRegistry);
+      return fixShapelessSequenceFlow(issue, definitions, elementRegistry, removedElements);
 
     case 'shapeless-message-flow':
-      return fixShapelessMessageFlow(issue, definitions, elementRegistry);
+      return fixShapelessMessageFlow(issue, definitions, elementRegistry, removedElements);
 
     case 'zombie-shape':
     case 'zombie-edge':
       return fixZombieDiElement(issue, definitions, elementRegistry);
 
+    // moddle already left the unresolved reference unset; SanitizerBridge.dismissDanglingRefWarnings clears the warning.
     case 'dangling-message-ref':
     case 'dangling-error-ref':
     case 'dangling-signal-ref':
     case 'dangling-escalation-ref':
-      return fixDanglingRef(issue, definitions, elementRegistry);
+      return [];
 
     case 'empty-extension-elements':
       return fixEmptyExtensionElements(issue, definitions, elementRegistry);
@@ -86,25 +160,112 @@ function fixShapelessFlowNode(
   issue: SanitizableIssue,
   definitions: any,
   elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
 ): CmdHelperDescriptor[] {
-  const process = findProcessContaining(definitions, issue.elementId);
-  if (!process) {
+  const container = findProcessContaining(definitions, issue.elementId);
+  const flowNode = (container?.flowElements ?? []).find((el: any) => el.id === issue.elementId);
+  if (!flowNode || removedElements.has(flowNode)) {
     return [];
   }
+  return removeFlowNodeWithDependents(flowNode, container, elementRegistry, removedElements);
+}
 
-  const flowEl = (process.flowElements ?? []).find((el: any) => el.id === issue.elementId);
-  if (!flowEl) {
-    return [];
+/**
+ * Removes a shapeless flow node together with everything that cannot be drawn without it:
+ * lane references, connected sequence flows, attached boundary events, and data associations to it.
+ */
+function removeFlowNodeWithDependents(
+  flowNode: any,
+  container: any,
+  elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
+): CmdHelperDescriptor[] {
+  removedElements.add(flowNode);
+  const cmds: CmdHelperDescriptor[] = [];
+
+  for (let scope = container; scope != null; scope = scope.$parent) {
+    for (const lane of collectLanes(scope.laneSets)) {
+      if (Array.isArray(lane.flowNodeRef) && lane.flowNodeRef.includes(flowNode)) {
+        const laneShape = elementRegistry.get(lane.id) ?? { id: lane.id };
+        cmds.push(CmdHelper.removeElementsFromList(laneShape, lane, 'flowNodeRef', undefined, [flowNode]));
+      }
+    }
   }
 
-  const rootShape = elementRegistry.get(process.id) ?? { id: process.id };
-  return [CmdHelper.removeElementsFromList(rootShape, process, 'flowElements', undefined, [flowEl])];
+  for (const sequenceFlow of [...(flowNode.incoming ?? []), ...(flowNode.outgoing ?? [])]) {
+    if (!removedElements.has(sequenceFlow)) {
+      cmds.push(
+        ...removeSequenceFlow(sequenceFlow, sequenceFlow.$parent ?? container, elementRegistry, removedElements),
+      );
+    }
+  }
+
+  for (const sibling of container.flowElements ?? []) {
+    if (sibling.$type === 'bpmn:BoundaryEvent' && sibling.attachedToRef === flowNode && !removedElements.has(sibling)) {
+      cmds.push(...removeFlowNodeWithDependents(sibling, container, elementRegistry, removedElements));
+    }
+  }
+
+  if (flowNode.$type === 'bpmn:DataObjectReference' || flowNode.$type === 'bpmn:DataStoreReference') {
+    cmds.push(...removeDataAssociationsTo(flowNode, container, elementRegistry, removedElements));
+  }
+
+  const containerShape = elementRegistry.get(container.id) ?? { id: container.id };
+  cmds.push(CmdHelper.removeElementsFromList(containerShape, container, 'flowElements', undefined, [flowNode]));
+  return cmds;
+}
+
+function collectLanes(laneSets: any): any[] {
+  const lanes: any[] = [];
+  const visitLaneSet = (laneSet: any): void => {
+    for (const lane of laneSet?.lanes ?? []) {
+      lanes.push(lane);
+      visitLaneSet(lane.childLaneSet);
+    }
+  };
+  (Array.isArray(laneSets) ? laneSets : []).forEach(visitLaneSet);
+  return lanes;
+}
+
+function removeDataAssociationsTo(
+  dataReference: any,
+  container: any,
+  elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
+): CmdHelperDescriptor[] {
+  const cmds: CmdHelperDescriptor[] = [];
+  const visit = (scope: any): void => {
+    for (const owner of scope.flowElements ?? []) {
+      const inputs = (owner.dataInputAssociations ?? []).filter(
+        (association: any) =>
+          association.sourceRef === dataReference ||
+          (Array.isArray(association.sourceRef) && association.sourceRef.includes(dataReference)),
+      );
+      const outputs = (owner.dataOutputAssociations ?? []).filter(
+        (association: any) => association.targetRef === dataReference,
+      );
+      [...inputs, ...outputs].forEach((association) => removedElements.add(association));
+      const ownerShape = elementRegistry.get(owner.id) ?? { id: owner.id };
+      if (inputs.length > 0) {
+        cmds.push(CmdHelper.removeElementsFromList(ownerShape, owner, 'dataInputAssociations', undefined, inputs));
+      }
+      if (outputs.length > 0) {
+        cmds.push(CmdHelper.removeElementsFromList(ownerShape, owner, 'dataOutputAssociations', undefined, outputs));
+      }
+      if (Array.isArray(owner.flowElements)) {
+        visit(owner);
+      }
+    }
+  };
+  visit(container);
+  return cmds;
 }
 
 function fixShapelessParticipant(
   issue: SanitizableIssue,
   definitions: any,
   elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
 ): CmdHelperDescriptor[] {
   const collab = findCollaboration(definitions);
   if (!collab) {
@@ -115,6 +276,7 @@ function fixShapelessParticipant(
   if (!participant) {
     return [];
   }
+  removedElements.add(participant);
 
   const rootShape = elementRegistry.get(collab.id) ?? { id: collab.id };
   return [CmdHelper.removeElementsFromList(rootShape, collab, 'participants', undefined, [participant])];
@@ -124,30 +286,38 @@ function fixShapelessSequenceFlow(
   issue: SanitizableIssue,
   definitions: any,
   elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
 ): CmdHelperDescriptor[] {
-  const process = findProcessContaining(definitions, issue.elementId);
-  if (!process) {
+  const container = findProcessContaining(definitions, issue.elementId);
+  const sequenceFlow = (container?.flowElements ?? []).find((el: any) => el.id === issue.elementId);
+  if (!sequenceFlow || removedElements.has(sequenceFlow)) {
     return [];
   }
+  return removeSequenceFlow(sequenceFlow, container, elementRegistry, removedElements);
+}
 
-  const flowEl = (process.flowElements ?? []).find((el: any) => el.id === issue.elementId);
-  if (!flowEl) {
-    return [];
-  }
-
+function removeSequenceFlow(
+  sequenceFlow: any,
+  container: any,
+  elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
+): CmdHelperDescriptor[] {
+  removedElements.add(sequenceFlow);
   const cmds: CmdHelperDescriptor[] = [];
-  const rootShape = elementRegistry.get(process.id) ?? { id: process.id };
 
-  if (flowEl.sourceRef && Array.isArray(flowEl.sourceRef.outgoing)) {
-    const srcElement = elementRegistry.get(flowEl.sourceRef.id) ?? { id: flowEl.sourceRef.id };
-    cmds.push(CmdHelper.removeElementsFromList(srcElement, flowEl.sourceRef, 'outgoing', undefined, [flowEl]));
+  const source = sequenceFlow.sourceRef;
+  if (source && Array.isArray(source.outgoing) && !removedElements.has(source)) {
+    const sourceShape = elementRegistry.get(source.id) ?? { id: source.id };
+    cmds.push(CmdHelper.removeElementsFromList(sourceShape, source, 'outgoing', undefined, [sequenceFlow]));
   }
-  if (flowEl.targetRef && Array.isArray(flowEl.targetRef.incoming)) {
-    const tgtElement = elementRegistry.get(flowEl.targetRef.id) ?? { id: flowEl.targetRef.id };
-    cmds.push(CmdHelper.removeElementsFromList(tgtElement, flowEl.targetRef, 'incoming', undefined, [flowEl]));
+  const target = sequenceFlow.targetRef;
+  if (target && Array.isArray(target.incoming) && !removedElements.has(target)) {
+    const targetShape = elementRegistry.get(target.id) ?? { id: target.id };
+    cmds.push(CmdHelper.removeElementsFromList(targetShape, target, 'incoming', undefined, [sequenceFlow]));
   }
 
-  cmds.push(CmdHelper.removeElementsFromList(rootShape, process, 'flowElements', undefined, [flowEl]));
+  const containerShape = elementRegistry.get(container.id) ?? { id: container.id };
+  cmds.push(CmdHelper.removeElementsFromList(containerShape, container, 'flowElements', undefined, [sequenceFlow]));
   return cmds;
 }
 
@@ -155,6 +325,7 @@ function fixShapelessMessageFlow(
   issue: SanitizableIssue,
   definitions: any,
   elementRegistry: ElementRegistryLike,
+  removedElements: Set<any>,
 ): CmdHelperDescriptor[] {
   const collab = findCollaboration(definitions);
   if (!collab) {
@@ -162,9 +333,10 @@ function fixShapelessMessageFlow(
   }
 
   const mf = (collab.messageFlows ?? []).find((el: any) => el.id === issue.elementId);
-  if (!mf) {
+  if (!mf || removedElements.has(mf)) {
     return [];
   }
+  removedElements.add(mf);
 
   const rootShape = elementRegistry.get(collab.id) ?? { id: collab.id };
   return [CmdHelper.removeElementsFromList(rootShape, collab, 'messageFlows', undefined, [mf])];
@@ -196,32 +368,6 @@ function fixZombieDiElement(
 
   return [];
 }
-
-function fixDanglingRef(
-  issue: SanitizableIssue,
-  definitions: any,
-  elementRegistry: ElementRegistryLike,
-): CmdHelperDescriptor[] {
-  const refProp = ISSUE_TYPE_TO_REF_PROP[issue.type];
-  if (!refProp) {
-    return [];
-  }
-
-  const eventDef = findEventDefinitionWithDanglingRef(definitions, issue.elementId, refProp);
-  if (!eventDef) {
-    return [];
-  }
-
-  const element = elementRegistry.get(issue.elementId) ?? { id: issue.elementId };
-  return [CmdHelper.updateBusinessObject(element, eventDef, { [refProp]: undefined })];
-}
-
-const ISSUE_TYPE_TO_REF_PROP: Record<string, string> = {
-  'dangling-message-ref': 'messageRef',
-  'dangling-error-ref': 'errorRef',
-  'dangling-signal-ref': 'signalRef',
-  'dangling-escalation-ref': 'escalationRef',
-};
 
 function fixEmptyExtensionElements(
   issue: SanitizableIssue,
@@ -295,7 +441,7 @@ function findDirectContainer(container: any, elementId: string): any {
   }
 
   for (const el of flowElements) {
-    if (el.$type === 'bpmn:SubProcess' && Array.isArray(el.flowElements)) {
+    if (Array.isArray(el.flowElements)) {
       const nested = findDirectContainer(el, elementId);
       if (nested) {
         return nested;
@@ -312,60 +458,6 @@ function findCollaboration(definitions: any): any {
     return null;
   }
   return rootElements.find((el: any) => el.$type === 'bpmn:Collaboration') ?? null;
-}
-
-function findEventDefinitionWithDanglingRef(definitions: any, ownerId: string, refProp: string): any {
-  const visited = new Set<any>();
-  return walkFindEventDef(definitions, ownerId, refProp, visited);
-}
-
-function walkFindEventDef(node: any, ownerId: string, refProp: string, visited: Set<any>): any {
-  if (node == null || typeof node !== 'object') {
-    return null;
-  }
-  if (visited.has(node)) {
-    return null;
-  }
-  visited.add(node);
-
-  if (node.$type && node[refProp] != null) {
-    const owner = findOwnerOfEventDef(node);
-    if (owner?.id === ownerId) {
-      return node;
-    }
-  }
-
-  for (const key of Object.keys(node)) {
-    if (key.startsWith('$')) {
-      continue;
-    }
-    const value = node[key];
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        const result = walkFindEventDef(item, ownerId, refProp, visited);
-        if (result) {
-          return result;
-        }
-      }
-    } else if (value != null && typeof value === 'object') {
-      const result = walkFindEventDef(value, ownerId, refProp, visited);
-      if (result) {
-        return result;
-      }
-    }
-  }
-  return null;
-}
-
-function findOwnerOfEventDef(node: any): any {
-  let current = node.$parent;
-  while (current != null) {
-    if (current.id && current.$type && !current.$type.endsWith('EventDefinition')) {
-      return current;
-    }
-    current = current.$parent;
-  }
-  return null;
 }
 
 function findElementById(definitions: any, elementId: string): any {

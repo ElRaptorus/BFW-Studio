@@ -9,8 +9,10 @@ export function EditorAreaEmptyState(): React.JSX.Element {
   const extraActions = bifrost.commands.isRegistered('std.editorEmptyState.getExtraActions')
     ? bifrost.commands.executeCommand<React.JSX.Element[]>('std.editorEmptyState.getExtraActions')
     : undefined;
-    
-  const [tip] = useState<React.JSX.Element | null>(bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText'));
+
+  const [tip] = useState<React.JSX.Element | null>(
+    bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText'),
+  );
 
   return (
     <div className="editor-area-empty-state">

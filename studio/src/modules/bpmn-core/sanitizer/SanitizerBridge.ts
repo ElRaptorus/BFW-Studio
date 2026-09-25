@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom/client';
 
 import React from 'react';
 
-import { type ModdleParseWarning, analyzeSanitizableIssues } from './BpmnSanitizerAnalyzer';
+import { type ModdleParseWarning, analyzeSanitizableIssues, findReferenceOwner } from './BpmnSanitizerAnalyzer';
 import { SanitizerBadge } from './SanitizerBadge';
 import type { SanitizableIssue } from './sanitizerTypes';
 
@@ -77,15 +77,8 @@ export function SanitizerBridge(
       if (!warning.message?.startsWith('unresolved reference')) {
         return true;
       }
-      const ownerEl = warning.element?.$parent;
-      let current = ownerEl;
-      while (current != null) {
-        if (current.id && current.$type && !current.$type.endsWith('EventDefinition')) {
-          return !idSet.has(current.id);
-        }
-        current = current.$parent;
-      }
-      return true;
+      const owner = warning.element ? findReferenceOwner(warning.element) : null;
+      return owner == null || !idSet.has(owner.id);
     });
     this._runAnalysis();
   };

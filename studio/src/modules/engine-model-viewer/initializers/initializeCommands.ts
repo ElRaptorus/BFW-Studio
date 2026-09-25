@@ -4,6 +4,7 @@ import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { ENGINE_COMMANDS } from '#modules/engine-core';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 import type { StartResult } from '@elraptorus/bfw_engine_sdk';
 
@@ -121,7 +122,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
         return;
       }
       const element = selected[0] as any;
-      if (element?.type !== 'bpmn:SubProcess') {
+      if (element == null || !is(element, 'bpmn:SubProcess')) {
         return;
       }
       const canvas = adapter.getCanvas();

@@ -28,6 +28,16 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## Matching `$type === 'bpmn:SubProcess'` on raw moddle objects
+
+**Mistake**: Deciding whether to recurse into a container with an exact `$type` comparison against `bpmn:SubProcess`.
+
+**Why**: `bpmn:Transaction` and `bpmn:AdHocSubProcess` extend SubProcess but carry their own `$type`. Their children get skipped, e.g. the sanitizer reported real ad-hoc tasks as zombies. bpmn-js also creates a drill-down plane for every collapsed element that `is()` a SubProcess, so a breadcrumb or drill-down guard that compares `$type` breaks on collapsed Transactions and Ad-hoc Sub-Processes.
+
+**Correct approach**: Recurse on `Array.isArray(element.flowElements)`, or use `is(element, 'bpmn:SubProcess')` from `bpmnlint-utils` / bpmn-js `ModelUtil`, which follow inheritance.
+
+---
+
 ## BPMN `currentXml` vs `updateCurrentData`
 
 **Mistake**: On XML-changed, calling only `updateCurrentData(xml)`.

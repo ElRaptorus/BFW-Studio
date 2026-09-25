@@ -29,7 +29,7 @@ An always-on structural integrity scanner that detects invisible elements, dangl
 
 See [architecture](./docs/architecture/bpmn-sanitizer.md).
 
-## User Task Form Builder
+### User Task Form Builder
 
 A standalone GUI editor for designing User Task forms — replacing the traditional click-heavy inline property panels.
 

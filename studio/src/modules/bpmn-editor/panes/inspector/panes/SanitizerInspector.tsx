@@ -133,6 +133,7 @@ export function SanitizerInspector(props: SanitizerInspectorProps): React.JSX.El
             type="button"
             data-test--sanitizer-fix-all-btn
             onClick={onFixAll}
+            disabled={!findings.some((issue) => !issue.manualFixOnly)}
             title="Fix all issues"
           >
             <i className="ph ph-broom" />
@@ -202,15 +203,17 @@ export function SanitizerInspector(props: SanitizerInspectorProps): React.JSX.El
                           className={`sanitizer-issue__severity-icon sanitizer-issue__severity-icon${SEVERITY_CSS_SUFFIX[issue.severity] ?? ''} ${SEVERITY_ICONS[issue.severity] ?? ''}`}
                         />
                         <span className="sanitizer-issue__message">{desc?.message(issue) ?? issue.label}</span>
-                        <button
-                          className="sanitizer-issue__fix-btn"
-                          type="button"
-                          data-test--sanitizer-fix-issue-btn={issue.elementId}
-                          onClick={(e) => onFixIssue(issue, e)}
-                          title="Fix this issue"
-                        >
-                          <i className="ph-bold ph-broom" />
-                        </button>
+                        {!issue.manualFixOnly && (
+                          <button
+                            className="sanitizer-issue__fix-btn"
+                            type="button"
+                            data-test--sanitizer-fix-issue-btn={issue.elementId}
+                            onClick={(e) => onFixIssue(issue, e)}
+                            title="Fix this issue"
+                          >
+                            <i className="ph-bold ph-broom" />
+                          </button>
+                        )}
                       </div>
                       {isExpanded && desc && (
                         <div className="sanitizer-issue__detail">

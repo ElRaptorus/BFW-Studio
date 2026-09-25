@@ -15,7 +15,7 @@ export const issueDescriptions: Record<SanitizerIssueTypeDiscriminant, Sanitizab
     message: (issue) => `Poltergeist: ${nameOrId(issue)}`,
     why: 'This is a Poltergeist — a ghost element that haunts the process definition. It has no diagram coordinates, so it is completely invisible in the editor, yet the engine will still execute it. If it is connected to visible elements via invisible sequence flows, it creates hidden execution paths that cause unpredictable behavior in production.',
     suggestion:
-      'Remove the ghost element from the XML. This will also clean up any connected invisible sequence flows.',
+      'Remove the ghost element from the XML. This also removes its lane references, connected sequence flows, attached boundary events, and data associations to it. Inside a collapsed sub-process there is no automatic fix: expand the sub-process or lay out its children on the drill-down plane.',
   },
 
   'shapeless-participant': {
@@ -28,7 +28,7 @@ export const issueDescriptions: Record<SanitizerIssueTypeDiscriminant, Sanitizab
     message: (issue) => `Poltergeist wire: ${issue.elementId}`,
     why: 'This invisible sequence flow is the arm of a Poltergeist — it connects a ghost element to the visible process flow without appearing on the diagram. The engine follows it silently, creating a hidden execution branch.',
     suggestion:
-      'Remove the invisible sequence flow. This typically happens alongside removing the ghost element it connects.',
+      'Remove the invisible sequence flow. This typically happens alongside removing the ghost element it connects. Inside a collapsed sub-process there is no automatic fix: expand the sub-process or lay out its children on the drill-down plane.',
   },
 
   'shapeless-message-flow': {

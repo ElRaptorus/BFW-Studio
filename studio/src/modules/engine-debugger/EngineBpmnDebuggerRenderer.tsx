@@ -30,6 +30,7 @@ import {
   resolveHealthState,
 } from '#modules/engine-core';
 import type { EngineConnectionManager } from '#modules/engine-core';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 import React, { useEffect, useReducer, useRef, useState } from 'react';
 
@@ -62,7 +63,7 @@ function buildBreadcrumbChain(adapter: BpmnViewerComponentAdapter): BreadcrumbEn
     const name = businessObject.name || businessObject.id;
     const type: string = businessObject.$type;
 
-    if (type === 'bpmn:SubProcess') {
+    if (is(businessObject, 'bpmn:SubProcess')) {
       chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: businessObject.id });
     } else if (type === 'bpmn:Process') {
       chain.unshift({ id: businessObject.id, label: name, targetSubprocessId: null });
@@ -87,7 +88,7 @@ function navigateToPlane(adapter: BpmnViewerComponentAdapter, targetSubprocessId
 
   const roots = canvas.getRootElements();
   const mainRoot = roots.find(
-    (root: any) => root.businessObject != null && root.businessObject.$type !== 'bpmn:SubProcess',
+    (root: any) => root.businessObject != null && !is(root.businessObject, 'bpmn:SubProcess'),
   );
   if (mainRoot != null) {
     canvas.setRootElement(mainRoot);
@@ -106,7 +107,7 @@ function DebuggerSubprocessBreadcrumbBar(props: { adapter: BpmnViewerComponentAd
   }, [adapter]);
 
   const rootElement = adapter.getCanvas().getRootElement();
-  if (rootElement?.businessObject?.$type !== 'bpmn:SubProcess') {
+  if (rootElement?.businessObject == null || !is(rootElement.businessObject, 'bpmn:SubProcess')) {
     return null;
   }
 

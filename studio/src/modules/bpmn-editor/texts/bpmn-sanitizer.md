@@ -16,8 +16,8 @@ The Sanitizer runs automatically after every model change. When issues are detec
 
 Elements that exist in the BPMN XML but have no diagram coordinates. They are completely invisible on the canvas yet still participate in the process flow. This is the most dangerous category — a shapeless task connected via sequence flow will execute at runtime without ever being visible to the modeler.
 
-- **Shapeless Flow Node** — A task, event, or gateway without diagram coordinates. It exists in the XML, is wired into the flow, but cannot be seen.
-- **Shapeless Participant** — A pool or lane defined in the collaboration but missing from the diagram.
+- **Shapeless Flow Node** — A task, event, gateway, data object reference, or data store reference without diagram coordinates. It exists in the XML, is wired into the flow, but cannot be seen.
+- **Shapeless Participant** — A pool defined in the collaboration but missing from the diagram.
 - **Shapeless Sequence Flow** — An invisible wire connecting two elements. The connection exists in the process flow but has no visual representation.
 - **Shapeless Message Flow** — An invisible cross-pool message wire. The message flow exists in the collaboration but cannot be seen.
 
@@ -56,9 +56,10 @@ Top-level definitions (Messages, Errors, Signals, Escalations) that are not refe
 
 ## Fixing Issues
 
-Every detected issue can be fixed individually (Broom icon per row) or in bulk ("Fix All" button). All fixes are executed as a single operation on the command stack and can be undone with **Ctrl+Z**.
+Almost every detected issue can be fixed individually (Broom icon per row) or in bulk ("Fix All" button). All fixes are executed as a single operation on the command stack and can be undone with **Ctrl+Z**.
 
-- **Shapeless elements** — Removed from the process/collaboration XML.
-- **Dangling references** — The broken reference is cleared from the event definition.
+- **Shapeless elements** — Removed from the process/collaboration XML. Removing a flow node also removes its lane references, connected sequence flows, attached boundary events, and data associations to it.
+- **Shapeless elements inside a collapsed sub-process** — No automatic fix (no Broom icon, skipped by "Fix All"), because deleting them would destroy content that only lacks a layout. Expand the sub-process or lay out its children on the drill-down plane.
+- **Dangling references** — The broken reference is already empty in the loaded model; the stale warning is dismissed.
 - **Empty containers** — The empty wrapper element is removed. If the parent also becomes empty, it is cleaned up too.
 - **Unreferenced globals** — The unused definition is removed from `rootElements`.

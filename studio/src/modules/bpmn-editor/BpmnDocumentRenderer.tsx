@@ -18,6 +18,7 @@ import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/diagram-js.css';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 import 'diagram-js-minimap/assets/diagram-js-minimap.css';
 
 import React from 'react';
@@ -345,7 +346,7 @@ export default class BpmnDocumentRenderer extends React.Component<EditorDocument
 
     const roots = canvas.getRootElements();
     const mainRoot = roots.find(
-      (root: any) => root.businessObject != null && root.businessObject.$type !== 'bpmn:SubProcess',
+      (root: any) => root.businessObject != null && !is(root.businessObject, 'bpmn:SubProcess'),
     );
     if (mainRoot != null) {
       canvas.setRootElement(mainRoot);

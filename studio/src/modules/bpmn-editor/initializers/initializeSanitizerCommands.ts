@@ -71,7 +71,7 @@ export function initializeSanitizerCommands(bifrost: Bifrost): void {
       return;
     }
 
-    const findings = bridge.getFindings();
+    const findings = bridge.getFindings().filter((issue) => !issue.manualFixOnly);
     if (findings.length === 0) {
       return;
     }
@@ -119,7 +119,7 @@ export function initializeSanitizerCommands(bifrost: Bifrost): void {
       return false;
     }
     const bridge = getSanitizerBridge(bifrost);
-    return bridge != null && bridge.getFindingsCount() > 0;
+    return bridge != null && bridge.getFindings().some((issue) => !issue.manualFixOnly);
   };
 
   bifrost.commands.register('bpmn.sanitizer.fixAll', fixAll, {
@@ -131,6 +131,9 @@ export function initializeSanitizerCommands(bifrost: Bifrost): void {
   bifrost.commands.register(
     'bpmn.sanitizer.fixIssue',
     (issue: SanitizableIssue) => {
+      if (issue.manualFixOnly) {
+        return;
+      }
       if (issue.category === 'dangling-reference') {
         const bridge = getSanitizerBridge(bifrost);
         bridge?.dismissDanglingRefWarnings([issue.elementId]);

@@ -86,4 +86,6 @@ export type SanitizableIssue = SanitizerIssueType & {
   elementId: string;
   elementName?: string;
   elementType: string;
+  /** No automatic fix exists; the issue is shown but has no quick-fix and Fix All skips it. */
+  manualFixOnly?: true;
 };

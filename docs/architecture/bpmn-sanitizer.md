@@ -93,17 +93,19 @@ Category-level labels and descriptions are also defined here, sorted by severity
 analyzeSanitizableIssues(definitions, elementRegistry?, parseWarnings?): SanitizableIssue[]
 ```
 
-Pure function on the `bpmn:Definitions` moddle tree. Detection algorithms:
+Pure function on the `bpmn:Definitions` moddle tree. `collectSemanticElements` first gathers every element the definitions own by walking moddle containment only: each `$descriptor` property that is not `isReference`, skipping `definitions.diagrams`. This covers every element type and subtype moddle knows (Transaction and Ad-hoc Sub-Process children, child lane sets, process-level data inputs/outputs, groups, artifacts, extension payloads) without per-type code, and it excludes elements that were removed but are still reachable through stale references. Zombie, unreferenced-global, dangling-reference, and empty-container detection all read from this set. Detection algorithms:
 
-1. **Shapeless elements (Poltergeists)** — Compare semantic elements against DI shapes/edges in `definitions.diagrams[0].plane.planeElement`. Live modeler path checks `elementRegistry.get(id)` instead. Covers flow nodes, participants, sequence flows, message flows. Recurses into subprocesses at arbitrary nesting depth.
+1. **Shapeless elements (Poltergeists)** — Compare semantic elements against DI shapes/edges in `definitions.diagrams[0].plane.planeElement`. Live modeler path checks `elementRegistry.get(id)` instead. Covers flow nodes (including Data Object and Data Store References), participants, sequence flows, message flows. Recurses into every element with `flowElements` (Sub-Process, Transaction, Ad-hoc Sub-Process) at arbitrary nesting depth.
 
-2. **Zombie elements** — The inverse of shapeless detection. Walks all DI plane elements and checks whether each one has a resolved `bpmnElement` reference. When bpmn-moddle encounters a `bpmnElement` attribute pointing to a non-existent semantic element, it drops the reference to `undefined` and emits a parse warning. The detector flags any shape/edge where `bpmnElement` is falsy. The issue's `elementId` is the DI element's own `id` (since the semantic reference is unresolved). Also catches any DI element whose resolved `bpmnElement.id` is not in the `collectSemanticElementIds` set (belt-and-suspenders check).
+   Children of a **collapsed** sub-process (live path: registry shape has `collapsed: true`; XML path: its BPMNShape lacks `isExpanded="true"`) live on the drill-down plane. When they are shapeless, the issue carries `manualFixOnly: true` — at any depth below the collapsed container. Deleting them would silently empty the drill-down, so the user must add the missing DI or expand the sub-process.
 
-3. **Unreferenced globals** — DFS-walk the full tree collecting all `*Ref` targets (messageRef, errorRef, signalRef, escalationRef). Report any global `bpmn:Message/Error/Signal/Escalation` from `rootElements` with zero consumers.
+2. **Zombie elements** — The inverse of shapeless detection. Walks all DI plane elements and flags any shape/edge whose `bpmnElement` is unresolved (bpmn-moddle drops a reference to a non-existent element to `undefined`) or whose resolved `bpmnElement.id` is not an ID of a semantic element. The issue's `elementId` is the DI element's own `id`.
 
-3. **Dangling references** — Extracted from `bpmn-moddle` parse warnings (`unresolved reference <...>`). When moddle encounters a `messageRef="Message_DELETED"` targeting a non-existent element, it drops the reference and emits a warning. The analyzer walks up the `$parent` chain from the event definition to find the owning BPMN element.
+3. **Unreferenced globals** — Collect `messageRef`, `errorRef`, `signalRef`, and `escalationRef` targets of semantic elements. Report any global `bpmn:Message/Error/Signal/Escalation` from `rootElements` with zero consumers.
 
-4. **Empty containers** — Flag `extensionElements` where `values` is undefined or empty. Also detect `bfw:Properties` with no `linterRulesetScores`.
+4. **Dangling references** — Extracted from `bpmn-moddle` parse warnings (`unresolved reference <...>`). A warning is skipped once its element is no longer semantic or the reference property is set again, because the warnings are only captured at import. `findReferenceOwner` (shared with `SanitizerBridge.dismissDanglingRefWarnings`) reports the issue against the referencing element itself (Send/Receive Task) or, for an event definition, the event that owns it.
+
+5. **Empty containers** — Flag `extensionElements` where `values` is undefined or empty. Also detect `bfw:Properties` with no `linterRulesetScores`.
 
 ### Fixer (`BpmnSanitizerFixer.ts`)
 
@@ -111,15 +113,15 @@ Pure function on the `bpmn:Definitions` moddle tree. Detection algorithms:
 buildSanitizerFixCommands(issues, definitions, elementRegistry): CmdHelperDescriptor
 ```
 
-Builds `CmdHelper` commands wrapped in `executeMultipleCommands` for a single undo step:
+Builds `CmdHelper` commands wrapped in `executeMultipleCommands` for a single undo step. Issues with `manualFixOnly` produce no commands. A shared `removedElements` set deduplicates across the batch: an element already removed by an earlier cascade is not removed again, and list updates on an already-removed flow endpoint are skipped. After all issues are processed, `removeConnectionsToRemovedElements` removes connections whose source or target is in that set (bpmn-js cannot import a connection with an undrawn end): first collaboration `messageFlows`, then `bpmn:Association`s in every `artifacts` list (processes, collaborations, nested sub-processes), so an association attached to a removed message flow is caught too. Text annotations and groups stay. Then `removeDiOfRemovedElements` removes every plane's `planeElement` whose `bpmnElement` is in that set, so dependents that had DI (a drawn boundary on a shapeless host, the edge of a removed flow or data association) do not become zombies.
 
 | Issue Category | Fix Strategy |
 |----------------|-------------|
 | Unreferenced global | `removeElementsFromList` from `definitions.rootElements` |
-| Shapeless flow node | `removeElementsFromList` from the immediate parent container's `flowElements` — `findDirectContainer` recurses into nested subprocesses to locate the actual parent |
-| Shapeless participant | `removeElementsFromList` from collaboration `participants` |
+| Shapeless flow node | `removeFlowNodeWithDependents` cascades, in order: lane `flowNodeRef` entries (every enclosing scope's lane sets, child lanes included), incoming/outgoing sequence flows, attached boundary events (recursively), data input/output associations pointing at a data reference, then the node from the immediate parent's `flowElements` — `findDirectContainer` recurses into every nested element with `flowElements` (Sub-Process, Transaction, Ad-hoc Sub-Process) to locate it |
+| Shapeless participant | `removeElementsFromList` from collaboration `participants`; records the participant in `removedElements` so message flows to the pool are removed by the connection pass |
 | Shapeless sequence flow | Clean up `sourceRef.outgoing` / `targetRef.incoming`, then remove from parent container's `flowElements` (also subprocess-aware) |
-| Shapeless message flow | `removeElementsFromList` from collaboration `messageFlows` |
+| Shapeless message flow | `removeElementsFromList` from collaboration `messageFlows`; skipped if already removed as a dependent, otherwise recorded in `removedElements` |
 | Zombie shape / edge | `removeElementsFromList` from `diagram.plane.planeElement` — finds the DI element by its own `id` (the semantic `bpmnElement` is unresolved) |
 | Dangling reference | Dismissed via `SanitizerBridge.dismissDanglingRefWarnings()` — the ref is already `undefined` in the moddle tree (bpmn-moddle drops unresolved refs on parse); clearing the stale parse warning is sufficient |
 | Empty extension elements | `updateBusinessObject` to remove `extensionElements` |
@@ -188,7 +190,7 @@ inspector/editor/sanitizer → metadata.action: 'show-sanitizer' → view: 'sani
 
 - **Header:** "Structural Issues" + Help icon (`ph ph-question`, opens `bpmn/sanitizer` help text) + "Fix All" button
 - **Grouped by category**, sorted by severity (error first)
-- **Per-issue rows:** severity icon + message text + wrench quick-fix button
+- **Per-issue rows:** severity icon + message text + wrench quick-fix button (hidden for `manualFixOnly` issues)
 - **Expandable detail:** `why` + `suggestion` text on click
 - **Empty state:** Green check icon + "No issues found. The BPMN is clean." (replaces entire content area when zero findings)
 
@@ -198,13 +200,13 @@ Subscribes to findings via polling `SanitizerBridge.getFindings()` every 500ms (
 
 ## Commands
 
-Registered in `studio/src/modules/bpmn-core/sanitizer/initializeSanitizerCommands.ts`:
+Registered in `studio/src/modules/bpmn-editor/initializers/initializeSanitizerCommands.ts`:
 
 | Command ID | In search? | Description |
 |------------|------------|-------------|
 | `bpmn.sanitizer.showInInspector` | Yes: `['BPMN: Show sanitizer report', 'BPMN: Show structural issues']` | Opens bottom inspector, navigates to Sanitizer section |
-| `bpmn.sanitizer.fixAll` | Yes: `['BPMN: Fix all structural issues', 'BPMN: Sanitize diagram']` | Confirmation dialog → batch fix |
-| `bpmn.sanitizer.fixIssue` | No (internal) | Fix single issue, arg: `SanitizableIssue` |
+| `bpmn.sanitizer.fixAll` | Yes: `['BPMN: Fix all structural issues', 'BPMN: Sanitize diagram']` | Confirmation dialog → batch fix of every issue without `manualFixOnly`; disabled when only such issues remain |
+| `bpmn.sanitizer.fixIssue` | No (internal) | Fix single issue, arg: `SanitizableIssue`; no-op for `manualFixOnly` |
 
 ---
 
@@ -250,12 +252,11 @@ Loads the same fixture, detects issues, then runs `buildSanitizerFixCommands` an
 | `bpmn-core/sanitizer/BpmnSanitizerFixer.ts` | Fix command builder |
 | `bpmn-core/sanitizer/SanitizerBridge.ts` | Always-on diagram-js module |
 | `bpmn-core/sanitizer/SanitizerBadge.tsx` | Bottom-left canvas badge |
-| `bpmn-core/sanitizer/initializeSanitizerCommands.ts` | Command + command search registration |
 | `bpmn-core/sanitizer/sanitizer.scss` | Badge + inspector styles |
 | `bpmn-core/sanitizer/index.ts` | Barrel export |
 | `bpmn-editor/panes/inspector/panes/SanitizerInspector.tsx` | Inspector section component |
 | `bpmn-editor/texts/bpmn-sanitizer.md` | Help text explaining the sanitizer and listing all issue types |
-| `bpmn-editor/initializers/initializeSanitizerCommands.ts` | Command + command search registration (moved from bpmn-core) |
+| `bpmn-editor/initializers/initializeSanitizerCommands.ts` | Command + command search registration |
 
 ---
 

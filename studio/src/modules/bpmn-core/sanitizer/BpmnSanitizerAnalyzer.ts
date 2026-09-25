@@ -28,6 +28,8 @@ const FLOW_NODE_BASE_TYPES = new Set([
   'bpmn:BusinessRuleTask',
   'bpmn:ScriptTask',
   'bpmn:SubProcess',
+  'bpmn:Transaction',
+  'bpmn:AdHocSubProcess',
   'bpmn:CallActivity',
   'bpmn:ExclusiveGateway',
   'bpmn:ParallelGateway',
@@ -39,6 +41,8 @@ const FLOW_NODE_BASE_TYPES = new Set([
   'bpmn:IntermediateCatchEvent',
   'bpmn:IntermediateThrowEvent',
   'bpmn:BoundaryEvent',
+  'bpmn:DataObjectReference',
+  'bpmn:DataStoreReference',
 ]);
 
 export function analyzeSanitizableIssues(
@@ -50,16 +54,16 @@ export function analyzeSanitizableIssues(
 
   const diShapeIds = collectDiShapeIds(definitions);
   const diEdgeIds = collectDiEdgeIds(definitions);
-  const referencedGlobalIds = collectReferencedGlobalIds(definitions);
+  const semanticElements = collectSemanticElements(definitions);
+  const semanticIds = new Set([...semanticElements].map((element) => element.id).filter(Boolean));
+  const referencedGlobalIds = collectReferencedGlobalIds(semanticElements);
   const globalDefinitionsById = collectGlobalDefinitions(definitions);
-
-  const semanticIds = collectSemanticElementIds(definitions);
 
   detectShapelessElements(definitions, diShapeIds, diEdgeIds, elementRegistry, issues);
   detectZombieElements(definitions, semanticIds, issues);
   detectUnreferencedGlobals(globalDefinitionsById, referencedGlobalIds, issues);
-  detectDanglingReferences(definitions, parseWarnings ?? [], issues);
-  detectEmptyContainers(definitions, issues);
+  detectDanglingReferences(semanticElements, parseWarnings ?? [], issues);
+  detectEmptyContainers(semanticElements, issues);
 
   return issues;
 }
@@ -121,48 +125,16 @@ function collectGlobalDefinitions(definitions: any): Map<string, any> {
   return globals;
 }
 
-function collectReferencedGlobalIds(definitions: any): Set<string> {
+function collectReferencedGlobalIds(semanticElements: Set<any>): Set<string> {
   const refs = new Set<string>();
-  const visited = new Set<any>();
-  walkForRefs(definitions, refs, visited);
-  return refs;
-}
-
-function walkForRefs(node: any, refs: Set<string>, visited: Set<any>): void {
-  if (node == null || typeof node !== 'object') {
-    return;
-  }
-  if (visited.has(node)) {
-    return;
-  }
-  visited.add(node);
-
-  if (node.messageRef?.id) {
-    refs.add(node.messageRef.id);
-  }
-  if (node.errorRef?.id) {
-    refs.add(node.errorRef.id);
-  }
-  if (node.signalRef?.id) {
-    refs.add(node.signalRef.id);
-  }
-  if (node.escalationRef?.id) {
-    refs.add(node.escalationRef.id);
-  }
-
-  for (const key of Object.keys(node)) {
-    if (key.startsWith('$')) {
-      continue;
-    }
-    const value = node[key];
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        walkForRefs(item, refs, visited);
+  for (const element of semanticElements) {
+    for (const property of ['messageRef', 'errorRef', 'signalRef', 'escalationRef']) {
+      if (element[property]?.id) {
+        refs.add(element[property].id);
       }
-    } else if (value != null && typeof value === 'object') {
-      walkForRefs(value, refs, visited);
     }
   }
+  return refs;
 }
 
 function hasShape(id: string, diShapeIds: Set<string>, elementRegistry?: ElementRegistryLike): boolean {
@@ -191,9 +163,13 @@ function detectShapelessElements(
     return;
   }
 
+  const collapsedSubProcessIds = collectCollapsedSubProcessIds(definitions);
+  const isCollapsed = (element: any): boolean =>
+    elementRegistry ? elementRegistry.get(element.id)?.collapsed === true : collapsedSubProcessIds.has(element.id);
+
   for (const rootEl of rootElements) {
     if (rootEl.$type === 'bpmn:Process') {
-      detectShapelessFlowElements(rootEl, diShapeIds, diEdgeIds, elementRegistry, issues);
+      detectShapelessFlowElements(rootEl, false, isCollapsed, diShapeIds, diEdgeIds, elementRegistry, issues);
     }
 
     if (rootEl.$type === 'bpmn:Collaboration') {
@@ -234,17 +210,40 @@ function detectShapelessElements(
   }
 }
 
+/** Sub-process-like elements whose DI shape is collapsed (bpmn-js treats a missing `isExpanded` as collapsed). */
+function collectCollapsedSubProcessIds(definitions: any): Set<string> {
+  const ids = new Set<string>();
+  for (const diagram of definitions.diagrams ?? []) {
+    for (const planeElement of diagram.plane?.planeElement ?? []) {
+      const element = planeElement.bpmnElement;
+      if (
+        planeElement.$type === 'bpmndi:BPMNShape' &&
+        element?.id &&
+        Array.isArray(element.flowElements) &&
+        planeElement.isExpanded !== true
+      ) {
+        ids.add(element.id);
+      }
+    }
+  }
+  return ids;
+}
+
 function detectShapelessFlowElements(
-  process: any,
+  container: any,
+  insideCollapsedContainer: boolean,
+  isCollapsed: (element: any) => boolean,
   diShapeIds: Set<string>,
   diEdgeIds: Set<string>,
   elementRegistry: ElementRegistryLike | undefined,
   issues: SanitizableIssue[],
 ): void {
-  const flowElements = process.flowElements;
+  const flowElements = container.flowElements;
   if (!Array.isArray(flowElements)) {
     return;
   }
+  // Deleting the children of a collapsed sub-process would destroy content that only lacks a drill-down layout.
+  const manualFixOnly = insideCollapsedContainer ? { manualFixOnly: true as const } : {};
 
   for (const el of flowElements) {
     if (!el.id) {
@@ -261,6 +260,7 @@ function detectShapelessFlowElements(
           elementId: el.id,
           elementName: el.name ?? undefined,
           elementType: 'bpmn:SequenceFlow',
+          ...manualFixOnly,
         });
       }
       continue;
@@ -276,121 +276,51 @@ function detectShapelessFlowElements(
           elementId: el.id,
           elementName: el.name ?? undefined,
           elementType: el.$type,
+          ...manualFixOnly,
         });
       }
     }
 
-    if (el.$type === 'bpmn:SubProcess' && Array.isArray(el.flowElements)) {
-      detectShapelessFlowElements(el, diShapeIds, diEdgeIds, elementRegistry, issues);
+    if (Array.isArray(el.flowElements)) {
+      detectShapelessFlowElements(
+        el,
+        insideCollapsedContainer || isCollapsed(el),
+        isCollapsed,
+        diShapeIds,
+        diEdgeIds,
+        elementRegistry,
+        issues,
+      );
     }
   }
 }
 
-function collectSemanticElementIds(definitions: any): Set<string> {
-  const ids = new Set<string>();
-  const rootElements = definitions.rootElements;
-  if (!Array.isArray(rootElements)) {
-    return ids;
-  }
-
-  if (definitions.id) {
-    ids.add(definitions.id);
-  }
-
-  for (const rootEl of rootElements) {
-    if (rootEl.id) {
-      ids.add(rootEl.id);
+/**
+ * Every element owned by the definitions, found by walking moddle containment
+ * properties only. References are skipped so stale references to removed
+ * elements do not revive them; DI is skipped because it is not semantic.
+ */
+function collectSemanticElements(definitions: any): Set<any> {
+  const elements = new Set<any>();
+  const visit = (node: any): void => {
+    if (node == null || typeof node !== 'object' || elements.has(node)) {
+      return;
     }
-
-    if (rootEl.$type === 'bpmn:Process') {
-      collectFlowElementIds(rootEl, ids);
-    }
-
-    if (rootEl.$type === 'bpmn:Collaboration') {
-      for (const participant of rootEl.participants ?? []) {
-        if (participant.id) {
-          ids.add(participant.id);
-        }
+    elements.add(node);
+    for (const property of node.$descriptor?.properties ?? []) {
+      if (property.isReference || (node === definitions && property.name === 'diagrams')) {
+        continue;
       }
-      for (const messageFlow of rootEl.messageFlows ?? []) {
-        if (messageFlow.id) {
-          ids.add(messageFlow.id);
-        }
-      }
-      for (const annotation of rootEl.textAnnotations ?? []) {
-        if (annotation.id) {
-          ids.add(annotation.id);
-        }
-      }
-      for (const association of rootEl.associations ?? []) {
-        if (association.id) {
-          ids.add(association.id);
-        }
-      }
-      for (const artifact of rootEl.artifacts ?? []) {
-        if (artifact.id) {
-          ids.add(artifact.id);
-        }
+      const value = node[property.name];
+      if (Array.isArray(value)) {
+        value.forEach(visit);
+      } else if (value != null && typeof value === 'object' && '$type' in value) {
+        visit(value);
       }
     }
-  }
-  return ids;
-}
-
-function collectFlowElementIds(container: any, ids: Set<string>): void {
-  const flowElements = container.flowElements;
-  if (Array.isArray(flowElements)) {
-    for (const el of flowElements) {
-      if (el.id) {
-        ids.add(el.id);
-      }
-      collectActivityChildIds(el, ids);
-      if (el.$type === 'bpmn:SubProcess') {
-        collectFlowElementIds(el, ids);
-      }
-    }
-  }
-
-  for (const artifact of container.artifacts ?? []) {
-    if (artifact.id) {
-      ids.add(artifact.id);
-    }
-  }
-
-  for (const lane of container.laneSets ?? []) {
-    if (lane.id) {
-      ids.add(lane.id);
-    }
-    collectLaneIds(lane, ids);
-  }
-}
-
-function collectActivityChildIds(activity: any, ids: Set<string>): void {
-  const nestedArrays = ['dataInputAssociations', 'dataOutputAssociations', 'ioSpecification'];
-
-  for (const prop of nestedArrays) {
-    const children = activity[prop];
-    if (Array.isArray(children)) {
-      for (const child of children) {
-        if (child.id) {
-          ids.add(child.id);
-        }
-      }
-    } else if (children?.id) {
-      ids.add(children.id);
-    }
-  }
-}
-
-function collectLaneIds(laneSet: any, ids: Set<string>): void {
-  for (const lane of laneSet.lanes ?? []) {
-    if (lane.id) {
-      ids.add(lane.id);
-    }
-    for (const childSet of lane.childLaneSet ?? []) {
-      collectLaneIds(childSet, ids);
-    }
-  }
+  };
+  visit(definitions);
+  return elements;
 }
 
 function detectZombieElements(definitions: any, semanticIds: Set<string>, issues: SanitizableIssue[]): void {
@@ -478,7 +408,7 @@ const PROPERTY_TO_ISSUE_TYPE: Record<string, SanitizableIssue['type']> = {
 };
 
 function detectDanglingReferences(
-  _definitions: any,
+  semanticElements: Set<any>,
   parseWarnings: ModdleParseWarning[],
   issues: SanitizableIssue[],
 ): void {
@@ -495,24 +425,30 @@ function detectDanglingReferences(
       continue;
     }
 
-    const eventDef = warning.element;
-    const ownerElement = findOwnerElement(eventDef);
     const refProp = warning.property.replace('bpmn:', '');
+    const referencingElement = warning.element;
+    // Import-time warnings go stale once the reference is set again or the element is removed.
+    if (referencingElement[refProp] != null || !semanticElements.has(referencingElement)) {
+      continue;
+    }
+
+    const ownerElement = findReferenceOwner(referencingElement);
 
     issues.push({
       type: issueType,
       category: 'dangling-reference',
       severity: 'warning',
-      label: `Dangling ${refProp} on ${ownerElement?.name ?? ownerElement?.id ?? eventDef?.id ?? 'unknown'}`,
-      elementId: ownerElement?.id ?? eventDef?.id ?? 'unknown',
+      label: `Dangling ${refProp} on ${ownerElement?.name ?? ownerElement?.id ?? referencingElement.id ?? 'unknown'}`,
+      elementId: ownerElement?.id ?? referencingElement.id ?? 'unknown',
       elementName: ownerElement?.name ?? undefined,
       elementType: ownerElement?.$type ?? 'unknown',
     } as SanitizableIssue);
   }
 }
 
-function findOwnerElement(node: any): any {
-  let current = node.$parent;
+/** The flow element a reference belongs to: the element itself, or the event owning an event definition. */
+export function findReferenceOwner(referencingElement: any): any {
+  let current = referencingElement;
   while (current != null) {
     if (current.id && current.$type && !current.$type.endsWith('EventDefinition')) {
       return current;
@@ -522,21 +458,11 @@ function findOwnerElement(node: any): any {
   return null;
 }
 
-function detectEmptyContainers(definitions: any, issues: SanitizableIssue[]): void {
-  const visited = new Set<any>();
-  walkForEmptyContainers(definitions, visited, issues);
-}
-
-function walkForEmptyContainers(node: any, visited: Set<any>, issues: SanitizableIssue[]): void {
-  if (node == null || typeof node !== 'object') {
-    return;
-  }
-  if (visited.has(node)) {
-    return;
-  }
-  visited.add(node);
-
-  if (node.$type && node.extensionElements) {
+function detectEmptyContainers(semanticElements: Set<any>, issues: SanitizableIssue[]): void {
+  for (const node of semanticElements) {
+    if (!node.extensionElements) {
+      continue;
+    }
     const extValues = node.extensionElements.values;
     const isEmpty = !Array.isArray(extValues) || extValues.length === 0;
 
@@ -550,38 +476,25 @@ function walkForEmptyContainers(node: any, visited: Set<any>, issues: Sanitizabl
         elementName: node.name ?? undefined,
         elementType: node.$type,
       });
-    } else {
-      for (const val of extValues) {
-        if (val.$type === 'bfw:Properties') {
-          const hasScores = Array.isArray(val.linterRulesetScores) && val.linterRulesetScores.length > 0;
-          const hasProperties = Array.isArray(val.values) && val.values.length > 0;
-          if (!hasScores && !hasProperties) {
-            issues.push({
-              type: 'empty-bfw-properties',
-              category: 'empty-container',
-              severity: 'warning',
-              label: `Empty bfw:Properties on ${node.name ?? node.id ?? 'element'}`,
-              elementId: node.id ?? 'unknown',
-              elementName: node.name ?? undefined,
-              elementType: node.$type,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  for (const key of Object.keys(node)) {
-    if (key.startsWith('$') || key === 'extensionElements') {
       continue;
     }
-    const value = node[key];
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        walkForEmptyContainers(item, visited, issues);
+
+    for (const val of extValues) {
+      if (val.$type === 'bfw:Properties') {
+        const hasScores = Array.isArray(val.linterRulesetScores) && val.linterRulesetScores.length > 0;
+        const hasProperties = Array.isArray(val.values) && val.values.length > 0;
+        if (!hasScores && !hasProperties) {
+          issues.push({
+            type: 'empty-bfw-properties',
+            category: 'empty-container',
+            severity: 'warning',
+            label: `Empty bfw:Properties on ${node.name ?? node.id ?? 'element'}`,
+            elementId: node.id ?? 'unknown',
+            elementName: node.name ?? undefined,
+            elementType: node.$type,
+          });
+        }
       }
-    } else if (value != null && typeof value === 'object') {
-      walkForEmptyContainers(value, visited, issues);
     }
   }
 }

@@ -90,8 +90,13 @@
   cursor: pointer;
   transition: background 0.1s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--theme-list-item-hover-bg, rgba(128, 128, 128, 0.1));
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 
   i {
