@@ -373,6 +373,26 @@
   font-style: italic;
 }
 
+// Path tips on tree rows: one horizontal line, not the default 200px wrap.
+.tooltip.tooltip--tree-entry {
+  --bs-tooltip-max-width: none;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  pointer-events: none;
+
+  .tooltip-arrow {
+    display: none;
+  }
+
+  .tooltip-inner {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+    text-align: start;
+  }
+}
+
 .pane__content--drop-target {
   background: var(--color-list-highlight, rgba(0, 120, 212, 0.1));
   outline: 2px dashed var(--color-focus-border, rgba(0, 120, 212, 0.5));
