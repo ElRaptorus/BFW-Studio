@@ -112,7 +112,7 @@
     "dmn-js": "^17.11.1",
     "dompurify": "^3.4.15",
     "electron": "44.4.5",
-    "electron-builder": "27.0.0-alpha.8",
+    "electron-builder": "27.0.0-alpha.9",
     "electron-chromedriver": "44.4.5",
     "electron-log": "5.4.4",
     "eslint": "^10.11.0",
