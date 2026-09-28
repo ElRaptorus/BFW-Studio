@@ -11,3 +11,5 @@ A `Data Output Association` is the line that makes a step write to a [Data Objec
 By default the step's full output is written, **replacing** the Data Object's previous value. To write only part of the output, or to reshape it first, add a [Transformation](help://bpmn/properties/data_output_association_transformation).
 
 If the target Data Object has a [Value Contract](help://bpmn/properties/data_object), a write that does not fit it is rejected and the writing step fails.
+
+An association to a Data Store is valid. The Engine ignores it at runtime: there is no write and no `dataObjects` binding. The Bifrost Forge World Fabricator surveys it.

@@ -6,6 +6,7 @@ import type {
   DataContract,
   DataObject,
   DataObjectReference,
+  DataStoreReference,
   ErrorDefinition,
   EscalationDefinition,
   EventDefinition,
@@ -76,7 +77,7 @@ function convertProcess(raw: Record<string, unknown>): BpmnProcess {
     dataObjects: asRecordArray(raw.dataObjects).map(convertDataObject),
     dataObjectReferences: asRecordArray(raw.dataObjectReferences).map(convertDataObjectReference),
     dataStores: [],
-    dataStoreReferences: [],
+    dataStoreReferences: asRecordArray(raw.dataStoreReferences).map(convertDataStoreReference),
     associations: asRecordArray(raw.associations).map(convertAssociation),
     extensions: asRecordArray(raw.extensions).map(convertExtension),
     linterScores: asRecordArray(raw.linterScores).map(convertLinterScore),
@@ -242,6 +243,7 @@ function convertTypeData(flowNodeType: FlowNodeType, raw: Record<string, unknown
         sequenceFlows: asRecordArray(raw.sequenceFlows).map(convertSequenceFlow),
         dataObjects: asRecordArray(raw.dataObjects).map(convertDataObject),
         dataObjectReferences: asRecordArray(raw.dataObjectReferences).map(convertDataObjectReference),
+        dataStoreReferences: asRecordArray(raw.dataStoreReferences).map(convertDataStoreReference),
       };
     case FlowNodeType.ExclusiveGateway:
       return { type: 'exclusive_gateway', defaultFlowRef: asString(raw.defaultFlowRef) };
@@ -358,6 +360,15 @@ function convertDataObjectReference(raw: Record<string, unknown>): DataObjectRef
     id: String(raw.id ?? ''),
     name: asString(raw.name),
     dataObjectRef: asString(raw.dataObjectRef),
+    dataState: asString(raw.dataState),
+  };
+}
+
+function convertDataStoreReference(raw: Record<string, unknown>): DataStoreReference {
+  return {
+    id: String(raw.id ?? ''),
+    name: asString(raw.name),
+    dataStoreRef: asString(raw.dataStoreRef),
     dataState: asString(raw.dataState),
   };
 }

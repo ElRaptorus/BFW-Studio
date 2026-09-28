@@ -101,10 +101,7 @@ export default function Workbench(): React.JSX.Element {
       bifrost.fileExplorerView.on(EVENT_FILE_EXPLORER_OPENED_SOLUTION, () => forceUpdate()),
       bifrost.recentlyOpened.on(EVENT_RECENTLY_OPENED_CHANGED, () => forceUpdate()),
       bifrost.settings.on(EVENT_SETTINGS_CHANGED, () => forceUpdate()),
-      bifrost.events.on('unspecifiedGlobalUpdate', () => {
-        const timeoutId = setTimeout(() => forceUpdate(), 100);
-        timeoutIds.push(timeoutId);
-      }),
+      bifrost.events.on('unspecifiedGlobalUpdate', () => forceUpdate()),
     ];
 
     return () => {

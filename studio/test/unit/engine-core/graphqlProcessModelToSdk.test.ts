@@ -28,6 +28,9 @@ describe('convertGraphqlProcessModel', () => {
         lanes: [{ id: 'Lane_default', name: 'default', flowNodeRefs: ['Start_1', 'Task_http'] }],
         dataObjects: [],
         dataObjectReferences: [],
+        dataStoreReferences: [
+          { id: 'DataStoreRef_Orders', name: 'Orders', dataStoreRef: 'DataStore_Orders', dataState: null },
+        ],
         associations: [],
         extensions: [],
         linterScores: [{ rulesetId: 'bfw-default', scorePercent: '92.5', complianceStatus: 'compliant' }],
@@ -78,6 +81,9 @@ describe('convertGraphqlProcessModel', () => {
             sequenceFlows: [],
             dataObjects: [],
             dataObjectReferences: [],
+            dataStoreReferences: [
+              { id: 'DataStoreRef_Inner', name: 'Inner store', dataStoreRef: 'DataStore_Inner', dataState: null },
+            ],
             flowNodes: [
               {
                 id: 'Inner_script',
@@ -104,6 +110,9 @@ describe('convertGraphqlProcessModel', () => {
     expect(process.isExecutable).toBe(true);
     expect(process.correlationKey).toBe('token.orderId');
     expect(process.associations).toEqual([]);
+    expect(process.dataStoreReferences).toEqual([
+      { id: 'DataStoreRef_Orders', name: 'Orders', dataStoreRef: 'DataStore_Orders', dataState: null },
+    ]);
     expect(definitions.rawXml).toBe('<xml/>');
     expect(definitions.messages).toEqual([{ id: 'Message_payment', name: 'payment-received' }]);
     expect(process.linterScores[0]?.rulesetId).toBe('bfw-default');
@@ -137,6 +146,9 @@ describe('convertGraphqlProcessModel', () => {
     if (subprocess?.typeData.type === 'sub_process') {
       expect(subprocess.typeData.flowNodes).toHaveLength(1);
       expect(subprocess.typeData.flowNodes[0]?.typeData.type).toBe('script_task');
+      expect(subprocess.typeData.dataStoreReferences).toEqual([
+        { id: 'DataStoreRef_Inner', name: 'Inner store', dataStoreRef: 'DataStore_Inner', dataState: null },
+      ]);
     }
   });
 

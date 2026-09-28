@@ -12,5 +12,5 @@ A `Manual Task` marks a step that a person carries out **away from** the system 
 
 The `Require Confirmation` option controls whether the process waits at the task:
 
-- **On** — the process pauses and waits for someone to confirm the step is done before continuing.
+- **On** — the process pauses and waits for someone to confirm the step is done before continuing. The task shows up in the Task Inbox with a "Confirm" action.
 - **Off** (default) — the process passes straight through, using the task purely as a visible note in the flow.
