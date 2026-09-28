@@ -22,7 +22,7 @@ export function startTaskCountPoller(bifrost: Bifrost, connectionManager: Engine
           const lanes = connectionManager.identity.getLanes(engine.url);
           const filter = {
             state: { eq: FlowNodeInstanceState.Waiting },
-            flowNodeType: { eq: FlowNodeType.UserTask },
+            flowNodeType: { in: [FlowNodeType.ManualTask, FlowNodeType.UserTask] },
             ...(lanes.length > 0 ? { laneName: { in: lanes } } : {}),
           };
           const result = await client.graphql.queryFlowNodeInstances({

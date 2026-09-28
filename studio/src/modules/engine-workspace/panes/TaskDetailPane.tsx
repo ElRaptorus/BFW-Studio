@@ -6,6 +6,7 @@ import { getHumanizedDateTime } from '#modules/engine-core';
 
 import React, { useCallback } from 'react';
 
+import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type { TaskInboxDocumentModel } from '../models/TaskInboxDocumentModel';
@@ -71,10 +72,21 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
         value={task.startedAt ? getHumanizedDateTime(task.startedAt) : '—'}
         disabled
       />
-      <PaneProperty type="text" label="Due date" value={dueDate ? getHumanizedDateTime(dueDate) : '—'} disabled />
-      <PaneProperty type="text" label="Form fields" value={formFieldCount} disabled />
+      {task.flowNodeType === FlowNodeType.ManualTask ? (
+        <PaneProperty type="text" label="Kind" value="Manual Task" disabled={true} />
+      ) : (
+        <>
+          <PaneProperty type="text" label="Due date" value={dueDate ? getHumanizedDateTime(dueDate) : '—'} disabled />
+          <PaneProperty type="text" label="Form fields" value={formFieldCount} disabled />
+        </>
+      )}
       <div className="engine-pane-actions">
-        <button type="button" className="engine-pane-actions__button" onClick={handleComplete}>
+        <button
+          type="button"
+          className="engine-pane-actions__button"
+          data-test--task-detail-complete=""
+          onClick={handleComplete}
+        >
           Complete Task
         </button>
         <button

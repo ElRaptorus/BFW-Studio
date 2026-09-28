@@ -433,8 +433,8 @@ export class TaskInboxDocumentModel extends EditorDocumentModel {
 
   private buildFilter(lanes: string[]): FlowNodeInstanceFilter {
     const filter: FlowNodeInstanceFilter = {
-      state: { eq: FlowNodeInstanceState.Waiting as string },
-      flowNodeType: { eq: FlowNodeType.UserTask as string },
+      state: { eq: FlowNodeInstanceState.Waiting },
+      flowNodeType: { in: [FlowNodeType.UserTask, FlowNodeType.ManualTask] },
     };
 
     if (lanes.length > 0 && !this.laneNameFilter) {

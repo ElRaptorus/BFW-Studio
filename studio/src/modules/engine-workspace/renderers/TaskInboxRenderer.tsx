@@ -274,7 +274,7 @@ export default function TaskInboxRenderer(props: EditorDocumentRendererProps): R
           </button>
         </div>
       ),
-      size: 72,
+      size: 108,
     },
   ];
 
@@ -366,7 +366,7 @@ export default function TaskInboxRenderer(props: EditorDocumentRendererProps): R
           {data.error && <div className="engine-list-view__error">{data.error}</div>}
           {data.loading && data.tasks.length === 0 && <div className="engine-list-view__loading">Loading tasks...</div>}
           {!data.loading && data.tasks.length === 0 && !data.error && Object.keys(columnFilters).length === 0 && (
-            <div className="engine-list-view__empty">No pending user tasks.</div>
+            <div className="engine-list-view__empty">No pending tasks.</div>
           )}
 
           {(data.tasks.length > 0 || Object.keys(columnFilters).length > 0) && (
