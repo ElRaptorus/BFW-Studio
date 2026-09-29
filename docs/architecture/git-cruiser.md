@@ -726,7 +726,7 @@ After completion, the target folder is a proper git repository on the selected b
 
 ## HTTPS Credential Handling
 
-`GIT_TERMINAL_PROMPT=0` is set at module level in `registerGitHandlers.ts`, preventing git from hanging on interactive credential prompts. Without this, `git ls-remote` on a private HTTPS repo would wait indefinitely for stdin input in the headless Electron main process.
+`GIT_TERMINAL_PROMPT=0` is set at module level in `registerGitHandlers.ts`, and every `simple-git` instance lists it in `allowEnvironment`. simple-git 4 drops parent variables whose names start with `GIT_` unless they are listed there, so the assignment alone never reaches the git process. With the variable set, git fails immediately instead of opening a terminal prompt. Without it, `git ls-remote` on a private HTTPS repo waits for input in the Electron main process.
 
 When `GIT_TERMINAL_PROMPT=0` is active and credentials are needed, git fails immediately with a catchable authentication error. The three-step dialog chain handles this by:
 1. Detecting HTTPS URLs in Dialog 1

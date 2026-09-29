@@ -1,11 +1,4 @@
 import { startWdioSession } from '@wdio/electron-service';
-import * as path from 'path';
-
-const electronChromedriverBinary = path.join(
-  path.dirname(require.resolve('electron-chromedriver/chromedriver')),
-  'bin',
-  'chromedriver',
-);
 
 export type StartOptions = {
   paths: StartPaths;
@@ -73,9 +66,6 @@ export default class TestDriver {
     const capabilities: Record<string, any> = {
       browserName: 'electron',
       'wdio:electronServiceOptions': electronServiceOptions,
-      'wdio:chromedriverOptions': {
-        binary: electronChromedriverBinary,
-      },
       'goog:chromeOptions': {
         binary: executablePathGiven ? this.startOptions.paths.executable : this.startOptions.paths.electron,
         args: this.getChromiumCiArguments(),

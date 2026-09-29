@@ -34,11 +34,15 @@ import { ipcMain } from 'electron';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import type { BranchSummary, LogResult, SimpleGit, StatusResult } from 'simple-git';
-import simpleGit from 'simple-git';
+import type { BranchSummary, LogResult, SimpleGit, SimpleGitOptions, StatusResult } from 'simple-git';
+import { simpleGit } from 'simple-git';
+
+function createGit(options: Partial<SimpleGitOptions> = {}): SimpleGit {
+  return simpleGit({ ...options, allowEnvironment: ['GIT_TERMINAL_PROMPT'] });
+}
 
 function getGit(cwd: string): SimpleGit {
-  return simpleGit(cwd);
+  return createGit({ baseDir: cwd });
 }
 
 async function moveDirectory(source: string, destination: string): Promise<void> {
@@ -57,7 +61,7 @@ export function registerGitHandlers(): void {
   process.env.GIT_TERMINAL_PROMPT = '0';
   ipcMain.handle(IPC_INVOKE_GIT_IS_AVAILABLE, async () => {
     try {
-      const git = simpleGit();
+      const git = createGit();
       const version = await git.version();
       return { available: true, version: version.toString() };
     } catch {
@@ -346,7 +350,7 @@ export function registerGitHandlers(): void {
   });
 
   ipcMain.handle(IPC_INVOKE_GIT_CLONE, async (event, url: string, targetDir: string, branch?: string) => {
-    const git = simpleGit({
+    const git = createGit({
       timeout: { block: 30000 },
       progress({ stage, progress }) {
         event.sender.send(IPC_MESSAGE_GIT_CLONE_PROGRESS, { stage, progress });
@@ -357,7 +361,7 @@ export function registerGitHandlers(): void {
   });
 
   ipcMain.handle(IPC_INVOKE_GIT_LS_REMOTE, async (_event, url: string) => {
-    const git = simpleGit({ timeout: { block: 15000 } });
+    const git = createGit({ timeout: { block: 15000 } });
     const output = await git.listRemote(['--heads', '--symref', url]);
 
     const branches: { name: string; isHead: boolean }[] = [];
@@ -397,7 +401,7 @@ export function registerGitHandlers(): void {
       const tempDir = path.join(os.tmpdir(), `bifrost-forge-world-connect-${Date.now()}`);
 
       try {
-        const cloneGit = simpleGit({
+        const cloneGit = createGit({
           timeout: { block: 60000 },
           progress({ stage, progress }) {
             event.sender.send(IPC_MESSAGE_GIT_CLONE_PROGRESS, { stage, progress });
@@ -406,7 +410,7 @@ export function registerGitHandlers(): void {
         await cloneGit.clone(url, tempDir, ['--branch', branch]);
 
         if (newBranch) {
-          const tempGit = simpleGit(tempDir);
+          const tempGit = getGit(tempDir);
           const branchInfo = await tempGit.branch(['-a']);
           const existsOnRemote = branchInfo.all.some((ref) => ref === `remotes/origin/${newBranch}`);
           if (existsOnRemote) {
