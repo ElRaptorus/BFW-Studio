@@ -25,7 +25,6 @@ import { ENGINE_COMMANDS, EngineContextBreadcrumb } from '#modules/engine-core';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { ModelViewerDocumentModel } from '../models/ModelViewerDocumentModel';
 import type { ModelViewerModelData, ModelViewerSelection } from '../types';
@@ -337,7 +336,7 @@ export default function ModelViewerRenderer(props: EditorDocumentRendererProps):
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

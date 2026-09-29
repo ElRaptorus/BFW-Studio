@@ -6,8 +6,6 @@ import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
 import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 import type { OffsetPageInfo, ProcessModel, ProcessModelField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
-import { bulkRemoveProcesses, bulkToggleProcesses } from '../helpers/workspaceNavigation';
-
 const CONNECTION_GRACE_PERIOD_MS = 60_000;
 const PAGE_SIZE = 50;
 
@@ -543,25 +541,6 @@ export class ProcessExplorerDocumentModel extends EditorDocumentModel {
 
   clearBulkSelection(): void {
     this.selectedModelIds.clear();
-  }
-
-  async bulkRemoveSelected(): Promise<void> {
-    const selected = this.getSelectedModels();
-    if (selected.length === 0) {
-      return;
-    }
-    await bulkRemoveProcesses(this.connectionManager, this.engineId, selected);
-    this.clearBulkSelection();
-    await this.refresh();
-  }
-
-  async bulkToggleSelected(enabled: boolean): Promise<void> {
-    const selected = this.getSelectedModels();
-    if (selected.length === 0) {
-      return;
-    }
-    await bulkToggleProcesses(this.connectionManager, this.engineId, selected, enabled);
-    await this.refresh();
   }
 }
 

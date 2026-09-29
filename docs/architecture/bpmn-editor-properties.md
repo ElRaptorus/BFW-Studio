@@ -258,20 +258,24 @@ Form data is stored as two separate extension elements on User Tasks:
 
 Both are read/written via `BpmnDocumentElementAccess.getFormFieldDefinitions()` / `setFormFieldDefinitions()` / `getFormActions()` / `setFormActions()`.
 
-### Field Types (v1)
+### Field Types
 
-| Type | SDK Enum | Description |
-|------|----------|-------------|
-| text | `FormFieldType.Text` | Single-line text input |
-| number | `FormFieldType.Number` | Numeric input |
-| date | `FormFieldType.Date` | Date picker |
-| checkbox | `FormFieldType.Checkbox` | Checkbox |
-| select | `FormFieldType.Select` | Dropdown select |
-| radio | `FormFieldType.Radio` | Radio button group |
-| textarea | `FormFieldType.Textarea` | Multi-line text |
-| file | `FormFieldType.File` | File upload |
-| boolean | `FormFieldType.Boolean` | Toggle switch |
-| header | `FormFieldType.Header` | Section heading (non-input) |
+The modeling contract is `studio/src/modules/bpmn-core/form-renderer/FormModel.ts` (`FormFieldDefinition`, `FormFieldType`, `FormFieldOption`, `FormFieldValidationRule`, `FormAction`, `FormActionPreset`). `bpmn-editor` imports it and re-exports the types from `BpmnElementTypes`. Engine modules that render a task form import the same contract. Neither `bpmn-core` nor `bpmn-editor` imports `@elraptorus/bfw_engine_sdk` for form types. The Engine stores the JSON the editor writes; it does not define these types.
+
+| Type | Description |
+|------|-------------|
+| `text` | Single-line text input |
+| `number` | Numeric input |
+| `date` | Date picker |
+| `checkbox` | Single checkbox, or a checkbox group when `options` is present |
+| `dropdown` | Dropdown select |
+| `radio` | Radio button group |
+| `textarea` | Multi-line text |
+| `file` | File upload |
+| `toggle` | Toggle switch |
+| `section_header` | Section heading (non-input) |
+
+Every stored field includes `required` (`false` when the author does not check it). Optional `hint` is help text shown with the field. A pattern is stored as `validationRules: [{ "type": "pattern", "value": "<regex>", "message"?: "<text>" }]`. `FormRenderer` (`patternValidationMessage`) tests the whole input against that regular expression and shows `message` when the rule has one. `defaultValue` is a string. A type the renderer does not know is drawn as a text input.
 
 ### Form Actions
 
@@ -291,7 +295,7 @@ The Form Builder opens as a fragment editor tab (no own model). It parses a URI 
 
 Integration tests live in `studio/test/integration/bpmn-editor/form-builder.test.ts` and open `studio/test/fixtures/test-solution-bpmn/form-builder.bpmn` (`UserTask_1` with no form fields). The empty new-document template (`BpmnEmptyDocument.bpmn`) has no user task. `user-task.bpmn` already has `bfw:formFields`, so the summary pane shows Edit Form instead of Create Form. Persist tests close only the focused Form Builder tab (`std.editor.closeFocusedDocument`), not `Test: Close all`, so the parent BPMN stays in memory with the written fields.
 
-There is no `data-test--actions-editor-add-button` and no shared `data-test--form-builder-toolbox-item`. Field kits use `[data-test--form-builder-toolbox-field="<type>"]` (`text`, `number`, `date`, `checkbox`, `select`, `radio`, `textarea`, `file`, `boolean`, `header`). Action presets use `[data-test--form-builder-toolbox-action="<preset>"]` (`confirm`, `ok`, `yes`, `no`, `cancel`, `custom`). Added actions render `[data-test--actions-editor-item]` in `ActionsEditor`.
+There is no `data-test--actions-editor-add-button` and no shared `data-test--form-builder-toolbox-item`. Field kits use `[data-test--form-builder-toolbox-field="<type>"]` (`text`, `number`, `date`, `checkbox`, `dropdown`, `radio`, `textarea`, `file`, `toggle`, `section_header`). Action presets use `[data-test--form-builder-toolbox-action="<preset>"]` (`confirm`, `ok`, `yes`, `no`, `cancel`, `custom`). Added actions render `[data-test--actions-editor-item]` in `ActionsEditor`.
 
 Command: `bpmn.formBuilder.open` — opens the form builder for the selected User Task element.
 
@@ -299,12 +303,10 @@ Command: `bpmn.formBuilder.open` — opens the form builder for the selected Use
 
 The engine-debugger uses `DynamicUiComponentAdapter` (`studio/src/modules/engine-debugger/task-viewer/DynamicUiComponentAdapter.tsx`) to render User Task forms at runtime. It:
 
-1. Receives `UserTaskInstance` with `userTaskConfig.formFields` and `userTaskConfig.formActions` from the engine
-2. Maps engine field types to SDK `FormFieldType` enum values (e.g., engine `string` → `FormFieldType.Text`, engine `enum` → `FormFieldType.Select`)
-3. Maps engine actions to SDK `FormAction[]` (preserving `submitsForm`, `isDefault`, `isDanger` flags)
-4. Renders the shared `FormRenderer` component
-5. On submit: calls `userTasks.finishUserTask(id, data, identity)` with collected form data
-6. On cancel: calls `userTasks.finishUserTask(id, { _action, _cancelled: true }, identity)`
+1. Reads `typeProperties.form_schema` and `typeProperties.form_actions` only when each value is an array, typed as the `FormModel` contract
+2. Passes those arrays to `FormRenderer` without renaming field types
+3. On submit: calls `userTasks.finish(id, { result })` with collected form data
+4. On cancel: calls `userTasks.cancel(id, { reason })`
 
 ### Data Flow
 
@@ -329,11 +331,9 @@ Model changes (undo/redo/external) → EVENT_DATA_UPDATED
 
 **Debugger path** (Engine response → Form UI → Engine API):
 ```
-Engine GET /user-tasks/:id → UserTaskInstance
-  → mapEngineFieldToDefinition(field) → FormFieldDefinition[]
-  → mapEngineActionsToFormActions(actions) → FormAction[]
+Engine user task → typeProperties.form_schema / form_actions (arrays)
   → <FormRenderer fields actions onSubmit onCancel />
-  → User clicks action → collectFormData() → POST finishUserTask
+  → User clicks action → collectFormData() → userTasks.finish / userTasks.cancel
 ```
 
 ---

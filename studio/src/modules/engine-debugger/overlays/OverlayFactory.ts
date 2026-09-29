@@ -261,12 +261,10 @@ export async function createFlowNodeInstanceOverlays(
     }
   }
 
-  const isInteractiveTask =
-    flowNodeModel?.type === FlowNodeType.Task ||
-    flowNodeModel?.type === FlowNodeType.ManualTask ||
-    flowNodeModel?.type === FlowNodeType.UserTask;
+  const isWaitingInteractiveTask =
+    isWaiting && (flowNodeModel?.type === FlowNodeType.ManualTask || flowNodeModel?.type === FlowNodeType.UserTask);
 
-  if (isInteractiveTask && isWaiting) {
+  if (isWaitingInteractiveTask) {
     overlays.push(createContinueInteractiveTaskLink(flowNode, selectedFlowNodeInstance.id, model, studio));
   }
 

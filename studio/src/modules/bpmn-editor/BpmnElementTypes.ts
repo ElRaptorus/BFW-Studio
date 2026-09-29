@@ -1,3 +1,14 @@
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
+
+export type {
+  FormAction,
+  FormFieldDefinition,
+  FormFieldOption,
+  FormFieldType,
+  FormFieldValidationRule,
+} from '#modules/bpmn-core/form-renderer/FormModel';
+export { FormActionPreset } from '#modules/bpmn-core/form-renderer/FormModel';
+
 export type BpmnElement =
   | BpmnElement_BoundaryEvent
   | BpmnElement_CallActivity
@@ -727,58 +738,6 @@ export type BpmnElement_UserTask = BpmnElementCommonProperties & {
   readonly payloadContract?: string;
   readonly resultContract?: string;
 };
-
-//
-// Form Builder Types
-//
-
-export type FormFieldDefinition = {
-  readonly id: string;
-  readonly type: FormFieldType;
-  readonly label: string;
-  readonly required?: boolean;
-  readonly placeholder?: string;
-  readonly defaultValue?: string;
-  readonly pattern?: string;
-  readonly options?: FormFieldOption[];
-  readonly hint?: string;
-};
-
-export type FormFieldOption = {
-  readonly value: string;
-  readonly label: string;
-};
-
-export enum FormFieldType {
-  Text = 'text',
-  Number = 'number',
-  Date = 'date',
-  Checkbox = 'checkbox',
-  Select = 'select',
-  Radio = 'radio',
-  Textarea = 'textarea',
-  File = 'file',
-  Boolean = 'boolean',
-  Header = 'header',
-}
-
-export type FormAction = {
-  readonly id: string;
-  readonly label: string;
-  readonly preset: FormActionPreset;
-  readonly submitsForm: boolean;
-  readonly isDefault?: boolean;
-  readonly isDanger?: boolean;
-};
-
-export enum FormActionPreset {
-  Confirm = 'confirm',
-  Ok = 'ok',
-  Yes = 'yes',
-  No = 'no',
-  Cancel = 'cancel',
-  Custom = 'custom',
-}
 
 //
 // Conditional Flow

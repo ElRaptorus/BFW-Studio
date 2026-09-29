@@ -19,6 +19,7 @@ export const ENGINE_COMMANDS = {
   removeFromHistory: 'engine.removeFromHistory',
 
   setAuthToken: 'engine.setAuthToken',
+  resolveAuthLabel: 'engine.resolveAuthLabel',
 
   deploy: 'engine.deploy',
   deployBatch: 'engine.deployBatch',
@@ -49,6 +50,7 @@ export interface EngineCommandArgs {
   [ENGINE_COMMANDS.disconnect]: [engineId: string];
   [ENGINE_COMMANDS.removeFromHistory]: [url: string];
   [ENGINE_COMMANDS.setAuthToken]: [engineUrl: string];
+  [ENGINE_COMMANDS.resolveAuthLabel]: [engineUrl: string];
   [ENGINE_COMMANDS.deploy]: [engineId: string, fileContent: string, fileName: string];
   [ENGINE_COMMANDS.deployBatch]: [engineId: string, files: { content: string; name: string }[]];
   [ENGINE_COMMANDS.startProcess]: [engineId: string, processModelId: string, options?: StartRequest];

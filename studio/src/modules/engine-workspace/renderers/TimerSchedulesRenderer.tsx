@@ -29,14 +29,24 @@ import {
 
 import React, { useState } from 'react';
 
-import type { TimerSchedule } from '../helpers/engineApi';
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { TimerSchedulesDocumentModel } from '../models/TimerSchedulesDocumentModel';
 import type { TimerSchedulesContextMetadata } from '../types/TimerSchedulesContext';
 import './EngineListView.scss';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
+interface TimerSchedule {
+  id: string;
+  processModelId: string;
+  processVersionId: string;
+  flowNodeId: string;
+  kind: 'cycle' | 'date' | 'duration';
+  isoSpec: string;
+  enabled: boolean;
+  nextFireAt: string | null;
+  lastTriggeredAt?: string | null;
+}
 
 export default function TimerSchedulesRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
@@ -292,7 +302,7 @@ export default function TimerSchedulesRenderer(props: EditorDocumentRendererProp
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

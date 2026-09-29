@@ -31,12 +31,9 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function formatFormFieldCount(formFields: unknown): string {
-  if (Array.isArray(formFields)) {
-    return String(formFields.length);
-  }
-  if (formFields) {
-    return 'configured';
+function formatFormFieldCount(formSchema: unknown): string {
+  if (Array.isArray(formSchema)) {
+    return String(formSchema.length);
   }
   return '0';
 }
@@ -50,7 +47,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     if (!task) {
       return;
     }
-    props.studio.commands.executeCommand('engine.workspace.completeTask', [engineId, task.id]);
+    props.studio.commands.executeCommand('engine.workspace.completeTask', [engineId, task]);
   }, [props.studio, engineId, task]);
 
   if (!task) {
@@ -59,7 +56,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
 
   const typeProperties = task.typeProperties ?? {};
   const dueDate = typeof typeProperties.dueDate === 'string' ? typeProperties.dueDate : null;
-  const formFieldCount = formatFormFieldCount(typeProperties.formFields);
+  const formFieldCount = formatFormFieldCount(typeProperties.form_schema);
 
   return (
     <div className="engine-pane-process-info">

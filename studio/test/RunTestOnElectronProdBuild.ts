@@ -121,7 +121,7 @@ async function runTests(): Promise<void> {
 
   const childProcess = spawn(
     `cross-env TEST_APP_PATH=${quoteForShell(pathToBifrost)} npm run ${npmRunArgs.join(' ')}`,
-    { stdio: 'inherit', shell: true }
+    { stdio: 'inherit', shell: true },
   );
 
   childProcess.stdout?.on('data', (data) => {

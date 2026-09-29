@@ -364,11 +364,6 @@ function registerFlowNodeInstancePanes(bifrost: Bifrost): void {
       require('../property-panel/FlowNode/ManualTaskPane'),
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'EngineDebugger/panes/UntypedTask',
-      'EngineDebugger/pane-providers/UntypedTask',
-      require('../property-panel/FlowNode/UntypedTaskPane'),
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
       'EngineDebugger/panes/ScriptTask',
       'EngineDebugger/pane-providers/ScriptTask',
       require('../property-panel/FlowNode/ScriptTaskPane'),

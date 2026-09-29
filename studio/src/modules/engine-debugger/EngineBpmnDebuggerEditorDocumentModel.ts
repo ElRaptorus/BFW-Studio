@@ -28,7 +28,6 @@ import {
 import { EVENT_DEBUGGER_SELECTED_FLOW_NODE_INSTANCE_CHANGED } from './Constants';
 import CustomContextPadProvider from './bpmn-js/Provider/CustomContextPadProvider';
 import CustomPopupProvider from './bpmn-js/Provider/CustomPopupProvider';
-import { parseDebuggerUri } from './helpers/parseDebuggerUri';
 import type { DataObject, ExecutableFlowNode, SelectableElement } from './libs/index';
 import {
   EngineAdapter,
@@ -53,6 +52,19 @@ type SubProcessSanitizationMap = {
   flowNodeId: string;
   subProcesses: SubProcessSanitizationMap[];
 };
+
+interface ParsedDebuggerUri {
+  engineId: string;
+  processInstanceId: string;
+}
+
+function parseDebuggerUri(uri: string): ParsedDebuggerUri {
+  const match = uri.match(/^engine-debug:\/\/([^/]+)\/([^/?]+)/);
+  return {
+    engineId: match?.[1] ?? '',
+    processInstanceId: match?.[2] ?? '',
+  };
+}
 
 const flowNodeWasExecuted = (fn: ExecutableFlowNode) => fn.flowNodeInstances.length > 0;
 

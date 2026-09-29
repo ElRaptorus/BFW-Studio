@@ -556,50 +556,6 @@ export class DecisionCatalogDocumentModel extends EditorDocumentModel {
   clearBulkSelection(): void {
     this.selectedDecisionIds.clear();
   }
-
-  async bulkRemoveSelected(): Promise<void> {
-    const selected = this.getSelectedDecisions();
-    if (selected.length === 0) {
-      return;
-    }
-    for (const decision of selected) {
-      const modelId = decision.decisionDefinitionId ?? decision.id;
-      await this.toggleDecisionEnabled(modelId, false);
-      await this.removeDecision(modelId);
-    }
-    this.clearBulkSelection();
-    await this.refresh();
-  }
-
-  async bulkToggleSelected(enabled: boolean): Promise<void> {
-    const selected = this.getSelectedDecisions();
-    if (selected.length === 0) {
-      return;
-    }
-    for (const decision of selected) {
-      const modelId = decision.decisionDefinitionId ?? decision.id;
-      await this.toggleDecisionEnabled(modelId, enabled);
-    }
-    await this.refresh();
-  }
-
-  private async toggleDecisionEnabled(decisionId: string, enabled: boolean): Promise<void> {
-    if (!this.client) {
-      throw new Error('Not connected');
-    }
-    if (enabled) {
-      await this.client.decisions.enable(decisionId);
-    } else {
-      await this.client.decisions.disable(decisionId);
-    }
-  }
-
-  private async removeDecision(decisionId: string): Promise<void> {
-    if (!this.client) {
-      throw new Error('Not connected');
-    }
-    await this.client.decisions.undeploy(decisionId);
-  }
 }
 
 function extractEngineId(uri: string): string {

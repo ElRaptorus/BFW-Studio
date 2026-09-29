@@ -6,7 +6,7 @@
     </bpmn:startEvent>
     <bpmn:userTask id="UserTask_1" name="Enter Data">
       <bpmn:extensionElements>
-        <bfw:FormFields>[{"id":"field_name","label":"Name","type":"string","defaultValue":"Jane"},{"id":"field_email","label":"Email","type":"string","defaultValue":"jane@example.com"}]</bfw:FormFields>
+        <bfw:FormFields>[{"id":"field_name","label":"Name","type":"text","defaultValue":"Jane"},{"id":"field_email","label":"Email","type":"text","defaultValue":"jane@example.com"}]</bfw:FormFields>
         <bfw:Properties>
           <bfw:Property name="payload" value="theirs-value" />
           <bfw:Property name="category" value="premium" />

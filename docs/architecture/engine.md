@@ -52,7 +52,7 @@ Current models:
 - `DashboardDocumentModel` — auto-refresh timer, health/info/stats fetching, settings-reactive interval
 - `ProcessExplorerDocumentModel` — GraphQL `queryProcessModels` with server-side filtering (including `ilike` for names), sorting, and offset pagination (`limit`/`offset`). Two-step filter resolution for version fields (process versions queried separately, then filtered via `processId`). Nested `versions` include for latest version/deployedAt enrichment. Event-driven auto-refresh subscribes to `ProcessDefinitionDeployed`, `ProcessDefinitionUndeployed`, `ProcessDefinitionEnabled`, and `ProcessDefinitionDisabled` engine WebSocket events.
 - `InstanceSearchDocumentModel` — GraphQL `queryProcessInstances` with server-side filtering (`ilike` for ID/businessKey, enum multi-select for state, date-range for startedAt), sorting, and offset pagination. Two-step filter resolution for process name and version.
-- `TaskInboxDocumentModel` — GraphQL `queryFlowNodeInstances` filtered to user tasks in waiting state. Server-side `ilike` filters, date-range filters, sorting, and offset pagination.
+- `TaskInboxDocumentModel` — GraphQL `queryFlowNodeInstances` filtered to User Tasks and confirming Manual Tasks in waiting state. Server-side `ilike` filters, date-range filters, sorting, and offset pagination. Completion is `engine.workspace.taskInbox.completeSelected` / `completeSingle`, which call `completeInboxTask` (User Task finish without values, Manual Task confirm).
 - `DecisionCatalogDocumentModel` — GraphQL `queryDecisionDefinitions` with server-side filtering, sorting, and offset pagination. Two-step filter resolution for version fields. Nested `versions` include.
 - `TimerSchedulesDocumentModel` — REST-backed (client-side filtering/sorting only; no GraphQL endpoint for timer schedules).
 
@@ -68,7 +68,7 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 - **`EngineCommandArgs`** — maps each command ID to its typed argument tuple.
 - **File:** `studio/src/modules/engine-core/commands/CommandContract.ts`
 
-21 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerEscalation`, `triggerTimerEvent`.
+22 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `resolveAuthLabel`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerEscalation`, `triggerTimerEvent`.
 
 ### SDK Imports
 
@@ -124,6 +124,7 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 | Command | Purpose |
 |---------|---------|
 | `engine.setAuthToken` | Sets a JWT auth token for an engine |
+| `engine.resolveAuthLabel` | Returns the toolbar label for the engine's auth token: `Log In` when none is set, the JWT subject truncated to 17 characters plus `...` when longer than 20, otherwise `Auth Token` |
 
 ### Process Operations
 
@@ -487,7 +488,7 @@ The empty BPMN document template (`bpmn-editor/BpmnEmptyDocument.bpmn`) includes
 
 ### Version Utility Module
 
-`engine-workspace/helpers/versionUtils.ts` provides shared version logic used by all deploy entry points:
+`engine-core/helpers/versionUtils.ts` provides shared version logic used by all deploy entry points:
 
 | Function | Purpose |
 |----------|---------|
@@ -618,6 +619,6 @@ The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop e
 | Model viewer document model | `studio/src/modules/engine-model-viewer/models/ModelViewerDocumentModel.ts` |
 | Moddle conformance | `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts` |
 | Engine ID extraction | `studio/src/modules/engine-core/helpers/checkEngineConnectivity.ts` |
-| Version utilities | `studio/src/modules/engine-workspace/helpers/versionUtils.ts` |
+| Version utilities | `studio/src/modules/engine-core/helpers/versionUtils.ts` |
 | AutoVersionOnPoolBehavior | `studio/src/modules/bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts` |
 | BPMN empty template | `studio/src/modules/bpmn-editor/BpmnEmptyDocument.bpmn` |

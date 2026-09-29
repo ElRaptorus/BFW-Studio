@@ -1,5 +1,5 @@
-import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
-import { FormActionPreset } from '#modules/bpmn-editor/BpmnElementTypes';
+import { FormActionPreset } from '#modules/bpmn-core/form-renderer/FormModel';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 
 import React, { useCallback, useRef, useState } from 'react';
 
@@ -23,6 +23,28 @@ const DEFAULT_ACTIONS: FormAction[] = [
   { id: 'ok', label: 'OK', preset: FormActionPreset.Ok, submitsForm: true, isDefault: true },
 ];
 
+function patternValidationMessage(field: FormFieldDefinition, value: string): string | null {
+  if (value.trim() === '') {
+    return null;
+  }
+  const rule = field.validationRules?.find((entry) => entry.type === 'pattern');
+  if (rule == null || typeof rule.value !== 'string' || rule.value === '') {
+    return null;
+  }
+  try {
+    const regex = new RegExp(rule.value);
+    if (!regex.test(value)) {
+      if (rule.message != null && rule.message !== '') {
+        return rule.message;
+      }
+      return `${field.label} does not match the expected format`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export function FormRenderer(props: FormRendererProps): React.JSX.Element {
   const { fields, actions, title, readOnly, onSubmit, onCancel } = props;
   const formRef = useRef<HTMLFormElement>(null);
@@ -37,7 +59,7 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
     }
 
     for (const field of fields) {
-      if (field.type === 'header') {
+      if (field.type === 'section_header') {
         continue;
       }
 
@@ -80,15 +102,9 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
         continue;
       }
 
-      if (field.pattern && value && value.trim() !== '') {
-        try {
-          const regex = new RegExp(field.pattern);
-          if (!regex.test(value)) {
-            errors[field.id] = `${field.label} does not match the expected format`;
-          }
-        } catch {
-          // invalid regex — skip validation
-        }
+      const patternMessage = patternValidationMessage(field, value);
+      if (patternMessage != null) {
+        errors[field.id] = patternMessage;
       }
     }
 
@@ -102,7 +118,7 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
     }
 
     for (const field of fields) {
-      if (field.type === 'header') {
+      if (field.type === 'section_header') {
         continue;
       }
 
@@ -129,7 +145,7 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
       } else if (inputElement instanceof HTMLInputElement) {
         switch (field.type) {
           case 'checkbox':
-          case 'boolean':
+          case 'toggle':
             result[field.id] = inputElement.checked;
             break;
           case 'number':

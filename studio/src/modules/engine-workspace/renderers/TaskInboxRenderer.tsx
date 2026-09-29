@@ -39,7 +39,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import type { FlowNodeInstance, FlowNodeInstanceField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { TaskInboxDocumentModel } from '../models/TaskInboxDocumentModel';
 import type { TaskInboxContextMetadata } from '../types/TaskInboxContext';
@@ -348,7 +347,7 @@ export default function TaskInboxRenderer(props: EditorDocumentRendererProps): R
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

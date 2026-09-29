@@ -206,7 +206,7 @@ describe('convertGraphqlProcessModel', () => {
           boundaryEventRefs: [],
           isForCompensation: false,
           assigneesExpression: 'identity.groups',
-          formSchema: { fields: [{ name: 'approved' }] },
+          formSchema: [{ id: 'approved', type: 'toggle', label: 'approved', required: false }],
           payloadContract: { type: 'object' },
           resultContract: { type: 'object' },
         },
@@ -282,7 +282,9 @@ describe('convertGraphqlProcessModel', () => {
     expect(byId.User_1?.typeData.type).toBe('user_task');
     if (byId.User_1?.typeData.type === 'user_task') {
       expect(byId.User_1.typeData.assigneesExpression).toBe('identity.groups');
-      expect(byId.User_1.typeData.formSchema).toEqual({ fields: [{ name: 'approved' }] });
+      expect(byId.User_1.typeData.formSchema).toEqual([
+        { id: 'approved', type: 'toggle', label: 'approved', required: false },
+      ]);
     }
 
     expect(byId.Throw_1?.typeData.type).toBe('intermediate_throw_event');
@@ -379,5 +381,29 @@ describe('convertGraphqlProcessModel', () => {
     });
 
     expect(converted?.process.flowNodes[0]?.multiInstance?.loopCardinality).toBe('5');
+  });
+
+  it('drops a form schema that is not a field array', () => {
+    const converted = convertGraphqlProcessModel({
+      id: 'form-process',
+      isExecutable: true,
+      flowNodes: [
+        {
+          id: 'User_1',
+          type: 'USER_TASK',
+          incoming: [],
+          outgoing: [],
+          boundaryEventRefs: [],
+          isForCompensation: false,
+          formSchema: { fields: [{ name: 'approved' }] },
+        },
+      ],
+    });
+
+    const userTask = converted?.process.flowNodes[0];
+    expect(userTask?.typeData.type).toBe('user_task');
+    if (userTask?.typeData.type === 'user_task') {
+      expect(userTask.typeData.formSchema).toBeNull();
+    }
   });
 });

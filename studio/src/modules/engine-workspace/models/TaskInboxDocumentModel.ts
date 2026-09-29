@@ -503,27 +503,6 @@ export class TaskInboxDocumentModel extends EditorDocumentModel {
     return this.tasks.filter((task) => this.selectedTaskIds.has(task.id));
   }
 
-  async bulkCompleteSelected(result?: Record<string, unknown>): Promise<void> {
-    const selected = this.getSelectedTasks();
-    if (selected.length === 0 || !this.client) {
-      return;
-    }
-    for (const task of selected) {
-      await this.client.userTasks.finish(task.id, { result });
-    }
-    this.selectedTaskIds.clear();
-    await this.refresh();
-  }
-
-  async completeSelectedTask(result?: Record<string, unknown>): Promise<void> {
-    if (!this.selectedTask || !this.client) {
-      return;
-    }
-    await this.client.userTasks.finish(this.selectedTask.id, { result });
-    this.clearSelection();
-    await this.refresh();
-  }
-
   private updatePendingCount(count: number): void {
     let counts: Record<string, number>;
     try {

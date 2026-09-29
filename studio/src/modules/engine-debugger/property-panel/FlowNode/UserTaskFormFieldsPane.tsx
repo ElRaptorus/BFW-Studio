@@ -15,7 +15,7 @@ import type { FlowNode as BpmnFlowNode } from '@elraptorus/bfw_engine_sdk';
 import { FlowNodeInstanceState } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getUserTaskFormSchema } from '../../libs/BpmnFlowNodeAccessors';
+import { getUserTaskFormActions, getUserTaskFormSchema } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
 import { shouldDisplayUserTaskInstancePane } from '../ShouldBeDisplayedConditions';
 import './UserTaskFormFieldsPane.scss';
@@ -60,19 +60,12 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function extractFieldSummaries(definitionSchema: unknown, runtimeSchema: unknown): FormFieldSummary[] {
-  const schema = definitionSchema ?? runtimeSchema;
-  if (schema == null || typeof schema !== 'object') {
+function summarizeFields(schema: unknown): FormFieldSummary[] {
+  if (!Array.isArray(schema)) {
     return [];
   }
 
-  const items = Array.isArray(schema) ? schema : (schema as { fields?: unknown[] }).fields;
-
-  if (!Array.isArray(items)) {
-    return [];
-  }
-
-  return items.map((item: Record<string, unknown>) => ({
+  return schema.map((item: Record<string, unknown>) => ({
     id: String(item.id ?? ''),
     type: String(item.type ?? 'text'),
     label: item.label != null ? String(item.label) : undefined,
@@ -80,27 +73,15 @@ function extractFieldSummaries(definitionSchema: unknown, runtimeSchema: unknown
   }));
 }
 
-function extractActionSummaries(definitionSchema: unknown, userTaskInstance: FlowNodeInstance): FormActionSummary[] {
-  const runtimeActions = userTaskInstance.typeProperties?.form_actions ?? userTaskInstance.typeProperties?.formActions;
-
-  if (Array.isArray(runtimeActions) && runtimeActions.length > 0) {
-    return (runtimeActions as Record<string, unknown>[]).map((action) => ({
-      id: String(action.id ?? ''),
-      label: String(action.label ?? ''),
-    }));
+function summarizeActions(actions: unknown): FormActionSummary[] {
+  if (!Array.isArray(actions)) {
+    return [];
   }
 
-  if (definitionSchema != null && typeof definitionSchema === 'object' && !Array.isArray(definitionSchema)) {
-    const defActions = (definitionSchema as { actions?: Record<string, unknown>[] }).actions;
-    if (Array.isArray(defActions)) {
-      return defActions.map((action) => ({
-        id: String(action.id ?? ''),
-        label: String(action.label ?? ''),
-      }));
-    }
-  }
-
-  return [];
+  return actions.map((action: Record<string, unknown>) => ({
+    id: String(action.id ?? ''),
+    label: String(action.label ?? ''),
+  }));
 }
 
 function UserTaskFormFieldsPane(props: UserTaskFormFieldsPaneProps): React.JSX.Element {
@@ -108,10 +89,14 @@ function UserTaskFormFieldsPane(props: UserTaskFormFieldsPaneProps): React.JSX.E
   const userTaskModel = flowNode.flowNodeModel as BpmnFlowNode | undefined;
   const userTaskInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode) as FlowNodeInstance;
   const definitionSchema = getUserTaskFormSchema(userTaskModel);
-  const runtimeSchema = userTaskInstance.typeProperties?.form_schema ?? userTaskInstance.typeProperties?.formSchema;
+  const runtimeSchema = userTaskInstance.typeProperties?.form_schema;
+  const runtimeFields = summarizeFields(runtimeSchema);
+  const definitionFields = summarizeFields(definitionSchema);
+  const fields = runtimeFields.length > 0 ? runtimeFields : definitionFields;
 
-  const fields = extractFieldSummaries(definitionSchema, runtimeSchema);
-  const actions = extractActionSummaries(definitionSchema, userTaskInstance);
+  const runtimeActions = summarizeActions(userTaskInstance.typeProperties?.form_actions);
+  const definitionActions = summarizeActions(getUserTaskFormActions(userTaskModel));
+  const actions = runtimeActions.length > 0 ? runtimeActions : definitionActions;
 
   const isFinished = userTaskInstance.state === FlowNodeInstanceState.Finished;
   const hasOutputToken = userTaskInstance.outputToken != null;

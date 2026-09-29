@@ -4,13 +4,27 @@ import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
 import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
+import type { DmnExpressionBody } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 
 import React from 'react';
 
 import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
-import { describeExpressionBody, getExpressionPreview } from '../helpers/dmnExpressionHelpers';
+import { describeExpressionBody, isDecisionTable } from '../helpers/dmnExpressionHelpers';
 import { getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
+
+function getExpressionPreview(expression: DmnExpressionBody | null): string | null {
+  if (expression == null) {
+    return null;
+  }
+  if ('text' in expression && typeof expression.text === 'string') {
+    return expression.text;
+  }
+  if (isDecisionTable(expression)) {
+    return `${expression.inputs.length} inputs, ${expression.rules.length} rules`;
+  }
+  return describeExpressionBody(expression);
+}
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,

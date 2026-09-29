@@ -4,7 +4,6 @@ import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
 
 import { DECISION_VIEWER_COMMANDS } from '../commands/DecisionViewerCommands';
-import { downloadBlob, downloadTextFile } from '../helpers/downloadFile';
 import type { DecisionViewerDocumentModel } from '../models/DecisionViewerDocumentModel';
 
 export default function initializeCommands(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
@@ -86,6 +85,25 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     }
     downloadBlob(blob, `${model.getDecisionModelId()}.png`);
   });
+
+  function downloadTextFile(content: string, fileName: string, mimeType = 'text/plain'): void {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   bifrost.commands.register(
     'std.editor.zoomToActualSize.engine-decision-viewer',

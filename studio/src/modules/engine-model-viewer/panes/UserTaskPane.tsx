@@ -54,7 +54,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     if (flowNode.typeData.type !== 'user_task') {
       return undefined;
     }
-    return flowNode.typeData.formSchema != null ? JSON.stringify(flowNode.typeData.formSchema) : null;
+    return Array.isArray(flowNode.typeData.formSchema) ? JSON.stringify(flowNode.typeData.formSchema) : null;
   });
 
   return (

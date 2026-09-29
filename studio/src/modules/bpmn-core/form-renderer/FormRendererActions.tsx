@@ -1,4 +1,4 @@
-import type { FormAction } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormAction } from '#modules/bpmn-core/form-renderer/FormModel';
 
 import React from 'react';
 

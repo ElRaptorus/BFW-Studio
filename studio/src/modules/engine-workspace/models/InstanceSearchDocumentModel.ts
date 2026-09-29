@@ -1,7 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import { ENGINE_COMMANDS, EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
+import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
 
 import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 import type {
@@ -9,11 +9,8 @@ import type {
   ProcessInstance,
   ProcessInstanceField,
   ProcessInstanceFilter,
-  RetryRequest,
   SortClause,
 } from '@elraptorus/bfw_engine_sdk';
-
-import { parseEngineUri } from '../helpers/parseEngineUri';
 
 const CONNECTION_GRACE_PERIOD_MS = 60_000;
 const PAGE_SIZE = 50;
@@ -32,6 +29,11 @@ export interface InstanceSearchModelData {
   connectionGracePeriodExpired: boolean;
 }
 
+interface ParsedEngineUri {
+  engineId: string;
+  query: URLSearchParams;
+}
+
 const INSTANCE_FIELDS = [
   'id',
   'processVersionId',
@@ -43,6 +45,14 @@ const INSTANCE_FIELDS = [
   'startedBy',
   'errorInfo',
 ] as ProcessInstanceField[];
+
+function parseEngineUri(uri: string, pathPattern: RegExp): ParsedEngineUri {
+  const [pathPart, queryPart] = uri.split('?');
+  const match = pathPart.match(pathPattern);
+  const engineId = match?.[1] ?? '';
+  const query = new URLSearchParams(queryPart ?? '');
+  return { engineId, query };
+}
 
 export class InstanceSearchDocumentModel extends EditorDocumentModel {
   private studio: Bifrost;
@@ -690,37 +700,6 @@ export class InstanceSearchDocumentModel extends EditorDocumentModel {
     return this.instances.filter((instance) => this.selectedInstanceIds.has(instance.id));
   }
 
-  async bulkAbortSelected(abortableInstances: ProcessInstance[]): Promise<void> {
-    let succeeded = 0;
-    let failed = 0;
-
-    for (const instance of abortableInstances) {
-      try {
-        await this.studio.commands.executeCommand(ENGINE_COMMANDS.abortProcessInstance, [this.engineId, instance.id]);
-        succeeded++;
-      } catch {
-        failed++;
-      }
-    }
-
-    if (failed > 0) {
-      this.studio.notifications.open({
-        type: 'warning',
-        content: `${succeeded} of ${abortableInstances.length} instances aborted, ${failed} failed.`,
-        source: 'Engine',
-      });
-    } else {
-      this.studio.notifications.open({
-        type: 'info',
-        content: `${succeeded} instance${succeeded === 1 ? '' : 's'} aborted.`,
-        source: 'Engine',
-      });
-    }
-
-    this.selectedInstanceIds.clear();
-    await this.refresh();
-  }
-
   applyColumnFilter(columnId: string, value: string): void {
     if (columnId === 'id') {
       this.setIdFilter(value);
@@ -731,71 +710,5 @@ export class InstanceSearchDocumentModel extends EditorDocumentModel {
     } else if (columnId === 'businessKey') {
       this.setBusinessKeyFilter(value);
     }
-  }
-
-  async bulkRetrySelected(retryableInstances: ProcessInstance[], retryRequest?: RetryRequest): Promise<void> {
-    let succeeded = 0;
-    let failed = 0;
-
-    for (const instance of retryableInstances) {
-      try {
-        await this.studio.commands.executeCommand(ENGINE_COMMANDS.retryProcessInstance, [
-          this.engineId,
-          instance.id,
-          retryRequest,
-        ]);
-        succeeded++;
-      } catch {
-        failed++;
-      }
-    }
-
-    if (failed > 0) {
-      this.studio.notifications.open({
-        type: 'warning',
-        content: `${succeeded} of ${retryableInstances.length} instances retried, ${failed} failed.`,
-        source: 'Engine',
-      });
-    } else {
-      this.studio.notifications.open({
-        type: 'info',
-        content: `${succeeded} instance${succeeded === 1 ? '' : 's'} retried.`,
-        source: 'Engine',
-      });
-    }
-
-    this.selectedInstanceIds.clear();
-    await this.refresh();
-  }
-
-  async bulkDeleteSelected(deletableInstances: ProcessInstance[]): Promise<void> {
-    let succeeded = 0;
-    let failed = 0;
-
-    for (const instance of deletableInstances) {
-      try {
-        await this.studio.commands.executeCommand(ENGINE_COMMANDS.deleteProcessInstance, [this.engineId, instance.id]);
-        succeeded++;
-      } catch {
-        failed++;
-      }
-    }
-
-    if (failed > 0) {
-      this.studio.notifications.open({
-        type: 'warning',
-        content: `${succeeded} of ${deletableInstances.length} instances deleted, ${failed} failed.`,
-        source: 'Engine',
-      });
-    } else {
-      this.studio.notifications.open({
-        type: 'info',
-        content: `${succeeded} instance${succeeded === 1 ? '' : 's'} deleted.`,
-        source: 'Engine',
-      });
-    }
-
-    this.selectedInstanceIds.clear();
-    await this.refresh();
   }
 }

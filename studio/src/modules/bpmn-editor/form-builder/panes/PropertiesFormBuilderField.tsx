@@ -4,14 +4,13 @@ import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
-import type { FormFieldDefinition, FormFieldOption } from '#modules/bpmn-editor/BpmnElementTypes';
-import { FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormFieldDefinition, FormFieldOption, FormFieldType } from '#modules/bpmn-core/form-renderer/FormModel';
 
 import React, { useEffect, useState } from 'react';
 
 import type { FormBuilderEditorSnapshot } from '../FormBuilderEditorMediator';
 import { FormBuilderEditorMediator } from '../FormBuilderEditorMediator';
-import { FIELD_TYPE_DESCRIPTORS } from '../constants';
+import { FIELD_TYPE_DESCRIPTORS, patternValue, withPattern } from '../constants';
 
 const FORM_BUILDER_DOCUMENT_TYPE = 'bpmn.form-builder';
 const HELP_ID = 'bpmn/properties/form_builder_field';
@@ -92,8 +91,7 @@ function FieldPropertiesForm(props: FieldPropertiesFormProps): React.JSX.Element
     }
   };
 
-  const hasOptions =
-    field.type === FormFieldType.Select || field.type === FormFieldType.Radio || field.type === FormFieldType.Checkbox;
+  const hasOptions = field.type === 'dropdown' || field.type === 'radio' || field.type === 'checkbox';
 
   return (
     <>
@@ -134,7 +132,7 @@ function FieldPropertiesForm(props: FieldPropertiesFormProps): React.JSX.Element
         </select>
       </div>
 
-      {field.type !== FormFieldType.Header && (
+      {field.type !== 'section_header' && (
         <>
           <div className="form-group">
             <label className="form-check-label">
@@ -163,8 +161,10 @@ function FieldPropertiesForm(props: FieldPropertiesFormProps): React.JSX.Element
             <input
               className="form-control form-control-sm"
               type="text"
-              value={field.defaultValue ?? ''}
-              onChange={(event) => updateField({ defaultValue: event.target.value || undefined })}
+              value={field.defaultValue == null ? '' : String(field.defaultValue)}
+              onChange={(event) =>
+                updateField({ defaultValue: event.target.value === '' ? undefined : event.target.value })
+              }
             />
           </div>
 
@@ -173,9 +173,15 @@ function FieldPropertiesForm(props: FieldPropertiesFormProps): React.JSX.Element
             <input
               className="form-control form-control-sm"
               type="text"
-              value={field.pattern ?? ''}
+              value={patternValue(field)}
               placeholder="e.g. ^[a-z]+$"
-              onChange={(event) => updateField({ pattern: event.target.value || undefined })}
+              onChange={(event) => {
+                const updatedField = withPattern(field, event.target.value);
+                updateField({
+                  required: updatedField.required,
+                  validationRules: updatedField.validationRules,
+                });
+              }}
             />
           </div>
 
@@ -197,7 +203,7 @@ function FieldPropertiesForm(props: FieldPropertiesFormProps): React.JSX.Element
 }
 
 type OptionsEditorProps = {
-  options: FormFieldOption[];
+  options: readonly FormFieldOption[];
   onChange: (options: FormFieldOption[]) => void;
 };
 

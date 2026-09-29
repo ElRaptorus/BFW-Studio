@@ -80,6 +80,13 @@ export function getUserTaskFormSchema(flowNode: BpmnFlowNode | undefined): unkno
   return flowNode.typeData.formSchema;
 }
 
+export function getUserTaskFormActions(flowNode: BpmnFlowNode | undefined): unknown {
+  if (!flowNode || flowNode.typeData.type !== 'user_task') {
+    return null;
+  }
+  return flowNode.typeData.formActions;
+}
+
 export function getCorrelationRetrievalExpression(flowNode: BpmnFlowNode | undefined): string {
   const eventDefinition = flowNode ? getEventDefinition(flowNode) : null;
   if (eventDefinition?.type === 'message') {

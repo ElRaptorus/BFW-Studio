@@ -1,8 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
-import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
-import { FormActionPreset, FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 import type { EngineConnectionManager } from '#modules/engine-core';
 
 import React from 'react';
@@ -11,122 +10,7 @@ import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import { FormRenderer } from '../../bpmn-core/form-renderer';
 import './DynamicUiComponentAdapter.scss';
-
-type UserTaskFormField = {
-  id: string;
-  type: string;
-  label?: string;
-  defaultValue?: unknown;
-  required?: boolean;
-  placeholder?: string;
-  pattern?: string;
-  hint?: string;
-  options?: { value: string; label: string }[];
-  enumValues?: { id: string; name: string }[];
-};
-
-type UserTaskFormAction = {
-  id: string;
-  label: string;
-  preset?: string;
-  submitsForm?: boolean;
-  isDefault?: boolean;
-  isDanger?: boolean;
-};
-
-function extractFormFields(flowNodeInstance: FlowNodeInstance): UserTaskFormField[] {
-  const formSchema = flowNodeInstance.typeProperties?.form_schema ?? flowNodeInstance.typeProperties?.formSchema;
-  if (formSchema == null || typeof formSchema !== 'object') {
-    return [];
-  }
-  if (Array.isArray(formSchema)) {
-    return formSchema as UserTaskFormField[];
-  }
-  const fields = (formSchema as { fields?: UserTaskFormField[] }).fields;
-  return Array.isArray(fields) ? fields : [];
-}
-
-function extractFormActions(flowNodeInstance: FlowNodeInstance): UserTaskFormAction[] | undefined {
-  const formActions = flowNodeInstance.typeProperties?.form_actions ?? flowNodeInstance.typeProperties?.formActions;
-  if (Array.isArray(formActions) && formActions.length > 0) {
-    return formActions as UserTaskFormAction[];
-  }
-  const formSchema = flowNodeInstance.typeProperties?.form_schema ?? flowNodeInstance.typeProperties?.formSchema;
-  if (formSchema == null || typeof formSchema !== 'object' || Array.isArray(formSchema)) {
-    return undefined;
-  }
-  const actions = (formSchema as { actions?: UserTaskFormAction[] }).actions;
-  return Array.isArray(actions) ? actions : undefined;
-}
-
-function mapEngineFieldToDefinition(engineField: UserTaskFormField): FormFieldDefinition {
-  const typeMapping: Record<string, FormFieldType> = {
-    text: FormFieldType.Text,
-    string: FormFieldType.Text,
-    number: FormFieldType.Number,
-    integer: FormFieldType.Number,
-    long: FormFieldType.Number,
-    date: FormFieldType.Date,
-    boolean: FormFieldType.Boolean,
-    checkbox: FormFieldType.Checkbox,
-    enum: FormFieldType.Select,
-    select: FormFieldType.Select,
-    radio: FormFieldType.Radio,
-    textarea: FormFieldType.Textarea,
-    file: FormFieldType.File,
-    range: FormFieldType.Number,
-    header: FormFieldType.Header,
-    paragraph: FormFieldType.Header,
-  };
-
-  const mappedType = typeMapping[engineField.type] ?? FormFieldType.Text;
-
-  let options: { value: string; label: string }[] | undefined;
-  if (engineField.options != null && engineField.options.length > 0) {
-    options = engineField.options;
-  } else if (engineField.enumValues != null && engineField.enumValues.length > 0) {
-    options = engineField.enumValues.map((enumValue) => ({
-      label: enumValue.name,
-      value: enumValue.id,
-    }));
-  }
-
-  return {
-    id: engineField.id,
-    type: mappedType,
-    label: engineField.label ?? '',
-    required: engineField.required ?? false,
-    placeholder: engineField.placeholder,
-    pattern: engineField.pattern,
-    hint: engineField.hint,
-    defaultValue: engineField.defaultValue != null ? String(engineField.defaultValue) : undefined,
-    options,
-  };
-}
-
-function mapEngineActionsToFormActions(engineActions?: UserTaskFormAction[]): FormAction[] | undefined {
-  if (engineActions == null || engineActions.length === 0) {
-    return undefined;
-  }
-
-  const presetMapping: Record<string, FormActionPreset> = {
-    confirm: FormActionPreset.Confirm,
-    ok: FormActionPreset.Ok,
-    yes: FormActionPreset.Yes,
-    no: FormActionPreset.No,
-    cancel: FormActionPreset.Cancel,
-    custom: FormActionPreset.Custom,
-  };
-
-  return engineActions.map((engineAction) => ({
-    id: engineAction.id,
-    label: engineAction.label,
-    preset: presetMapping[engineAction.preset ?? ''] ?? FormActionPreset.Custom,
-    submitsForm: engineAction.submitsForm ?? true,
-    isDefault: engineAction.isDefault ?? false,
-    isDanger: engineAction.isDanger ?? false,
-  }));
-}
+import { readFormActions, readFormFields } from './readTaskForm';
 
 function applyOutputTokenDefaults(
   fields: FormFieldDefinition[],
@@ -141,25 +25,6 @@ function applyOutputTokenDefaults(
   });
 }
 
-function extractFormFieldsFromSchema(schema: unknown): UserTaskFormField[] {
-  if (schema == null || typeof schema !== 'object') {
-    return [];
-  }
-  if (Array.isArray(schema)) {
-    return schema as UserTaskFormField[];
-  }
-  const fields = (schema as { fields?: UserTaskFormField[] }).fields;
-  return Array.isArray(fields) ? fields : [];
-}
-
-function extractFormActionsFromSchema(schema: unknown): UserTaskFormAction[] | undefined {
-  if (schema == null || typeof schema !== 'object' || Array.isArray(schema)) {
-    return undefined;
-  }
-  const actions = (schema as { actions?: UserTaskFormAction[] }).actions;
-  return Array.isArray(actions) ? actions : undefined;
-}
-
 export function DynamicUiComponentAdapter(props: {
   engineId: string;
   studio: Bifrost;
@@ -168,16 +33,10 @@ export function DynamicUiComponentAdapter(props: {
   definitionFormSchema?: unknown;
   onTaskCompleted: () => void;
 }): React.JSX.Element {
-  const runtimeFields = extractFormFields(props.userTaskInstance);
-  const definitionFields = extractFormFieldsFromSchema(props.definitionFormSchema);
-  const resolvedFields = runtimeFields.length > 0 ? runtimeFields : definitionFields;
-
-  let fields: FormFieldDefinition[] = resolvedFields.map(mapEngineFieldToDefinition);
-
-  const runtimeActions = extractFormActions(props.userTaskInstance);
-  const definitionActions = extractFormActionsFromSchema(props.definitionFormSchema);
-  const resolvedActions = runtimeActions ?? definitionActions;
-  const actions: FormAction[] = mapEngineActionsToFormActions(resolvedActions) ?? [];
+  const runtimeFields = readFormFields(props.userTaskInstance.typeProperties?.form_schema);
+  const definitionFields = readFormFields(props.definitionFormSchema);
+  let fields = runtimeFields.length > 0 ? runtimeFields : definitionFields;
+  const actions = readFormActions(props.userTaskInstance.typeProperties?.form_actions);
 
   if (props.readOnly && props.userTaskInstance.outputToken != null) {
     fields = applyOutputTokenDefaults(fields, props.userTaskInstance.outputToken);
@@ -193,7 +52,7 @@ export function DynamicUiComponentAdapter(props: {
     if (!client) {
       return;
     }
-    await client.userTasks.finish(props.userTaskInstance.id, { result: data });
+    await client.userTasks.finish(props.userTaskInstance.id, { values: data });
     props.onTaskCompleted();
   };
 

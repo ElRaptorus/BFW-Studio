@@ -699,19 +699,6 @@ export function shouldDisplayTimerEventPane(
   return selectedFlowNodeInstance.eventType === EventDefinitionType.Timer;
 }
 
-export function shouldDisplayUntypedTaskInstancePane(
-  document: EditorDocument,
-  model: EngineBpmnDebuggerEditorDocumentModel,
-): boolean {
-  if (!isDebuggerDocumentWithSingleSelectedExecutedFlowNode(document, model)) {
-    return false;
-  }
-
-  const selectedFlowNodeInstance = getSelectedFlowNodeInstance(model);
-
-  return selectedFlowNodeInstance.flowNodeType === FlowNodeType.Task;
-}
-
 export function shouldDisplayUserTaskInstancePane(
   document: EditorDocument,
   model: EngineBpmnDebuggerEditorDocumentModel,

@@ -1,4 +1,4 @@
-import type { FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 
 import React from 'react';
 

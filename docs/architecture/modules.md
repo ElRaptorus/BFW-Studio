@@ -74,7 +74,7 @@ Registers ten additional color themes beyond the two core themes (`light`/`dark`
 
 #### bpmn-core
 
-Shared BPMN infrastructure. Contains the bpmn-js modeler/viewer adapter, overlay factories, export functions, BPMN-specific solution/project types, the context pad provider, and the modeler module discovery registry.
+Shared BPMN infrastructure. Contains the bpmn-js modeler/viewer adapter, overlay factories, export functions, BPMN-specific solution/project types, the context pad provider, the modeler module discovery registry, and the User Task form contract (`form-renderer/FormModel.ts`) that the editor authors and the engine modules render.
 
 - **Entry:** `studio/src/modules/bpmn-core/index.tsx`
 - **Commands registered:** `bpmn.modeler.registerModule` (allows modules to inject diagram-js modules into every BpmnModeler instance)

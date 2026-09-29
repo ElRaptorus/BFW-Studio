@@ -39,7 +39,6 @@ import { ProcessInstanceState } from '@elraptorus/bfw_engine_sdk';
 import type { ProcessInstance } from '@elraptorus/bfw_engine_sdk';
 import type { ProcessInstanceField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { InstanceSearchDocumentModel } from '../models/InstanceSearchDocumentModel';
 import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';
@@ -441,7 +440,7 @@ export default function InstanceSearchRenderer(props: EditorDocumentRendererProp
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

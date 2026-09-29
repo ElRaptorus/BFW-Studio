@@ -1,4 +1,4 @@
-import type { FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 
 import React from 'react';
 
@@ -11,7 +11,7 @@ type FormRendererFieldProps = {
 export function FormRendererField(props: FormRendererFieldProps): React.JSX.Element {
   const { field, readOnly, error } = props;
 
-  if (field.type === 'header') {
+  if (field.type === 'section_header') {
     return (
       <div className="form-renderer-field form-renderer-field--header">
         <h4 className="form-renderer-field__section-title">{field.label}</h4>
@@ -96,7 +96,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
         </div>
       );
 
-    case 'select':
+    case 'dropdown':
       return (
         <select {...commonProps} className="form-renderer-field__select" defaultValue={field.defaultValue ?? ''}>
           <option value="">{field.placeholder ?? 'Select...'}</option>
@@ -140,7 +140,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
     case 'file':
       return <input {...commonProps} type="file" className="form-renderer-field__file" />;
 
-    case 'boolean':
+    case 'toggle':
       return (
         <label className="form-renderer-field__toggle">
           <input

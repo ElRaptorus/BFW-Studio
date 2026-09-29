@@ -39,7 +39,6 @@ import { DECISION_VIEWER_COMMANDS } from '../commands/DecisionViewerCommands';
 import { DecisionViewerBreadcrumb } from '../components/DecisionViewerBreadcrumb';
 import { EvaluationPanel } from '../components/EvaluationPanel';
 import { ImportChainPanel } from '../components/ImportChainPanel';
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { DecisionViewerDocumentModel, DecisionViewerModelData } from '../models/DecisionViewerDocumentModel';
 import './DecisionViewerRenderer.scss';
@@ -277,7 +276,7 @@ export default function DecisionViewerRenderer(props: EditorDocumentRendererProp
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

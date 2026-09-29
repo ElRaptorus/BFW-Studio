@@ -9,7 +9,6 @@ import { is } from 'bpmn-js/lib/util/ModelUtil';
 import type { StartResult } from '@elraptorus/bfw_engine_sdk';
 
 import { MODEL_VIEWER_COMMANDS } from '../commands/ModelViewerCommands';
-import { downloadBlob, downloadTextFile } from '../helpers/downloadFile';
 import type { ModelViewerDocumentModel } from '../models/ModelViewerDocumentModel';
 
 export default function initializeCommands(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
@@ -69,6 +68,20 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     }
     downloadTextFile(xml, `${model.getProcessModelId()}.bpmn`, 'application/xml');
   });
+
+  function downloadTextFile(content: string, fileName: string, mimeType = 'text/plain'): void {
+    const blob = new Blob([content], { type: mimeType });
+    downloadBlob(blob, fileName);
+  }
+
+  function downloadBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   bifrost.commands.register(
     MODEL_VIEWER_COMMANDS.startProcessAtStartEvent,

@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import type { StudioAgentBpmnExtension } from '../../StudioAgentBpmnExtension';
@@ -102,5 +103,19 @@ describe('bpmn/form-builder', () => {
     await studioAgent.clickOn('[data-test--form-summary-edit-button]');
     await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertVisible('[data-test--form-canvas-item]', ASSERT_VISIBLE_TIMEOUT);
+  });
+
+  it('bpmn/form-builder: should add dropdown, toggle, and section header fields', async () => {
+    await openBlankUserTaskFormSummary();
+
+    await studioAgent.clickOn('[data-test--form-summary-create-button]');
+    await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="dropdown"]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="toggle"]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="section_header"]');
+
+    const canvasItems = await studioAgent.getTestDriver().client!.$$('[data-test--form-canvas-item]');
+    assert.equal(canvasItems.length, 3);
   });
 });

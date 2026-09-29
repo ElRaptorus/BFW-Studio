@@ -13,18 +13,12 @@ import * as path from 'path';
 
 import type { Menu, MenuItem_Command } from '@elraptorus/bfw_studio_sdk';
 
+import { RETRYABLE_STATES, TERMINAL_STATES } from '../constants/sharedResourceKeys';
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
 import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';
 import type { ProcessExplorerContextMetadata } from '../types/ProcessExplorerContext';
 import type { TaskInboxContextMetadata } from '../types/TaskInboxContext';
 import type { TimerSchedulesContextMetadata } from '../types/TimerSchedulesContext';
-import {
-  buildDecisionCatalogContextMenu,
-  buildInstanceSearchContextMenu,
-  buildProcessExplorerContextMenu,
-  buildTaskInboxContextMenu,
-  buildTimerSchedulesContextMenu,
-} from './initializeCommands';
 
 const DEPLOYABLE_EXTENSIONS = ['.bpmn', '.dmn'];
 
@@ -48,6 +42,41 @@ function uriToFilePath(uri: string): string {
   }
   return uri;
 }
+
+function truncateForMenu(value: string, maxLength = 24): string {
+  return value.length > maxLength ? value.slice(0, maxLength) + '...' : value;
+}
+
+const PROCESS_EXPLORER_FILTERABLE_COLUMNS: Record<string, string> = {
+  name: 'Name',
+  processModelId: 'Process ID',
+  version: 'Version',
+};
+
+const DECISION_CATALOG_FILTERABLE_COLUMNS: Record<string, string> = {
+  name: 'Name',
+  decisionDefinitionId: 'Model ID',
+  version: 'Version',
+};
+
+const TASK_INBOX_FILTERABLE_COLUMNS: Record<string, string> = {
+  flowNodeId: 'Task',
+  processInstanceId: 'Process Instance',
+  laneName: 'Lane',
+};
+
+const TIMER_SCHEDULES_FILTERABLE_COLUMNS: Record<string, string> = {
+  processModelId: 'Process',
+  flowNodeId: 'Start Event',
+  kind: 'Kind',
+};
+
+const FILTERABLE_COLUMN_LABELS: Record<string, string> = {
+  id: 'Instance ID',
+  processModelId: 'Process',
+  version: 'Version',
+  businessKey: 'Business Key',
+};
 
 export default function initializeMenus(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
   bifrost.commands.register('engine.workspace.deploySelectedFiles', async (uris: string[]) => {
@@ -414,38 +443,310 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
 
   bifrost.menus.registerMenu(
     'engine-workspace/process-explorer/contextmenu',
-    (metadata: ProcessExplorerContextMetadata, studio: Bifrost): Menu => {
-      return buildProcessExplorerContextMenu(studio, metadata);
+    (metadata: ProcessExplorerContextMetadata): Menu => {
+      const { engineId, processModel, columnId, cellValue } = metadata;
+      const enabled = processModel.enabled ?? true;
+      const bpmnId = processModel.processModelId ?? processModel.id;
+
+      const filterEntry: Menu =
+        columnId && cellValue && PROCESS_EXPLORER_FILTERABLE_COLUMNS[columnId]
+          ? [
+              {
+                type: 'command' as const,
+                id: `engine-workspace/process-explorer/use-as-filter-${columnId}`,
+                label: `Use "${truncateForMenu(cellValue)}" as ${PROCESS_EXPLORER_FILTERABLE_COLUMNS[columnId]} Filter`,
+                icon: 'ph ph-funnel',
+                command: 'engine.workspace.processExplorer.applyColumnFilter',
+                commandArgs: [columnId, cellValue],
+              },
+              { type: 'divider' as const },
+            ]
+          : [];
+
+      return [
+        ...filterEntry,
+        {
+          type: 'command',
+          id: 'engine-workspace/process-explorer/open-model',
+          label: 'Open in Model Viewer',
+          icon: 'ph ph-folder-open',
+          command: 'engine.workspace.openModelViewer',
+          commandArgs: [engineId, bpmnId],
+        },
+        {
+          type: 'command',
+          id: 'engine-workspace/process-explorer/start-process',
+          label: 'Start in Debugger',
+          icon: 'ph ph-play',
+          command: ENGINE_COMMANDS.startProcessAndOpenDebugger,
+          commandArgs: [engineId, bpmnId],
+        },
+        {
+          type: 'command',
+          id: 'engine-workspace/process-explorer/configured-start-process',
+          label: 'Configured Start in Debugger...',
+          icon: 'ph ph-sliders-horizontal',
+          command: ENGINE_COMMANDS.configuredStartProcessAndOpenDebugger,
+          commandArgs: [engineId, bpmnId],
+        },
+        { type: 'divider' },
+        {
+          type: 'command',
+          id: 'engine-workspace/process-explorer/show-instances',
+          label: 'Show Process Instances',
+          command: 'engine.workspace.openInstanceSearch',
+          commandArgs: [engineId, { processModelId: bpmnId }],
+        },
+        { type: 'divider' },
+        {
+          type: 'command',
+          id: 'engine-workspace/process-explorer/toggle-enabled',
+          label: enabled ? 'Disable' : 'Enable',
+          icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
+          command: 'engine.workspace.toggleProcessEnabled',
+          commandArgs: [engineId, bpmnId, !enabled],
+        },
+        {
+          type: 'command',
+          id: 'engine-workspace/process-explorer/remove',
+          label: 'Remove from Engine',
+          icon: 'ph ph-trash',
+          command: 'engine.workspace.removeProcessFromEngine',
+          commandArgs: [engineId, bpmnId],
+        },
+      ];
     },
   );
 
   bifrost.menus.registerMenu(
     'engine-workspace/decision-catalog/contextmenu',
-    (metadata: DecisionCatalogContextMetadata, studio: Bifrost): Menu => {
-      return buildDecisionCatalogContextMenu(studio, metadata);
+    (metadata: DecisionCatalogContextMetadata): Menu => {
+      const { engineId, decision, columnId, cellValue } = metadata;
+      const enabled = decision.enabled ?? true;
+      const dmnId = decision.decisionDefinitionId ?? decision.id;
+
+      const filterEntry: Menu =
+        columnId && cellValue && DECISION_CATALOG_FILTERABLE_COLUMNS[columnId]
+          ? [
+              {
+                type: 'command' as const,
+                id: `engine-workspace/decision-catalog/use-as-filter-${columnId}`,
+                label: `Use "${truncateForMenu(cellValue)}" as ${DECISION_CATALOG_FILTERABLE_COLUMNS[columnId]} Filter`,
+                icon: 'ph ph-funnel',
+                command: 'engine.workspace.decisionCatalog.applyColumnFilter',
+                commandArgs: [columnId, cellValue],
+              },
+              { type: 'divider' as const },
+            ]
+          : [];
+
+      return [
+        ...filterEntry,
+        {
+          type: 'command',
+          id: 'engine-workspace/decision-catalog/open-viewer',
+          label: 'Open in Decision Viewer',
+          icon: 'ph ph-folder-open',
+          command: 'engine.workspace.openDecisionViewer',
+          commandArgs: [engineId, dmnId],
+        },
+        { type: 'divider' },
+        {
+          type: 'command',
+          id: 'engine-workspace/decision-catalog/toggle-enabled',
+          label: enabled ? 'Disable' : 'Enable',
+          icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
+          command: 'engine.workspace.toggleDecisionEnabled',
+          commandArgs: [engineId, dmnId, !enabled],
+        },
+        {
+          type: 'command',
+          id: 'engine-workspace/decision-catalog/remove',
+          label: 'Remove from Engine',
+          icon: 'ph ph-trash',
+          command: 'engine.workspace.removeDecisionFromEngine',
+          commandArgs: [engineId, dmnId],
+        },
+      ];
     },
   );
 
   bifrost.menus.registerMenu(
     'engine-workspace/instance-search/contextmenu',
     (metadata: InstanceSearchContextMetadata, studio: Bifrost): Menu => {
-      return buildInstanceSearchContextMenu(studio, metadata);
+      const { engineId, instance, columnId, cellValue } = metadata;
+      const isRetryable = RETRYABLE_STATES.has(instance.state);
+      const isRunning = instance.state === 'running';
+      const isTerminal = TERMINAL_STATES.has(instance.state);
+
+      const filterEntry: Menu =
+        columnId && cellValue && FILTERABLE_COLUMN_LABELS[columnId]
+          ? [
+              {
+                type: 'command' as const,
+                id: `engine-workspace/instance-search/use-as-filter-${columnId}`,
+                label: `Use "${truncateForMenu(cellValue)}" as ${FILTERABLE_COLUMN_LABELS[columnId]} Filter`,
+                icon: 'ph ph-funnel',
+                command: 'engine.workspace.instanceSearch.applyColumnFilter',
+                commandArgs: [columnId, cellValue],
+              },
+              { type: 'divider' as const },
+            ]
+          : [];
+
+      return [
+        ...filterEntry,
+        {
+          type: 'command',
+          id: 'engine-workspace/instance-search/open-debugger',
+          label: 'Open in Debugger',
+          icon: 'ph ph-bug',
+          command: 'engine.debugger.focusOrOpen',
+          commandArgs: [engineId, instance.id],
+        },
+        ...(instance.processModelId
+          ? [
+              {
+                type: 'command' as const,
+                id: 'engine-workspace/instance-search/open-model',
+                label: 'Open Process in Model Viewer',
+                icon: 'ph ph-flow-arrow',
+                command: 'engine.workspace.openModelViewer',
+                commandArgs: [engineId, instance.processModelId],
+              },
+            ]
+          : []),
+        { type: 'divider' },
+        ...(isRunning
+          ? [
+              {
+                type: 'command' as const,
+                id: 'engine-workspace/instance-search/abort',
+                label: 'Abort Instance',
+                icon: 'ph ph-stop',
+                command: 'engine.workspace.instanceSearch.abortSingle',
+                commandArgs: [engineId, instance.id],
+              },
+            ]
+          : []),
+        ...(isRetryable
+          ? [
+              {
+                type: 'command' as const,
+                id: 'engine-workspace/instance-search/retry',
+                label: 'Retry Instance',
+                icon: 'ph ph-arrow-counter-clockwise',
+                command: 'engine.workspace.instanceSearch.retrySingle',
+                commandArgs: [
+                  engineId,
+                  instance.id,
+                  {
+                    processModelId: (instance as any).processModelId,
+                    currentVersion: (instance as any).version,
+                  },
+                ],
+              },
+            ]
+          : []),
+        ...(isTerminal
+          ? [
+              {
+                type: 'command' as const,
+                id: 'engine-workspace/instance-search/delete',
+                label: 'Delete Instance',
+                icon: 'ph ph-trash',
+                command: 'engine.workspace.instanceSearch.deleteSingle',
+                commandArgs: [engineId, instance.id],
+              },
+            ]
+          : []),
+      ];
     },
   );
 
   bifrost.menus.registerMenu(
     'engine-workspace/timer-schedules/contextmenu',
-    (metadata: TimerSchedulesContextMetadata, studio: Bifrost): Menu => {
-      return buildTimerSchedulesContextMenu(studio, metadata);
+    (metadata: TimerSchedulesContextMetadata): Menu => {
+      const { engineId, schedule, columnId, cellValue } = metadata;
+      const enabled = schedule.enabled ?? true;
+
+      const filterEntry: Menu =
+        columnId && cellValue && TIMER_SCHEDULES_FILTERABLE_COLUMNS[columnId]
+          ? [
+              {
+                type: 'command' as const,
+                id: `engine-workspace/timer-schedules/use-as-filter-${columnId}`,
+                label: `Use "${truncateForMenu(cellValue)}" as ${TIMER_SCHEDULES_FILTERABLE_COLUMNS[columnId]} Filter`,
+                icon: 'ph ph-funnel',
+                command: 'engine.workspace.timerSchedules.applyColumnFilter',
+                commandArgs: [columnId, cellValue],
+              },
+              { type: 'divider' as const },
+            ]
+          : [];
+
+      return [
+        ...filterEntry,
+        {
+          type: 'command',
+          id: 'engine-workspace/timer-schedules/open-model',
+          label: 'Open Process in Model Viewer',
+          icon: 'ph ph-flow-arrow',
+          command: 'engine.workspace.openModelViewer',
+          commandArgs: [engineId, schedule.processModelId],
+        },
+        { type: 'divider' },
+        {
+          type: 'command',
+          id: 'engine-workspace/timer-schedules/toggle-enabled',
+          label: enabled ? 'Disable Schedule' : 'Enable Schedule',
+          icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
+          command: 'engine.workspace.timerSchedules.toggleSingle',
+          commandArgs: [engineId, schedule.id, !enabled],
+        },
+      ];
     },
   );
 
-  bifrost.menus.registerMenu(
-    'engine-workspace/task-inbox/contextmenu',
-    (metadata: TaskInboxContextMetadata, studio: Bifrost): Menu => {
-      return buildTaskInboxContextMenu(studio, metadata);
-    },
-  );
+  bifrost.menus.registerMenu('engine-workspace/task-inbox/contextmenu', (metadata: TaskInboxContextMetadata): Menu => {
+    const { engineId, task, columnId, cellValue } = metadata;
+
+    const filterEntry: Menu =
+      columnId && cellValue && TASK_INBOX_FILTERABLE_COLUMNS[columnId]
+        ? [
+            {
+              type: 'command' as const,
+              id: `engine-workspace/task-inbox/use-as-filter-${columnId}`,
+              label: `Use "${truncateForMenu(cellValue)}" as ${TASK_INBOX_FILTERABLE_COLUMNS[columnId]} Filter`,
+              icon: 'ph ph-funnel',
+              command: 'engine.workspace.taskInbox.applyColumnFilter',
+              commandArgs: [columnId, cellValue],
+            },
+            { type: 'divider' as const },
+          ]
+        : [];
+
+    return [
+      ...filterEntry,
+      {
+        type: 'command',
+        id: 'engine-workspace/task-inbox/open-debugger',
+        label: 'Open in Debugger',
+        icon: 'ph ph-bug',
+        command: 'engine.debugger.focusOrOpen',
+        commandArgs: [engineId, task.processInstanceId],
+      },
+      { type: 'divider' },
+      {
+        type: 'command',
+        id: 'engine-workspace/task-inbox/complete',
+        label: 'Complete Task',
+        icon: 'ph ph-check-circle',
+        command: 'engine.workspace.taskInbox.completeSingle',
+        commandArgs: [engineId, task],
+      },
+    ];
+  });
 
   bifrost.menus.registerMenu('engine-workspace/sidebar/engine', (metadata: any): Menu => {
     return [

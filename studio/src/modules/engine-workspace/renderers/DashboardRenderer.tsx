@@ -28,7 +28,6 @@ import type { EngineHealthState } from '#modules/engine-core';
 
 import React from 'react';
 
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { DashboardDocumentModel } from '../models/DashboardDocumentModel';
 import './DashboardRenderer.scss';
@@ -113,7 +112,7 @@ export default function DashboardRenderer(props: EditorDocumentRendererProps): R
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

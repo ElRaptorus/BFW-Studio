@@ -36,7 +36,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import type { ProcessModel, ProcessModelField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { ProcessExplorerDocumentModel } from '../models/ProcessExplorerDocumentModel';
 import type { ProcessExplorerContextMetadata } from '../types/ProcessExplorerContext';
@@ -432,7 +431,7 @@ export default function ProcessExplorerRenderer(props: EditorDocumentRendererPro
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

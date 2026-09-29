@@ -376,13 +376,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
             model,
             flowNode.flowNodeInstances.find((fni) => fni.id === id),
           ]);
-        case FlowNodeType.ManualTask:
-        case FlowNodeType.Task: {
+        case FlowNodeType.ManualTask: {
           const client = getEngineClient(connectionManager, model.engineId);
           if (client == null) {
             return;
           }
-          await client.userTasks.finish(id, { result: {} });
+          await client.manualTasks.confirm(id);
           return;
         }
       }

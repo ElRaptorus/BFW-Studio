@@ -1,5 +1,10 @@
-import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
-import { FormActionPreset, FormFieldType } from '#modules/bpmn-editor/BpmnElementTypes';
+import type {
+  FormAction,
+  FormFieldDefinition,
+  FormFieldType,
+  FormFieldValidationRule,
+} from '#modules/bpmn-core/form-renderer/FormModel';
+import { FormActionPreset } from '#modules/bpmn-core/form-renderer/FormModel';
 
 export type FieldTypeDescriptor = {
   type: FormFieldType;
@@ -9,16 +14,16 @@ export type FieldTypeDescriptor = {
 };
 
 export const FIELD_TYPE_DESCRIPTORS: FieldTypeDescriptor[] = [
-  { type: FormFieldType.Text, label: 'Text', icon: 'ph ph-text-aa', category: 'input' },
-  { type: FormFieldType.Number, label: 'Number', icon: 'ph ph-hash', category: 'input' },
-  { type: FormFieldType.Date, label: 'Date', icon: 'ph ph-calendar', category: 'input' },
-  { type: FormFieldType.Checkbox, label: 'Checkbox', icon: 'ph ph-check-square', category: 'toggle' },
-  { type: FormFieldType.Select, label: 'Dropdown', icon: 'ph ph-caret-down', category: 'choice' },
-  { type: FormFieldType.Radio, label: 'Radio Group', icon: 'ph ph-radio-button', category: 'choice' },
-  { type: FormFieldType.Textarea, label: 'Multi-line', icon: 'ph ph-text-align-left', category: 'input' },
-  { type: FormFieldType.File, label: 'File Upload', icon: 'ph ph-upload', category: 'input' },
-  { type: FormFieldType.Boolean, label: 'Toggle', icon: 'ph ph-toggle-right', category: 'toggle' },
-  { type: FormFieldType.Header, label: 'Section Header', icon: 'ph ph-text-h', category: 'decorative' },
+  { type: 'text', label: 'Text', icon: 'ph ph-text-aa', category: 'input' },
+  { type: 'number', label: 'Number', icon: 'ph ph-hash', category: 'input' },
+  { type: 'date', label: 'Date', icon: 'ph ph-calendar', category: 'input' },
+  { type: 'checkbox', label: 'Checkbox', icon: 'ph ph-check-square', category: 'toggle' },
+  { type: 'dropdown', label: 'Dropdown', icon: 'ph ph-caret-down', category: 'choice' },
+  { type: 'radio', label: 'Radio Group', icon: 'ph ph-radio-button', category: 'choice' },
+  { type: 'textarea', label: 'Multi-line', icon: 'ph ph-text-align-left', category: 'input' },
+  { type: 'file', label: 'File Upload', icon: 'ph ph-upload', category: 'input' },
+  { type: 'toggle', label: 'Toggle', icon: 'ph ph-toggle-right', category: 'toggle' },
+  { type: 'section_header', label: 'Section Header', icon: 'ph ph-text-h', category: 'decorative' },
 ];
 
 export const ACTION_PRESET_DEFAULTS: Record<FormActionPreset, Omit<FormAction, 'id'>> = {
@@ -45,6 +50,29 @@ export function createDefaultField(type: FormFieldType): FormFieldDefinition {
     type,
     label: descriptor?.label ?? 'Field',
     required: false,
+  };
+}
+
+export function fieldsForStorage(fields: FormFieldDefinition[]): FormFieldDefinition[] {
+  return fields.map((field) => ({
+    ...field,
+    required: typeof field.required === 'boolean' ? field.required : false,
+  }));
+}
+
+export function patternValue(field: FormFieldDefinition): string {
+  const rule = field.validationRules?.find((entry) => entry.type === 'pattern');
+  return typeof rule?.value === 'string' ? rule.value : '';
+}
+
+export function withPattern(field: FormFieldDefinition, pattern: string): FormFieldDefinition {
+  const remainingRules = (field.validationRules ?? []).filter((entry) => entry.type !== 'pattern');
+  const patternRule: FormFieldValidationRule[] = pattern === '' ? [] : [{ type: 'pattern', value: pattern }];
+  const validationRules = [...remainingRules, ...patternRule];
+  return {
+    ...field,
+    required: typeof field.required === 'boolean' ? field.required : false,
+    validationRules: validationRules.length > 0 ? validationRules : undefined,
   };
 }
 

@@ -158,7 +158,7 @@ function convertTypeData(flowNodeType: FlowNodeType, raw: Record<string, unknown
         type: 'user_task',
         ...mappings,
         ...contracts,
-        formSchema: asObjectOrNull(raw.formSchema),
+        formSchema: asFormSchema(raw.formSchema),
         formActions: Array.isArray(raw.formActions) ? (raw.formActions as Record<string, unknown>[]) : null,
         assigneesExpression: asString(raw.assigneesExpression),
         dueDate: asString(raw.dueDate),
@@ -551,4 +551,12 @@ function asRecordArray(value: unknown): Record<string, unknown>[] {
 
 function asObjectOrNull(value: unknown): Record<string, unknown> | null {
   return isRecord(value) ? value : null;
+}
+
+function asFormSchema(value: unknown): Record<string, unknown> | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  // The installed SDK types this field as a record. The canonical value is the field array.
+  return value as unknown as Record<string, unknown>;
 }

@@ -1,7 +1,5 @@
 import type { DmnExpressionBody } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 
-import React from 'react';
-
 export function isDecisionTable(
   expression: DmnExpressionBody | null,
 ): expression is Extract<DmnExpressionBody, { hitPolicy: string; inputs: unknown[]; rules: unknown[] }> {
@@ -46,64 +44,4 @@ export function describeExpressionBody(expression: DmnExpressionBody | null): st
     return 'Function Definition';
   }
   return 'Expression';
-}
-
-export function getExpressionPreview(expression: DmnExpressionBody | null): string | null {
-  if (expression == null) {
-    return null;
-  }
-  if ('text' in expression && typeof expression.text === 'string') {
-    return expression.text;
-  }
-  if (isDecisionTable(expression)) {
-    return `${expression.inputs.length} inputs, ${expression.rules.length} rules`;
-  }
-  return describeExpressionBody(expression);
-}
-
-/** Lightweight FEEL token highlighting for table cells. */
-export function highlightFeelExpression(text: string): React.ReactNode {
-  const tokenizer = /(\b(?:if|then|else|not|and|or|true|false|null)\b|[+\-*/=<>!&|()[\],:{}"]|\d+(?:\.\d+)?)/g;
-  const nodes: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null = tokenizer.exec(text);
-
-  while (match != null) {
-    if (match.index > lastIndex) {
-      nodes.push(text.slice(lastIndex, match.index));
-    }
-
-    const part = match[0];
-    const offset = match.index;
-    if (/^(if|then|else|not|and|or|true|false|null)$/.test(part)) {
-      nodes.push(
-        <span key={`kw-${offset}`} className="engine-decision-table-viewer__feel-keyword">
-          {part}
-        </span>,
-      );
-    } else if (/^\d+(?:\.\d+)?$/.test(part)) {
-      nodes.push(
-        <span key={`num-${offset}`} className="engine-decision-table-viewer__feel-number">
-          {part}
-        </span>,
-      );
-    } else if (/^["']/.test(part)) {
-      nodes.push(
-        <span key={`str-${offset}`} className="engine-decision-table-viewer__feel-string">
-          {part}
-        </span>,
-      );
-    } else {
-      nodes.push(part);
-    }
-
-    lastIndex = match.index + part.length;
-    match = tokenizer.exec(text);
-  }
-
-  if (lastIndex < text.length) {
-    nodes.push(text.slice(lastIndex));
-  }
-
-  return nodes;
 }

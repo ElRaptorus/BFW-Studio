@@ -6,31 +6,39 @@ import { ENGINE_COMMANDS, formatDeployErrorMessage } from '#modules/engine-core'
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { RetryRequest } from '@elraptorus/bfw_engine_sdk';
-import type { Menu } from '@elraptorus/bfw_studio_sdk';
+import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
+import type { FlowNodeInstance, RetryRequest } from '@elraptorus/bfw_engine_sdk';
+import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
-import {
-  openDecisionViewer,
-  openInstanceSearch,
-  openModelViewer,
-  removeProcessFromEngine,
-  toggleProcessEnabled,
-} from '../helpers/workspaceNavigation';
+import { ABORTABLE_STATES, RETRYABLE_STATES, TERMINAL_STATES } from '../constants/sharedResourceKeys';
 import type { DashboardDocumentModel } from '../models/DashboardDocumentModel';
 import type { DecisionCatalogDocumentModel } from '../models/DecisionCatalogDocumentModel';
 import type { InstanceSearchDocumentModel } from '../models/InstanceSearchDocumentModel';
 import type { ProcessExplorerDocumentModel } from '../models/ProcessExplorerDocumentModel';
 import type { TaskInboxDocumentModel } from '../models/TaskInboxDocumentModel';
 import type { TimerSchedulesDocumentModel } from '../models/TimerSchedulesDocumentModel';
-import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
-import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';
-import type { ProcessExplorerContextMetadata } from '../types/ProcessExplorerContext';
-import type { TaskInboxContextMetadata } from '../types/TaskInboxContext';
-import type { TimerSchedulesContextMetadata } from '../types/TimerSchedulesContext';
 
-const RETRYABLE_STATES = new Set(['fatal', 'aborted', 'error']);
-const ABORTABLE_STATES = new Set(['running']);
-const TERMINAL_STATES = new Set(['finished', 'fatal', 'aborted', 'error']);
+function reportInstanceBulkOutcome(
+  bifrost: Bifrost,
+  pastParticiple: string,
+  succeeded: number,
+  failed: number,
+  total: number,
+): void {
+  if (failed > 0) {
+    bifrost.notifications.open({
+      type: 'warning',
+      content: `${succeeded} of ${total} instances ${pastParticiple}, ${failed} failed.`,
+      source: 'Engine',
+    });
+    return;
+  }
+  bifrost.notifications.open({
+    type: 'info',
+    content: `${succeeded} instance${succeeded === 1 ? '' : 's'} ${pastParticiple}.`,
+    source: 'Engine',
+  });
+}
 
 function hasDeployBpmnCapability(connectionManager: EngineConnectionManager, engineId: string): boolean {
   const connection = connectionManager.getConnection(engineId);
@@ -78,6 +86,14 @@ async function deployFileFromPicker(
 }
 
 export default function initializeCommands(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
+  function requireClient(engineId: string): BfwEngineClient {
+    const client = connectionManager.getClient(engineId);
+    if (!client) {
+      throw new Error('Not connected');
+    }
+    return client;
+  }
+
   bifrost.commands.register(
     'engine.workspace.openDashboard',
     (engineId?: string) => {
@@ -116,6 +132,38 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     },
     { visibleInSearch: true, description: ['Engine: Instance Search', 'Engine Instances'] },
   );
+
+  async function openInstanceSearch(
+    studio: Bifrost,
+    engineId: string,
+    filter?: { processModelId?: string; version?: string; businessKey?: string },
+  ): Promise<void> {
+    const baseUri = `engine://instances/${engineId}`;
+
+    let doc = studio.editors.getOpenEditorDocuments().find((existing) => existing.uri.startsWith(baseUri));
+
+    if (!doc) {
+      doc = studio.editors.focusOrOpenEditorDocument(baseUri, 'Instances');
+    } else {
+      studio.editors.focusOrOpenEditorDocument(doc.uri);
+    }
+
+    if (filter == null) {
+      return;
+    }
+
+    const model = await studio.editors.getEditorDocumentModel<InstanceSearchDocumentModel>(doc);
+
+    if (filter.processModelId) {
+      model.setProcessModelIdFilter(filter.processModelId);
+    }
+    if (filter.version) {
+      model.setVersionFilter(filter.version);
+    }
+    if (filter.businessKey) {
+      model.setBusinessKeyFilter(filter.businessKey);
+    }
+  }
 
   bifrost.commands.register(
     'engine.workspace.openTaskInbox',
@@ -160,7 +208,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     'engine.workspace.openModelViewer',
     (engineId: string, processModelId: string) => {
       connectionManager.setActiveEngine(engineId);
-      openModelViewer(bifrost, engineId, processModelId);
+      bifrost.editors.focusOrOpenEditorDocument(`engine-model://${engineId}/${processModelId}`, processModelId);
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
@@ -169,7 +217,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     'engine.workspace.openDecisionViewer',
     (engineId: string, decisionModelId: string) => {
       connectionManager.setActiveEngine(engineId);
-      openDecisionViewer(bifrost, engineId, decisionModelId);
+      bifrost.editors.focusOrOpenEditorDocument(`engine-decision://${engineId}/${decisionModelId}`, decisionModelId);
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
@@ -177,7 +225,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.toggleProcessEnabled',
     async (engineId: string, processModelId: string, enabled: boolean) => {
-      await toggleProcessEnabled(connectionManager, engineId, processModelId, enabled);
+      const client = requireClient(engineId);
+      if (enabled) {
+        await client.processes.enable(processModelId);
+      } else {
+        await client.processes.disable(processModelId);
+      }
       bifrost.notifications.open({
         type: 'info',
         content: `Process "${processModelId}" ${enabled ? 'enabled' : 'disabled'}.`,
@@ -190,7 +243,8 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.removeProcessFromEngine',
     async (engineId: string, processModelId: string) => {
-      await removeProcessFromEngine(connectionManager, engineId, processModelId);
+      const client = requireClient(engineId);
+      await client.processes.undeploy(processModelId);
       bifrost.notifications.open({
         type: 'info',
         content: `Process "${processModelId}" removed from engine.`,
@@ -202,12 +256,9 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.completeTask',
-    async (engineId: string, flowNodeInstanceId: string, result?: Record<string, unknown>) => {
-      const client = connectionManager.getClient(engineId);
-      if (!client) {
-        throw new Error('Not connected');
-      }
-      await client.userTasks.finish(flowNodeInstanceId, { result });
+    async (engineId: string, task: Pick<FlowNodeInstance, 'id' | 'flowNodeType'>) => {
+      const client = requireClient(engineId);
+      await completeInboxTask(client, task);
       bifrost.notifications.open({ type: 'info', content: 'Task completed.', source: 'Engine' });
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
@@ -227,10 +278,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.toggleDecisionEnabled',
     async (engineId: string, decisionModelId: string, enabled: boolean) => {
-      const client = connectionManager.getClient(engineId);
-      if (!client) {
-        throw new Error('Not connected');
-      }
+      const client = requireClient(engineId);
       if (enabled) {
         await client.decisions.enable(decisionModelId);
       } else {
@@ -248,10 +296,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.removeDecisionFromEngine',
     async (engineId: string, decisionModelId: string) => {
-      const client = connectionManager.getClient(engineId);
-      if (!client) {
-        throw new Error('Not connected');
-      }
+      const client = requireClient(engineId);
       await client.decisions.undeploy(decisionModelId);
       bifrost.notifications.open({
         type: 'info',
@@ -302,19 +347,38 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.processExplorer.enableSelected',
-    async (model: ProcessExplorerDocumentModel) => model.bulkToggleSelected(true),
+    async (model: ProcessExplorerDocumentModel) => {
+      const client = requireClient(model.getEngineId());
+      for (const processModel of model.getSelectedModels()) {
+        await client.processes.enable(processModel.processModelId ?? processModel.id);
+      }
+      await model.refresh();
+    },
     { enabledWhen: (model: ProcessExplorerDocumentModel) => model?.getSelectedModelIds()?.length > 0 },
   );
 
   bifrost.commands.register(
     'engine.workspace.processExplorer.disableSelected',
-    async (model: ProcessExplorerDocumentModel) => model.bulkToggleSelected(false),
+    async (model: ProcessExplorerDocumentModel) => {
+      const client = requireClient(model.getEngineId());
+      for (const processModel of model.getSelectedModels()) {
+        await client.processes.disable(processModel.processModelId ?? processModel.id);
+      }
+      await model.refresh();
+    },
     { enabledWhen: (model: ProcessExplorerDocumentModel) => model?.getSelectedModelIds()?.length > 0 },
   );
 
   bifrost.commands.register(
     'engine.workspace.processExplorer.removeSelected',
-    async (model: ProcessExplorerDocumentModel) => model.bulkRemoveSelected(),
+    async (model: ProcessExplorerDocumentModel) => {
+      const client = requireClient(model.getEngineId());
+      for (const processModel of model.getSelectedModels()) {
+        await client.processes.undeploy(processModel.processModelId ?? processModel.id);
+      }
+      model.clearBulkSelection();
+      await model.refresh();
+    },
     { enabledWhen: (model: ProcessExplorerDocumentModel) => model?.getSelectedModelIds()?.length > 0 },
   );
 
@@ -324,19 +388,40 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.decisionCatalog.enableSelected',
-    async (model: DecisionCatalogDocumentModel) => model.bulkToggleSelected(true),
+    async (model: DecisionCatalogDocumentModel) => {
+      const client = requireClient(model.getEngineId());
+      for (const decision of model.getSelectedDecisions()) {
+        await client.decisions.enable(decision.decisionDefinitionId ?? decision.id);
+      }
+      await model.refresh();
+    },
     { enabledWhen: (model: DecisionCatalogDocumentModel) => model?.getSelectedDecisionIds()?.length > 0 },
   );
 
   bifrost.commands.register(
     'engine.workspace.decisionCatalog.disableSelected',
-    async (model: DecisionCatalogDocumentModel) => model.bulkToggleSelected(false),
+    async (model: DecisionCatalogDocumentModel) => {
+      const client = requireClient(model.getEngineId());
+      for (const decision of model.getSelectedDecisions()) {
+        await client.decisions.disable(decision.decisionDefinitionId ?? decision.id);
+      }
+      await model.refresh();
+    },
     { enabledWhen: (model: DecisionCatalogDocumentModel) => model?.getSelectedDecisionIds()?.length > 0 },
   );
 
   bifrost.commands.register(
     'engine.workspace.decisionCatalog.removeSelected',
-    async (model: DecisionCatalogDocumentModel) => model.bulkRemoveSelected(),
+    async (model: DecisionCatalogDocumentModel) => {
+      const client = requireClient(model.getEngineId());
+      for (const decision of model.getSelectedDecisions()) {
+        const decisionModelId = decision.decisionDefinitionId ?? decision.id;
+        await client.decisions.disable(decisionModelId);
+        await client.decisions.undeploy(decisionModelId);
+      }
+      model.clearBulkSelection();
+      await model.refresh();
+    },
     { enabledWhen: (model: DecisionCatalogDocumentModel) => model?.getSelectedDecisionIds()?.length > 0 },
   );
 
@@ -363,7 +448,22 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
         return;
       }
 
-      await model.bulkAbortSelected(abortable);
+      let succeeded = 0;
+      let failed = 0;
+      for (const instance of abortable) {
+        try {
+          await bifrost.commands.executeCommand(ENGINE_COMMANDS.abortProcessInstance, [
+            model.getEngineId(),
+            instance.id,
+          ]);
+          succeeded++;
+        } catch {
+          failed++;
+        }
+      }
+      reportInstanceBulkOutcome(bifrost, 'aborted', succeeded, failed, abortable.length);
+      model.setSelectedInstanceIds([]);
+      await model.refresh();
     },
     {
       enabledWhen: (model: InstanceSearchDocumentModel) =>
@@ -386,7 +486,22 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
         return;
       }
 
-      await model.bulkDeleteSelected(deletable);
+      let succeeded = 0;
+      let failed = 0;
+      for (const instance of deletable) {
+        try {
+          await bifrost.commands.executeCommand(ENGINE_COMMANDS.deleteProcessInstance, [
+            model.getEngineId(),
+            instance.id,
+          ]);
+          succeeded++;
+        } catch {
+          failed++;
+        }
+      }
+      reportInstanceBulkOutcome(bifrost, 'deleted', succeeded, failed, deletable.length);
+      model.setSelectedInstanceIds([]);
+      await model.refresh();
     },
     {
       enabledWhen: (model: InstanceSearchDocumentModel) =>
@@ -409,7 +524,23 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
         return;
       }
 
-      await model.bulkRetrySelected(retryable, dialogResult);
+      let succeeded = 0;
+      let failed = 0;
+      for (const instance of retryable) {
+        try {
+          await bifrost.commands.executeCommand(ENGINE_COMMANDS.retryProcessInstance, [
+            model.getEngineId(),
+            instance.id,
+            dialogResult,
+          ]);
+          succeeded++;
+        } catch {
+          failed++;
+        }
+      }
+      reportInstanceBulkOutcome(bifrost, 'retried', succeeded, failed, retryable.length);
+      model.setSelectedInstanceIds([]);
+      await model.refresh();
     },
     {
       enabledWhen: (model: InstanceSearchDocumentModel) =>
@@ -429,7 +560,18 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.taskInbox.completeSelected',
-    async (model: TaskInboxDocumentModel) => model.bulkCompleteSelected(),
+    async (model: TaskInboxDocumentModel) => {
+      const client = connectionManager.getClient(model.getEngineId());
+      const selected = model.getSelectedTasks();
+      if (!client || selected.length === 0) {
+        return;
+      }
+      for (const task of selected) {
+        await completeInboxTask(client, task);
+      }
+      model.setSelectedTaskIds([]);
+      await model.refresh();
+    },
     { enabledWhen: (model: TaskInboxDocumentModel) => model?.getSelectedTaskIds()?.length > 0 },
   );
 
@@ -439,13 +581,25 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
   bifrost.commands.register(
     'engine.workspace.timerSchedules.enableSelected',
-    async (model: TimerSchedulesDocumentModel) => model.bulkToggleSelected(true),
+    async (model: TimerSchedulesDocumentModel) => {
+      const engineId = model.getEngineId();
+      for (const schedule of model.getSelectedSchedules()) {
+        await enableTimerSchedule(connectionManager, engineId, schedule.id);
+      }
+      await model.refresh();
+    },
     { enabledWhen: (model: TimerSchedulesDocumentModel) => model?.getSelectedScheduleIds()?.length > 0 },
   );
 
   bifrost.commands.register(
     'engine.workspace.timerSchedules.disableSelected',
-    async (model: TimerSchedulesDocumentModel) => model.bulkToggleSelected(false),
+    async (model: TimerSchedulesDocumentModel) => {
+      const engineId = model.getEngineId();
+      for (const schedule of model.getSelectedSchedules()) {
+        await disableTimerSchedule(connectionManager, engineId, schedule.id);
+      }
+      await model.refresh();
+    },
     { enabledWhen: (model: TimerSchedulesDocumentModel) => model?.getSelectedScheduleIds()?.length > 0 },
   );
 
@@ -533,26 +687,125 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     },
   );
 
+  bifrost.commands.register('engine.workspace.timerSchedules.fetch', async (engineId: string) =>
+    fetchTimerSchedules(connectionManager, engineId),
+  );
+
   bifrost.commands.register(
     'engine.workspace.timerSchedules.toggleSingle',
     async (engineId: string, scheduleId: string, enabled: boolean) => {
       if (enabled) {
-        const { enableTimerSchedule } = await import('../helpers/engineApi');
         await enableTimerSchedule(connectionManager, engineId, scheduleId);
       } else {
-        const { disableTimerSchedule } = await import('../helpers/engineApi');
         await disableTimerSchedule(connectionManager, engineId, scheduleId);
       }
     },
   );
 
-  bifrost.commands.register('engine.workspace.taskInbox.completeSingle', async (engineId: string, taskId: string) => {
-    const client = connectionManager.getClient(engineId);
-    if (!client) {
-      return;
+  interface TimerSchedule {
+    id: string;
+    processModelId: string;
+    processVersionId: string;
+    flowNodeId: string;
+    kind: 'cycle' | 'date' | 'duration';
+    isoSpec: string;
+    enabled: boolean;
+    nextFireAt: string | null;
+    lastTriggeredAt?: string | null;
+  }
+
+  async function authorizedFetch(
+    connectionManager: EngineConnectionManager,
+    engineId: string,
+    path: string,
+    init?: RequestInit,
+  ): Promise<Response> {
+    const connection = connectionManager.getConnection(engineId);
+    if (!connection) {
+      throw new Error('Not connected');
     }
-    await client.userTasks.finish(taskId, {});
-  });
+
+    const token = connectionManager.identity.getToken(connection.url);
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      ...(init?.headers as Record<string, string> | undefined),
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const url = `${connection.url.replace(/\/$/, '')}${path}`;
+    return fetch(url, { ...init, headers });
+  }
+
+  async function fetchTimerSchedules(
+    connectionManager: EngineConnectionManager,
+    engineId: string,
+  ): Promise<TimerSchedule[]> {
+    const response = await authorizedFetch(connectionManager, engineId, '/timer-schedules');
+    if (!response.ok) {
+      throw new Error(`Failed to load timer schedules (${response.status})`);
+    }
+    const body = (await response.json()) as { data: TimerSchedule[] };
+    return body.data ?? [];
+  }
+
+  async function enableTimerSchedule(
+    connectionManager: EngineConnectionManager,
+    engineId: string,
+    scheduleId: string,
+  ): Promise<TimerSchedule> {
+    const response = await authorizedFetch(connectionManager, engineId, `/timer-schedules/${scheduleId}/enable`, {
+      method: 'PUT',
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to enable timer schedule (${response.status})`);
+    }
+    const body = (await response.json()) as { data: TimerSchedule };
+    return body.data;
+  }
+
+  async function disableTimerSchedule(
+    connectionManager: EngineConnectionManager,
+    engineId: string,
+    scheduleId: string,
+  ): Promise<TimerSchedule> {
+    const response = await authorizedFetch(connectionManager, engineId, `/timer-schedules/${scheduleId}/disable`, {
+      method: 'PUT',
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to disable timer schedule (${response.status})`);
+    }
+    const body = (await response.json()) as { data: TimerSchedule };
+    return body.data;
+  }
+
+  bifrost.commands.register(
+    'engine.workspace.taskInbox.completeSingle',
+    async (engineId: string, task: Pick<FlowNodeInstance, 'id' | 'flowNodeType'>) => {
+      const client = connectionManager.getClient(engineId);
+      if (!client) {
+        return;
+      }
+      await completeInboxTask(client, task);
+    },
+  );
+}
+
+export async function completeInboxTask(
+  client: Pick<BfwEngineClient, 'userTasks' | 'manualTasks'>,
+  task: Pick<FlowNodeInstance, 'id' | 'flowNodeType'>,
+): Promise<void> {
+  switch (task.flowNodeType) {
+    case FlowNodeType.ManualTask:
+      await client.manualTasks.confirm(task.id);
+      return;
+    case FlowNodeType.UserTask:
+      await client.userTasks.finish(task.id);
+      return;
+    default:
+      throw new Error(`Task ${task.id} of type ${task.flowNodeType} cannot be completed from the inbox.`);
+  }
 }
 
 async function showBulkRetryDialog(
@@ -643,334 +896,4 @@ async function showBulkDeleteDialog(
   });
 
   return !dialogResult.wasCancelled && dialogResult.response === 'delete';
-}
-
-function truncateForMenu(value: string, maxLength = 24): string {
-  return value.length > maxLength ? value.slice(0, maxLength) + '...' : value;
-}
-
-const PROCESS_EXPLORER_FILTERABLE_COLUMNS: Record<string, string> = {
-  name: 'Name',
-  processModelId: 'Process ID',
-  version: 'Version',
-};
-
-const DECISION_CATALOG_FILTERABLE_COLUMNS: Record<string, string> = {
-  name: 'Name',
-  decisionDefinitionId: 'Model ID',
-  version: 'Version',
-};
-
-const TASK_INBOX_FILTERABLE_COLUMNS: Record<string, string> = {
-  flowNodeId: 'Task',
-  processInstanceId: 'Process Instance',
-  laneName: 'Lane',
-};
-
-const TIMER_SCHEDULES_FILTERABLE_COLUMNS: Record<string, string> = {
-  processModelId: 'Process',
-  flowNodeId: 'Start Event',
-  kind: 'Kind',
-};
-
-export function buildProcessExplorerContextMenu(_studio: Bifrost, metadata: ProcessExplorerContextMetadata): Menu {
-  const { engineId, processModel, columnId, cellValue } = metadata;
-  const enabled = processModel.enabled ?? true;
-  const bpmnId = processModel.processModelId ?? processModel.id;
-
-  const filterEntry: Menu =
-    columnId && cellValue && PROCESS_EXPLORER_FILTERABLE_COLUMNS[columnId]
-      ? [
-          {
-            type: 'command' as const,
-            id: `engine-workspace/process-explorer/use-as-filter-${columnId}`,
-            label: `Use "${truncateForMenu(cellValue)}" as ${PROCESS_EXPLORER_FILTERABLE_COLUMNS[columnId]} Filter`,
-            icon: 'ph ph-funnel',
-            command: 'engine.workspace.processExplorer.applyColumnFilter',
-            commandArgs: [columnId, cellValue],
-          },
-          { type: 'divider' as const },
-        ]
-      : [];
-
-  return [
-    ...filterEntry,
-    {
-      type: 'command',
-      id: 'engine-workspace/process-explorer/open-model',
-      label: 'Open in Model Viewer',
-      icon: 'ph ph-folder-open',
-      command: 'engine.workspace.openModelViewer',
-      commandArgs: [engineId, bpmnId],
-    },
-    {
-      type: 'command',
-      id: 'engine-workspace/process-explorer/start-process',
-      label: 'Start in Debugger',
-      icon: 'ph ph-play',
-      command: ENGINE_COMMANDS.startProcessAndOpenDebugger,
-      commandArgs: [engineId, bpmnId],
-    },
-    {
-      type: 'command',
-      id: 'engine-workspace/process-explorer/configured-start-process',
-      label: 'Configured Start in Debugger...',
-      icon: 'ph ph-sliders-horizontal',
-      command: ENGINE_COMMANDS.configuredStartProcessAndOpenDebugger,
-      commandArgs: [engineId, bpmnId],
-    },
-    { type: 'divider' },
-    {
-      type: 'command',
-      id: 'engine-workspace/process-explorer/show-instances',
-      label: 'Show Process Instances',
-      command: 'engine.workspace.openInstanceSearch',
-      commandArgs: [engineId, { processModelId: bpmnId }],
-    },
-    { type: 'divider' },
-    {
-      type: 'command',
-      id: 'engine-workspace/process-explorer/toggle-enabled',
-      label: enabled ? 'Disable' : 'Enable',
-      icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
-      command: 'engine.workspace.toggleProcessEnabled',
-      commandArgs: [engineId, bpmnId, !enabled],
-    },
-    {
-      type: 'command',
-      id: 'engine-workspace/process-explorer/remove',
-      label: 'Remove from Engine',
-      icon: 'ph ph-trash',
-      command: 'engine.workspace.removeProcessFromEngine',
-      commandArgs: [engineId, bpmnId],
-    },
-  ];
-}
-
-export function buildDecisionCatalogContextMenu(_studio: Bifrost, metadata: DecisionCatalogContextMetadata): Menu {
-  const { engineId, decision, columnId, cellValue } = metadata;
-  const enabled = decision.enabled ?? true;
-  const dmnId = decision.decisionDefinitionId ?? decision.id;
-
-  const filterEntry: Menu =
-    columnId && cellValue && DECISION_CATALOG_FILTERABLE_COLUMNS[columnId]
-      ? [
-          {
-            type: 'command' as const,
-            id: `engine-workspace/decision-catalog/use-as-filter-${columnId}`,
-            label: `Use "${truncateForMenu(cellValue)}" as ${DECISION_CATALOG_FILTERABLE_COLUMNS[columnId]} Filter`,
-            icon: 'ph ph-funnel',
-            command: 'engine.workspace.decisionCatalog.applyColumnFilter',
-            commandArgs: [columnId, cellValue],
-          },
-          { type: 'divider' as const },
-        ]
-      : [];
-
-  return [
-    ...filterEntry,
-    {
-      type: 'command',
-      id: 'engine-workspace/decision-catalog/open-viewer',
-      label: 'Open in Decision Viewer',
-      icon: 'ph ph-folder-open',
-      command: 'engine.workspace.openDecisionViewer',
-      commandArgs: [engineId, dmnId],
-    },
-    { type: 'divider' },
-    {
-      type: 'command',
-      id: 'engine-workspace/decision-catalog/toggle-enabled',
-      label: enabled ? 'Disable' : 'Enable',
-      icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
-      command: 'engine.workspace.toggleDecisionEnabled',
-      commandArgs: [engineId, dmnId, !enabled],
-    },
-    {
-      type: 'command',
-      id: 'engine-workspace/decision-catalog/remove',
-      label: 'Remove from Engine',
-      icon: 'ph ph-trash',
-      command: 'engine.workspace.removeDecisionFromEngine',
-      commandArgs: [engineId, dmnId],
-    },
-  ];
-}
-
-const FILTERABLE_COLUMN_LABELS: Record<string, string> = {
-  id: 'Instance ID',
-  processModelId: 'Process',
-  version: 'Version',
-  businessKey: 'Business Key',
-};
-
-export function buildInstanceSearchContextMenu(_studio: Bifrost, metadata: InstanceSearchContextMetadata): Menu {
-  const { engineId, instance, columnId, cellValue } = metadata;
-  const isRetryable = RETRYABLE_STATES.has(instance.state);
-  const isRunning = instance.state === 'running';
-  const isTerminal = TERMINAL_STATES.has(instance.state);
-
-  const filterEntry: Menu =
-    columnId && cellValue && FILTERABLE_COLUMN_LABELS[columnId]
-      ? [
-          {
-            type: 'command' as const,
-            id: `engine-workspace/instance-search/use-as-filter-${columnId}`,
-            label: `Use "${truncateForMenu(cellValue)}" as ${FILTERABLE_COLUMN_LABELS[columnId]} Filter`,
-            icon: 'ph ph-funnel',
-            command: 'engine.workspace.instanceSearch.applyColumnFilter',
-            commandArgs: [columnId, cellValue],
-          },
-          { type: 'divider' as const },
-        ]
-      : [];
-
-  return [
-    ...filterEntry,
-    {
-      type: 'command',
-      id: 'engine-workspace/instance-search/open-debugger',
-      label: 'Open in Debugger',
-      icon: 'ph ph-bug',
-      command: 'engine.debugger.focusOrOpen',
-      commandArgs: [engineId, instance.id],
-    },
-    ...(instance.processModelId
-      ? [
-          {
-            type: 'command' as const,
-            id: 'engine-workspace/instance-search/open-model',
-            label: 'Open Process in Model Viewer',
-            icon: 'ph ph-flow-arrow',
-            command: 'engine.workspace.openModelViewer',
-            commandArgs: [engineId, instance.processModelId],
-          },
-        ]
-      : []),
-    { type: 'divider' },
-    ...(isRunning
-      ? [
-          {
-            type: 'command' as const,
-            id: 'engine-workspace/instance-search/abort',
-            label: 'Abort Instance',
-            icon: 'ph ph-stop',
-            command: 'engine.workspace.instanceSearch.abortSingle',
-            commandArgs: [engineId, instance.id],
-          },
-        ]
-      : []),
-    ...(isRetryable
-      ? [
-          {
-            type: 'command' as const,
-            id: 'engine-workspace/instance-search/retry',
-            label: 'Retry Instance',
-            icon: 'ph ph-arrow-counter-clockwise',
-            command: 'engine.workspace.instanceSearch.retrySingle',
-            commandArgs: [
-              engineId,
-              instance.id,
-              {
-                processModelId: (instance as any).processModelId,
-                currentVersion: (instance as any).version,
-              } satisfies RetryContext,
-            ],
-          },
-        ]
-      : []),
-    ...(isTerminal
-      ? [
-          {
-            type: 'command' as const,
-            id: 'engine-workspace/instance-search/delete',
-            label: 'Delete Instance',
-            icon: 'ph ph-trash',
-            command: 'engine.workspace.instanceSearch.deleteSingle',
-            commandArgs: [engineId, instance.id],
-          },
-        ]
-      : []),
-  ];
-}
-
-export function buildTimerSchedulesContextMenu(_studio: Bifrost, metadata: TimerSchedulesContextMetadata): Menu {
-  const { engineId, schedule, columnId, cellValue } = metadata;
-  const enabled = schedule.enabled ?? true;
-
-  const filterEntry: Menu =
-    columnId && cellValue && TIMER_SCHEDULES_FILTERABLE_COLUMNS[columnId]
-      ? [
-          {
-            type: 'command' as const,
-            id: `engine-workspace/timer-schedules/use-as-filter-${columnId}`,
-            label: `Use "${truncateForMenu(cellValue)}" as ${TIMER_SCHEDULES_FILTERABLE_COLUMNS[columnId]} Filter`,
-            icon: 'ph ph-funnel',
-            command: 'engine.workspace.timerSchedules.applyColumnFilter',
-            commandArgs: [columnId, cellValue],
-          },
-          { type: 'divider' as const },
-        ]
-      : [];
-
-  return [
-    ...filterEntry,
-    {
-      type: 'command',
-      id: 'engine-workspace/timer-schedules/open-model',
-      label: 'Open Process in Model Viewer',
-      icon: 'ph ph-flow-arrow',
-      command: 'engine.workspace.openModelViewer',
-      commandArgs: [engineId, schedule.processModelId],
-    },
-    { type: 'divider' },
-    {
-      type: 'command',
-      id: 'engine-workspace/timer-schedules/toggle-enabled',
-      label: enabled ? 'Disable Schedule' : 'Enable Schedule',
-      icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
-      command: 'engine.workspace.timerSchedules.toggleSingle',
-      commandArgs: [engineId, schedule.id, !enabled],
-    },
-  ];
-}
-
-export function buildTaskInboxContextMenu(_studio: Bifrost, metadata: TaskInboxContextMetadata): Menu {
-  const { engineId, task, columnId, cellValue } = metadata;
-
-  const filterEntry: Menu =
-    columnId && cellValue && TASK_INBOX_FILTERABLE_COLUMNS[columnId]
-      ? [
-          {
-            type: 'command' as const,
-            id: `engine-workspace/task-inbox/use-as-filter-${columnId}`,
-            label: `Use "${truncateForMenu(cellValue)}" as ${TASK_INBOX_FILTERABLE_COLUMNS[columnId]} Filter`,
-            icon: 'ph ph-funnel',
-            command: 'engine.workspace.taskInbox.applyColumnFilter',
-            commandArgs: [columnId, cellValue],
-          },
-          { type: 'divider' as const },
-        ]
-      : [];
-
-  return [
-    ...filterEntry,
-    {
-      type: 'command',
-      id: 'engine-workspace/task-inbox/open-debugger',
-      label: 'Open in Debugger',
-      icon: 'ph ph-bug',
-      command: 'engine.debugger.focusOrOpen',
-      commandArgs: [engineId, task.processInstanceId],
-    },
-    { type: 'divider' },
-    {
-      type: 'command',
-      id: 'engine-workspace/task-inbox/complete',
-      label: 'Complete Task',
-      icon: 'ph ph-check-circle',
-      command: 'engine.workspace.taskInbox.completeSingle',
-      commandArgs: [engineId, task.id],
-    },
-  ];
 }

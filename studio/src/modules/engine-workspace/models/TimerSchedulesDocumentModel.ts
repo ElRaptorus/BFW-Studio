@@ -5,8 +5,17 @@ import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
 
 import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 
-import type { TimerSchedule } from '../helpers/engineApi';
-import { fetchTimerSchedules } from '../helpers/engineApi';
+interface TimerSchedule {
+  id: string;
+  processModelId: string;
+  processVersionId: string;
+  flowNodeId: string;
+  kind: 'cycle' | 'date' | 'duration';
+  isoSpec: string;
+  enabled: boolean;
+  nextFireAt: string | null;
+  lastTriggeredAt?: string | null;
+}
 
 const CONNECTION_GRACE_PERIOD_MS = 60_000;
 
@@ -221,7 +230,9 @@ export class TimerSchedulesDocumentModel extends EditorDocumentModel {
     this.publishDataRevision();
 
     try {
-      const schedules = await fetchTimerSchedules(this.connectionManager, this.engineId);
+      const schedules = await this.studio.commands.executeCommand('engine.workspace.timerSchedules.fetch', [
+        this.engineId,
+      ]);
       this.schedules = schedules;
       this.loading = false;
       this.error = null;
@@ -271,43 +282,10 @@ export class TimerSchedulesDocumentModel extends EditorDocumentModel {
     return this.schedules.filter((schedule) => this.selectedScheduleIds.has(schedule.id));
   }
 
-  async bulkToggleSelected(enabled: boolean): Promise<void> {
-    const selected = this.getSelectedSchedules();
-    if (selected.length === 0) {
-      return;
-    }
-    if (enabled) {
-      const { enableTimerSchedule } = await import('../helpers/engineApi');
-      for (const schedule of selected) {
-        await enableTimerSchedule(this.connectionManager, this.engineId, schedule.id);
-      }
-    } else {
-      const { disableTimerSchedule } = await import('../helpers/engineApi');
-      for (const schedule of selected) {
-        await disableTimerSchedule(this.connectionManager, this.engineId, schedule.id);
-      }
-    }
-    await this.refresh();
-  }
-
   applyColumnFilter(columnId: string, value: string): void {
     this.appliedFilter = { columnId, value };
     this.filterRevision++;
     this.updateMetadata({ filterRevision: this.filterRevision });
-  }
-
-  async toggleSelectedSchedule(enabled: boolean): Promise<void> {
-    if (!this.selectedSchedule) {
-      return;
-    }
-    if (enabled) {
-      const { enableTimerSchedule } = await import('../helpers/engineApi');
-      await enableTimerSchedule(this.connectionManager, this.engineId, this.selectedSchedule.id);
-    } else {
-      const { disableTimerSchedule } = await import('../helpers/engineApi');
-      await disableTimerSchedule(this.connectionManager, this.engineId, this.selectedSchedule.id);
-    }
-    await this.refresh();
   }
 }
 

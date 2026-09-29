@@ -36,7 +36,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import type { DecisionDefinition, DecisionDefinitionField, SortClause } from '@elraptorus/bfw_engine_sdk';
 
-import { resolveAuthLabel } from '../helpers/resolveAuthLabel';
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { DecisionCatalogDocumentModel } from '../models/DecisionCatalogDocumentModel';
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
@@ -388,7 +387,7 @@ export default function DecisionCatalogRenderer(props: EditorDocumentRendererPro
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-key"
-            label={resolveAuthLabel(connectionManager, engineUrl)}
+            label={bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveAuthLabel, [engineUrl])}
             command={ENGINE_COMMANDS.setAuthToken}
             commandArgs={[engineUrl]}
           />

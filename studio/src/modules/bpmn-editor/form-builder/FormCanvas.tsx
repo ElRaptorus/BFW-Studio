@@ -1,4 +1,4 @@
-import type { FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 import { useDrag, useDrop } from 'react-dnd';
 
 import React, { useCallback, useRef } from 'react';

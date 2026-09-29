@@ -2,13 +2,14 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { EVENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
-import type { FormAction, FormFieldDefinition } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import BpmnDocumentModel from '../BpmnDocumentModel';
 import { FormBuilderEditorMediator } from './FormBuilderEditorMediator';
 import type { FormBuilderSelection } from './FormBuilderEditorMediator';
+import { fieldsForStorage } from './constants';
 
 export type FormBuilderState = {
   loading: boolean;
@@ -98,8 +99,9 @@ export function useBpmnFormBuilderState(props: EditorDocumentRendererProps): For
       if (model == null) {
         return;
       }
-      setFields(newFields);
-      model.elements.setFormFieldDefinitions(fragmentId, newFields);
+      const storedFields = fieldsForStorage(newFields);
+      setFields(storedFields);
+      model.elements.setFormFieldDefinitions(fragmentId, storedFields);
     },
     [model, fragmentId],
   );
