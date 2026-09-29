@@ -143,17 +143,11 @@ export default class TestDriver {
 
   public async maximizeWindow() {
     try {
-      await this.client!.maximizeWindow();
+      await this.client!.execute(() => {
+        require('electron').ipcRenderer.send('IPC_MESSAGE_MAXIMIZE_FOCUSED_WINDOW');
+      });
     } catch {
-      try {
-        await this.client!.execute(() => {
-          const remote = require('@electron/remote');
-          remote.getCurrentWindow().maximize();
-        });
-      } catch {
-        // Best-effort. CI ChromeDriver/Electron can reject execute/sync with
-        // "call function result missing int 'status'".
-      }
+      // Best effort. A failed maximization during test runs is a nuisance, not a crash.
     }
     await this.pause(500);
   }

@@ -82,13 +82,6 @@ let appManagerSubscriptions: AbstractSubscription[] = [];
 
 const releaseChannelName = BuildInfo.releaseChannelName;
 
-if (process.env.APP_TEST == 'true') {
-  require('@electron/remote/main').initialize();
-  app.on('browser-window-created', (_, window) => {
-    require('@electron/remote/main').enable(window.webContents);
-  });
-}
-
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 process.env.__BFW_BUNDLE_DIR__ = __dirname;
 

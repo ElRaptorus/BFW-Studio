@@ -1,5 +1,5 @@
 import type { ExecException } from 'child_process';
-import { exec, execSync } from 'child_process';
+import { exec, execSync, spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -119,7 +119,10 @@ async function runTests(): Promise<void> {
 
   console.log(`Running production Electron tests against: ${pathToBifrost}`);
 
-  const childProcess = exec(`cross-env TEST_APP_PATH=${quoteForShell(pathToBifrost)} npm run ${npmRunArgs.join(' ')}`);
+  const childProcess = spawn(
+    `cross-env TEST_APP_PATH=${quoteForShell(pathToBifrost)} npm run ${npmRunArgs.join(' ')}`,
+    { stdio: 'inherit', shell: true }
+  );
 
   childProcess.stdout?.on('data', (data) => {
     console.log(data);
