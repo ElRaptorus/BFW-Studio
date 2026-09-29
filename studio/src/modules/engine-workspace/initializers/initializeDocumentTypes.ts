@@ -1,5 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import { checkEngineConnectivity } from '#modules/engine-core';
+import type { EngineConnectionManager } from '#modules/engine-core';
 
 import { DashboardDocumentModel } from '../models/DashboardDocumentModel';
 import { DecisionCatalogDocumentModel } from '../models/DecisionCatalogDocumentModel';
@@ -14,7 +14,7 @@ import ProcessExplorerRenderer from '../renderers/ProcessExplorerRenderer';
 import TaskInboxRenderer from '../renderers/TaskInboxRenderer';
 import TimerSchedulesRenderer from '../renderers/TimerSchedulesRenderer';
 
-export default function initializeDocumentTypes(bifrost: Bifrost): void {
+export default function initializeDocumentTypes(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
   bifrost.icons.registerIcons({
     'engine-workspace/dashboard': 'ph-duotone ph-gauge',
     'engine-workspace/processes': 'ph-duotone ph-tree-structure',
@@ -25,7 +25,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost): void {
     'engine-workspace/sidebar-icon': 'ph-duotone ph-engine',
   });
 
-  const canOpen = (uri: string) => checkEngineConnectivity(bifrost, uri);
+  const canOpen = (uri: string) => connectionManager.checkEngineConnectivity(uri);
 
   bifrost.editors.registerDocumentType('engine-dashboard', {
     uriMatch: /^engine:\/\/dashboard\/.+$/,

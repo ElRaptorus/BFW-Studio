@@ -40,6 +40,10 @@ export const ENGINE_COMMANDS = {
   triggerSignal: 'engine.triggerSignal',
   triggerEscalation: 'engine.triggerEscalation',
   triggerTimerEvent: 'engine.triggerTimerEvent',
+
+  discoverLatestVersion: 'engine.discoverLatestVersion',
+  ensureProcessVersions: 'engine.ensureProcessVersions',
+  resolveVersionConflicts: 'engine.resolveVersionConflicts',
 } as const;
 
 export type EngineCommandId = (typeof ENGINE_COMMANDS)[keyof typeof ENGINE_COMMANDS];
@@ -76,4 +80,12 @@ export interface EngineCommandArgs {
   [ENGINE_COMMANDS.triggerSignal]: [engineId: string, signalName: string];
   [ENGINE_COMMANDS.triggerEscalation]: [engineId: string, escalationCode: string];
   [ENGINE_COMMANDS.triggerTimerEvent]: [engineId: string, flowNodeInstanceId: string];
+  [ENGINE_COMMANDS.discoverLatestVersion]: [engineId: string, processId: string];
+  [ENGINE_COMMANDS.ensureProcessVersions]: [engineId: string, xml: string];
+  [ENGINE_COMMANDS.resolveVersionConflicts]: [
+    engineId: string,
+    xml: string,
+    conflicts: { processModelId: string; version: string }[],
+    options?: { allowRunExisting?: boolean },
+  ];
 }

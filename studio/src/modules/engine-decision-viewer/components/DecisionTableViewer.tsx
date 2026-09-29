@@ -1,12 +1,18 @@
 import type { DmnDecision } from '#modules/engine-decision-viewer/types/dmnModelTypes';
+import type { DmnExpressionBody } from '#modules/engine-decision-viewer/types/dmnModelTypes';
 
 import React from 'react';
 
-import { isDecisionTable } from '../helpers/dmnExpressionHelpers';
 import './DecisionTableViewer.scss';
 
 interface DecisionTableViewerProps {
   decision: DmnDecision;
+}
+
+function isDecisionTable(
+  expression: DmnExpressionBody | null,
+): expression is Extract<DmnExpressionBody, { hitPolicy: string; inputs: unknown[]; rules: unknown[] }> {
+  return expression != null && 'hitPolicy' in expression && 'inputs' in expression && 'rules' in expression;
 }
 
 function highlightFeelExpression(text: string): React.ReactNode {

@@ -10,8 +10,13 @@ import React from 'react';
 
 import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
-import { describeExpressionBody, isDecisionTable } from '../helpers/dmnExpressionHelpers';
-import { getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
+import {
+  describeExpressionBody,
+  getParsedModel,
+  getSelection,
+  isDecisionTable,
+  isDecisionViewerDocument,
+} from './paneUtils';
 
 function getExpressionPreview(expression: DmnExpressionBody | null): string | null {
   if (expression == null) {

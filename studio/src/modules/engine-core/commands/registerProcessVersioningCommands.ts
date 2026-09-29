@@ -6,13 +6,45 @@ import type {
   DialogValidationResult,
 } from '#bifrost/contracts/DialogTypes';
 import bfwPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
+import { BPMN_COMMANDS } from '#modules/bpmn-core/commands/registerVersionCommands';
 import { BpmnModdle } from 'bpmn-moddle';
 
 import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 
+import type { EngineConnectionManager } from '../EngineConnectionManager';
+import { ENGINE_COMMANDS } from './CommandContract';
+
 const SEMVER_REGEX = /^(v?)(\d+)\.(\d+)\.(\d+)(.*)$/;
 const PREFIXED_INTEGER_REGEX = /^(v?)(\d+)$/;
-const TRAILING_NUMBER_REGEX = /^(.*-)(\d+)$/;
+
+export default function registerProcessVersioningCommands(
+  bifrost: Bifrost,
+  connectionManager: EngineConnectionManager,
+): void {
+  bifrost.commands.register(
+    ENGINE_COMMANDS.discoverLatestVersion,
+    async (engineId: string, processId: string): Promise<string | null> => {
+      const client = connectionManager.getClient(engineId);
+      if (!client) {
+        return null;
+      }
+      return discoverLatestVersion(client, processId);
+    },
+  );
+
+  bifrost.commands.register(ENGINE_COMMANDS.ensureProcessVersions, async (engineId: string, xml: string) => {
+    const client = connectionManager.getClient(engineId);
+    return ensureProcessVersions(xml, bifrost, client);
+  });
+
+  bifrost.commands.register(
+    ENGINE_COMMANDS.resolveVersionConflicts,
+    async (engineId: string, xml: string, conflicts: VersionConflict[], options?: ResolveVersionConflictOptions) => {
+      const client = connectionManager.getClient(engineId);
+      return resolveVersionConflicts(xml, conflicts, bifrost, client, options);
+    },
+  );
+}
 
 /**
  * Picks the "higher" of two version strings for bump-reference purposes.
@@ -47,40 +79,10 @@ function pickHigherVersion(versionA: string, versionB: string): string {
 }
 
 /**
- * Suggests the next version string based on the current version.
- *
- * - SemVer:           "1.0.0" → "1.0.1", "v2.1.3" → "v2.1.4"
- * - Simple integer:   "3" → "4", "v3" → "v4"
- * - Trailing number:  "alpha-2" → "alpha-3"
- * - Non-deterministic: "alpha" → "alpha-1"
- */
-export function suggestNextVersion(current: string): string {
-  const semverMatch = current.match(SEMVER_REGEX);
-  if (semverMatch) {
-    const [, prefix, major, minor, patch, rest] = semverMatch;
-    return `${prefix}${major}.${minor}.${parseInt(patch, 10) + 1}${rest}`;
-  }
-
-  const integerMatch = current.match(PREFIXED_INTEGER_REGEX);
-  if (integerMatch) {
-    const [, prefix, num] = integerMatch;
-    return `${prefix}${parseInt(num, 10) + 1}`;
-  }
-
-  const trailingMatch = current.match(TRAILING_NUMBER_REGEX);
-  if (trailingMatch) {
-    const [, base, num] = trailingMatch;
-    return `${base}${parseInt(num, 10) + 1}`;
-  }
-
-  return `${current}-1`;
-}
-
-/**
  * Queries the engine for the latest deployed version of a process.
  * Returns `null` if the process has never been deployed or on any error.
  */
-export async function discoverLatestVersion(client: BfwEngineClient, processId: string): Promise<string | null> {
+async function discoverLatestVersion(client: BfwEngineClient, processId: string): Promise<string | null> {
   try {
     const model = await client.processes.get(processId);
     return model?.version ?? null;
@@ -150,7 +152,7 @@ function findProcessById(definitions: any, processId: string): any | undefined {
  *
  * Returns `null` if the user cancelled. Otherwise returns the (possibly modified) XML.
  */
-export async function ensureProcessVersions(
+async function ensureProcessVersions(
   xml: string,
   bifrost: Bifrost,
   client: BfwEngineClient | null,
@@ -187,7 +189,9 @@ export async function ensureProcessVersions(
 
   for (const process of missing) {
     const latestDeployed = discoveredVersions.get(process.processId) ?? null;
-    const suggestion = latestDeployed ? suggestNextVersion(latestDeployed) : '1.0.0';
+    const suggestion = latestDeployed
+      ? bifrost.commands.executeCommand<string>(BPMN_COMMANDS.suggestNextVersion, [latestDeployed])
+      : '1.0.0';
 
     contentItems.push({
       type: 'text_input',
@@ -239,7 +243,7 @@ export async function ensureProcessVersions(
  * user chooses "Run Latest Deployed Version", returns `{ runExisting, processModelId }`.
  * Otherwise returns the updated XML.
  */
-export async function resolveVersionConflicts(
+async function resolveVersionConflicts(
   xml: string,
   conflicts: { processModelId: string; version: string }[],
   bifrost: Bifrost,
@@ -286,7 +290,7 @@ export async function resolveVersionConflicts(
       latestDeployed && latestDeployed !== localVersion
         ? pickHigherVersion(localVersion, latestDeployed)
         : localVersion;
-    const suggestion = suggestNextVersion(referenceVersion);
+    const suggestion = bifrost.commands.executeCommand<string>(BPMN_COMMANDS.suggestNextVersion, [referenceVersion]);
 
     const processName = processElement.name ?? processElement.id ?? 'Unnamed Process';
 
@@ -397,3 +401,6 @@ function validateConflictFields(
   }
   return { closeDialog: true as const };
 }
+
+type VersionConflict = { processModelId: string; version: string };
+type ResolveVersionConflictOptions = { allowRunExisting?: boolean };

@@ -10,7 +10,7 @@ import initializePanes from './initializers/initializePanes';
 export async function onLoad(bifrost: Bifrost): Promise<void> {
   const connectionManager = bifrost.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
 
-  initializeDocumentTypes(bifrost);
+  initializeDocumentTypes(bifrost, connectionManager);
   initializeCommands(bifrost, connectionManager);
   initializeMenus(bifrost);
   initializePanes(bifrost);

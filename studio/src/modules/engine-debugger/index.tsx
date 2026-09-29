@@ -1,6 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import { checkEngineConnectivity } from '#modules/engine-core';
 
 import React from 'react';
 
@@ -50,7 +49,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
     inspectorKey: 'EngineDebuggerDocumentInspector',
     inspectorConstructor: EngineBpmnDebuggerDocumentInspector,
     icon: 'engine-debugger/main',
-    canOpen: (uri: string) => checkEngineConnectivity(bifrost, uri),
+    canOpen: (uri: string) => connectionManager.checkEngineConnectivity(uri),
   });
 
   bifrost.editors.registerDocumentType(USER_TASK_VIEW_DOCUMENT_TYPE, {
@@ -102,7 +101,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
     inspectorKey: 'DmnTraceInspector',
     inspectorConstructor: DmnTraceInspector,
     icon: 'engine-debugger/dmn-trace',
-    canOpen: (uri: string) => checkEngineConnectivity(bifrost, uri),
+    canOpen: (uri: string) => connectionManager.checkEngineConnectivity(uri),
   });
 }
 

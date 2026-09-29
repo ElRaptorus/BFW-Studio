@@ -8,6 +8,7 @@ import { renderBpmnToPng, renderBpmnToSvg } from '#modules/bpmn-core/BpmnExportF
 import type { ProjectProcess } from '#modules/bpmn-core/BpmnSpecificSolutionAndProjectTypes';
 import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import bfwPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
+import { BPMN_COMMANDS } from '#modules/bpmn-core/commands/registerVersionCommands';
 import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
 import type {
   BpmnElementColor,
@@ -15,7 +16,6 @@ import type {
   BpmnElement_Process,
   CustomServiceTaskType,
 } from '#modules/bpmn-editor/BpmnElementTypes';
-import { suggestNextVersion } from '#modules/engine-core';
 import { BpmnModdle } from 'bpmn-moddle';
 import * as path from 'path';
 
@@ -1199,7 +1199,9 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
           const process = participant.process;
           const processName = process.name ?? process.id;
           if (process.version) {
-            const newVersion = suggestNextVersion(process.version);
+            const newVersion = bifrost.commands.executeCommand<string>(BPMN_COMMANDS.suggestNextVersion, [
+              process.version,
+            ]);
             bpmnDocumentModel.elements.setElementProperty(participant.id, 'process', { version: newVersion });
             changes.push({ name: processName, label: `${process.version} → ${newVersion}` });
           } else {
@@ -1212,7 +1214,9 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
         for (const process of processes) {
           const processName = process.name ?? process.id;
           if (process.version) {
-            const newVersion = suggestNextVersion(process.version);
+            const newVersion = bifrost.commands.executeCommand<string>(BPMN_COMMANDS.suggestNextVersion, [
+              process.version,
+            ]);
             bpmnDocumentModel.elements.setElementProperty(process.id, 'process', { version: newVersion });
             changes.push({ name: processName, label: `${process.version} → ${newVersion}` });
           } else {

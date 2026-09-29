@@ -1,10 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import { checkEngineConnectivity } from '#modules/engine-core';
+import type { EngineConnectionManager } from '#modules/engine-core';
 
 import { ModelViewerDocumentModel } from '../models/ModelViewerDocumentModel';
 import ModelViewerRenderer from '../renderers/ModelViewerRenderer';
 
-export default function initializeDocumentTypes(bifrost: Bifrost): void {
+export default function initializeDocumentTypes(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
   bifrost.icons.registerIcons({
     'engine-model-viewer/model': 'ph-duotone ph-flow-arrow',
   });
@@ -16,6 +16,6 @@ export default function initializeDocumentTypes(bifrost: Bifrost): void {
     rendererKey: 'EngineModelViewerRenderer',
     rendererConstructor: ModelViewerRenderer,
     icon: 'engine-model-viewer/model',
-    canOpen: (uri: string) => checkEngineConnectivity(bifrost, uri),
+    canOpen: (uri: string) => connectionManager.checkEngineConnectivity(uri),
   });
 }

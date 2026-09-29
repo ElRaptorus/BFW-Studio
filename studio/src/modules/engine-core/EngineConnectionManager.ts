@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import type { CanOpenDocumentResult } from '#bifrost/common/EditorDocumentTypeManager';
 
 import { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 import type { EngineInfoResponse } from '@elraptorus/bfw_engine_sdk';
@@ -16,6 +17,19 @@ import type {
 
 const RECONNECT_BASE_DELAY = 1_000;
 const RECONNECT_MAX_DELAY = 20_000;
+
+const ENGINE_ID_URI_PATTERNS: RegExp[] = [
+  /^engine:\/\/dashboard\/([^/?]+)/,
+  /^engine:\/\/processes\/([^/?]+)/,
+  /^engine:\/\/instances\/([^/?]+)/,
+  /^engine-task-inbox:\/\/([^/?]+)/,
+  /^engine:\/\/decisions\/([^/?]+)/,
+  /^engine:\/\/timers\/([^/?]+)/,
+  /^engine-model:\/\/([^/]+)\//,
+  /^engine-decision:\/\/([^/]+)\//,
+  /^engine-debug:\/\/([^/]+)\//,
+  /^fragment\+engine-debug\.dmn-trace:engine-debug%3A\/\/([^/]+)\//,
+];
 
 interface ManagedEngine {
   engineId: string;
@@ -151,6 +165,30 @@ export class EngineConnectionManager extends AbstractEmitter {
 
   isConnected(engineId: string): boolean {
     return this.engines.get(engineId)?.state === 'connected';
+  }
+
+  extractEngineIdFromUri(uri: string): string | null {
+    for (const pattern of ENGINE_ID_URI_PATTERNS) {
+      const match = uri.match(pattern);
+      if (match?.[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  }
+
+  checkEngineConnectivity(uri: string): CanOpenDocumentResult {
+    const engineId = this.extractEngineIdFromUri(uri);
+    if (!engineId) {
+      return { documentCanBeOpened: false, error: 'Cannot determine engine ID from URI' };
+    }
+    if (this.isConnected(engineId)) {
+      return { documentCanBeOpened: true };
+    }
+    return {
+      documentCanBeOpened: false,
+      error: 'Engine is not connected',
+    };
   }
 
   getUrlHistory(): string[] {

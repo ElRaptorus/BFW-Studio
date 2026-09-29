@@ -10,8 +10,7 @@ import React from 'react';
 
 import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
-import { describeExpressionBody } from '../helpers/dmnExpressionHelpers';
-import { getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
+import { describeExpressionBody, getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,

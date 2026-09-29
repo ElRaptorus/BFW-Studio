@@ -1,6 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import { extractEngineIdFromUri } from '#modules/engine-core';
 
 import './engine-workspace.scss';
 import initializeCommands from './initializers/initializeCommands';
@@ -14,7 +13,7 @@ import { startTaskCountPoller } from './services/TaskCountPoller';
 export async function onLoad(bifrost: Bifrost): Promise<void> {
   const connectionManager = bifrost.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
 
-  initializeDocumentTypes(bifrost);
+  initializeDocumentTypes(bifrost, connectionManager);
   initializeCommands(bifrost, connectionManager);
   initializeMenus(bifrost, connectionManager);
   initializePanes(bifrost);
@@ -26,7 +25,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   connectionManager.on('engine:disconnected', (event: { engineId: string }) => {
     const openDocuments = bifrost.editors.getOpenEditorDocuments();
     for (const editorDocument of openDocuments) {
-      const docEngineId = extractEngineIdFromUri(editorDocument.uri);
+      const docEngineId = connectionManager.extractEngineIdFromUri(editorDocument.uri);
       if (docEngineId === event.engineId) {
         void bifrost.editors.closeEditorDocument(editorDocument);
       }

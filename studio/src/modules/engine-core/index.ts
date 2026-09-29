@@ -11,6 +11,7 @@ import registerConnectionCommands from './commands/registerConnectionCommands';
 import registerDeployCommands from './commands/registerDeployCommands';
 import registerEventCommands from './commands/registerEventCommands';
 import registerProcessInstanceCommands from './commands/registerProcessInstanceCommands';
+import registerProcessVersioningCommands from './commands/registerProcessVersioningCommands';
 import registerSettings from './settings/registerSettings';
 
 export { EngineConnectionManager } from './EngineConnectionManager';
@@ -21,13 +22,6 @@ export { SubscribeThenSnapshot } from './SubscribeThenSnapshot';
 export type { SnapshotUpdate, SnapshotUpdateHandler } from './SubscribeThenSnapshot';
 export { WebSocketBridge } from './WebSocketBridge';
 export { EventDrivenRefresh } from './services/EventDrivenRefresh';
-export { checkEngineConnectivity, extractEngineIdFromUri } from './helpers/checkEngineConnectivity';
-export {
-  discoverLatestVersion,
-  ensureProcessVersions,
-  resolveVersionConflicts,
-  suggestNextVersion,
-} from './helpers/versionUtils';
 
 export { EngineContextBreadcrumb } from './components/EngineContextBreadcrumb';
 export { EngineHealthBadge, resolveHealthState } from './components/EngineHealthBadge';
@@ -86,6 +80,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   registerConfiguredDeleteCommands(bifrost, connectionManager);
   registerEventCommands(bifrost, connectionManager);
   registerAuthCommands(bifrost, connectionManager);
+  registerProcessVersioningCommands(bifrost, connectionManager);
 
   bifrost.registerSharedRessource('engineConnectionManager', connectionManager);
   bifrost.registerSharedRessource('engineWebSocketBridge', webSocketBridge);

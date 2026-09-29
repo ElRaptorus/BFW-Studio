@@ -77,7 +77,7 @@ Registers ten additional color themes beyond the two core themes (`light`/`dark`
 Shared BPMN infrastructure. Contains the bpmn-js modeler/viewer adapter, overlay factories, export functions, BPMN-specific solution/project types, the context pad provider, the modeler module discovery registry, and the User Task form contract (`form-renderer/FormModel.ts`) that the editor authors and the engine modules render.
 
 - **Entry:** `studio/src/modules/bpmn-core/index.tsx`
-- **Commands registered:** `bpmn.modeler.registerModule` (allows modules to inject diagram-js modules into every BpmnModeler instance)
+- **Commands registered:** `bpmn.modeler.registerModule` (allows modules to inject diagram-js modules into every BpmnModeler instance); `bpmn.suggestNextVersion` (`commands/registerVersionCommands.ts`) — next version string from a SemVer patch bump, integer increment, trailing-number increment, or `-1` suffix. No engine connection.
 - **Dependencies:** None
 - **Depended on by:** `bpmn-editor`, `engine-model-viewer`, `engine-debugger` (via direct imports); `engine-workspace` (moddle descriptor only); any module that calls `bpmn.modeler.registerModule` (via command)
 
@@ -146,7 +146,8 @@ All engine modules interact with an external BFW-Engine instance via `@elraptoru
 Foundation layer for all engine UI. Provides multi-engine connection management (`EngineConnectionManager`), JWT auth (`JwtIdentityManager`), WebSocket event bridge, shared formatters/components, a frozen command contract (`ENGINE_COMMANDS`), and settings keys used across all engine modules.
 
 - **Entry:** `studio/src/modules/engine-core/index.ts`
-- **Dependencies (commands):** `std`
+- **Dependencies (commands):** `std`, `bpmn.suggestNextVersion`
+- **Dependencies (imports):** `bpmn-core` (moddle descriptor, `BPMN_COMMANDS`)
 - **Dependencies (npm):** `@elraptorus/bfw_engine_client`, `@elraptorus/bfw_engine_sdk`
 - **Shared resources registered:** `engineConnectionManager`, `engineWebSocketBridge`
 - **Depended on by:** `engine-workspace`, `engine-model-viewer`, `engine-decision-viewer`, `engine-debugger`
@@ -267,7 +268,7 @@ git-cruiser ← std (cmd), bpmn-diff, dmn-diff (cmd)      │
                                                         │
 machine-sanctum ← std (cmd)                             │
                                                         │
-engine-core ← std (Bifrost APIs)                        │
+engine-core ← std (Bifrost APIs), bpmn-core (cmd + import) │
   registers: engineConnectionManager,                   │
              engineWebSocketBridge                      │
 engine-workspace ← engine-core (import + cmd)            │

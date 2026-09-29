@@ -47,10 +47,10 @@ if (bifrost.engines.isCurrentlyOnline(engineUrl)) {
 For document-level connectivity checks (e.g. `canOpen`):
 
 ```typescript
-import { checkEngineConnectivity } from '../engine-browser/utils/engineConnectivityCheck';
-
-canOpen: (uri: string) => checkEngineConnectivity(bifrost, uri),
+canOpen: (uri: string) => connectionManager.checkEngineConnectivity(uri),
 ```
+
+`connectionManager.extractEngineIdFromUri(uri)` reads the engine ID back out of the same document URIs.
 
 ## Subscribing to Engine Events
 

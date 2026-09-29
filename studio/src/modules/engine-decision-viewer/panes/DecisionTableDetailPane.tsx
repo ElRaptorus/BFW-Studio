@@ -9,8 +9,7 @@ import type { DrgSelection } from '#modules/engine-decision-viewer/types/dmnMode
 import React from 'react';
 
 import { DecisionTableViewer } from '../components/DecisionTableViewer';
-import { isDecisionTable } from '../helpers/dmnExpressionHelpers';
-import { getParsedModel, getSelection, isDecisionViewerDocument } from './paneUtils';
+import { getParsedModel, getSelection, isDecisionTable, isDecisionViewerDocument } from './paneUtils';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,

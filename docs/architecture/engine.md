@@ -68,7 +68,7 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 - **`EngineCommandArgs`** — maps each command ID to its typed argument tuple.
 - **File:** `studio/src/modules/engine-core/commands/CommandContract.ts`
 
-22 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `resolveAuthLabel`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerEscalation`, `triggerTimerEvent`.
+25 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `resolveAuthLabel`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerEscalation`, `triggerTimerEvent`, `discoverLatestVersion`, `ensureProcessVersions`, `resolveVersionConflicts`.
 
 ### SDK Imports
 
@@ -150,6 +150,16 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 | `engine.triggerMessage` | Triggers a message event on the engine |
 | `engine.triggerSignal` | Triggers a signal event on the engine |
 | `engine.triggerEscalation` | Triggers an escalation inject on the engine (engine-wide waiting catchers) |
+
+### Process versioning
+
+Registered by `registerProcessVersioningCommands.ts`. Each takes an engine ID and resolves the client. The next-version string itself is `bpmn.suggestNextVersion` in `bpmn-core` (`registerVersionCommands.ts`); these commands call it when they need a suggestion.
+
+| Command | Purpose |
+|---------|---------|
+| `engine.discoverLatestVersion` | `(engineId, processId)` → latest deployed version via `processes.get`, or `null` when the engine is offline, the process was never deployed, or the request fails |
+| `engine.ensureProcessVersions` | `(engineId, xml)` → `{ xml, modified }` after the "Missing Versions" dialog, or `null` when the user cancels. Injects `bfw:Version` for processes that lack one |
+| `engine.resolveVersionConflicts` | `(engineId, xml, conflicts, options?)` → updated `{ xml }`, `{ runExisting, processModelId }` when `allowRunExisting` is set, or `null` on cancel. Handles a 409 `version_exists` |
 
 ### Configured Retry Architecture
 
@@ -290,7 +300,7 @@ These commands are registered by `engine-workspace` and orchestrate deploy+start
 | `engine.menubar.deployButton` | Shift-aware deploy button router. Click = deploy, Shift+Click = deploy & open |
 | `engine.menubar.setActiveEngine` | Engine dropdown onChange handler, calls `connectionManager.setActiveEngine()` |
 
-**Shared deploy pipeline:** The four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) all call the shared `deployFocusedBpmnFile()` helper which encapsulates: file read → `ensureProcessVersions()` → deploy with `resolveVersionConflicts()` retry loop (max 3). Each command only differs in its post-deploy action. DMN deploy logic is handled inline in `deployCurrentProcess` and `deployAndOpenCurrentProcess` only (no version checks or conflict resolution for DMN).
+**Shared deploy pipeline:** The four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) all call the shared `deployFocusedBpmnFile()` helper which encapsulates: file read → `engine.ensureProcessVersions` → deploy with `engine.resolveVersionConflicts` retry loop (max 3). Each command only differs in its post-deploy action. DMN deploy logic is handled inline in `deployCurrentProcess` and `deployAndOpenCurrentProcess` only (no version checks or conflict resolution for DMN).
 
 ### Menubar Structure
 
@@ -366,11 +376,12 @@ Engine-related documents encode the engine ID and resource identifiers in the UR
 
 ### Parsing
 
-**Path:** `studio/src/modules/engine-core/helpers/checkEngineConnectivity.ts`
+**Path:** `EngineConnectionManager` in `studio/src/modules/engine-core/EngineConnectionManager.ts`
 
-- `extractEngineIdFromUri(uri)` → `string` — extracts the engine ID from any engine document URI
+- `extractEngineIdFromUri(uri)` → `string | null` — extracts the engine ID from any engine document URI
+- `checkEngineConnectivity(uri)` → `CanOpenDocumentResult` — `documentCanBeOpened: true` when that engine is connected
 
-All engine document types use `canOpen: (uri) => checkEngineConnectivity(bifrost, uri)` to verify the target engine is online before opening.
+All engine document types use `canOpen: (uri) => connectionManager.checkEngineConnectivity(uri)` to verify the target engine is online before opening.
 
 ---
 
@@ -486,30 +497,23 @@ The empty BPMN document template (`bpmn-editor/BpmnEmptyDocument.bpmn`) includes
 
 `AutoVersionOnPoolBehavior` (`bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts`) is a diagram-js behavior that hooks into `commandStack.shape.create.postExecuted`. When a Participant (pool) is created, it checks whether the referenced process already has an `bfw:Version` extension. If not, it injects version `1.0.0` via the command stack, making the operation undo-able.
 
-### Version Utility Module
+### Process versioning commands
 
-`engine-core/helpers/versionUtils.ts` provides shared version logic used by all deploy entry points:
-
-| Function | Purpose |
-|----------|---------|
-| `suggestNextVersion(current)` | Bumps the patch segment of SemVer, increments plain integers, increments trailing numbers, or appends `-1` for non-deterministic strings |
-| `discoverLatestVersion(client, processId)` | Queries the engine via `client.processes.get(processId)` for the latest deployed version; returns `null` on 404 or network error |
-| `ensureProcessVersions(xml, bifrost, client)` | Parses XML, finds processes missing `bfw:Version`, runs discovery, shows "Missing Versions" dialog with pre-filled suggestions, injects versions on confirm |
-| `resolveVersionConflicts(xml, conflicts, bifrost, client)` | Post-409 handler: runs discovery to find the true latest version, shows "Version Conflict" dialog with accurate suggestions, injects new versions on confirm |
+`registerProcessVersioningCommands.ts` owns the deploy version dialogs. The bump rule is `bpmn.suggestNextVersion`. Deploy entry points call `engine.ensureProcessVersions` and `engine.resolveVersionConflicts`. See §Engine-Core Commands.
 
 ### Pre-Deploy Version Check
 
-Before every deployment (all 5 Run Menu commands + file explorer deploy), `ensureProcessVersions` is called on BPMN files. If any process lacks a version, the "Missing Versions" dialog appears with suggestions based on engine discovery. The user must always confirm — there is no auto-skip. If confirmed, versions are written back to the XML and saved to disk.
+Before every deployment (all 5 Run Menu commands + file explorer deploy), `engine.ensureProcessVersions` runs on BPMN files. If any process lacks a version, the "Missing Versions" dialog appears with suggestions based on engine discovery. The user must always confirm — there is no auto-skip. If confirmed, versions are written back to the XML and saved to disk.
 
 ### Version Conflict Resolution
 
-When any BPMN deploy command receives a 409 `version_exists` error, `resolveVersionConflicts` shows the "Version Conflict" dialog. It queries the engine for the latest deployed version (which may be higher than the conflicting version) and suggests `suggestNextVersion(max(local, deployed))`. On confirm, the updated XML is saved to disk and deployment is retried automatically, up to 3 times.
+When any BPMN deploy command receives a 409 `version_exists` error, `engine.resolveVersionConflicts` shows the "Version Conflict" dialog. It queries the engine for the latest deployed version (which may be higher than the conflicting version) and suggests the next version after the higher of the local and deployed versions. On confirm, the updated XML is saved to disk and deployment is retried automatically, up to 3 times.
 
 All four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) share the same deploy pipeline via the `deployFocusedBpmnFile()` helper. This ensures consistent version checking and conflict resolution regardless of the entry point. The commands differ only in their post-deploy action (notification, open viewer, start debugger, or configured start).
 
 ### Bump Version Command
 
-`bpmn.process.bumpVersion` (registered in `bpmn-editor/initializers/initializeBpmnCommands.ts`) is available in the command palette and the Run menu. It applies `suggestNextVersion` to all processes in the focused diagram that already have a version, operates through the modeler command stack (undo-able), and shows a notification with the version transitions.
+`bpmn.process.bumpVersion` (registered in `bpmn-editor/initializers/initializeBpmnCommands.ts`) is available in the command palette and the Run menu. It calls `bpmn.suggestNextVersion` for every process in the focused diagram that already has a version, operates through the modeler command stack (undo-able), and shows a notification with the version transitions.
 
 ---
 
@@ -618,7 +622,7 @@ The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop e
 | BpmnProcessHelpers | `studio/src/modules/engine-debugger/libs/BpmnProcessHelpers.ts` |
 | Model viewer document model | `studio/src/modules/engine-model-viewer/models/ModelViewerDocumentModel.ts` |
 | Moddle conformance | `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts` |
-| Engine ID extraction | `studio/src/modules/engine-core/helpers/checkEngineConnectivity.ts` |
-| Version utilities | `studio/src/modules/engine-core/helpers/versionUtils.ts` |
+| Engine ID extraction | `EngineConnectionManager.extractEngineIdFromUri` in `studio/src/modules/engine-core/EngineConnectionManager.ts` |
+| Process versioning commands | `studio/src/modules/engine-core/commands/registerProcessVersioningCommands.ts` |
 | AutoVersionOnPoolBehavior | `studio/src/modules/bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts` |
 | BPMN empty template | `studio/src/modules/bpmn-editor/BpmnEmptyDocument.bpmn` |

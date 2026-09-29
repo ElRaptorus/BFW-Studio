@@ -2,12 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { CommandContext } from '#bifrost/contracts/CommandTypes';
 import type { MenuBarItemMap } from '#bifrost/contracts/MenuBarTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import {
-  ENGINE_COMMANDS,
-  ensureProcessVersions,
-  formatDeployErrorMessage,
-  resolveVersionConflicts,
-} from '#modules/engine-core';
+import { ENGINE_COMMANDS, formatDeployErrorMessage } from '#modules/engine-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -108,8 +103,10 @@ async function deployFocusedBpmnFile(
 
   let content = await fs.readFile(filePath, 'utf-8');
 
-  const client = connectionManager.getClient(activeEngineId);
-  const checked = await ensureProcessVersions(content, bifrost, client);
+  const checked = await bifrost.commands.executeCommand(ENGINE_COMMANDS.ensureProcessVersions, [
+    activeEngineId,
+    content,
+  ]);
   if (checked == null) {
     return null;
   }
@@ -138,9 +135,12 @@ async function deployFocusedBpmnFile(
       return { processModelId, engineId: activeEngineId, filePath, fileName };
     } catch (deployError: any) {
       if (deployError?.errorCode === 'version_exists' && Array.isArray(deployError?.conflicts)) {
-        const resolved = await resolveVersionConflicts(content, deployError.conflicts, bifrost, client, {
-          allowRunExisting: options?.allowRunExistingOnConflict,
-        });
+        const resolved = await bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveVersionConflicts, [
+          activeEngineId,
+          content,
+          deployError.conflicts,
+          { allowRunExisting: options?.allowRunExistingOnConflict },
+        ]);
         if (resolved == null) {
           return null;
         }
@@ -339,14 +339,15 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
         return;
       }
 
-      const client = connectionManager.getClient(activeEngineId);
-
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (!file.name.toLowerCase().endsWith('.bpmn')) {
           continue;
         }
-        const checked = await ensureProcessVersions(file.content, bifrost, client);
+        const checked = await bifrost.commands.executeCommand(ENGINE_COMMANDS.ensureProcessVersions, [
+          activeEngineId,
+          file.content,
+        ]);
         if (checked == null) {
           return;
         }

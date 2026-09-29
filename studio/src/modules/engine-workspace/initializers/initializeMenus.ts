@@ -1,12 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import {
-  ENGINE_COMMANDS,
-  SETTINGS_KEYS,
-  ensureProcessVersions,
-  formatDeployErrorMessage,
-  resolveVersionConflicts,
-} from '#modules/engine-core';
+import { ENGINE_COMMANDS, SETTINGS_KEYS, formatDeployErrorMessage } from '#modules/engine-core';
 import type { AutoRefreshInterval } from '#modules/engine-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -100,7 +94,6 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       return;
     }
 
-    const client = connectionManager.getClient(activeEngineId);
     const connection = connectionManager.getConnection(activeEngineId);
     const engineLabel = connection?.displayName ?? activeEngineId;
 
@@ -111,7 +104,10 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       const fileName = path.basename(filePath);
 
       if (fileName.toLowerCase().endsWith('.bpmn')) {
-        const checked = await ensureProcessVersions(content, bifrost, client);
+        const checked = await bifrost.commands.executeCommand(ENGINE_COMMANDS.ensureProcessVersions, [
+          activeEngineId,
+          content,
+        ]);
         if (checked == null) {
           return;
         }
@@ -153,7 +149,11 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
           break;
         } catch (deployError: any) {
           if (deployError?.errorCode === 'version_exists' && Array.isArray(deployError?.conflicts)) {
-            const resolved = await resolveVersionConflicts(currentContent, deployError.conflicts, bifrost, client);
+            const resolved = await bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveVersionConflicts, [
+              activeEngineId,
+              currentContent,
+              deployError.conflicts,
+            ]);
             if (resolved == null) {
               aborted = true;
               break;
