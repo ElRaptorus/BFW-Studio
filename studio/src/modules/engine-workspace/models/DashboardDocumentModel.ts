@@ -32,7 +32,7 @@ export class DashboardDocumentModel extends EditorDocumentModel {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-    this.engineId = extractEngineId(uri);
+    this.engineId = this.connectionManager.extractEngineIdFromUri(uri) ?? '';
     this.client = this.connectionManager.getClient(this.engineId);
   }
 
@@ -252,9 +252,4 @@ export class DashboardDocumentModel extends EditorDocumentModel {
       this.publishDataRevision();
     }
   }
-}
-
-function extractEngineId(uri: string): string {
-  const match = uri.match(/engine:\/\/dashboard\/(.+)/);
-  return match?.[1] ?? '';
 }

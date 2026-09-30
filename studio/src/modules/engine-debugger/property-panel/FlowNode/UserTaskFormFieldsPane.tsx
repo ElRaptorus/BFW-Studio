@@ -7,6 +7,7 @@ import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
+import { isRenderableFormAction } from '#modules/bpmn-core/form-renderer/formActionOutcome';
 
 import React from 'react';
 
@@ -78,7 +79,7 @@ function summarizeActions(actions: unknown): FormActionSummary[] {
     return [];
   }
 
-  return actions.map((action: Record<string, unknown>) => ({
+  return actions.filter(isRenderableFormAction).map((action: Record<string, unknown>) => ({
     id: String(action.id ?? ''),
     label: String(action.label ?? ''),
   }));

@@ -6,11 +6,11 @@ title: Form Builder — Action Properties
 
 This pane shows the properties of the currently selected form action in the Form Builder.
 
-Form actions define the buttons displayed at the bottom of the rendered form. They determine how the user can interact with and submit the form at runtime.
+Form actions define the buttons displayed at the bottom of the rendered form.
 
 ## Action ID
 
-A unique identifier for the action. This ID is included in the form submission payload so the engine and downstream handlers know which button the user clicked.
+A unique identifier for the action. A submitting action sends this id as `actionId`. An aborting action sends it as the cancel reason. The label is display text only.
 
 ## Label
 
@@ -20,25 +20,32 @@ The text displayed on the button.
 
 A predefined action template. Presets provide sensible defaults:
 
-| Preset  | Default Label | Submits Form | Default Styling |
-| ------- | ------------- | ------------ | --------------- |
-| Confirm | Confirm       | Yes          | Primary         |
-| OK      | OK            | Yes          | Primary         |
-| Yes     | Yes           | Yes          | Normal          |
-| No      | No            | No           | Normal          |
-| Cancel  | Cancel        | No           | Normal          |
-| Custom  | Custom        | Yes          | Normal          |
+| Preset  | Default Label | Effect  | Other               |
+| ------- | ------------- | ------- | ------------------- |
+| Confirm | Confirm       | Submit  | Primary styling     |
+| OK      | OK            | Submit  | Primary styling     |
+| Yes     | Yes           | Submit  |                     |
+| No      | No            | Submit  | Skips validation    |
+| Cancel  | Cancel        | Dismiss |                     |
+| Abort   | Abort         | Abort   | Destructive styling |
+| Custom  | Custom        | Submit  |                     |
 
-Changing the preset updates the action's defaults but you can override any property afterwards.
+Changing the preset in the dropdown changes only the stored preset name. The toolbox buttons apply the defaults above.
 
-## Submits Form
+## Effect
 
-When enabled, clicking this action button triggers `finishUserTask` on the engine, submitting the collected form data. When disabled, the action fires without submitting — useful for "Cancel" or "Reset" scenarios.
+- **Submits User Task** finishes the task with the field values and this action's id.
+- **Closes Form Only** closes the form. It does not contact the Engine.
+- **Cancels User Task** cancels the task after a confirmation. That aborts the whole process instance tree.
+
+## Skips validation
+
+Shown only for a submitting action. When enabled, the fields are collected without required or pattern checks.
 
 ## Default (primary styling)
 
-Marks this action as the primary/default button. Only one action should have this flag set. Primary actions receive highlighted styling to draw the user's attention.
+Marks this action as the primary button. Enter activates the first default action that submits. Primary actions receive highlighted styling.
 
 ## Danger (destructive styling)
 
-When enabled, the button is styled with a destructive/warning appearance (typically red) to indicate an irreversible or high-impact operation.
+When enabled, the button uses destructive styling. This is appearance only and does not change the effect.

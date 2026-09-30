@@ -25,8 +25,8 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   connectionManager.on('engine:disconnected', (event: { engineId: string }) => {
     const openDocuments = bifrost.editors.getOpenEditorDocuments();
     for (const editorDocument of openDocuments) {
-      const docEngineId = connectionManager.extractEngineIdFromUri(editorDocument.uri);
-      if (docEngineId === event.engineId) {
+      const documentEngineId = connectionManager.extractEngineIdFromUri(editorDocument.uri);
+      if (documentEngineId === event.engineId) {
         void bifrost.editors.closeEditorDocument(editorDocument);
       }
     }

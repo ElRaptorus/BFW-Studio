@@ -41,7 +41,7 @@ function formatFormFieldCount(formSchema: unknown): string {
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const model = props.editorDocumentModel as TaskInboxDocumentModel | null;
   const task = model?.getSelectedTask() ?? null;
-  const engineId = extractEngineId(props.editorDocument?.uri ?? '');
+  const engineId = model?.getEngineId() ?? '';
 
   const handleComplete = useCallback(() => {
     if (!task) {
@@ -98,9 +98,4 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       </div>
     </div>
   );
-}
-
-function extractEngineId(uri: string): string {
-  const match = uri.match(/engine-task-inbox:\/\/([^?]+)/);
-  return match?.[1] ?? '';
 }

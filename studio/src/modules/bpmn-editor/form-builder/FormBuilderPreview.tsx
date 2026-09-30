@@ -21,7 +21,10 @@ export function FormBuilderPreview(props: FormBuilderPreviewProps): React.JSX.El
         onSubmit={() => {
           // Preview mode: no-op
         }}
-        onCancel={() => {
+        onDismiss={() => {
+          // Preview mode: no-op
+        }}
+        onAbort={() => {
           // Preview mode: no-op
         }}
       />

@@ -38,12 +38,27 @@ export type FormFieldDefinition = {
   readonly hint?: string;
 };
 
+export type FormActionEffect = 'submit' | 'dismiss' | 'abort';
+
 export type FormAction = {
   readonly id: string;
   readonly label: string;
   readonly preset: FormActionPreset;
-  readonly submitsForm: boolean;
+  /**
+   * What pressing the button does.
+   * `submit` finishes the User Task with the field values and this action's id.
+   * `dismiss` closes the form without contacting the Engine.
+   * `abort` cancels the User Task, which aborts the whole process instance tree.
+   */
+  readonly effect: FormActionEffect;
+  /**
+   * Only for `submit`. When set, fields are collected without validation.
+   */
+  readonly skipsValidation?: boolean;
   readonly isDefault?: boolean;
+  /**
+   * Styling only. It does not change what the button does.
+   */
   readonly isDanger?: boolean;
 };
 
@@ -53,5 +68,6 @@ export enum FormActionPreset {
   Yes = 'yes',
   No = 'no',
   Cancel = 'cancel',
+  Abort = 'abort',
   Custom = 'custom',
 }

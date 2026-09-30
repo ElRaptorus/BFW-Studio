@@ -70,6 +70,24 @@ describe('bpmn/form-builder', () => {
     await studioAgent.assertVisible('[data-test--actions-editor-item]', ASSERT_VISIBLE_TIMEOUT);
   });
 
+  it('bpmn/form-builder: should show abort effect and skips validation only for submit', async () => {
+    await openBlankUserTaskFormSummary();
+
+    await studioAgent.clickOn('[data-test--form-summary-create-button]');
+    await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-action="abort"]');
+    await studioAgent.clickOn('[data-test--actions-editor-item]');
+    await studioAgent.assertVisible('[data-test--action-inspector-effect="abort"]', ASSERT_VISIBLE_TIMEOUT);
+
+    const abortChecked = await studioAgent.getAttribute('[data-test--action-inspector-effect="abort"]', 'checked');
+    assert.equal(abortChecked, 'true');
+    await studioAgent.assertNotVisible('[data-test--action-inspector-skips-validation]');
+
+    await studioAgent.clickOn('[data-test--action-inspector-effect="submit"]');
+    await studioAgent.assertVisible('[data-test--action-inspector-skips-validation]', ASSERT_VISIBLE_TIMEOUT);
+  });
+
   it('bpmn/form-builder: should switch to preview and render FormRenderer', async () => {
     await openBlankUserTaskFormSummary();
 

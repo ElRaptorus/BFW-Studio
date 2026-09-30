@@ -61,7 +61,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       {processModel.definitionsId && (
         <PaneProperty type="text" label="Definitions ID" value={processModel.definitionsId} disabled />
       )}
-      <VersionBrowser studio={props.studio} processId={bpmnId} engineId={extractEngineId(props.editorDocument.uri)} />
+      <VersionBrowser studio={props.studio} processId={bpmnId} engineId={model?.getEngineId() ?? ''} />
     </div>
   );
 }
@@ -144,9 +144,4 @@ function VersionBrowser(props: {
       ))}
     </div>
   );
-}
-
-function extractEngineId(uri: string): string {
-  const match = uri.match(/engine:\/\/processes\/([^?]+)/);
-  return match?.[1] ?? '';
 }

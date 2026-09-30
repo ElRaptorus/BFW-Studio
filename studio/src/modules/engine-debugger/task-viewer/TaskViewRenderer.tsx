@@ -36,7 +36,7 @@ export default function TaskViewRenderer(props: EditorDocumentRendererProps): Re
       userTaskInstance={userTaskInstance}
       readOnly={readOnly}
       definitionFormSchema={definitionFormSchema}
-      onTaskCompleted={() => studio.editors.closeEditorDocument(editorDocument)}
+      onClose={() => studio.editors.closeEditorDocument(editorDocument)}
     />
   );
 }

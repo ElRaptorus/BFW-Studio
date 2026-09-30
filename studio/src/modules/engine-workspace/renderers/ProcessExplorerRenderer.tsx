@@ -41,11 +41,6 @@ import type { ProcessExplorerDocumentModel } from '../models/ProcessExplorerDocu
 import type { ProcessExplorerContextMetadata } from '../types/ProcessExplorerContext';
 import './ProcessExplorerRenderer.scss';
 
-function parseEngineIdFromUri(uri: string): string {
-  const match = uri.match(/engine:\/\/processes\/([^/?]+)/);
-  return match?.[1] ?? '';
-}
-
 export default function ProcessExplorerRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
   const bifrost: Bifrost = studio;
@@ -53,7 +48,7 @@ export default function ProcessExplorerRenderer(props: EditorDocumentRendererPro
 
   const connectionManager = bifrost.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
 
-  const uriEngineId = parseEngineIdFromUri(editorDocument.uri);
+  const uriEngineId = connectionManager.extractEngineIdFromUri(editorDocument.uri) ?? '';
   const engineId = model?.getEngineId() || uriEngineId;
   const connection = connectionManager.getConnection(engineId);
   const engineDisplayName = connection?.displayName ?? engineId;

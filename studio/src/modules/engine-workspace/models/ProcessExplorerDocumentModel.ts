@@ -63,7 +63,7 @@ export class ProcessExplorerDocumentModel extends EditorDocumentModel {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-    this.engineId = extractEngineId(uri);
+    this.engineId = this.connectionManager.extractEngineIdFromUri(uri) ?? '';
     this.client = this.connectionManager.getClient(this.engineId);
   }
 
@@ -542,9 +542,4 @@ export class ProcessExplorerDocumentModel extends EditorDocumentModel {
   clearBulkSelection(): void {
     this.selectedModelIds.clear();
   }
-}
-
-function extractEngineId(uri: string): string {
-  const match = uri.match(/engine:\/\/processes\/([^?]+)/);
-  return match?.[1] ?? '';
 }

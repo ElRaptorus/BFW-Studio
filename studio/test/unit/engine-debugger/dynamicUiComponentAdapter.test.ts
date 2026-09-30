@@ -1,5 +1,9 @@
 import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
-import { readFormActions, readFormFields } from '#modules/engine-debugger/task-viewer/readTaskForm';
+import {
+  readFormActions,
+  readFormFields,
+  readSubmittedFormValues,
+} from '#modules/engine-debugger/task-viewer/readTaskForm';
 import assert from 'node:assert';
 import { describe, it } from 'vitest';
 
@@ -13,5 +17,12 @@ describe('dynamic UI form adapter', () => {
   it('does not read the object shape', () => {
     assert.deepEqual(readFormFields({ fields: canonicalFields }), []);
     assert.deepEqual(readFormActions({ actions: [{ id: 'ok', label: 'OK' }] }), []);
+  });
+
+  it('reads submitted values from a user task result token', () => {
+    assert.deepEqual(readSubmittedFormValues({ actionId: 'approve', values: { approved: true } }), { approved: true });
+    assert.deepEqual(readSubmittedFormValues(null), {});
+    assert.deepEqual(readSubmittedFormValues({ actionId: null }), {});
+    assert.deepEqual(readSubmittedFormValues({ actionId: 'approve', values: 'flat' }), {});
   });
 });

@@ -9,7 +9,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import BpmnDocumentModel from '../BpmnDocumentModel';
 import { FormBuilderEditorMediator } from './FormBuilderEditorMediator';
 import type { FormBuilderSelection } from './FormBuilderEditorMediator';
-import { fieldsForStorage } from './constants';
+
+export function fieldsForStorage(fields: FormFieldDefinition[]): FormFieldDefinition[] {
+  return fields.map((field) => ({
+    ...field,
+    required: typeof field.required === 'boolean' ? field.required : false,
+  }));
+}
 
 export type FormBuilderState = {
   loading: boolean;

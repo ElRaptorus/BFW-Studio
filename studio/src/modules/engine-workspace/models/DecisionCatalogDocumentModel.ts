@@ -68,7 +68,7 @@ export class DecisionCatalogDocumentModel extends EditorDocumentModel {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-    this.engineId = extractEngineId(uri);
+    this.engineId = this.connectionManager.extractEngineIdFromUri(uri) ?? '';
     this.client = this.connectionManager.getClient(this.engineId);
   }
 
@@ -556,9 +556,4 @@ export class DecisionCatalogDocumentModel extends EditorDocumentModel {
   clearBulkSelection(): void {
     this.selectedDecisionIds.clear();
   }
-}
-
-function extractEngineId(uri: string): string {
-  const match = uri.match(/engine:\/\/decisions\/([^?]+)/);
-  return match?.[1] ?? '';
 }

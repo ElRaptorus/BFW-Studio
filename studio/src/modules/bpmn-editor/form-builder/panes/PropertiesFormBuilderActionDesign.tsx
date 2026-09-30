@@ -3,9 +3,7 @@ import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTy
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 import type { FormAction } from '#modules/bpmn-editor/BpmnElementTypes';
-import { FormActionPreset } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React, { useEffect, useState } from 'react';
 
@@ -13,16 +11,6 @@ import type { FormBuilderEditorSnapshot } from '../FormBuilderEditorMediator';
 import { FormBuilderEditorMediator } from '../FormBuilderEditorMediator';
 
 const FORM_BUILDER_DOCUMENT_TYPE = 'bpmn.form-builder';
-const HELP_ID = 'bpmn/properties/form_builder_action';
-const MAXIMUM_ACTION_ID_LENGTH = 255;
-
-/** The Engine rejects a blank or over-long `actionId` on finish; duplicates make `token.actionId` ambiguous. */
-export function isValidActionId(nextId: string, currentId: string, actions: readonly FormAction[]): boolean {
-  if (nextId.trim() === '' || nextId.length > MAXIMUM_ACTION_ID_LENGTH) {
-    return false;
-  }
-  return !actions.some((existingAction) => existingAction.id === nextId && existingAction.id !== currentId);
-}
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,
@@ -32,7 +20,7 @@ export const paneProvider: PaneProvider = {
 };
 
 function getPaneTitle(): string {
-  return 'Action Properties';
+  return 'Design';
 }
 
 function shouldBeDisplayed(editorDocument: EditorDocument): boolean {
@@ -46,9 +34,7 @@ function shouldBeDisplayed(editorDocument: EditorDocument): boolean {
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
   return (
     <Pane>
-      <PaneHeader studio={props.studio} title={getPaneTitle()} paneId={props.paneId} collapsed={props.collapsed}>
-        <PaneHeaderHelpIcon studio={props.studio} id={HELP_ID} />
-      </PaneHeader>
+      <PaneHeader studio={props.studio} title={getPaneTitle()} paneId={props.paneId} collapsed={props.collapsed} />
       {props.collapsed !== true && <PaneContent {...props} />}
     </Pane>
   );
@@ -104,53 +90,30 @@ function ActionPropertiesForm(props: ActionPropertiesFormProps): React.JSX.Eleme
     replaceAction({ ...action, ...patch });
   };
 
-  const [invalidIdDraft, setInvalidIdDraft] = useState<string | null>(null);
-
-  const handleIdChange = (nextId: string): void => {
-    if (isValidActionId(nextId, action.id, snapshot.actions)) {
-      setInvalidIdDraft(null);
-      updateAction({ id: nextId });
-    } else {
-      setInvalidIdDraft(nextId);
-    }
-  };
-
   return (
     <>
       <div className="form-group">
-        <label className="d-block">ID</label>
-        <input
-          className="form-control form-control-sm"
-          type="text"
-          value={invalidIdDraft ?? action.id}
-          onChange={(event) => handleIdChange(event.target.value)}
-          onBlur={() => setInvalidIdDraft(null)}
-        />
+        <label className="form-check-label">
+          <input
+            type="checkbox"
+            className="form-check-input"
+            checked={action.isDefault ?? false}
+            onChange={(event) => updateAction({ isDefault: event.target.checked })}
+          />{' '}
+          Default (primary styling)
+        </label>
       </div>
 
       <div className="form-group">
-        <label className="d-block">Label</label>
-        <input
-          className="form-control form-control-sm"
-          type="text"
-          value={action.label}
-          onChange={(event) => updateAction({ label: event.target.value })}
-        />
-      </div>
-
-      <div className="form-group">
-        <label className="d-block">Preset</label>
-        <select
-          className="form-control form-control-sm"
-          value={action.preset}
-          onChange={(event) => updateAction({ preset: event.target.value as FormActionPreset })}
-        >
-          {Object.values(FormActionPreset).map((preset) => (
-            <option key={preset} value={preset}>
-              {preset}
-            </option>
-          ))}
-        </select>
+        <label className="form-check-label">
+          <input
+            type="checkbox"
+            className="form-check-input"
+            checked={action.isDanger ?? false}
+            onChange={(event) => updateAction({ isDanger: event.target.checked })}
+          />{' '}
+          Danger (destructive styling)
+        </label>
       </div>
     </>
   );

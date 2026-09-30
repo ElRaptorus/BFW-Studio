@@ -10,14 +10,13 @@ import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import { FormRenderer } from '../../bpmn-core/form-renderer';
 import './DynamicUiComponentAdapter.scss';
-import { readFormActions, readFormFields } from './readTaskForm';
+import { confirmUserTaskCancel } from './confirmUserTaskCancel';
+import { readFormActions, readFormFields, readSubmittedFormValues } from './readTaskForm';
 
-function applyOutputTokenDefaults(
-  fields: FormFieldDefinition[],
-  outputToken: Record<string, unknown>,
-): FormFieldDefinition[] {
+function applyOutputTokenDefaults(fields: FormFieldDefinition[], outputToken: unknown): FormFieldDefinition[] {
+  const values = readSubmittedFormValues(outputToken);
   return fields.map((field) => {
-    const tokenValue = outputToken[field.id];
+    const tokenValue = values[field.id];
     if (tokenValue != null) {
       return { ...field, defaultValue: String(tokenValue) };
     }
@@ -31,43 +30,58 @@ export function DynamicUiComponentAdapter(props: {
   userTaskInstance: FlowNodeInstance;
   readOnly?: boolean;
   definitionFormSchema?: unknown;
-  onTaskCompleted: () => void;
+  onClose: () => void;
 }): React.JSX.Element {
   const runtimeFields = readFormFields(props.userTaskInstance.typeProperties?.form_schema);
   const definitionFields = readFormFields(props.definitionFormSchema);
   let fields = runtimeFields.length > 0 ? runtimeFields : definitionFields;
   const actions = readFormActions(props.userTaskInstance.typeProperties?.form_actions);
 
-  if (props.readOnly && props.userTaskInstance.outputToken != null) {
+  if (props.readOnly) {
     fields = applyOutputTokenDefaults(fields, props.userTaskInstance.outputToken);
   }
 
-  const handleSubmit = async (data: Record<string, unknown>): Promise<void> => {
+  const resolveClient = () => {
+    const connectionManager = props.studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
+    return connectionManager.getClient(props.engineId);
+  };
+
+  const handleSubmit = async (actionId: string, values: Record<string, unknown>): Promise<void> => {
     if (props.readOnly) {
       return;
     }
 
-    const connectionManager = props.studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-    const client = connectionManager.getClient(props.engineId);
+    const client = resolveClient();
     if (!client) {
       return;
     }
-    await client.userTasks.finish(props.userTaskInstance.id, { values: data });
-    props.onTaskCompleted();
+    await client.userTasks.finish(props.userTaskInstance.id, { actionId, values });
+    props.onClose();
   };
 
-  const handleCancel = async (actionId: string): Promise<void> => {
+  const handleDismiss = (): void => {
+    if (props.readOnly) {
+      return;
+    }
+    props.onClose();
+  };
+
+  const handleAbort = async (actionId: string): Promise<void> => {
     if (props.readOnly) {
       return;
     }
 
-    const connectionManager = props.studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-    const client = connectionManager.getClient(props.engineId);
+    const confirmed = await confirmUserTaskCancel((options) => props.studio.dialog.open(options));
+    if (!confirmed) {
+      return;
+    }
+
+    const client = resolveClient();
     if (!client) {
       return;
     }
     await client.userTasks.cancel(props.userTaskInstance.id, { reason: actionId });
-    props.onTaskCompleted();
+    props.onClose();
   };
 
   const taskTitle = props.userTaskInstance.flowNodeId ?? 'User Task';
@@ -83,7 +97,8 @@ export function DynamicUiComponentAdapter(props: {
               title={taskTitle}
               readOnly={props.readOnly}
               onSubmit={handleSubmit}
-              onCancel={handleCancel}
+              onDismiss={handleDismiss}
+              onAbort={handleAbort}
             />
           </div>
         </div>

@@ -137,6 +137,16 @@ export function initializeBpmnPanes(bifrost: Bifrost): void {
       'bpmn/pane-providers/properties/PropertiesFormBuilderAction',
       require('../form-builder/panes/PropertiesFormBuilderAction'),
     ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'bpmn/panes/properties/PropertiesFormBuilderActionBehavior',
+      'bpmn/pane-providers/properties/PropertiesFormBuilderActionBehavior',
+      require('../form-builder/panes/PropertiesFormBuilderActionBehavior'),
+    ),
+    bifrost.panes.getPaneViaPaneProvider(
+      'bpmn/panes/properties/PropertiesFormBuilderActionDesign',
+      'bpmn/pane-providers/properties/PropertiesFormBuilderActionDesign',
+      require('../form-builder/panes/PropertiesFormBuilderActionDesign'),
+    ),
 
     // Message events (message/signal reference fields)
     bifrost.panes.getPaneViaPaneProvider(

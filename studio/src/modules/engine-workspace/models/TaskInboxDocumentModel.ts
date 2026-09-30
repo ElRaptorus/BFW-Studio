@@ -82,7 +82,7 @@ export class TaskInboxDocumentModel extends EditorDocumentModel {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-    this.engineId = extractEngineId(uri);
+    this.engineId = this.connectionManager.extractEngineIdFromUri(uri) ?? '';
     this.client = this.connectionManager.getClient(this.engineId);
   }
 
@@ -514,9 +514,4 @@ export class TaskInboxDocumentModel extends EditorDocumentModel {
     counts[this.engineId] = count;
     this.studio.registerSharedRessource(TASK_INBOX_PENDING_COUNTS_KEY, counts, true);
   }
-}
-
-function extractEngineId(uri: string): string {
-  const match = uri.match(/engine-task-inbox:\/\/([^?]+)/);
-  return match?.[1] ?? '';
 }

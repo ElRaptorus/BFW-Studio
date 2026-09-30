@@ -279,15 +279,33 @@ Every stored field includes `required` (`false` when the author does not check i
 
 ### Form Actions
 
-Actions define the buttons at the bottom of the form. Each action has:
-- `id` — Unique identifier
-- `label` — Button text
-- `preset` — One of: `confirm`, `ok`, `yes`, `no`, `cancel`, `custom`
-- `submitsForm` — Whether clicking the action triggers form validation and submission
-- `isDefault` — Primary visual emphasis
-- `isDanger` — Destructive visual emphasis
+Actions are the buttons at the bottom of the form. `FormAction` in `FormModel.ts` is `{ id, label, preset, effect, skipsValidation?, isDefault?, isDanger? }`. `FormActionEffect` is `submit`, `dismiss`, or `abort`.
 
-When no actions are configured, the `FormRenderer` shows a default "OK" button.
+| Field | Meaning |
+|-------|---------|
+| `id` | Action identifier. It reaches the Engine as described below. The label carries no meaning. |
+| `label` | Button text |
+| `preset` | `confirm`, `ok`, `yes`, `no`, `cancel`, `abort`, or `custom` |
+| `effect` | `submit` finishes the User Task with the field values and this action's id. `dismiss` closes the form without contacting the Engine. `abort` cancels the User Task, which aborts the whole process instance tree. |
+| `skipsValidation` | Only for `submit`. Fields are collected without `required` / `pattern` validation. The builder shows the checkbox only while the effect is `submit` and removes the flag when the effect changes. The renderer ignores it on other effects. |
+| `isDefault` | Primary styling. Enter activates the first action that is default and `submit`. |
+| `isDanger` | Styling only. It does not change the effect. |
+
+In the debugger, `submit` calls `userTasks.finish(id, { actionId, values })`, `dismiss` closes the task view, and `abort` asks for confirmation and then calls `userTasks.cancel(id, { reason: actionId })`. The finish body and the next token are `{ actionId, values }`. Gateways read `token.actionId` and `token.values.<fieldId>`.
+
+An action whose `effect` is missing or not one of the three values is not rendered. When no valid action remains, the renderer shows the default OK button (`effect: 'submit'`).
+
+Preset defaults (`ACTION_PRESET_DEFAULTS`):
+
+| Preset | Label | Effect | Other |
+|--------|-------|--------|-------|
+| Confirm | Confirm | `submit` | `isDefault: true` |
+| OK | OK | `submit` | `isDefault: true` |
+| Yes | Yes | `submit` | |
+| No | No | `submit` | `skipsValidation: true` |
+| Cancel | Cancel | `dismiss` | |
+| Abort | Abort | `abort` | `isDanger: true` |
+| Custom | Custom | `submit` | |
 
 ### Fragment Pattern
 
@@ -295,7 +313,7 @@ The Form Builder opens as a fragment editor tab (no own model). It parses a URI 
 
 Integration tests live in `studio/test/integration/bpmn-editor/form-builder.test.ts` and open `studio/test/fixtures/test-solution-bpmn/form-builder.bpmn` (`UserTask_1` with no form fields). The empty new-document template (`BpmnEmptyDocument.bpmn`) has no user task. `user-task.bpmn` already has `bfw:formFields`, so the summary pane shows Edit Form instead of Create Form. Persist tests close only the focused Form Builder tab (`std.editor.closeFocusedDocument`), not `Test: Close all`, so the parent BPMN stays in memory with the written fields.
 
-There is no `data-test--actions-editor-add-button` and no shared `data-test--form-builder-toolbox-item`. Field kits use `[data-test--form-builder-toolbox-field="<type>"]` (`text`, `number`, `date`, `checkbox`, `dropdown`, `radio`, `textarea`, `file`, `toggle`, `section_header`). Action presets use `[data-test--form-builder-toolbox-action="<preset>"]` (`confirm`, `ok`, `yes`, `no`, `cancel`, `custom`). Added actions render `[data-test--actions-editor-item]` in `ActionsEditor`.
+There is no `data-test--actions-editor-add-button` and no shared `data-test--form-builder-toolbox-item`. Field kits use `[data-test--form-builder-toolbox-field="<type>"]` (`text`, `number`, `date`, `checkbox`, `dropdown`, `radio`, `textarea`, `file`, `toggle`, `section_header`). Action presets use `[data-test--form-builder-toolbox-action="<preset>"]` (`confirm`, `ok`, `yes`, `no`, `cancel`, `abort`, `custom`). The effect radio uses `[data-test--action-inspector-effect="<effect>"]` (`submit`, `dismiss`, `abort`). The skips-validation checkbox is `[data-test--action-inspector-skips-validation]` and is present only for `submit`. Added actions render `[data-test--actions-editor-item]` in `ActionsEditor`.
 
 Command: `bpmn.formBuilder.open` — opens the form builder for the selected User Task element.
 
@@ -304,9 +322,11 @@ Command: `bpmn.formBuilder.open` — opens the form builder for the selected Use
 The engine-debugger uses `DynamicUiComponentAdapter` (`studio/src/modules/engine-debugger/task-viewer/DynamicUiComponentAdapter.tsx`) to render User Task forms at runtime. It:
 
 1. Reads `typeProperties.form_schema` and `typeProperties.form_actions` only when each value is an array, typed as the `FormModel` contract
-2. Passes those arrays to `FormRenderer` without renaming field types
-3. On submit: calls `userTasks.finish(id, { result })` with collected form data
-4. On cancel: calls `userTasks.cancel(id, { reason })`
+2. Passes those arrays to `FormRenderer` without renaming field types. Actions with a missing or unknown `effect` are not rendered.
+3. On `submit`: calls `userTasks.finish(id, { actionId, values })`, then closes the task view
+4. On `dismiss`: closes the task view. No Engine call.
+5. On `abort`: `confirmUserTaskCancel` opens a dialog ("Cancel User Task" / "Keep Task"). Only the `cancel-user-task` response calls `userTasks.cancel(id, { reason: actionId })` and then closes the task view. Cancelling aborts the whole process instance tree.
+6. A finished task's read-only review prefills fields from `readSubmittedFormValues`, which returns `outputToken.values` when both are records. A task whose output mappings flatten the envelope shows empty fields.
 
 ### Data Flow
 
@@ -332,8 +352,10 @@ Model changes (undo/redo/external) → EVENT_DATA_UPDATED
 **Debugger path** (Engine response → Form UI → Engine API):
 ```
 Engine user task → typeProperties.form_schema / form_actions (arrays)
-  → <FormRenderer fields actions onSubmit onCancel />
-  → User clicks action → collectFormData() → userTasks.finish / userTasks.cancel
+  → <FormRenderer fields actions onSubmit onDismiss onAbort />
+  → submit → userTasks.finish(id, { actionId, values })
+  → dismiss → close the task view
+  → abort → confirmation → userTasks.cancel(id, { reason: actionId })
 ```
 
 ---

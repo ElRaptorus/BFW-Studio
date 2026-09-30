@@ -2,6 +2,7 @@ import type { FormAction, FormFieldDefinition } from '#modules/bpmn-core/form-re
 
 export type {
   FormAction,
+  FormActionEffect,
   FormFieldDefinition,
   FormFieldOption,
   FormFieldType,

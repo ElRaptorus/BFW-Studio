@@ -46,7 +46,7 @@ export class TimerSchedulesDocumentModel extends EditorDocumentModel {
     super(uri);
     this.studio = studio;
     this.connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-    this.engineId = extractEngineId(uri);
+    this.engineId = this.connectionManager.extractEngineIdFromUri(uri) ?? '';
     this.client = this.connectionManager.getClient(this.engineId);
   }
 
@@ -287,9 +287,4 @@ export class TimerSchedulesDocumentModel extends EditorDocumentModel {
     this.filterRevision++;
     this.updateMetadata({ filterRevision: this.filterRevision });
   }
-}
-
-function extractEngineId(uri: string): string {
-  const match = uri.match(/engine:\/\/timers\/([^?]+)/);
-  return match?.[1] ?? '';
 }

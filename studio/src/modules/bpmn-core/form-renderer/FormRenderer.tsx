@@ -6,9 +6,12 @@ import React, { useCallback, useRef, useState } from 'react';
 import { FormRendererActions } from './FormRendererActions';
 import { FormRendererField } from './FormRendererField';
 import './form-renderer.scss';
+import { isRenderableFormAction, resolveFormActionOutcome } from './formActionOutcome';
+import { patternValidationMessage } from './patternValidationMessage';
 
-export type FormRendererSubmitHandler = (result: Record<string, unknown>) => void;
-export type FormRendererCancelHandler = (reason: string) => void;
+export type FormRendererSubmitHandler = (actionId: string, values: Record<string, unknown>) => void;
+export type FormRendererDismissHandler = () => void;
+export type FormRendererAbortHandler = (actionId: string) => void;
 
 export type FormRendererProps = {
   fields: FormFieldDefinition[];
@@ -16,41 +19,21 @@ export type FormRendererProps = {
   title?: string;
   readOnly?: boolean;
   onSubmit?: FormRendererSubmitHandler;
-  onCancel?: FormRendererCancelHandler;
+  onDismiss?: FormRendererDismissHandler;
+  onAbort?: FormRendererAbortHandler;
 };
 
 const DEFAULT_ACTIONS: FormAction[] = [
-  { id: 'ok', label: 'OK', preset: FormActionPreset.Ok, submitsForm: true, isDefault: true },
+  { id: 'ok', label: 'OK', preset: FormActionPreset.Ok, effect: 'submit', isDefault: true },
 ];
 
-function patternValidationMessage(field: FormFieldDefinition, value: string): string | null {
-  if (value.trim() === '') {
-    return null;
-  }
-  const rule = field.validationRules?.find((entry) => entry.type === 'pattern');
-  if (rule == null || typeof rule.value !== 'string' || rule.value === '') {
-    return null;
-  }
-  try {
-    const regex = new RegExp(rule.value);
-    if (!regex.test(value)) {
-      if (rule.message != null && rule.message !== '') {
-        return rule.message;
-      }
-      return `${field.label} does not match the expected format`;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 export function FormRenderer(props: FormRendererProps): React.JSX.Element {
-  const { fields, actions, title, readOnly, onSubmit, onCancel } = props;
+  const { fields, actions, title, readOnly, onSubmit, onDismiss, onAbort } = props;
   const formRef = useRef<HTMLFormElement>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const effectiveActions = actions.length > 0 ? actions : DEFAULT_ACTIONS;
+  const renderableActions = actions.filter(isRenderableFormAction);
+  const effectiveActions = renderableActions.length > 0 ? renderableActions : DEFAULT_ACTIONS;
 
   const validateFields = useCallback((): Record<string, string> => {
     const errors: Record<string, string> = {};
@@ -174,26 +157,30 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
         return;
       }
 
-      if (action.submitsForm) {
-        const errors = validateFields();
-        if (Object.keys(errors).length > 0) {
-          setValidationErrors(errors);
-          return;
-        }
-        setValidationErrors({});
-        const formData = collectFormData();
-        onSubmit?.({ _action: action.id, ...formData });
-      } else {
-        onCancel?.(action.id);
+      const outcome = resolveFormActionOutcome(action, validateFields, collectFormData);
+      if (outcome.kind === 'invalid') {
+        setValidationErrors(outcome.errors);
+        return;
       }
+
+      setValidationErrors({});
+      if (outcome.kind === 'submit') {
+        onSubmit?.(outcome.actionId, outcome.values);
+        return;
+      }
+      if (outcome.kind === 'dismiss') {
+        onDismiss?.();
+        return;
+      }
+      onAbort?.(outcome.actionId);
     },
-    [readOnly, validateFields, collectFormData, onSubmit, onCancel],
+    [readOnly, validateFields, collectFormData, onSubmit, onDismiss, onAbort],
   );
 
   const handleFormSubmit = useCallback(
     (event: React.FormEvent) => {
       event.preventDefault();
-      const defaultAction = effectiveActions.find((action) => action.isDefault && action.submitsForm);
+      const defaultAction = effectiveActions.find((action) => action.isDefault === true && action.effect === 'submit');
       if (defaultAction != null) {
         handleActionClick(defaultAction);
       }

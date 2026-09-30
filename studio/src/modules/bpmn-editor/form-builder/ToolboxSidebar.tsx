@@ -1,15 +1,70 @@
-import type { FormFieldType } from '#modules/bpmn-core/form-renderer/FormModel';
+import type { FormAction, FormFieldDefinition, FormFieldType } from '#modules/bpmn-core/form-renderer/FormModel';
 import { FormActionPreset } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 
 import './ToolboxSidebar.scss';
-import { FIELD_TYPE_DESCRIPTORS, createDefaultAction, createDefaultField } from './constants';
+import { FIELD_TYPE_DESCRIPTORS } from './constants';
 import type { FormBuilderState } from './useBpmnFormBuilderState';
 
 type ToolboxSidebarProps = {
   state: FormBuilderState;
 };
+
+let actionIdCounter = 0;
+let fieldIdCounter = 0;
+
+export const ACTION_PRESET_DEFAULTS: Record<FormActionPreset, Omit<FormAction, 'id'>> = {
+  [FormActionPreset.Confirm]: {
+    label: 'Confirm',
+    preset: FormActionPreset.Confirm,
+    effect: 'submit',
+    isDefault: true,
+  },
+  [FormActionPreset.Ok]: { label: 'OK', preset: FormActionPreset.Ok, effect: 'submit', isDefault: true },
+  [FormActionPreset.Yes]: { label: 'Yes', preset: FormActionPreset.Yes, effect: 'submit', isDefault: false },
+  [FormActionPreset.No]: {
+    label: 'No',
+    preset: FormActionPreset.No,
+    effect: 'submit',
+    skipsValidation: true,
+    isDefault: false,
+  },
+  [FormActionPreset.Cancel]: {
+    label: 'Cancel',
+    preset: FormActionPreset.Cancel,
+    effect: 'dismiss',
+    isDefault: false,
+  },
+  [FormActionPreset.Abort]: {
+    label: 'Abort',
+    preset: FormActionPreset.Abort,
+    effect: 'abort',
+    isDanger: true,
+    isDefault: false,
+  },
+  [FormActionPreset.Custom]: { label: 'Custom', preset: FormActionPreset.Custom, effect: 'submit', isDefault: false },
+};
+
+export function createDefaultAction(preset: FormActionPreset): FormAction {
+  actionIdCounter += 1;
+  const defaults = ACTION_PRESET_DEFAULTS[preset];
+  return {
+    id: `action_${preset}_${Date.now()}_${actionIdCounter}`,
+    ...defaults,
+  };
+}
+
+export function createDefaultField(type: FormFieldType): FormFieldDefinition {
+  fieldIdCounter += 1;
+  const descriptor = FIELD_TYPE_DESCRIPTORS.find((descriptorEntry) => descriptorEntry.type === type);
+  return {
+    id: `field_${type}_${Date.now()}_${fieldIdCounter}`,
+    type,
+    label: descriptor?.label ?? 'Field',
+    required: false,
+  };
+}
 
 export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
   const { state } = props;
@@ -98,6 +153,16 @@ export function ToolboxSidebar(props: ToolboxSidebarProps): React.JSX.Element {
           >
             <i className="ph ph-x" />
             <span className="form-builder-toolbox__item-label">Cancel</span>
+          </button>
+          <button
+            type="button"
+            className="form-builder-toolbox__item"
+            data-test--form-builder-toolbox-action="abort"
+            title="Add Abort action"
+            onClick={() => handleAddAction(FormActionPreset.Abort)}
+          >
+            <i className="ph ph-warning" />
+            <span className="form-builder-toolbox__item-label">Abort</span>
           </button>
           <button
             type="button"

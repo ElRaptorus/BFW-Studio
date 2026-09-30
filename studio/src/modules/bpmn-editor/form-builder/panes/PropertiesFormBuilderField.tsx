@@ -4,16 +4,37 @@ import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
-import type { FormFieldDefinition, FormFieldOption, FormFieldType } from '#modules/bpmn-core/form-renderer/FormModel';
+import type {
+  FormFieldDefinition,
+  FormFieldOption,
+  FormFieldType,
+  FormFieldValidationRule,
+} from '#modules/bpmn-core/form-renderer/FormModel';
 
 import React, { useEffect, useState } from 'react';
 
 import type { FormBuilderEditorSnapshot } from '../FormBuilderEditorMediator';
 import { FormBuilderEditorMediator } from '../FormBuilderEditorMediator';
-import { FIELD_TYPE_DESCRIPTORS, patternValue, withPattern } from '../constants';
+import { FIELD_TYPE_DESCRIPTORS } from '../constants';
 
 const FORM_BUILDER_DOCUMENT_TYPE = 'bpmn.form-builder';
 const HELP_ID = 'bpmn/properties/form_builder_field';
+
+export function withPattern(field: FormFieldDefinition, pattern: string): FormFieldDefinition {
+  const remainingRules = (field.validationRules ?? []).filter((entry) => entry.type !== 'pattern');
+  const patternRule: FormFieldValidationRule[] = pattern === '' ? [] : [{ type: 'pattern', value: pattern }];
+  const validationRules = [...remainingRules, ...patternRule];
+  return {
+    ...field,
+    required: typeof field.required === 'boolean' ? field.required : false,
+    validationRules: validationRules.length > 0 ? validationRules : undefined,
+  };
+}
+
+export function patternValue(field: FormFieldDefinition): string {
+  const rule = field.validationRules?.find((entry) => entry.type === 'pattern');
+  return typeof rule?.value === 'string' ? rule.value : '';
+}
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: getPaneTitle,

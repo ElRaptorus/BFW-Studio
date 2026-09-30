@@ -41,18 +41,13 @@ import type { DecisionCatalogDocumentModel } from '../models/DecisionCatalogDocu
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
 import './DecisionCatalogRenderer.scss';
 
-function parseEngineIdFromDecisionUri(uri: string): string {
-  const match = uri.match(/engine:\/\/decisions\/([^/?]+)/);
-  return match?.[1] ?? '';
-}
-
 export default function DecisionCatalogRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
   const bifrost: Bifrost = studio;
   const model = useEditorModel<DecisionCatalogDocumentModel>(bifrost, editorDocument);
 
   const connectionManager = bifrost.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
-  const uriEngineId = parseEngineIdFromDecisionUri(editorDocument.uri);
+  const uriEngineId = connectionManager.extractEngineIdFromUri(editorDocument.uri) ?? '';
   const engineId = model?.getEngineId() || uriEngineId;
   const connection = connectionManager.getConnection(engineId);
   const engineDisplayName = connection?.displayName ?? engineId;
