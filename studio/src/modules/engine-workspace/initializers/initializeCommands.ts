@@ -7,7 +7,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
-import type { FlowNodeInstance, RetryRequest } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNodeInstance, RetryRequest, TimerSchedule } from '@elraptorus/bfw_engine_sdk';
 import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
 import { ABORTABLE_STATES, RETRYABLE_STATES, TERMINAL_STATES } from '../constants/sharedResourceKeys';
@@ -18,8 +18,9 @@ import type { ProcessExplorerDocumentModel } from '../models/ProcessExplorerDocu
 import type { TaskInboxDocumentModel } from '../models/TaskInboxDocumentModel';
 import type { TimerSchedulesDocumentModel } from '../models/TimerSchedulesDocumentModel';
 
-function reportInstanceBulkOutcome(
+function reportBulkOutcome(
   bifrost: Bifrost,
+  noun: string,
   pastParticiple: string,
   succeeded: number,
   failed: number,
@@ -28,14 +29,14 @@ function reportInstanceBulkOutcome(
   if (failed > 0) {
     bifrost.notifications.open({
       type: 'warning',
-      content: `${succeeded} of ${total} instances ${pastParticiple}, ${failed} failed.`,
+      content: `${succeeded} of ${total} ${noun}s ${pastParticiple}, ${failed} failed.`,
       source: 'Engine',
     });
     return;
   }
   bifrost.notifications.open({
     type: 'info',
-    content: `${succeeded} instance${succeeded === 1 ? '' : 's'} ${pastParticiple}.`,
+    content: `${succeeded} ${noun}${succeeded === 1 ? '' : 's'} ${pastParticiple}.`,
     source: 'Engine',
   });
 }
@@ -231,11 +232,6 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       } else {
         await client.processes.disable(processModelId);
       }
-      bifrost.notifications.open({
-        type: 'info',
-        content: `Process "${processModelId}" ${enabled ? 'enabled' : 'disabled'}.`,
-        source: 'Engine',
-      });
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
@@ -243,13 +239,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.removeProcessFromEngine',
     async (engineId: string, processModelId: string) => {
-      const client = requireClient(engineId);
-      await client.processes.undeploy(processModelId);
-      bifrost.notifications.open({
-        type: 'info',
-        content: `Process "${processModelId}" removed from engine.`,
-        source: 'Engine',
-      });
+      await requireClient(engineId).processes.undeploy(processModelId);
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
@@ -257,9 +247,14 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.completeTask',
     async (engineId: string, task: Pick<FlowNodeInstance, 'id' | 'flowNodeType'>) => {
-      const client = requireClient(engineId);
-      await completeInboxTask(client, task);
-      bifrost.notifications.open({ type: 'info', content: 'Task completed.', source: 'Engine' });
+      switch (task.flowNodeType) {
+        case FlowNodeType.ManualTask:
+          return bifrost.commands.executeCommand(ENGINE_COMMANDS.confirmManualTask, [engineId, task.id]);
+        case FlowNodeType.UserTask:
+          return bifrost.commands.executeCommand(ENGINE_COMMANDS.finishUserTask, [engineId, task.id]);
+        default:
+          throw new Error(`Task ${task.id} of type ${task.flowNodeType} cannot be completed from the inbox.`);
+      }
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
@@ -284,6 +279,73 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       } else {
         await client.decisions.disable(decisionModelId);
       }
+    },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.removeDecisionFromEngine',
+    async (engineId: string, decisionModelId: string) => {
+      await requireClient(engineId).decisions.undeploy(decisionModelId);
+    },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.toggleTimerScheduleEnabled',
+    async (engineId: string, scheduleId: string, enabled: boolean) => {
+      const client = requireClient(engineId);
+      if (enabled) {
+        await client.timerSchedules.enable(scheduleId);
+      } else {
+        await client.timerSchedules.disable(scheduleId);
+      }
+    },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
+  bifrost.commands.register('engine.workspace.listTimerSchedules', async (engineId: string): Promise<TimerSchedule[]> =>
+    requireClient(engineId).timerSchedules.list(),
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.processExplorer.toggleSingle',
+    async (engineId: string, processModelId: string, enabled: boolean) => {
+      await bifrost.commands.executeCommand('engine.workspace.toggleProcessEnabled', [
+        engineId,
+        processModelId,
+        enabled,
+      ]);
+      bifrost.notifications.open({
+        type: 'info',
+        content: `Process "${processModelId}" ${enabled ? 'enabled' : 'disabled'}.`,
+        source: 'Engine',
+      });
+    },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.processExplorer.removeSingle',
+    async (engineId: string, processModelId: string) => {
+      await bifrost.commands.executeCommand('engine.workspace.removeProcessFromEngine', [engineId, processModelId]);
+      bifrost.notifications.open({
+        type: 'info',
+        content: `Process "${processModelId}" removed from engine.`,
+        source: 'Engine',
+      });
+    },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.decisionCatalog.toggleSingle',
+    async (engineId: string, decisionModelId: string, enabled: boolean) => {
+      await bifrost.commands.executeCommand('engine.workspace.toggleDecisionEnabled', [
+        engineId,
+        decisionModelId,
+        enabled,
+      ]);
       bifrost.notifications.open({
         type: 'info',
         content: `Decision "${decisionModelId}" ${enabled ? 'enabled' : 'disabled'}.`,
@@ -294,10 +356,9 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   );
 
   bifrost.commands.register(
-    'engine.workspace.removeDecisionFromEngine',
+    'engine.workspace.decisionCatalog.removeSingle',
     async (engineId: string, decisionModelId: string) => {
-      const client = requireClient(engineId);
-      await client.decisions.undeploy(decisionModelId);
+      await bifrost.commands.executeCommand('engine.workspace.removeDecisionFromEngine', [engineId, decisionModelId]);
       bifrost.notifications.open({
         type: 'info',
         content: `Decision "${decisionModelId}" removed from engine.`,
@@ -348,9 +409,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.processExplorer.enableSelected',
     async (model: ProcessExplorerDocumentModel) => {
-      const client = requireClient(model.getEngineId());
       for (const processModel of model.getSelectedModels()) {
-        await client.processes.enable(processModel.processModelId ?? processModel.id);
+        await bifrost.commands.executeCommand('engine.workspace.toggleProcessEnabled', [
+          model.getEngineId(),
+          processModel.processModelId ?? processModel.id,
+          true,
+        ]);
       }
       await model.refresh();
     },
@@ -360,9 +424,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.processExplorer.disableSelected',
     async (model: ProcessExplorerDocumentModel) => {
-      const client = requireClient(model.getEngineId());
       for (const processModel of model.getSelectedModels()) {
-        await client.processes.disable(processModel.processModelId ?? processModel.id);
+        await bifrost.commands.executeCommand('engine.workspace.toggleProcessEnabled', [
+          model.getEngineId(),
+          processModel.processModelId ?? processModel.id,
+          false,
+        ]);
       }
       await model.refresh();
     },
@@ -372,9 +439,11 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.processExplorer.removeSelected',
     async (model: ProcessExplorerDocumentModel) => {
-      const client = requireClient(model.getEngineId());
       for (const processModel of model.getSelectedModels()) {
-        await client.processes.undeploy(processModel.processModelId ?? processModel.id);
+        await bifrost.commands.executeCommand('engine.workspace.removeProcessFromEngine', [
+          model.getEngineId(),
+          processModel.processModelId ?? processModel.id,
+        ]);
       }
       model.clearBulkSelection();
       await model.refresh();
@@ -389,9 +458,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.decisionCatalog.enableSelected',
     async (model: DecisionCatalogDocumentModel) => {
-      const client = requireClient(model.getEngineId());
       for (const decision of model.getSelectedDecisions()) {
-        await client.decisions.enable(decision.decisionDefinitionId ?? decision.id);
+        await bifrost.commands.executeCommand('engine.workspace.toggleDecisionEnabled', [
+          model.getEngineId(),
+          decision.decisionDefinitionId ?? decision.id,
+          true,
+        ]);
       }
       await model.refresh();
     },
@@ -401,9 +473,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.decisionCatalog.disableSelected',
     async (model: DecisionCatalogDocumentModel) => {
-      const client = requireClient(model.getEngineId());
       for (const decision of model.getSelectedDecisions()) {
-        await client.decisions.disable(decision.decisionDefinitionId ?? decision.id);
+        await bifrost.commands.executeCommand('engine.workspace.toggleDecisionEnabled', [
+          model.getEngineId(),
+          decision.decisionDefinitionId ?? decision.id,
+          false,
+        ]);
       }
       await model.refresh();
     },
@@ -413,11 +488,11 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.decisionCatalog.removeSelected',
     async (model: DecisionCatalogDocumentModel) => {
-      const client = requireClient(model.getEngineId());
       for (const decision of model.getSelectedDecisions()) {
-        const decisionModelId = decision.decisionDefinitionId ?? decision.id;
-        await client.decisions.disable(decisionModelId);
-        await client.decisions.undeploy(decisionModelId);
+        await bifrost.commands.executeCommand('engine.workspace.removeDecisionFromEngine', [
+          model.getEngineId(),
+          decision.decisionDefinitionId ?? decision.id,
+        ]);
       }
       model.clearBulkSelection();
       await model.refresh();
@@ -461,7 +536,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
           failed++;
         }
       }
-      reportInstanceBulkOutcome(bifrost, 'aborted', succeeded, failed, abortable.length);
+      reportBulkOutcome(bifrost, 'instance', 'aborted', succeeded, failed, abortable.length);
       model.setSelectedInstanceIds([]);
       await model.refresh();
     },
@@ -499,7 +574,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
           failed++;
         }
       }
-      reportInstanceBulkOutcome(bifrost, 'deleted', succeeded, failed, deletable.length);
+      reportBulkOutcome(bifrost, 'instance', 'deleted', succeeded, failed, deletable.length);
       model.setSelectedInstanceIds([]);
       await model.refresh();
     },
@@ -538,7 +613,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
           failed++;
         }
       }
-      reportInstanceBulkOutcome(bifrost, 'retried', succeeded, failed, retryable.length);
+      reportBulkOutcome(bifrost, 'instance', 'retried', succeeded, failed, retryable.length);
       model.setSelectedInstanceIds([]);
       await model.refresh();
     },
@@ -561,14 +636,22 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.taskInbox.completeSelected',
     async (model: TaskInboxDocumentModel) => {
-      const client = connectionManager.getClient(model.getEngineId());
       const selected = model.getSelectedTasks();
-      if (!client || selected.length === 0) {
+      if (selected.length === 0) {
         return;
       }
+
+      let succeeded = 0;
+      let failed = 0;
       for (const task of selected) {
-        await completeInboxTask(client, task);
+        try {
+          await bifrost.commands.executeCommand('engine.workspace.completeTask', [model.getEngineId(), task]);
+          succeeded++;
+        } catch {
+          failed++;
+        }
       }
+      reportBulkOutcome(bifrost, 'task', 'completed', succeeded, failed, selected.length);
       model.setSelectedTaskIds([]);
       await model.refresh();
     },
@@ -582,9 +665,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.timerSchedules.enableSelected',
     async (model: TimerSchedulesDocumentModel) => {
-      const engineId = model.getEngineId();
       for (const schedule of model.getSelectedSchedules()) {
-        await enableTimerSchedule(connectionManager, engineId, schedule.id);
+        await bifrost.commands.executeCommand('engine.workspace.toggleTimerScheduleEnabled', [
+          model.getEngineId(),
+          schedule.id,
+          true,
+        ]);
       }
       await model.refresh();
     },
@@ -594,9 +680,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.timerSchedules.disableSelected',
     async (model: TimerSchedulesDocumentModel) => {
-      const engineId = model.getEngineId();
       for (const schedule of model.getSelectedSchedules()) {
-        await disableTimerSchedule(connectionManager, engineId, schedule.id);
+        await bifrost.commands.executeCommand('engine.workspace.toggleTimerScheduleEnabled', [
+          model.getEngineId(),
+          schedule.id,
+          false,
+        ]);
       }
       await model.refresh();
     },
@@ -687,125 +776,14 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     },
   );
 
-  bifrost.commands.register('engine.workspace.timerSchedules.fetch', async (engineId: string) =>
-    fetchTimerSchedules(connectionManager, engineId),
-  );
-
-  bifrost.commands.register(
-    'engine.workspace.timerSchedules.toggleSingle',
-    async (engineId: string, scheduleId: string, enabled: boolean) => {
-      if (enabled) {
-        await enableTimerSchedule(connectionManager, engineId, scheduleId);
-      } else {
-        await disableTimerSchedule(connectionManager, engineId, scheduleId);
-      }
-    },
-  );
-
-  interface TimerSchedule {
-    id: string;
-    processModelId: string;
-    processVersionId: string;
-    flowNodeId: string;
-    kind: 'cycle' | 'date' | 'duration';
-    isoSpec: string;
-    enabled: boolean;
-    nextFireAt: string | null;
-    lastTriggeredAt?: string | null;
-  }
-
-  async function authorizedFetch(
-    connectionManager: EngineConnectionManager,
-    engineId: string,
-    path: string,
-    init?: RequestInit,
-  ): Promise<Response> {
-    const connection = connectionManager.getConnection(engineId);
-    if (!connection) {
-      throw new Error('Not connected');
-    }
-
-    const token = connectionManager.identity.getToken(connection.url);
-    const headers: Record<string, string> = {
-      Accept: 'application/json',
-      ...(init?.headers as Record<string, string> | undefined),
-    };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    const url = `${connection.url.replace(/\/$/, '')}${path}`;
-    return fetch(url, { ...init, headers });
-  }
-
-  async function fetchTimerSchedules(
-    connectionManager: EngineConnectionManager,
-    engineId: string,
-  ): Promise<TimerSchedule[]> {
-    const response = await authorizedFetch(connectionManager, engineId, '/timer-schedules');
-    if (!response.ok) {
-      throw new Error(`Failed to load timer schedules (${response.status})`);
-    }
-    const body = (await response.json()) as { data: TimerSchedule[] };
-    return body.data ?? [];
-  }
-
-  async function enableTimerSchedule(
-    connectionManager: EngineConnectionManager,
-    engineId: string,
-    scheduleId: string,
-  ): Promise<TimerSchedule> {
-    const response = await authorizedFetch(connectionManager, engineId, `/timer-schedules/${scheduleId}/enable`, {
-      method: 'PUT',
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to enable timer schedule (${response.status})`);
-    }
-    const body = (await response.json()) as { data: TimerSchedule };
-    return body.data;
-  }
-
-  async function disableTimerSchedule(
-    connectionManager: EngineConnectionManager,
-    engineId: string,
-    scheduleId: string,
-  ): Promise<TimerSchedule> {
-    const response = await authorizedFetch(connectionManager, engineId, `/timer-schedules/${scheduleId}/disable`, {
-      method: 'PUT',
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to disable timer schedule (${response.status})`);
-    }
-    const body = (await response.json()) as { data: TimerSchedule };
-    return body.data;
-  }
-
   bifrost.commands.register(
     'engine.workspace.taskInbox.completeSingle',
     async (engineId: string, task: Pick<FlowNodeInstance, 'id' | 'flowNodeType'>) => {
-      const client = connectionManager.getClient(engineId);
-      if (!client) {
-        return;
-      }
-      await completeInboxTask(client, task);
+      await bifrost.commands.executeCommand('engine.workspace.completeTask', [engineId, task]);
+      bifrost.notifications.open({ type: 'info', content: 'Task completed.', source: 'Engine' });
     },
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
   );
-}
-
-export async function completeInboxTask(
-  client: Pick<BfwEngineClient, 'userTasks' | 'manualTasks'>,
-  task: Pick<FlowNodeInstance, 'id' | 'flowNodeType'>,
-): Promise<void> {
-  switch (task.flowNodeType) {
-    case FlowNodeType.ManualTask:
-      await client.manualTasks.confirm(task.id);
-      return;
-    case FlowNodeType.UserTask:
-      await client.userTasks.finish(task.id);
-      return;
-    default:
-      throw new Error(`Task ${task.id} of type ${task.flowNodeType} cannot be completed from the inbox.`);
-  }
 }
 
 async function showBulkRetryDialog(

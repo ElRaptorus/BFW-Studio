@@ -128,6 +128,16 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## Engine client calls belong in commands
+
+**Mistake**: Calling `client.<namespace>.<method>()` from a React component, a view model's action, or a second module's command, or hand-writing `fetch` against an Engine route.
+
+**Why**: The same operation ends up implemented several times with different error handling, notifications, and connection checks; a component that resolves the client through `getSharedRessource` bypasses command enablement.
+
+**Correct approach**: An operation used by more than one module is an `ENGINE_COMMANDS` primitive in engine-core; a dialog-guarded variant lives with its only consumer or as a `configured*` command. Workspace views call one canonical `engine.workspace.*` command and add UI in `<view>.<verb>Single` / `<verb>Selected` wrappers. Read queries in document models are not affected. See [`engine.md`](engine.md) §Engine-Workspace Operation Commands.
+
+---
+
 ## Sync predicates cannot call async commands
 
 **Mistake**: `enabledWhen` / toolbar `visible` calling `executeCommand` (returns a Promise, always truthy).

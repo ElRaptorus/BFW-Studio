@@ -47,7 +47,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     if (!task) {
       return;
     }
-    props.studio.commands.executeCommand('engine.workspace.completeTask', [engineId, task]);
+    props.studio.commands.executeCommand('engine.workspace.taskInbox.completeSingle', [engineId, task]);
   }, [props.studio, engineId, task]);
 
   if (!task) {

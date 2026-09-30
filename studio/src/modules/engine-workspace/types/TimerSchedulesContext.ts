@@ -1,16 +1,8 @@
+import type { TimerSchedule } from '@elraptorus/bfw_engine_sdk';
+
 export interface TimerSchedulesContextMetadata {
   engineId: string;
-  schedule: {
-    id: string;
-    processModelId: string;
-    processVersionId: string;
-    flowNodeId: string;
-    kind: 'cycle' | 'date' | 'duration';
-    isoSpec: string;
-    enabled: boolean;
-    nextFireAt: string | null;
-    lastTriggeredAt?: string | null;
-  };
+  schedule: TimerSchedule;
   columnId?: string;
   cellValue?: string;
 }

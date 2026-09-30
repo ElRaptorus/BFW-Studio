@@ -2,13 +2,13 @@
 
 For the full architectural documentation of the engine connectivity system, see:
 
-**[docs/architecture/engine.md](../../docs/architecture/engine.md)**
+**[docs/architecture/engine.md](../../../docs/architecture/engine.md)**
 
 Key topics covered there:
 
-- **EngineManager** — full method table, connection lifecycle, settings
-- **Events** — all events with args types and triggers
-- **Engine-core commands** — connection, process operations, tasks/events, authentication
-- **Document URI scheme** — format, examples, parsing
-- **EngineInformation** — type definition
+- **EngineConnectionManager** — connection lifecycle, events, settings, URI parsing
+- **Command Contract** — the frozen `ENGINE_COMMANDS` list
+- **Engine-core commands** — connection, process operations, events, task operations, versioning
+- **Engine-Workspace Operation Commands** — canonical commands and view wrappers
+- **Document URI scheme** — patterns per document type
 - **File path reference** — all relevant source files

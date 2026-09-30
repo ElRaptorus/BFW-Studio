@@ -52,7 +52,7 @@ Current models:
 - `DashboardDocumentModel` — auto-refresh timer, health/info/stats fetching, settings-reactive interval
 - `ProcessExplorerDocumentModel` — GraphQL `queryProcessModels` with server-side filtering (including `ilike` for names), sorting, and offset pagination (`limit`/`offset`). Two-step filter resolution for version fields (process versions queried separately, then filtered via `processId`). Nested `versions` include for latest version/deployedAt enrichment. Event-driven auto-refresh subscribes to `ProcessDefinitionDeployed`, `ProcessDefinitionUndeployed`, `ProcessDefinitionEnabled`, and `ProcessDefinitionDisabled` engine WebSocket events.
 - `InstanceSearchDocumentModel` — GraphQL `queryProcessInstances` with server-side filtering (`ilike` for ID/businessKey, enum multi-select for state, date-range for startedAt), sorting, and offset pagination. Two-step filter resolution for process name and version.
-- `TaskInboxDocumentModel` — GraphQL `queryFlowNodeInstances` filtered to User Tasks and confirming Manual Tasks in waiting state. Server-side `ilike` filters, date-range filters, sorting, and offset pagination. Completion is `engine.workspace.taskInbox.completeSelected` / `completeSingle`, which call `completeInboxTask` (User Task finish without values, Manual Task confirm).
+- `TaskInboxDocumentModel` — GraphQL `queryFlowNodeInstances` filtered to User Tasks and confirming Manual Tasks in waiting state. Server-side `ilike` filters, date-range filters, sorting, and offset pagination. Completion is `engine.workspace.taskInbox.completeSelected` / `completeSingle`, which run the canonical `engine.workspace.completeTask` (User Task finish without values, Manual Task confirm; see §Engine-Workspace Operation Commands).
 - `DecisionCatalogDocumentModel` — GraphQL `queryDecisionDefinitions` with server-side filtering, sorting, and offset pagination. Two-step filter resolution for version fields. Nested `versions` include.
 - `TimerSchedulesDocumentModel` — REST-backed (client-side filtering/sorting only; no GraphQL endpoint for timer schedules).
 
@@ -68,7 +68,7 @@ All engine-core commands are registered at runtime but their IDs and argument sh
 - **`EngineCommandArgs`** — maps each command ID to its typed argument tuple.
 - **File:** `studio/src/modules/engine-core/commands/CommandContract.ts`
 
-25 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `resolveAuthLabel`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerEscalation`, `triggerTimerEvent`, `discoverLatestVersion`, `ensureProcessVersions`, `resolveVersionConflicts`.
+28 commands are frozen: `connect`, `connectWithDialog`, `disconnect`, `removeFromHistory`, `setAuthToken`, `resolveAuthLabel`, `deploy`, `deployBatch`, `startProcess`, `configuredStartProcess`, `startProcessAndOpenDebugger`, `configuredStartProcessAndOpenDebugger`, `abortProcessInstance`, `configuredAbortProcessInstance`, `retryProcessInstance`, `configuredRetryProcessInstance`, `deleteProcessInstance`, `configuredDeleteProcessInstance`, `triggerMessage`, `triggerSignal`, `triggerEscalation`, `triggerTimerEvent`, `finishUserTask`, `cancelUserTask`, `confirmManualTask`, `discoverLatestVersion`, `ensureProcessVersions`, `resolveVersionConflicts`.
 
 ### SDK Imports
 
@@ -151,6 +151,18 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 | `engine.triggerSignal` | Triggers a signal event on the engine |
 | `engine.triggerEscalation` | Triggers an escalation inject on the engine (engine-wide waiting catchers) |
 
+### Task Operations
+
+Registered by `registerTaskCommands.ts`. Thin client wrappers with no UI; they throw when the engine is not connected or the call fails.
+
+| Command | Purpose |
+|---------|---------|
+| `engine.finishUserTask` | `(engineId, flowNodeInstanceId, request?: FinishUserTaskRequest)` → `userTasks.finish`. No request sends no body (`actionId` `null`, `values` `{}`) |
+| `engine.cancelUserTask` | `(engineId, flowNodeInstanceId, reason?)` → `userTasks.cancel`, which aborts the whole process instance tree |
+| `engine.confirmManualTask` | `(engineId, flowNodeInstanceId)` → `manualTasks.confirm`; the entered token passes through |
+
+Consumers: the debugger task view (`finishUserTask`, and `cancelUserTask` through `engine.debugger.taskView.cancelUserTask`), the debugger's `continueInteractiveTask` (`confirmManualTask`), and the canonical `engine.workspace.completeTask`.
+
 ### Process versioning
 
 Registered by `registerProcessVersioningCommands.ts`. Each takes an engine ID and resolves the client. The next-version string itself is `bpmn.suggestNextVersion` in `bpmn-core` (`registerVersionCommands.ts`); these commands call it when they need a suggestion.
@@ -208,6 +220,8 @@ Returns `null` when the user cancels.
 **Debugger toolbar `enabledWhen` guards:**
 - `engine.debugger.abortProcessInstance` — wraps the core `engine.configuredAbortProcessInstance` command (confirmation dialog); enabled only when the PI is in `Running` state
 - `engine.debugger.retryWithConfirmation` — enabled only when the PI is in a retryable state (`Fatal`, `Aborted`, `Error`)
+
+**Task view commands:** `engine.debugger.taskView.focusOrOpen`, `engine.debugger.taskView.reviewCompleted`, and `engine.debugger.taskView.cancelUserTask(engineIdOrUrl, flowNodeInstanceId, reason?) → boolean`. The cancel command opens the "Cancel User Task" confirmation (Keep Task is default), runs `engine.cancelUserTask` only for the `cancel-user-task` response, and turns `FniNotWaitingError` into an error notification (returns `false`). Its only consumer is the `abort` form action in `DynamicUiComponentAdapter`. `engine.debugger.continueInteractiveTask` runs `engine.confirmManualTask` for a Manual Task and opens the task view for a User Task. `engine.debugger.restartProcessInstance` starts through `engine.startProcess`.
 
 ### Event Subprocess debugging
 
@@ -280,6 +294,28 @@ Each event type has its own dedicated confirmation dialog, split from the former
 - **Timer**: `askTimerTriggerConfirmation`. Simple confirmation stating the timer will be skipped.
 
 **File:** `studio/src/modules/engine-debugger/libs/BpmnCustomPropertyAccessor.ts` — reads `bfw:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.
+
+### Engine-Workspace Operation Commands
+
+**Path:** `studio/src/modules/engine-workspace/initializers/initializeCommands.ts`
+
+Workspace commands that change Engine state follow three layers:
+
+1. **engine-core primitives** (`ENGINE_COMMANDS`) — used by more than one module; client call only.
+2. **Canonical workspace commands** — the single implementation of an operation for every workspace view. No UI (no notifications, no selection handling); they throw on failure.
+3. **View wrappers** (`engine.workspace.<view>.<verb>Single` / `<verb>Selected`) — view-specific preflight and UI (selection, notifications, clearing the selection, refresh), then the canonical command. A wrapper exists only when it adds behaviour; otherwise menus call the canonical command.
+
+| Canonical command | Implementation | Wrappers |
+|---|---|---|
+| `engine.workspace.completeTask(engineId, task)` | `ManualTask` → `engine.confirmManualTask`, `UserTask` → `engine.finishUserTask` (no body), else throws | `taskInbox.completeSingle` (context menu, `TaskDetailPane`; "Task completed."), `taskInbox.completeSelected` (per-task count, one `reportBulkOutcome` summary) |
+| `engine.workspace.toggleProcessEnabled(engineId, processModelId, enabled)` | `processes.enable` / `disable` | `processExplorer.toggleSingle` (context menu, notification), `processExplorer.enableSelected` / `disableSelected` |
+| `engine.workspace.removeProcessFromEngine(engineId, processModelId)` | `processes.undeploy` | `processExplorer.removeSingle`, `processExplorer.removeSelected` |
+| `engine.workspace.toggleDecisionEnabled(engineId, decisionModelId, enabled)` | `decisions.enable` / `disable` | `decisionCatalog.toggleSingle`, `decisionCatalog.enableSelected` / `disableSelected` |
+| `engine.workspace.removeDecisionFromEngine(engineId, decisionModelId)` | `decisions.undeploy` | `decisionCatalog.removeSingle`, `decisionCatalog.removeSelected` |
+| `engine.workspace.toggleTimerScheduleEnabled(engineId, scheduleId, enabled)` | `timerSchedules.enable` / `disable` | `timerSchedules.enableSelected` / `disableSelected`; the context menu calls the canonical command |
+| `engine.workspace.listTimerSchedules(engineId)` | `timerSchedules.list` → SDK `TimerSchedule[]` | used by `TimerSchedulesDocumentModel.refresh` |
+
+Instance Search follows the same split with engine-core commands as the canonical layer: `instanceSearch.abortSingle` / `retrySingle` / `deleteSingle` delegate to the `configured*` commands, and the `*Selected` wrappers loop the raw commands and report through `reportBulkOutcome`.
 
 ### Engine-Workspace Commands (Run Menu & Menubar)
 
@@ -624,5 +660,7 @@ The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop e
 | Moddle conformance | `studio/src/modules/bpmn-core/moddle/verifyModdleConformance.ts` |
 | Engine ID extraction | `EngineConnectionManager.extractEngineIdFromUri` in `studio/src/modules/engine-core/EngineConnectionManager.ts` |
 | Process versioning commands | `studio/src/modules/engine-core/commands/registerProcessVersioningCommands.ts` |
+| Task commands | `studio/src/modules/engine-core/commands/registerTaskCommands.ts` |
+| Workspace operation commands | `studio/src/modules/engine-workspace/initializers/initializeCommands.ts` |
 | AutoVersionOnPoolBehavior | `studio/src/modules/bpmn-core/bpmn-js/behaviors/AutoVersionOnPoolBehavior.ts` |
 | BPMN empty template | `studio/src/modules/bpmn-editor/BpmnEmptyDocument.bpmn` |

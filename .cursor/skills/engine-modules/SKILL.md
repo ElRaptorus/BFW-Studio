@@ -1,192 +1,134 @@
 ---
 name: engine-modules
 description: >-
-  Develop features for engine-related modules (engine-browser,
-  engine-debugger, engine-bpmn-viewer). Use when adding engine
-  commands, subscribing to engine events, working with process instances, or
-  building UI for engine connectivity.
+  Develop features for engine-related modules (engine-core, engine-workspace,
+  engine-debugger, engine-model-viewer, engine-decision-viewer). Use when
+  adding engine commands, calling the Engine API, subscribing to engine events,
+  working with process instances or tasks, or building UI for engine connectivity.
 ---
 
 # Engine Module Development
 
-Engine modules interact with external Engines via `bifrost.engines` (the `EngineManager`). This skill covers how to build features within this architecture.
+Engine modules talk to BFW-Engines through `EngineConnectionManager` (engine-core) and the `@elraptorus/bfw_engine_client` it creates per connection. Every operation that changes Engine state runs through a command.
 
-For architectural details (event list, method signatures, settings, URI scheme), see [reference.md](reference.md).
+For architectural details (command tables, events, URI scheme, file paths), see [reference.md](reference.md) → `docs/architecture/engine.md`.
 
 ## Dependency Rules
 
-- `engine-core` and `EngineManager` are the shared foundation
-- Consumer modules (`engine-browser`, `engine-debugger`, `engine-bpmn-viewer`) may depend on `engine-core`. The engine menubar is a sub-feature of `engine-browser` (`engine-browser/menubar/`).
-- `engine-core` MUST NEVER depend on consumer modules
-- When core operations need to notify consumers, emit events on `EngineManager` — consumers subscribe and react
-- Cross-module feature access goes through commands (see the `bifrost-commands` skill)
+- `engine-core` is the shared foundation. `engine-workspace`, `engine-debugger`, `engine-model-viewer` and `engine-decision-viewer` may depend on it; `engine-core` never depends on them.
+- `bpmn-core` / `bpmn-editor` never depend on engine modules. Engine modules may use `bpmn.*` commands.
+- Cross-module feature access goes through commands (see the `bifrost-commands` skill). Command IDs of engine-core come from `ENGINE_COMMANDS` (`engine-core/commands/CommandContract.ts`), never string literals.
 
-## Getting an Engine Client
+## The Connection Manager
 
-```typescript
-const engineClient = bifrost.engines.getClient(engineUrl);
-```
-
-Returns a legacy `EngineClient`. Use it for API calls:
+`EngineConnectionManager` is registered as the shared resource `engineConnectionManager`. Models and command registrations resolve it once:
 
 ```typescript
-const identity = bifrost.engines.getIdentityForRequest(engineUrl);
-await engineClient.processInstances.query({ identity });
+const connectionManager = studio.getSharedRessource<EngineConnectionManager>('engineConnectionManager');
 ```
 
-Always pass `identity` from `getIdentityForRequest` — it resolves the active user or falls back to the root access token.
+| Method | Use |
+|---|---|
+| `getConnection(engineId)` / `getConnectionByUrl(url)` | Connection (`engineId`, `url`, `state`, `client`, `info`) or `null` |
+| `getClient(engineId)` | `BfwEngineClient` or `null` |
+| `isConnected(engineId)` | Connectivity check, e.g. in `enabledWhen` |
+| `extractEngineIdFromUri(uri)` | Engine ID from any engine document URI; do not write local URI parsers |
+| `checkEngineConnectivity(uri)` | Document gate: `canOpen: (uri) => connectionManager.checkEngineConnectivity(uri)` |
 
-## Checking Connectivity
+A pane never parses the URI or resolves the client: it reads `model.getEngineId()` and runs commands.
+
+## Where an Engine Call Lives
+
+Components, panes, and renderers never call the client for an operation that changes Engine state. Read queries inside a document model's `refresh()` (GraphQL, `get`, `list`) are fine.
+
+1. **engine-core primitive** (`ENGINE_COMMANDS`, `engine-core/commands/register*Commands.ts`) — an operation used by more than one module. Client call only, no UI, throws on failure. Examples: `engine.startProcess`, `engine.abortProcessInstance`, `engine.finishUserTask`, `engine.confirmManualTask`.
+2. **`engine.configured*` command** (engine-core) — a confirmation dialog and readable error notifications shared by several modules, delegating to the primitive (`configuredAbortProcessInstance`, `configuredRetryProcessInstance`).
+3. **Module command** — a dialog-guarded or view-specific variant with a single consumer lives in that module (`engine.debugger.taskView.cancelUserTask`).
+4. **Workspace canonical command + view wrappers** — `engine.workspace.<operation>` is the one implementation for all workspace views (no UI). `engine.workspace.<view>.<verb>Single` / `<verb>Selected` add preflight and UI (selection, notification, refresh) and run the canonical command. Add a wrapper only when it adds behaviour.
 
 ```typescript
-if (bifrost.engines.isCurrentlyOnline(engineUrl)) {
-  // safe to make API calls
-}
+// engine-core/commands/registerTaskCommands.ts — a primitive
+bifrost.commands.register(
+  ENGINE_COMMANDS.confirmManualTask,
+  async (engineId: string, flowNodeInstanceId: string) => {
+    await requireClient(engineId).manualTasks.confirm(flowNodeInstanceId);
+  },
+  { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+);
+
+// A consumer — never the client directly
+await bifrost.commands.executeCommand(ENGINE_COMMANDS.confirmManualTask, [engineId, flowNodeInstanceId]);
 ```
 
-For document-level connectivity checks (e.g. `canOpen`):
-
-```typescript
-canOpen: (uri: string) => connectionManager.checkEngineConnectivity(uri),
-```
-
-`connectionManager.extractEngineIdFromUri(uri)` reads the engine ID back out of the same document URIs.
+A new primitive is added to `ENGINE_COMMANDS` and `EngineCommandArgs`, registered from `engine-core/index.ts`, and documented in `docs/architecture/engine.md`. Catch typed SDK errors (`FniNotWaitingError`, `ProcessInstanceAlreadyTerminalError`, …) in the command that owns the UI, not in the primitive.
 
 ## Subscribing to Engine Events
 
-For the general Editor Document Model system (base class, lifecycle hooks, subscription patterns, model-to-renderer communication), see `docs/architecture/editor-documents.md`.
+For the Editor Document Model system (lifecycle hooks, model-to-renderer communication), see `docs/architecture/editor-documents.md`.
 
-**Prefer subscribing in the Editor Document Model, not in `onLoad`.** Each model instance knows its own identity (engine URL, process instance ID) and can self-select relevant events. Cleanup is automatic via `onEditorDocumentWillClose`.
+**Subscribe in the Editor Document Model, not in `onLoad`.** Each model knows its engine and can filter events.
 
-```typescript
-this.internalEventSubscriptions.push(
-  this.bifrost.engines.on(EVENT_ENGINE_CONNECTED, async (args: EngineEventArgs) => {
-    if (args.url === this.engineUrl) {
-      await this.refresh();
-    }
-  }),
-);
-```
-
-Only subscribe in `onLoad` for module-wide concerns not tied to a specific document (e.g. updating a global activity bar view).
-
-Key engine events to handle in document models:
-- `EVENT_ENGINE_CONNECTED` / `EVENT_ENGINE_RECONNECTED` — refresh data, notify renderer
-- `EVENT_ENGINE_CONNECTION_LOST` — show offline state
-- `EVENT_ENGINE_ACTIVE_USER_CHANGED` — re-authenticate, refresh
-- `EVENT_PROCESS_INSTANCE_RETRIED` — refresh if process model was updated
-
-## Document URI Scheme
-
-Engine documents encode parameters in the URI query string:
+- Engine WebSocket events: `EventDrivenRefresh` with `relevantEventTypes` and `engineId: this.engineId`.
+- Connection lifecycle: `connectionManager.on('engine:connected' | 'engine:disconnected' | 'engine:connection-lost' | 'engine:reconnected' | 'engine:state-changed' | 'engine:info-updated' | 'engine:auth-token-changed', …)`.
 
 ```typescript
-const uri = `engineBrowser:MyView?engineUrl=${encodeURIComponent(engineUrl)}&processInstanceId=${id}`;
-```
+this.autoRefresh = new EventDrivenRefresh({
+  connectionManager: this.connectionManager,
+  studio: this.studio,
+  settingsKey: SETTINGS_KEYS.taskInboxAutoRefresh,
+  relevantEventTypes: ['UserTaskCreated', 'UserTaskFinished'],
+  onRefresh: () => void this.refresh(),
+  engineId: this.engineId,
+});
 
-Parse with:
-
-```typescript
-import { getParametersFromDocumentUrl } from '../engine-core/UrlParser';
-
-const params = getParametersFromDocumentUrl(document.uri);
-const engineUrl = params.engineUrl;
-const processInstanceId = params.processInstanceId;
-```
-
-## Registering Engine Commands
-
-Shared engine operations belong in `engine-core`. Module-specific commands belong in the module itself.
-
-**In engine-core** (shared operations):
-
-```typescript
-// studio/src/modules/engine-core/commands/MyOperation.ts
-export default function registerMyCommands(bifrost: Bifrost): void {
-  bifrost.commands.register('engine.myOperation', async (engineUrl: string) => {
-    const client = bifrost.engines.getClient(engineUrl);
-    const identity = bifrost.engines.getIdentityForRequest(engineUrl);
-    await client.someApi.doSomething({ identity });
-  });
-}
-```
-
-Register in `engine-core/index.ts`:
-
-```typescript
-import registerMyCommands from './commands/MyOperation';
-registerMyCommands(bifrost);
-```
-
-**In a consumer module** (module-specific):
-
-```typescript
-bifrost.commands.register('engineDebugger.myFeature', async (args) => {
-  // module-specific logic
+this.authTokenSubscription = this.connectionManager.on('engine:auth-token-changed', (event: { engineId: string }) => {
+  if (event.engineId === this.engineId) {
+    void this.refresh();
+  }
 });
 ```
 
-## Emitting Events from Engine-Core
+Only subscribe in `onLoad` for module-wide concerns not tied to one document (for example the task count poller).
 
-When a core operation has side effects that consumers care about, add a public method on `EngineManager` and a corresponding event constant:
+## Document URI Scheme
 
-```typescript
-// EngineManager.ts
-export const EVENT_MY_OPERATION_COMPLETED = 'EVENT_MY_OPERATION_COMPLETED';
-
-notifyMyOperationCompleted(engineUrl: string, data: SomeType): void {
-  this.emit(EVENT_MY_OPERATION_COMPLETED, [{ engineUrl, data }]);
-}
-```
-
-Call from the command:
-
-```typescript
-bifrost.engines.notifyMyOperationCompleted(engineUrl, result);
-```
-
-Note: `AbstractEmitter.emit()` is `protected`. Always add a public method on `EngineManager` rather than calling `emit` directly.
+Engine documents put the engine ID in the URI path (`engine://processes/{engineId}`, `engine-task-inbox://{engineId}`, `engine-debug://{engineId}/{processInstanceId}`, …). The full table is `docs/architecture/engine.md` §Document URI Scheme. Read the ID back with `connectionManager.extractEngineIdFromUri(uri)`.
 
 ## Property panes
 
-When adding or editing a `PaneProvider` (debugger, model viewer, decision viewer), follow the `studio-panes` skill and `docs/architecture/panes.md`. `shouldBeDisplayed` is the only visibility gate; do not restate it in `Pane` / `PaneContent`.
+When adding or editing a `PaneProvider` (debugger, model viewer, decision viewer, workspace), follow the `studio-panes` skill and `docs/architecture/panes.md`. `shouldBeDisplayed` is the only visibility gate; do not restate it in `Pane` / `PaneContent`.
 
 ## Pane Data Access Pattern (Debugger Pattern)
 
-Panes in engine modules access data from the `EditorDocumentModel`, never from `studio.getSharedRessource()` or by reading `editorDocument.data.current` for working data. The canonical pattern — established by the Debugger and adopted by all engine views — is:
+Panes in engine modules access data from the `EditorDocumentModel`, never from `studio.getSharedRessource()` or by reading `editorDocument.data.current` for working data:
 
 1. The model stores working data (selections, parsed models, fetched lists) on **private fields** with **public getters**
 2. Panes **cast** `props.editorDocumentModel` to the concrete model type and **call the getter**
 3. To trigger pane re-renders on selection changes, the model increments a `selectionRevision` counter in metadata
 
 ```typescript
-// In the pane
 const model = props.editorDocumentModel as ProcessExplorerDocumentModel | null;
 const selectedModels = model?.getSelectedModels() ?? [];
 ```
 
-For full rules on what data belongs in `currentData`, `metadata`, and private fields, see the `editor-document-data-placement` cursor rule and `docs/architecture/editor-documents.md` §Data Placement Rules.
+For what belongs in `currentData`, `metadata`, and private fields, see the `editor-document-data-placement` cursor rule and `docs/architecture/editor-documents.md` §Data Placement Rules.
 
 ## Multi-Engine Isolation
 
-Engine document models must scope all event handling to their own engine:
+Engine document models scope all event handling to their own engine:
 
 - Pass `engineId: this.engineId` when constructing `EventDrivenRefresh`
 - Guard direct WebSocket event handlers with `if (payload?.engineId !== this.engineId) { return; }`
 - Guard `engine:auth-token-changed` handlers with `if (event.engineId !== this.engineId) { return; }`
 
-See `docs/architecture/engine.md` §Multi-Engine Isolation for architecture details.
+See `docs/architecture/engine.md` §Multi-Engine Isolation.
 
 ## Version Checks
 
-Some features require a minimum engine version:
+Features that need a minimum Engine version wrap their UI in `EngineVersionGate` (engine-core):
 
-```typescript
-if (bifrost.engines.engineVersionMatches(engineUrl, '20.0.0')) {
-  // feature available
-}
-
-if (bifrost.engines.engineVersionMatchesOneOf(engineUrl, ['19.5.0', '20.0.0'])) {
-  // feature available in either version
-}
+```tsx
+<EngineVersionGate engineVersion={connection?.info?.version} minimumVersion="1.4.0">
+  <NewFeature />
+</EngineVersionGate>
 ```

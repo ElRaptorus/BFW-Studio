@@ -29,24 +29,14 @@ import {
 
 import React, { useState } from 'react';
 
+import type { TimerSchedule } from '@elraptorus/bfw_engine_sdk';
+
 import { useEditorModel } from '../hooks/useEditorModel';
 import type { TimerSchedulesDocumentModel } from '../models/TimerSchedulesDocumentModel';
 import type { TimerSchedulesContextMetadata } from '../types/TimerSchedulesContext';
 import './EngineListView.scss';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
-
-interface TimerSchedule {
-  id: string;
-  processModelId: string;
-  processVersionId: string;
-  flowNodeId: string;
-  kind: 'cycle' | 'date' | 'duration';
-  isoSpec: string;
-  enabled: boolean;
-  nextFireAt: string | null;
-  lastTriggeredAt?: string | null;
-}
 
 export default function TimerSchedulesRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;

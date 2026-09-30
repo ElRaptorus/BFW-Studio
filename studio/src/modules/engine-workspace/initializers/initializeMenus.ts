@@ -503,7 +503,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
           id: 'engine-workspace/process-explorer/toggle-enabled',
           label: enabled ? 'Disable' : 'Enable',
           icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
-          command: 'engine.workspace.toggleProcessEnabled',
+          command: 'engine.workspace.processExplorer.toggleSingle',
           commandArgs: [engineId, bpmnId, !enabled],
         },
         {
@@ -511,7 +511,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
           id: 'engine-workspace/process-explorer/remove',
           label: 'Remove from Engine',
           icon: 'ph ph-trash',
-          command: 'engine.workspace.removeProcessFromEngine',
+          command: 'engine.workspace.processExplorer.removeSingle',
           commandArgs: [engineId, bpmnId],
         },
       ];
@@ -556,7 +556,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
           id: 'engine-workspace/decision-catalog/toggle-enabled',
           label: enabled ? 'Disable' : 'Enable',
           icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
-          command: 'engine.workspace.toggleDecisionEnabled',
+          command: 'engine.workspace.decisionCatalog.toggleSingle',
           commandArgs: [engineId, dmnId, !enabled],
         },
         {
@@ -564,7 +564,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
           id: 'engine-workspace/decision-catalog/remove',
           label: 'Remove from Engine',
           icon: 'ph ph-trash',
-          command: 'engine.workspace.removeDecisionFromEngine',
+          command: 'engine.workspace.decisionCatalog.removeSingle',
           commandArgs: [engineId, dmnId],
         },
       ];
@@ -701,7 +701,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
           id: 'engine-workspace/timer-schedules/toggle-enabled',
           label: enabled ? 'Disable Schedule' : 'Enable Schedule',
           icon: enabled ? 'ph ph-prohibit' : 'ph ph-check-circle',
-          command: 'engine.workspace.timerSchedules.toggleSingle',
+          command: 'engine.workspace.toggleTimerScheduleEnabled',
           commandArgs: [engineId, schedule.id, !enabled],
         },
       ];

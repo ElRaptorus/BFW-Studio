@@ -4,18 +4,7 @@ import type { EngineConnectionManager } from '#modules/engine-core';
 import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
 
 import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
-
-interface TimerSchedule {
-  id: string;
-  processModelId: string;
-  processVersionId: string;
-  flowNodeId: string;
-  kind: 'cycle' | 'date' | 'duration';
-  isoSpec: string;
-  enabled: boolean;
-  nextFireAt: string | null;
-  lastTriggeredAt?: string | null;
-}
+import type { TimerSchedule } from '@elraptorus/bfw_engine_sdk';
 
 const CONNECTION_GRACE_PERIOD_MS = 60_000;
 
@@ -230,9 +219,10 @@ export class TimerSchedulesDocumentModel extends EditorDocumentModel {
     this.publishDataRevision();
 
     try {
-      const schedules = await this.studio.commands.executeCommand('engine.workspace.timerSchedules.fetch', [
-        this.engineId,
-      ]);
+      const schedules = await this.studio.commands.executeCommand<Promise<TimerSchedule[]>>(
+        'engine.workspace.listTimerSchedules',
+        [this.engineId],
+      );
       this.schedules = schedules;
       this.loading = false;
       this.error = null;

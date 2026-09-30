@@ -12,6 +12,7 @@ import registerDeployCommands from './commands/registerDeployCommands';
 import registerEventCommands from './commands/registerEventCommands';
 import registerProcessInstanceCommands from './commands/registerProcessInstanceCommands';
 import registerProcessVersioningCommands from './commands/registerProcessVersioningCommands';
+import registerTaskCommands from './commands/registerTaskCommands';
 import registerSettings from './settings/registerSettings';
 
 export { EngineConnectionManager } from './EngineConnectionManager';
@@ -32,8 +33,6 @@ export { LoadingIndicator } from './components/LoadingIndicator';
 export { NoAuthTokenHint } from './components/NoAuthTokenHint';
 export { PaneLoadingWrapper } from './components/PaneLoadingWrapper';
 export { ProcessInstanceStateBadge } from './components/ProcessInstanceStateBadge';
-
-export { useAsyncAction } from './hooks/useAsyncAction';
 
 export * from './Formatters';
 export { resolveFlowNodeIconName } from './FlowNodeIconResolver';
@@ -79,6 +78,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   registerConfiguredAbortCommands(bifrost, connectionManager);
   registerConfiguredDeleteCommands(bifrost, connectionManager);
   registerEventCommands(bifrost, connectionManager);
+  registerTaskCommands(bifrost, connectionManager);
   registerAuthCommands(bifrost, connectionManager);
   registerProcessVersioningCommands(bifrost, connectionManager);
 

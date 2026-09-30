@@ -8,7 +8,7 @@
  * FROZEN for Wave 2 parallel execution — do not rename or remove IDs without
  * coordinating all tracks.
  */
-import type { RetryRequest, StartRequest, TriggerOptions } from '@elraptorus/bfw_engine_sdk';
+import type { FinishUserTaskRequest, RetryRequest, StartRequest, TriggerOptions } from '@elraptorus/bfw_engine_sdk';
 
 import type { RetryContext } from './registerConfiguredRetryCommands';
 
@@ -40,6 +40,10 @@ export const ENGINE_COMMANDS = {
   triggerSignal: 'engine.triggerSignal',
   triggerEscalation: 'engine.triggerEscalation',
   triggerTimerEvent: 'engine.triggerTimerEvent',
+
+  finishUserTask: 'engine.finishUserTask',
+  cancelUserTask: 'engine.cancelUserTask',
+  confirmManualTask: 'engine.confirmManualTask',
 
   discoverLatestVersion: 'engine.discoverLatestVersion',
   ensureProcessVersions: 'engine.ensureProcessVersions',
@@ -80,6 +84,9 @@ export interface EngineCommandArgs {
   [ENGINE_COMMANDS.triggerSignal]: [engineId: string, signalName: string];
   [ENGINE_COMMANDS.triggerEscalation]: [engineId: string, escalationCode: string];
   [ENGINE_COMMANDS.triggerTimerEvent]: [engineId: string, flowNodeInstanceId: string];
+  [ENGINE_COMMANDS.finishUserTask]: [engineId: string, flowNodeInstanceId: string, request?: FinishUserTaskRequest];
+  [ENGINE_COMMANDS.cancelUserTask]: [engineId: string, flowNodeInstanceId: string, reason?: string];
+  [ENGINE_COMMANDS.confirmManualTask]: [engineId: string, flowNodeInstanceId: string];
   [ENGINE_COMMANDS.discoverLatestVersion]: [engineId: string, processId: string];
   [ENGINE_COMMANDS.ensureProcessVersions]: [engineId: string, xml: string];
   [ENGINE_COMMANDS.resolveVersionConflicts]: [

@@ -15,8 +15,8 @@ import type { EngineConnectionManager, RetryContext, RetryResult } from '#module
 import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
 import * as json5 from 'json5';
 
-import type { FlowNodeInstance, ProcessInstance } from '@elraptorus/bfw_engine_sdk';
-import { FlowNodeType, ProcessInstanceState } from '@elraptorus/bfw_engine_sdk';
+import type { FlowNodeInstance, ProcessInstance, StartRequest, StartResult } from '@elraptorus/bfw_engine_sdk';
+import { FlowNodeType, FniNotWaitingError, ProcessInstanceState } from '@elraptorus/bfw_engine_sdk';
 
 import { DataObjectDetailLevel } from '../../bpmn-core/DataObjectDetailsSettings';
 import { DMN_TRACE_DOCUMENT_TYPE, ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
@@ -225,21 +225,27 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     'engine.debugger.restartProcessInstance',
     async (engineIdOrUrl: string, processInstanceToReRun: ProcessInstance) => {
       const connection = resolveEngineConnection(connectionManager, engineIdOrUrl);
-      const engineId = connection?.engineId ?? engineIdOrUrl;
-      const client = getEngineClient(connectionManager, engineIdOrUrl);
-      if (!client || !processInstanceToReRun.processModelId) {
+      if (!connection || !processInstanceToReRun.processModelId) {
         return;
       }
 
       const restoreData =
         (processInstanceToReRun.startedWithContext as Record<string, unknown> | undefined) ?? undefined;
-      const startResult = await client.processes.start(processInstanceToReRun.processModelId, {
+      const startRequest: StartRequest = {
         businessKey: processInstanceToReRun.businessKey ?? undefined,
         payload: restoreData,
         context: restoreData,
-      } as Parameters<typeof client.processes.start>[1]);
+      };
+      const startResult: StartResult = await bifrost.commands.executeCommand(ENGINE_COMMANDS.startProcess, [
+        connection.engineId,
+        processInstanceToReRun.processModelId,
+        startRequest,
+      ]);
 
-      bifrost.commands.executeCommand('engine.debugger.focusOrOpen', [engineId, startResult.processInstanceId]);
+      bifrost.commands.executeCommand('engine.debugger.focusOrOpen', [
+        connection.engineId,
+        startResult.processInstanceId,
+      ]);
     },
     {
       enabledWhen: (engineIdOrUrl: string, processInstanceToReRun: ProcessInstance) =>
@@ -376,14 +382,8 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
             model,
             flowNode.flowNodeInstances.find((fni) => fni.id === id),
           ]);
-        case FlowNodeType.ManualTask: {
-          const client = getEngineClient(connectionManager, model.engineId);
-          if (client == null) {
-            return;
-          }
-          await client.manualTasks.confirm(id);
-          return;
-        }
+        case FlowNodeType.ManualTask:
+          return bifrost.commands.executeCommand(ENGINE_COMMANDS.confirmManualTask, [model.engineId, id]);
       }
       throw new Error(`Invalid BpmnType ${flowNode.flowNodeModel?.type} for interactive task ${id}.`);
     },
@@ -672,6 +672,43 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
       bifrost.editors.focusOrOpenEditorDocument(taskViewerUri, `UserTask: ${getShortId(userTaskInstance.id)} (Review)`);
     },
+  );
+
+  bifrost.commands.register(
+    'engine.debugger.taskView.cancelUserTask',
+    async (engineIdOrUrl: string, flowNodeInstanceId: string, reason?: string): Promise<boolean> => {
+      const dialogResult = await bifrost.dialog.open({
+        title: 'Cancel User Task',
+        content:
+          'Cancelling this User Task aborts the whole process instance, including its parent and child process instances. Error boundary events do not catch it.',
+        actions: [
+          { label: 'Keep Task', response: 'keep', cancel: true, default: true },
+          { label: 'Cancel User Task', response: 'cancel-user-task', dangerous: true },
+        ],
+      });
+
+      if (dialogResult.response !== 'cancel-user-task') {
+        return false;
+      }
+
+      const engineId = resolveEngineConnection(connectionManager, engineIdOrUrl)?.engineId ?? engineIdOrUrl;
+      try {
+        await bifrost.commands.executeCommand(ENGINE_COMMANDS.cancelUserTask, [engineId, flowNodeInstanceId, reason]);
+      } catch (error: unknown) {
+        if (error instanceof FniNotWaitingError) {
+          bifrost.notifications.open({
+            type: 'error',
+            content: 'This User Task is no longer waiting and cannot be cancelled.',
+            source: 'Engine',
+          });
+          return false;
+        }
+        throw error;
+      }
+
+      return true;
+    },
+    { enabledWhen: (engineIdOrUrl: string): boolean => isEngineOnline(connectionManager, engineIdOrUrl) },
   );
 
   bifrost.commands.register(
