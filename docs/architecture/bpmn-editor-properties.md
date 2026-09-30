@@ -280,7 +280,7 @@ The modeling contract is `studio/src/modules/bpmn-core/form-renderer/FormModel.t
 | `toggle` | Toggle switch |
 | `section_header` | Section heading (non-input) |
 
-Every stored field includes `required` (`false` when the author does not check it). Optional `hint` is help text shown with the field. A pattern is stored as `validationRules: [{ "type": "pattern", "value": "<regex>", "message"?: "<text>" }]`. `FormRenderer` (`patternValidationMessage`) tests the whole input against that regular expression and shows `message` when the rule has one. `defaultValue` is a string. A type the renderer does not know is drawn as a text input.
+Every stored field includes `required` (`false` when the author does not check it). Optional `hint` is help text shown with the field. A pattern is stored as `validationRules: [{ "type": "pattern", "value": "<regex>", "message"?: "<text>" }]`. `FormRenderer` (`patternValidationMessage`) tests the whole input against that regular expression and shows `message` when the rule has one. `defaultValue` is a string: a non-string value from a hand-written BPMN is ignored, and checkbox and toggle use `"true"` / `"false"` (`bpmn-core/form-renderer/formFieldInitialValue.ts`). A single checkbox or toggle with `required: true` must be checked to submit. A type the renderer does not know is drawn as a text input.
 
 ### Form Actions
 
@@ -326,12 +326,12 @@ Command: `bpmn.formBuilder.open` — opens the form builder for the selected Use
 
 The engine-debugger uses `DynamicUiComponentAdapter` (`studio/src/modules/engine-debugger/task-viewer/DynamicUiComponentAdapter.tsx`) to render User Task forms at runtime. It:
 
-1. Reads `typeProperties.form_schema` and `typeProperties.form_actions` only when each value is an array, typed as the `FormModel` contract
+1. Reads `typeProperties.form_fields` and `typeProperties.form_actions` only when each value is an array (`task-viewer/readTaskForm.ts`). Entries that are not records, fields without a string `id` and `type`, and actions without a string `id` are dropped. When the runtime list is empty, `preferRuntimeEntries` falls back to the modelled `definitionFormFields` / `definitionFormActions`, which `engine.debugger.taskView.reviewCompleted` passes from the BPMN model.
 2. Passes those arrays to `FormRenderer` without renaming field types. Actions with a missing or unknown `effect` are not rendered.
 3. On `submit`: runs `engine.finishUserTask(engineId, id, { actionId, values })`, then closes the task view
 4. On `dismiss`: closes the task view. No Engine call.
 5. On `abort`: runs `engine.debugger.taskView.cancelUserTask(engineId, id, actionId)`, which opens the "Cancel User Task" / "Keep Task" dialog and runs `engine.cancelUserTask` only for the `cancel-user-task` response. The task view closes only when it returns `true`. Cancelling aborts the whole process instance tree. See [engine.md](engine.md) §Task Operations.
-6. A finished task's read-only review prefills fields from `readSubmittedFormValues`, which returns `outputToken.values` when both are records. A task whose output mappings flatten the envelope shows empty fields.
+6. A finished task's read-only review passes `readSubmittedFormValues(outputToken)` (`outputToken.values` when both are records) to `FormRenderer` as `initialValues`, which `FormRendererField` applies through `formFieldInitialValue.ts`, checkbox groups included. A submitted `null` shows as empty; a field missing from `values` shows its modelled `defaultValue`, so a task whose output mappings flatten the envelope shows the defaults, not the submitted values.
 
 ### Data Flow
 
@@ -356,8 +356,8 @@ Model changes (undo/redo/external) → EVENT_DATA_UPDATED
 
 **Debugger path** (Engine response → Form UI → Engine API):
 ```
-Engine user task → typeProperties.form_schema / form_actions (arrays)
-  → <FormRenderer fields actions onSubmit onDismiss onAbort />
+Engine user task → typeProperties.form_fields / form_actions (arrays)
+  → <FormRenderer fields actions initialValues onSubmit onDismiss onAbort />
   → submit → engine.finishUserTask → userTasks.finish(id, { actionId, values })
   → dismiss → close the task view
   → abort → engine.debugger.taskView.cancelUserTask (confirmation) → engine.cancelUserTask → userTasks.cancel(id, { reason: actionId })

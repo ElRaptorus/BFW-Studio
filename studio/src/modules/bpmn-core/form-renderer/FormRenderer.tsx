@@ -18,6 +18,8 @@ export type FormRendererProps = {
   actions: FormAction[];
   title?: string;
   readOnly?: boolean;
+  /** Runtime values by field id, shown instead of the modelled defaults. */
+  initialValues?: Record<string, unknown>;
   onSubmit?: FormRendererSubmitHandler;
   onDismiss?: FormRendererDismissHandler;
   onAbort?: FormRendererAbortHandler;
@@ -28,7 +30,7 @@ const DEFAULT_ACTIONS: FormAction[] = [
 ];
 
 export function FormRenderer(props: FormRendererProps): React.JSX.Element {
-  const { fields, actions, title, readOnly, onSubmit, onDismiss, onAbort } = props;
+  const { fields, actions, title, readOnly, initialValues, onSubmit, onDismiss, onAbort } = props;
   const formRef = useRef<HTMLFormElement>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -47,6 +49,14 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
       }
 
       const inputElement = formRef.current.elements.namedItem(field.id);
+
+      const isSingleCheckbox = field.type === 'checkbox' && (field.options == null || field.options.length === 0);
+      if (isSingleCheckbox || field.type === 'toggle') {
+        if (field.required && !(inputElement instanceof HTMLInputElement && inputElement.checked)) {
+          errors[field.id] = `${field.label} is required`;
+        }
+        continue;
+      }
 
       if (field.type === 'checkbox' && field.options != null && field.options.length > 0) {
         if (field.required) {
@@ -198,7 +208,13 @@ export function FormRenderer(props: FormRendererProps): React.JSX.Element {
       <form ref={formRef} className="form-renderer__form" onSubmit={handleFormSubmit}>
         <section className="form-renderer__body">
           {fields.map((field) => (
-            <FormRendererField key={field.id} field={field} readOnly={readOnly} error={validationErrors[field.id]} />
+            <FormRendererField
+              key={field.id}
+              field={field}
+              readOnly={readOnly}
+              error={validationErrors[field.id]}
+              initialValue={initialValues?.[field.id]}
+            />
           ))}
           {fields.length === 0 && <p className="form-renderer__empty">No form fields configured.</p>}
         </section>

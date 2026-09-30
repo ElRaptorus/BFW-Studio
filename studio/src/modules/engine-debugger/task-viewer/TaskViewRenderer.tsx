@@ -8,6 +8,17 @@ import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
 import { DynamicUiComponentAdapter } from './DynamicUiComponentAdapter';
 
+function parseJsonOrNull(text: string | undefined): unknown {
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 export default function TaskViewRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
 
@@ -20,14 +31,8 @@ export default function TaskViewRenderer(props: EditorDocumentRendererProps): Re
 
   const readOnly = parsedFragmentUri.data.readOnly === 'true';
 
-  let definitionFormSchema: unknown = null;
-  if (parsedFragmentUri.data.definitionFormSchema) {
-    try {
-      definitionFormSchema = JSON.parse(parsedFragmentUri.data.definitionFormSchema);
-    } catch {
-      definitionFormSchema = null;
-    }
-  }
+  const definitionFormFields = parseJsonOrNull(parsedFragmentUri.data.definitionFormFields);
+  const definitionFormActions = parseJsonOrNull(parsedFragmentUri.data.definitionFormActions);
 
   return (
     <DynamicUiComponentAdapter
@@ -35,7 +40,8 @@ export default function TaskViewRenderer(props: EditorDocumentRendererProps): Re
       studio={studio as Bifrost}
       userTaskInstance={userTaskInstance}
       readOnly={readOnly}
-      definitionFormSchema={definitionFormSchema}
+      definitionFormFields={definitionFormFields}
+      definitionFormActions={definitionFormActions}
       onClose={() => studio.editors.closeEditorDocument(editorDocument)}
     />
   );

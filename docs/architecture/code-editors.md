@@ -28,7 +28,7 @@ code-editor kit
 
 **Path:** `studio/src/components/MultiLineCodeEditor.tsx`
 
-Public host API for JSON, JavaScript, XML, HTML, and plaintext. Mounts an `EditorView` once. Imperative methods: `focus()`, `getCurrentValue()`, `resetValue()`, `setValue()`, `updateJsonSchema()`. When the parent stays mounted and the document identity changes, remount with a **parent-identity** `key` (element id / flow-node-instance id) — never the live value.
+Public host API for JSON, JavaScript, XML, HTML, and plaintext. Mounts an `EditorView` once. Imperative methods: `focus()`, `getCurrentValue()`, `resetValue()`, `setValue()`, `updateJsonSchema()`. A changed `initialValue` prop replaces the document when it differs from the current text, so read-only views (Selection Inspectors) follow their input without a remount. Editable panes still remount with a **parent-identity** `key` (element id / flow-node-instance id) — never the live value — so undo history and cursor do not leak across elements.
 
 | Prop | Notes |
 |------|-------|

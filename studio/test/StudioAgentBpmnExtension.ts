@@ -34,6 +34,21 @@ export async function createAndStartStudioAgentBpmnExtension(
 
 export class StudioAgentBpmnExtension extends StudioAgent {
   /**
+   * Reads the form field definitions of a User Task from the open BPMN document model
+   * (the stored `bfw:formFields`, not the rendered form).
+   */
+  async getUserTaskFormFieldDefinitions(fileName: string, elementId: string): Promise<Record<string, unknown>[]> {
+    const fields = await this.executeInRenderer(
+      `const editors = window.bifrost.editors;
+       const editorDocument = editors.getOpenEditorDocuments().find((doc) => doc.uri.endsWith(${JSON.stringify(fileName)}));
+       const model = editorDocument == null ? null : editors.getEditorDocumentModelIfPresent(editorDocument);
+       return model == null ? null : model.elements.getFormFieldDefinitions(${JSON.stringify(elementId)});`,
+    );
+    assert.ok(Array.isArray(fields), `No open BPMN document model found for ${fileName}`);
+    return fields as Record<string, unknown>[];
+  }
+
+  /**
    * Blur the focused pane editor and wait for CodeMirror FEEL tooltips to
    * unmount before a canvas pointer action. Escape on OneLineFeelEditor only
    * closes autocomplete — the editor stays focused, so a leftover `.cm-tooltip`

@@ -24,7 +24,7 @@ import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEdi
 import type { DmnTraceFragmentModel } from '../dmn-trace/DmnTraceFragmentModel';
 import { getCustomPropertyFromViewer } from '../libs/BpmnCustomPropertyAccessor';
 import { renderToPng, renderToSvg } from '../libs/BpmnExportFunctions';
-import { getUserTaskFormSchema } from '../libs/BpmnFlowNodeAccessors';
+import { getUserTaskFormActions, getUserTaskFormFields } from '../libs/BpmnFlowNodeAccessors';
 import { getFlowNodeById } from '../libs/BpmnProcessHelpers';
 import { createCsvExportString } from '../libs/CsvExportHelper';
 import type { FlowNode } from '../libs/SelectableElement';
@@ -657,9 +657,13 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
       if (model.processModel) {
         const bpmnFlowNode = getFlowNodeById(model.processModel, userTaskInstance.flowNodeId);
-        const definitionFormSchema = getUserTaskFormSchema(bpmnFlowNode);
-        if (definitionFormSchema != null) {
-          additionalData.definitionFormSchema = JSON.stringify(definitionFormSchema);
+        const definitionFormFields = getUserTaskFormFields(bpmnFlowNode);
+        if (definitionFormFields != null) {
+          additionalData.definitionFormFields = JSON.stringify(definitionFormFields);
+        }
+        const definitionFormActions = getUserTaskFormActions(bpmnFlowNode);
+        if (definitionFormActions != null) {
+          additionalData.definitionFormActions = JSON.stringify(definitionFormActions);
         }
       }
 

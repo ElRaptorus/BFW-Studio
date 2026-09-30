@@ -1,44 +1,34 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
-import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
+import { FormRenderer } from '#modules/bpmn-core/form-renderer';
 import { ENGINE_COMMANDS } from '#modules/engine-core';
 
 import React from 'react';
 
 import type { FlowNodeInstance } from '@elraptorus/bfw_engine_sdk';
 
-import { FormRenderer } from '../../bpmn-core/form-renderer';
 import './DynamicUiComponentAdapter.scss';
-import { readFormActions, readFormFields, readSubmittedFormValues } from './readTaskForm';
-
-function applyOutputTokenDefaults(fields: FormFieldDefinition[], outputToken: unknown): FormFieldDefinition[] {
-  const values = readSubmittedFormValues(outputToken);
-  return fields.map((field) => {
-    const tokenValue = values[field.id];
-    if (tokenValue != null) {
-      return { ...field, defaultValue: String(tokenValue) };
-    }
-    return field;
-  });
-}
+import { preferRuntimeEntries, readFormActions, readFormFields, readSubmittedFormValues } from './readTaskForm';
 
 export function DynamicUiComponentAdapter(props: {
   engineId: string;
   studio: Bifrost;
   userTaskInstance: FlowNodeInstance;
   readOnly?: boolean;
-  definitionFormSchema?: unknown;
+  definitionFormFields?: unknown;
+  definitionFormActions?: unknown;
   onClose: () => void;
 }): React.JSX.Element {
-  const runtimeFields = readFormFields(props.userTaskInstance.typeProperties?.form_schema);
-  const definitionFields = readFormFields(props.definitionFormSchema);
-  let fields = runtimeFields.length > 0 ? runtimeFields : definitionFields;
-  const actions = readFormActions(props.userTaskInstance.typeProperties?.form_actions);
-
-  if (props.readOnly) {
-    fields = applyOutputTokenDefaults(fields, props.userTaskInstance.outputToken);
-  }
+  const fields = preferRuntimeEntries(
+    readFormFields(props.userTaskInstance.typeProperties?.form_fields),
+    readFormFields(props.definitionFormFields),
+  );
+  const actions = preferRuntimeEntries(
+    readFormActions(props.userTaskInstance.typeProperties?.form_actions),
+    readFormActions(props.definitionFormActions),
+  );
+  const initialValues = props.readOnly ? readSubmittedFormValues(props.userTaskInstance.outputToken) : undefined;
 
   const handleSubmit = async (actionId: string, values: Record<string, unknown>): Promise<void> => {
     if (props.readOnly) {
@@ -86,6 +76,7 @@ export function DynamicUiComponentAdapter(props: {
               actions={actions}
               title={taskTitle}
               readOnly={props.readOnly}
+              initialValues={initialValues}
               onSubmit={handleSubmit}
               onDismiss={handleDismiss}
               onAbort={handleAbort}

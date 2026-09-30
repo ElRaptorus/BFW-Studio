@@ -1,4 +1,4 @@
-import type { BpmnElementCustomProperty } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElementCustomProperty } from '#modules/bpmn-core/BpmnElementCoreTypes';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
 /** Descriptor passed to `commandStack.execute(cmd, context)`. */

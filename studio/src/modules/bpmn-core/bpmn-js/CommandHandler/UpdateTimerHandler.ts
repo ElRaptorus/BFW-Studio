@@ -1,4 +1,4 @@
-import { BpmnTimerType } from '#modules/bpmn-editor/BpmnElementTypes';
+import { BpmnTimerType } from '#modules/bpmn-core/BpmnElementCoreTypes';
 import { getBusinessObject } from 'bpmn-js/lib/util/ModelUtil';
 import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';

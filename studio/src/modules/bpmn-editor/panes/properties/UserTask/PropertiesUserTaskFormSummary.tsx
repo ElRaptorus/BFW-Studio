@@ -6,9 +6,8 @@ import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
+import type { FormAction, FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
-import type { FormAction } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
 

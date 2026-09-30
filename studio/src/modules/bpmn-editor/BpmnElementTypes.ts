@@ -1,4 +1,9 @@
+import { BpmnTimerType } from '#modules/bpmn-core/BpmnElementCoreTypes';
+import type { BpmnElementColor, BpmnElementCustomProperty } from '#modules/bpmn-core/BpmnElementCoreTypes';
 import type { FormAction, FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
+
+export { BpmnTimerType };
+export type { BpmnElementColor, BpmnElementCustomProperty };
 
 export type {
   FormAction,
@@ -147,12 +152,6 @@ export enum BpmnElementType {
 
 export type BpmnElement_Generic = BpmnElementCommonProperties & {
   readonly type: string;
-};
-
-export type BpmnElementColor = {
-  label?: string;
-  backgroundColor?: string;
-  borderColor?: string;
 };
 
 //
@@ -571,12 +570,6 @@ export type BpmnElement_SignalStartEvent = BpmnElementCommonProperties & {
 // TimerTypes
 //
 
-export enum BpmnTimerType {
-  Cycle = 'timeCycle',
-  Date = 'timeDate',
-  Duration = 'timeDuration',
-}
-
 //
 // Timer Start Event
 //
@@ -814,13 +807,6 @@ export type BpmnElement_Participant_Expanded = BpmnElement_Participant_Base & {
 
 export type BpmnElement_Participant_WithCollapseCheck =
   BpmnElement_Participant_Collapsed | BpmnElement_Participant_Expanded;
-
-export type BpmnElementCustomProperty = {
-  readonly name: string;
-  readonly value: string;
-  /** Stable React list identity from the live moddle object. Not serialized to BPMN. */
-  readonly rowId?: string;
-};
 
 export enum LoopCharacteristics {
   Loop = 'Loop',

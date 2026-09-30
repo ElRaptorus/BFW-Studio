@@ -1,6 +1,6 @@
 import type { SettingsMediator } from '#bifrost/common/SettingsMediator';
 import { PREDEFINED_COLORS } from '#components/BpmnElementColorPicker';
-import type { BpmnElementColor } from '#modules/bpmn-editor/BpmnElementTypes';
+import type { BpmnElementColor } from '#modules/bpmn-core/BpmnElementCoreTypes';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
 const noColor = {

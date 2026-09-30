@@ -45,7 +45,7 @@ export {
   getTypePropertyRecord,
   getTypePropertyString,
   getUserTaskAssigneesExpression,
-  getUserTaskFormSchema,
+  getUserTaskFormFields,
   resolveEventDefinitionName,
 } from './BpmnFlowNodeAccessors';
 export * from './BpmnExportFunctions';

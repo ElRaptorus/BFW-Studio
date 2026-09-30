@@ -176,6 +176,11 @@
   color: var(--theme-fg-muted);
 }
 
+.form-renderer-field__toggle-input:checked ~ .form-renderer-field__toggle-label--off,
+.form-renderer-field__toggle-input:not(:checked) ~ .form-renderer-field__toggle-label--on {
+  display: none;
+}
+
 .form-renderer-field__hint {
   font-size: 11px;
   color: var(--theme-fg-muted);

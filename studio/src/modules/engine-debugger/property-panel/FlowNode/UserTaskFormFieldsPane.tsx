@@ -16,8 +16,9 @@ import type { FlowNode as BpmnFlowNode } from '@elraptorus/bfw_engine_sdk';
 import { FlowNodeInstanceState } from '@elraptorus/bfw_engine_sdk';
 
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
-import { getUserTaskFormActions, getUserTaskFormSchema } from '../../libs/BpmnFlowNodeAccessors';
+import { getUserTaskFormActions, getUserTaskFormFields } from '../../libs/BpmnFlowNodeAccessors';
 import type { FlowNode } from '../../libs/SelectableElement';
+import { preferRuntimeEntries, readFormActions, readFormFields } from '../../task-viewer/readTaskForm';
 import { shouldDisplayUserTaskInstancePane } from '../ShouldBeDisplayedConditions';
 import './UserTaskFormFieldsPane.scss';
 
@@ -61,43 +62,37 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function summarizeFields(schema: unknown): FormFieldSummary[] {
-  if (!Array.isArray(schema)) {
-    return [];
-  }
-
-  return schema.map((item: Record<string, unknown>) => ({
-    id: String(item.id ?? ''),
-    type: String(item.type ?? 'text'),
+function summarizeFields(fieldsValue: unknown): FormFieldSummary[] {
+  return readFormFields(fieldsValue).map((item) => ({
+    id: item.id,
+    type: item.type,
     label: item.label != null ? String(item.label) : undefined,
     required: item.required === true,
   }));
 }
 
-function summarizeActions(actions: unknown): FormActionSummary[] {
-  if (!Array.isArray(actions)) {
-    return [];
-  }
-
-  return actions.filter(isRenderableFormAction).map((action: Record<string, unknown>) => ({
-    id: String(action.id ?? ''),
-    label: String(action.label ?? ''),
-  }));
+function summarizeActions(actionsValue: unknown): FormActionSummary[] {
+  return readFormActions(actionsValue)
+    .filter(isRenderableFormAction)
+    .map((action) => ({
+      id: action.id,
+      label: String(action.label ?? ''),
+    }));
 }
 
 function UserTaskFormFieldsPane(props: UserTaskFormFieldsPaneProps): React.JSX.Element {
   const flowNode = props.model.selectedElements[0] as FlowNode;
   const userTaskModel = flowNode.flowNodeModel as BpmnFlowNode | undefined;
   const userTaskInstance = props.model.getSelectedFlowNodeInstanceByFlowNode(flowNode) as FlowNodeInstance;
-  const definitionSchema = getUserTaskFormSchema(userTaskModel);
-  const runtimeSchema = userTaskInstance.typeProperties?.form_schema;
-  const runtimeFields = summarizeFields(runtimeSchema);
-  const definitionFields = summarizeFields(definitionSchema);
-  const fields = runtimeFields.length > 0 ? runtimeFields : definitionFields;
+  const definitionFieldsValue = getUserTaskFormFields(userTaskModel);
+  const runtimeFieldsValue = userTaskInstance.typeProperties?.form_fields;
+  const runtimeFields = summarizeFields(runtimeFieldsValue);
+  const fields = preferRuntimeEntries(runtimeFields, summarizeFields(definitionFieldsValue));
 
-  const runtimeActions = summarizeActions(userTaskInstance.typeProperties?.form_actions);
-  const definitionActions = summarizeActions(getUserTaskFormActions(userTaskModel));
-  const actions = runtimeActions.length > 0 ? runtimeActions : definitionActions;
+  const actions = preferRuntimeEntries(
+    summarizeActions(userTaskInstance.typeProperties?.form_actions),
+    summarizeActions(getUserTaskFormActions(userTaskModel)),
+  );
 
   const isFinished = userTaskInstance.state === FlowNodeInstanceState.Finished;
   const hasOutputToken = userTaskInstance.outputToken != null;
@@ -116,7 +111,7 @@ function UserTaskFormFieldsPane(props: UserTaskFormFieldsPaneProps): React.JSX.E
     props.studio.commands.executeCommand('engine.debugger.taskView.reviewCompleted', [props.model, userTaskInstance]);
   };
 
-  const rawSchemaValue = runtimeSchema ?? definitionSchema;
+  const rawFieldsValue = runtimeFields.length > 0 ? runtimeFieldsValue : definitionFieldsValue;
 
   return (
     <PaneBody>
@@ -156,16 +151,16 @@ function UserTaskFormFieldsPane(props: UserTaskFormFieldsPaneProps): React.JSX.E
             studio={props.studio}
             type="engine-debug.json-property"
             parentUri={props.editorDocument.uri}
-            fragmentId={`${userTaskInstance.id}-FormSchema`}
+            fragmentId={`${userTaskInstance.id}-FormFields`}
             additionalData={{
               id: userTaskInstance.id,
               flowNodeId: userTaskInstance.flowNodeId,
               flowNodeName: userTaskInstance.flowNodeId,
-              propertyName: 'Form Schema',
-              value: typeof rawSchemaValue !== 'string' ? JSON.stringify(rawSchemaValue, null, 2) : rawSchemaValue,
+              propertyName: 'Form Fields',
+              value: typeof rawFieldsValue !== 'string' ? JSON.stringify(rawFieldsValue, null, 2) : rawFieldsValue,
               scriptLanguage: 'json',
             }}
-            dataTest="open-form-schema-in-new-tab"
+            dataTest="open-form-fields-in-new-tab"
           />
         </div>
       </div>

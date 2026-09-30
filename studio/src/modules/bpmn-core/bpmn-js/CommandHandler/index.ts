@@ -24,7 +24,6 @@ import { UpdateScriptHandler } from './UpdateScriptHandler';
 import { UpdateServiceTaskHandler } from './UpdateServiceTaskHandler';
 import { UpdateSignalHandler } from './UpdateSignalHandler';
 import { UpdateTimerHandler } from './UpdateTimerHandler';
-import { UpdateUserTaskHandler } from './UpdateUserTaskHandler';
 import { UpdateUserTaskResourcesHandler } from './UpdateUserTaskResourcesHandler';
 
 export const CommandHandler = {
@@ -48,7 +47,6 @@ export const CommandHandler = {
   UpdateConditionalEventHandler: UpdateConditionalEventHandler,
   UpdateEscalationHandler: UpdateEscalationHandler,
   UpdateServiceTaskHandler: UpdateServiceTaskHandler,
-  UpdateUserTaskHandler: UpdateUserTaskHandler,
   UpdateDefinitionHandler: UpdateDefinitionHandler,
   UpdateBusinessRuleTaskHandler: UpdateBusinessRuleTaskHandler,
   UpdateLoopCharacteristicsHandler: UpdateLoopCharacteristicsHandler,

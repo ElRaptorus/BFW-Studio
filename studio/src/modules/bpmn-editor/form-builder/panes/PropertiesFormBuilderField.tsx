@@ -192,6 +192,7 @@ function FieldPropertiesForm(props: FieldPropertiesFormProps): React.JSX.Element
           <div className="form-group">
             <label className="d-block">Pattern (regex)</label>
             <input
+              data-test--field-inspector-pattern-input
               className="form-control form-control-sm"
               type="text"
               value={patternValue(field)}

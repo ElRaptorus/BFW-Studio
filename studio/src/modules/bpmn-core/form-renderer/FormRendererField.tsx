@@ -2,14 +2,18 @@ import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormM
 
 import React from 'react';
 
+import { initialText, initiallyChecked, optionInitiallyChecked } from './formFieldInitialValue';
+
 type FormRendererFieldProps = {
   field: FormFieldDefinition;
   readOnly?: boolean;
   error?: string;
+  /** Runtime value to show instead of the modelled default, for example a submitted value. */
+  initialValue?: unknown;
 };
 
 export function FormRendererField(props: FormRendererFieldProps): React.JSX.Element {
-  const { field, readOnly, error } = props;
+  const { field, readOnly, error, initialValue } = props;
 
   if (field.type === 'section_header') {
     return (
@@ -25,7 +29,7 @@ export function FormRendererField(props: FormRendererFieldProps): React.JSX.Elem
         {field.label}
         {field.required && <span className="form-renderer-field__required">*</span>}
       </label>
-      {renderInput(field, readOnly)}
+      {renderInput(field, readOnly, initialValue)}
       {field.hint != null && (
         <span className="form-renderer-field__hint" id={`${field.id}-hint`}>
           {field.hint}
@@ -36,7 +40,11 @@ export function FormRendererField(props: FormRendererFieldProps): React.JSX.Elem
   );
 }
 
-function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.Element {
+function renderInput(
+  field: FormFieldDefinition,
+  readOnly: boolean | undefined,
+  initialValue: unknown,
+): React.JSX.Element {
   const commonProps = {
     id: field.id,
     name: field.id,
@@ -52,7 +60,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
           type="text"
           className="form-renderer-field__input"
           placeholder={field.placeholder}
-          defaultValue={field.defaultValue ?? ''}
+          defaultValue={initialText(field, initialValue)}
         />
       );
 
@@ -63,7 +71,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
           type="number"
           className="form-renderer-field__input"
           placeholder={field.placeholder}
-          defaultValue={field.defaultValue ?? ''}
+          defaultValue={initialText(field, initialValue)}
         />
       );
 
@@ -73,7 +81,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
           {...commonProps}
           type="date"
           className="form-renderer-field__input"
-          defaultValue={field.defaultValue ?? ''}
+          defaultValue={initialText(field, initialValue)}
         />
       );
 
@@ -83,13 +91,19 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
           {field.options != null && field.options.length > 0 ? (
             field.options.map((option) => (
               <label key={option.value} className="form-renderer-field__checkbox-option">
-                <input type="checkbox" name={field.id} value={option.value} disabled={readOnly} />
+                <input
+                  type="checkbox"
+                  name={field.id}
+                  value={option.value}
+                  disabled={readOnly}
+                  defaultChecked={optionInitiallyChecked(field, option, initialValue)}
+                />
                 <span>{option.label}</span>
               </label>
             ))
           ) : (
             <label className="form-renderer-field__checkbox-option">
-              <input {...commonProps} type="checkbox" defaultChecked={field.defaultValue === 'true'} />
+              <input {...commonProps} type="checkbox" defaultChecked={initiallyChecked(field, initialValue)} />
               <span>{field.label}</span>
             </label>
           )}
@@ -98,7 +112,11 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
 
     case 'dropdown':
       return (
-        <select {...commonProps} className="form-renderer-field__select" defaultValue={field.defaultValue ?? ''}>
+        <select
+          {...commonProps}
+          className="form-renderer-field__select"
+          defaultValue={initialText(field, initialValue)}
+        >
           <option value="">{field.placeholder ?? 'Select...'}</option>
           {field.options?.map((option) => (
             <option key={option.value} value={option.value}>
@@ -118,7 +136,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
                 name={field.id}
                 value={option.value}
                 disabled={readOnly}
-                defaultChecked={field.defaultValue === option.value}
+                defaultChecked={optionInitiallyChecked(field, option, initialValue)}
               />
               <span>{option.label}</span>
             </label>
@@ -132,7 +150,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
           {...commonProps}
           className="form-renderer-field__textarea"
           placeholder={field.placeholder}
-          defaultValue={field.defaultValue ?? ''}
+          defaultValue={initialText(field, initialValue)}
           rows={4}
         />
       );
@@ -147,10 +165,11 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
             {...commonProps}
             type="checkbox"
             className="form-renderer-field__toggle-input"
-            defaultChecked={field.defaultValue === 'true'}
+            defaultChecked={initiallyChecked(field, initialValue)}
           />
           <span className="form-renderer-field__toggle-slider" />
-          <span className="form-renderer-field__toggle-label">{field.defaultValue === 'true' ? 'Yes' : 'No'}</span>
+          <span className="form-renderer-field__toggle-label form-renderer-field__toggle-label--on">Yes</span>
+          <span className="form-renderer-field__toggle-label form-renderer-field__toggle-label--off">No</span>
         </label>
       );
 
@@ -161,7 +180,7 @@ function renderInput(field: FormFieldDefinition, readOnly?: boolean): React.JSX.
           type="text"
           className="form-renderer-field__input"
           placeholder={field.placeholder}
-          defaultValue={field.defaultValue ?? ''}
+          defaultValue={initialText(field, initialValue)}
         />
       );
   }

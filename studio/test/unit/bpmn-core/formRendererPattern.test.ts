@@ -16,6 +16,14 @@ function textField(validationRules: FormFieldDefinition['validationRules']): For
 describe('form renderer pattern validation', () => {
   const field = textField([{ type: 'pattern', value: '^[a-z]+$' }]);
 
+  it('ignores validation rules that are not an array', () => {
+    const malformed = textField({
+      type: 'pattern',
+      value: '^[a-z]+$',
+    } as unknown as FormFieldDefinition['validationRules']);
+    assert.equal(patternValidationMessage(malformed, 'ABC'), null);
+  });
+
   it('accepts a value that matches the pattern', () => {
     assert.equal(patternValidationMessage(field, 'abc'), null);
   });

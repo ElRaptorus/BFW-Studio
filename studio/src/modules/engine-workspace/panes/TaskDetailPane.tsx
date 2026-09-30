@@ -31,9 +31,9 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function formatFormFieldCount(formSchema: unknown): string {
-  if (Array.isArray(formSchema)) {
-    return String(formSchema.length);
+function formatFormFieldCount(formFields: unknown): string {
+  if (Array.isArray(formFields)) {
+    return String(formFields.length);
   }
   return '0';
 }
@@ -55,8 +55,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   }
 
   const typeProperties = task.typeProperties ?? {};
-  const dueDate = typeof typeProperties.dueDate === 'string' ? typeProperties.dueDate : null;
-  const formFieldCount = formatFormFieldCount(typeProperties.form_schema);
+  const dueDate = typeof typeProperties.due_date === 'string' ? typeProperties.due_date : null;
+  const formFieldCount = formatFormFieldCount(typeProperties.form_fields);
 
   return (
     <div className="engine-pane-process-info">

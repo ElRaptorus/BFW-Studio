@@ -578,6 +578,17 @@ export class StudioAgent {
     return (await this.getText(`${parentSelector} .cm-content`)).trim();
   }
 
+  /**
+   * Returns the rendered text of a code editor inside `parentSelector`,
+   * including lines scrolled out of view; empty when the editor is absent.
+   */
+  async getCodeEditorRenderedText(parentSelector: string): Promise<string> {
+    return (await this.testDriver.client!.execute(
+      (selector: string) => document.querySelector(`${selector} .cm-content`)?.textContent ?? '',
+      parentSelector,
+    )) as string;
+  }
+
   async openViaCommandSearch(query: string, assertNotVisibleAfterwards: boolean = true): Promise<void> {
     await this.waitForNotVisible(QUERY_QUICK_JUMP);
     await this.sendKeyboardInput([SHOW_QUICK_JUMP_COMMANDS]);

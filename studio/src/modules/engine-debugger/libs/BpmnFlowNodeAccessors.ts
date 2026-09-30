@@ -73,11 +73,11 @@ export function getUserTaskAssigneesExpression(flowNode: BpmnFlowNode | undefine
   return flowNode.typeData.assigneesExpression ?? '';
 }
 
-export function getUserTaskFormSchema(flowNode: BpmnFlowNode | undefined): unknown {
+export function getUserTaskFormFields(flowNode: BpmnFlowNode | undefined): unknown {
   if (!flowNode || flowNode.typeData.type !== 'user_task') {
     return null;
   }
-  return flowNode.typeData.formSchema;
+  return flowNode.typeData.formFields;
 }
 
 export function getUserTaskFormActions(flowNode: BpmnFlowNode | undefined): unknown {

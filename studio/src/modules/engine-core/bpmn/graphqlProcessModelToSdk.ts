@@ -13,6 +13,8 @@ import type {
   Extension,
   FlowNode,
   FlowNodeTypeData,
+  FormAction,
+  FormFieldDefinition,
   Lane,
   LinterRulesetScore,
   Mapping,
@@ -158,8 +160,8 @@ function convertTypeData(flowNodeType: FlowNodeType, raw: Record<string, unknown
         type: 'user_task',
         ...mappings,
         ...contracts,
-        formSchema: asFormSchema(raw.formSchema),
-        formActions: Array.isArray(raw.formActions) ? (raw.formActions as Record<string, unknown>[]) : null,
+        formFields: asFormFields(raw.formFields),
+        formActions: Array.isArray(raw.formActions) ? (raw.formActions as FormAction[]) : null,
         assigneesExpression: asString(raw.assigneesExpression),
         dueDate: asString(raw.dueDate),
         priority: asNumber(raw.priority),
@@ -553,10 +555,6 @@ function asObjectOrNull(value: unknown): Record<string, unknown> | null {
   return isRecord(value) ? value : null;
 }
 
-function asFormSchema(value: unknown): Record<string, unknown> | null {
-  if (!Array.isArray(value)) {
-    return null;
-  }
-  // The installed SDK types this field as a record. The canonical value is the field array.
-  return value as unknown as Record<string, unknown>;
+function asFormFields(value: unknown): FormFieldDefinition[] | null {
+  return Array.isArray(value) ? (value as FormFieldDefinition[]) : null;
 }

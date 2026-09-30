@@ -4,7 +4,10 @@ export function patternValidationMessage(field: FormFieldDefinition, value: stri
   if (value.trim() === '') {
     return null;
   }
-  const rule = field.validationRules?.find((entry) => entry.type === 'pattern');
+  if (!Array.isArray(field.validationRules)) {
+    return null;
+  }
+  const rule = field.validationRules.find((entry) => entry.type === 'pattern');
   if (rule == null || typeof rule.value !== 'string' || rule.value === '') {
     return null;
   }
