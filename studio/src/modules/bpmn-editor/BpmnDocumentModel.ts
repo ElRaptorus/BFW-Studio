@@ -406,7 +406,7 @@ export default class BpmnDocumentModel extends EditorDocumentModel {
   //#endregion EditorDocumentModel Lifecycle Event Handlers
 
   UNSAFE_getSelectionFromModeler(): any {
-    return this.bpmnComponentAdapter.getSelection()['_selectedElements'];
+    return this.bpmnComponentAdapter.getSelection().get();
   }
 
   UNSAFE_getBusinessObjectFromModeler(elementId: string): any {

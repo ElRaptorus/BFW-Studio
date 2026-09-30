@@ -136,4 +136,45 @@ describe('bpmn/form-builder', () => {
     const canvasItems = await studioAgent.getTestDriver().client!.$$('[data-test--form-canvas-item]');
     assert.equal(canvasItems.length, 3);
   });
+
+  it('bpmn/form-builder: should store field types, required flags and the pattern rule', async () => {
+    await openBlankUserTaskFormSummary();
+
+    await studioAgent.clickOn('[data-test--form-summary-create-button]');
+    await studioAgent.assertVisible('[data-test--form-builder-tab-design]', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="dropdown"]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="toggle"]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="section_header"]');
+    await studioAgent.clickOn('[data-test--form-builder-toolbox-field="text"]');
+
+    const canvasItems = await studioAgent.getTestDriver().client!.$$('[data-test--form-canvas-item]');
+    assert.equal(canvasItems.length, 4);
+    await canvasItems[3].click();
+    await studioAgent.assertVisible('[data-test--field-inspector-pattern-input]', ASSERT_VISIBLE_TIMEOUT);
+    // Set the value through the native setter so React's onChange fires; `^` and `$` are awkward to type.
+    await studioAgent.executeInRenderer(
+      `const input = document.querySelector('[data-test--field-inspector-pattern-input]');
+       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '^[a-z]+$');
+       input.dispatchEvent(new Event('input', { bubbles: true }));`,
+    );
+
+    await studioAgent.waitUntil(
+      async () => {
+        const fields = await studioAgent.getUserTaskFormFieldDefinitions(FORM_BUILDER_FIXTURE, USER_TASK_ID);
+        return fields.length === 4 && fields[3].validationRules != null;
+      },
+      { timeout: ASSERT_VISIBLE_TIMEOUT, timeoutMsg: 'The pattern rule was not stored on the text field' },
+    );
+
+    const fields = await studioAgent.getUserTaskFormFieldDefinitions(FORM_BUILDER_FIXTURE, USER_TASK_ID);
+    assert.deepEqual(
+      fields.map((field) => field.type),
+      ['dropdown', 'toggle', 'section_header', 'text'],
+    );
+    for (const field of fields) {
+      assert.equal(typeof field.required, 'boolean');
+    }
+    assert.deepEqual(fields[3].validationRules, [{ type: 'pattern', value: '^[a-z]+$' }]);
+  });
 });

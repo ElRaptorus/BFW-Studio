@@ -177,7 +177,11 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
             if (!update.docChanged) {
               return;
             }
-            currentValueRef.current = update.state.doc.toString();
+            const value = update.state.doc.toString();
+            if (value === currentValueRef.current) {
+              return;
+            }
+            currentValueRef.current = value;
             if (latestPropsRef.current.liveUpdate === true) {
               latestPropsRef.current.onChange?.(currentValueRef.current);
             }
@@ -213,6 +217,16 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
     // Schema updates go through `updateJsonSchema`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const view = editorRef.current;
+    const value = props.initialValue ?? '';
+    if (view == null || view.state.doc.toString() === value) {
+      return;
+    }
+    currentValueRef.current = value;
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
+  }, [props.initialValue]);
 
   useEffect(() => {
     if (editorRef.current != null && props.jsonSchema != null) {

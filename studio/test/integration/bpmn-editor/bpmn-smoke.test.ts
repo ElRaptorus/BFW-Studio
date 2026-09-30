@@ -97,4 +97,35 @@ describe('bpmn/smoke', () => {
 
     await studioAgent.assertNoErrorsPresent();
   });
+
+  it('bpmn/smoke/inspector: should follow the selection in every Selection Inspector column', async () => {
+    const columnSelectors = [
+      '#editor-inspector-selected-element',
+      '#editor-inspector-selected-element-from-modeler',
+      '#editor-inspector-selected-element-business-object',
+    ];
+    const readColumns = (): Promise<string[]> =>
+      Promise.all(columnSelectors.map((selector) => studioAgent.getCodeEditorRenderedText(selector)));
+    const waitForColumnsToShow = async (elementId: string, otherElementId: string): Promise<void> => {
+      await studioAgent.waitUntil(
+        async () =>
+          (await readColumns()).every(
+            (text) => text.includes(`"${elementId}"`) && !text.includes(`"${otherElementId}"`),
+          ),
+        { timeout: ASSERT_VISIBLE_TIMEOUT, timeoutMsg: `Selection Inspector columns did not show ${elementId}` },
+      );
+    };
+
+    await studioAgent.jumpToFileInSolution('message-autocomplete.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+    await studioAgent.executeCommand('bpmn.workbench.openOrFocusInspector');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement('ReceiveTask_1');
+    await waitForColumnsToShow('ReceiveTask_1', 'ReceiveTask_2');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement('ReceiveTask_2');
+    await waitForColumnsToShow('ReceiveTask_2', 'ReceiveTask_1');
+
+    await studioAgent.assertNoErrorsPresent();
+  });
 });
