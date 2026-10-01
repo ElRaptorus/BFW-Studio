@@ -34,11 +34,8 @@ See [here](./CHANGELOG.md) to get a better picture of what's in store for v1.
 ## Installation
 
 ```sh
-npm ci --allow-remote=all
+npm ci
 ```
-
-`--allow-remote=all` is required for the extract-zip override (I use a [drop-in replacement](https://github.com/ElRaptorus/zippogryph)).
-Will be removed, as soon as the vulnerabilities are fixed (which is unlikely, given extract-zip is pretty much dead), or other libs have replaced it.
 
 ### Development Build
 

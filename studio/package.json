@@ -146,6 +146,6 @@
   },
   "overrides": {
     "deepmerge-ts": "^8.0.0",
-    "extract-zip": "npm:@elraptorus/zippogryph@^1.0.1"
+    "@puppeteer/browsers": "^3.2.3"
   }
 }
