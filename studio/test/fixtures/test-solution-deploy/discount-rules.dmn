@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+  xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+  xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+  id="discount-rules"
+  name="Discount Rules"
+  namespace="https://www.omg.org/spec/DMN/20191111/MODEL/">
+
+  <inputData id="InputData_Amount" name="Amount">
+    <variable id="Variable_Amount" name="Amount" typeRef="number" />
+  </inputData>
+
+  <decision id="Decision_Discount" name="Discount">
+    <variable id="Variable_Discount" name="Discount" typeRef="number" />
+    <informationRequirement id="IR_1">
+      <requiredInput href="#InputData_Amount" />
+    </informationRequirement>
+    <decisionTable id="DecisionTable_1" hitPolicy="UNIQUE">
+      <input id="Input_1">
+        <inputExpression id="InputExpression_1" typeRef="number">
+          <text>Amount</text>
+        </inputExpression>
+      </input>
+      <output id="Output_1" name="Discount" typeRef="number" />
+      <rule id="Rule_1">
+        <inputEntry id="InputEntry_1">
+          <text>&lt; 100</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_1">
+          <text>0</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_2">
+        <inputEntry id="InputEntry_2">
+          <text>&gt;= 100</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_2">
+          <text>10</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_1">
+      <dmndi:DMNShape id="Shape_Amount" dmnElementRef="InputData_Amount">
+        <dc:Bounds x="100" y="200" width="125" height="45" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Discount" dmnElementRef="Decision_Discount">
+        <dc:Bounds x="100" y="60" width="180" height="80" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

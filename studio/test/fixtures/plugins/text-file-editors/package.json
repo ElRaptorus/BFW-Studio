@@ -22,7 +22,7 @@
     "@types/node": "^25.9.1"
   },
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "Text File Editors",
     "description": "Markdown and JSON editors backed by CodeMirror 6, replacing the Studio's removed built-in default/markdown editors via the public webview document type API.",
     "permissions": [
@@ -35,6 +35,7 @@
           "displayName": "Markdown Editor",
           "icon": "ph ph-markdown-logo",
           "uriPattern": "\\.(mdx?|mdc|markdown|mdown|mkd|mkdn)$",
+          "page": "design/workspace",
           "includedFilePatterns": [
             "**/*.md",
             "**/*.mdx",
@@ -50,6 +51,7 @@
           "displayName": "JSON Editor",
           "icon": "ph ph-brackets-curly",
           "uriPattern": "\\.json$",
+          "page": "design/workspace",
           "includedFilePatterns": [
             "**/*.json"
           ]

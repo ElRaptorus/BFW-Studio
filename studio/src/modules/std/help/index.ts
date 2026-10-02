@@ -8,6 +8,7 @@ export const DEFAULT_HELP_TEXT_ID = 'home';
 
 export function loadHelp(bifrost: Bifrost): void {
   bifrost.editors.registerDocumentType('help', {
+    page: 'active',
     uriMatch: /^help:\/\/(.+)$/,
     modelKey: 'HelpTextDocumentModel',
     modelConstructor: HelpTextDocumentModel,

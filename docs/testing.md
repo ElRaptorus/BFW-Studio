@@ -53,6 +53,7 @@ studio/test/
 ├── fixtures/                   # Test data directories
 │   ├── test-solution-simple/   # Single-root smoke: call_activity_test.bpmn + hidden-file.fixture
 │   ├── test-solution-bpmn/     # BPMN files named by editor / plugin / linter tests
+│   ├── test-solution-deploy/   # Cross-references for solution-model scans: order/payment/draft/unversioned .bpmn, discount-rules.dmn
 │   ├── test-solution-navigator/ # Navigation history (001.bpmn)
 │   ├── test-solution-multi-a/  # Multi-root fixture: project A
 │   ├── test-solution-multi-b/  # Multi-root fixture: project B
@@ -63,8 +64,6 @@ studio/test/
     │   ├── bpmn-elements.test.ts
     │   ├── bpmn-drilldown.test.ts
     │   └── form-builder.test.ts  # Form Builder fragment editor tests
-    ├── bpmn-linter/            # Explorer lint + live-linter UX
-    │   └── explorer-lint.test.ts
     ├── dmn-editor/             # DMN editor tests
     │   ├── dmn-smoke.test.ts
     │   └── dmn-elements.test.ts
@@ -90,8 +89,8 @@ Scoped-settings helpers:
 | Helper | Purpose |
 |---|---|
 | `getSolutionProjects()` | `{ name, baseUri }[]` of the open solution — use `baseUri` instead of building `file://` URIs by hand |
-| `getMenuBarSelectValue(itemId)` | Value of the menu-bar `select` with `data-menu-bar-item-id="itemId"` |
-| `selectMenuBarOption(itemId, value)` | Sets that `select` and dispatches `change` (React-controlled) |
+| `getLinterProfileValue()` | Value of the ruleset select `[data-menu-bar-item-id="bpmn-linter-profile-select"] select`, right-pinned in the Design page bar while a BPMN document is focused |
+| `selectLinterProfile(value)` | Sets that `select` and dispatches `change` (React-controlled) |
 | `clickSettingsScope('user' \| 'solution' \| 'project')` | Clicks `[data-test-settings-scope=…]` in the Settings GUI scope bar |
 | `waitForJsonFileValue(filePath, key, expected, timeoutMs?)` | Polls a JSON file until the top-level `key` deep-equals `expected`; use instead of fixed pauses after async settings writes |
 
@@ -358,10 +357,6 @@ it('should add folder to solution', async () => {
 - **Elements**: 131 tests covering all element types, property panes, palette, replace popup, participants, loops, custom attributes
 - **Drilldown**: subprocess drill-down/up, breadcrumbs, overlay click
 
-### BPMN Linter (`bpmn-linter/`)
-
-- **Explorer lint** (`explorer-lint.test.ts`): live lint off still shows Explorer Lint File and the ruleset selector; closed-file lint writes `bfw:LinterRulesetScore`; View → Live Linter checkbox tracks `bpmn.linter.toggle`
-
 ### DMN Editor (`dmn-editor/`)
 
 - **Smoke**: open `.dmn` file, view switcher, export as SVG/DMN copy, global search
@@ -376,11 +371,14 @@ it('should add folder to solution', async () => {
 
 ## Testing Workbench Layout
 
-Hide/show of the left and right pane areas uses always-visible menu bar **buttons**, not a Layout dropdown.
+The Studio starts on the Home page; `createAndStartStudioAgent` activates `design/workspace` so explorer panes are present. Header selectors: `.workbench-header__category[data-category-id]`, `.workbench-page-bar__page[data-page-id]`, `.workbench-header-container[data-page-id]`.
 
-- **Property Panel**: `[data-test--menubar--button-for-command="std.workbench.togglePropertyPanel"]` (stable id `menu-bar-menu-layout`). Prefer `clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel')`. After hide, the same selector must still match — the right `MenuBarSection` is parked on the center row. Assert the area with `.app-layout__panes-right`.
-- **Sidebar**: `[data-test--menubar--button-for-command="std.workbench.toggleSidebar"]` (id `menu-bar-toggle-sidebar`). After hide, parked left `pane_content_toggle` icons still work (`leftMenuBar.togglePane('pane/left/explorer')`). Assert the area with `.app-layout__panes-left`.
-- Do **not** expect a context menu on `menu-bar-menu-layout`. That id is a `MenuBarButton`, not `MenuBarMenu`.
+Hide/show of the pane areas uses layout toggle **buttons** in the header (`buildLayoutToggleItems`), one per area the active page has. Home and other pages with `paneAreas: []` have none.
+
+- **Property Panel**: `[data-test--menubar--button-for-command="std.workbench.togglePropertyPanel"]` (id `header-layout-toggle-right`). Prefer `clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel')`. The button stays in the header after the area hides. Assert the area with `.app-layout__panes-right`.
+- **Sidebar**: `[data-test--menubar--button-for-command="std.workbench.toggleSidebar"]` (id `header-layout-toggle-left`). Assert the area with `.app-layout__panes-left`. The bottom area uses `std.workbench.toggleInspectorPanel`.
+- Left panes are reached through the page bar and the left tab strip: `studioAgent.navigation.showLeftPane('pane/left/explorer')` and `assertLeftPaneIsActive(...)`. `navigation` is `StudioAgent/WorkbenchNavigation.ts` (`activateCategory`, `activatePage`, `assertActivePage`, `assertActiveCategory` (a category reopens its last page, so use this when the page does not matter), `showLeftPane`, `assertLeftPaneIsActive`, `assertLeftPaneIsNotActive`). It maps explorer and search to `design/workspace` (tab strip), git to `design/source`, engines to `debug/engines` and plugins to `control/plugins`. The active tab carries `data-test--active`.
+- Category shortcuts (`alt-1…6` on Windows and Linux, `cmd-alt-1…6` on macOS) are testable through `executeCommand('std.workbench.goTo<Category>')`. The binding table itself is covered by the unit test `test/unit/std/categoryKeyBindings.test.ts`.
 - Reset both areas with `executeCommand('std.workbench.showPanels')` at the start of a test when the shared agent may have left a pane hidden.
 - Ctrl/Cmd+B is still `std.workbench.togglePanels` (both sides). View → Appearance remains the menu path.
 

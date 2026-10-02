@@ -10,10 +10,12 @@ import type { StartPaths } from './Driver/TestDriver';
 import TestDriver from './Driver/TestDriver';
 import { OsSpecificKeystroke } from './OsSpecificKeystroke';
 import InputSimulator from './StudioAgent/InputSimulator';
-import LeftMenuBar from './StudioAgent/LeftMenuBar';
 import LogCapture from './StudioAgent/LogCapture';
 import PluginHost, { PLUGIN_HOST_WAIT_TIMEOUT_MS } from './StudioAgent/PluginHost';
 import ScreenCapture from './StudioAgent/ScreenCapture';
+import WorkbenchNavigation from './StudioAgent/WorkbenchNavigation';
+
+const LINTER_PROFILE_SELECT = '[data-menu-bar-item-id="bpmn-linter-profile-select"] select';
 
 function getElectronPath(): string {
   return require('electron/index') as string;
@@ -71,6 +73,8 @@ export async function createAndStartStudioAgent<T extends StudioAgent>(
     };
 
     studioAgent = await StudioAgent.start<T>(testContext, paths, studioCliArgs, studioAgentClass);
+    // The Studio starts on the Home page; most integration tests expect the Design workspace.
+    await studioAgent.executeCommand('std.workbench.activatePage', ['design/workspace']);
 
     return studioAgent;
   } catch (error: any) {
@@ -209,7 +213,7 @@ export async function stopPluginHostStudioAgent(
 }
 
 export class StudioAgent {
-  public leftMenuBar: LeftMenuBar;
+  public navigation: WorkbenchNavigation;
   public pluginHost: PluginHost;
 
   protected testDriver: TestDriver;
@@ -227,7 +231,7 @@ export class StudioAgent {
     this.logCapture = new LogCapture(this, this.testDriver, './tmp/logs/', `${new Date().getTime()}`);
     this.inputSimulator = new InputSimulator(this.testDriver);
 
-    this.leftMenuBar = new LeftMenuBar(this);
+    this.navigation = new WorkbenchNavigation(this);
     this.pluginHost = new PluginHost(this);
 
     this.testDriver.client!.addLocatorStrategy('querySelectorAll', (selector: any) => {
@@ -445,26 +449,25 @@ export class StudioAgent {
     return envelope.value;
   }
 
-  async getMenuBarSelectValue(itemId: string): Promise<string> {
-    const selector = `[data-menu-bar-item-id="${itemId}"] select`;
-    await this.assertVisible(selector);
-    return this.getValue(selector);
+  /** The linter ruleset select sits right-pinned in the Design page bar while a BPMN document is focused. */
+  async getLinterProfileValue(): Promise<string> {
+    await this.assertVisible(LINTER_PROFILE_SELECT);
+    return this.getValue(LINTER_PROFILE_SELECT);
   }
 
-  async selectMenuBarOption(itemId: string, value: string): Promise<void> {
+  async selectLinterProfile(value: string): Promise<void> {
+    await this.assertVisible(LINTER_PROFILE_SELECT);
     await this.testDriver.client!.execute(
-      (menuBarItemId: string, nextValue: string) => {
-        const select = document.querySelector(
-          `[data-menu-bar-item-id="${menuBarItemId}"] select`,
-        ) as HTMLSelectElement | null;
+      (selector: string, nextValue: string) => {
+        const select = document.querySelector(selector) as HTMLSelectElement | null;
         if (select == null) {
-          throw new Error(`Menu bar select not found: ${menuBarItemId}`);
+          throw new Error(`Linter profile select not found: ${selector}`);
         }
         const valueProperty = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value');
         valueProperty?.set?.call(select, nextValue);
         select.dispatchEvent(new Event('change', { bubbles: true }));
       },
-      itemId,
+      LINTER_PROFILE_SELECT,
       value,
     );
   }
@@ -837,6 +840,8 @@ export class StudioAgent {
   }
 
   async jumpToFileInSolution(filename: string, expectedDocumentType: string = 'bpmn'): Promise<void> {
+    // Closing documents keeps the page, so a test that ended on another page would hide the Explorer.
+    await this.navigation.showLeftPane('pane/left/explorer');
     await this.assertVisible(`.treeview__label=${filename}`, ASSERT_VISIBLE_TIMEOUT);
     await this.openViaQuickJump(filename);
 

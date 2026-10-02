@@ -1,37 +1,26 @@
 # Workbench Layout
 
-The Studio's main UI is rendered by `studio/src/components/Workbench.tsx`. It orchestrates the top-level layout: menu bars, pane areas, editor area, and status bar.
+The Studio's main UI is rendered by `studio/src/components/Workbench.tsx`. It stacks the header (categories, page bar, header menu bar), the app layout (pane areas and editor area) and the status bar. Categories, pages and the header chrome order are documented in [workbench-categories.md](workbench-categories.md); this file covers the columns, the header menu bar and the pane area renderers.
 
-## Three-Column Split-Bar Model
+## Column Model
 
-The layout uses a three-column design where each column can have its own independent menu bar header:
+The app layout has three columns. There are no per-column menu bars; the header is the only menu bar.
 
 ```
-┌──────────────┬──────────────────────────────┬──────────────┐
-│ Left MenuBar │ Center MenuBar (optional)    │ Right MenuBar│
-│ icons+toggle │ engine items                 │ linter+toggle│
-├──────────────┼──────────────────────────────┼──────────────┤
-│              │                              │              │
+┌────────────────────────────────────────────────────────────┐
+│ Header: categories, Engine cluster, layout toggles, Control│
+│ Page bar                                                   │
+├──────────────┬──────────────────────────────┬──────────────┤
 │  Left Pane   │  Editor Area + Bottom Pane   │  Right Pane  │
-│  (Explorer,  │                              │  (Property   │
-│   Search,    │                              │   Panel)     │
-│   Engines)   │                              │              │
-└──────────────┴──────────────────────────────┴──────────────┘
+│ (tab strip   │                              │  (Property   │
+│  Explorer |  │                              │   Panel)     │
+│  Search)     │                              │              │
+├──────────────┴──────────────────────────────┴──────────────┤
 │                     Status Bar                             │
 └────────────────────────────────────────────────────────────┘
 ```
 
-Each column is wrapped in a `div.app-layout__column` (flex column) where the last child flexes to fill remaining space. If a menu bar section has no items, it is not rendered, and the pane below extends to the top.
-
-**Parking:** `MenuBarSection` for the left and right columns must not unmount with the pane area. When `deferredPaneArea.left/right.visible` is false, that area's section is parked on the matching edge of the **center** column's `.menu-bar-section-row` (left items `align="left"`, right items `align="right"`). The center row is created only when it has something to show: center items, a parked left section, or a parked right section. This keeps Hide/Show pane-area buttons, left `pane_content_toggle` icons, and the BPMN linter ruleset select clickable after the pane hides. `std.workbench.hideBarsAndPanels` still hides every menu bar (`menuBar.visible === false`), including parked sections.
-
-The center column requires special handling: `SplitterLayout` uses `position: absolute; width: 100%; height: 100%`, which breaks out of flex flow. To prevent the editor area from overlapping the center menu bar, the inner `SplitterLayout` is wrapped in `div.app-layout__center-content` (`position: relative`), which provides a positioned container for the absolutely-positioned splitter. The wrapper receives `flex: 1; min-height: 0` from the `.app-layout__column > *:last-child` rule, so it fills remaining space after the menu bar. The left and right columns do not need this wrapper because their last child (`PaneArea`) uses normal flex positioning.
-
-### Menu Bar Sections
-
-Each column's menu bar is rendered by `MenuBarSection` (`studio/src/components/menu_bar/MenuBarSection.tsx`), a lightweight component that receives an array of `MenuBarItem` objects and an optional `align` prop (`'left' | 'center' | 'right'`). In-column left and center sections use centered alignment; the right section uses right-alignment. Parked left sections (center row) use left-alignment. The old monolithic `<MenuBar>` component (which rendered left/center/right in a single row) is no longer used in the Workbench.
-
-Menu bar sections have a fixed height of 34px (`flex: 0 0 34px`), use `--color-border-menu-bar` for the bottom border, and are conditionally rendered based on whether items exist. Nested sections inside `.menu-bar-section-row` drop their own bottom border; the row owns the 34px chrome. Buttons within a section use compact sizing (26px min, 18px icons) and the active state is themed via `--theme-menu-bar-active-bg`.
+Each column is a `div.app-layout__column` (flex column) whose last child flexes to fill the remaining space. `SplitterLayout` uses `position: absolute; width: 100%; height: 100%`, which breaks out of flex flow, so the inner `SplitterLayout` of the center column is wrapped in `div.app-layout__center-content` (`position: relative`). `std.workbench.hideBarsAndPanels` hides the header (`menuBar.visible === false`).
 
 ### Splitter Structure
 
@@ -41,60 +30,46 @@ The column layout is achieved via nested `SplitterLayout` components:
 2. **Inner splitter** — splits left pane from center (editor + bottom pane)
 3. **Vertical splitter** — splits editor area from bottom pane
 
+## Header Menu Bar
+
+`MenuBarItemArea` is `'header' | 'pageBar'`; `MenuBarItemMap` and `MenuBarSerialized` carry a `header` and a `pageBar` list. `pageBar` is internal (plugins only get `header`) and is rendered right-pinned in the page bar ([workbench-categories.md](workbench-categories.md) §Header). `insertAfterMenuBarItem` / `insertBeforeMenuBarItem` search only the header list and throw when the anchor id is missing. The fixed header chrome (Home, web hamburger, categories, layout toggles, Control) is rendered by `WorkbenchHeader` itself and is **not** registered as menu bar items; registered header items (Engine cluster, plugin items) are filtered by `pages` and rendered through `MenuBarSection` between the main categories and the layout toggles.
+
+**Layout toggles.** `buildLayoutToggleItems(paneAreas)` (`components/header/headerLayoutToggles.ts`) returns one `button` per pane area that has groups on the active page (`paneGroups.length > 0`), in the order left, bottom, right. A page with `paneAreas: []` gets none.
+
+| Area | Command | Icon | Item id |
+|---|---|---|---|
+| left | `std.workbench.toggleSidebar` | `ph-sidebar-simple` | `header-layout-toggle-left` |
+| bottom | `std.workbench.toggleInspectorPanel` | `ph-square-half-bottom` | `header-layout-toggle-bottom` |
+| right | `std.workbench.togglePropertyPanel` | `ph-sidebar-simple` plus `header-layout-toggle-icon--mirrored` | `header-layout-toggle-right` |
+
+The icon is `ph-fill` while the area is visible and `ph` while hidden; the tooltip reads `Hide …` / `Show …`. The buttons are `MenuBarButton`s, so `data-test--menubar--button-for-command` keeps working. `WorkbenchHeader` subscribes to `EVENT_PANE_LAYOUT_UPDATED` to refresh them. An area counts as present when it has groups on the page, not only displayable ones, so a right toggle can open an empty column.
+
+**Web hamburger.** When `bifrost.env.isWeb`, the header start group shows a `menu` item (icon `std/menubar/hamburger`, menu `std/application/main`) after Home.
+
+### MenuBarSection
+
+`MenuBarSection` (`components/menu_bar/MenuBarSection.tsx`) receives an array of `MenuBarItem` objects and an `align` prop. Inside the header it drops its stand-alone height and border (`.workbench-header .menu-bar-section`). The end group uses `flex: 0 0 auto`; the engine select has a max width with ellipsis so the header fits 1024 px.
+
 ## MenuBarItem Types
 
-Menu bar items are typed POJOs produced by factory and modifier functions registered via `MenuBarMediator`. The union type `MenuBarItem` is defined in `studio/src/bifrost/contracts/MenuBarTypes.ts`.
+Menu bar items are typed POJOs produced by factory and modifier functions registered via `MenuBarMediator`. The union type `MenuBarItem` is defined in `studio/src/bifrost/contracts/MenuBarTypes.ts`. Every item may carry `pages` (page ids or `<categoryId>/*`).
 
 | Type | Rendering | Purpose |
 |---|---|---|
-| `button` | `MenuBarButton` | General-purpose clickable icon that executes a command |
-| `pane_content_toggle` | `MenuBarPaneContentToggle` | Icon button that selects a specific pane within a pane area |
+| `button` | `MenuBarButton` | Clickable icon that executes a command |
 | `menu` | `MenuBarMenu` | Icon that opens a context menu on click |
 | `select` | `MenuBarSelect` | Dropdown select element |
 | `divider` | `<div>` | Visual separator |
 | `icon` | `<span>` with Icon | Static icon display |
 | `text` | `<div>` | Static text display |
 
-### PaneContentToggle
+`pane_content_toggle` no longer exists; panes are reached through the page bar, the left tab strip and View › Go to.
 
-The `pane_content_toggle` type (`MenuBarItem_PaneContentToggle`) is the primary mechanism for controlling which content fills a pane area from the menu bar. Properties:
+## Left Side: Page Bar and Tab Strip
 
-| Property | Type | Description |
-|---|---|---|
-| `id` | `string?` | Unique identifier (used as `data-menu-bar-item-id` attribute) |
-| `icon` | `string` | Icon ID |
-| `tooltip` | `string` | Tooltip text |
-| `paneAreaId` | `'left' \| 'right' \| 'bottom'` | Which pane area this toggle controls |
-| `paneId` | `string` | The pane ID to select when clicked (e.g. `'activities/explorer'`) |
+The left menu bar, its overflow menu and `PANE_FOCUS_COMMANDS` are gone. A left group is selected by navigating to its page (header category, then page bar) and, when a page has two or more displayable left groups, by the text tab strip at the top of `PaneAreaLeft`. `design/workspace` holds `explorer` (label `Explorer`) and `search` (label `Search`); the other pages show their single group without a strip. Left groups need a `label` for the strip (see `pane-group-registration.mdc`).
 
-The component (`MenuBarPaneContentToggle.tsx`) determines its own `active` state at render time by calling `bifrost.panes.isPaneGroupVisibleByPaneId(paneId)`, which checks whether the pane group containing the given pane is the visible group in its area **and** the area itself is visible. When active, it applies the `menu-bar__button--active` CSS class and sets `data-test--active="true"`.
-
-Clicking a `pane_content_toggle` calls `bifrost.panes.setVisibilityOfPaneAreaByPaneId(paneId, true)`, which shows the associated pane and makes the pane area visible. Clicking the already-active button is effectively a no-op (the pane is already displayed).
-
-## Left Menu Bar Items
-
-The left menu bar is populated by factories and modifiers registered in `initializeMenuBarItems.ts`:
-
-1. **Explorer** (type `pane_content_toggle`, paneId `pane/left/explorer`)
-2. **Search** (type `pane_content_toggle`, paneId `pane/left/search`)
-3. **Engines** (type `pane_content_toggle`, paneId `pane/left/engines`) — injected by `engine-workspace` module via modifier
-4. **Divider** + **Overflow menu** (`std/menubar/left-overflow`) — a chevron dropdown listing all toggle items with icons and keyboard shortcuts
-5. **Hide/Show Sidebar** (type `button`, id `menu-bar-toggle-sidebar`, command `std.workbench.toggleSidebar`) — `<<` / `>>` caret-double icons; tooltip **Hide Sidebar** / **Show Sidebar** from `getPaneAreaVisibility('left')`
-
-Startpage and Settings are accessible through the **View** application menu, not the toolbar.
-
-### Overflow Menu Keyboard Shortcuts
-
-The overflow menu (`std/menubar/left-overflow`) maps known pane IDs to their specific focus commands via `PANE_FOCUS_COMMANDS` in `initializeMenus.ts`. This allows `renderBifrostMenu` to resolve keybindings automatically (e.g. `activities/explorer` → `std.workbench.focusExplorer`). Module-registered toggles without a mapped command fall back to `std.workbench.toggleActivity`.
-
-## Right Menu Bar Items
-
-The right menu bar is registered in the same initializer. There is no Layout dropdown.
-
-1. **Hide/Show Property Panel** (type `button`, id `menu-bar-menu-layout`, command `std.workbench.togglePropertyPanel`) — `>>` when the right pane is visible (tooltip **Hide Property Panel**), `<<` when hidden (**Show Property Panel**). The id is historical; `bpmn-linter` still `insertBeforeMenuBarItem(..., 'menu-bar-menu-layout', …)`.
-2. **Linter ruleset select** — injected by `bpmn-linter` immediately before that button when a BPMN document is focused and the linter is enabled.
-
-View → Appearance still exposes Sidebar, Property Panel, and Inspector Panel. Ctrl/Cmd+B remains `std.workbench.togglePanels` (both sides).
+The View menu keeps static `Explorer` (`std.workbench.focusExplorer`, `view/explorer`) and `Search` (`std.workbench.focusSearch`, `view/search`) entries, plus the `view/go-to` submenu (see [workbench-categories.md](workbench-categories.md)). Source Control, Engines and Plugins are reached through Go to and the page bar. Ctrl/Cmd+B remains `std.workbench.togglePanels`. View → Appearance still exposes Sidebar, Property Panel and Inspector Panel.
 
 ## Pane Area Renderers (3-Way Split)
 
@@ -104,7 +79,7 @@ Each pane area has its own dedicated renderer component because their interactio
 
 **File:** `studio/src/components/panes/PaneAreaLeft.tsx`
 
-Maps over `paneGroups` and renders a `PanesList` per group. Only the group with `visible: true` shows content. Group switching is controlled externally by the left menu bar icons (via `setVisibilityOfPaneAreaByPaneId`).
+Maps over `paneGroups` and renders a `PanesList` per group. Only the group with `visible: true` shows content. When `getDisplayableGroups(...)` yields two or more groups, a `PaneGroupTabBar` (text variant) is rendered above them; a tab click calls `bifrost.panes.setActiveGroupInArea('left', groupId)`. `setVisibilityOfPaneAreaByPaneId` (focus commands, cross-page pane activation) also switches the group.
 
 ### PaneAreaRight
 
@@ -137,7 +112,7 @@ Shared tab bar component for switching between pane groups. Two rendering varian
 | Variant | Used by | Rendering |
 |---|---|---|
 | `icon` | PaneAreaRight | 24x24 icon buttons, tooltip on hover, right-click context menu |
-| `text` | PaneAreaBottom | Text tabs with labels, reuses `pane-tab` CSS patterns |
+| `text` | PaneAreaLeft, PaneAreaBottom | Text tabs with labels, reuses `pane-tab` CSS patterns; the active tab carries `data-test--active` |
 
 **Icon resolution order** (icon variant):
 1. If `icon` is a function: call it, use returned string as CSS class (supports dynamic icons).
@@ -182,13 +157,13 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `setActiveGroupInArea(area, groupId)` | Sets the specified group as visible and hides all others in that area. Emits `EVENT_PANE_LAYOUT_UPDATED`. |
 | `requestPaneLayoutUpdate()` | Emits `EVENT_PANE_LAYOUT_UPDATED` without changing data. Used by modules to trigger re-renders when icon factories change. |
 | `getActivePaneIdForArea(area)` | Returns the ID of the currently active pane in the given area, or `null` if the area is hidden |
-| `isPaneGroupVisibleByPaneId(paneId)` | Returns `true` when the group containing the given pane is the visible group in its area and the area itself is visible. Used by `MenuBarPaneContentToggle` to determine its active/highlighted state. |
+| `isPaneGroupVisibleByPaneId(paneId)` | Returns `true` when the group containing the given pane is the visible group in its area and the area itself is visible. |
 | `selectLastActivePaneInArea(area)` | Re-selects the last active pane. Used by Toggle Sidebar to restore after hiding. |
 | `unregisterPane(paneId)` | Removes a single pane from its group, clamps `activePaneIndex`, emits `EVENT_PANE_LAYOUT_UPDATED`. No-op if pane not found. |
 | `unregisterPaneGroup(paneGroupId)` | Removes an entire pane group from its area, emits `EVENT_PANE_LAYOUT_UPDATED`. No-op if group not found. |
 | `unregisterPaneProvider(providerId)` | Removes a pane provider entry from the `PaneProviderManager`. |
 
-`PaneManager` tracks `lastActivePaneIdPerArea` (serialized/deserialized with pane layout) to support restoring the last active pane when toggling sidebar visibility.
+`PaneManager` tracks `lastActivePaneIdPerArea` (serialized/deserialized with pane layout; updated by both `setVisibilityOfPaneAreaByPaneId` and the tab strip's `setActiveGroupInArea`) to support restoring the last active pane when toggling sidebar visibility.
 
 ### Persistence
 
@@ -198,9 +173,8 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 
 ## Interaction Model
 
-- **Clicking a `pane_content_toggle` icon** in the left menu bar selects that pane content. Clicking the already-active icon is effectively a no-op. When the left pane area is hidden, the icons are parked on the center row; clicking one still calls `setVisibilityOfPaneAreaByPaneId(paneId, true)` and restores the sidebar.
-- **Hide/Show Sidebar** (`std.workbench.toggleSidebar`, left menu bar button `menu-bar-toggle-sidebar`) hides or shows the left pane area. When hiding, calls `hidePaneArea('left')`. When showing, calls `selectLastActivePaneInArea('left')`.
-- **Hide/Show Property Panel** (`std.workbench.togglePropertyPanel`, right menu bar button `menu-bar-menu-layout`) toggles `bifrost.panes.togglePaneArea('right')`. The button stays mounted via parking when the right column unmounts.
+- **Left tab strip**: Click switches the active left group on the page. Not rendered with fewer than two displayable groups.
+- **Layout toggles** (header): `std.workbench.toggleSidebar` hides or shows the left area (hiding calls `hidePaneArea('left')`, showing calls `selectLastActivePaneInArea('left')`); `togglePropertyPanel` toggles `bifrost.panes.togglePaneArea('right')`; `toggleInspectorPanel` toggles the bottom area. The buttons live in the header and stay mounted when an area hides.
 - **Right pane group tabs** (icon variant): Click switches active group. Right-click opens context menu listing all displayable groups with labels.
 - **Bottom pane group tabs** (text variant): Click switches active group. Pane-level tabs below update to show the selected group's panes.
 
@@ -209,21 +183,22 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | File | Purpose |
 |---|---|
 | `studio/src/components/Workbench.tsx` | Top-level layout, event subscriptions, column structure |
-| `studio/src/components/panes/PaneAreaLeft.tsx` | Left pane area renderer (single visible group, externally controlled) |
+| `studio/src/components/header/WorkbenchHeader.tsx` | Header chrome: categories, page bar, hamburger, header items, layout toggles |
+| `studio/src/components/header/headerLayoutToggles.ts` | Pure `buildLayoutToggleItems(paneAreas)` |
+| `studio/src/components/panes/PaneAreaLeft.tsx` | Left pane area renderer (one visible group, text tab strip with two or more groups) |
 | `studio/src/components/panes/PaneAreaRight.tsx` | Right pane area renderer (multi-group with icon tab bar) |
 | `studio/src/components/panes/PaneAreaBottom.tsx` | Bottom pane area renderer (multi-group with text tab bar) |
-| `studio/src/components/panes/PaneGroupTabBar.tsx` | Group-level tab bar component (icon and text variants) |
+| `studio/src/components/panes/PaneGroupTabBar.tsx` | Group-level tab bar component (icon and text variants; text tabs carry `data-test--active`) |
 | `studio/src/components/panes/PaneWrapper.tsx` | Per-pane mount gate: evaluates `shouldBeDisplayed`, then renders `Pane` |
 | `studio/src/components/panes/PanesList.tsx` | Renders a group's panes as stacked PaneWrappers |
 | `studio/src/components/panes/component.pane-group-tab-bar.scss` | Styles for group tab bar, context menu, severity utility classes |
-| `studio/src/components/menu_bar/MenuBarSection.tsx` | Per-column menu bar component, dispatches to type-specific renderers |
+| `studio/src/components/menu_bar/MenuBarSection.tsx` | Menu bar item list component, dispatches to type-specific renderers |
 | `studio/src/components/menu_bar/MenuBarButton.tsx` | Generic button with command execution and `active` CSS class |
-| `studio/src/components/menu_bar/MenuBarPaneContentToggle.tsx` | PaneContentToggle button: self-determines active state from `bifrost.panes` |
-| `studio/src/components/menu_bar/workbench.menu-bar.scss` | Menu bar section styles (`.menu-bar-section`, `.menu-bar-section-row`, `.menu-bar__button--active`) |
+| `studio/src/components/menu_bar/workbench.menu-bar.scss` | Menu bar item styles (`.menu-bar-section`, `.menu-bar__button--active`) |
 | `studio/src/bifrost/styles/workbench.app-layout.scss` | Column layout (`.app-layout__column`) |
-| `studio/src/bifrost/contracts/MenuBarTypes.ts` | All `MenuBarItem` type definitions including `MenuBarItem_PaneContentToggle` |
+| `studio/src/bifrost/contracts/MenuBarTypes.ts` | All `MenuBarItem` type definitions (`MenuBarItemArea`: `header`, internal `pageBar`) |
 | `studio/src/bifrost/common/PaneManager.ts` | Pane area state, visibility, `lastActivePaneIdPerArea`, `setActiveGroupInArea()`, `requestPaneLayoutUpdate()` |
 | `studio/src/bifrost/common/PaneMediator.ts` | Public API for PaneManager, persistence, pane provider registration |
 | `studio/src/bifrost/contracts/PaneTypes.ts` | `PaneGroupObject` type with `label`, `icon` fields |
-| `studio/src/modules/std/initializers/initializeMenuBarItems.ts` | Left/center/right menu bar item registration |
-| `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts` | Engine menubar items (registered on 'center') |
+| `studio/src/modules/engine-workspace/initializers/engineHeaderItems.ts` | Pure `buildEngineHeaderItems`: the Engine cluster in the header |
+| `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts` | Appends the Engine cluster to the `header` menu bar area |

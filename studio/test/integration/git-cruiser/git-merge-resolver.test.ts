@@ -79,7 +79,7 @@ describe('git-merge-resolver', () => {
   });
 
   it('should detect merge state and show conflicts in Git Pane', async () => {
-    await studioAgent.leftMenuBar.togglePane('pane/left/git');
+    await studioAgent.navigation.showLeftPane('pane/left/git');
     await studioAgent.assertGitPaneVisible();
 
     const branchLabel = await studioAgent.getGitPaneBranchLabel();
@@ -102,7 +102,9 @@ describe('git-merge-resolver', () => {
   });
 
   it('should display file progress counter in title', async () => {
+    await studioAgent.navigation.activatePage('design/workspace');
     await studioAgent.openMergeResolver();
+    await studioAgent.navigation.assertActivePage('design/source');
 
     const title = await studioAgent.getMergeResolverTitle();
     assert.ok(

@@ -6,7 +6,6 @@ import React, { Fragment } from 'react';
 import { Icon } from '../Icon';
 import MenuBarButton from './MenuBarButton';
 import MenuBarMenu from './MenuBarMenu';
-import MenuBarPaneContentToggle from './MenuBarPaneContentToggle';
 import MenuBarSelect from './MenuBarSelect';
 import { menuBarItemKey } from './menuBarItemKey';
 
@@ -58,16 +57,6 @@ function renderMenuBarItemObject(item: MenuBarItem, Icon: IconComponent): React.
           command={item.command}
           commandArgs={item.commandArgs}
           tooltip={item.tooltip}
-          htmlAttributes={getHtmlAttributes(item)}
-        />
-      );
-    case 'pane_content_toggle':
-      return (
-        <MenuBarPaneContentToggle
-          icon={item.icon}
-          tooltip={item.tooltip}
-          paneAreaId={item.paneAreaId}
-          paneId={item.paneId}
           htmlAttributes={getHtmlAttributes(item)}
         />
       );

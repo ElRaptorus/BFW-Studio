@@ -35,7 +35,17 @@ import { BpmnEditorDocumentInspector } from './panes/inspector/EditorInspectorPa
 export const BPMN_DOCUMENT_TYPE = 'bpmn';
 
 export function onLoad(bifrost: Bifrost): void {
+  bifrost.icons.registerIcons({ 'std/page/workspace': 'ph ph-folders' });
+  bifrost.categories.registerPage({
+    id: 'design/workspace',
+    categoryId: 'design',
+    label: 'Workspace',
+    icon: 'std/page/workspace',
+    order: 0,
+  });
+
   bifrost.editors.registerDocumentType(BPMN_DOCUMENT_TYPE, {
+    page: 'design/workspace',
     uriMatch: /\.bpmn$/,
     modelKey: 'BpmnDocumentModel',
     modelConstructor: BpmnDocumentModel,
@@ -48,6 +58,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/bpmn',
   });
   bifrost.editors.registerDocumentType('bpmn.script', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.script:/,
     modelKey: null,
     rendererKey: 'BpmnScriptRenderer',
@@ -55,6 +66,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.text', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.text:/,
     modelKey: null,
     rendererKey: 'BpmnTextRenderer',
@@ -62,6 +74,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.docs', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.docs:/,
     modelKey: null,
     rendererKey: 'BpmnDocumentationRenderer',
@@ -69,6 +82,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.data-output-association.transformation', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.data-output-association\.transformation:/,
     modelKey: null,
     rendererKey: 'BpmnDataOutputAssociationTransformationRenderer',
@@ -76,6 +90,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.http-service-task.body', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.http-service-task\.body:/,
     modelKey: null,
     rendererKey: 'BpmnHttpServiceTaskBodyRenderer',
@@ -83,6 +98,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.general.example-payload', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.general\.example-payload:/,
     modelKey: null,
     rendererKey: 'BpmnExamplePayloadFragmentRenderer',
@@ -90,6 +106,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.general.example-result', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.general\.example-result:/,
     modelKey: null,
     rendererKey: 'BpmnExampleResultFragmentRenderer',
@@ -97,6 +114,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.sequence-flow.condition', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.sequence-flow\.condition:/,
     modelKey: null,
     rendererKey: 'BpmnSequenceFlowConditionRenderer',
@@ -104,6 +122,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.conditional-event', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.conditional-event:/,
     modelKey: null,
     rendererKey: 'BpmnConditionalEventRenderer',
@@ -111,6 +130,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.loop-break-condition.payload', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.loop-break-condition:/,
     modelKey: null,
     rendererKey: 'BpmnLoopBreakConditionFragmentRenderer',
@@ -118,6 +138,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.user-task-assignees', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.user-task-assignees:/,
     modelKey: null,
     rendererKey: 'BpmnUserTaskAssigneesRenderer',
@@ -125,6 +146,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.start-event.default-custom-start-token', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.start-event\.default-custom-start-token:/,
     modelKey: null,
     rendererKey: 'BpmnDefaultCustomStartTokenRenderer',
@@ -132,6 +154,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.form-builder', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.form-builder:/,
     modelKey: null,
     rendererKey: 'FormBuilderRenderer',
@@ -139,6 +162,7 @@ export function onLoad(bifrost: Bifrost): void {
     icon: 'bpmn/editor-tab/docs',
   });
   bifrost.editors.registerDocumentType('bpmn.inspector.item', {
+    page: 'design/workspace',
     uriMatch: /^fragment\+bpmn\.inspector\.item:/i,
     modelKey: null,
     rendererKey: 'EditorInspectorItemFragmentRenderer',

@@ -20,6 +20,7 @@ export function loadStartPage(bifrost: Bifrost): void {
   });
 
   bifrost.editors.registerDocumentType('startpage', {
+    page: 'home/welcome',
     uriMatch: /^about:start$/,
     modelKey: null,
     modelConstructor: null,

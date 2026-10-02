@@ -21,7 +21,7 @@
     "@types/node": "^25.9.1"
   },
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "Webview Showcase",
     "description": "Demonstrates iframe-based editor document types with React UI, theming, and two-way messaging.",
     "permissions": [

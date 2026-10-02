@@ -71,6 +71,7 @@ describe('git-cruiser/dmn-diff', () => {
     await studioAgent.pause(2000);
 
     await studioAgent.assertVisible('[data-test--editors--focused-document-type="dmn.diff"]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.navigation.assertActivePage('design/source');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
 
@@ -149,6 +150,7 @@ describe('git-cruiser/dmn-diff', () => {
       '[data-test--editors--focused-document-type="dmn.history-preview"]',
       ASSERT_VISIBLE_TIMEOUT,
     );
+    await studioAgent.navigation.assertActivePage('design/source');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
 

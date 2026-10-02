@@ -12,7 +12,8 @@ export function initializeCommands(bifrost: Bifrost): void {
   });
 
   bifrost.commands.register('plugins.showConsole', () => {
-    bifrost.panes.setActiveGroupInArea('bottom', 'console');
+    bifrost.categories.activatePage('control/plugins');
+    bifrost.panes.setActiveGroupInArea('bottom', 'plugin-console');
     bifrost.panes.showPaneArea('bottom');
   });
 

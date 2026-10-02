@@ -1,4 +1,5 @@
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { isValidPagePattern } from '#bifrost/common/CategoryManager';
 
 import type {
   MenuBarItem,
@@ -21,9 +22,8 @@ type MenuBarItemModifier = {
 };
 
 type MenuBarItemFactoryMap = {
-  left: MenuBarItemFactory[];
-  center: MenuBarItemFactory[];
-  right: MenuBarItemFactory[];
+  header: MenuBarItemFactory[];
+  pageBar: MenuBarItemFactory[];
 };
 
 export class MenuBarManager extends AbstractEmitter implements ISerializable {
@@ -37,28 +37,37 @@ export class MenuBarManager extends AbstractEmitter implements ISerializable {
     this.visible = true;
     this.menuBarItemModifiers = [];
     this.menuBarItems = {
-      left: [],
-      center: [],
-      right: [],
+      header: [],
+      pageBar: [],
     };
     this.serialized = {
       visible: this.visible,
       items: {
-        left: [],
-        center: [],
-        right: [],
+        header: [],
+        pageBar: [],
       },
     };
   }
 
-  registerMenuBarItem(area: MenuBarItemArea, factoryFn: MenuBarItemFactoryFn): { dispose: () => void } {
-    const newItem: MenuBarItemFactory = { factoryFn };
-
-    if (area === 'right') {
-      this.menuBarItems[area].unshift(newItem);
-    } else {
-      this.menuBarItems[area].push(newItem);
+  registerMenuBarItem(
+    area: MenuBarItemArea,
+    factoryFn: MenuBarItemFactoryFn,
+    options?: { pages?: string[] },
+  ): { dispose: () => void } {
+    const pages = options?.pages;
+    for (const pattern of pages ?? []) {
+      if (!isValidPagePattern(pattern)) {
+        throw new Error(`Invalid page '${pattern}'. Expected '<categoryId>/<name>' or '<categoryId>/*'.`);
+      }
     }
+    const newItem: MenuBarItemFactory = {
+      factoryFn:
+        pages == null
+          ? factoryFn
+          : (...factoryFnArgs: any[]) => factoryFn(...factoryFnArgs).map((item) => ({ ...item, pages })),
+    };
+
+    this.menuBarItems[area].push(newItem);
 
     return {
       dispose: () => {
@@ -113,16 +122,21 @@ export class MenuBarManager extends AbstractEmitter implements ISerializable {
 
   updateMenuBarItems(factoryFnArgs: any[]): void {
     const unmodifiedMenuBarItemMap: MenuBarItemMap = {
-      left: this.buildMenuBarItemObjects(this.menuBarItems.left, factoryFnArgs),
-      center: this.buildMenuBarItemObjects(this.menuBarItems.center, factoryFnArgs),
-      right: this.buildMenuBarItemObjects(this.menuBarItems.right, factoryFnArgs),
+      header: this.buildMenuBarItemObjects(this.menuBarItems.header, factoryFnArgs),
+      pageBar: this.buildMenuBarItemObjects(this.menuBarItems.pageBar, factoryFnArgs),
     };
 
     const menuBarItemMap = this.menuBarItemModifiers.reduce(
       (previousValue: MenuBarItemMap, currentValue: MenuBarItemModifier) => {
         const modifierFnArgs: [MenuBarItemMap, ...any[]] = [previousValue, ...factoryFnArgs];
 
-        return currentValue.modifierFn.apply(null, modifierFnArgs);
+        // A failing modifier (e.g. its target item was removed) must not take the whole menu bar down.
+        try {
+          return currentValue.modifierFn.apply(null, modifierFnArgs);
+        } catch (error) {
+          console.error(error);
+          return previousValue;
+        }
       },
       unmodifiedMenuBarItemMap,
     );

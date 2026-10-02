@@ -11,10 +11,11 @@ export interface MenuBarApi {
   /**
    * Register menu bar items in a given area.
    *
-   * @param area - Target area: `'left'`, `'center'`, or `'right'`.
+   * @param area - Target area: `'header'` (the only area plugins can use).
    * @param items - Static array of {@link MenuBarItem} POJOs.
+   * @param options - `pages` limits the items to the listed workbench pages, as page IDs (`design/workspace`) or category wildcards (`design/*`). Default: every page.
    */
-  registerMenuBarItem(area: MenuBarItemArea, items: MenuBarItem[]): Promise<void>;
+  registerMenuBarItem(area: MenuBarItemArea, items: MenuBarItem[], options?: { pages?: string[] }): Promise<void>;
 
   /**
    * Register a menu bar item modifier using a declarative config.

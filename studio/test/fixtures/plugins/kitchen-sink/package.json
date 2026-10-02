@@ -12,7 +12,7 @@
   ],
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "Kitchen Sink",
     "description": "Exercises every Plugin API feature for manual and automated testing.",
     "permissions": [

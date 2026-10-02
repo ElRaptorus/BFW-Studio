@@ -10,7 +10,7 @@ import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 import type { FlowNodeInstance, RetryRequest, TimerSchedule } from '@elraptorus/bfw_engine_sdk';
 import { FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
-import { ABORTABLE_STATES, RETRYABLE_STATES, TERMINAL_STATES } from '../constants/sharedResourceKeys';
+import { ABORTABLE_STATES, DELETABLE_STATES, RETRYABLE_STATES } from '../constants/sharedResourceKeys';
 import type { DashboardDocumentModel } from '../models/DashboardDocumentModel';
 import type { DecisionCatalogDocumentModel } from '../models/DecisionCatalogDocumentModel';
 import type { InstanceSearchDocumentModel } from '../models/InstanceSearchDocumentModel';
@@ -212,6 +212,29 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       bifrost.editors.focusOrOpenEditorDocument(`engine-model://${engineId}/${processModelId}`, processModelId);
     },
     { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
+  bifrost.commands.register(
+    'engine.workspace.openLocalSource',
+    async (kind: 'process' | 'decision', id: string) => {
+      const uri = (await bifrost.commands.executeCommand(
+        kind === 'process' ? 'solution.models.findProcessFile' : 'solution.models.findDecisionFile',
+        [id],
+      )) as string | null;
+      if (uri == null) {
+        bifrost.notifications.open({
+          type: 'info',
+          content: `No file in the open solution defines ${kind} '${id}'.`,
+          source: 'Engine',
+        });
+        return;
+      }
+      bifrost.editors.focusOrOpenEditorDocument(uri);
+    },
+    {
+      enabledWhen: (_kind: string, id: unknown) =>
+        bifrost.solution.getSolution() != null && typeof id === 'string' && id !== '',
+    },
   );
 
   bifrost.commands.register(
@@ -550,7 +573,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     'engine.workspace.instanceSearch.deleteSelected',
     async (model: InstanceSearchDocumentModel) => {
       const selected = model.getSelectedInstances();
-      const deletable = selected.filter((inst) => TERMINAL_STATES.has(inst.state));
+      const deletable = selected.filter((inst) => DELETABLE_STATES.has(inst.state));
 
       if (deletable.length === 0) {
         return;
@@ -580,7 +603,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     },
     {
       enabledWhen: (model: InstanceSearchDocumentModel) =>
-        model?.getSelectedInstances().some((inst) => TERMINAL_STATES.has(inst.state)) ?? false,
+        model?.getSelectedInstances().some((inst) => DELETABLE_STATES.has(inst.state)) ?? false,
     },
   );
 

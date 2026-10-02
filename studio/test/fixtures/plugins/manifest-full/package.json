@@ -6,7 +6,7 @@
   "author": "Bifrost Forge World Tests",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "Manifest Full",
     "description": "Exercises the complete set of manifest contributions.",
     "permissions": [
@@ -77,6 +77,15 @@
           "visibleWhen": {
             "documentType": "bpmn"
           }
+        }
+      ],
+      "editorDocumentTypes": [
+        {
+          "id": "manifestFull.notes",
+          "displayName": "Manifest Full Notes",
+          "icon": "ph-note",
+          "uriPattern": "\\.mfnotes$",
+          "page": "design/workspace"
         }
       ],
       "serviceTaskTypes": [

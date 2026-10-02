@@ -18,7 +18,7 @@ import type { PluginPermission } from '../PluginPermission';
  * ```json
  * {
  *   "bifrostStudio": {
- *     "apiVersion": "1.0.0",
+ *     "apiVersion": "2.0.0",
  *     "activationEvents": ["onStartup"],
  *     "contributes": {
  *       "commands": [{ "id": "hello", "title": "Say Hello" }]
@@ -63,8 +63,6 @@ export interface ManifestContributions {
   icons?: Record<string, string>;
   /** Pane contributions that add webview-backed panels to the Studio layout. */
   panes?: ManifestPaneContribution[];
-  /** Pane toggle buttons added to the menu bar for left-area pane access. */
-  paneToggles?: ManifestPaneToggle[];
   /** Service task type registrations for BPMN service task handlers. */
   serviceTaskTypes?: ManifestServiceTaskType[];
   /** CSS theme contributions with custom property overrides. */
@@ -184,24 +182,8 @@ export interface ManifestPaneContribution {
     /** Only show when this boolean setting is truthy. */
     setting?: string;
   };
-}
-
-/** A menu bar toggle button that controls a pane's visibility. */
-export interface ManifestPaneToggle {
-  /** Unique identifier for the toggle (used as the menu bar item ID). */
-  id: string;
-  /** Icon identifier for the toggle button. */
-  icon: string;
-  /** Tooltip text displayed on hover. */
-  tooltip: string;
-  /** The pane area this toggle controls. */
-  paneAreaId: 'left' | 'right' | 'bottom';
-  /** The pane ID to select when clicked. */
-  paneId: string;
-  /** Insert after the menu bar item with this ID. Mutually exclusive with `insertBefore`. */
-  insertAfter?: string;
-  /** Insert before the menu bar item with this ID. Mutually exclusive with `insertAfter`. */
-  insertBefore?: string;
+  /** Workbench pages the pane appears on. Required for `left` panes; `right` and `bottom` default to every page. */
+  pages?: string[];
 }
 
 /** A BPMN service task type registration. */
@@ -343,6 +325,8 @@ export interface ManifestEditorDocumentType {
   icon: string;
   /** Regex source string (e.g. `"\\.md$"`) matched against document URIs to determine applicability. */
   uriPattern: string;
+  /** Workbench page the documents open on (`<categoryId>/<name>`), or `"active"` for the current page. */
+  page: string;
   /**
    * File glob patterns to register as "known" (non-hidden) files in the File Explorer,
    * effective immediately at discovery time — before the plugin has activated.

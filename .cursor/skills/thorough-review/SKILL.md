@@ -44,14 +44,15 @@ cd studio && npx tsc --noEmit -p tsconfig.electron-renderer.json && npx tsc --no
 
 Must exit 0 with no type errors.
 
-## 3. Integration Tests
+## 3. Tests
 
 ```bash
-cd studio && npm run test:integration:electron:insiders
-cd studio && npm run test:integration:electron:stable
+cd studio && npm run test:unit
 ```
 
-All tests must pass. If tests fail, report the failure with test name, file, and error summary.
+Unit tests must pass.
+
+**Integration tests open Electron windows. Ask the user before running them** (see `.cursor/rules/studio-testing.mdc`). Name the scripts you want to run (e.g. `npm run test:integration:core`) and wait for an explicit yes. Requesting a thorough review is not permission. If the user declines, report integration tests as "not run — awaiting user approval". If they run, all tests must pass; report each failure with test name, file, and error summary.
 
 ## 4. Architecture Documentation
 

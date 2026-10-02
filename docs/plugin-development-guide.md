@@ -130,7 +130,7 @@ Example:
   "name": "my-plugin",
   "main": "dist/index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "My Plugin",
     "activationEvents": ["onStartup"],
     "permissions": ["filesystem", "commands.std"],
@@ -149,7 +149,7 @@ CI can skip the dialog with `BFW_SKIP_PERMISSION_DIALOG=1`.
 
 Command IDs in the manifest are local (`hello`); the public ID is `plugin.<name>.hello`. The manifest registers a **stub** that only triggers activation. Your real handler exists only after `api.commands.register` in `activate()`.
 
-`contributes.editorDocumentTypes` is a **placeholder**. You must call `api.editors.registerWebviewDocumentType({ id: <same id>, … })` in `activate()` or the tab stays on “Plugin activated but did not register an editor”.
+`contributes.editorDocumentTypes` is a **placeholder**. You must call `api.editors.registerWebviewDocumentType({ id: <same id>, … })` in `activate()` or the tab stays on “Plugin activated but did not register an editor”. Since API 2.0.0 both the manifest entry and the call carry `page` (`<category>/<name>` such as `design/workspace`, or `active`), and left panes carry `pages`; see [architecture/workbench-categories.md](architecture/workbench-categories.md).
 
 Schema, contribution keys, and cleanup: [architecture/plugin-manifest.md](architecture/plugin-manifest.md).
 

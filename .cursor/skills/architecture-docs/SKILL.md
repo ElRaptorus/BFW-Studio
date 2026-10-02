@@ -181,7 +181,8 @@ Use this table to determine **which file to update** based on what you changed o
 | FEEL widgets, FeelSimulator, `bpmn.feel.getExpressionContext` | `feel-editor.md` |
 | BPMN modeler modules, `registerModule`, diagram-js services | `bpmn-modeler-modules.md` |
 | Token simulator, simulation behaviors, overlays | `bpmn-token-simulator.md` |
-| Workbench layout, split bars, pane areas, menu bar | `workbench-layout.md` |
+| Workbench layout, split bars, pane areas, header menu bar, layout toggles, left tab strip | `workbench-layout.md` |
+| Categories, pages, header chrome order, category shortcuts, View › Go to | `workbench-categories.md` |
 | PaneProvider contract, `shouldBeDisplayed` vs renderer, pane registration | `panes.md` |
 | BPMN property pane inventory, element access, command handlers | `bpmn-editor-properties.md` |
 | BPMN linter, scores, Findings pane | `bpmn-linter.md` |

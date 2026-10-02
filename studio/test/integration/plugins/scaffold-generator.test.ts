@@ -90,7 +90,7 @@ describe('create-bfw-plugin scaffold generator', () => {
       assert.strictEqual(pkg.name, 'manifest-check');
       assert.strictEqual(pkg.displayName, 'Manifest Check');
       assert.ok(pkg.bifrostStudio);
-      assert.strictEqual(pkg.bifrostStudio.apiVersion, '1.0.0');
+      assert.strictEqual(pkg.bifrostStudio.apiVersion, '2.0.0');
       assert.ok(Array.isArray(pkg.bifrostStudio.activationEvents));
       assert.ok(pkg.bifrostStudio.contributes.commands.length > 0);
     });

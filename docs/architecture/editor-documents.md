@@ -21,6 +21,10 @@ Every opened tab in the editor area is an `EditorDocument`. Documents that need 
 
 ---
 
+## Pages
+
+Every document type declares `page` (`<categoryId>/<name>` or `'active'`). `EditorMediator` owns one `EditorAreaManager` per page, created lazily. A page's `defaultDocumentUri` opens when the page is activated without documents, and its `editorTabsVisible: false` hides the tab strip while the page holds at most one document. Routing rules R1–R5, the default document and the v2 session format: [workbench-categories.md](workbench-categories.md).
+
 ## Document Type Registration
 
 Modules register document types in their `onLoad` entry point via `bifrost.editors.registerDocumentType`:

@@ -270,8 +270,8 @@ The `engine.configuredDeleteProcessInstance` command shows a confirmation dialog
 
 **Consumers:**
 - **Debugger** — not wired; delete is a housekeeping action and belongs in the instance list only
-- **Instance Search (single)** — `engine.workspace.instanceSearch.deleteSingle` delegates to `configuredDeleteProcessInstance` (context menu, shown only for terminal instances)
-- **Instance Search (bulk)** — `engine.workspace.instanceSearch.deleteSelected` pre-filters to terminal instances, shows a bulk confirmation dialog, then loops `engine.deleteProcessInstance` per instance with per-call error handling and a summary notification
+- **Instance Search (single)** — `engine.workspace.instanceSearch.deleteSingle` delegates to `configuredDeleteProcessInstance` (context menu, shown only for instances the Engine can delete: `DELETABLE_STATES` = finished, fatal, aborted, error, escalated, compensated)
+- **Instance Search (bulk)** — `engine.workspace.instanceSearch.deleteSelected` pre-filters to `DELETABLE_STATES`, shows a bulk confirmation dialog, then loops `engine.deleteProcessInstance` per instance with per-call error handling and a summary notification
 
 ### Debugger Event Trigger Commands
 
@@ -317,11 +317,15 @@ Workspace commands that change Engine state follow three layers:
 
 Instance Search follows the same split with engine-core commands as the canonical layer: `instanceSearch.abortSingle` / `retrySingle` / `deleteSingle` delegate to the `configured*` commands, and the `*Selected` wrappers loop the raw commands and report through `reportBulkOutcome`.
 
-### Engine-Workspace Commands (Run Menu & Menubar)
+#### Open in Design
+
+`engine.workspace.openLocalSource(kind: 'process' | 'decision', id)` (in `engine-workspace/initializers/initializeCommands.ts`) resolves the id to a file of the open solution through `solution.models.findProcessFile` / `solution.models.findDecisionFile` and opens it with `focusOrOpenEditorDocument`; routing rule R1 then activates the Design page. A decision id is the DMN `<definitions id>`, which is what the Engine stores as `decision_definition_id`. With no match it shows an info notification (source `Engine`). `enabledWhen` requires an open solution and a non-empty id, so the button is disabled while a viewer has no id yet. The model viewer, decision viewer and debugger toolbars carry an "Open in Design" button (`ph-pencil-simple`) after Download that runs it.
+
+### Engine-Workspace Commands (Run Menu & Header)
 
 **Path:** `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts`
 
-These commands are registered by `engine-workspace` and orchestrate deploy+start workflows, menubar interactions, and multi-engine state.
+These commands are registered by `engine-workspace` and orchestrate deploy+start workflows, header interactions, and multi-engine state.
 
 | Command | Purpose |
 |---------|---------|
@@ -338,22 +342,26 @@ These commands are registered by `engine-workspace` and orchestrate deploy+start
 
 **Shared deploy pipeline:** The four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) all call the shared `deployFocusedBpmnFile()` helper which encapsulates: file read → `engine.ensureProcessVersions` → deploy with `engine.resolveVersionConflicts` retry loop (max 3). Each command only differs in its post-deploy action. DMN deploy logic is handled inline in `deployCurrentProcess` and `deployAndOpenCurrentProcess` only (no version checks or conflict resolution for DMN).
 
-### Menubar Structure
+### Engine Cluster (Header)
 
-The engine menubar (center area) contains:
+**Path:** `studio/src/modules/engine-workspace/initializers/engineHeaderItems.ts`
 
-1. **Open Engine Dashboard** button — gauge icon, visible only when active engine is connected
-2. **Play** button — Shift+Click enabled. Tooltip dynamically adapts to focused document type (local BPMN vs. model viewer)
-3. **Deploy** button — Shift+Click enabled (Shift = deploy & open). Only visible when a deployable document is focused
-4. **Engine Selector** dropdown (`MenuBarItem_Select`) — lists all connected/recent engines with `[OFFLINE]` prefix for disconnected ones. Falls back to a "(No engine)" text label when no engines exist
+The pure builder `buildEngineHeaderItems({ activeEngineId, state, engines, deployEnabled, isViewingModelViewer })` returns the Engine cluster for the `header` menu bar area. `initializeRunMenu.ts` appends its result in a menu bar modifier. Every item carries `pages: ['design/*', 'deploy/*', 'debug/*']` (`ENGINE_HEADER_PAGES`). Order:
 
-The menubar subscribes to `engine:list-changed`, `engine:state-changed`, `engine:disconnected`, `engine:connected`, and `engine:reconnected` events to trigger automatic rebuilds when engine state changes.
+1. **Status icon** `engine-menubar/engine-status` — `ph-fill ph-circle engine-header-status engine-header-status--<state>`; colours in `engine-workspace.scss` from core tokens (connected = success, connecting/reconnecting = orange, error = error, disconnected = muted)
+2. **Engine selector** `engine-menubar/engine-select` (`MenuBarItem_Select`) — lists all connected/recent engines with `[OFFLINE]` prefix for disconnected ones, max width with ellipsis. Falls back to the text `engine-menubar/engine-name` "No engine" when no engines exist
+3. **Connection menu** `engine-menubar/connection` — opens the menu `engine/header/connection` (`initializeMenus.ts`): Connect… (`engine.connectWithDialog`), Disconnect (`engine.disconnect` with the active engine id, visible only while connected), Manage Engines (`std.workbench.toggleLeftPaneAreaItem` with `pane/left/engines`, which switches to `debug/engines` through cross-page pane activation)
+4. **Open Engine Dashboard** `engine-menubar/open-engine` — gauge icon, visible only when the active engine is connected
+5. **Deploy** `engine-menubar/deploy` — Shift+Click = deploy & open. Only visible when a deployable document is focused
+6. **Play** `engine-menubar/play` — Shift+Click = configured start. Tooltip adapts to the focused document type (local BPMN vs. model viewer)
+
+The header rebuilds on `engine:list-changed`, `engine:state-changed`, `engine:disconnected`, `engine:connected`, and `engine:reconnected`.
 
 ### File Explorer deploy menus
 
 **Path:** `studio/src/modules/engine-workspace/initializers/initializeMenus.ts`
 
-`engine-workspace` registers modifiers on the File Explorer context menus. Visibility uses the same rule as the menubar Deploy button: the **active engine is connected** (`getActiveEngineId()` + `isConnected`). JWT `deploy_bpmn` / `deploy_dmn` claims are **not** required to show the item — local engines often have no token, and the menubar already offers deploy in that case. The engine still enforces claims on the actual deploy call.
+`engine-workspace` registers modifiers on the File Explorer context menus. Visibility uses the same rule as the header Deploy button: the **active engine is connected** (`getActiveEngineId()` + `isConnected`). JWT `deploy_bpmn` / `deploy_dmn` claims are **not** required to show the item — local engines often have no token, and the header already offers deploy in that case. The engine still enforces claims on the actual deploy call.
 
 | Menu | Id | Label | Placement |
 |------|----|-------|-----------|
@@ -365,7 +373,7 @@ The menubar subscribes to `engine:list-changed`, `engine:state-changed`, `engine
 
 File-menu order when both linter and deploy apply: New File group → **Deploy to Engine** → **Lint File** + Compare to → copy/rename/delete.
 
-The context menu is rebuilt on every right-click (`getMenu`); no menubar-style event subscription is needed.
+The context menu is rebuilt on every right-click (`getMenu`); no header-style event subscription is needed.
 
 ### Configured Start Dialog
 
@@ -648,7 +656,7 @@ The debugger visualises Multi-Instance (parallel/sequential) and Standard Loop e
 | Command Contract | `studio/src/modules/engine-core/commands/CommandContract.ts` |
 | engine-core entry | `studio/src/modules/engine-core/index.ts` |
 | engine-workspace entry | `studio/src/modules/engine-workspace/index.ts` |
-| engine-workspace menubar | `studio/src/modules/engine-workspace/initializers/initializeRunMenu.ts` |
+| engine-workspace header cluster | `studio/src/modules/engine-workspace/initializers/engineHeaderItems.ts`, `initializeRunMenu.ts` |
 | engine-workspace explorer menus | `studio/src/modules/engine-workspace/initializers/initializeMenus.ts` |
 | engine-model-viewer entry | `studio/src/modules/engine-model-viewer/index.ts` |
 | engine-decision-viewer entry | `studio/src/modules/engine-decision-viewer/index.ts` |

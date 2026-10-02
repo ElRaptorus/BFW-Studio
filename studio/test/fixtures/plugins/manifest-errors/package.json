@@ -7,6 +7,30 @@
   "main": "index.js",
   "bifrostStudio": {
     "contributes": {
+      "panes": [
+        {
+          "id": "leftWithoutPages",
+          "title": "Left pane without pages",
+          "area": "left"
+        }
+      ],
+      "editorDocumentTypes": [
+        {
+          "id": "withoutPage",
+          "displayName": "No Page",
+          "icon": "ph ph-warning",
+          "uriPattern": "\\.nopage$"
+        }
+      ],
+      "paneToggles": [
+        {
+          "id": "removedToggle",
+          "icon": "ph ph-warning",
+          "tooltip": "Removed",
+          "paneAreaId": "left",
+          "paneId": "leftWithoutPages"
+        }
+      ],
       "commands": [
         {
           "title": "Missing ID command"

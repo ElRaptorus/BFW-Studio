@@ -25,7 +25,7 @@ It exercises the following APIs:
 
 ## Lazy activation via `contributes.editorDocumentTypes`
 
-This plugin does **not** declare `activationEvents` and is not loaded at Studio boot. Instead, `package.json`'s `bifrostStudio.contributes.editorDocumentTypes` declares both document types (`id`, `displayName`, `icon`, `uriPattern`, `includedFilePatterns`) statically. The Studio registers a lightweight **placeholder** editor document type for each entry at plugin-discovery time — before this plugin's code has ever run — which is enough to:
+This plugin does **not** declare `activationEvents` and is not loaded at Studio boot. Instead, `package.json`'s `bifrostStudio.contributes.editorDocumentTypes` declares both document types (`id`, `displayName`, `icon`, `uriPattern`, `page`, `includedFilePatterns`) statically. The Studio registers a lightweight **placeholder** editor document type for each entry at plugin-discovery time — before this plugin's code has ever run — which is enough to:
 
 - make `.md`/`.mdx`/`.mdc`/`.markdown`/`.mdown`/`.mkd`/`.mkdn`/`.json` files visible in the File Explorer immediately (no "Show hidden files" needed), and
 - let a user open one of those files, which shows a brief "Activating plugin…" tab, triggers this plugin's real activation (including the permission dialog, since it declares `filesystem`), and then automatically swaps in the real CodeMirror editor once `activate()` calls `api.editors.registerWebviewDocumentType()`.

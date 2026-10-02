@@ -16,8 +16,6 @@ export function menuBarItemKey(item: MenuBarItem): string {
       return `select:${item.command}:${item.tooltip ?? ''}`;
     case 'text':
       return `text:${item.label}:${item.tooltip ?? ''}`;
-    case 'pane_content_toggle':
-      return `toggle:${item.paneId}:${item.icon}`;
     case 'divider':
       return 'divider:plain';
     default:

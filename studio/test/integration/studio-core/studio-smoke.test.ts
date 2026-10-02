@@ -22,8 +22,8 @@ describe('studio/smoke', () => {
     currentContext = { testName: 'setup', testFile: __filename };
     studioAgent = await createAndStartStudioAgent(currentContext);
     await studioAgent.executeCommand('std.workbench.showPanels');
+    // The right area only shows while a focused document has right panes; the property pane test opens one.
     await studioAgent.assertVisible('.app-layout__panes-left', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.assertVisible('.app-layout__panes-right', ASSERT_VISIBLE_TIMEOUT);
   });
 
   beforeEach(({ task }) => {
@@ -46,17 +46,18 @@ describe('studio/smoke', () => {
     await studioAgent.assertVisible('[data-test--editors--focused-document-type=aboutpage]', ASSERT_VISIBLE_TIMEOUT);
   });
 
-  it('smoke/pane-content: should switch between different panes via left menubar', async () => {
+  it('smoke/pane-content: should switch between the Explorer and Search tabs of the left tab strip', async () => {
     await studioAgent.sendKeyboardInput([FOCUS_SEARCH]);
-    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/search');
+    await studioAgent.navigation.assertActivePage('design/workspace');
+    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/search');
 
-    await studioAgent.leftMenuBar.togglePane('pane/left/explorer');
-    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/explorer');
+    await studioAgent.navigation.showLeftPane('pane/left/explorer');
+    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/explorer');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
 
     await studioAgent.sendKeyboardInput([FOCUS_SEARCH]);
-    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/search');
+    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/search');
 
     await studioAgent.sendKeyboardInput('how to deploy'.split('').concat(['space', '?', '?']));
 
@@ -122,7 +123,10 @@ describe('studio/smoke', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('smoke/workbench: should toggle the property pane from the right-side pane toggle button', async () => {
+  it('smoke/workbench: should toggle the property pane from the right-side layout toggle in the header', async () => {
+    await studioAgent.navigation.activatePage('design/workspace');
+    await studioAgent.openFileFromFixturesDirectory('test-solution-bpmn', 'definition.bpmn');
+    await studioAgent.assertVisible('.app-layout__panes-right', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertVisible(PROPERTY_PANEL_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel');
     await studioAgent.pause(500);
@@ -136,9 +140,9 @@ describe('studio/smoke', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('smoke/workbench: should toggle the sidebar from the left-side pane toggle button', async () => {
-    await studioAgent.leftMenuBar.togglePane('pane/left/explorer');
-    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/explorer');
+  it('smoke/workbench: should toggle the sidebar from the left-side layout toggle in the header', async () => {
+    await studioAgent.navigation.showLeftPane('pane/left/explorer');
+    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/explorer');
 
     await studioAgent.assertVisible(SIDEBAR_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOnMenubarButtonForCommand('std.workbench.toggleSidebar');
@@ -149,7 +153,23 @@ describe('studio/smoke', () => {
 
     await studioAgent.clickOnMenubarButtonForCommand('std.workbench.toggleSidebar');
     await studioAgent.assertVisible('.app-layout__panes-left', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/explorer');
+    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/explorer');
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('smoke/workbench: should switch categories with the go-to shortcuts and hide layout toggles without pane areas', async () => {
+    await studioAgent.executeCommand('std.workbench.goToHome');
+    await studioAgent.navigation.assertActivePage('home/welcome');
+    await studioAgent.assertNotVisible(SIDEBAR_TOGGLE);
+    await studioAgent.assertNotVisible(PROPERTY_PANEL_TOGGLE);
+
+    await studioAgent.executeCommand('std.workbench.goToDesign');
+    await studioAgent.navigation.assertActivePage('design/workspace');
+    await studioAgent.assertVisible(SIDEBAR_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.executeCommand('std.workbench.goToControl');
+    await studioAgent.navigation.assertActiveCategory('control');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

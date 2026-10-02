@@ -8,6 +8,8 @@ import * as path from 'path';
 
 import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
+import { buildEngineHeaderItems } from './engineHeaderItems';
+
 const DEPLOYABLE_EXTENSIONS = ['.bpmn', '.dmn'];
 
 function isFocusedDocumentDeployable(bifrost: Bifrost): boolean {
@@ -51,14 +53,6 @@ function isStartEnabled(bifrost: Bifrost, connectionManager: EngineConnectionMan
 function extractProcessModelIdFromModelViewerUri(uri: string): string | null {
   const match = uri.match(/^engine-model:\/\/[^/]+\/(.+)$/);
   return match?.[1] ?? null;
-}
-
-function formatEngineLabel(connection: { displayName: string | null; url: string; state?: string }): string {
-  const name = connection.displayName ?? connection.url;
-  if (connection.state && connection.state !== 'connected') {
-    return `[OFFLINE] ${name}`;
-  }
-  return name;
 }
 
 interface BpmnDeployResult {
@@ -667,65 +661,17 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
 
   bifrost.menuBar.registerMenuBarItemModifier((menuBarItems: MenuBarItemMap) => {
     const activeEngineId = connectionManager.getActiveEngineId();
-    const connection = activeEngineId ? connectionManager.getConnection(activeEngineId) : null;
-    const allEngines = connectionManager.getAllEngines();
-    const focusedDoc = bifrost.editors.getFocusedEditorDocument();
-    const isViewingModelViewer = focusedDoc?.documentType === 'engine-model-viewer';
+    const activeConnection = activeEngineId ? connectionManager.getConnection(activeEngineId) : null;
 
-    const playTooltip = isViewingModelViewer
-      ? 'Start Current Process in Debugger\n[Shift+Click] Configured Start'
-      : 'Quick Deploy & Start in Debugger (F5)\n[Shift+Click] Configured Start';
+    const engineHeaderItems = buildEngineHeaderItems({
+      activeEngineId,
+      state: activeConnection?.state ?? 'disconnected',
+      engines: connectionManager.getAllEngines(),
+      deployEnabled: isDeployEnabled(bifrost, connectionManager),
+      isViewingModelViewer: isFocusedDocumentModelViewer(bifrost),
+    });
 
-    const centerItems = menuBarItems.center ?? [];
-    centerItems.push(
-      {
-        type: 'button',
-        id: 'engine-menubar/open-engine',
-        icon: 'ph-duotone ph-gauge',
-        tooltip: 'Open Engine Dashboard',
-        command: 'engine.workspace.openDashboard',
-        commandArgs: activeEngineId ? [activeEngineId] : [],
-        visible: activeEngineId != null && connectionManager.isConnected(activeEngineId),
-      },
-      {
-        type: 'button',
-        id: 'engine-menubar/play',
-        icon: 'ph-fill ph-play',
-        tooltip: playTooltip,
-        command: 'engine.menubar.playButton',
-      },
-      {
-        type: 'button',
-        id: 'engine-menubar/deploy',
-        icon: 'ph ph-paper-plane-tilt',
-        tooltip: 'Deploy Current Process (F3)\n[Shift+Click] Deploy & Open',
-        visible: isDeployEnabled(bifrost, connectionManager),
-        command: 'engine.menubar.deployButton',
-      },
-    );
-
-    if (allEngines.length > 0) {
-      centerItems.push({
-        type: 'select',
-        id: 'engine-menubar/engine-select',
-        command: 'engine.menubar.setActiveEngine',
-        value: activeEngineId ?? '',
-        entries: allEngines.map((engine) => ({
-          label: formatEngineLabel(engine),
-          value: engine.engineId,
-        })),
-        tooltip: connection?.url ?? 'Select an engine',
-      });
-    } else {
-      centerItems.push({
-        type: 'text',
-        id: 'engine-menubar/engine-name',
-        label: 'No engine',
-        tooltip: 'Connect an engine to get started',
-      });
-    }
-
-    return { ...menuBarItems, center: centerItems };
+    return { ...menuBarItems, header: [...menuBarItems.header, ...engineHeaderItems] };
   });
 
   // ─── Engine event subscriptions for menubar refresh ───────────────

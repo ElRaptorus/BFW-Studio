@@ -114,6 +114,11 @@ export interface RegisterWebviewDocumentTypeOptions {
   icon: string;
   /** URI pattern that determines which documents this type handles (e.g. `"*.myext"`). */
   uriPattern: string;
+  /**
+   * Workbench page the documents open on, as `<categoryId>/<name>` (for example `design/workspace`),
+   * or `"active"` to open them on whichever page is current.
+   */
+  page: string;
   /** Webview configuration for the editor surface. */
   webviewOptions: WebviewDocumentTypeWebviewOptions;
   /**
@@ -223,6 +228,8 @@ export interface RegisterWebviewPaneOptions {
   groupId?: string;
   /** Icon identifier for the pane's tab. */
   icon?: string;
+  /** Workbench pages the pane appears on. Required for `left` panes; `right` and `bottom` default to every page. */
+  pages?: string[];
   /** Webview configuration for the pane content. */
   webviewOptions: WebviewPaneWebviewOptions;
 }
@@ -442,6 +449,8 @@ export interface TreeViewOptions {
   groupId?: string;
   /** Icon identifier for the pane's tab. */
   icon?: string;
+  /** Workbench pages the tree view appears on. Required for `left` tree views. */
+  pages?: string[];
 }
 
 // ─── Theme types ────────────────────────────────────────────────

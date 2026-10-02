@@ -5,7 +5,7 @@
   "description": "Fixture plugin with 'bpmn.renderer' — tests full hierarchy (implies bpmn.modelling implies bpmn).",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "BPMN Permission High",
     "permissions": [
       "bpmn.renderer"

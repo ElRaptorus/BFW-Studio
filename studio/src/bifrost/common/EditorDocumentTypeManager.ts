@@ -15,6 +15,11 @@ export type EditorDocumentTypeDefinitionWithoutName = {
    */
   uriMatch: RegExp;
   /**
+   * the workbench page documents of this type open on (for example `design/workspace`),
+   * or `'active'` to open on whichever page is currently active
+   */
+  page: string;
+  /**
    * the icon id for the editor document type
    */
   icon: string;

@@ -42,7 +42,7 @@ export function getPaneTitle(
   editorDocumentModel: EditorDocumentModel,
   studio: Bifrost,
 ): string {
-  const editors = Bifrost.cast(studio).editors.getOpenEditors();
+  const editors = getEditorsOfActivePage(Bifrost.cast(studio));
 
   const totalEditorDocuments = editors.reduce((acc, editor) => {
     return acc + editor.editorDocuments.length;
@@ -51,13 +51,21 @@ export function getPaneTitle(
   return `Open Editors (${totalEditorDocuments})`;
 }
 
+/** Open Editors is a page-local list (rule R5): it never shows or closes documents of other pages. */
+function getEditorsOfActivePage(bifrost: Bifrost): EditorAreaLayout_Editor[] {
+  const pageId = bifrost.categories.getActivePageId();
+  return pageId == null ? [] : bifrost.editors.getOpenEditorsOfPage(pageId);
+}
+
 export function PaneTabOptions(props: PaneComponentProps): React.JSX.Element | null {
-  return !props.collapsed && Bifrost.cast(props.studio).editors.getOpenEditors().length > 0 ? (
+  const editors = getEditorsOfActivePage(Bifrost.cast(props.studio));
+  return !props.collapsed && editors.length > 0 ? (
     <>
       <PaneHeaderIcon
         studio={props.studio}
         icon="ph ph-x-square"
-        command="std.editor.closeAllEditorDocuments"
+        command="std.editor.closeAllEditorDocumentsInTabGroup"
+        commandArgs={[editors.flatMap((editor) => editor.editorDocuments)]}
         tooltip="Close all editors"
       />
     </>
@@ -72,7 +80,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   const solutionEntry = JSON.parse(JSON.stringify(fileExplorerViewData.solution));
 
-  const editors = bifrost.editors.getOpenEditors();
+  const editors = getEditorsOfActivePage(bifrost);
   const openEditorEntries = getOpenEditorEntries(bifrost, editors);
 
   if (solutionEntry != null) {

@@ -7,12 +7,22 @@ import { initializePanes } from './initializers/initializePanes';
 import { initializeSettings } from './initializers/initializeSettings';
 
 export function onLoad(bifrost: Bifrost): void {
+  bifrost.icons.registerIcons({ 'std/page/plugins': 'ph ph-puzzle-piece' });
+  bifrost.categories.registerPage({
+    id: 'control/plugins',
+    categoryId: 'control',
+    label: 'Plugins',
+    icon: 'std/page/plugins',
+    order: 0,
+  });
+
   bifrost.icons.registerIcons({
     'plugins/left-pane-icon': 'ph-bold ph-puzzle-piece',
     'plugins/readme/document-type': 'ph ph-book-open',
   });
 
   bifrost.editors.registerDocumentType('plugin-readme', {
+    page: 'control/plugins',
     uriMatch: /^about:plugin-readme\//,
     modelKey: null,
     modelConstructor: null,

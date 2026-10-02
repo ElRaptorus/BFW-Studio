@@ -33,8 +33,12 @@ export class MenuBarMediator extends AbstractEmitter {
     editorsPanesSettingsSolutionEventMediator.on(EVENT_CONTENT_UPDATE, () => this.updateMenuBarItems());
   }
 
-  registerMenuBarItem(area: MenuBarItemArea, factoryFn: MenuBarItemFactoryFn): { dispose: () => void } {
-    return this.menuBarManager.registerMenuBarItem(area, factoryFn);
+  registerMenuBarItem(
+    area: MenuBarItemArea,
+    factoryFn: MenuBarItemFactoryFn,
+    options?: { pages?: string[] },
+  ): { dispose: () => void } {
+    return this.menuBarManager.registerMenuBarItem(area, factoryFn, options);
   }
 
   registerMenuBarItemModifier(factoryFn: MenuBarItemModifierFn): { dispose: () => void } {

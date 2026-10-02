@@ -7,7 +7,7 @@ import * as path from 'path';
 
 import type { Menu, MenuItem_Command } from '@elraptorus/bfw_studio_sdk';
 
-import { RETRYABLE_STATES, TERMINAL_STATES } from '../constants/sharedResourceKeys';
+import { DELETABLE_STATES, RETRYABLE_STATES } from '../constants/sharedResourceKeys';
 import type { DecisionCatalogContextMetadata } from '../types/DecisionCatalogContext';
 import type { InstanceSearchContextMetadata } from '../types/InstanceSearchContext';
 import type { ProcessExplorerContextMetadata } from '../types/ProcessExplorerContext';
@@ -73,6 +73,34 @@ const FILTERABLE_COLUMN_LABELS: Record<string, string> = {
 };
 
 export default function initializeMenus(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
+  bifrost.menus.registerMenu('engine/header/connection', (): Menu => {
+    const activeEngineId = connectionManager.getActiveEngineId();
+    return [
+      {
+        type: 'command',
+        label: 'Connect...',
+        id: 'engine/header/connection/connect',
+        command: 'engine.connectWithDialog',
+      },
+      {
+        type: 'command',
+        label: 'Disconnect',
+        id: 'engine/header/connection/disconnect',
+        command: 'engine.disconnect',
+        commandArgs: activeEngineId != null ? [activeEngineId] : [],
+        visible: activeEngineId != null && connectionManager.isConnected(activeEngineId),
+      },
+      { type: 'divider' },
+      {
+        type: 'command',
+        label: 'Manage Engines',
+        id: 'engine/header/connection/manage-engines',
+        command: 'std.workbench.toggleLeftPaneAreaItem',
+        commandArgs: ['pane/left/engines'],
+      },
+    ];
+  });
+
   bifrost.commands.register('engine.workspace.deploySelectedFiles', async (uris: string[]) => {
     const activeEngineId = connectionManager.getActiveEngineId();
     if (!activeEngineId) {
@@ -577,7 +605,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
       const { engineId, instance, columnId, cellValue } = metadata;
       const isRetryable = RETRYABLE_STATES.has(instance.state);
       const isRunning = instance.state === 'running';
-      const isTerminal = TERMINAL_STATES.has(instance.state);
+      const isDeletable = DELETABLE_STATES.has(instance.state);
 
       const filterEntry: Menu =
         columnId && cellValue && FILTERABLE_COLUMN_LABELS[columnId]
@@ -648,7 +676,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
               },
             ]
           : []),
-        ...(isTerminal
+        ...(isDeletable
           ? [
               {
                 type: 'command' as const,

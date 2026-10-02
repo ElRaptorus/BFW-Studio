@@ -41,6 +41,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   initializeKeyBindings(bifrost);
 
   bifrost.editors.registerDocumentType(ENGINE_DEBUGGER_DOCUMENT_TYPE, {
+    page: 'debug/engines',
     uriMatch: DEBUGGER_URI_PATTERN,
     modelKey: 'EngineDebuggerDocumentModel',
     modelConstructor: EngineBpmnDebuggerEditorDocumentModel,
@@ -53,6 +54,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.editors.registerDocumentType(USER_TASK_VIEW_DOCUMENT_TYPE, {
+    page: 'debug/engines',
     uriMatch: USER_TASK_VIEW_URI_PATTERN,
     modelKey: null,
     rendererKey: 'EngineDebuggerUserTaskRenderer',
@@ -61,6 +63,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.editors.registerDocumentType('engine-debugger.json-property', {
+    page: 'debug/engines',
     uriMatch: JSON_PROPERTY_URI_PATTERN,
     modelKey: null,
     rendererKey: 'EngineDebuggerJsonPropertyFragment',
@@ -69,6 +72,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.editors.registerDocumentType('engine-debugger.process-json-property', {
+    page: 'debug/engines',
     uriMatch: /^fragment\+engine-debug\.process-json-property:/i,
     modelKey: null,
     rendererKey: 'EngineDebuggerProcessJsonPropertyFragment',
@@ -77,6 +81,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.editors.registerDocumentType('engine-debugger.docs', {
+    page: 'debug/engines',
     uriMatch: DOCS_FRAGMENT_URI_PATTERN,
     modelKey: null,
     rendererKey: 'EngineDebuggerDocsFragment',
@@ -85,6 +90,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.editors.registerDocumentType('engine-debugger.inspector-item', {
+    page: 'debug/engines',
     uriMatch: INSPECTOR_ITEM_URI_PATTERN,
     modelKey: null,
     rendererKey: 'EngineDebuggerInspectorItemFragment',
@@ -93,6 +99,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.editors.registerDocumentType(DMN_TRACE_DOCUMENT_TYPE, {
+    page: 'debug/engines',
     uriMatch: DMN_TRACE_URI_PATTERN,
     modelKey: 'DmnTraceFragmentModel',
     modelConstructor: DmnTraceFragmentModel,

@@ -133,3 +133,32 @@
   background: var(--theme-engine-ws-status-disabled-bg);
   color: var(--theme-engine-ws-status-disabled-fg);
 }
+
+.engine-header-status {
+  font-size: 0.75rem;
+  color: var(--theme-fg-muted);
+}
+
+.engine-header-status--connected {
+  color: var(--theme-validation-success-fg);
+}
+
+.engine-header-status--connecting,
+.engine-header-status--reconnecting {
+  color: var(--theme-icon-orange);
+}
+
+.engine-header-status--error {
+  color: var(--theme-validation-error-fg);
+}
+
+.engine-header-status--disconnected {
+  color: var(--theme-fg-muted);
+}
+
+.menu-bar__element[data-menu-bar-item-id='engine-menubar/engine-select'] select {
+  max-width: 12rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

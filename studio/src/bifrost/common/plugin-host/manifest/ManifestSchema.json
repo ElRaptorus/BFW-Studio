@@ -8,7 +8,7 @@
   "properties": {
     "apiVersion": {
       "type": "string",
-      "description": "Required. The Studio Plugin API version this plugin targets (semver, e.g. '1.0.0')."
+      "description": "Required. The Studio Plugin API version this plugin targets (semver, e.g. '2.0.0')."
     },
     "displayName": {
       "type": "string",
@@ -152,6 +152,11 @@
                   "setting": { "type": "string" }
                 },
                 "additionalProperties": false
+              },
+              "pages": {
+                "type": "array",
+                "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$" },
+                "description": "Workbench pages the pane appears on. Required for left panes."
               }
             },
             "additionalProperties": false
@@ -162,7 +167,7 @@
           "description": "Editor document types registered as placeholders at discovery time; replaced by the plugin's registerWebviewDocumentType() call on activation. Their presence makes the plugin lazily activated.",
           "items": {
             "type": "object",
-            "required": ["id", "displayName", "icon", "uriPattern"],
+            "required": ["id", "displayName", "icon", "uriPattern", "page"],
             "properties": {
               "id": {
                 "type": "string",
@@ -174,29 +179,16 @@
                 "type": "string",
                 "description": "Regex source string matched against document URIs (e.g. \\.md$)."
               },
+              "page": {
+                "type": "string",
+                "pattern": "^(active|[a-z][a-z0-9-]*/[a-z][a-z0-9-]*)$",
+                "description": "Workbench page the documents open on (<categoryId>/<name>), or 'active' for the current page."
+              },
               "includedFilePatterns": {
                 "type": "array",
                 "description": "File globs registered as known (non-hidden) files in the File Explorer.",
                 "items": { "type": "string" }
               }
-            },
-            "additionalProperties": false
-          }
-        },
-        "paneToggles": {
-          "type": "array",
-          "description": "Menu bar toggle buttons for pane visibility.",
-          "items": {
-            "type": "object",
-            "required": ["id", "icon", "tooltip", "paneAreaId", "paneId"],
-            "properties": {
-              "id": { "type": "string", "description": "Unique identifier for the toggle." },
-              "icon": { "type": "string", "description": "Icon identifier." },
-              "tooltip": { "type": "string", "description": "Tooltip text." },
-              "paneAreaId": { "type": "string", "enum": ["left", "right", "bottom"] },
-              "paneId": { "type": "string", "description": "Pane ID to select when clicked." },
-              "insertAfter": { "type": "string", "description": "Insert after menu bar item with this ID." },
-              "insertBefore": { "type": "string", "description": "Insert before menu bar item with this ID." }
             },
             "additionalProperties": false
           }

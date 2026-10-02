@@ -1,13 +1,11 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { KeybindingsDefinition } from '#bifrost/browser/KeybindingsManager';
-import { insertAfterMenuBarItem, insertBeforeMenuBarItem } from '#bifrost/common/MenuBarModifierFunctions';
 import type {
   BifrostStudioManifest,
   ManifestCommand,
   ManifestEditorDocumentType,
   ManifestKeybinding,
   ManifestPaneContribution,
-  ManifestPaneToggle,
   ManifestSetting,
   ManifestTheme,
 } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
@@ -118,16 +116,6 @@ export class ContributionRegistrar {
           entry,
           activatePlugin,
         );
-        if (disposer != null) {
-          disposers.push(disposer);
-        }
-      }
-    }
-
-    // ── Pane Toggles (menu bar) ───────────────────────────────
-    if (contributes.paneToggles != null) {
-      for (const toggle of contributes.paneToggles) {
-        const disposer = this.registerPaneToggle(pluginName, toggle);
         if (disposer != null) {
           disposers.push(disposer);
         }
@@ -507,6 +495,7 @@ export class ContributionRegistrar {
       this.bifrost.panes.registerPaneGroup(pane.area, groupId, [paneObject], {
         label: pane.title,
         icon: pane.icon,
+        pages: pane.pages,
       });
     } catch {
       try {
@@ -566,6 +555,7 @@ export class ContributionRegistrar {
 
     try {
       this.bifrost.editors.registerDocumentType(documentTypeId, {
+        page: entry.page,
         uriMatch: uriRegex,
         icon: entry.icon,
         rendererKey,
@@ -604,45 +594,6 @@ export class ContributionRegistrar {
       } catch (err) {
         console.warn(`[ContributionRegistrar] Failed to unregister placeholder '${documentTypeId}':`, err);
       }
-    };
-  }
-
-  // ── Pane Toggles (menu bar) ────────────────────────────────
-
-  private registerPaneToggle(pluginName: string, toggle: ManifestPaneToggle): (() => void) | null {
-    const paneId = toggle.paneId.startsWith('plugin.') ? toggle.paneId : `plugin.${pluginName}.${toggle.paneId}`;
-    const toggleId = toggle.id.startsWith('plugin.') ? toggle.id : `plugin.${pluginName}.${toggle.id}`;
-
-    const items = [
-      {
-        type: 'pane_content_toggle' as const,
-        id: toggleId,
-        icon: toggle.icon,
-        tooltip: toggle.tooltip,
-        paneAreaId: toggle.paneAreaId,
-        paneId,
-      },
-    ];
-
-    let disposer: { dispose: () => void };
-
-    if (toggle.insertAfter != null) {
-      disposer = this.bifrost.menuBar.registerMenuBarItemModifier((menuBarItemMap) => {
-        return insertAfterMenuBarItem(menuBarItemMap, toggle.insertAfter!, () => items);
-      });
-    } else if (toggle.insertBefore != null) {
-      disposer = this.bifrost.menuBar.registerMenuBarItemModifier((menuBarItemMap) => {
-        return insertBeforeMenuBarItem(menuBarItemMap, toggle.insertBefore!, () => items);
-      });
-    } else {
-      disposer = this.bifrost.menuBar.registerMenuBarItem('left', () => items);
-    }
-
-    this.bifrost.menuBar.updateMenuBarItems();
-
-    return () => {
-      disposer.dispose();
-      this.bifrost.menuBar.updateMenuBarItems();
     };
   }
 

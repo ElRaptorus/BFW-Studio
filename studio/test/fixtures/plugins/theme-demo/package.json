@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "Theme Demo",
     "description": "Demonstrates declarative theme contributions via the manifest.",
     "permissions": [],

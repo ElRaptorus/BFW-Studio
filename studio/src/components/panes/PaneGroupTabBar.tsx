@@ -151,6 +151,7 @@ export default function PaneGroupTabBar(props: PaneGroupTabBarProps): React.JSX.
             onClick={() => props.onSelectGroup(group.groupId)}
             type="button"
             data-test--pane-group-tab={group.groupId}
+            data-test--active={isActive}
           >
             {resolveGroupLabel(group)}
           </button>

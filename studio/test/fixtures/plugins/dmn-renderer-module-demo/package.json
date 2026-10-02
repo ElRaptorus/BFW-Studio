@@ -5,7 +5,7 @@
   "description": "Demonstrates renderer module injection: real-time downstream requirement highlighting on hover, with bidirectional channel communication.",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "DMN Requirement Tracer (Renderer Module Demo)",
     "permissions": [
       "dmn",

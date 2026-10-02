@@ -20,7 +20,6 @@ export interface ManifestContributions {
   keybindings?: ManifestKeybinding[];
   icons?: Record<string, string>;
   panes?: ManifestPaneContribution[];
-  paneToggles?: ManifestPaneToggle[];
   serviceTaskTypes?: ManifestServiceTaskType[];
   themes?: ManifestTheme[];
   bpmnPalette?: ManifestBpmnPaletteEntry[];
@@ -38,6 +37,8 @@ export interface ManifestEditorDocumentType {
   icon: string;
   uriPattern: string;
   includedFilePatterns?: string[];
+  /** `<categoryId>/<name>` of the workbench page the documents open on, or `active` for the current page. */
+  page: string;
 }
 
 export interface ManifestBpmnModule {
@@ -90,6 +91,8 @@ export interface ManifestPaneContribution {
   groupId?: string;
   icon?: string;
   visibleWhen?: { documentType?: string; setting?: string };
+  /** Workbench pages the pane appears on. Required for `left` panes; right and bottom default to every page. */
+  pages?: string[];
 }
 
 export interface ManifestServiceTaskType {
@@ -127,16 +130,6 @@ export interface ManifestDmnContextPadEntry {
   title: string;
   command: string;
   elementTypes?: string[];
-}
-
-export interface ManifestPaneToggle {
-  id: string;
-  icon: string;
-  tooltip: string;
-  paneAreaId: 'left' | 'right' | 'bottom';
-  paneId: string;
-  insertAfter?: string;
-  insertBefore?: string;
 }
 
 export interface ManifestTheme {

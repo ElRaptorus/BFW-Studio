@@ -10,7 +10,20 @@ import MachineSanctumRenderer from './MachineSanctumRenderer';
 import { NOTIFICATION_EXAMPLES } from './pages/NotificationExamples';
 
 export function onLoad(bifrost: Bifrost): void {
+  bifrost.icons.registerIcons({ 'std/page/machine-sanctum': 'ph ph-gear-six' });
+  bifrost.categories.registerPage({
+    id: 'control/machine-sanctum',
+    categoryId: 'control',
+    label: 'Machine Sanctum',
+    icon: 'std/page/machine-sanctum',
+    order: 30,
+    paneAreas: [],
+    defaultDocumentUri: 'about:machine-sanctum',
+    editorTabsVisible: false,
+  });
+
   bifrost.editors.registerDocumentType('machine-sanctum', {
+    page: 'control/machine-sanctum',
     uriMatch: /^about:machine-sanctum(|\/.+)$/,
     modelKey: 'MachineSanctumDocumentModel',
     modelConstructor: MachineSanctumDocumentModel,

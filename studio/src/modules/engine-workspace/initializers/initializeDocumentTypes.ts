@@ -28,6 +28,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   const canOpen = (uri: string) => connectionManager.checkEngineConnectivity(uri);
 
   bifrost.editors.registerDocumentType('engine-dashboard', {
+    page: 'debug/engines',
     uriMatch: /^engine:\/\/dashboard\/.+$/,
     modelKey: 'EngineDashboardModel',
     modelConstructor: DashboardDocumentModel,
@@ -38,6 +39,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   });
 
   bifrost.editors.registerDocumentType('engine-process-explorer', {
+    page: 'debug/engines',
     uriMatch: /^engine:\/\/processes\/.+$/,
     modelKey: 'EngineProcessExplorerModel',
     modelConstructor: ProcessExplorerDocumentModel,
@@ -48,6 +50,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   });
 
   bifrost.editors.registerDocumentType('engine-instance-search', {
+    page: 'debug/engines',
     uriMatch: /^engine:\/\/instances\/.+$/,
     modelKey: 'EngineInstanceSearchModel',
     modelConstructor: InstanceSearchDocumentModel,
@@ -58,6 +61,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   });
 
   bifrost.editors.registerDocumentType('engine-task-inbox', {
+    page: 'debug/engines',
     uriMatch: /^engine-task-inbox:\/\/.+$/,
     modelKey: 'EngineTaskInboxModel',
     modelConstructor: TaskInboxDocumentModel,
@@ -68,6 +72,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   });
 
   bifrost.editors.registerDocumentType('engine-decision-catalog', {
+    page: 'debug/engines',
     uriMatch: /^engine:\/\/decisions\/.+$/,
     modelKey: 'EngineDecisionCatalogModel',
     modelConstructor: DecisionCatalogDocumentModel,
@@ -78,6 +83,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   });
 
   bifrost.editors.registerDocumentType('engine-timer-schedules', {
+    page: 'debug/engines',
     uriMatch: /^engine:\/\/timers\/.+$/,
     modelKey: 'EngineTimerSchedulesModel',
     modelConstructor: TimerSchedulesDocumentModel,

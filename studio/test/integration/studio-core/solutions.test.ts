@@ -170,7 +170,7 @@ describe('solutions', () => {
     it('should search across multiple projects', async () => {
       await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
-      await studioAgent.leftMenuBar.togglePane('pane/left/search');
+      await studioAgent.navigation.showLeftPane('pane/left/search');
       await studioAgent.assertPaneVisible('pane/left/search');
 
       await studioAgent.sendKeyboardInput([...'Start'.split(''), 'enter']);

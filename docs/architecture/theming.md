@@ -56,7 +56,7 @@ All tokens use the `--theme-` prefix. They are organized by UI surface:
 - **Base**: `--theme-bg`, `--theme-fg`, `--theme-fg-secondary`, `--theme-fg-muted`, `--theme-border`, `--theme-focus`, `--theme-accent`, `--theme-link`, `--theme-shadow`
 - **Icon Colors**: `--theme-icon-red`, `--theme-icon-orange`, `--theme-icon-green`, etc.
 - **Surfaces**: `--theme-surface-primary`, `--theme-surface-secondary`, `--theme-surface-elevated`, `--theme-surface-canvas`, `--theme-surface-inset`, `--theme-surface-backdrop`
-- **Menu Bar**: `--theme-menu-bar-bg`, `--theme-menu-bar-fg`, `--theme-menu-bar-hover-bg`
+- **Menu Bar** (the header): `--theme-menu-bar-bg`, `--theme-menu-bar-fg`, `--theme-menu-bar-hover-bg`. The Engine cluster status icon (`.engine-header-status--<state>`) reuses core tokens (`--theme-validation-success-fg`, `--theme-icon-orange`, `--theme-validation-error-fg`, `--theme-fg-muted`) and defines none of its own.
 - **Status Bar**: `--theme-status-bar-bg`, `--theme-status-bar-fg`, `--theme-status-bar-border`, `--theme-status-bar-hover-bg`
 - **Editor Tabs**: `--theme-editor-tab-bg`, `--theme-editor-tab-active-bg`, `--theme-editor-tab-active-fg`, `--theme-editor-tab-controls-fg`, `--theme-editor-tab-controls-hover-bg`
 - **Editor Toolbar**: `--theme-editor-toolbar-bg`, `--theme-editor-toolbar-fg`, `--theme-editor-toolbar-icon`, etc.

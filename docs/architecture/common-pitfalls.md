@@ -348,9 +348,9 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## `insertAfterMenuBarItem` requires the anchor to exist
 
-**Mistake**: Inserting after `pane/left/plugins` from a module that loads before `plugins`.
+**Mistake**: Inserting after `engine-menubar/engine-select` from a module that loads before `engine-workspace`.
 
-**Why**: The first menu rebuild throws and the pane system dies.
+**Why**: The modifier throws on the first menu bar rebuild. `MenuBarManager` logs and skips it, so the item silently never appears.
 
 **Correct approach**: Anchor only on items from earlier modules. Authoritative order is `createAndInitializeBifrost.ts`.
 
@@ -363,16 +363,6 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 **Why**: Async factories (application menu) pass a Promise; `.find` throws.
 
 **Correct approach**: `async (menuOrPromise) => { const menu = await menuOrPromise; … }`
-
----
-
-## Do not gate a column's menu bar on pane-area visibility
-
-**Mistake**: `{paneArea.left.visible && <MenuBarSection …>}`.
-
-**Why**: Hide unmounts the Show control and parked icons.
-
-**Correct approach**: Park that area's `MenuBarSection` on the center row. See [`workbench-layout.md`](workbench-layout.md).
 
 ---
 

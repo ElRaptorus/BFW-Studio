@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { CommandRegistrationOptions } from '#bifrost/contracts/CommandTypes';
 import type { DialogResult } from '#bifrost/contracts/DialogTypes';
 import type { EngineConnectionManager } from '#modules/engine-core';
 
@@ -12,12 +13,14 @@ export type RecordedCall = { method: string; arguments: unknown[] };
  */
 export function createRecordingBifrost(options: { dialogResult?: DialogResult } = {}) {
   const handlers = new Map<string, CommandHandler>();
+  const registrationOptions = new Map<string, CommandRegistrationOptions | undefined>();
   const calls: RecordedCall[] = [];
 
   const bifrost = {
     commands: {
-      register: (commandName: string, handler: CommandHandler) => {
+      register: (commandName: string, handler: CommandHandler, options?: CommandRegistrationOptions) => {
         handlers.set(commandName, handler);
+        registrationOptions.set(commandName, options);
       },
       executeCommand: (commandName: string, commandArguments: unknown[] = []) => {
         calls.push({ method: `command:${commandName}`, arguments: commandArguments });
@@ -41,7 +44,7 @@ export function createRecordingBifrost(options: { dialogResult?: DialogResult } 
     },
   };
 
-  return { bifrost: bifrost as unknown as Bifrost, calls, handlers };
+  return { bifrost: bifrost as unknown as Bifrost, calls, handlers, registrationOptions };
 }
 
 /** A connection manager whose single connected engine records every client call into `calls`. */

@@ -6,7 +6,7 @@
   "author": "Bifrost Forge World Tests",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "Editor Document Type Broken Plugin",
     "permissions": [
       "filesystem"
@@ -18,6 +18,7 @@
           "displayName": "Broken Editor",
           "icon": "ph ph-warning",
           "uriPattern": "\\.brokentest$",
+          "page": "active",
           "includedFilePatterns": [
             "**/*.brokentest"
           ]

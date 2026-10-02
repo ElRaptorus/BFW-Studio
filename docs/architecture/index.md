@@ -27,7 +27,8 @@ Each file owns one topic. Point to other files; do not copy their tables.
 - **[bpmn-drilldown.md](bpmn-drilldown.md)** — Subprocess drill-down: plane navigation, root.set event wiring, plane-scoped element access, breadcrumb theming, metadata persistence, PropertiesSubprocessContext pane, DrilldownBehavior module, drill-down/drill-up commands
 - **[bpmn-linter.md](bpmn-linter.md)** — BPMN linter module: bpmnlint integration, LintBridge/LintEngine, canvas markers, Error Summary Badge, Findings Pane toggle, rule profiles, three-tier findings
 - **[bpmn-sanitizer.md](bpmn-sanitizer.md)** — BPMN sanitizer: always-on structural integrity scanner, ghost element / dangling reference / empty container detection, SanitizerBridge diagram-js module, canvas badge, Inspector section, per-issue and bulk fixes
-- **[workbench-layout.md](workbench-layout.md)** — Workbench layout: three-column split-bar model, MenuBarSection, PaneContentToggle, PaneManager pane area selection, left menu bar interaction model
+- **[workbench-categories.md](workbench-categories.md)** — Categorized workbench: categories and pages, per-page editor areas and pane groups, routing rules R1–R5, header, Plugin API 2.0.0 page contract
+- **[workbench-layout.md](workbench-layout.md)** — Workbench layout: three-column layout, header menu bar and layout toggles, left tab strip, PaneManager pane area selection
 - **[imports-and-modules.md](imports-and-modules.md)** — Module resolution: subpath import aliases (`#bifrost/*`, `#components/*`, `#modules/*`), ambient declarations, TypeScript 6.0 configuration, per-target tsconfig layout
 - **[bpmn-diff.md](bpmn-diff.md)** — Side-by-side BPMN diff, history preview, change summary, three-panel merge UI
 - **[git-cruiser.md](git-cruiser.md)** — Git primitives: GitService, IPC, pane, status bar, merge framework (BPMN/DMN visualization in bpmn-diff)

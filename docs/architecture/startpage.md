@@ -1,6 +1,6 @@
 # Start Page
 
-The Start Page (Welcome tab) is an editor document (`about:start`) that serves as the Studio's landing page. It highlights the Studio's core creative entry points and provides quick access to common actions.
+The Start Page (Welcome tab) is an editor document (`about:start`) that serves as the Studio's landing page. It is the canvas of the Home page (`home/welcome`: `defaultDocumentUri: 'about:start'`, `editorTabsVisible: false`, `paneAreas: []`), so Home shows no editor tabs and no pane areas. It highlights the Studio's core creative entry points and provides quick access to common actions.
 
 ## Layout
 

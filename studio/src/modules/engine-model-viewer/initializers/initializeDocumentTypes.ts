@@ -10,6 +10,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   });
 
   bifrost.editors.registerDocumentType('engine-model-viewer', {
+    page: 'debug/engines',
     uriMatch: /^engine-model:\/\/.+/,
     modelKey: 'EngineModelViewerModel',
     modelConstructor: ModelViewerDocumentModel,

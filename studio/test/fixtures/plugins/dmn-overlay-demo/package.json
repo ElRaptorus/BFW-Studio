@@ -6,7 +6,7 @@
   "main": "index.js",
   "readme": "README.md",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "DMN Overlay Demo",
     "permissions": [
       "dmn"

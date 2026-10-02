@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parentPort, workerData } from 'worker_threads';
 
+import { STUDIO_PLUGIN_API_VERSION } from '../../../contracts/PluginApiVersion';
 import type { PluginPermission } from '../permissions/PermissionTypes';
 import { createModuleGate } from './ModuleGate';
 
@@ -661,7 +662,7 @@ function createPluginApi(): Record<string, unknown> {
       pluginPath,
       pluginName,
       storagePath,
-      apiVersion: '1.0.0',
+      apiVersion: STUDIO_PLUGIN_API_VERSION,
     }),
   };
 }

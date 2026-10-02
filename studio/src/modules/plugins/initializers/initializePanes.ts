@@ -5,9 +5,18 @@ import * as PluginInfoPropertyPaneModule from '../PluginInfoPropertyPane';
 import * as PluginsPaneModule from '../PluginsPaneRenderer';
 
 export function initializePanes(bifrost: Bifrost): void {
-  bifrost.panes.registerPaneGroup('left', 'plugins', [
-    bifrost.panes.getPaneViaPaneProvider('pane/left/plugins', 'plugins/pane-providers/PluginsPane', PluginsPaneModule),
-  ]);
+  bifrost.panes.registerPaneGroup(
+    'left',
+    'plugins',
+    [
+      bifrost.panes.getPaneViaPaneProvider(
+        'pane/left/plugins',
+        'plugins/pane-providers/PluginsPane',
+        PluginsPaneModule,
+      ),
+    ],
+    { pages: ['control/plugins'] },
+  );
 
   bifrost.panes.prependToPaneGroup('right', 'property', [
     bifrost.panes.getPaneViaPaneProvider(
@@ -17,27 +26,18 @@ export function initializePanes(bifrost: Bifrost): void {
     ),
   ]);
 
-  bifrost.panes.appendToPaneGroup('bottom', 'console', [
-    bifrost.panes.getPaneViaPaneProvider(
-      'pane/bottom/plugin-host-console',
-      'plugins/pane-providers/PluginHostConsole',
-      PluginHostConsolePaneModule,
-    ),
-  ]);
-
-  bifrost.menuBar.registerMenuBarItemModifier((menuBarItems) => {
-    return bifrost.menuBar.insertAfterMenuBarItem(menuBarItems, 'pane/left/engines', () => [
-      {
-        type: 'pane_content_toggle',
-        id: 'pane/left/plugins',
-        tooltip: 'Plugins',
-        icon: 'plugins/left-pane-icon',
-        visible: bifrost.panes.getPaneAreaVisibility('left'),
-        paneAreaId: 'left',
-        paneId: 'pane/left/plugins',
-      },
-    ]);
-  });
+  bifrost.panes.registerPaneGroup(
+    'bottom',
+    'plugin-console',
+    [
+      bifrost.panes.getPaneViaPaneProvider(
+        'pane/bottom/plugin-host-console',
+        'plugins/pane-providers/PluginHostConsole',
+        PluginHostConsolePaneModule,
+      ),
+    ],
+    { label: 'Plugin Console', icon: 'ph ph-terminal', pages: ['control/plugins'] },
+  );
 
   bifrost.menus.registerMenuModifier('std/application/main', async (mainMenu) => {
     const menu = await mainMenu;

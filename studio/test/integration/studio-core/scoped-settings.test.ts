@@ -71,12 +71,12 @@ describe('scoped settings', () => {
     assert.ok(projectA != null && projectB != null);
 
     await studioAgent.openFile(`${projectA.baseUri}/diagram-a.bpmn`);
-    assert.strictEqual(await studioAgent.getMenuBarSelectValue('bpmn-linter-profile-select'), 'bpmn-development');
+    assert.strictEqual(await studioAgent.getLinterProfileValue(), 'bpmn-development');
 
     await studioAgent.openFile(`${projectB.baseUri}/diagram-b.bpmn`);
-    assert.strictEqual(await studioAgent.getMenuBarSelectValue('bpmn-linter-profile-select'), 'bpmn-production-ready');
+    assert.strictEqual(await studioAgent.getLinterProfileValue(), 'bpmn-production-ready');
 
-    await studioAgent.selectMenuBarOption('bpmn-linter-profile-select', 'bpmn-development');
+    await studioAgent.selectLinterProfile('bpmn-development');
     await studioAgent.waitForJsonFileValue(
       path.join(PROJECT_B, '.bifrostfw', 'settings.json'),
       'bpmnLinter.profile',
@@ -123,14 +123,14 @@ describe('scoped settings', () => {
     assert.ok(projectA != null && projectB != null);
 
     await studioAgent.openFile(`${projectA.baseUri}/diagram-a.bpmn`);
-    assert.strictEqual(await studioAgent.getMenuBarSelectValue('bpmn-linter-profile-select'), 'bpmn-development');
+    assert.strictEqual(await studioAgent.getLinterProfileValue(), 'bpmn-development');
 
     await studioAgent.executeCommand('std.fileExplorer.dropItems', [
       [`${projectA.baseUri}/diagram-a.bpmn`],
       projectB.baseUri,
     ]);
 
-    assert.strictEqual(await studioAgent.getMenuBarSelectValue('bpmn-linter-profile-select'), 'bpmn-production-ready');
+    assert.strictEqual(await studioAgent.getLinterProfileValue(), 'bpmn-production-ready');
   });
 });
 

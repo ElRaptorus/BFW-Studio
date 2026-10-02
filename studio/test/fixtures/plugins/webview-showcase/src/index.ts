@@ -62,6 +62,7 @@ interface PluginApi {
       displayName: string;
       icon: string;
       uriPattern: string;
+      page: string;
       webviewOptions: { entryPoint: string };
     }): Promise<void>;
     openDocument(uri: string): Promise<void>;
@@ -143,6 +144,7 @@ module.exports.activate = async (api: PluginApi): Promise<void> => {
     displayName: 'Webview Showcase',
     icon: 'ph ph-browser',
     uriPattern: '^ext://webview-showcase/',
+    page: 'design/workspace',
     webviewOptions: {
       entryPoint: 'webview/dist/index.html',
     },

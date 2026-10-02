@@ -4,6 +4,7 @@ import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import { isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorAreaLayout_Editor, EditorAreaViewData, EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { ACTIVE_PAGE } from '#bifrost/contracts/WorkbenchTypes';
 import {
   EVENT_EDITOR_AREA_DOCUMENT_CLOSED,
   EVENT_EDITOR_AREA_FOCUS_UPDATED,
@@ -16,6 +17,7 @@ import {
   EVENT_EDITOR_DOCUMENT_URI_UPDATED,
 } from '#bifrost/contracts/internal/EditorEvents';
 import type { SearchQuery } from '#bifrost/contracts/internal/SearchTypes';
+import { EVENT_WORKBENCH_PAGE_ACTIVATED } from '#bifrost/contracts/internal/WorkbenchEvents';
 
 import type { Bifrost } from '../Bifrost';
 import { EditorAreaManager } from '../common/EditorAreaManager';
@@ -34,7 +36,8 @@ import { RecentlyViewedMediator } from '../common/RecentlyViewedMediator';
 export class EditorMediator extends AbstractEmitter {
   private bifrost: Bifrost;
 
-  private editorAreaManager: EditorAreaManager;
+  /** One editor area per workbench page, created on first use. */
+  private readonly editorAreaManagers = new Map<string, EditorAreaManager>();
   private editorAreaStorage: LocalStorageItem;
 
   private editorDocumentModelManager: EditorDocumentModelManager;
@@ -60,70 +63,50 @@ export class EditorMediator extends AbstractEmitter {
     this.editorDocumentInspectorManager = new EditorDocumentInspectorManager();
     this.editorDocumentMergeResolverManager = new EditorDocumentMergeResolverManager();
 
-    this.editorAreaManager = new EditorAreaManager(this.bifrost);
-
     this.editorDocumentModelManager = new EditorDocumentModelManager([this.bifrost.files, this.bifrost]);
     this.editorDocumentModelManager.on(EVENT_EDITOR_DOCUMENT_DATA_UPDATED, (editorDocument: EditorDocument) => {
       this.emit(EVENT_EDITOR_DOCUMENT_DATA_UPDATED, [editorDocument]);
 
       if (editorDocument.hasUnsavedChanges && editorDocument.isTemporary) {
-        this.editorAreaManager.persistEditorDocument(editorDocument);
+        this.getManagerOfDocument(editorDocument).persistEditorDocument(editorDocument);
       }
     });
 
-    this.editorAreaManager.on(
-      EVENT_EDITOR_AREA_FOCUS_UPDATED,
-      (focusedEditorDocument: EditorDocument, blurredEditorDocument: EditorDocument) => {
-        if (blurredEditorDocument != null) {
-          const blurredEditorDocumentModel = this.getEditorDocumentModelIfPresent(blurredEditorDocument);
-          blurredEditorDocumentModel?.onEditorDocumentDidBlur();
-        }
-
-        if (focusedEditorDocument != null) {
-          const focusedEditorDocumentModel = this.getEditorDocumentModelIfPresent(focusedEditorDocument);
-          focusedEditorDocumentModel?.onEditorDocumentDidFocus();
-        }
-
-        this.emit(EVENT_EDITOR_AREA_FOCUS_UPDATED, [focusedEditorDocument, blurredEditorDocument]);
-      },
-    );
-    this.editorAreaManager.on(EVENT_EDITOR_AREA_LAYOUT_UPDATED, () => this.emit(EVENT_EDITOR_AREA_LAYOUT_UPDATED));
-
     this.editorAreaStorage = localStorage;
 
-    const saveEditorAreaFn = (): void => {
-      const editorAreaData = this.editorAreaManager.serialize();
-      this.editorAreaStorage.save(editorAreaData);
-    };
+    this.editorDocumentModelManager.on(EVENT_EDITOR_DOCUMENT_DATA_UPDATED, () => this.saveEditorAreas());
 
-    this.editorAreaManager.on(EVENT_EDITOR_AREA_LAYOUT_UPDATED, saveEditorAreaFn);
-    this.editorAreaManager.on(EVENT_EDITOR_AREA_FOCUS_UPDATED, saveEditorAreaFn);
-    this.editorAreaManager.on(EVENT_EDITOR_DOCUMENT_METADATA_UPDATED, saveEditorAreaFn);
-    this.editorDocumentModelManager.on(EVENT_EDITOR_DOCUMENT_DATA_UPDATED, saveEditorAreaFn);
+    this.bifrost.categories.on(
+      EVENT_WORKBENCH_PAGE_ACTIVATED,
+      (_pageId: string | null, previousPageId: string | null) => this.onPageActivated(previousPageId),
+    );
 
     this.editorDocumentModelManager.on(EVENT_EDITOR_DOCUMENT_METADATA_UPDATED, (uri: string, metadataDiff: any) => {
-      const editorDocument = this.editorAreaManager.getEditorDocumentByUri(uri);
+      const editorDocument = this.getEditorDocumentByUri(uri);
       if (editorDocument == null) {
         return;
       }
 
       const metadataBefore = editorDocument.metadata ?? {};
-      this.editorAreaManager.updateEditorDocumentMetadata(editorDocument, { ...metadataBefore, ...metadataDiff });
+      this.getManagerOfDocument(editorDocument).updateEditorDocumentMetadata(editorDocument, {
+        ...metadataBefore,
+        ...metadataDiff,
+      });
       this.emit(EVENT_EDITOR_DOCUMENT_METADATA_UPDATED, [editorDocument]);
     });
     this.editorDocumentModelManager.on(
       EVENT_EDITOR_DOCUMENT_FRAGMENT_ID_UPDATED,
       (parentUri: any, oldFragmentId: string, newFragmentId: string) => {
-        this.editorAreaManager.updateEditorDocumentFragmentId(parentUri, oldFragmentId, newFragmentId);
+        this.getManagerOfUri(parentUri)?.updateEditorDocumentFragmentId(parentUri, oldFragmentId, newFragmentId);
       },
     );
     this.editorDocumentModelManager.on(EVENT_EDITOR_DOCUMENT_LABEL_UPDATED, (uri: string, newLabel: string) => {
-      const editorDocument = this.editorAreaManager.getEditorDocumentByUri(uri);
+      const editorDocument = this.getEditorDocumentByUri(uri);
       if (editorDocument == null) {
         return;
       }
 
-      this.editorAreaManager.updateEditorDocumentLabel(editorDocument, newLabel);
+      this.getManagerOfDocument(editorDocument).updateEditorDocumentLabel(editorDocument, newLabel);
 
       this.bifrost.recentlyOpened.updateRecentlyOpenedEditorDocumentLabel(editorDocument.uri, newLabel);
 
@@ -134,14 +117,14 @@ export class EditorMediator extends AbstractEmitter {
       (editorDocumentUriBefore: string, editorDocumentUriAfter: string) => {
         this.bifrost.settings.resourceMoved(editorDocumentUriBefore, editorDocumentUriAfter);
 
-        const editorDocument = this.editorAreaManager.getEditorDocumentByUri(editorDocumentUriBefore);
+        const editorDocument = this.getEditorDocumentByUri(editorDocumentUriBefore);
         if (editorDocument == null) {
           return;
         }
 
-        this.editorAreaManager.updateEditorDocumentUri(editorDocument, editorDocumentUriAfter);
+        this.getManagerOfDocument(editorDocument).updateEditorDocumentUri(editorDocument, editorDocumentUriAfter);
 
-        const updatedEditorDocument = this.editorAreaManager.getEditorDocumentByUri(editorDocumentUriAfter);
+        const updatedEditorDocument = this.getEditorDocumentByUri(editorDocumentUriAfter);
         if (updatedEditorDocument == null) {
           return;
         }
@@ -162,7 +145,131 @@ export class EditorMediator extends AbstractEmitter {
         this.emit(EVENT_EDITOR_DOCUMENT_URI_UPDATED, [editorDocumentUriBefore, editorDocumentUriAfter]);
       },
     );
-    this.editorAreaManager.on(EVENT_EDITOR_AREA_DOCUMENT_CLOSED, (editorDocument: EditorDocument) => {
+    this.recentlyViewed = new RecentlyViewedMediator();
+
+    window.addEventListener('resize', () => this.onEditorSizeChanged());
+  }
+
+  /** R5: the open documents of a single page (for page-local lists such as Open Editors). */
+  getOpenEditorDocumentsOfPage(pageId: string): EditorDocument[] {
+    return this.editorAreaManagers.get(pageId)?.getOpenEditorDocuments() ?? [];
+  }
+
+  /** R5: the layout editors (tab groups) of a single page. */
+  getOpenEditorsOfPage(pageId: string): EditorAreaLayout_Editor[] {
+    return this.editorAreaManagers.get(pageId)?.getOpenEditors() ?? [];
+  }
+
+  /** The page that shows the document; the active page for a document that is not open. */
+  getPageIdOfEditorDocument(editorDocument: EditorDocument): string {
+    const manager = this.getManagerOfUri(editorDocument.uri);
+    return manager == null ? this.getActivePageId() : this.getPageIdOfManager(manager);
+  }
+
+  private suppressDefaultDocument = false;
+
+  private static readonly FALLBACK_PAGE_ID = 'design/workspace';
+
+  private getActivePageId(): string {
+    return this.bifrost.categories.getActivePageId() ?? EditorMediator.FALLBACK_PAGE_ID;
+  }
+
+  private getActiveManager(): EditorAreaManager {
+    return this.getManagerOfPage(this.getActivePageId());
+  }
+
+  private getManagerOfPage(pageId: string): EditorAreaManager {
+    let manager = this.editorAreaManagers.get(pageId);
+    if (manager == null) {
+      manager = new EditorAreaManager(this.bifrost);
+      this.attachManager(manager);
+      this.editorAreaManagers.set(pageId, manager);
+    }
+    return manager;
+  }
+
+  private getPageIdOfManager(manager: EditorAreaManager): string {
+    for (const [pageId, candidate] of this.editorAreaManagers) {
+      if (candidate === manager) {
+        return pageId;
+      }
+    }
+    return EditorMediator.FALLBACK_PAGE_ID;
+  }
+
+  private getManagerOfUri(uri: string): EditorAreaManager | null {
+    for (const manager of this.editorAreaManagers.values()) {
+      if (manager.getEditorDocumentByUri(uri) != null) {
+        return manager;
+      }
+    }
+    return null;
+  }
+
+  private getManagerOfDocument(editorDocument: EditorDocument): EditorAreaManager {
+    return this.getManagerOfUri(editorDocument.uri) ?? this.getActiveManager();
+  }
+
+  private getManagerOfEditor(editorId: string | null): EditorAreaManager | null {
+    for (const manager of this.editorAreaManagers.values()) {
+      if (manager.getEditorById(editorId) != null) {
+        return manager;
+      }
+    }
+    return null;
+  }
+
+  /** Resolves `'active'` and refuses (with a notification) pages that are not registered. */
+  private resolvePageOfDocumentType(page: string, documentType: string): string | null {
+    const pageId = page === ACTIVE_PAGE ? this.getActivePageId() : page;
+    if (!this.bifrost.categories.hasPage(pageId) && pageId !== EditorMediator.FALLBACK_PAGE_ID) {
+      this.bifrost.notifications.open({
+        type: 'error',
+        content: `Cannot open a document of type '${documentType}': its page '${pageId}' is not registered.`,
+        source: 'EditorMediator.resolvePageOfDocumentType',
+      });
+      return null;
+    }
+    return pageId;
+  }
+
+  private activateAndGetManagerForPage(pageId: string | null): EditorAreaManager {
+    if (pageId == null) {
+      throw new Error('The page of the document type is not registered.');
+    }
+    if (this.bifrost.categories.hasPage(pageId)) {
+      // The document about to open takes the place of the page's default document.
+      this.suppressDefaultDocument = true;
+      try {
+        this.bifrost.categories.activatePage(pageId);
+      } finally {
+        this.suppressDefaultDocument = false;
+      }
+    }
+    return this.getManagerOfPage(pageId);
+  }
+
+  private activatePageOfManager(manager: EditorAreaManager): void {
+    const pageId = this.getPageIdOfManager(manager);
+    if (this.bifrost.categories.hasPage(pageId)) {
+      this.bifrost.categories.activatePage(pageId);
+    }
+  }
+
+  private attachManager(manager: EditorAreaManager): void {
+    manager.on(
+      EVENT_EDITOR_AREA_FOCUS_UPDATED,
+      (focusedEditorDocument: EditorDocument, blurredEditorDocument: EditorDocument) => {
+        this.onFocusChanged(focusedEditorDocument, blurredEditorDocument);
+        this.saveEditorAreas();
+      },
+    );
+    manager.on(EVENT_EDITOR_AREA_LAYOUT_UPDATED, () => {
+      this.emit(EVENT_EDITOR_AREA_LAYOUT_UPDATED);
+      this.saveEditorAreas();
+    });
+    manager.on(EVENT_EDITOR_DOCUMENT_METADATA_UPDATED, () => this.saveEditorAreas());
+    manager.on(EVENT_EDITOR_AREA_DOCUMENT_CLOSED, (editorDocument: EditorDocument) => {
       if (!isUrlForOpenInNewTab(editorDocument.uri)) {
         this.editorDocumentModelManager.tryRemoveEditorDocumentModelInstance(editorDocument);
       }
@@ -170,10 +277,48 @@ export class EditorMediator extends AbstractEmitter {
       this.bifrost.recentlyClosed.addItem('editor_document', { uri: editorDocument.uri, label: editorDocument.label });
       this.emit(EVENT_EDITOR_AREA_DOCUMENT_CLOSED, [editorDocument]);
     });
+  }
 
-    this.recentlyViewed = new RecentlyViewedMediator();
+  private onFocusChanged(
+    focusedEditorDocument: EditorDocument | null,
+    blurredEditorDocument: EditorDocument | null,
+  ): void {
+    if (blurredEditorDocument != null) {
+      this.getEditorDocumentModelIfPresent(blurredEditorDocument)?.onEditorDocumentDidBlur();
+    }
+    if (focusedEditorDocument != null) {
+      this.getEditorDocumentModelIfPresent(focusedEditorDocument)?.onEditorDocumentDidFocus();
+    }
+    this.emit(EVENT_EDITOR_AREA_FOCUS_UPDATED, [focusedEditorDocument, blurredEditorDocument]);
+  }
 
-    window.addEventListener('resize', () => this.onEditorSizeChanged());
+  /** Switching pages blurs the focused document of the old page and focuses the one of the new page. */
+  private onPageActivated(previousPageId: string | null): void {
+    const blurredEditorDocument = this.editorAreaManagers.get(previousPageId ?? '')?.getFocusedEditorDocument() ?? null;
+    this.onFocusChanged(this.getActiveManager().getFocusedEditorDocument(), blurredEditorDocument);
+    this.emit(EVENT_EDITOR_AREA_LAYOUT_UPDATED);
+    this.openDefaultDocumentOfActivePage();
+  }
+
+  /** Opens the `defaultDocumentUri` of the active page when the page has no documents. */
+  openDefaultDocumentOfActivePage(): void {
+    const page = this.bifrost.categories.getActivePage();
+    if (
+      this.suppressDefaultDocument ||
+      page?.defaultDocumentUri == null ||
+      this.getActiveManager().getOpenEditorDocuments().length > 0
+    ) {
+      return;
+    }
+    this.focusOrOpenEditorDocument(page.defaultDocumentUri);
+  }
+
+  private saveEditorAreas(): void {
+    const pages: Record<string, unknown> = {};
+    for (const [pageId, manager] of this.editorAreaManagers) {
+      pages[pageId] = manager.serialize();
+    }
+    this.editorAreaStorage.save({ version: 2, pages });
   }
 
   filterRecentlyViewedHistory(filterFn: (item: any) => boolean): void {
@@ -185,19 +330,54 @@ export class EditorMediator extends AbstractEmitter {
   }
 
   persistEditorDocument(editorDocument: EditorDocument): void {
-    this.editorAreaManager.persistEditorDocument(editorDocument);
+    this.getManagerOfDocument(editorDocument).persistEditorDocument(editorDocument);
   }
 
   /**
    * Internal: Restores data from the last session.
    */
   restoreFromLastSession(): void {
+    // Stored state without `version: 2` (older builds) is ignored; the Studio starts with the default layout.
     const editorAreaData = this.editorAreaStorage.load();
-    this.editorAreaManager.deserialize(editorAreaData);
+    if (editorAreaData?.version === 2 && editorAreaData.pages != null) {
+      const storedPages = Object.entries(editorAreaData.pages);
+      const isRestorable = (pageId: string) =>
+        this.bifrost.categories.hasPage(pageId) || pageId === EditorMediator.FALLBACK_PAGE_ID;
+      // Deserializing replaces a page's layout, so relocated documents may only be adopted afterwards.
+      for (const [pageId, pageData] of storedPages) {
+        if (isRestorable(pageId)) {
+          this.getManagerOfPage(pageId).deserialize(pageData);
+        }
+      }
+      for (const [pageId, pageData] of storedPages) {
+        if (!isRestorable(pageId)) {
+          this.relocateDocumentsOfUnregisteredPage(pageData);
+        }
+      }
+    }
+    this.openDefaultDocumentOfActivePage();
 
     const focusedEditorDocument = this.getFocusedEditorDocument();
     if (focusedEditorDocument != null) {
       this.recentlyViewed.addEditorDocument(focusedEditorDocument, null);
+    }
+  }
+
+  /** Documents stored on a page that no longer exists move to the page of their document type. */
+  private relocateDocumentsOfUnregisteredPage(pageData: unknown): void {
+    const temporaryManager = new EditorAreaManager(this.bifrost);
+    temporaryManager.deserialize(pageData);
+    for (const editorDocument of temporaryManager.getOpenEditorDocuments()) {
+      let targetPageId = EditorMediator.FALLBACK_PAGE_ID;
+      try {
+        const page = this.editorDocumentTypeManager.getById(editorDocument.documentType).page;
+        if (page !== ACTIVE_PAGE && this.bifrost.categories.hasPage(page)) {
+          targetPageId = page;
+        }
+      } catch {
+        // Unknown document type: keep the fallback page.
+      }
+      this.getManagerOfPage(targetPageId).adoptEditorDocument(editorDocument);
     }
   }
 
@@ -231,7 +411,9 @@ export class EditorMediator extends AbstractEmitter {
 
     const blurredEditorDocument = this.getFocusedEditorDocument();
 
-    const newEditorDocument = this.editorAreaManager.createNewEditorDocument(
+    const newEditorDocument = this.activateAndGetManagerForPage(
+      this.resolvePageOfDocumentType(editorDocumentTypeDefinition.page, documentType),
+    ).createNewEditorDocument(
       documentType,
       editorDocumentTypeDefinition.rendererKey,
       editorDocumentTypeDefinition.modelKey,
@@ -266,7 +448,8 @@ export class EditorMediator extends AbstractEmitter {
   ): EditorDocument {
     const currentlyFocussedEditorDocument = this.getFocusedEditorDocument();
     const editorDocumentTypeDefinition = this.editorDocumentTypeManager.getByUri(uri);
-    const openedEditorDocument = this.editorAreaManager.openEditorDocumentByUri(
+    const managerOfEditor = this.getManagerOfEditor(editor.editorId) ?? this.getActiveManager();
+    const openedEditorDocument = managerOfEditor.openEditorDocumentByUri(
       uri,
       editorDocumentTypeDefinition.documentType,
       editorDocumentTypeDefinition.rendererKey,
@@ -356,7 +539,12 @@ export class EditorMediator extends AbstractEmitter {
 
     const uri = typeof editorDocumentOrUri === 'string' ? editorDocumentOrUri : editorDocumentOrUri.uri;
 
-    const focusedEditorDocument = this.editorAreaManager.focusEditorDocumentByUri(uri);
+    // R1: a document that is already open is focused on its own page, which becomes the active page.
+    const managerOfOpenDocument = this.getManagerOfUri(uri);
+    if (managerOfOpenDocument != null) {
+      this.activatePageOfManager(managerOfOpenDocument);
+    }
+    const focusedEditorDocument = managerOfOpenDocument?.focusEditorDocumentByUri(uri) ?? null;
 
     if (focusedEditorDocument == null) {
       if (isUrlForOpenInNewTab(uri)) {
@@ -407,7 +595,21 @@ export class EditorMediator extends AbstractEmitter {
           throw new Error(canOpenResult.error);
         }
       }
-      const openedEditorDocument = this.editorAreaManager.openEditorDocumentByUri(
+      const pageId = this.resolvePageOfDocumentType(
+        editorDocumentTypeDefinition.page,
+        editorDocumentTypeDefinition.documentType,
+      );
+      if (pageId == null) {
+        const currentFocused = this.getFocusedEditorDocument();
+        if (currentFocused) {
+          return currentFocused;
+        }
+        throw new Error(
+          `The page '${editorDocumentTypeDefinition.page}' of document type '${editorDocumentTypeDefinition.documentType}' is not registered.`,
+        );
+      }
+      const managerForOpening = this.activateAndGetManagerForPage(pageId);
+      const openedEditorDocument = managerForOpening.openEditorDocumentByUri(
         uri,
         editorDocumentTypeDefinition.documentType,
         editorDocumentTypeDefinition.rendererKey,
@@ -416,7 +618,7 @@ export class EditorMediator extends AbstractEmitter {
         editorDocumentTypeDefinition.icon,
         optionalTitle,
       );
-      this.editorAreaManager.focusEditorDocumentByUri(uri);
+      managerForOpening.focusEditorDocumentByUri(uri);
 
       if (shouldRecordForRecentManagers) {
         if (!isUrlForOpenInNewTab(openedEditorDocument.uri)) {
@@ -446,7 +648,11 @@ export class EditorMediator extends AbstractEmitter {
    * Returns the focused EditorDocument
    */
   async focusEditorDocumentAndWaitForVisible(editorDocument: EditorDocument): Promise<EditorDocument> {
-    const focusedEditorDocument = this.editorAreaManager.focusEditorDocumentByUri(editorDocument.uri);
+    const managerOfDocument = this.getManagerOfUri(editorDocument.uri);
+    if (managerOfDocument != null) {
+      this.activatePageOfManager(managerOfDocument);
+    }
+    const focusedEditorDocument = managerOfDocument?.focusEditorDocumentByUri(editorDocument.uri);
     if (focusedEditorDocument == null) {
       throw new Error(`Unexpected error: Could not focus EditorDocument: ${JSON.stringify(editorDocument)}`);
     }
@@ -524,7 +730,7 @@ export class EditorMediator extends AbstractEmitter {
       }
     }
 
-    if (this.editorAreaManager.getFocusedEditorDocument() == null) {
+    if (this.getActiveManager().getFocusedEditorDocument() == null) {
       this.navigateToNextAvailableOpenDocument();
     }
     return success;
@@ -548,7 +754,8 @@ export class EditorMediator extends AbstractEmitter {
     let shouldCloseEditorDocument = true;
     let editorDocumentModel: EditorDocumentModel | null = null;
 
-    let documentToCloseIsFocused = editorDocument.uri === this.editorAreaManager.getFocusedEditorDocument()?.uri;
+    let documentToCloseIsFocused =
+      editorDocument.uri === this.getManagerOfDocument(editorDocument).getFocusedEditorDocument()?.uri;
 
     if (editorDocument.modelKey != null) {
       try {
@@ -580,7 +787,8 @@ export class EditorMediator extends AbstractEmitter {
         editorDocumentModel.onEditorDocumentWillClose();
       }
 
-      this.editorAreaManager.closeEditorDocument(editorDocument);
+      const managerOfDocument = this.getManagerOfDocument(editorDocument);
+      managerOfDocument.closeEditorDocument(editorDocument);
 
       if (editorDocumentModel != null) {
         editorDocumentModel.onEditorDocumentDidClose();
@@ -588,7 +796,11 @@ export class EditorMediator extends AbstractEmitter {
 
       this.removeItemFromHistoryIfClosingUnsavedBuffer(editorDocument);
 
-      if (documentToCloseIsFocused && navigateToNextOpenTabAfterClose) {
+      if (
+        documentToCloseIsFocused &&
+        navigateToNextOpenTabAfterClose &&
+        managerOfDocument === this.getActiveManager()
+      ) {
         this.navigateToNextAvailableOpenDocument();
       }
 
@@ -598,10 +810,15 @@ export class EditorMediator extends AbstractEmitter {
     return shouldCloseEditorDocument;
   }
 
+  /** Closing never switches pages: the next document comes from the active page, else its default document opens. */
   private navigateToNextAvailableOpenDocument(): void {
     const recentDocuments = this.recentlyViewed.getRecentlyViewedEditorDocumentItems().reverse() as EditorDocument[];
 
-    const openEditors = this.getOpenEditorDocuments().reverse();
+    const openEditors = this.getActiveManager().getOpenEditorDocuments().reverse();
+    if (openEditors.length === 0) {
+      this.openDefaultDocumentOfActivePage();
+      return;
+    }
 
     const lastViewedOpenDocument = recentDocuments.find((historyItem) =>
       openEditors.some((document) => document?.uri === historyItem?.uri),
@@ -886,7 +1103,7 @@ export class EditorMediator extends AbstractEmitter {
    * Returns the `EditorDocument` object for a given `uri`.
    */
   getEditorDocumentByUri(uri: string): EditorDocument | null {
-    return this.editorAreaManager.getEditorDocumentByUri(uri);
+    return this.getManagerOfUri(uri)?.getEditorDocumentByUri(uri) ?? null;
   }
 
   /**
@@ -935,14 +1152,14 @@ export class EditorMediator extends AbstractEmitter {
    * Returns the focused EditorDocument, if present.
    */
   getFocusedEditorDocument(): EditorDocument | null {
-    return this.editorAreaManager.getFocusedEditorDocument();
+    return this.getActiveManager().getFocusedEditorDocument();
   }
 
   /**
    * Returns the active EditorDocuments.
    */
   getActiveEditorDocuments(): EditorDocument[] {
-    return this.editorAreaManager.getActiveEditorDocuments();
+    return this.getActiveManager().getActiveEditorDocuments();
   }
 
   /**
@@ -1057,7 +1274,7 @@ export class EditorMediator extends AbstractEmitter {
    * Updates the label of the given `editorDocument` to the given `newLabel`.
    */
   updateEditorDocumentLabel(editorDocument: EditorDocument, newLabel: string): void {
-    this.editorAreaManager.updateEditorDocumentLabel(editorDocument, newLabel);
+    this.getManagerOfDocument(editorDocument).updateEditorDocumentLabel(editorDocument, newLabel);
   }
 
   /**
@@ -1074,19 +1291,26 @@ export class EditorMediator extends AbstractEmitter {
   }
 
   getEditorById(editorIdOrNull: string | null): EditorAreaLayout_Editor | null {
-    return this.editorAreaManager.getEditorById(editorIdOrNull);
+    for (const manager of this.editorAreaManagers.values()) {
+      const editor = manager.getEditorById(editorIdOrNull);
+      if (editor != null) {
+        return editor;
+      }
+    }
+    return null;
   }
 
   getEditorNextToFocusedEditor(): EditorAreaLayout_Editor | null {
-    return this.editorAreaManager.getEditorNextToFocusedEditor();
+    return this.getActiveManager().getEditorNextToFocusedEditor();
   }
 
   getOpenEditorDocuments(): EditorDocument[] {
-    return this.editorAreaManager.getOpenEditorDocuments();
+    // R4: enumeration spans all pages.
+    return [...this.editorAreaManagers.values()].flatMap((manager) => manager.getOpenEditorDocuments());
   }
 
   getOpenEditors() {
-    return this.editorAreaManager.getOpenEditors();
+    return [...this.editorAreaManagers.values()].flatMap((manager) => manager.getOpenEditors());
   }
 
   moveAndActivateEditorDocumentByEditorIdAndIndex(
@@ -1096,7 +1320,8 @@ export class EditorMediator extends AbstractEmitter {
     destIndex: number,
     shouldCloseEditorIfEmpty: boolean = true,
   ): void {
-    this.editorAreaManager.moveAndActivateEditorDocumentByEditorIdAndIndex(
+    const managerOfOrigin = this.getManagerOfEditor(origEditorId) ?? this.getActiveManager();
+    managerOfOrigin.moveAndActivateEditorDocumentByEditorIdAndIndex(
       origEditorId,
       origIndex,
       destEditorId,
@@ -1105,20 +1330,23 @@ export class EditorMediator extends AbstractEmitter {
     );
   }
 
-  canSplitEditor(editorDocument: EditorDocument): boolean {
-    return this.editorAreaManager.canSplitEditor(editorDocument);
+  canSplitEditor(editorDocument: EditorDocument | null): boolean {
+    if (editorDocument == null) {
+      return false;
+    }
+    return this.getManagerOfDocument(editorDocument).canSplitEditor(editorDocument);
   }
 
   splitEditorDocumentToTheRight(editorDocument: EditorDocument): EditorAreaLayout_Editor | null {
-    return this.editorAreaManager.splitEditorToTheRight(editorDocument);
+    return this.getManagerOfDocument(editorDocument).splitEditorToTheRight(editorDocument);
   }
 
   splitEditorDocumentToTheBottom(editorDocument: EditorDocument): EditorAreaLayout_Editor | null {
-    return this.editorAreaManager.splitEditorToTheBottom(editorDocument);
+    return this.getManagerOfDocument(editorDocument).splitEditorToTheBottom(editorDocument);
   }
 
   splitFocusedEditorToTheRight(): EditorAreaLayout_Editor {
-    return this.editorAreaManager.splitFocusedEditorToTheRight();
+    return this.getActiveManager().splitFocusedEditorToTheRight();
   }
 
   focusNextEditorDocument(): void {
@@ -1127,7 +1355,7 @@ export class EditorMediator extends AbstractEmitter {
       return;
     }
 
-    const editor = this.editorAreaManager.getEditorForEditorDocument(editorDocument);
+    const editor = this.getManagerOfDocument(editorDocument).getEditorForEditorDocument(editorDocument);
     assertNotNull(editor, 'editor');
 
     let nextIndex = editor.activeEditorDocumentIndex + 1;
@@ -1144,7 +1372,7 @@ export class EditorMediator extends AbstractEmitter {
       return;
     }
 
-    const editor = this.editorAreaManager.getEditorForEditorDocument(editorDocument);
+    const editor = this.getManagerOfDocument(editorDocument).getEditorForEditorDocument(editorDocument);
     assertNotNull(editor, 'editor');
 
     let nextIndex = editor.activeEditorDocumentIndex - 1;
@@ -1156,22 +1384,29 @@ export class EditorMediator extends AbstractEmitter {
   }
 
   setEditorTabsVisibility(visible: boolean): void {
-    this.editorAreaManager.setEditorTabsVisibility(visible);
+    this.getActiveManager().setEditorTabsVisibility(visible);
   }
 
   getViewData(): EditorAreaViewData {
-    return this.editorAreaManager.serialize();
+    const activeManager = this.getActiveManager();
+    const viewData = activeManager.serialize();
+    const page = this.bifrost.categories.getActivePage();
+    // A page that hides its tabs shows them again once it holds a second document, so that document stays reachable.
+    const pageShowsTabs = page?.editorTabsVisible !== false || activeManager.getOpenEditorDocuments().length > 1;
+    return { ...viewData, editorTabsVisible: viewData.editorTabsVisible && pageShowsTabs };
   }
 
   reset(): void {
-    this.editorAreaManager.reset();
+    for (const manager of this.editorAreaManagers.values()) {
+      manager.reset();
+    }
     this.editorDocumentModelManager.reset();
 
     this.emit(EVENT_EDITOR_AREA_LAYOUT_UPDATED);
   }
 
   updateEditorInlineSearch(editorDocument: EditorDocument, visible: boolean, searchQuery: SearchQuery): void {
-    this.editorAreaManager.updateEditorInlineSearch(editorDocument, visible, searchQuery);
+    this.getManagerOfDocument(editorDocument).updateEditorInlineSearch(editorDocument, visible, searchQuery);
   }
 
   onEditorSizeChanged(): void {

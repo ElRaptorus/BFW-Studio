@@ -8,15 +8,16 @@ import { initializeCommands } from './initializers/initializeCommands';
 import { initializeFileExplorerAutoReveal } from './initializers/initializeFileExplorerAutoReveal';
 import { initializeIcons } from './initializers/initializeIcons';
 import { initializeKeyBindings } from './initializers/initializeKeyBindings';
-import { initializeMenuBarItems } from './initializers/initializeMenuBarItems';
 import { initializeMenus } from './initializers/initializeMenus';
 import { initializePanes } from './initializers/initializePanes';
 import { initializeStatusBarItems } from './initializers/initializeStatusBarItems';
+import { initializeWorkbenchCategories } from './initializers/initializeWorkbenchCategories';
 import { loadSettings } from './settings/index';
 import { loadStartPage } from './startpage/index';
 
 export async function onLoad(bifrost: Bifrost): Promise<void> {
   initializeIcons(bifrost);
+  initializeWorkbenchCategories(bifrost);
 
   bifrost.theme.registerTheme({
     id: 'light',
@@ -31,6 +32,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.editors.registerDocumentType('Default.Document.Inspector.Item', {
+    page: 'active',
     uriMatch: /^fragment\+default\.document\.inspector\.item:/i,
     modelKey: null,
     rendererKey: 'DefaultDocumentInspectorFragmentRenderer',
@@ -100,7 +102,6 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
 
   initializeMenus(bifrost);
 
-  initializeMenuBarItems(bifrost);
   initializeStatusBarItems(bifrost);
 
   initializePanes(bifrost);

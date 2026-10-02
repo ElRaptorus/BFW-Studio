@@ -225,7 +225,7 @@ export async function activate(api: StudioPluginApi): Promise<void> {
 | `editors` | `bifrost.editors` (EditorMediator) via `PluginHostBridge` |
 | `panes` | `bifrost.panes` (PaneMediator) via `PluginHostBridge` |
 | `statusBar` | `bifrost.statusBar` (StatusBarMediator / StatusBarManager) via `PluginHostBridge` |
-| `menuBar` | `bifrost.menuBar` (MenuBarMediator / MenuBarManager) via `PluginHostBridge` |
+| `menuBar` | `bifrost.menuBar` (MenuBarMediator / MenuBarManager) via `PluginHostBridge`; plugins may only use the `header` area |
 | `menus` | `bifrost.menus` (MenuMediator) via `PluginHostBridge` |
 | `workspace` | `bifrost.files` (FileHandlingService) + `bifrost.solution` (SolutionMediator) via `PluginHostBridge` |
 | `views` | `bifrost.panes` (PaneMediator) via `TreeViewPaneProvider` + `PluginHostBridge` |
@@ -619,7 +619,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the Studio `Tree` component |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Renderer | Event-driven lazy activation: subscribes to activation events, defers `PH_LOAD_PLUGIN` until trigger fires. Stores a `pendingActivations` promise so concurrent callers (e.g. stub callbacks) join an in-flight activation instead of returning early |
-| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders, editor document type placeholders, service task types, pane toggles, themes, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules |
+| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders (with their `pages`), editor document type placeholders (with their `page`), service task types, themes, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Renderer | Pane UI showing "Activating plugin…" while the plugin is pending activation |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderEditorDocumentRenderer.tsx` | Renderer | Editor tab UI shown for a `contributes.editorDocumentTypes` placeholder: triggers activation on mount, force-reopens the tab once replaced by the real registration, or renders a terminal "denied"/"failed"/"mismatch" error state |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestTypes.ts` | Shared | TypeScript interfaces for the `bifrostStudio` manifest section |

@@ -62,8 +62,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('pane/plugin-listing: shows plugin cards with correct metadata', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
-      await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
 
       await studioAgent.assertVisible('[data-test--plugins-pane-list]', ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
@@ -87,8 +87,8 @@ describe('plugin-host/integration', () => {
         { pluginsDirectory: PLUGINS_EMPTY_DIR },
       );
 
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
-      await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
 
       await studioAgent.assertVisible('[data-test--plugins-pane-empty]', ASSERT_VISIBLE_TIMEOUT);
     });
@@ -97,8 +97,8 @@ describe('plugin-host/integration', () => {
       const resultBefore = await studioAgent.executeCommand('plugin.happy-plugin.greet', ['Pre']);
       assert.strictEqual(resultBefore, 'Hello, Pre!');
 
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
-      await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
 
       await studioAgent.executeCommand('plugins.refreshPluginList');
 
@@ -124,7 +124,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('toggle/disable: disabling a plugin updates the setting and marks the card', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -142,7 +142,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('toggle/re-enable: re-enabling a plugin removes it from the disabled list', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -165,7 +165,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('toggle/disabled-on-refresh: disabled plugins are not loaded after refresh', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -206,7 +206,7 @@ describe('plugin-host/integration', () => {
       const beforeDisable = await studioAgent.pluginHost.isCommandRegistered('plugin.happy-plugin.greet');
       assert.strictEqual(beforeDisable, true, 'command should be registered before disable');
 
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -219,7 +219,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('selective/reload-restores-command: re-enabling a plugin re-registers its commands', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -243,7 +243,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('selective/isolation: other plugins retain state when one is selectively unloaded', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -264,7 +264,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('selective/plugin-list-update: plugin list reflects status change after selective unload', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -287,7 +287,7 @@ describe('plugin-host/integration', () => {
         (window as any).bifrost.settings.set('plugin.lifecycle-plugin.deactivatedAt', '');
       });
 
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="lifecycle-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="lifecycle-plugin"]');
@@ -337,7 +337,7 @@ describe('plugin-host/integration', () => {
       const originalSource = await fs.readFile(pluginIndexPath, 'utf-8');
       await fs.writeFile(pluginIndexPath, originalSource.replace('Hello,', 'Hola,'), 'utf-8');
 
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -399,7 +399,7 @@ describe('plugin-host/integration', () => {
           version: '1.0.0',
           main: 'index.js',
           bifrostStudio: {
-            apiVersion: '1.0.0',
+            apiVersion: '2.0.0',
             permissions: ['filesystem'],
             activationEvents: ['onStartup'],
           },
@@ -533,7 +533,7 @@ describe('plugin-host/integration', () => {
 
       assert.strictEqual(env.pluginName, 'happy-plugin');
       assert.ok((env.pluginPath as string).includes('happy-plugin'), 'pluginPath should contain "happy-plugin"');
-      assert.strictEqual(env.apiVersion, '1.0.0');
+      assert.strictEqual(env.apiVersion, '2.0.0');
       assert.strictEqual(typeof env.storagePath, 'string');
     });
 
@@ -878,7 +878,7 @@ describe('plugin-host/integration', () => {
       const env = await studioAgent.executeCommand('plugin.kitchen-sink.getEnv');
       assert.strictEqual(env.pluginName, 'kitchen-sink');
       assert.ok(env.pluginPath.includes('kitchen-sink'), 'pluginPath should contain "kitchen-sink"');
-      assert.strictEqual(env.apiVersion, '1.0.0');
+      assert.strictEqual(env.apiVersion, '2.0.0');
       assert.ok(typeof env.storagePath === 'string' && env.storagePath.length > 0, 'storagePath should be set');
     });
   });
@@ -965,8 +965,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('readme/open-with-content: clicking a plugin card opens its README as an editor tab', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
-      await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="happy-plugin"]');
@@ -978,13 +978,14 @@ describe('plugin-host/integration', () => {
 
       const focusedUri = await studioAgent.getFocusedDocumentUri();
       assert.strictEqual(focusedUri, 'about:plugin-readme/happy-plugin');
+      await studioAgent.navigation.assertActivePage('control/plugins');
 
       await studioAgent.assertVisible('[data-test--plugin-readme="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.assertVisible('[data-test--plugin-readme-content]', ASSERT_VISIBLE_TIMEOUT);
     });
 
     it('readme/rendered-markdown: README content contains rendered HTML elements', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="kitchen-sink"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="kitchen-sink"]');
@@ -1017,7 +1018,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('readme/simple-readme: short README renders correctly', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="lifecycle-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="lifecycle-plugin"]');
@@ -1107,8 +1108,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('settings/with-category: opens settings GUI and navigates to the plugin category', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
-      await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="settings-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.getTestDriver().client!.execute(() => {
@@ -1137,8 +1138,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('settings/without-category: opens settings GUI without category navigation', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
-      await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.getTestDriver().client!.execute(() => {
@@ -1281,8 +1282,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('metadata/missing-author-warning: plugin card shows orange warning for missing author', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
-      await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="error-on-activate"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.assertVisible(
@@ -1292,14 +1293,14 @@ describe('plugin-host/integration', () => {
     });
 
     it('metadata/deprecated-indicator: plugin card shows yellow warning for deprecated plugin', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.assertVisible('[data-test--plugin-card-deprecated="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
     });
 
     it('metadata/readme-logo: README viewer renders logo for plugin with LOGO.png', async () => {
-      await studioAgent.leftMenuBar.togglePane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('pane/left/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="happy-plugin"]');
@@ -1467,7 +1468,7 @@ describe('plugin-host/integration', () => {
     it('onStartup/kitchen-sink-manifest: kitchen-sink PluginInfo has manifest populated', async () => {
       const plugin = await studioAgent.pluginHost.getByName('kitchen-sink');
       assert.ok(plugin?.manifest, 'manifest should be populated');
-      assert.strictEqual(plugin?.manifest.apiVersion, '1.0.0');
+      assert.strictEqual(plugin?.manifest.apiVersion, '2.0.0');
       assert.ok(
         Array.isArray(plugin?.manifest.activationEvents) && plugin?.manifest.activationEvents.includes('onStartup'),
         'activationEvents should include onStartup',
@@ -1554,7 +1555,7 @@ describe('plugin-host/integration', () => {
     it('metadata/manifest-present: plugins with bifrostStudio have manifest on PluginInfo', async () => {
       const plugin = await studioAgent.pluginHost.getByName('kitchen-sink');
       assert.ok(plugin?.manifest, 'manifest should be populated');
-      assert.strictEqual(plugin?.manifest.apiVersion, '1.0.0');
+      assert.strictEqual(plugin?.manifest.apiVersion, '2.0.0');
       assert.ok(plugin?.manifest.contributes, 'contributes should be present');
     });
 
@@ -1568,7 +1569,7 @@ describe('plugin-host/integration', () => {
     it('metadata/pending-manifest: pending plugins have manifest but no errorMessage', async () => {
       const plugin = await studioAgent.pluginHost.getByName('lazy-plugin');
       assert.ok(plugin?.manifest, 'lazy-plugin should have manifest');
-      assert.strictEqual(plugin?.manifest.apiVersion, '1.0.0');
+      assert.strictEqual(plugin?.manifest.apiVersion, '2.0.0');
       assert.ok(!plugin?.errorMessage, 'pending plugin should have no errorMessage');
     });
 
@@ -1886,6 +1887,13 @@ describe('plugin-host/integration', () => {
       assert.ok(manifestWarningsLine, 'log should contain output from manifest-warnings plugin');
     });
 
+    it('console/focus: focusing the plugin console lands on the plugins page', async () => {
+      await studioAgent.navigation.activatePage('design/workspace');
+      await studioAgent.executeCommand('std.workbench.focusPluginsConsole');
+      await studioAgent.navigation.assertActivePage('control/plugins');
+      await studioAgent.assertVisible('.bottom-pane .plugin-host-console', ASSERT_VISIBLE_TIMEOUT);
+    });
+
     it('console/clear: clearPluginHostLog empties the buffer', async () => {
       await studioAgent.getTestDriver().client!.execute(() => (window as any).bifrost.plugins.clearPluginHostLog());
 
@@ -1995,26 +2003,18 @@ describe('plugin-host/integration', () => {
       await finishPluginHostTest(studioAgent, task);
     });
 
-    it('menuBar/registerItem: button appears in menu bar view data', async () => {
+    it('menuBar/registerItem: button appears in the header area', async () => {
       const viewData = await studioAgent.getMenuBarViewData();
 
-      const rightItems = viewData.items.right;
-      const quickAction = rightItems.find((item: any) => item.id === 'kitchen-sink.quickAction');
-      assert.ok(quickAction, 'kitchen-sink.quickAction should exist in right area');
+      const quickAction = viewData.items.header.find((item: any) => item.id === 'kitchen-sink.quickAction');
+      assert.ok(quickAction, 'kitchen-sink.quickAction should exist in header area');
       assert.strictEqual(quickAction.type, 'button');
       assert.strictEqual(quickAction.icon, 'ph-lightning');
     });
 
-    it('menuBar/modifier: pane toggle appears after plugins toggle', async () => {
-      const viewData = await studioAgent.getMenuBarViewData();
-
-      const leftItems = viewData.items.left;
-      const pluginsIdx = leftItems.findIndex((item: any) => item.id === 'pane/left/plugins');
-      const sidebarIdx = leftItems.findIndex((item: any) => item.id === 'kitchen-sink.sidebarToggle');
-
-      assert.ok(pluginsIdx !== -1, 'pane/left/plugins should exist in left area');
-      assert.ok(sidebarIdx !== -1, 'kitchen-sink.sidebarToggle should exist in left area');
-      assert.ok(sidebarIdx > pluginsIdx, 'sidebar toggle should appear after plugins toggle');
+    it('menuBar/modifier: pane_content_toggle items are rejected', async () => {
+      const result = await studioAgent.executeCommand('plugin.kitchen-sink.tryPaneContentToggle');
+      assert.match(String(result), /pane_content_toggle.*removed in Plugin API 2\.0\.0/);
     });
 
     it('menuBar/isVisible: returns current visibility state', async () => {
@@ -2043,17 +2043,13 @@ describe('plugin-host/integration', () => {
       assert.strictEqual(kitchenSinkEntry, undefined, 'Kitchen Sink View Entry should be removed after disable');
     });
 
-    it('menuBar/cleanup: items and modifiers removed on plugin disable', async () => {
+    it('menuBar/cleanup: items removed on plugin disable', async () => {
       await studioAgent.pluginHost.toggleAndWaitUntilStatus('kitchen-sink', 'disabled');
 
       const viewData = await studioAgent.getMenuBarViewData();
 
-      const allItems = [...viewData.items.left, ...viewData.items.center, ...viewData.items.right];
-      const quickAction = allItems.find((item: any) => item.id === 'kitchen-sink.quickAction');
-      const sidebarToggle = allItems.find((item: any) => item.id === 'kitchen-sink.sidebarToggle');
-
+      const quickAction = viewData.items.header.find((item: any) => item.id === 'kitchen-sink.quickAction');
       assert.strictEqual(quickAction, undefined, 'quick action button should be removed after disable');
-      assert.strictEqual(sidebarToggle, undefined, 'sidebar toggle should be removed after disable');
     });
   });
 

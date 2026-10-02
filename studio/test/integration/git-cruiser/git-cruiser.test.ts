@@ -54,16 +54,25 @@ describe('git-cruiser/smoke', () => {
     }
   });
 
-  it('smoke/git-pane: should toggle the Git pane via left menubar', async () => {
-    await studioAgent.leftMenuBar.togglePane('pane/left/git');
-    await studioAgent.leftMenuBar.assertPaneIsActive('pane/left/git');
+  it('smoke/git-pane: should show the Git pane through the Source page', async () => {
+    await studioAgent.navigation.showLeftPane('pane/left/git');
+    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/git');
 
     await studioAgent.assertVisible('[data-test--git-pane]', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
+  it('smoke/git-focus: git.focusGitPane switches from Design › Workspace to Design › Source', async () => {
+    await studioAgent.navigation.activatePage('design/workspace');
+    await studioAgent.executeCommand('git.focusGitPane');
+
+    await studioAgent.navigation.assertActivePage('design/source');
+    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/git');
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
   it('smoke/git-detect: should detect the git repo after opening solution', async () => {
-    await studioAgent.leftMenuBar.togglePane('pane/left/git');
+    await studioAgent.navigation.showLeftPane('pane/left/git');
     await studioAgent.assertGitPaneVisible();
 
     const branchLabel = await studioAgent.getGitPaneBranchLabel();
@@ -81,7 +90,7 @@ describe('git-cruiser/smoke', () => {
     await studioAgent.openViaCommandSearch('Git: Refresh Status');
     await studioAgent.pause(1000);
 
-    await studioAgent.leftMenuBar.togglePane('pane/left/git');
+    await studioAgent.navigation.showLeftPane('pane/left/git');
     await studioAgent.assertGitPaneVisible();
     await studioAgent.pause(1000);
 

@@ -31,7 +31,7 @@ Key characteristics:
 │  (diagram-js) │  (bpmnlint)   │ (canvas markers)          │
 ├───────────────┴───────────────┴───────────────────────────┤
 │  ErrorSummaryBadge │ ProblemsPane │ PaletteProvider        │
-│                    │ (linter grp) │ MenuBar RulesetSelect  │
+│                    │ (linter grp) │ Ruleset (page bar)     │
 │ Explorer lintUris  │ lintOnDisk   │ View → Live Linter     │
 └───────────────────────────────────────────────────────────┘
          │                │               │
@@ -267,7 +267,7 @@ Each structure check is its own rule, so the findings pane shows only the explan
 
 The three config rules are separate so each finding carries its own explanation, and so `adhoc-subprocess-ordering` holds only Engine rejections while the two advice rules stay off in `bpmn-development`. `adhoc-subprocess-ordering` reads `bfw:ActiveElements` via the shared `extensionElements.values` lookup pattern (same as `bfw:LoopInterval`, `bfw:CorrelationKey`, etc.). A sequential engine-managed ad-hoc subprocess that passes `bpmn-production-ready` also passes the engine's deploy-time check for `bfw:ActiveElements`. The score still charges one penalty per element when both rules report the same subprocess.
 
-Unit tests: `studio/test/unit/bpmn-linter/adhoc-subprocess-rules.test.ts`. Integration test: `studio/test/integration/bpmn-linter/adhoc-rules.test.ts` opens `test-solution-bpmn/adhoc-subprocess.bpmn` (config violation) and `adhoc-subprocess-invalid.bpmn` (structure violation) with the linter enabled and `bpmn-production-ready` active, asserting the Findings pane reports both.
+Unit tests: `studio/test/unit/bpmn-linter/adhoc-subprocess-rules.test.ts`.
 
 ### Exclusive / Complex split-flow conditions
 
@@ -398,15 +398,16 @@ A floating React component mounted inside `.editor__content` via DOM injection. 
 
 ---
 
-## Ruleset Selector (Menu Bar)
+## Ruleset Selector (Page Bar)
 
-**Path:** `studio/src/modules/bpmn-linter/initializers/initializeMenuBarItems.ts`
+**Path:** `studio/src/modules/bpmn-linter/initializers/initializePageBarItems.ts`
 
-A `<select>` dropdown registered in the right menu bar via `bifrost.menuBar.registerMenuBarItemModifier`. Positioned before the property-panel toggle button (`id: 'menu-bar-menu-layout'`). Replaces the former `RulesetSelectorPane` that lived inside the right pane area. When the right pane area is hidden, the select stays reachable because the right `MenuBarSection` is parked on the center column top row.
+`initializePageBarItems` registers `buildLinterPageBarItems` in the internal `pageBar` menu bar area with `pages: ['design/*']`, so the items sit right-pinned in the Design page bar ([workbench-categories.md](workbench-categories.md) §Header). Items: an icon `bpmn-linter-rule-selection-icon` (`ph ph-fill ph-highlighter`, tooltip `Current Linter Ruleset<origin>`) and a select `bpmn-linter-profile-select` (tooltip `Select Linter Ruleset<origin>`). The Findings pane has no select.
 
-- **Visibility**: always inserted in the right menu bar (parked on the center row when the property pane is hidden). Not gated on a focused BPMN tab or on `bpmnLinter.enabled`.
-- **Data source**: `bpmnLinter.profile` plus built-in Development / Production Ready names and `bpmnLinter.customRulesets` keys, read from settings (not from `LintBridge`)
+- **Visibility**: whenever a BPMN document is focused, regardless of `bpmnLinter.enabled`; the factory returns `[]` otherwise.
+- **Data source**: `bpmnLinter.profile` plus built-in Development / Production Ready names and `bpmnLinter.customRulesets` keys (`listLinterProfileEntries`; an unknown profile falls back to `bpmn-development`). `profileOriginSuffix` appends ` (Solution)` or ` (Project: <name>)` when the profile comes from that scope. The menu bar rebuilds on `EVENT_CONTENT_UPDATE` (focus, settings, solution).
 - **On change**: executes `bpmn.linter.setProfile`, which writes `bpmnLinter.profile`. Live lint re-runs only when a `LintBridge` is active.
+- **Tests**: `test/unit/bpmn-linter/linterPageBarItems.test.ts`; `StudioAgent.getLinterProfileValue()` / `selectLinterProfile(value)` use `[data-menu-bar-item-id="bpmn-linter-profile-select"] select`.
 
 ---
 
@@ -489,7 +490,7 @@ When the profile is a built-in name, no overrides are applied.
 |---------|-------|---------|
 | `bpmn.linter.toggle` | BPMN: Toggle Live Linter | Command search, View → BPMN Editor → Live Linter. Writes `bpmnLinter.enabled` directly (no focused BPMN required). Palette still calls `lintBridge.toggle()`. |
 | `bpmn.linter.showProblemsPane` | (internal) | Badge click — activates the `linter` group in the right pane area |
-| `bpmn.linter.setProfile` | (internal) | Menu bar selector — writes `bpmnLinter.profile`. Always enabled. |
+| `bpmn.linter.setProfile` | (internal) | Page bar ruleset select — writes `bpmnLinter.profile`. Always enabled. |
 | `bpmn.linter.createCustomRuleset` | BPMN: Create Custom Lint Ruleset | Command search |
 | `bpmn.linter.lintUris` | (internal) | Explorer Lint File / Folder / multi-select. Args: `string[]` of file or directory URIs. Recursive `*.bpmn` walk for directories. |
 | `bpmn.linter.lintSolution` | BPMN: Lint Solution | Explorer solution header + command search. Walks every `solution.projects[].baseUri`. |
@@ -677,6 +678,6 @@ An interface describing the public surface of the `LintBridge` diagram-js servic
 | Menus initializer | `studio/src/modules/bpmn-linter/initializers/initializeMenus.ts` |
 | Explorer / disk lint | `studio/src/modules/bpmn-linter/lintUris.ts`, `studio/src/modules/bpmn-linter/lintOnDisk.ts` |
 | Panes initializer | `studio/src/modules/bpmn-linter/initializers/initializePanes.ts` |
-| Menu bar items | `studio/src/modules/bpmn-linter/initializers/initializeMenuBarItems.ts` |
+| Ruleset select (page bar) | `studio/src/modules/bpmn-linter/initializers/initializePageBarItems.ts` |
 | SCSS | `studio/src/modules/bpmn-linter/styles/bpmn-linter.scss` |
 | Module registration | `studio/src/createAndInitializeBifrost.ts` |

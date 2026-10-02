@@ -6,6 +6,8 @@
 
 The BPMN editor exposes element-specific property panes in the right pane area. Panes are grouped into three categories (`property`, `scripting`, `documentation`) and registered via `initializeBpmnPanes.ts`. Each pane implements the `PaneProvider` contract and uses `BpmnDocumentElementAccess` to read/write element data through the bpmn-js modeler's command stack.
 
+BPMN documents and all their fragment types open on `design/workspace`. The right groups are registered without `pages`, so they show on every page, but their `shouldBeDisplayed` hides them unless a BPMN document is focused ([workbench-categories.md](workbench-categories.md)).
+
 ---
 
 ## Architecture

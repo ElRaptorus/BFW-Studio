@@ -10,6 +10,7 @@ export default function initializeDocumentTypes(bifrost: Bifrost, connectionMana
   });
 
   bifrost.editors.registerDocumentType('engine-decision-viewer', {
+    page: 'debug/engines',
     uriMatch: /^engine-decision:\/\/[^/]+\/.+$/,
     modelKey: 'EngineDecisionViewerModel',
     modelConstructor: DecisionViewerDocumentModel,

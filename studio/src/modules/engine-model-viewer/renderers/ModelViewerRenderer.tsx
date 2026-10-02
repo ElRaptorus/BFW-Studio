@@ -296,6 +296,13 @@ export default function ModelViewerRenderer(props: EditorDocumentRendererProps):
             command={MODEL_VIEWER_COMMANDS.downloadXml}
             commandArgs={[editorDocument]}
           />
+          <EditorToolbarButton
+            studio={bifrost}
+            icon="ph ph-pencil-simple"
+            tooltip="Open in Design"
+            command="engine.workspace.openLocalSource"
+            commandArgs={['process', processModelId]}
+          />
         </EditorToolbarLeft>
         <EditorToolbarCenter>
           <EditorToolbarButton

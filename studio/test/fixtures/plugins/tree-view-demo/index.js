@@ -20,6 +20,7 @@ exports.activate = async (api) => {
     id: 'demo-tree',
     title: 'Demo Tree',
     area: 'left',
+    pages: ['design/workspace'],
     icon: 'ph-tree-structure',
   });
 

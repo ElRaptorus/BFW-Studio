@@ -33,6 +33,7 @@ describe('machine-sanctum', () => {
     await studioAgent.openUriAsDocument('about:machine-sanctum/contextmenu');
     await studioAgent.openUriAsDocument('about:machine-sanctum/errors');
     await studioAgent.openUriAsDocument('about:machine-sanctum/feel_editor');
+    await studioAgent.navigation.assertActivePage('control/machine-sanctum');
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 

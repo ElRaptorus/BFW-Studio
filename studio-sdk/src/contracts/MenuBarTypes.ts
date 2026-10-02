@@ -1,11 +1,11 @@
-export type MenuBarItemArea = 'left' | 'center' | 'right';
+/** Plugins register menu bar items in the workbench header. */
+export type MenuBarItemArea = 'header';
 
 export type MenuBarItem =
   | MenuBarItem_Button
   | MenuBarItem_Divider
   | MenuBarItem_Icon
   | MenuBarItem_Menu
-  | MenuBarItem_PaneContentToggle
   | MenuBarItem_Select
   | MenuBarItem_Text;
 
@@ -40,16 +40,6 @@ export type MenuBarItem_Menu = {
   readonly icon: string;
   readonly menu: string;
   readonly tooltip?: string;
-};
-
-export type MenuBarItem_PaneContentToggle = {
-  type: 'pane_content_toggle';
-  readonly id?: string;
-  readonly visible?: boolean;
-  readonly icon: string;
-  readonly tooltip: string;
-  readonly paneAreaId: 'left' | 'right' | 'bottom';
-  readonly paneId: string;
 };
 
 export type MenuBarItem_Select = {

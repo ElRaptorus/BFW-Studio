@@ -497,3 +497,10 @@
     stroke-width: 2px;
   }
 }
+
+.bifrost [data-menu-bar-item-id='bpmn-linter-profile-select'] select {
+  max-width: 12rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

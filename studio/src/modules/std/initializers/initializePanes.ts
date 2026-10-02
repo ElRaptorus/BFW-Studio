@@ -7,25 +7,35 @@ import * as NotificationInspector from '#components/panes/inspectors/Notificatio
 import * as PerformanceInspector from '#components/panes/inspectors/PerformanceInspector';
 
 export function initializePanes(bifrost: Bifrost): void {
-  bifrost.panes.registerPaneGroup('left', 'explorer', [
-    bifrost.panes.getPaneViaPaneProvider(
-      'pane/left/open-editors',
-      'std/pane-providers/activities/explorer/OpenEditorsPane',
-      OpenEditorsPane,
-    ),
-    bifrost.panes.getPaneViaPaneProvider(
-      'pane/left/explorer',
-      'std/pane-providers/activities/explorer/SolutionPane',
-      SolutionPane,
-    ),
-  ]);
-  bifrost.panes.registerPaneGroup('left', 'search', [
-    bifrost.panes.getPaneViaPaneProvider(
-      'pane/left/search',
-      'std/pane-providers/activities/search/GlobalSearchPane',
-      GlobalSearchPane,
-    ),
-  ]);
+  bifrost.panes.registerPaneGroup(
+    'left',
+    'explorer',
+    [
+      bifrost.panes.getPaneViaPaneProvider(
+        'pane/left/open-editors',
+        'std/pane-providers/activities/explorer/OpenEditorsPane',
+        OpenEditorsPane,
+      ),
+      bifrost.panes.getPaneViaPaneProvider(
+        'pane/left/explorer',
+        'std/pane-providers/activities/explorer/SolutionPane',
+        SolutionPane,
+      ),
+    ],
+    { label: 'Explorer', pages: ['design/workspace'] },
+  );
+  bifrost.panes.registerPaneGroup(
+    'left',
+    'search',
+    [
+      bifrost.panes.getPaneViaPaneProvider(
+        'pane/left/search',
+        'std/pane-providers/activities/search/GlobalSearchPane',
+        GlobalSearchPane,
+      ),
+    ],
+    { label: 'Search', pages: ['design/workspace'] },
+  );
 
   bifrost.panes.registerPaneGroup('right', 'property', [], { label: 'Properties', icon: 'ph ph-list-dashes' });
   bifrost.panes.registerPaneGroup('right', 'scripting', [], { label: 'Scripts', icon: 'ph ph-scroll' });
@@ -50,5 +60,9 @@ export function initializePanes(bifrost: Bifrost): void {
     ),
   ]);
 
-  bifrost.panes.registerPaneGroup('bottom', 'console', [], { label: 'Debug Console', icon: 'ph ph-terminal' });
+  bifrost.panes.registerPaneGroup('bottom', 'console', [], {
+    label: 'Debug Console',
+    icon: 'ph ph-terminal',
+    pages: ['debug/engines'],
+  });
 }

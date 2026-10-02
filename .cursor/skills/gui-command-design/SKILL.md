@@ -17,7 +17,7 @@ The command search (`Cmd/Ctrl+Shift+P`) targets power users who know what they'r
 
 1. **Menu Bar** — The primary entry point for most users. Use the `File` menu for file/folder/solution operations, `Edit` for editing, etc.
 2. **Context Menus** — Provide contextual actions where they're relevant (e.g., right-clicking a file, directory, project root, or solution).
-3. **Activity Bar / Status Bar** — For persistent actions or status indicators.
+3. **Header / Status Bar** — For persistent actions or status indicators: header menu bar items (the only menu bar area), layout toggles, and the category shortcuts (`alt-1…6` on Windows/Linux, `⌘⌥1…6` on macOS, View › Go to).
 
 ## Checklist for New Commands
 

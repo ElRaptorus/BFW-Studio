@@ -755,6 +755,12 @@ export class EditorAreaManager extends AbstractEmitter implements ISerializable 
     return foundEditor;
   }
 
+  /** Internal: Appends an already existing document to the first editor, creating it when needed. */
+  adoptEditorDocument(editorDocument: EditorDocument): void {
+    const editor = this.getOpenEditors()[0] ?? this.resetEditor();
+    editor.editorDocuments.push(editorDocument);
+  }
+
   setEditorTabsVisibility(visible: boolean): void {
     this.editorTabsVisible = visible;
 

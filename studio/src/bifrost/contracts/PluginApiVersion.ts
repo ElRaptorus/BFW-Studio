@@ -11,4 +11,4 @@
  * - MINOR: backward-compatible additions (old plugins still work)
  * - PATCH: bug fixes (no API surface change)
  */
-export const STUDIO_PLUGIN_API_VERSION = '1.0.0';
+export const STUDIO_PLUGIN_API_VERSION = '2.0.0';

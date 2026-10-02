@@ -210,7 +210,7 @@ Alternatively, use CSS `font-size` directly on the icon element or its parent â€
 | `ph-flip-v` | Vertical mirror     |
 
 ```typescript
-// A mirrored search icon for the left menu bar
+// A mirrored search icon
 'std/left-pane-item/search': 'ph-bold ph-magnifying-glass ph-flip-h'
 ```
 

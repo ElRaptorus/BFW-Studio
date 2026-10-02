@@ -559,22 +559,31 @@ export function initializeEditorCommands(bifrost: Bifrost): void {
     bifrost.editors.closeEditorDocument(editorDocument);
   });
 
+  // The tab-close commands act on the page that shows the tab (or the active page), never on hidden pages.
+  const getOpenEditorDocumentsOnPageOf = (editorDocument?: EditorDocument | null): EditorDocument[] => {
+    const pageId =
+      editorDocument != null
+        ? bifrost.editors.getPageIdOfEditorDocument(editorDocument)
+        : bifrost.categories.getActivePageId();
+    return pageId == null ? [] : bifrost.editors.getOpenEditorDocumentsOfPage(pageId);
+  };
+
   commands.register('std.editor.closeOtherEditorDocuments', async (editorDocument: EditorDocument) => {
-    const otherEditorDocuments = bifrost.editors.getOpenEditorDocuments().filter((openEditorDocument) => {
+    const otherEditorDocuments = getOpenEditorDocumentsOnPageOf(editorDocument).filter((openEditorDocument) => {
       return openEditorDocument.uri !== editorDocument.uri;
     });
 
     await bifrost.editors.closeEditorDocumentsUntilUserCancels(otherEditorDocuments);
   });
 
-  commands.register('std.editor.closeAllEditorDocuments', async () => {
-    const editorDocuments = bifrost.editors.getOpenEditorDocuments();
+  commands.register('std.editor.closeAllEditorDocuments', async (editorDocument?: EditorDocument | null) => {
+    const editorDocuments = getOpenEditorDocumentsOnPageOf(editorDocument);
 
     await bifrost.editors.closeEditorDocumentsUntilUserCancels(editorDocuments);
   });
 
-  commands.register('std.editor.closeSavedEditorDocuments', async () => {
-    const editorDocuments = bifrost.editors.getOpenEditorDocuments();
+  commands.register('std.editor.closeSavedEditorDocuments', async (editorDocument?: EditorDocument | null) => {
+    const editorDocuments = getOpenEditorDocumentsOnPageOf(editorDocument);
 
     const editorDocumentsWithoutChanges = editorDocuments.filter((currentEditorDocument) => {
       return !currentEditorDocument.hasUnsavedChanges;

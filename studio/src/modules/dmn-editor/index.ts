@@ -19,6 +19,7 @@ export const DMN_DOCUMENT_TYPE = 'dmn';
 
 export function onLoad(bifrost: Bifrost): void {
   bifrost.editors.registerDocumentType(DMN_DOCUMENT_TYPE, {
+    page: 'design/workspace',
     uriMatch: /\.dmn$/,
     modelKey: 'DmnDocumentModel',
     modelConstructor: DmnDocumentModel,

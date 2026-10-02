@@ -116,6 +116,10 @@ Form-builder panes (`PropertiesFormBuilderField`, `PropertiesFormBuilderAction`)
 
 ---
 
+## Pages
+
+`PaneManager` keeps a single `paneAreas` set holding all groups. `registerPaneGroup(area, groupId, panes, { pages })` assigns a group to workbench pages; `pages` is mandatory for left groups (throws otherwise) and left groups should carry a `label`, because the text tab strip of `PaneAreaLeft` (two or more displayable left groups on a page, for example `Explorer` and `Search` on `design/workspace`) shows it and defaults to every page for right and bottom groups. Area visibility, size, active group and last active pane are stored per page, so switching pages swaps that state. `getViewData()` returns copies of the areas filtered to the active page; with no active page (an empty category) every area is empty. The Workbench also drops the right column when none of its groups has a displayable pane. A page with `paneAreas: []` (Home, Settings, Machine Sanctum, About) shows no area at all. Index-based methods operate on that filtered list. Activating a pane of a group on another page switches to the group's first page. Persisted format is `{ version: 2, pages, collapsed }`; state without `version` is ignored. Details: [workbench-categories.md](workbench-categories.md).
+
 ## Public API / User-Facing Features
 
 Users see panes as stacked cards in a pane area. Groups with at least one displayable pane appear as tabs (icon tabs on the right, text tabs on the bottom). Collapse is per-pane (`PaneObject.collapsed`).

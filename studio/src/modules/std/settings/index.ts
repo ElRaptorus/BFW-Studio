@@ -12,6 +12,7 @@ import { requestCategoryNavigation, requestScopeNavigation } from './settingsNav
 
 export function loadSettings(bifrost: Bifrost): void {
   bifrost.editors.registerDocumentType('settings-gui', {
+    page: 'control/settings',
     uriMatch: /^about:settings$/,
     modelKey: null,
     modelConstructor: null,
@@ -21,6 +22,7 @@ export function loadSettings(bifrost: Bifrost): void {
   });
 
   bifrost.editors.registerDocumentType('settings-json-scoped', {
+    page: 'control/settings',
     uriMatch: /^about:settings-json\?scope=/,
     modelKey: 'ScopedSettingsDocumentModel',
     modelConstructor: ScopedSettingsDocumentModel,
@@ -30,6 +32,7 @@ export function loadSettings(bifrost: Bifrost): void {
   });
 
   bifrost.editors.registerDocumentType('settings-json', {
+    page: 'control/settings',
     uriMatch: /^about:settings-json$/,
     modelKey: 'SettingsDocumentModel',
     modelConstructor: UserSettingsDocumentModel,
@@ -39,6 +42,7 @@ export function loadSettings(bifrost: Bifrost): void {
   });
 
   bifrost.editors.registerDocumentType('default-settings', {
+    page: 'control/settings',
     uriMatch: /^about:default-settings$/,
     modelKey: null,
     modelConstructor: null,
@@ -48,6 +52,7 @@ export function loadSettings(bifrost: Bifrost): void {
   });
 
   bifrost.editors.registerDocumentType('key-bindings', {
+    page: 'control/settings',
     uriMatch: /^about:key-bindings$/,
     modelKey: null,
     modelConstructor: null,

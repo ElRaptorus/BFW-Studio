@@ -11,6 +11,7 @@ export function loadAboutPage(studio: Bifrost): void {
   const Aboutpage = __BIFROST_CLIENT__ === 'electron' ? AboutpageRendererElectron : AboutpageRenderer;
 
   studio.editors.registerDocumentType('aboutpage', {
+    page: 'control/about',
     uriMatch: /^about:about$/,
     modelKey: null,
     modelConstructor: null,

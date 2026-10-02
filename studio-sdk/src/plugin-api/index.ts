@@ -131,7 +131,6 @@ export type {
   ManifestKeybinding,
   ManifestMenuItem,
   ManifestPaneContribution,
-  ManifestPaneToggle,
   ManifestServiceTaskType,
   ManifestSetting,
   ManifestTheme,

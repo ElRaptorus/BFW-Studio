@@ -8,7 +8,9 @@ import type {
   PaneProviderModule,
 } from '#bifrost/contracts/PaneTypes';
 import { EVENT_PANE_LAYOUT_UPDATED, EVENT_PANE_SIZE_UPDATED } from '#bifrost/contracts/internal/PaneEvents';
+import { EVENT_WORKBENCH_PAGE_ACTIVATED } from '#bifrost/contracts/internal/WorkbenchEvents';
 
+import type { CategoryMediator } from './CategoryMediator';
 import type { LocalStorageItem } from './LocalStorageItem';
 import { PaneManager } from './PaneManager';
 import { PaneProviderManager } from './PaneProviderManager';
@@ -45,6 +47,16 @@ export class PaneMediator extends AbstractEmitter {
 
     this.paneManager.on(EVENT_PANE_LAYOUT_UPDATED, () => this.emit(EVENT_PANE_LAYOUT_UPDATED));
     this.paneManager.on(EVENT_PANE_SIZE_UPDATED, () => this.emit(EVENT_PANE_SIZE_UPDATED));
+  }
+
+  /** Panes follow the active workbench page. Call once, before `restoreFromLastSession`. */
+  attachCategories(categories: CategoryMediator): void {
+    this.paneManager.configurePages(
+      (pageId) => categories.getPaneAreasOfPage(pageId),
+      (pageId) => categories.activatePage(pageId),
+    );
+    categories.on(EVENT_WORKBENCH_PAGE_ACTIVATED, (pageId: string | null) => this.paneManager.setActivePage(pageId));
+    this.paneManager.setActivePage(categories.getActivePageId());
   }
 
   restoreFromLastSession(): void {
@@ -136,7 +148,7 @@ export class PaneMediator extends AbstractEmitter {
     paneArea: PaneAreaName,
     paneGroupId: string,
     paneObjects: PaneObject[],
-    options?: { label?: string; icon?: string | (() => string) },
+    options?: { label?: string; icon?: string | (() => string); pages?: string[] },
   ): void {
     this.paneManager.registerPaneGroup(paneArea, paneGroupId, paneObjects, options);
   }

@@ -3,8 +3,8 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { LintBridge } from './LintBridge';
 import { LinterPaletteProvider } from './LinterPaletteProvider';
 import { initializeCommands } from './initializers/initializeCommands';
-import { initializeMenuBarItems } from './initializers/initializeMenuBarItems';
 import { initializeMenus } from './initializers/initializeMenus';
+import { initializePageBarItems } from './initializers/initializePageBarItems';
 import { initializePanes, linterCounts } from './initializers/initializePanes';
 import { initializeSettings } from './initializers/initializeSettings';
 import './styles/bpmn-linter.scss';
@@ -15,8 +15,8 @@ export function onLoad(bifrost: Bifrost): void {
   initializeSettings(bifrost);
   initializeCommands(bifrost);
   initializeMenus(bifrost);
+  initializePageBarItems(bifrost);
   initializePanes(bifrost);
-  initializeMenuBarItems(bifrost);
 
   bifrost.icons.registerIcons({
     'bpmn-linter/severity/error': 'ph-fill ph-x-circle',

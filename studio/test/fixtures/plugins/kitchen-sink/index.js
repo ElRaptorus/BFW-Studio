@@ -476,28 +476,30 @@ exports.activate = async (api) => {
 
   // ─── MenuBar API ────────────────────────────────────────────
 
-  await api.menuBar.registerMenuBarItem('right', [
-    {
-      type: 'button',
-      id: 'kitchen-sink.quickAction',
-      icon: 'ph-lightning',
-      tooltip: 'Kitchen Sink Quick Action',
-      command: 'plugin.kitchen-sink.getStatus',
-    },
-  ]);
-
-  await api.menuBar.registerMenuBarItemModifier({
-    insertAfter: 'pane/left/plugins',
-    items: [
+  await api.menuBar.registerMenuBarItem(
+    'header',
+    [
       {
-        type: 'pane_content_toggle',
-        id: 'kitchen-sink.sidebarToggle',
-        icon: 'ph-flask',
-        tooltip: 'Kitchen Sink Sidebar',
-        paneAreaId: 'left',
-        paneId: 'kitchen-sink.sidebar',
+        type: 'button',
+        id: 'kitchen-sink.quickAction',
+        icon: 'ph-lightning',
+        tooltip: 'Kitchen Sink Quick Action',
+        command: 'plugin.kitchen-sink.getStatus',
       },
     ],
+    { pages: ['design/*'] },
+  );
+
+  await api.commands.register('tryPaneContentToggle', async () => {
+    try {
+      await api.menuBar.registerMenuBarItemModifier({
+        insertAfter: 'kitchen-sink.quickAction',
+        items: [{ type: 'pane_content_toggle', id: 'kitchen-sink.toggle', paneId: 'x' }],
+      });
+      return 'accepted';
+    } catch (error) {
+      return String(error?.message ?? error);
+    }
   });
 
   await api.commands.register('isMenuBarVisible', async () => {
@@ -678,6 +680,7 @@ exports.activate = async (api) => {
         id: 'ks-tree',
         title: 'Kitchen Sink Tree',
         area: 'left',
+        pages: ['design/workspace'],
         icon: 'ph-tree-structure',
       });
       treeViewRegistered = true;

@@ -26,6 +26,7 @@ import { StatusBarMediator } from './browser/StatusBarMediator';
 import { ThemeMediator } from './browser/ThemeMediator';
 import { ViewMediatorManager } from './browser/ViewMediatorManager';
 import { BifrostEventService } from './common/BifrostEventService';
+import { CategoryMediator } from './common/CategoryMediator';
 import { DiagnosticsManager } from './common/DiagnosticsManager';
 import { DialogManager } from './common/DialogManager';
 import { DialogService } from './common/DialogService';
@@ -177,6 +178,12 @@ export class Bifrost {
    * Check `PaneMediator` for more information.
    */
   public readonly panes: PaneMediator;
+  /**
+   * Categories (header entries) and their pages. Every document type and pane group belongs to a page.
+   *
+   * Check `CategoryManager` for more information.
+   */
+  public readonly categories: CategoryMediator;
 
   // Views & View Mediators
 
@@ -338,6 +345,12 @@ export class Bifrost {
         description: 'When enabled, single-clicked files open in a temporary tab that gets replaced by the next file.',
         default: false,
       },
+      'workbench.categories.showEmpty': {
+        type: 'boolean',
+        label: 'Show Empty Categories',
+        description: 'Show workbench categories that have no pages (for example Measure) in the header.',
+        default: false,
+      },
       'dialog.defaultDirectory': {
         type: 'string',
         label: 'Default Dialog Directory',
@@ -383,6 +396,8 @@ export class Bifrost {
     const recentlyClosedStorage = this.getLocalStorage('RecentlyClosed', BifrostLocalStorageScope.Instance);
     this.recentlyClosed = new RecentlyClosedMediator(recentlyClosedStorage);
     this.recentlyClosed.on(EVENT_RECENTLY_CLOSED_CHANGED, () => this.menus.updateMenus());
+
+    this.categories = new CategoryMediator(this.getLocalStorage('Categories', BifrostLocalStorageScope.Instance));
 
     const editorsStorage = this.getLocalStorage('EditorArea', BifrostLocalStorageScope.Instance);
     this.editors = new EditorMediator(editorsStorage, this);
@@ -633,6 +648,9 @@ export class Bifrost {
       }
     };
 
+    maybe(() => this.categories.restoreFromLastSession());
+    maybe(() => this.categories.ensureActivePage('design/workspace'));
+    maybe(() => this.panes.attachCategories(this.categories));
     maybe(() => this.panes.restoreFromLastSession());
     maybe(() => this.editors.restoreFromLastSession());
 
@@ -755,6 +773,7 @@ export class Bifrost {
   clearInstance(): void {
     this.editors.clearInstance();
     this.panes.clearInstance();
+    this.categories.clearInstance();
     this.solution.clearInstance();
     this.recentlyClosed.clearInstance();
   }

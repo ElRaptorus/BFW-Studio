@@ -21,6 +21,10 @@ import {
 } from '#bifrost/contracts/internal/EditorEvents';
 import { EVENT_PANE_LAYOUT_UPDATED } from '#bifrost/contracts/internal/PaneEvents';
 import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
+import {
+  EVENT_WORKBENCH_CATEGORIES_UPDATED,
+  EVENT_WORKBENCH_PAGE_ACTIVATED,
+} from '#bifrost/contracts/internal/WorkbenchEvents';
 
 import React, { useCallback, useDeferredValue, useEffect, useReducer, useRef, useState } from 'react';
 
@@ -29,11 +33,12 @@ import { ErrorBoundaryWithMessage } from './ErrorBoundaryWithMessage';
 import { Icon } from './Icon';
 import DialogContainer from './dialog/Dialog';
 import EditorArea from './editors/EditorArea';
-import MenuBarSection from './menu_bar/MenuBarSection';
+import WorkbenchHeader from './header/WorkbenchHeader';
 import NotificationContainer from './notifications/NotificationContainer';
 import PaneAreaBottom from './panes/PaneAreaBottom';
 import PaneAreaLeft from './panes/PaneAreaLeft';
 import PaneAreaRight from './panes/PaneAreaRight';
+import { getDisplayableGroups } from './panes/PaneGroupTabBar';
 import QuickJump from './quick_jump/QuickJump';
 import { SplitterLayout } from './splitter/SplitterLayout';
 import { SplitterLayoutMediator } from './splitter/SplitterLayoutMediator';
@@ -95,6 +100,8 @@ export default function Workbench(): React.JSX.Element {
       ),
       bifrost.statusBar.on(EVENT_STATUS_BAR_UPDATED, () => setStatusBar({ ...bifrost.statusBar.getViewData() })),
 
+      bifrost.categories.on(EVENT_WORKBENCH_PAGE_ACTIVATED, () => forceUpdate()),
+      bifrost.categories.on(EVENT_WORKBENCH_CATEGORIES_UPDATED, () => forceUpdate()),
       bifrost.editors.on(EVENT_EDITOR_DOCUMENT_DATA_UPDATED, () => forceUpdate()),
       bifrost.editors.on(EVENT_EDITOR_DOCUMENT_METADATA_UPDATED, () => forceUpdate()),
       bifrost.editors.on(EVENT_EDITOR_DOCUMENT_URI_UPDATED, () => forceUpdate()),
@@ -130,12 +137,11 @@ export default function Workbench(): React.JSX.Element {
     [bifrost.panes],
   );
 
-  const hasLeftMenuBarItems = menuBar.visible && menuBar.items.left.length > 0;
-  const hasCenterMenuBarItems = menuBar.visible && menuBar.items.center.length > 0;
-  const hasRightMenuBarItems = menuBar.visible && menuBar.items.right.length > 0;
-  const parkLeftMenuBar = hasLeftMenuBarItems && !deferredPaneArea.left.visible;
-  const parkRightMenuBar = hasRightMenuBarItems && !deferredPaneArea.right.visible;
-  const showCenterMenuBarRow = hasCenterMenuBarItems || parkLeftMenuBar || parkRightMenuBar;
+  const activeCategory = bifrost.categories.getCategory(bifrost.categories.getActiveCategoryId() ?? '');
+
+  const showRightColumn =
+    deferredPaneArea.right.visible &&
+    getDisplayableGroups(deferredPaneArea.right.paneGroups, editorDocument, editorDocumentModel, bifrost).length > 0;
 
   const appSplitterLayoutClassName = `app-layout__splitter-layout${statusBar.visible ? ' app-layout__splitter-layout--with-status-bar' : ''}`;
 
@@ -162,7 +168,16 @@ export default function Workbench(): React.JSX.Element {
           <QuickJump iconComponent={Icon} quickJump={bifrost.views.getById('std/quick-jump')} {...quickJump} />
         )}
 
-        <div className="app-layout">
+        {menuBar.visible && <WorkbenchHeader />}
+
+        {bifrost.categories.getActivePageId() == null && (
+          <div className="workbench-empty-category">
+            {activeCategory != null && <Icon id={activeCategory.icon} />}
+            <span>{activeCategory?.label ?? 'This category'} has no pages yet.</span>
+          </div>
+        )}
+
+        <div className="app-layout" hidden={bifrost.categories.getActivePageId() == null}>
           <SplitterLayout
             customClassName={appSplitterLayoutClassName}
             secondaryInitialSize={deferredPaneArea.right.sizeInPixels}
@@ -182,7 +197,6 @@ export default function Workbench(): React.JSX.Element {
             >
               {deferredPaneArea.left.visible && (
                 <div className="app-layout__column">
-                  {hasLeftMenuBarItems && <MenuBarSection items={menuBar.items.left} align="center" />}
                   <ErrorBoundaryWithMessage message="This component has crashed. Please restart the program.">
                     <PaneAreaLeft
                       className="app-layout__panes-left"
@@ -195,13 +209,6 @@ export default function Workbench(): React.JSX.Element {
               )}
 
               <div className="app-layout__column">
-                {showCenterMenuBarRow && (
-                  <div className="menu-bar-section-row">
-                    {parkLeftMenuBar && <MenuBarSection items={menuBar.items.left} align="left" />}
-                    {hasCenterMenuBarItems && <MenuBarSection items={menuBar.items.center} align="center" />}
-                    {parkRightMenuBar && <MenuBarSection items={menuBar.items.right} align="right" />}
-                  </div>
-                )}
                 <div className="app-layout__center-content">
                   <SplitterLayout
                     customClassName="app-layout__main"
@@ -239,9 +246,8 @@ export default function Workbench(): React.JSX.Element {
               </div>
             </SplitterLayout>
 
-            {deferredPaneArea.right.visible && (
+            {showRightColumn && (
               <div className="app-layout__column">
-                {hasRightMenuBarItems && <MenuBarSection items={menuBar.items.right} align="right" />}
                 <ErrorBoundaryWithMessage message="This component has crashed. Please restart the program.">
                   <PaneAreaRight
                     className="app-layout__panes-right"

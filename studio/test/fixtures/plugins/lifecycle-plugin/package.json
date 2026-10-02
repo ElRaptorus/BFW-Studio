@@ -6,7 +6,7 @@
   "author": "Bifrost Forge World Tests (https://example.com)",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "permissions": []
   }
 }

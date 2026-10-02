@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:bfw="https://bifrostforge.world/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="draft-process_Definition" targetNamespace="https://bifrostforge.world/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_draft">
+    <bpmn:participant id="Participant_draft" name="Draft" processRef="draft-process" />
+  </bpmn:collaboration>
+  <bpmn:process id="draft-process" name="Draft Process" isExecutable="false">
+    <bpmn:extensionElements>
+      <bfw:version>0.1.0</bfw:version>
+    </bpmn:extensionElements>
+    <bpmn:laneSet id="LaneSet_draft">
+      <bpmn:lane id="Lane_draft_default" name="default">
+        <bpmn:flowNodeRef>Start_draft</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_draft</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_draft" name="Draft started">
+      <bpmn:outgoing>Flow_draft_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="End_draft" name="Draft done">
+      <bpmn:incoming>Flow_draft_1</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_draft_1" sourceRef="Start_draft" targetRef="End_draft" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_draft">
+    <bpmndi:BPMNPlane id="BPMNPlane_draft" bpmnElement="Collaboration_draft">
+      <bpmndi:BPMNShape id="Participant_draft_di" bpmnElement="Participant_draft" isHorizontal="true">
+        <dc:Bounds x="100" y="60" width="400" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_draft_default_di" bpmnElement="Lane_draft_default" isHorizontal="true">
+        <dc:Bounds x="130" y="60" width="370" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_draft_di" bpmnElement="Start_draft">
+        <dc:Bounds x="190" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_draft_di" bpmnElement="End_draft">
+        <dc:Bounds x="390" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_draft_1_di" bpmnElement="Flow_draft_1">
+        <di:waypoint x="226" y="160" />
+        <di:waypoint x="390" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

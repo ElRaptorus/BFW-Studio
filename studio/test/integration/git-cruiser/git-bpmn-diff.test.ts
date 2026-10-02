@@ -68,6 +68,7 @@ describe('git-cruiser/bpmn-diff', () => {
     await studioAgent.pause(2000);
 
     await studioAgent.assertVisible('[data-test--editors--focused-document-type="bpmn.diff"]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.navigation.assertActivePage('design/source');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
 
@@ -96,6 +97,7 @@ describe('git-cruiser/bpmn-diff', () => {
       '[data-test--editors--focused-document-type="bpmn.history-preview"]',
       ASSERT_VISIBLE_TIMEOUT,
     );
+    await studioAgent.navigation.assertActivePage('design/source');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
 

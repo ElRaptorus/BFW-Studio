@@ -33,6 +33,8 @@ export async function createAndInitializeBifrost(
 
     await bifrost.modules.requirePackagedModule('git-cruiser');
 
+    await bifrost.modules.requirePackagedModule('solution-models');
+
     await bifrost.modules.requirePackagedModule('machine-sanctum');
 
     await bifrost.modules.requirePackagedModule('engine-core');

@@ -8,13 +8,18 @@ import * as ScheduleDetailPane from '../panes/ScheduleDetailPane';
 import * as TaskDetailPane from '../panes/TaskDetailPane';
 
 export default function initializePanes(bifrost: Bifrost): void {
-  bifrost.panes.registerPaneGroup('left', 'engines', [
-    bifrost.panes.getPaneViaPaneProvider(
-      'pane/left/engines',
-      'engine-workspace/pane-providers/EngineSidebarPane',
-      EngineSidebarPane,
-    ),
-  ]);
+  bifrost.panes.registerPaneGroup(
+    'left',
+    'engines',
+    [
+      bifrost.panes.getPaneViaPaneProvider(
+        'pane/left/engines',
+        'engine-workspace/pane-providers/EngineSidebarPane',
+        EngineSidebarPane,
+      ),
+    ],
+    { pages: ['debug/engines'] },
+  );
 
   bifrost.panes.prependToPaneGroup('right', 'property', [
     bifrost.panes.getPaneViaPaneProvider(
@@ -43,18 +48,4 @@ export default function initializePanes(bifrost: Bifrost): void {
       ScheduleDetailPane,
     ),
   ]);
-
-  bifrost.menuBar.registerMenuBarItemModifier((menuBarItems) => {
-    return bifrost.menuBar.insertAfterMenuBarItem(menuBarItems, 'pane/left/git', () => [
-      {
-        type: 'pane_content_toggle',
-        id: 'pane/left/engines',
-        tooltip: 'Engines',
-        icon: 'engine-workspace/sidebar-icon',
-        visible: bifrost.panes.getPaneAreaVisibility('left'),
-        paneAreaId: 'left',
-        paneId: 'pane/left/engines',
-      },
-    ]);
-  });
 }

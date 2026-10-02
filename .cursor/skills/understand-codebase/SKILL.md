@@ -75,7 +75,7 @@ Key modules and their roles:
 | `bpmn-diff` | BPMN diagram diff viewer |
 | `bpmn-token-simulator` | Token flow simulation on BPMN diagrams |
 | `engine-core` | Foundation: EngineManager, engine events, shared engine utilities |
-| `engine-browser` | Process instance browser, deployment UI, engine menubar |
+| `engine-browser` | Process instance browser, deployment UI, Engine cluster in the header |
 | `engine-debugger` | Runtime debugging of process instances |
 | `engine-bpmn-viewer` | Remote BPMN viewer for engine-deployed processes |
 | `git-cruiser` | Git integration (status, commit, diff, BPMN diff) |

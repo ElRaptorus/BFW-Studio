@@ -16,7 +16,7 @@ The manifest lives in `package.json` under the `bifrostStudio` key:
   "version": "1.0.0",
   "main": "dist/index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "My Plugin",
     "activationEvents": ["onCommand:myPlugin.doThing"],
     "contributes": { ... }
@@ -65,7 +65,7 @@ The `permissions` array declares which sandbox capabilities the plugin needs. Pl
 
 ```json
 "bifrostStudio": {
-  "apiVersion": "1.0.0",
+  "apiVersion": "2.0.0",
   "permissions": ["filesystem", "commands.std"],
   "activationEvents": ["onStartup"]
 }
@@ -156,6 +156,7 @@ Array of pane placeholder declarations.
 | `id` | `string` | Yes |
 | `title` | `string` | Yes |
 | `area` | `'left' \| 'right' \| 'bottom'` | Yes |
+| `pages` | `string[]` (`<categoryId>/<name>`) | **Yes for `area: 'left'`**; optional otherwise (omitted = every page) |
 | `groupId` | `string` | No |
 | `icon` | `string` | No |
 | `visibleWhen` | `{ documentType?: string; setting?: string }` | No |
@@ -170,27 +171,16 @@ Array of editor document type declarations. Processed at discovery time by `Cont
 | `displayName` | `string` | Yes | Human-readable name of the document type |
 | `icon` | `string` | Yes | Icon ID or Phosphor class |
 | `uriPattern` | `string` | Yes | Regex source string matched against document URIs (e.g. `"\\.md$"`) |
+| `page` | `string` | Yes | Workbench page the documents open on: `<categoryId>/<name>` (for example `design/workspace`) or `active` for whichever page is current. An unregistered page refuses the open with an error notification |
 | `includedFilePatterns` | `string[]` | No | File globs registered as known (non-hidden) files in the File Explorer via `SolutionMediator.registerDefaultIncludedFiles()` |
 
 Each entry registers a **placeholder** document type whose renderer (`PlaceholderEditorDocumentRenderer`) triggers activation of the owning plugin when a matching file is opened, then closes and reopens the tab so it re-resolves to the real editor the plugin registered. Declaring `editorDocumentTypes` therefore makes the plugin lazily activated even without any `activationEvents` entry. Validation rejects non-object entries, missing/blank required fields, `uriPattern` values that are not valid regular expressions, duplicate `id`s within a plugin, and `includedFilePatterns` that is not an array of strings.
 
 Full state machine (replacement, permission denial, activation failure, missing registration): see [plugin-host.md](plugin-host.md) §Static editor document type contributions.
 
-#### `contributes.paneToggles`
+#### `contributes.paneToggles` (removed in 2.0.0)
 
-Array of pane toggle button declarations for the left menu bar. Processed at discovery time by `ContributionRegistrar.registerPaneToggle()`, before plugin activation. Each toggle creates a `MenuBarItem_PaneContentToggle` in the left menu bar area.
-
-| Field | Type | Required |
-|-------|------|----------|
-| `id` | `string` | Yes |
-| `icon` | `string` | Yes |
-| `tooltip` | `string` | Yes |
-| `paneAreaId` | `string` | Yes |
-| `paneId` | `string` | Yes |
-| `insertAfter` | `string` | No |
-| `insertBefore` | `string` | No |
-
-If `insertAfter` or `insertBefore` is provided, the toggle is registered as a menu bar modifier (positioned relative to the specified item). Otherwise, it is appended to the `'left'` area directly. The `paneId` and toggle `id` are auto-namespaced with `plugin.<pluginName>.` if not already prefixed.
+Pane toggle buttons no longer exist; the header and page bar replace the left menu bar. A manifest that still declares `paneToggles` is rejected with an error naming `pages` as the replacement.
 
 #### `contributes.serviceTaskTypes`
 
@@ -250,11 +240,13 @@ Modules are standard diagram-js modules exporting `__init__` and service factori
 
 ## API Versioning
 
-The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `1.0.0`, defined in `studio/src/bifrost/contracts/PluginApiVersion.ts`). Compatibility rules:
+The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `2.0.0`, defined in `studio/src/bifrost/contracts/PluginApiVersion.ts`). Compatibility rules:
 
 - Same major version required
 - Plugin's minor ≤ Studio's minor (plugin can't require features the Studio doesn't have)
 - Patch version is ignored for compatibility
+
+**2.0.0 (breaking):** `editorDocumentTypes[].page` is required, left `panes[].pages` is required, `paneToggles` is removed, and the menu bar API is header-only: `pages` accepts page ids and `<categoryId>/*` wildcards, and modifiers cannot touch other areas or insert `pane_content_toggle` (see [workbench-categories.md](workbench-categories.md)).
 
 Incompatible plugins are rejected at discovery with a clear error notification.
 
@@ -270,7 +262,7 @@ discoverAndLoadPlugins()
        → If incompatible → reject (status: 'error', show notification)
     5. ContributionRegistrar.registerContributions(manifest)
        → Register stub commands, icons, keybindings, menus, settings, panes,
-         editor document type placeholders, pane toggles, service task types, themes
+         editor document type placeholders, service task types, themes
     6. If activationEvents OR contributes.editorDocumentTypes present
        → ActivationManager.registerActivationEvents()
        → Plugin status: 'pending' (lazy)
@@ -289,7 +281,6 @@ discoverAndLoadPlugins()
 | Settings | `SettingsMediator.unregisterSettings()`. Values preserved, schema removed. |
 | Panes | `PaneMediator.unregisterPane()` + `unregisterPaneProvider()` |
 | Editor Document Types | `SolutionMediator.unregisterDefaultIncludedFiles()`; the placeholder document type is unregistered via `EditorMediator.unregisterDocumentType()` only if it has not already been replaced by the plugin's real `registerWebviewDocumentType()` registration (which owns its own disposer in `PluginHostBridge`) |
-| Pane Toggles | Menu bar item/modifier disposer + `updateMenuBarItems()` |
 | Service Task Types | `bpmn.serviceTasks.removeCustomType` command |
 | Themes | `ThemeManager.unregisterTheme()` + injected `<style>` removal + type-aware fallback if active |
 | bpmnPalette | `PluginBpmnContributionStore.removePaletteEntries(pluginName)` |

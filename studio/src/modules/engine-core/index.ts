@@ -65,6 +65,15 @@ export { AUTO_REFRESH_INTERVALS } from './types';
 export { SETTINGS_KEYS } from './settings/registerSettings';
 
 export async function onLoad(bifrost: Bifrost): Promise<void> {
+  bifrost.icons.registerIcons({ 'std/page/engines': 'ph ph-cpu' });
+  bifrost.categories.registerPage({
+    id: 'debug/engines',
+    categoryId: 'debug',
+    label: 'Engines',
+    icon: 'std/page/engines',
+    order: 0,
+  });
+
   registerSettings(bifrost);
 
   const connectionManager = new EngineConnectionManager(bifrost);

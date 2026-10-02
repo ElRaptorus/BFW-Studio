@@ -780,6 +780,7 @@ export class PluginHostBridge {
             displayName: string;
             icon: string;
             uriPattern: string;
+            page: string;
             webviewOptions: { entryPoint: string; localResourceRoots?: string[] };
             includedFilePatterns?: string[];
           },
@@ -809,12 +810,18 @@ export class PluginHostBridge {
           },
         });
 
+        if (typeof options.page !== 'string' || options.page.length === 0) {
+          throw new Error(
+            `Plugin '${pluginName}': registerWebviewDocumentType('${options.id}') requires 'page' (Plugin API 2.0.0).`,
+          );
+        }
         const uriRegex = new RegExp(options.uriPattern);
 
         // registerOrReplace transparently overwrites a manifest-declared placeholder type
         // (from contributes.editorDocumentTypes) registered by ContributionRegistrar at
         // discovery time, or simply registers fresh if no placeholder preceded it.
         this.bifrost.editors.registerOrReplaceDocumentType(documentTypeId, {
+          page: options.page,
           uriMatch: uriRegex,
           icon: options.icon,
           rendererKey,
@@ -881,6 +888,7 @@ export class PluginHostBridge {
             title: string;
             area: 'left' | 'bottom' | 'right';
             groupId?: string;
+            pages?: string[];
             icon?: string;
             webviewOptions: { entryPoint: string; localResourceRoots?: string[] };
           },
@@ -928,6 +936,7 @@ export class PluginHostBridge {
               this.bifrost.panes.registerPaneGroup(options.area, groupId, [paneObject], {
                 label: options.title,
                 icon: options.icon,
+                pages: options.pages,
               });
             } catch {
               this.bifrost.panes.appendToPaneGroup(options.area, groupId, [paneObject]);
@@ -1074,10 +1083,20 @@ export class PluginHostBridge {
   private handleMenuBarApi(method: string, args: unknown[], callerName: string): unknown {
     switch (method) {
       case 'registerMenuBarItem': {
-        const [area, items] = args as ['left' | 'center' | 'right', unknown[]];
+        const [area, items, options] = args as ['header', { type?: string }[], { pages?: string[] } | undefined];
+        if (area !== 'header') {
+          throw new Error(
+            `Plugin '${callerName}': menu bar area '${String(area)}' is not available. Plugins register menu bar items in the 'header' area (Plugin API 2.0.0).`,
+          );
+        }
+        if (items.some((item) => item.type === 'pane_content_toggle')) {
+          throw new Error(
+            `Plugin '${callerName}': 'pane_content_toggle' menu bar items were removed in Plugin API 2.0.0. Declare 'pages' on the pane instead.`,
+          );
+        }
         const factoryFn = () => items as any[];
 
-        const disposer = this.bifrost.menuBar.registerMenuBarItem(area, factoryFn);
+        const disposer = this.bifrost.menuBar.registerMenuBarItem(area, factoryFn, { pages: options?.pages });
         this.bifrost.menuBar.updateMenuBarItems();
 
         const key = `menuBarItem:${callerName}:${Date.now()}:${Math.random()}`;
@@ -1094,6 +1113,20 @@ export class PluginHostBridge {
         const [config] = args as [{ insertAfter?: string; insertBefore?: string; items: unknown[] }];
 
         let disposer: { dispose: () => void };
+
+        if ((config.items as { type?: string }[]).some((item) => item?.type === 'pane_content_toggle')) {
+          throw new Error(
+            'pane_content_toggle items were removed in Plugin API 2.0.0. Panes are reached through the page bar',
+          );
+        }
+
+        const targetId = config.insertAfter ?? config.insertBefore;
+        const headerItems = this.bifrost.menuBar.getViewData().items.header;
+        if (targetId != null && !headerItems.some((item) => item.id === targetId)) {
+          throw new Error(
+            `Plugin '${callerName}': menu bar item '${targetId}' was not found in the header. Plugins can only modify the header menu bar.`,
+          );
+        }
 
         if (config.insertAfter != null) {
           disposer = this.bifrost.menuBar.registerMenuBarItemModifier((menuBarItemMap) => {
@@ -1537,6 +1570,7 @@ export class PluginHostBridge {
             title: string;
             area: 'left' | 'bottom' | 'right';
             groupId?: string;
+            pages?: string[];
             icon?: string;
           },
         ];
@@ -1578,6 +1612,7 @@ export class PluginHostBridge {
             this.bifrost.panes.registerPaneGroup(options.area, groupId, [paneObject], {
               label: options.title,
               icon: options.icon,
+              pages: options.pages,
             });
           } catch {
             this.bifrost.panes.appendToPaneGroup(options.area, groupId, [paneObject]);

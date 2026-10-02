@@ -8,6 +8,8 @@ The DMN editor is a three-module system for modeling, diffing, and merging DMN 1
 
 All three modules are internal (bundled with the Studio), loaded sequentially in `createAndInitializeBifrost.ts` as `dmn-core` → `dmn-editor` → `dmn-diff`.
 
+DMN documents open on `design/workspace`; `dmn.diff` and the DMN history preview open on `design/source` ([git-cruiser.md](git-cruiser.md) §Design › Source page). The DMN right groups are registered without `pages` and show on every page while a DMN document is focused.
+
 ---
 
 ## Module Split

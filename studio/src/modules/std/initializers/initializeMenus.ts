@@ -4,10 +4,11 @@ import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
+import { GO_TO_CATEGORY_COMMANDS } from './initializeWorkbenchCategories';
+
 export function initializeMenus(bifrost: Bifrost): void {
   registerApplicationMenu(bifrost);
 
-  registerLeftMenuBarOverflowMenu(bifrost);
   registerEditorMenu(bifrost);
   registerEditorTabListControlsMoreMenu(bifrost);
   registerFileExplorerMenus(bifrost);
@@ -167,30 +168,6 @@ function registerApplicationMenu(bifrost: Bifrost): void {
         command: 'std.editor.clearRecentlyOpened',
       },
     ];
-    const leftMenuBarItems = bifrost.menuBar.getViewData().items.left;
-    const leftMenuBarEntries: MenuItem[] = [];
-    for (const item of leftMenuBarItems) {
-      if (item.type === 'pane_content_toggle') {
-        const focusCommand = PANE_FOCUS_COMMANDS[item.paneId];
-        leftMenuBarEntries.push({
-          type: 'command',
-          label: item.tooltip,
-          icon: item.icon,
-          id: `view/${item.tooltip.toLowerCase().replace(/\s/g, '-')}`,
-          command: focusCommand ?? 'std.workbench.toggleLeftPaneAreaItem',
-          commandArgs: focusCommand != null ? undefined : [item.paneId],
-        });
-      } else if (item.type === 'button') {
-        leftMenuBarEntries.push({
-          type: 'command',
-          label: item.tooltip,
-          id: `view/${item.tooltip.toLowerCase().replace(/\s/g, '-')}`,
-          command: item.command,
-          commandArgs: item.commandArgs,
-        });
-      }
-    }
-
     const windowMenuAsArray: any = [];
     if (bifrost.commands.isRegistered('std.window.getWindowInfos')) {
       const windowEntries: MenuItem[] = [];
@@ -438,6 +415,17 @@ function registerApplicationMenu(bifrost: Bifrost): void {
             label: 'Command Search',
             command: 'std.quickJump.showCommands',
           },
+          {
+            type: 'menu',
+            id: 'view/go-to',
+            label: 'Go to',
+            submenu: GO_TO_CATEGORY_COMMANDS.map(({ categoryId, label, command }) => ({
+              type: 'command' as const,
+              id: `view/go-to/${categoryId}`,
+              label,
+              command,
+            })),
+          },
           { type: 'divider' },
           {
             type: 'menu',
@@ -556,7 +544,20 @@ function registerApplicationMenu(bifrost: Bifrost): void {
           },
 
           { type: 'divider' },
-          ...leftMenuBarEntries,
+          {
+            type: 'command',
+            label: 'Explorer',
+            icon: 'std/left-pane-item/files',
+            id: 'view/explorer',
+            command: 'std.workbench.focusExplorer',
+          },
+          {
+            type: 'command',
+            label: 'Search',
+            icon: 'std/left-pane-item/search',
+            id: 'view/search',
+            command: 'std.workbench.focusSearch',
+          },
           { type: 'divider' },
           {
             type: 'menu',
@@ -695,49 +696,6 @@ function registerApplicationMenu(bifrost: Bifrost): void {
     ];
 
     return appMenu;
-  });
-}
-
-const PANE_FOCUS_COMMANDS: Record<string, string> = {
-  'pane/left/explorer': 'std.workbench.focusExplorer',
-  'pane/left/search': 'std.workbench.focusSearch',
-};
-
-function registerLeftMenuBarOverflowMenu(bifrost: Bifrost): void {
-  bifrost.menus.registerMenu('std/menubar/left-overflow', (): Menu => {
-    const leftItems = bifrost.menuBar.getViewData().items.left;
-    const items: MenuItem[] = [];
-
-    for (const item of leftItems) {
-      if (item.visible === false) {
-        continue;
-      }
-
-      if (item.type === 'pane_content_toggle') {
-        const focusCommand = PANE_FOCUS_COMMANDS[item.paneId];
-
-        items.push({
-          type: 'command',
-          label: item.tooltip,
-          icon: item.icon,
-          id: `std/menubar/left-overflow/${item.id}`,
-          checked: bifrost.panes.isPaneGroupVisibleByPaneId(item.paneId),
-          command: focusCommand ?? 'std.workbench.toggleLeftPaneAreaItem',
-          commandArgs: focusCommand != null ? undefined : [item.paneId],
-        });
-      } else if (item.type === 'button') {
-        items.push({
-          type: 'command',
-          label: item.tooltip,
-          icon: item.icon,
-          id: `std/menubar/left-overflow/${item.id}`,
-          command: item.command,
-          commandArgs: item.commandArgs,
-        });
-      }
-    }
-
-    return items;
   });
 }
 

@@ -32,6 +32,7 @@ interface PluginApi {
       displayName: string;
       icon: string;
       uriPattern: string;
+      page: string;
       webviewOptions: { entryPoint: string };
       includedFilePatterns?: string[];
     }): Promise<void>;
@@ -67,6 +68,7 @@ function registerDocumentType(
     displayName: string;
     icon: string;
     uriPattern: string;
+    page: string;
     entryPoint: string;
   },
 ): Promise<void> {
@@ -79,6 +81,7 @@ function registerDocumentType(
       displayName: options.displayName,
       icon: options.icon,
       uriPattern: options.uriPattern,
+      page: options.page,
       webviewOptions: { entryPoint: options.entryPoint },
     })
     .then(() =>
@@ -156,6 +159,7 @@ module.exports.activate = async (api: PluginApi): Promise<void> => {
     displayName: 'Markdown Editor',
     icon: 'ph ph-markdown-logo',
     uriPattern: '\\.(mdx?|mdc|markdown|mdown|mkd|mkdn)$',
+    page: 'design/workspace',
     entryPoint: 'webview/dist/markdown.html',
   });
 
@@ -164,6 +168,7 @@ module.exports.activate = async (api: PluginApi): Promise<void> => {
     displayName: 'JSON Editor',
     icon: 'ph ph-brackets-curly',
     uriPattern: '\\.json$',
+    page: 'design/workspace',
     entryPoint: 'webview/dist/json.html',
   });
 };

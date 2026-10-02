@@ -5,7 +5,7 @@
   "description": "Fixture plugin demonstrating palette, context pad, and modeling API usage.",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "BPMN Palette & Modeling Demo",
     "permissions": [
       "bpmn.modelling"

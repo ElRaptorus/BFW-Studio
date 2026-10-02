@@ -5,7 +5,7 @@
   "description": "Fixture plugin with 'dmn' but NOT 'dmn.modelling' — tests permission gate for palette/context pad and modeling.",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "DMN Permission Low",
     "permissions": [
       "dmn"

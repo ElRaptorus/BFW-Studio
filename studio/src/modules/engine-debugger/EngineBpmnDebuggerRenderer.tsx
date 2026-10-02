@@ -294,6 +294,13 @@ export default function EngineBpmnDebuggerRenderer(props: EditorDocumentRenderer
             command={`engine.debugger.downloadBpmn`}
             commandArgs={[model]}
           />
+          <EditorToolbarButton
+            studio={studio}
+            tooltip="Open in Design"
+            icon="ph ph-pencil-simple"
+            command="engine.workspace.openLocalSource"
+            commandArgs={['process', model.processInstance?.processModelId ?? '']}
+          />
         </EditorToolbarLeft>
         <EditorToolbarCenter>
           <EditorToolbarButton

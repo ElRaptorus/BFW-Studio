@@ -16,7 +16,6 @@ import type {
   ManifestKeybinding,
   ManifestMenuItem,
   ManifestPaneContribution,
-  ManifestPaneToggle,
   ManifestReadResult,
   ManifestServiceTaskType,
   ManifestSetting,
@@ -308,7 +307,11 @@ function validateContributes(
     result.serviceTaskTypes = validateServiceTaskTypes(raw.serviceTaskTypes, errors);
   }
   if (raw.paneToggles != null) {
-    result.paneToggles = validatePaneToggles(raw.paneToggles, errors);
+    errors.push({
+      path: 'bifrostStudio.contributes.paneToggles',
+      message:
+        'paneToggles were removed in Plugin API 2.0.0. Panes are reached through the page bar; declare "pages" on the pane instead',
+    });
   }
   if (raw.themes != null) {
     result.themes = validateThemes(raw.themes, errors);
@@ -605,6 +608,18 @@ function validatePanes(raw: unknown, errors: ManifestError[]): ManifestPaneContr
       continue;
     }
 
+    const pages = validatePageList(obj.pages, `${entryPath}.pages`, errors);
+    if (pages === 'invalid') {
+      continue;
+    }
+    if (obj.area === 'left' && (pages == null || pages.length === 0)) {
+      errors.push({
+        path: `${entryPath}.pages`,
+        message: 'Required for left panes: list the workbench pages the pane appears on',
+      });
+      continue;
+    }
+
     let visibleWhen: ManifestPaneContribution['visibleWhen'];
     if (obj.visibleWhen != null) {
       if (typeof obj.visibleWhen !== 'object' || Array.isArray(obj.visibleWhen)) {
@@ -625,9 +640,24 @@ function validatePanes(raw: unknown, errors: ManifestError[]): ManifestPaneContr
       groupId: typeof obj.groupId === 'string' ? obj.groupId : undefined,
       icon: typeof obj.icon === 'string' ? obj.icon : undefined,
       visibleWhen,
+      pages: pages ?? undefined,
     });
   }
   return result;
+}
+
+const PAGE_ID_PATTERN = /^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/;
+
+/** Returns the validated page IDs, `null` when absent, or `'invalid'` after recording an error. */
+function validatePageList(raw: unknown, path: string, errors: ManifestError[]): string[] | null | 'invalid' {
+  if (raw == null) {
+    return null;
+  }
+  if (!Array.isArray(raw) || raw.some((page) => typeof page !== 'string' || !PAGE_ID_PATTERN.test(page))) {
+    errors.push({ path, message: 'Must be an array of page IDs of the form "<categoryId>/<name>"' });
+    return 'invalid';
+  }
+  return raw as string[];
 }
 
 // ─── Service Task Types ──────────────────────────────────────
@@ -665,65 +695,6 @@ function validateServiceTaskTypes(raw: unknown, errors: ManifestError[]): Manife
     result.push({
       implementation: obj.implementation,
       label: obj.label,
-    });
-  }
-  return result;
-}
-
-// ─── Pane Toggles ────────────────────────────────────────────
-
-const VALID_TOGGLE_AREAS = new Set(['left', 'right', 'bottom']);
-
-function validatePaneToggles(raw: unknown, errors: ManifestError[]): ManifestPaneToggle[] {
-  const basePath = 'bifrostStudio.contributes.paneToggles';
-  if (!Array.isArray(raw)) {
-    errors.push({ path: basePath, message: 'Must be an array' });
-    return [];
-  }
-
-  const result: ManifestPaneToggle[] = [];
-  for (let i = 0; i < raw.length; i++) {
-    const entry = raw[i];
-    const entryPath = `${basePath}[${i}]`;
-
-    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
-      errors.push({ path: entryPath, message: 'Must be an object' });
-      continue;
-    }
-
-    const obj = entry as Record<string, unknown>;
-    if (typeof obj.id !== 'string' || obj.id.trim().length === 0) {
-      errors.push({ path: `${entryPath}.id`, message: 'Required field "id" is missing or not a string' });
-      continue;
-    }
-    if (typeof obj.icon !== 'string' || obj.icon.trim().length === 0) {
-      errors.push({ path: `${entryPath}.icon`, message: 'Required field "icon" is missing or not a string' });
-      continue;
-    }
-    if (typeof obj.tooltip !== 'string' || obj.tooltip.trim().length === 0) {
-      errors.push({ path: `${entryPath}.tooltip`, message: 'Required field "tooltip" is missing or not a string' });
-      continue;
-    }
-    if (typeof obj.paneAreaId !== 'string' || !VALID_TOGGLE_AREAS.has(obj.paneAreaId)) {
-      errors.push({
-        path: `${entryPath}.paneAreaId`,
-        message: `Required field "paneAreaId" must be one of: ${[...VALID_TOGGLE_AREAS].join(', ')}`,
-      });
-      continue;
-    }
-    if (typeof obj.paneId !== 'string' || obj.paneId.trim().length === 0) {
-      errors.push({ path: `${entryPath}.paneId`, message: 'Required field "paneId" is missing or not a string' });
-      continue;
-    }
-
-    result.push({
-      id: obj.id,
-      icon: obj.icon,
-      tooltip: obj.tooltip,
-      paneAreaId: obj.paneAreaId as ManifestPaneToggle['paneAreaId'],
-      paneId: obj.paneId,
-      insertAfter: typeof obj.insertAfter === 'string' ? obj.insertAfter : undefined,
-      insertBefore: typeof obj.insertBefore === 'string' ? obj.insertBefore : undefined,
     });
   }
   return result;
@@ -1086,6 +1057,13 @@ function validateEditorDocumentTypes(raw: unknown, errors: ManifestError[]): Man
         valid = false;
       }
     }
+    if (obj.page !== 'active' && (typeof obj.page !== 'string' || !PAGE_ID_PATTERN.test(obj.page))) {
+      errors.push({
+        path: `${entryPath}.page`,
+        message: 'Required field "page" must be "active" or a page ID of the form "<categoryId>/<name>"',
+      });
+      valid = false;
+    }
     if (!valid) {
       continue;
     }
@@ -1133,6 +1111,7 @@ function validateEditorDocumentTypes(raw: unknown, errors: ManifestError[]): Man
       icon: obj.icon as string,
       uriPattern,
       includedFilePatterns,
+      page: obj.page as string,
     });
   }
   return result;

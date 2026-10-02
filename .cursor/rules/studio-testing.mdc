@@ -1,22 +1,34 @@
+---
+description: Studio integration tests spawn Electron windows — always ask the user before running them
+alwaysApply: true
+---
+
 # Studio Testing Policy
 
-The Studio is an Electron application. Running `vitest run` (or `npx vitest run`) without scope floods the screen with parallel Electron windows and is **never acceptable**.
+The Studio is an Electron application. Integration tests spawn Electron windows that take over the user's screen while they work on other things.
 
 ## Rules
 
-- **NEVER** run bare `vitest run` or `npx vitest run` in the `studio/` directory. This launches all test suites — including integration tests that spawn Electron — in parallel.
-- **Unit tests only**: Use `npm run test:unit` (scoped to `test/unit/`). This is safe to run at any time.
-- **Integration tests**: Use the registered npm scripts below. **Only run these when the user explicitly asks for it.** They spawn Electron windows and take over the screen.
+- **Ask first, every time.** Before running any Studio integration test, ask the user in chat and wait for an explicit yes. This applies to every run: the full suite, a single folder, a single file, and re-runs after a fix.
+- **A plan is not permission.** An approved plan, a checklist step ("run the gate", "integration tests"), `do exe`, or an earlier yes in the same conversation does not count. Ask again right before running.
+- **Unit tests are always allowed.** `npm run test:unit` runs without Electron and needs no permission.
+- **NEVER** run bare `vitest run` / `npx vitest run` in `studio/`, and never call `vitest` on `test/integration/` directly. Use the npm scripts below, after the user has said yes.
+- **Clean up.** If an integration run is still active when you no longer need it, or the user asks you to stop, terminate the whole process tree (vitest, chromedriver, Electron).
+
+When asking, name the script and the suites it covers, and say roughly how long it takes.
 
 ## Available Test Scripts (defined in `studio/package.json`)
 
 | Script | What it runs |
 |--------|-------------|
-| `npm run test:unit` | Unit tests only (`test/unit/`) — safe, fast, no Electron |
-| `npm run test:integration` | Default integration suite (bloodforge) |
-| `npm run test:integration:electron:bloodforge` | Bloodforge integration tests |
-| `npm run test:integration:electron:stable` | Stable integration tests |
-| `npm run test:integration:electron:smoke` | Smoke test only (single file) |
+| `npm run test:unit` | Unit tests only (`test/unit/`) — no Electron, always allowed |
+| `npm run test:integration` | All integration suites (alias of `test:integration:all`) |
+| `npm run test:integration:core` | `test/integration/studio-core/` |
+| `npm run test:integration:bpmn-editor` | `test/integration/bpmn-editor/` |
+| `npm run test:integration:dmn-editor` | `test/integration/dmn-editor/` |
+| `npm run test:integration:git-cruiser` | `test/integration/git-cruiser/` |
+| `npm run test:integration:plugins` | `test/integration/plugins/` (builds plugin fixtures first) |
+| `npm run test:integration:smoke` | Smoke test only (single file) |
 
 ## After Code Changes
 
@@ -25,5 +37,5 @@ When verifying code changes in `studio/`:
 1. `npm run build` — Compile bundles
 2. `npm run lint:fix` — ESLint with auto-fix
 3. `npm run format` — Prettier
-4. `npm run test:unit` — Unit tests (always safe to run)
-5. Integration tests — **only when the user explicitly requests them**
+4. `npm run test:unit` — Unit tests
+5. Integration tests — **only after asking the user and getting a yes**

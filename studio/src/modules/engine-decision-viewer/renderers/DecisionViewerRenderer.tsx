@@ -228,6 +228,13 @@ export default function DecisionViewerRenderer(props: EditorDocumentRendererProp
             command={DECISION_VIEWER_COMMANDS.downloadXml}
             commandArgs={[editorDocument]}
           />
+          <EditorToolbarButton
+            studio={bifrost}
+            icon="ph ph-pencil-simple"
+            tooltip="Open in Design"
+            command="engine.workspace.openLocalSource"
+            commandArgs={['decision', model?.getDecisionModelId() ?? '']}
+          />
         </EditorToolbarLeft>
         <EditorToolbarCenter>
           <EditorToolbarButton

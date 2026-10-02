@@ -5,7 +5,7 @@
   "description": "Fixture plugin with 'dmn.renderer' — tests full hierarchy (implies dmn.modelling implies dmn).",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "DMN Permission High",
     "permissions": [
       "dmn.renderer"

@@ -24,6 +24,7 @@ export const BPMN_DIFF_HELP_TEXT_ID = 'bpmn-diff/home';
 
 export function onLoad(bifrost: Bifrost): void {
   bifrost.editors.registerDocumentType(BPMN_DIFF_DOCUMENT_TYPE, {
+    page: 'design/source',
     uriMatch: /^fragment\+bpmn.diff:/,
     modelKey: 'BpmnDiffDocumentModel',
     modelConstructor: BpmnDiffDocumentModel,
@@ -43,6 +44,7 @@ export function onLoad(bifrost: Bifrost): void {
   // --- History Preview document type ---
 
   bifrost.editors.registerDocumentType(HISTORY_PREVIEW_DOCUMENT_TYPE, {
+    page: 'design/source',
     uriMatch: /^fragment\+bpmn\.history-preview:/,
     modelKey: 'BpmnHistoryPreviewDocumentModel',
     modelConstructor: BpmnHistoryPreviewDocumentModel,

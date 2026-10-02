@@ -357,3 +357,10 @@ Test commands that accept parameters use `bifrost.dialog.prompt()`, which `Studi
 | Create Solution command | `studio/src/modules/std/initializers/commands/initializeCreateSolutionCommand.ts` |
 | FileExplorer commands | `studio/src/modules/std/initializers/commands/initializeFileExplorerCommands.ts` |
 | Standard command initializers | `studio/src/modules/std/initializers/commands/` |
+
+## Workbench navigation commands
+
+| Command | Arguments | Effect |
+|---|---|---|
+| `std.workbench.activateCategory` | `categoryId` | Activates the category's remembered or first page; does nothing for hidden categories |
+| `std.workbench.activatePage` | `pageId` | Activates the page |

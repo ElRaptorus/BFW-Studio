@@ -64,7 +64,7 @@ describe('solution', () => {
   it('solution/search: should open document via search', async () => {
     await studioAgent.openFixturesDirectoryAsSolution('test-solution-simple');
 
-    await studioAgent.leftMenuBar.togglePane('pane/left/search');
+    await studioAgent.navigation.showLeftPane('pane/left/search');
     await studioAgent.assertPaneVisible('pane/left/search');
 
     await studioAgent.sendKeyboardInput([...'StartEvent CallActivityTest'.split(''), 'enter']);

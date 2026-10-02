@@ -5,7 +5,7 @@
   "description": "Demonstrates renderer module injection: real-time execution path highlighting on hover, with bidirectional channel communication.",
   "main": "index.js",
   "bifrostStudio": {
-    "apiVersion": "1.0.0",
+    "apiVersion": "2.0.0",
     "displayName": "BPMN Path Tracer (Renderer Module Demo)",
     "permissions": [
       "bpmn",

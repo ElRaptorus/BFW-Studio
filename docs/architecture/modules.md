@@ -33,15 +33,16 @@ The load order is explicit and defined in `studio/src/createAndInitializeBifrost
 10. dmn-diff
 11. git-cruiser
 12. machine-sanctum
-13. engine-core            (registers EngineConnectionManager shared resource)
-14. engine-workspace       (sidebar, catalogs, menubar/run controls)
-15. engine-model-viewer    (read-only deployed BPMN viewer)
-16. engine-decision-viewer (read-only deployed DMN viewer)
-17. engine-debugger        (live PI debugger)
-18. plugins
+13. solution-models        (scans the solution's BPMN/DMN files)
+14. engine-core            (registers EngineConnectionManager shared resource)
+15. engine-workspace       (sidebar, catalogs, menubar/run controls)
+16. engine-model-viewer    (read-only deployed BPMN viewer)
+17. engine-decision-viewer (read-only deployed DMN viewer)
+18. engine-debugger        (live PI debugger)
+19. plugins
 ```
 
-This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then engine modules (`engine-core` first as foundation, then workspace/viewers/debugger), then plugin management (`plugins`) last.
+This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then `solution-models` (before the engine modules that call its commands), then engine modules (`engine-core` first as foundation, then workspace/viewers/debugger), then plugin management (`plugins`) last.
 
 ## Module Catalog
 
@@ -158,7 +159,7 @@ Foundation layer for all engine UI. Provides multi-engine connection management 
 Operational hub for connected engines. Provides the left-sidebar engine navigation pane, six workspace document types (dashboard, process explorer, instance search, task inbox, decision catalog, timer schedules), deploy-from-explorer context menus, and the engine menubar (deploy/start/play controls in `initializeRunMenu.ts`). Replaces the former `engine-browser` module.
 
 - **Entry:** `studio/src/modules/engine-workspace/index.ts`
-- **Dependencies (commands):** `std`, `engine-core`
+- **Dependencies (commands):** `std`, `engine-core`, `solution-models`
 - **Dependencies (imports):** `engine-core`, `bpmn-core` (moddle descriptor)
 - **Document types registered:** `engine-dashboard`, `engine-process-explorer`, `engine-instance-search`, `engine-task-inbox`, `engine-decision-catalog`, `engine-timer-schedules`
 - **Panes registered:** `EngineSidebarPane` (left), `ProcessModelInfoPane`, `ProcessInstanceSummaryPane`, `TaskDetailPane`, `DecisionSummaryPane`, `ScheduleDetailPane` (right/property)
@@ -210,7 +211,7 @@ Studio-native BPMN token flow simulator. Visualizes token movement through proce
 
 #### bpmn-linter
 
-BPMN diagram linter using bpmnlint as the rule engine. Provides auto/manual lint triggering, canvas markers, an Error Summary Badge, a Problems Pane (in its own `linter` pane group on the right area), and a ruleset selector in the menu bar. Feeds findings to `bifrost.diagnostics` for the status bar problems count.
+BPMN diagram linter using bpmnlint as the rule engine. Provides auto/manual lint triggering, canvas markers, an Error Summary Badge, a Problems Pane (in its own `linter` pane group on the right area), and a ruleset selector right-pinned in the Design page bar. Feeds findings to `bifrost.diagnostics` for the status bar problems count.
 
 - **Entry:** `studio/src/modules/bpmn-linter/index.ts`
 - **Commands registered:** `bpmn.linter.toggle`, `bpmn.linter.showProblemsPane`, `bpmn.linter.setProfile`, `bpmn.linter.createCustomRuleset`
@@ -232,6 +233,18 @@ Management UI for the Plugin Host. Provides the Plugins pane (left sidebar), plu
 - **Architecture doc:** [plugin-host.md](plugin-host.md)
 
 ### Utilities
+
+#### solution-models
+
+Scans the open solution's `.bpmn` and `.dmn` files (process ids, versions, call-activity and decision references, stored linter scores, SHA-256) and finds the file that defines a process or decision. No cache: every call re-reads the files.
+
+- **Entry:** `studio/src/modules/solution-models/index.ts` (scanner: `scanSolutionModels.ts`, types: `types.ts`)
+- **Commands:** `solution.models.scan`, `solution.models.findProcessFile(processId)`, `solution.models.findDecisionFile(definitionsId)`
+- **Entry shape (`SolutionModelEntry`, sorted by URI):**
+  - `bpmn`: `uri`, `sha256`, `processes` (`id`, `name`, `version`, `isExecutable`, `callActivities` with `calledElement` / `calledProcessVersion`, `decisionRefs`; both include nested subprocesses), `storedLinterScores`.
+  - `dmn`: `uri`, `sha256`, `definitionsId`.
+  - `invalid`: `uri`, `error`. A file that cannot be read, fails to parse, or has no complete `<definitions>` root closing the file.
+- **Stored scores:** `StoredLinterScore` is `BfwLinterRulesetScorePayload`; every value is the attribute text. Callers that compare scores parse the numbers themselves.
 
 #### machine-sanctum
 
@@ -268,11 +281,14 @@ git-cruiser ← std (cmd), bpmn-diff, dmn-diff (cmd)      │
                                                         │
 machine-sanctum ← std (cmd)                             │
                                                         │
+solution-models ────────────────────────────────────────┤ (no module deps)
+                                                        │
 engine-core ← std (Bifrost APIs), bpmn-core (cmd + import) │
   registers: engineConnectionManager,                   │
              engineWebSocketBridge                      │
 engine-workspace ← engine-core (import + cmd)            │
                  ← bpmn-core (moddle descriptor)        │
+                 ← solution-models (cmd)                │
   registers: engine-workspace.taskInbox.pendingCounts   │
 engine-model-viewer ← engine-core, bpmn-core (import)    │
 engine-decision-viewer ← engine-core, dmn-core (import)  │
@@ -292,3 +308,7 @@ plugins ← std (cmd: std.settings.openUserSettingsAtCategory)│
 | Module load site | `studio/src/createAndInitializeBifrost.ts` |
 | ModuleManager | `studio/src/bifrost/common/ModuleManager.ts` |
 | ModuleMediator | `studio/src/bifrost/browser/ModuleMediator.ts` |
+
+## Workbench pages and categories
+
+`std` registers the categories first (`initializeWorkbenchCategories.ts`); other modules register their page in `onLoad` (`design/workspace` in bpmn-editor, `design/source` in git-cruiser, `debug/engines` in engine-core, `control/plugins` in plugins, `control/machine-sanctum` in machine-sanctum). Document types need `page`, left pane groups need `pages`. See [workbench-categories.md](workbench-categories.md).

@@ -1,0 +1,151 @@
+.bifrost {
+  .workbench {
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .workbench > .app-layout {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .app-layout[hidden] {
+    display: none;
+  }
+
+  .workbench-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: 40px;
+    flex: 0 0 40px;
+    padding: 0 0.45rem;
+    background: var(--theme-workbench-header-bg, var(--theme-menu-bar-bg));
+    color: var(--theme-workbench-header-fg, var(--theme-menu-bar-fg));
+    border-bottom: 2px solid var(--theme-workbench-header-border, var(--theme-splitter));
+  }
+
+  .workbench-header__group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  // Start and end keep their natural width; the main group takes the space between them and shrinks first.
+  .workbench-header__group--start,
+  .workbench-header__group--end {
+    flex: 0 0 auto;
+  }
+
+  .workbench-header__group--end {
+    justify-content: flex-end;
+  }
+
+  // The header and page bar menu bar sections sit inside their row, so they drop their stand-alone chrome.
+  .workbench-header .menu-bar-section,
+  .workbench-page-bar .menu-bar-section {
+    height: auto;
+    flex: 0 0 auto;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .header-layout-toggle-icon--mirrored {
+    display: inline-block;
+    transform: scaleX(-1);
+  }
+
+  .workbench-header__group--main {
+    flex: 1 1 0;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .workbench-header__category {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    height: 30px;
+    padding: 0 0.7rem;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--theme-menu-bar-hover-bg);
+    }
+  }
+
+  .workbench-header__label {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .workbench-header__category--active {
+    background: var(--theme-workbench-header-active-bg, var(--theme-menu-bar-active-bg));
+    color: var(--theme-workbench-header-active-fg, var(--theme-accent));
+  }
+
+  .workbench-page-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    height: 32px;
+    flex: 0 0 32px;
+    padding: 0 0.45rem;
+    overflow: hidden;
+    background: var(--theme-workbench-page-bar-bg, var(--theme-menu-bar-bg));
+    border-bottom: 1px solid var(--theme-workbench-header-border, var(--theme-splitter));
+  }
+
+  .workbench-page-bar__page {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 0 0.9rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--theme-menu-bar-hover-bg);
+    }
+  }
+
+  .workbench-page-bar__page--active {
+    border-bottom-color: var(--theme-workbench-page-bar-active-border, var(--theme-accent));
+  }
+
+  .workbench-page-bar__items {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+.bifrost .workbench-empty-category {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--theme-fg-muted);
+}

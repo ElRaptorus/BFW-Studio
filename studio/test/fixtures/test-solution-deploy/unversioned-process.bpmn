@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:bfw="https://bifrostforge.world/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="unversioned-process_Definition" targetNamespace="https://bifrostforge.world/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_unversioned">
+    <bpmn:participant id="Participant_unversioned" name="Unversioned" processRef="unversioned-process" />
+  </bpmn:collaboration>
+  <bpmn:process id="unversioned-process" name="Unversioned Process" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_unversioned">
+      <bpmn:lane id="Lane_unversioned_default" name="default">
+        <bpmn:flowNodeRef>Start_unversioned</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_unversioned</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_unversioned" name="Started">
+      <bpmn:outgoing>Flow_unversioned_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="End_unversioned" name="Done">
+      <bpmn:incoming>Flow_unversioned_1</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_unversioned_1" sourceRef="Start_unversioned" targetRef="End_unversioned" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_unversioned">
+    <bpmndi:BPMNPlane id="BPMNPlane_unversioned" bpmnElement="Collaboration_unversioned">
+      <bpmndi:BPMNShape id="Participant_unversioned_di" bpmnElement="Participant_unversioned" isHorizontal="true">
+        <dc:Bounds x="100" y="60" width="400" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_unversioned_default_di" bpmnElement="Lane_unversioned_default" isHorizontal="true">
+        <dc:Bounds x="130" y="60" width="370" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_unversioned_di" bpmnElement="Start_unversioned">
+        <dc:Bounds x="190" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_unversioned_di" bpmnElement="End_unversioned">
+        <dc:Bounds x="390" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_unversioned_1_di" bpmnElement="Flow_unversioned_1">
+        <di:waypoint x="226" y="160" />
+        <di:waypoint x="390" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

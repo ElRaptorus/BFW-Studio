@@ -32,6 +32,15 @@ export function getGitService(): GitService {
 }
 
 export async function onLoad(bifrost: Bifrost): Promise<void> {
+  bifrost.icons.registerIcons({ 'std/page/source': 'ph ph-git-branch' });
+  bifrost.categories.registerPage({
+    id: 'design/source',
+    categoryId: 'design',
+    label: 'Source',
+    icon: 'std/page/source',
+    order: 10,
+  });
+
   initializeIcons(bifrost);
   initializeSettings(bifrost);
 
@@ -41,12 +50,13 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   const decorationProvider = initializeDecorations(bifrost);
   gitService.setDecorationProvider(decorationProvider);
   initializeMenus(bifrost, gitService);
-  initializePanes(bifrost, gitService);
+  initializePanes(bifrost);
   initializeStatusBar(bifrost, gitService);
 
   await cleanupTempFiles(bifrost);
 
   bifrost.editors.registerDocumentType(MERGE_DOCUMENT_TYPE, {
+    page: 'design/source',
     uriMatch: /^merge:/,
     modelKey: 'MergeDocumentModel',
     modelConstructor: MergeDocumentModel,
