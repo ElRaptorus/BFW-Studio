@@ -162,6 +162,38 @@
             "additionalProperties": false
           }
         },
+        "pages": {
+          "type": "array",
+          "description": "Pages added to existing workbench categories (the category must exist).",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "icon"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$",
+                "description": "Page identifier <categoryId>/<name>; must be unused."
+              },
+              "label": { "type": "string", "description": "Text shown in the page bar." },
+              "icon": { "type": "string", "description": "Icon identifier shown in the page bar." },
+              "order": { "type": "number", "description": "Sort position inside the category. Default 1000." },
+              "defaultDocumentUri": {
+                "type": "string",
+                "description": "Document opened when the page is activated while it has no documents."
+              },
+              "editorTabsVisible": {
+                "type": "boolean",
+                "description": "Whether the editor tab strip is shown. Default true."
+              },
+              "paneAreas": {
+                "type": "array",
+                "description": "Pane areas the page may show. Default: all three.",
+                "items": { "type": "string", "enum": ["left", "right", "bottom"] }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
         "editorDocumentTypes": {
           "type": "array",
           "description": "Editor document types registered as placeholders at discovery time; replaced by the plugin's registerWebviewDocumentType() call on activation. Their presence makes the plugin lazily activated.",

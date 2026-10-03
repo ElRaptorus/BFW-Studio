@@ -143,6 +143,8 @@ Extends `AbstractEmitter`. Manages multi-engine connection lifecycle: connect/di
 | `engine.deleteProcessInstance` | Deletes a terminal process instance (thin REST wrapper, no UI) |
 | `engine.configuredDeleteProcessInstance` | Opens a confirmation dialog, then delegates to `deleteProcessInstance`. Catches `ProcessInstanceNotTerminalError` with a user-friendly notification. Returns `boolean` (true if deleted). **File:** `registerConfiguredDeleteCommands.ts` |
 
+A `422 linter_gate_failed` is mapped by `remapFailuresToFileNames` to `DeployFailureDetail { fileName, details, rulesetFailures }`; each `rulesetFailures` entry is also appended to `details` via `formatRulesetFailure` (`rulesetId: check expected X, actual Y`).
+
 ### Events
 
 | Command | Purpose |
@@ -340,13 +342,13 @@ These commands are registered by `engine-workspace` and orchestrate deploy+start
 | `engine.menubar.deployButton` | Shift-aware deploy button router. Click = deploy, Shift+Click = deploy & open |
 | `engine.menubar.setActiveEngine` | Engine dropdown onChange handler, calls `connectionManager.setActiveEngine()` |
 
-**Shared deploy pipeline:** The four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) all call the shared `deployFocusedBpmnFile()` helper which encapsulates: file read → `engine.ensureProcessVersions` → deploy with `engine.resolveVersionConflicts` retry loop (max 3). Each command only differs in its post-deploy action. DMN deploy logic is handled inline in `deployCurrentProcess` and `deployAndOpenCurrentProcess` only (no version checks or conflict resolution for DMN).
+**Shared deploy pipeline:** `deployFocusedBpmnFile()` wraps `deployBpmnFile()` (`engine-workspace/deploy/deployBpmnFile.ts`, also exposed as `engine.workspace.deployBpmnFile`), which the Deploy plan reuses. The four BPMN deploy commands (`deployCurrentProcess`, `deployAndOpenCurrentProcess`, `quickDeployAndDebug`, `quickDeployAndConfiguredDebug`) all call the shared `deployFocusedBpmnFile()` helper which encapsulates: file read → `engine.ensureProcessVersions` → deploy with `engine.resolveVersionConflicts` retry loop (max 3). Each command only differs in its post-deploy action. DMN deploy logic is handled inline in `deployCurrentProcess` and `deployAndOpenCurrentProcess` only (no version checks or conflict resolution for DMN).
 
 ### Engine Cluster (Header)
 
 **Path:** `studio/src/modules/engine-workspace/initializers/engineHeaderItems.ts`
 
-The pure builder `buildEngineHeaderItems({ activeEngineId, state, engines, deployEnabled, isViewingModelViewer })` returns the Engine cluster for the `header` menu bar area. `initializeRunMenu.ts` appends its result in a menu bar modifier. Every item carries `pages: ['design/*', 'deploy/*', 'debug/*']` (`ENGINE_HEADER_PAGES`). Order:
+The pure builder `buildEngineHeaderItems({ activeEngineId, state, engines, deployEnabled, isViewingModelViewer })` returns the Engine cluster for the `header` menu bar area. `initializeRunMenu.ts` appends its result in a menu bar modifier. Items carry `pages: ['design/*', 'deploy/*', 'debug/*']` (`ENGINE_HEADER_PAGES`); the Deploy button uses `ENGINE_HEADER_DEPLOY_PAGES` (`design/*`, `debug/*`) because `deploy/*` has its own plan page ([deploy.md](deploy.md)). Order:
 
 1. **Status icon** `engine-menubar/engine-status` — `ph-fill ph-circle engine-header-status engine-header-status--<state>`; colours in `engine-workspace.scss` from core tokens (connected = success, connecting/reconnecting = orange, error = error, disconnected = muted)
 2. **Engine selector** `engine-menubar/engine-select` (`MenuBarItem_Select`) — lists all connected/recent engines with `[OFFLINE]` prefix for disconnected ones, max width with ellipsis. Falls back to the text `engine-menubar/engine-name` "No engine" when no engines exist

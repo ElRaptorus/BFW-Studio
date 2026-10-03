@@ -316,3 +316,33 @@ describe('EditorMediator page settings', () => {
     assert.strictEqual(restored.mediator.getEditorDocumentByUri('file:///moved.wsp')?.data.current, 'unsaved content');
   });
 });
+
+describe('EditorMediator removed pages', () => {
+  it('moves the documents of a page removed at runtime to the page of their type and keeps unsaved content', () => {
+    const fixture = createFixture();
+    fixture.categories.registerPage({
+      id: 'design/plugin',
+      categoryId: 'design',
+      label: 'Plugin',
+      icon: 'x',
+      order: 9,
+    });
+    fixture.register('workspace-type', /\.wsp$/, 'design/workspace');
+    fixture.register('plugin-type', /\.plg$/, 'design/plugin');
+    fixture.mediator.focusOrOpenEditorDocument('file:///a.plg');
+    fixture.mediator.getEditorDocumentByUri('file:///a.plg')!.data.current = 'unsaved';
+    fixture.categories.activatePage('design/plugin');
+
+    fixture.categories.unregisterPage('design/plugin');
+
+    assert.deepStrictEqual(fixture.mediator.getOpenEditorDocumentsOfPage('design/plugin'), []);
+    assert.deepStrictEqual(
+      fixture.mediator
+        .getOpenEditorDocumentsOfPage('design/workspace')
+        .map((document) => document.uri)
+        .sort(),
+      ['file:///a.plg'],
+    );
+    assert.strictEqual(fixture.mediator.getEditorDocumentByUri('file:///a.plg')?.data.current, 'unsaved');
+  });
+});

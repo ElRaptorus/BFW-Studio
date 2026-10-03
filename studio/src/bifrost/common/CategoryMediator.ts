@@ -4,6 +4,7 @@ import type { WorkbenchCategoryDefinition, WorkbenchPageDefinition } from '#bifr
 import {
   EVENT_WORKBENCH_CATEGORIES_UPDATED,
   EVENT_WORKBENCH_PAGE_ACTIVATED,
+  EVENT_WORKBENCH_PAGE_UNREGISTERED,
 } from '#bifrost/contracts/internal/WorkbenchEvents';
 
 import { CategoryManager } from './CategoryManager';
@@ -24,6 +25,9 @@ export class CategoryMediator extends AbstractEmitter {
 
     this.categoryManager.on(EVENT_WORKBENCH_PAGE_ACTIVATED, (pageId, previousPageId) =>
       this.emit(EVENT_WORKBENCH_PAGE_ACTIVATED, [pageId, previousPageId]),
+    );
+    this.categoryManager.on(EVENT_WORKBENCH_PAGE_UNREGISTERED, (pageId: string) =>
+      this.emit(EVENT_WORKBENCH_PAGE_UNREGISTERED, [pageId]),
     );
     this.categoryManager.on(EVENT_WORKBENCH_CATEGORIES_UPDATED, () => {
       if (this.restored) {

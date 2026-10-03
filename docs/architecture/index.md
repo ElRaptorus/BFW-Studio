@@ -28,6 +28,7 @@ Each file owns one topic. Point to other files; do not copy their tables.
 - **[bpmn-linter.md](bpmn-linter.md)** — BPMN linter module: bpmnlint integration, LintBridge/LintEngine, canvas markers, Error Summary Badge, Findings Pane toggle, rule profiles, three-tier findings
 - **[bpmn-sanitizer.md](bpmn-sanitizer.md)** — BPMN sanitizer: always-on structural integrity scanner, ghost element / dangling reference / empty container detection, SanitizerBridge diagram-js module, canvas badge, Inspector section, per-issue and bulk fixes
 - **[workbench-categories.md](workbench-categories.md)** — Categorized workbench: categories and pages, per-page editor areas and pane groups, routing rules R1–R5, header, Plugin API 2.0.0 page contract
+- **[deploy.md](deploy.md)** — Deploy category: `engine-deploy` module, `deploy/plan` page, Deploy Explorer, plan analysis against the Engine, per-file execution, keybinding scope
 - **[workbench-layout.md](workbench-layout.md)** — Workbench layout: three-column layout, header menu bar and layout toggles, left tab strip, PaneManager pane area selection
 - **[imports-and-modules.md](imports-and-modules.md)** — Module resolution: subpath import aliases (`#bifrost/*`, `#components/*`, `#modules/*`), ambient declarations, TypeScript 6.0 configuration, per-target tsconfig layout
 - **[bpmn-diff.md](bpmn-diff.md)** — Side-by-side BPMN diff, history preview, change summary, three-panel merge UI

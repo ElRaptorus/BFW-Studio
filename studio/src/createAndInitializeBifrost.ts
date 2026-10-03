@@ -39,6 +39,7 @@ export async function createAndInitializeBifrost(
 
     await bifrost.modules.requirePackagedModule('engine-core');
     await bifrost.modules.requirePackagedModule('engine-workspace');
+    await bifrost.modules.requirePackagedModule('engine-deploy');
     await bifrost.modules.requirePackagedModule('engine-model-viewer');
     await bifrost.modules.requirePackagedModule('engine-decision-viewer');
     await bifrost.modules.requirePackagedModule('engine-debugger');

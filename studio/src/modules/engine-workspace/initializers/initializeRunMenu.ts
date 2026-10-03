@@ -8,6 +8,8 @@ import * as path from 'path';
 
 import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
+import type { BpmnFileDeployOptions } from '../deploy/deployBpmnFile';
+import { deployBpmnFile } from '../deploy/deployBpmnFile';
 import { buildEngineHeaderItems } from './engineHeaderItems';
 
 const DEPLOYABLE_EXTENSIONS = ['.bpmn', '.dmn'];
@@ -67,7 +69,7 @@ interface BpmnDeployResult {
  * version-conflict retry loop. Returns null when the user cancels a dialog
  * or an unrecoverable error occurs.
  */
-async function deployFocusedBpmnFile(
+export async function deployFocusedBpmnFile(
   bifrost: Bifrost,
   connectionManager: EngineConnectionManager,
   options?: { allowRunExistingOnConflict?: boolean },
@@ -95,74 +97,31 @@ async function deployFocusedBpmnFile(
     return null;
   }
 
-  let content = await fs.readFile(filePath, 'utf-8');
-
-  const checked = await bifrost.commands.executeCommand(ENGINE_COMMANDS.ensureProcessVersions, [
-    activeEngineId,
-    content,
-  ]);
-  if (checked == null) {
-    return null;
-  }
-  if (checked.modified) {
-    await fs.writeFile(filePath, checked.xml, 'utf-8');
-  }
-  content = checked.xml;
-
-  const maxConflictRetries = 3;
-  for (let attempt = 0; attempt <= maxConflictRetries; attempt++) {
-    try {
-      const result: any = await bifrost.commands.executeCommand(ENGINE_COMMANDS.deploy, [
-        activeEngineId,
-        content,
-        fileName,
-      ]);
-      const processModelId: string | null = result?.deployed?.[0]?.processModelId ?? null;
-      if (!processModelId) {
-        bifrost.notifications.open({
-          type: 'error',
-          content: 'Deploy succeeded but the engine did not return a process model ID.',
-          source: 'Engine',
-        });
-        return null;
-      }
-      return { processModelId, engineId: activeEngineId, filePath, fileName };
-    } catch (deployError: any) {
-      if (deployError?.errorCode === 'version_exists' && Array.isArray(deployError?.conflicts)) {
-        const resolved = await bifrost.commands.executeCommand(ENGINE_COMMANDS.resolveVersionConflicts, [
-          activeEngineId,
-          content,
-          deployError.conflicts,
-          { allowRunExisting: options?.allowRunExistingOnConflict },
-        ]);
-        if (resolved == null) {
-          return null;
-        }
-        if ('runExisting' in resolved) {
-          return { processModelId: resolved.processModelId, engineId: activeEngineId, filePath, fileName };
-        }
-        await fs.writeFile(filePath, resolved.xml, 'utf-8');
-        content = resolved.xml;
-        continue;
-      }
-      bifrost.notifications.open({
-        type: 'error',
-        content: formatDeployErrorMessage(deployError),
-        source: 'Engine',
-      });
-      return null;
-    }
-  }
-
-  bifrost.notifications.open({
-    type: 'error',
-    content: 'Deployment failed after multiple version-conflict retries.',
-    source: 'Engine',
+  const outcome = await deployBpmnFile(bifrost, activeEngineId, filePath, {
+    allowRunExistingOnConflict: options?.allowRunExistingOnConflict,
   });
+  if (outcome.status === 'deployed') {
+    return {
+      processModelId: outcome.processModelId,
+      engineId: outcome.engineId,
+      filePath: outcome.filePath,
+      fileName: outcome.fileName,
+    };
+  }
+  if (outcome.status === 'failed') {
+    bifrost.notifications.open({ type: 'error', content: outcome.message, source: 'Engine' });
+  }
   return null;
 }
 
 export default function initializeRunMenu(bifrost: Bifrost, connectionManager: EngineConnectionManager): void {
+  bifrost.commands.register(
+    'engine.workspace.deployBpmnFile',
+    (engineId: string, filePath: string, options?: BpmnFileDeployOptions) =>
+      deployBpmnFile(bifrost, engineId, filePath, options),
+    { enabledWhen: (engineId: string) => connectionManager.isConnected(engineId) },
+  );
+
   // ─── Deploy commands ───────────────────────────────────────────────
 
   bifrost.commands.register(

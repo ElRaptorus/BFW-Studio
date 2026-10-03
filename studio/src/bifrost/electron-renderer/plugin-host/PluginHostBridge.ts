@@ -4,6 +4,7 @@ import { EVENT_DIAGNOSTICS_CHANGED } from '#bifrost/common/DiagnosticsManager';
 import type { WatcherDisposable } from '#bifrost/common/FileHandlingService';
 import { insertAfterMenuBarItem, insertBeforeMenuBarItem } from '#bifrost/common/MenuBarModifierFunctions';
 import { EVENT_SOLUTION_CHANGED } from '#bifrost/common/SolutionManager';
+import { readPageContribution } from '#bifrost/common/plugin-host/manifest/ManifestReader';
 import { canAccessCommand, checkCommandAccess } from '#bifrost/common/plugin-host/permissions/CommandDenylist';
 import { PermissionDeniedError, PermissionGate } from '#bifrost/common/plugin-host/permissions/PermissionGate';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
@@ -31,6 +32,7 @@ import { createIframePaneProvider } from './IframePaneProvider';
 import type { PluginHost } from './PluginHost';
 import { createTreeViewPaneProvider } from './TreeViewPaneProvider';
 import type { ContributionRegistrar } from './manifest/ContributionRegistrar';
+import { registerPluginPage } from './manifest/ContributionRegistrar';
 
 /**
  * Renderer-side bridge that executes Plugin Host API requests
@@ -178,6 +180,8 @@ export class PluginHostBridge {
         return this.handleStatusBarApi(method, args, callerName);
       case 'menuBar':
         return this.handleMenuBarApi(method, args, callerName);
+      case 'workbench':
+        return this.handleWorkbenchApi(method, args, callerName);
       case 'menus':
         return this.handleMenusApi(method, args, callerName);
       case 'workspace':
@@ -1077,6 +1081,45 @@ export class PluginHostBridge {
       }
       default:
         throw new Error(`Unknown statusBar method: ${method}`);
+    }
+  }
+
+  /** Page IDs registered through `api.workbench.registerPage`, with their owning plugin. */
+  private readonly runtimePageOwners = new Map<string, string>();
+
+  private handleWorkbenchApi(method: string, args: unknown[], callerName: string): unknown {
+    switch (method) {
+      case 'registerPage': {
+        const errors: { path: string; message: string }[] = [];
+        const page = readPageContribution(args[0], 'page', errors);
+        if (page == null) {
+          throw new Error(
+            `Plugin '${callerName}': invalid page definition: ${errors.map((error) => `${error.path}: ${error.message}`).join('; ')}`,
+          );
+        }
+        const disposer = registerPluginPage(this.bifrost, callerName, page);
+        this.runtimePageOwners.set(page.id, callerName);
+        this.getOrCreatePluginGroup(callerName).set(`workbenchPage:${page.id}`, {
+          disposer: () => {
+            this.runtimePageOwners.delete(page.id);
+            disposer.dispose();
+          },
+        });
+        return undefined;
+      }
+      case 'unregisterPage': {
+        const [pageId] = args as [string];
+        if (this.runtimePageOwners.get(pageId) !== callerName) {
+          throw new Error(`Plugin '${callerName}': page '${String(pageId)}' was not registered by this plugin.`);
+        }
+        const group = this.getOrCreatePluginGroup(callerName);
+        const key = `workbenchPage:${pageId}`;
+        group.get(key)?.disposer();
+        group.delete(key);
+        return undefined;
+      }
+      default:
+        throw new Error(`Unknown workbench method: ${method}`);
     }
   }
 

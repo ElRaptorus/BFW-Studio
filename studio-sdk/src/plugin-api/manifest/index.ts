@@ -13,6 +13,7 @@ export type {
   ManifestEditorDocumentType,
   ManifestKeybinding,
   ManifestMenuItem,
+  ManifestPageContribution,
   ManifestPaneContribution,
   ManifestServiceTaskType,
   ManifestSetting,

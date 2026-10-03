@@ -17,6 +17,7 @@ Tests run via npm scripts defined in `studio/package.json`:
 | `test:integration:dmn-editor` | Integration | DMN editor tests only (`test/integration/dmn-editor/`) |
 | `test:integration:core` | Integration | Studio core tests (`test/integration/studio-core/`) |
 | `test:integration:git-cruiser` | Integration | Git integration tests (`test/integration/git-cruiser/`) |
+| `test:integration:deploy` | Integration | Deploy plan page (`test/integration/deploy/`) |
 | `test:integration:plugins` | Integration | Plugin host tests (`test/integration/plugins/`) |
 | `test:integration:smoke` | Integration | Minimal smoke test only |
 

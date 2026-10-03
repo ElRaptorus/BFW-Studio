@@ -455,6 +455,7 @@ function createPluginApi(): Record<string, unknown> {
     ),
     menuBar: createNamespaceProxy('menuBar'),
     menus: createNamespaceProxy('menus'),
+    workbench: createNamespaceProxy('workbench'),
     workspace: new Proxy(
       {
         onDidChangeFile(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {

@@ -17,7 +17,10 @@ import {
   EVENT_EDITOR_DOCUMENT_URI_UPDATED,
 } from '#bifrost/contracts/internal/EditorEvents';
 import type { SearchQuery } from '#bifrost/contracts/internal/SearchTypes';
-import { EVENT_WORKBENCH_PAGE_ACTIVATED } from '#bifrost/contracts/internal/WorkbenchEvents';
+import {
+  EVENT_WORKBENCH_PAGE_ACTIVATED,
+  EVENT_WORKBENCH_PAGE_UNREGISTERED,
+} from '#bifrost/contracts/internal/WorkbenchEvents';
 
 import type { Bifrost } from '../Bifrost';
 import { EditorAreaManager } from '../common/EditorAreaManager';
@@ -79,6 +82,10 @@ export class EditorMediator extends AbstractEmitter {
     this.bifrost.categories.on(
       EVENT_WORKBENCH_PAGE_ACTIVATED,
       (_pageId: string | null, previousPageId: string | null) => this.onPageActivated(previousPageId),
+    );
+
+    this.bifrost.categories.on(EVENT_WORKBENCH_PAGE_UNREGISTERED, (pageId: string) =>
+      this.relocateDocumentsOfRemovedPage(pageId),
     );
 
     this.editorDocumentModelManager.on(EVENT_EDITOR_DOCUMENT_METADATA_UPDATED, (uri: string, metadataDiff: any) => {
@@ -367,7 +374,23 @@ export class EditorMediator extends AbstractEmitter {
   private relocateDocumentsOfUnregisteredPage(pageData: unknown): void {
     const temporaryManager = new EditorAreaManager(this.bifrost);
     temporaryManager.deserialize(pageData);
-    for (const editorDocument of temporaryManager.getOpenEditorDocuments()) {
+    this.relocateDocuments(temporaryManager.getOpenEditorDocuments());
+  }
+
+  /** A page removed at runtime (plugin unload) hands its open documents over; unsaved state travels with them. */
+  private relocateDocumentsOfRemovedPage(pageId: string): void {
+    const manager = this.editorAreaManagers.get(pageId);
+    if (manager == null) {
+      return;
+    }
+    this.editorAreaManagers.delete(pageId);
+    this.relocateDocuments(manager.getOpenEditorDocuments());
+    this.saveEditorAreas();
+    this.emit(EVENT_EDITOR_AREA_LAYOUT_UPDATED);
+  }
+
+  private relocateDocuments(editorDocuments: EditorDocument[]): void {
+    for (const editorDocument of editorDocuments) {
       let targetPageId = EditorMediator.FALLBACK_PAGE_ID;
       try {
         const page = this.editorDocumentTypeManager.getById(editorDocument.documentType).page;

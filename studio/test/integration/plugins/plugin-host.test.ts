@@ -21,7 +21,7 @@ const PLUGIN_LOAD_TIMEOUT = PLUGIN_HOST_WAIT_TIMEOUT_MS;
 // package.json and is therefore never returned by plugin discovery). Keep this in sync when
 // adding/removing fixtures — `waitUntilListCountAtLeast` uses `>=`, so a stale (too-low) value
 // fails silently rather than erroring, while a too-high value causes every consumer to time out.
-const FIXTURE_PLUGIN_COUNT = 39;
+const FIXTURE_PLUGIN_COUNT = 40;
 
 async function finishPluginHostTest(
   studioAgent: StudioAgent | undefined,
@@ -423,6 +423,64 @@ describe('plugin-host/integration', () => {
       await studioAgent.pluginHost.waitUntilCommandRegistered('plugin.late-onstartup-plugin.ping');
       const pingResult = await studioAgent.executeCommand('plugin.late-onstartup-plugin.ping');
       assert.strictEqual(pingResult, 'pong', 'plugin should be fully activated and its command callable');
+    });
+  });
+
+  describe('page contributions', () => {
+    let studioAgent: StudioAgent;
+    const category = (id: string) => `.workbench-header__category[data-category-id="${id}"]`;
+    const pageButton = (id: string) => `.workbench-page-bar__page[data-page-id="${id}"]`;
+    const activePage = (id: string) => `.workbench-header-container[data-page-id="${id}"]`;
+
+    beforeEach(async ({ task }) => {
+      studioAgent = await createAndStartStudioAgentForPluginHost(
+        { testName: task.name, testFile: __filename },
+        { pluginsDirectory: PLUGINS_FIXTURE_DIR, waitUntilListCountAtLeast: FIXTURE_PLUGIN_COUNT },
+      );
+      await studioAgent.pluginHost.waitUntilStatus('page-contribution-demo', 'loaded');
+    });
+
+    afterEach(async ({ task }) => {
+      await restorePluginIfDisabled(studioAgent, 'page-contribution-demo');
+      await finishPluginHostTest(studioAgent, task);
+    });
+
+    it('a manifest page makes its category visible and can be opened', async () => {
+      await studioAgent.assertVisible(category('measure'), ASSERT_VISIBLE_TIMEOUT);
+      await studioAgent.executeCommand('std.workbench.activatePage', ['measure/insights']);
+      await studioAgent.assertVisible(activePage('measure/insights'), ASSERT_VISIBLE_TIMEOUT);
+    });
+
+    it('a runtime page shows in the page bar of its category', async () => {
+      await studioAgent.executeCommand('std.workbench.activateCategory', ['design']);
+      await studioAgent.assertVisible(pageButton('design/demo-board'), ASSERT_VISIBLE_TIMEOUT);
+      await studioAgent.executeCommand('std.workbench.activatePage', ['design/demo-board']);
+      await studioAgent.assertVisible(activePage('design/demo-board'), ASSERT_VISIBLE_TIMEOUT);
+    });
+
+    it('refuses pages for an unknown category and for a taken ID', async () => {
+      const errors = (await studioAgent.executeCommand(
+        'plugin.page-contribution-demo.getRegistrationErrors',
+      )) as string[];
+      assert.strictEqual(errors.length, 2);
+      assert.ok(errors[0].includes("'nowhere/page'"), errors[0]);
+      assert.ok(errors[1].includes("'design/workspace'"), errors[1]);
+    });
+
+    it('disabling the plugin removes its pages and enabling brings them back', async () => {
+      await studioAgent.executeCommand('std.workbench.activatePage', ['design/demo-board']);
+      await studioAgent.assertVisible(activePage('design/demo-board'), ASSERT_VISIBLE_TIMEOUT);
+
+      await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'disabled');
+      await studioAgent.assertNotVisible(category('measure'));
+      await studioAgent.assertNotVisible(pageButton('design/demo-board'));
+      await studioAgent.assertNotVisible(activePage('design/demo-board'));
+      await studioAgent.assertVisible(`.workbench-header-container[data-category-id="design"]`, ASSERT_VISIBLE_TIMEOUT);
+
+      await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'loaded');
+      await studioAgent.assertVisible(category('measure'), ASSERT_VISIBLE_TIMEOUT);
+      await studioAgent.executeCommand('std.workbench.activateCategory', ['design']);
+      await studioAgent.assertVisible(pageButton('design/demo-board'), ASSERT_VISIBLE_TIMEOUT);
     });
   });
 

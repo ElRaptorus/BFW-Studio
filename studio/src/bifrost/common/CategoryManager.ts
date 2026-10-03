@@ -9,6 +9,7 @@ import {
 import {
   EVENT_WORKBENCH_CATEGORIES_UPDATED,
   EVENT_WORKBENCH_PAGE_ACTIVATED,
+  EVENT_WORKBENCH_PAGE_UNREGISTERED,
 } from '#bifrost/contracts/internal/WorkbenchEvents';
 
 const CATEGORY_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
@@ -87,6 +88,7 @@ export class CategoryManager extends AbstractEmitter {
         this.emit(EVENT_WORKBENCH_PAGE_ACTIVATED, [null, pageId]);
       }
     }
+    this.emit(EVENT_WORKBENCH_PAGE_UNREGISTERED, [pageId]);
     this.emit(EVENT_WORKBENCH_CATEGORIES_UPDATED);
   }
 

@@ -15,6 +15,7 @@ import type {
   ManifestError,
   ManifestKeybinding,
   ManifestMenuItem,
+  ManifestPageContribution,
   ManifestPaneContribution,
   ManifestReadResult,
   ManifestServiceTaskType,
@@ -338,6 +339,10 @@ function validateContributes(
     result.editorDocumentTypes = validateEditorDocumentTypes(raw.editorDocumentTypes, errors);
   }
 
+  if (raw.pages != null) {
+    result.pages = validatePages(raw.pages, errors);
+  }
+
   const knownContributes = new Set([
     'commands',
     'menus',
@@ -355,6 +360,7 @@ function validateContributes(
     'dmnContextPad',
     'dmnModules',
     'editorDocumentTypes',
+    'pages',
   ]);
   for (const key of Object.keys(raw)) {
     if (!knownContributes.has(key)) {
@@ -1022,6 +1028,96 @@ function validateDmnContextPad(raw: unknown, errors: ManifestError[]): ManifestD
       elementTypes: obj.elementTypes as string[] | undefined,
     });
   }
+  return result;
+}
+
+// ─── Pages ───────────────────────────────────────────────────
+
+/**
+ * Validates one page definition (manifest entry or `api.workbench.registerPage` argument). Pushes the problems to
+ * `errors` and returns null when there are any. Whether the category exists is the registry's concern.
+ */
+export function readPageContribution(
+  entry: unknown,
+  entryPath: string,
+  errors: ManifestError[],
+): ManifestPageContribution | null {
+  if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+    errors.push({ path: entryPath, message: 'Must be an object' });
+    return null;
+  }
+  const obj = entry as Record<string, unknown>;
+  const errorCountBefore = errors.length;
+
+  if (typeof obj.id !== 'string' || !PAGE_ID_PATTERN.test(obj.id)) {
+    errors.push({
+      path: `${entryPath}.id`,
+      message: 'Required field "id" must be a page ID of the form "<categoryId>/<name>"',
+    });
+  }
+  for (const field of ['label', 'icon'] as const) {
+    if (typeof obj[field] !== 'string' || (obj[field] as string).trim().length === 0) {
+      errors.push({
+        path: `${entryPath}.${field}`,
+        message: `Required field "${field}" is missing or not a non-empty string`,
+      });
+    }
+  }
+  if (obj.order != null && (typeof obj.order !== 'number' || !Number.isFinite(obj.order))) {
+    errors.push({ path: `${entryPath}.order`, message: '"order" must be a finite number when present' });
+  }
+  if (obj.defaultDocumentUri != null && typeof obj.defaultDocumentUri !== 'string') {
+    errors.push({ path: `${entryPath}.defaultDocumentUri`, message: '"defaultDocumentUri" must be a string' });
+  }
+  if (obj.editorTabsVisible != null && typeof obj.editorTabsVisible !== 'boolean') {
+    errors.push({ path: `${entryPath}.editorTabsVisible`, message: '"editorTabsVisible" must be a boolean' });
+  }
+  if (
+    obj.paneAreas != null &&
+    (!Array.isArray(obj.paneAreas) ||
+      obj.paneAreas.some((area) => typeof area !== 'string' || !VALID_PANE_AREAS.has(area)))
+  ) {
+    errors.push({
+      path: `${entryPath}.paneAreas`,
+      message: `"paneAreas" must be an array of: ${[...VALID_PANE_AREAS].join(', ')}`,
+    });
+  }
+  if (errors.length > errorCountBefore) {
+    return null;
+  }
+
+  return {
+    id: obj.id as string,
+    label: obj.label as string,
+    icon: obj.icon as string,
+    order: obj.order as number | undefined,
+    defaultDocumentUri: obj.defaultDocumentUri as string | undefined,
+    editorTabsVisible: obj.editorTabsVisible as boolean | undefined,
+    paneAreas: obj.paneAreas as ManifestPageContribution['paneAreas'],
+  };
+}
+
+function validatePages(raw: unknown, errors: ManifestError[]): ManifestPageContribution[] {
+  const basePath = 'bifrostStudio.contributes.pages';
+  if (!Array.isArray(raw)) {
+    errors.push({ path: basePath, message: 'Must be an array' });
+    return [];
+  }
+
+  const result: ManifestPageContribution[] = [];
+  const seenIds = new Set<string>();
+  raw.forEach((entry, index) => {
+    const page = readPageContribution(entry, `${basePath}[${index}]`, errors);
+    if (page == null) {
+      return;
+    }
+    if (seenIds.has(page.id)) {
+      errors.push({ path: `${basePath}[${index}].id`, message: `Duplicate pages id within this plugin: "${page.id}"` });
+      return;
+    }
+    seenIds.add(page.id);
+    result.push(page);
+  });
   return result;
 }
 

@@ -36,10 +36,11 @@ The load order is explicit and defined in `studio/src/createAndInitializeBifrost
 13. solution-models        (scans the solution's BPMN/DMN files)
 14. engine-core            (registers EngineConnectionManager shared resource)
 15. engine-workspace       (sidebar, catalogs, menubar/run controls)
-16. engine-model-viewer    (read-only deployed BPMN viewer)
-17. engine-decision-viewer (read-only deployed DMN viewer)
-18. engine-debugger        (live PI debugger)
-19. plugins
+16. engine-deploy          (Deploy category: plan page and explorer)
+17. engine-model-viewer    (read-only deployed BPMN viewer)
+18. engine-decision-viewer (read-only deployed DMN viewer)
+19. engine-debugger        (live PI debugger)
+20. plugins
 ```
 
 This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then `solution-models` (before the engine modules that call its commands), then engine modules (`engine-core` first as foundation, then workspace/viewers/debugger), then plugin management (`plugins`) last.
@@ -166,6 +167,16 @@ Operational hub for connected engines. Provides the left-sidebar engine navigati
 - **Shared resources registered:** `engine-workspace.taskInbox.pendingCounts` (via `TaskCountPoller`)
 - **Depended on by:** `engine-debugger` (via commands)
 
+#### engine-deploy
+
+Deploy category: the `deploy/plan` page with the read-only Deploy Explorer, plan analysis against the active Engine and per-file execution. Details: [deploy.md](deploy.md).
+
+- **Entry:** `studio/src/modules/engine-deploy/index.tsx`
+- **Dependencies (commands):** `std`, `engine-core`, `engine-workspace` (`engine.workspace.deployBpmnFile`), `solution-models`
+- **Dependencies (imports):** `engine-core` (types, `formatDeployErrorMessage`, `formatRulesetFailure`), `engine-workspace` (`useEditorModel` hook), `solution-models` (types, `sha256Hex`)
+- **Document types registered:** `engine-deploy-plan`
+- **Panes registered:** `DeployExplorerPane` (left, page `deploy/plan`), `DeployItemDetailsPane` (right/property)
+
 #### engine-model-viewer
 
 Read-only viewer for deployed BPMN process definitions fetched from the engine. Shows version history, element property panes, start-from-start-event overlays, and export. Replaces the former `engine-bpmn-viewer` module.
@@ -290,6 +301,8 @@ engine-workspace ← engine-core (import + cmd)            │
                  ← bpmn-core (moddle descriptor)        │
                  ← solution-models (cmd)                │
   registers: engine-workspace.taskInbox.pendingCounts   │
+engine-deploy ← engine-core (import + cmd)              │
+              ← engine-workspace, solution-models (cmd) │
 engine-model-viewer ← engine-core, bpmn-core (import)    │
 engine-decision-viewer ← engine-core, dmn-core (import)  │
 engine-debugger ← engine-core, bpmn-core, dmn-core      │

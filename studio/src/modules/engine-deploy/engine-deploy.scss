@@ -1,0 +1,101 @@
+.deploy-explorer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  &__empty {
+    padding: 8px 12px;
+    color: var(--theme-fg-muted);
+  }
+}
+
+.deploy-plan {
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    overflow: auto;
+  }
+
+  &__empty {
+    color: var(--theme-fg-muted);
+  }
+
+  &__notice {
+    padding: 8px 12px;
+    border-radius: 4px;
+    white-space: pre-line;
+    background: var(--theme-engine-ws-health-warn-bg);
+    color: var(--theme-engine-ws-health-warn-fg);
+
+    &--blocked {
+      background: var(--theme-engine-ws-health-critical-bg);
+      color: var(--theme-engine-ws-health-critical-fg);
+    }
+  }
+
+  &__folder {
+    color: var(--theme-fg-muted);
+    font-size: 0.85em;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--theme-surface-inset);
+    }
+  }
+
+  &__row {
+    cursor: pointer;
+
+    &--selected {
+      background: var(--theme-surface-inset);
+    }
+  }
+
+  &__result--failed {
+    color: var(--theme-engine-ws-health-critical-fg);
+  }
+
+  &__result--deployed {
+    color: var(--theme-engine-ws-health-ok-fg);
+  }
+}
+
+.deploy-item-details {
+  padding: 8px 12px;
+
+  &__heading {
+    margin: 12px 0 4px;
+  }
+
+  &__info {
+    color: var(--theme-fg-muted);
+  }
+
+  &__blocker {
+    color: var(--theme-engine-ws-health-critical-fg);
+    white-space: pre-line;
+  }
+
+  &__dependency {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+  }
+}

@@ -15,12 +15,25 @@ function splitIntoChunks<T>(array: T[], size: number): T[][] {
   return chunks;
 }
 
+/** One failed check of the Engine linter gate (`422 linter_gate_failed`). */
+export type DeployRulesetFailure = {
+  rulesetId: string;
+  check: string;
+  expected: unknown;
+  actual: unknown;
+};
+
 export type DeployFailureDetail = {
   fileName: string;
   details: string[];
+  rulesetFailures: DeployRulesetFailure[];
 };
 
-function remapFailuresToFileNames(error: any, chunkFileNames: string[]): DeployFailureDetail[] | null {
+export function formatRulesetFailure(failure: DeployRulesetFailure): string {
+  return `${failure.rulesetId}: ${failure.check} expected ${JSON.stringify(failure.expected)}, actual ${JSON.stringify(failure.actual)}`;
+}
+
+export function remapFailuresToFileNames(error: any, chunkFileNames: string[]): DeployFailureDetail[] | null {
   const rawFailures: any[] | undefined = error?.rawBody?.failures;
   if (!Array.isArray(rawFailures) || rawFailures.length === 0) {
     return null;
@@ -33,8 +46,14 @@ function remapFailuresToFileNames(error: any, chunkFileNames: string[]): DeployF
     const realFileName =
       oneBasedIndex > 0 && oneBasedIndex <= chunkFileNames.length ? chunkFileNames[oneBasedIndex - 1] : syntheticFile;
 
-    const details: string[] = Array.isArray(failure?.details) ? failure.details : [];
-    return { fileName: realFileName, details };
+    const rulesetFailures: DeployRulesetFailure[] = Array.isArray(failure?.rulesetFailures)
+      ? failure.rulesetFailures
+      : [];
+    const details: string[] = [
+      ...(Array.isArray(failure?.details) ? failure.details : []),
+      ...rulesetFailures.map(formatRulesetFailure),
+    ];
+    return { fileName: realFileName, details, rulesetFailures };
   });
 }
 

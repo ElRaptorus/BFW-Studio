@@ -44,8 +44,8 @@ export type { EngineCommandId } from './commands/CommandContract';
 export type { EngineCommandArgs } from './commands/CommandContract';
 
 export type { RetryContext, RetryResult } from './commands/registerConfiguredRetryCommands';
-export { formatDeployErrorMessage } from './commands/registerDeployCommands';
-export type { DeployFailureDetail } from './commands/registerDeployCommands';
+export { formatDeployErrorMessage, formatRulesetFailure } from './commands/registerDeployCommands';
+export type { DeployFailureDetail, DeployRulesetFailure } from './commands/registerDeployCommands';
 
 export type {
   AutoRefreshInterval,

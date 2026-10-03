@@ -4,6 +4,9 @@ import type { EngineConnection, EngineConnectionState } from '#modules/engine-co
 /** The Engine cluster is only meaningful on pages that talk to an engine. */
 export const ENGINE_HEADER_PAGES: string[] = ['design/*', 'deploy/*', 'debug/*'];
 
+/** The Deploy page has its own Deploy button; the header button only deploys the focused file. */
+export const ENGINE_HEADER_DEPLOY_PAGES: string[] = ['design/*', 'debug/*'];
+
 export type EngineHeaderState = {
   readonly activeEngineId: string | null;
   /** Connection state of the active engine; `disconnected` when there is none. */
@@ -91,5 +94,8 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
     },
   ];
 
-  return items.map((item) => ({ ...item, pages: ENGINE_HEADER_PAGES }));
+  return items.map((item) => ({
+    ...item,
+    pages: item.id === 'engine-menubar/deploy' ? ENGINE_HEADER_DEPLOY_PAGES : ENGINE_HEADER_PAGES,
+  }));
 }

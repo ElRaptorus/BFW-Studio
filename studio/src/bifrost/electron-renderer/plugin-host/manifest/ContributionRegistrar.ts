@@ -5,6 +5,7 @@ import type {
   ManifestCommand,
   ManifestEditorDocumentType,
   ManifestKeybinding,
+  ManifestPageContribution,
   ManifestPaneContribution,
   ManifestSetting,
   ManifestTheme,
@@ -22,6 +23,36 @@ import { createPlaceholderPaneProvider } from './PlaceholderPaneProvider';
 
 export interface ContributionDisposer {
   dispose(): void;
+}
+
+/** Default `order` of plugin pages, after the built-in ones. */
+const PLUGIN_PAGE_DEFAULT_ORDER = 1000;
+
+/**
+ * Adds a plugin's page to an existing category. Throws with a message naming the plugin and the page when the
+ * registry refuses it (unknown category, taken ID). The returned disposer removes the page again.
+ */
+export function registerPluginPage(
+  bifrost: Bifrost,
+  pluginName: string,
+  page: ManifestPageContribution,
+): ContributionDisposer {
+  try {
+    bifrost.categories.registerPage({
+      id: page.id,
+      categoryId: page.id.split('/')[0],
+      label: page.label,
+      icon: page.icon,
+      order: page.order ?? PLUGIN_PAGE_DEFAULT_ORDER,
+      defaultDocumentUri: page.defaultDocumentUri,
+      editorTabsVisible: page.editorTabsVisible,
+      paneAreas: page.paneAreas,
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Plugin '${pluginName}': page '${page.id}' was not added: ${reason}`, { cause: error });
+  }
+  return { dispose: () => bifrost.categories.unregisterPage(page.id) };
 }
 
 /**
@@ -104,6 +135,17 @@ export class ContributionRegistrar {
         if (disposer != null) {
           disposers.push(disposer);
         }
+      }
+    }
+
+    // ── Pages (added to existing categories) ──────────────────
+    for (const page of contributes.pages ?? []) {
+      try {
+        disposers.push(registerPluginPage(this.bifrost, pluginName, page).dispose);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`[ContributionRegistrar] ${message}`);
+        this.bifrost.notifications.open({ type: 'error', content: message, source: pluginName });
       }
     }
 

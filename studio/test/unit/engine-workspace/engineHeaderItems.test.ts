@@ -1,4 +1,8 @@
-import { ENGINE_HEADER_PAGES, buildEngineHeaderItems } from '#modules/engine-workspace/initializers/engineHeaderItems';
+import {
+  ENGINE_HEADER_DEPLOY_PAGES,
+  ENGINE_HEADER_PAGES,
+  buildEngineHeaderItems,
+} from '#modules/engine-workspace/initializers/engineHeaderItems';
 import type { EngineHeaderState } from '#modules/engine-workspace/initializers/engineHeaderItems';
 import assert from 'node:assert';
 import { describe, it } from 'vitest';
@@ -42,10 +46,14 @@ describe('buildEngineHeaderItems', () => {
     );
   });
 
-  it('limits every item to the design, deploy and debug pages', () => {
+  it('limits every item but Deploy to the design, deploy and debug pages', () => {
     for (const item of buildEngineHeaderItems(createState())) {
-      assert.deepStrictEqual(item.pages, ENGINE_HEADER_PAGES);
+      assert.deepStrictEqual(
+        item.pages,
+        item.id === 'engine-menubar/deploy' ? ENGINE_HEADER_DEPLOY_PAGES : ENGINE_HEADER_PAGES,
+      );
     }
+    assert.deepStrictEqual(ENGINE_HEADER_DEPLOY_PAGES, ['design/*', 'debug/*']);
     assert.deepStrictEqual(ENGINE_HEADER_PAGES, ['design/*', 'deploy/*', 'debug/*']);
   });
 

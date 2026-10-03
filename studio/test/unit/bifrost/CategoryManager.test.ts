@@ -1,5 +1,8 @@
 import { CategoryManager, isValidPagePattern, matchesPage } from '#bifrost/common/CategoryManager';
-import { EVENT_WORKBENCH_PAGE_ACTIVATED } from '#bifrost/contracts/internal/WorkbenchEvents';
+import {
+  EVENT_WORKBENCH_PAGE_ACTIVATED,
+  EVENT_WORKBENCH_PAGE_UNREGISTERED,
+} from '#bifrost/contracts/internal/WorkbenchEvents';
 import assert from 'node:assert';
 import { beforeEach, describe, it } from 'vitest';
 
@@ -126,6 +129,15 @@ describe('CategoryManager page patterns and fallbacks', () => {
     manager.unregisterPage('design/source');
     assert.strictEqual(manager.getActivePageId(), 'design/workspace');
     assert.strictEqual(received.length, 1);
+  });
+
+  it('announces a removed page once and stays silent for unknown pages', () => {
+    const manager = createManager();
+    const removed: unknown[] = [];
+    manager.on(EVENT_WORKBENCH_PAGE_UNREGISTERED, (pageId: string) => removed.push(pageId));
+    manager.unregisterPage('design/source');
+    manager.unregisterPage('design/source');
+    assert.deepStrictEqual(removed, ['design/source']);
   });
 
   it('ends without an active page when the last page of the category is unregistered', () => {

@@ -27,6 +27,7 @@ When asking, name the script and the suites it covers, and say roughly how long 
 | `npm run test:integration:bpmn-editor` | `test/integration/bpmn-editor/` |
 | `npm run test:integration:dmn-editor` | `test/integration/dmn-editor/` |
 | `npm run test:integration:git-cruiser` | `test/integration/git-cruiser/` |
+| `npm run test:integration:deploy` | `test/integration/deploy/` |
 | `npm run test:integration:plugins` | `test/integration/plugins/` (builds plugin fixtures first) |
 | `npm run test:integration:smoke` | Smoke test only (single file) |
 

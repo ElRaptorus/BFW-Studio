@@ -40,7 +40,7 @@ export function initializeKeyBindings(bifrost: Bifrost): void {
       '.kbm-editor-inline-search': {
         esc: 'std.editor.closeInlineSearch',
       },
-      '.kbm-treeview': {
+      '.kbm-file-explorer': {
         backspace: 'std.solution.deleteSelectedElementsInFileExplorer',
         enter: 'std.solution.renameFileOrDirectory',
       },
@@ -106,7 +106,7 @@ export function initializeKeyBindings(bifrost: Bifrost): void {
         enter: 'std.quickJump.openSelected',
         esc: 'std.quickJump.hide',
       },
-      '.kbm-treeview': {
+      '.kbm-file-explorer': {
         delete: 'std.solution.deleteSelectedElementsInFileExplorer',
         f2: 'std.solution.renameFileOrDirectory',
       },
@@ -158,7 +158,7 @@ export function initializeKeyBindings(bifrost: Bifrost): void {
         enter: 'std.quickJump.openSelected',
         esc: 'std.quickJump.hide',
       },
-      '.kbm-treeview': {
+      '.kbm-file-explorer': {
         backspace: 'std.solution.deleteSelectedElementsInFileExplorer',
         f2: 'std.solution.renameFileOrDirectory',
       },

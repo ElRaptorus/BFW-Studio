@@ -40,3 +40,41 @@ describe('ManifestReader pages (Plugin API 2.0.0)', () => {
     assert.ok(result.errors.some((error) => error.message.includes('removed in Plugin API 2.0.0')));
   });
 });
+
+describe('ManifestReader contributes.pages', () => {
+  const valid = { id: 'measure/insights', label: 'Insights', icon: 'ph-chart-line' };
+
+  it('accepts a page and keeps its optional fields', () => {
+    const page = {
+      ...valid,
+      order: 5,
+      editorTabsVisible: false,
+      paneAreas: ['left', 'bottom'],
+      defaultDocumentUri: 'x://y',
+    };
+    const result = read({ pages: [page] });
+    assert.deepStrictEqual(result.errors, []);
+    assert.strictEqual(result.manifest?.contributes?.pages?.[0].id, 'measure/insights');
+    assert.deepStrictEqual(result.manifest?.contributes?.pages?.[0].paneAreas, ['left', 'bottom']);
+  });
+
+  it.each([
+    ['id', { ...valid, id: 'Measure' }],
+    ['id', { ...valid, id: 'noslash' }],
+    ['label', { ...valid, label: ' ' }],
+    ['icon', { ...valid, icon: undefined }],
+    ['order', { ...valid, order: 'first' }],
+    ['editorTabsVisible', { ...valid, editorTabsVisible: 'no' }],
+    ['defaultDocumentUri', { ...valid, defaultDocumentUri: 3 }],
+    ['paneAreas', { ...valid, paneAreas: ['top'] }],
+  ])('rejects an invalid %s', (field, page) => {
+    const result = read({ pages: [page] });
+    assert.ok(result.errors.some((error) => error.path === `bifrostStudio.contributes.pages[0].${field}`));
+  });
+
+  it('rejects non-arrays, non-objects and duplicate ids within one plugin', () => {
+    assert.ok(read({ pages: 'x' }).errors.some((error) => error.path.endsWith('.pages')));
+    assert.ok(read({ pages: [3] }).errors.some((error) => error.path.endsWith('pages[0]')));
+    assert.ok(read({ pages: [valid, valid] }).errors.some((error) => error.message.includes('Duplicate')));
+  });
+});

@@ -1,0 +1,25 @@
+{
+  "name": "page-contribution-demo",
+  "displayName": "Page Contribution Demo",
+  "description": "Adds a page through the manifest and one through the API, and records refused registrations.",
+  "version": "1.0.0",
+  "author": "Bifrost Forge World Tests",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "2.0.0",
+    "displayName": "Page Contribution Demo",
+    "permissions": [],
+    "activationEvents": [
+      "onStartup"
+    ],
+    "contributes": {
+      "pages": [
+        {
+          "id": "measure/insights",
+          "label": "Insights",
+          "icon": "ph ph-chart-line-up"
+        }
+      ]
+    }
+  }
+}

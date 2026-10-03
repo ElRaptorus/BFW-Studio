@@ -51,6 +51,7 @@
     "test:integration:dmn-editor": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/dmn-editor/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:core": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/studio-core/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:git-cruiser": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/git-cruiser/ --bail 1 --retry 1 --no-file-parallelism",
+    "test:integration:deploy": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/deploy/ --bail 1 --retry 1 --no-file-parallelism",
     "build:plugin-fixtures": "node test/fixtures/plugins/build-ts-fixtures.mjs",
     "test:integration:plugins": "npm run build:plugin-fixtures && cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/plugins/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:smoke": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/studio-core/studio-smoke.test.ts --bail 1 --retry 1 --no-file-parallelism",

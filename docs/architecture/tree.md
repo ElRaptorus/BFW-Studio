@@ -248,6 +248,7 @@ The consumer is responsible for:
 2. Providing click/drop callbacks
 3. Choosing a unique `viewMediatorId`
 4. Optionally interacting with the `TreeViewMediator` for imperative operations (e.g. from commands)
+5. Giving the tree its own `className` for keybindings: `Tree` always adds `kbm-treeview`, so bindings on that class fire in every tree. The File Explorer binds `.kbm-file-explorer`, the Deploy Explorer `.kbm-deploy-explorer`
 
 ---
 

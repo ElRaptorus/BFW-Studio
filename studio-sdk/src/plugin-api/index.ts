@@ -69,6 +69,7 @@ export type { EditorsApi } from './EditorsApi';
 export type { PanesApi } from './PanesApi';
 export type { StatusBarApi } from './StatusBarApi';
 export type { MenuBarApi } from './MenuBarApi';
+export type { PluginPageDefinition, WorkbenchApi } from './WorkbenchApi';
 export type { MenusApi } from './MenusApi';
 export type { WorkspaceApi } from './WorkspaceApi';
 export type { ViewsApi } from './ViewsApi';
@@ -128,6 +129,7 @@ export type {
   ManifestDmnModule,
   ManifestDmnPaletteEntry,
   ManifestEditorDocumentType,
+  ManifestPageContribution,
   ManifestKeybinding,
   ManifestMenuItem,
   ManifestPaneContribution,

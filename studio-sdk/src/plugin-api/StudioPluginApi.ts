@@ -14,6 +14,7 @@ import type { StatusBarApi } from './StatusBarApi';
 import type { ThemesApi } from './ThemesApi';
 import type { ViewsApi } from './ViewsApi';
 import type { WebviewApi } from './WebviewApi';
+import type { WorkbenchApi } from './WorkbenchApi';
 import type { WorkspaceApi } from './WorkspaceApi';
 
 /** Frozen environment information available to every plugin at runtime. */
@@ -66,6 +67,8 @@ export interface StudioPluginApi {
   readonly menuBar: MenuBarApi;
   /** Application menu modification. */
   readonly menus: MenusApi;
+  /** Pages added to workbench categories. */
+  readonly workbench: WorkbenchApi;
   /** Scoped file system and workspace access. */
   readonly workspace: WorkspaceApi;
   /** Tree view registration and data push. */

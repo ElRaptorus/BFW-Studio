@@ -303,6 +303,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
             onDragAndDropItem={onDragAndDropItem}
             onExternalFileDrop={onExternalFileDrop}
             iconComponent={Icon}
+            className="kbm-file-explorer"
             multiSelectionMenuId="std/file-explorer/multi-selection"
             decorationSource={decorationSource}
           />

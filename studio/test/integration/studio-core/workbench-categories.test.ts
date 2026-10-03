@@ -32,12 +32,11 @@ describe('studio/workbench-categories', () => {
     await studioAgent?.stop();
   });
 
-  it('header: shows Home, Design, Debug and Control; Measure and Deploy are hidden while empty', async () => {
-    for (const id of ['home', 'design', 'debug', 'control']) {
+  it('header: shows Home, Design, Deploy, Debug and Control; Measure is hidden while empty', async () => {
+    for (const id of ['home', 'design', 'deploy', 'debug', 'control']) {
       await studioAgent.assertVisible(category(id), TIMEOUT);
     }
     await studioAgent.assertNotVisible(category('measure'));
-    await studioAgent.assertNotVisible(category('deploy'));
   });
 
   it('categories: activating a category shows its page bar and pages', async () => {

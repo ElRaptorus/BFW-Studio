@@ -161,6 +161,22 @@ Array of pane placeholder declarations.
 | `icon` | `string` | No |
 | `visibleWhen` | `{ documentType?: string; setting?: string }` | No |
 
+#### `contributes.pages`
+
+Pages added to **existing** workbench categories. Registered at discovery time by `registerPluginPage()` (`ContributionRegistrar.ts`), so a category that was empty (Measure) becomes visible while the plugin is still `pending`. Validated by `readPageContribution()` (`ManifestReader.ts`), which `api.workbench.registerPage` shares.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | `string` | Yes | `<categoryId>/<name>`, lowercase with digits and `-`. Not namespaced: the first plugin to claim an ID wins, and an ID of a built-in page is refused |
+| `label` | `string` | Yes | Text in the page bar |
+| `icon` | `string` | Yes | Icon ID or Phosphor class |
+| `order` | `number` | No | Sort position inside the category, default `1000` (after built-in pages) |
+| `defaultDocumentUri` | `string` | No | Opened when the page is activated without documents |
+| `editorTabsVisible` | `boolean` | No | Default `true` |
+| `paneAreas` | `('left'\|'right'\|'bottom')[]` | No | Default: all three |
+
+Validation rejects non-array values, non-object entries, malformed IDs, blank `label`/`icon`, a non-finite `order`, wrongly typed optional fields, unknown `paneAreas` entries and duplicate IDs within a plugin. The registry then refuses an unknown category or a taken ID: the page is skipped, `console.error` logs it and an error notification reads `Plugin '<name>': page '<id>' was not added: <reason>`. The plugin itself still loads.
+
 #### `contributes.editorDocumentTypes`
 
 Array of editor document type declarations. Processed at discovery time by `ContributionRegistrar.registerEditorDocumentTypePlaceholder()`, before plugin activation — the URI pattern and the File Explorer file visibility are therefore effective while the plugin is still `pending`.
@@ -245,6 +261,8 @@ The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `2.0.0`, defined in `s
 - Same major version required
 - Plugin's minor ≤ Studio's minor (plugin can't require features the Studio doesn't have)
 - Patch version is ignored for compatibility
+
+**2.0.0 (additive after the breaking change):** `contributes.pages` and `api.workbench` add to 2.0.0 without a bump.
 
 **2.0.0 (breaking):** `editorDocumentTypes[].page` is required, left `panes[].pages` is required, `paneToggles` is removed, and the menu bar API is header-only: `pages` accepts page ids and `<categoryId>/*` wildcards, and modifiers cannot touch other areas or insert `pane_content_toggle` (see [workbench-categories.md](workbench-categories.md)).
 

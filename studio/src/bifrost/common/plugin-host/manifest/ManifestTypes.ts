@@ -29,6 +29,28 @@ export interface ManifestContributions {
   dmnContextPad?: ManifestDmnContextPadEntry[];
   dmnModules?: ManifestDmnModule[];
   editorDocumentTypes?: ManifestEditorDocumentType[];
+  pages?: ManifestPageContribution[];
+}
+
+/**
+ * A workbench page contributed to an existing category (`contributes.pages`, or `api.workbench.registerPage`).
+ * The category is the prefix of the `id`.
+ */
+export interface ManifestPageContribution {
+  /** Page identifier of the form `<categoryId>/<name>`. Must be unused; the category must exist. */
+  id: string;
+  /** Text shown in the page bar. */
+  label: string;
+  /** Icon identifier shown in the page bar. */
+  icon: string;
+  /** Sort position inside the category. Default `1000`, so plugin pages follow the built-in ones. */
+  order?: number;
+  /** Document opened when the page is activated while it has no documents. */
+  defaultDocumentUri?: string;
+  /** Whether the editor tab strip is shown. Default `true`. */
+  editorTabsVisible?: boolean;
+  /** Pane areas the page may show. Default: all three. */
+  paneAreas?: ('left' | 'right' | 'bottom')[];
 }
 
 export interface ManifestEditorDocumentType {
