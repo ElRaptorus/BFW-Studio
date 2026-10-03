@@ -79,7 +79,7 @@ describe('git-merge-resolver', () => {
   });
 
   it('should detect merge state and show conflicts in Git Pane', async () => {
-    await studioAgent.navigation.showLeftPane('pane/left/git');
+    await studioAgent.navigation.showLeftPane('design/source/git');
     await studioAgent.assertGitPaneVisible();
 
     const branchLabel = await studioAgent.getGitPaneBranchLabel();

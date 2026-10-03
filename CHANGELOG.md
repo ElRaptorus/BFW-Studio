@@ -129,6 +129,17 @@ A complete design-to-execution loop without leaving the Studio.
 - **Solution Deploy** sends all diagrams in the active solution to the engine in one batch
 - **Configured Start** parses the process's start events, prompts for event selection and key/value payload entries, then starts the instance — making message, timer, and conditional starts testable without writing REST calls
 
+### Deploy Plan
+
+The Deploy category builds a deployment plan from the solution's BPMN and DMN files and compares it with the connected engine.
+
+- Each item gets an analysis status (new, new version, unchanged, version missing) and a changed model without a version bump is flagged
+- Dependencies (called processes, decision references) are added automatically, so groups deploy together with what they need
+- Blockers, such as unsaved changes, an offline engine, invalid files or missing deploy permissions, disable the deploy button with a reason
+- The deployment result is shown per item, including linter gate rejections from the engine
+
+See [architecture](./docs/architecture/deploy.md).
+
 ### Engine Browser
 
 A six-view management panel for connected Engine instances:
@@ -160,6 +171,17 @@ A WebSocket-driven overlay that visualizes process execution in real time.
 ---
 
 ## Workspace & Navigation
+
+### Workbench Categories & Pages
+
+The header groups the Studio into categories: **Home**, **Design**, **Deploy**, **Debug** and **Control**. Measure stays hidden until it has pages (or *Show Empty Categories* is on).
+
+- Each category holds pages, selected in the page bar below the header
+- Every page has its own editor area, tabs and pane layout, restored after a restart
+- View › Go to and `Alt+<n>` (`Cmd+Alt+<n>` on macOS) jump between categories
+- **Detail level:** the setting *Design Detail Level* (View › Appearance › Business Detail Level) hides the technical Scripts and Data Flow groups on Design pages
+
+See [architecture](./docs/architecture/workbench-categories.md).
 
 ### Multi-Root Solutions
 
@@ -211,9 +233,11 @@ See [architecture](./docs/architecture/settings.md).
 
 ### 4-Area Pane Layout
 
+Visibility, size and active group of each area are kept per page.
+
 | Area | Role |
 |------|------|
-| **Left** | Explorer panes, toggled via the menu bar above |
+| **Left** | Explorer panes of the page; a tab strip switches between several groups |
 | **Center** | Editor area |
 | **Bottom** | Inspector — analysis and debugging tools for the active editor tab |
 | **Right** | Toolbox — For Properties, Scripting, Documentation, Linting and more |
@@ -242,6 +266,7 @@ A process-isolated, permission-gated plugin architecture.
 - Plugins are individually toggleable with a dedicated management pane
 - Permissions must be declared upfront (filesystem, commands, renderer modules, native access, etc.)
     - Network access via Node.js native libraries is blocked. Period.
+- **Plugin API 2.0.0:** document types must name their `page`, left panes name their `pages`, the menu bar API targets the header only, and plugins can add pages to built-in categories (`contributes.pages`, `api.workbench.registerPage`)
 - Declarative feature manifest for commands, panes, webview-based documents, menus, settings, themes, and more
 - Full API bridge for runtime interaction with the Studio
 - The Studio SDK provides fully typed contracts and interfaces, which Plugin developers can use for properly accessing the Studio's Plugin Host

@@ -40,7 +40,7 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
     engines.length > 0
       ? {
           type: 'select',
-          id: 'engine-menubar/engine-select',
+          id: 'engine-header/engine-select',
           command: 'engine.menubar.setActiveEngine',
           value: activeEngineId ?? '',
           entries: engines.map((engine) => ({ label: formatEngineLabel(engine), value: engine.engineId })),
@@ -48,7 +48,7 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
         }
       : {
           type: 'text',
-          id: 'engine-menubar/engine-name',
+          id: 'engine-header/engine-name',
           label: 'No engine',
           tooltip: 'Connect an engine to get started',
         };
@@ -56,21 +56,21 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
   const items: MenuBarItem[] = [
     {
       type: 'icon',
-      id: 'engine-menubar/engine-status',
+      id: 'engine-header/engine-status',
       icon: `ph-fill ph-circle engine-header-status engine-header-status--${state}`,
       tooltip: `Engine: ${state}`,
     },
     engineSelectItem,
     {
       type: 'menu',
-      id: 'engine-menubar/connection',
+      id: 'engine-header/connection',
       icon: 'ph-bold ph-caret-down',
       menu: 'engine/header/connection',
       tooltip: 'Connection',
     },
     {
       type: 'button',
-      id: 'engine-menubar/open-engine',
+      id: 'engine-header/open-engine',
       icon: 'ph-duotone ph-gauge',
       tooltip: 'Open Engine Dashboard',
       command: 'engine.workspace.openDashboard',
@@ -79,7 +79,7 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
     },
     {
       type: 'button',
-      id: 'engine-menubar/deploy',
+      id: 'engine-header/deploy',
       icon: 'ph ph-paper-plane-tilt',
       tooltip: 'Deploy Current Process (F3)\n[Shift+Click] Deploy & Open',
       visible: deployEnabled,
@@ -87,7 +87,7 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
     },
     {
       type: 'button',
-      id: 'engine-menubar/play',
+      id: 'engine-header/play',
       icon: 'ph-fill ph-play',
       tooltip: playTooltip,
       command: 'engine.menubar.playButton',
@@ -96,6 +96,6 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
 
   return items.map((item) => ({
     ...item,
-    pages: item.id === 'engine-menubar/deploy' ? ENGINE_HEADER_DEPLOY_PAGES : ENGINE_HEADER_PAGES,
+    pages: item.id === 'engine-header/deploy' ? ENGINE_HEADER_DEPLOY_PAGES : ENGINE_HEADER_PAGES,
   }));
 }

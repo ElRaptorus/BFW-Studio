@@ -148,6 +148,16 @@ describe('CategoryManager page patterns and fallbacks', () => {
     assert.strictEqual(manager.getActivePageId(), null);
   });
 
+  it('falls back to the fallback page when the only page of the active category is removed', () => {
+    const manager = createManager();
+    manager.registerPage({ id: 'measure/insights', categoryId: 'measure', label: 'Insights', icon: 'x', order: 1 });
+    manager.activatePage('measure/insights');
+    manager.unregisterPage('measure/insights');
+    assert.ok(!manager.isCategoryVisible('measure'));
+    manager.ensureActivePage('design/workspace');
+    assert.strictEqual(manager.getActivePageId(), 'design/workspace');
+  });
+
   it('leaves a hidden empty active category for the fallback page', () => {
     const manager = createManager();
     manager.setShowEmptyCategories(true);

@@ -6,7 +6,7 @@ export function initializePanes(bifrost: Bifrost): void {
   bifrost.panes.registerPaneGroup(
     'left',
     'git',
-    [bifrost.panes.getPaneViaPaneProvider('pane/left/git', 'git-cruiser/pane-providers/GitPane', GitPaneModule)],
+    [bifrost.panes.getPaneViaPaneProvider('design/source/git', 'git-cruiser/pane-providers/GitPane', GitPaneModule)],
     { pages: ['design/source'] },
   );
 }

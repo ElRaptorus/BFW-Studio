@@ -1160,6 +1160,8 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
     console.log(`[PluginHost] Restarting in ${backoffMs}ms...`);
     await new Promise((resolve) => setTimeout(resolve, backoffMs));
 
+    this.activationManager.dispose();
+    this.disposeAllContributions();
     this.bridge.dispose();
     this.connection?.rejectAll('Plugin Host crashed');
     this.childProcess = null;

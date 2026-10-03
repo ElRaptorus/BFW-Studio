@@ -508,7 +508,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
       await bifrost.solution.onElementAdded(targetUri);
       if (treeViewMediator != null) {
-        bifrost.panes.setPaneCollapsed('pane/left/explorer', false);
+        bifrost.panes.setPaneCollapsed('design/workspace/explorer', false);
         try {
           await treeViewMediator.waitForAndSelectEntriesByMetadataFilter((metadata) => metadata.uri === targetUri);
 

@@ -4,7 +4,7 @@ import * as fs from 'fs/promises';
 
 export function initializeCommands(bifrost: Bifrost): void {
   bifrost.commands.register('plugins.focusPluginsPane', () => {
-    bifrost.panes.setVisibilityOfPaneAreaByPaneId('pane/left/plugins', true);
+    bifrost.panes.setVisibilityOfPaneAreaByPaneId('control/plugins/plugins', true);
   });
 
   bifrost.commands.register('plugins.refreshPluginList', async () => {
@@ -96,7 +96,7 @@ export function initializeCommands(bifrost: Bifrost): void {
   bifrost.commands.register(
     'std.workbench.focusPluginsConsole',
     () => {
-      bifrost.panes.setVisibilityOfPaneAreaByPaneId('pane/bottom/plugin-host-console', true);
+      bifrost.panes.setVisibilityOfPaneAreaByPaneId('control/plugins/plugin-host-console', true);
     },
     { visibleInSearch: true },
   );

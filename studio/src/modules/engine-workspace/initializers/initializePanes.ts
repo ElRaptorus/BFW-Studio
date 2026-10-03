@@ -13,7 +13,7 @@ export default function initializePanes(bifrost: Bifrost): void {
     'engines',
     [
       bifrost.panes.getPaneViaPaneProvider(
-        'pane/left/engines',
+        'debug/engines/engines',
         'engine-workspace/pane-providers/EngineSidebarPane',
         EngineSidebarPane,
       ),
@@ -23,27 +23,27 @@ export default function initializePanes(bifrost: Bifrost): void {
 
   bifrost.panes.prependToPaneGroup('right', 'property', [
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/process-model-info',
+      'debug/engines/process-model-info',
       'engine-workspace/pane-providers/ProcessModelInfoPane',
       ProcessModelInfoPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/process-instance-summary',
+      'debug/engines/process-instance-summary',
       'engine-workspace/pane-providers/ProcessInstanceSummaryPane',
       ProcessInstanceSummaryPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/task-detail',
+      'debug/engines/task-detail',
       'engine-workspace/pane-providers/TaskDetailPane',
       TaskDetailPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/decision-summary',
+      'debug/engines/decision-summary',
       'engine-workspace/pane-providers/DecisionSummaryPane',
       DecisionSummaryPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/schedule-detail',
+      'debug/engines/schedule-detail',
       'engine-workspace/pane-providers/ScheduleDetailPane',
       ScheduleDetailPane,
     ),

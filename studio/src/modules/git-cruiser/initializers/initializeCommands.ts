@@ -543,7 +543,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   );
 
   bifrost.commands.register('git.showInGitPane', async (_uri?: string) => {
-    bifrost.panes.setVisibilityOfPaneAreaByPaneId('pane/left/git', true);
+    bifrost.panes.setVisibilityOfPaneAreaByPaneId('design/source/git', true);
   });
 
   bifrost.commands.register('git.showGitNotFoundInfo', async () => {

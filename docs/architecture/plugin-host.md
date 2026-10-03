@@ -206,7 +206,7 @@ Plugins receive a `StudioPluginApi` instance in their `activate()` function:
 export async function activate(api: StudioPluginApi): Promise<void> {
   // api.commands, api.diagnostics, api.dialogs, api.notifications,
   // api.settings, api.events, api.webviews, api.editors, api.panes,
-  // api.statusBar, api.menuBar, api.menus, api.workspace,
+  // api.statusBar, api.menuBar, api.menus, api.workbench, api.workspace,
   // api.views, api.themes, api.bpmn, api.dmn, api.env
 }
 ```
@@ -397,7 +397,7 @@ If the Plugin Host child process exits unexpectedly:
 
 1. Increment crash counter within a 60-second sliding window.
 2. Notify the user via `bifrost.notifications`.
-3. If fewer than 3 crashes: restart with exponential backoff (1s, 2s, 4s) and **re-discover** plugins from disk (respecting current `disabledPlugins` setting and persisted quarantine list). This handles plugins deleted mid-session.
+3. If fewer than 3 crashes: dispose the activation triggers, all manifest contributions and the bridge state, then restart with exponential backoff (1s, 2s, 4s) and **re-discover** plugins from disk (respecting current `disabledPlugins` setting and persisted quarantine list). This handles plugins deleted mid-session.
 4. If 3+ crashes: disable plugins permanently until the Studio is restarted.
 
 ### Per-plugin Worker crash and quarantine

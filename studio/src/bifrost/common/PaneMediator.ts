@@ -148,9 +148,13 @@ export class PaneMediator extends AbstractEmitter {
     paneArea: PaneAreaName,
     paneGroupId: string,
     paneObjects: PaneObject[],
-    options?: { label?: string; icon?: string | (() => string); pages?: string[] },
+    options?: { label?: string; icon?: string | (() => string); pages?: string[]; detailLevel?: 'technical' },
   ): void {
     this.paneManager.registerPaneGroup(paneArea, paneGroupId, paneObjects, options);
+  }
+
+  setDetailLevel(level: 'technical' | 'business'): void {
+    this.paneManager.setDetailLevel(level);
   }
 
   setActiveGroupInArea(area: PaneAreaName, groupId: string): void {

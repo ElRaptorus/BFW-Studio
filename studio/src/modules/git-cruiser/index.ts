@@ -70,7 +70,7 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   });
 
   bifrost.commands.register('git.focusGitPane', () => {
-    bifrost.panes.setVisibilityOfPaneAreaByPaneId('pane/left/git', true);
+    bifrost.panes.setVisibilityOfPaneAreaByPaneId('design/source/git', true);
   });
 
   await gitService.initialize();

@@ -36,12 +36,12 @@ describe('buildEngineHeaderItems', () => {
     assert.deepStrictEqual(
       buildEngineHeaderItems(createState()).map((item) => item.id),
       [
-        'engine-menubar/engine-status',
-        'engine-menubar/engine-select',
-        'engine-menubar/connection',
-        'engine-menubar/open-engine',
-        'engine-menubar/deploy',
-        'engine-menubar/play',
+        'engine-header/engine-status',
+        'engine-header/engine-select',
+        'engine-header/connection',
+        'engine-header/open-engine',
+        'engine-header/deploy',
+        'engine-header/play',
       ],
     );
   });
@@ -50,7 +50,7 @@ describe('buildEngineHeaderItems', () => {
     for (const item of buildEngineHeaderItems(createState())) {
       assert.deepStrictEqual(
         item.pages,
-        item.id === 'engine-menubar/deploy' ? ENGINE_HEADER_DEPLOY_PAGES : ENGINE_HEADER_PAGES,
+        item.id === 'engine-header/deploy' ? ENGINE_HEADER_DEPLOY_PAGES : ENGINE_HEADER_PAGES,
       );
     }
     assert.deepStrictEqual(ENGINE_HEADER_DEPLOY_PAGES, ['design/*', 'debug/*']);
@@ -82,24 +82,24 @@ describe('buildEngineHeaderItems', () => {
     );
     const nameItem = items[1];
     assert.ok(nameItem.type === 'text');
-    assert.strictEqual(nameItem.id, 'engine-menubar/engine-name');
+    assert.strictEqual(nameItem.id, 'engine-header/engine-name');
     assert.strictEqual(nameItem.label, 'No engine');
   });
 
   it('shows the dashboard only while connected and deploy only when enabled', () => {
     const connected = buildEngineHeaderItems(createState());
-    assert.strictEqual(connected.find((item) => item.id === 'engine-menubar/open-engine')?.visible, true);
-    assert.strictEqual(connected.find((item) => item.id === 'engine-menubar/deploy')?.visible, true);
+    assert.strictEqual(connected.find((item) => item.id === 'engine-header/open-engine')?.visible, true);
+    assert.strictEqual(connected.find((item) => item.id === 'engine-header/deploy')?.visible, true);
 
     const offline = buildEngineHeaderItems(createState({ state: 'error', deployEnabled: false }));
-    assert.strictEqual(offline.find((item) => item.id === 'engine-menubar/open-engine')?.visible, false);
-    assert.strictEqual(offline.find((item) => item.id === 'engine-menubar/deploy')?.visible, false);
+    assert.strictEqual(offline.find((item) => item.id === 'engine-header/open-engine')?.visible, false);
+    assert.strictEqual(offline.find((item) => item.id === 'engine-header/deploy')?.visible, false);
   });
 
   it('switches the play tooltip in the model viewer', () => {
     const playTooltip = (isViewingModelViewer: boolean) => {
       const play = buildEngineHeaderItems(createState({ isViewingModelViewer })).find(
-        (item) => item.id === 'engine-menubar/play',
+        (item) => item.id === 'engine-header/play',
       );
       assert.ok(play?.type === 'button');
       return play.tooltip;

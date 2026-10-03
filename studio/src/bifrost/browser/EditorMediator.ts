@@ -384,7 +384,12 @@ export class EditorMediator extends AbstractEmitter {
       return;
     }
     this.editorAreaManagers.delete(pageId);
+    const previouslyFocusedEditorDocument = this.getActiveManager().getFocusedEditorDocument();
     this.relocateDocuments(manager.getOpenEditorDocuments());
+    const focusedEditorDocument = this.getActiveManager().getFocusedEditorDocument();
+    if (focusedEditorDocument !== previouslyFocusedEditorDocument) {
+      this.onFocusChanged(focusedEditorDocument, previouslyFocusedEditorDocument);
+    }
     this.saveEditorAreas();
     this.emit(EVENT_EDITOR_AREA_LAYOUT_UPDATED);
   }

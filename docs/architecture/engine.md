@@ -350,12 +350,12 @@ These commands are registered by `engine-workspace` and orchestrate deploy+start
 
 The pure builder `buildEngineHeaderItems({ activeEngineId, state, engines, deployEnabled, isViewingModelViewer })` returns the Engine cluster for the `header` menu bar area. `initializeRunMenu.ts` appends its result in a menu bar modifier. Items carry `pages: ['design/*', 'deploy/*', 'debug/*']` (`ENGINE_HEADER_PAGES`); the Deploy button uses `ENGINE_HEADER_DEPLOY_PAGES` (`design/*`, `debug/*`) because `deploy/*` has its own plan page ([deploy.md](deploy.md)). Order:
 
-1. **Status icon** `engine-menubar/engine-status` — `ph-fill ph-circle engine-header-status engine-header-status--<state>`; colours in `engine-workspace.scss` from core tokens (connected = success, connecting/reconnecting = orange, error = error, disconnected = muted)
-2. **Engine selector** `engine-menubar/engine-select` (`MenuBarItem_Select`) — lists all connected/recent engines with `[OFFLINE]` prefix for disconnected ones, max width with ellipsis. Falls back to the text `engine-menubar/engine-name` "No engine" when no engines exist
-3. **Connection menu** `engine-menubar/connection` — opens the menu `engine/header/connection` (`initializeMenus.ts`): Connect… (`engine.connectWithDialog`), Disconnect (`engine.disconnect` with the active engine id, visible only while connected), Manage Engines (`std.workbench.toggleLeftPaneAreaItem` with `pane/left/engines`, which switches to `debug/engines` through cross-page pane activation)
-4. **Open Engine Dashboard** `engine-menubar/open-engine` — gauge icon, visible only when the active engine is connected
-5. **Deploy** `engine-menubar/deploy` — Shift+Click = deploy & open. Only visible when a deployable document is focused
-6. **Play** `engine-menubar/play` — Shift+Click = configured start. Tooltip adapts to the focused document type (local BPMN vs. model viewer)
+1. **Status icon** `engine-header/engine-status` — `ph-fill ph-circle engine-header-status engine-header-status--<state>`; colours in `engine-workspace.scss` from core tokens (connected = success, connecting/reconnecting = orange, error = error, disconnected = muted)
+2. **Engine selector** `engine-header/engine-select` (`MenuBarItem_Select`) — lists all connected/recent engines with `[OFFLINE]` prefix for disconnected ones, max width with ellipsis. Falls back to the text `engine-header/engine-name` "No engine" when no engines exist
+3. **Connection menu** `engine-header/connection` — opens the menu `engine/header/connection` (`initializeMenus.ts`): Connect… (`engine.connectWithDialog`), Disconnect (`engine.disconnect` with the active engine id, visible only while connected), Manage Engines (`std.workbench.toggleLeftPaneAreaItem` with `debug/engines/engines`, which switches to `debug/engines` through cross-page pane activation)
+4. **Open Engine Dashboard** `engine-header/open-engine` — gauge icon, visible only when the active engine is connected
+5. **Deploy** `engine-header/deploy` — Shift+Click = deploy & open. Only visible when a deployable document is focused
+6. **Play** `engine-header/play` — Shift+Click = configured start. Tooltip adapts to the focused document type (local BPMN vs. model viewer)
 
 The header rebuilds on `engine:list-changed`, `engine:state-changed`, `engine:disconnected`, `engine:connected`, and `engine:reconnected`.
 

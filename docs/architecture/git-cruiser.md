@@ -10,7 +10,7 @@
 
 ## Design › Source page
 
-git-cruiser registers the page `design/source` (`index.ts`) and its left group `git` with `pages: ['design/source']` (`initializers/initializePanes.ts`). The Source-only document types are `bpmn.diff` and the BPMN history preview (`bpmn-diff`), `dmn.diff` and the DMN history preview (`dmn-diff`), and `merge:` (`MERGE_DOCUMENT_TYPE`). Show Diff, File History and the merge resolver therefore land on Source through routing rule R1 ([workbench-categories.md](workbench-categories.md)). `git.focusGitPane` calls `setVisibilityOfPaneAreaByPaneId('pane/left/git', true)`, which activates `design/source` first. The branch status bar item keeps `git.switchBranch` on click; during a merge it runs `git.merge.openResolver`, which opens on Source.
+git-cruiser registers the page `design/source` (`index.ts`) and its left group `git` with `pages: ['design/source']` (`initializers/initializePanes.ts`). The Source-only document types are `bpmn.diff` and the BPMN history preview (`bpmn-diff`), `dmn.diff` and the DMN history preview (`dmn-diff`), and `merge:` (`MERGE_DOCUMENT_TYPE`). Show Diff, File History and the merge resolver therefore land on Source through routing rule R1 ([workbench-categories.md](workbench-categories.md)). `git.focusGitPane` calls `setVisibilityOfPaneAreaByPaneId('design/source/git', true)`, which activates `design/source` first. The branch status bar item keeps `git.switchBranch` on click; during a merge it runs `git.merge.openResolver`, which opens on Source.
 
 ---
 

@@ -53,6 +53,8 @@ export class CategoryMediator extends AbstractEmitter {
 
   unregisterPage(pageId: string): void {
     this.categoryManager.unregisterPage(pageId);
+    // Removing the only page of a category hides it; do not leave the workbench on its placeholder.
+    this.categoryManager.ensureActivePage('design/workspace');
   }
 
   getCategory(categoryId: string): WorkbenchCategoryDefinition | undefined {

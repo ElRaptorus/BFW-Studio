@@ -1091,7 +1091,11 @@ export class PluginHostBridge {
     switch (method) {
       case 'registerPage': {
         const errors: { path: string; message: string }[] = [];
-        const page = readPageContribution(args[0], 'page', errors);
+        const warnings: { path: string; message: string }[] = [];
+        const page = readPageContribution(args[0], 'page', errors, warnings);
+        for (const warning of warnings) {
+          console.warn(`[PluginHostBridge] Plugin '${callerName}': registerPage ${warning.path}: ${warning.message}`);
+        }
         if (page == null) {
           throw new Error(
             `Plugin '${callerName}': invalid page definition: ${errors.map((error) => `${error.path}: ${error.message}`).join('; ')}`,
@@ -1110,7 +1114,10 @@ export class PluginHostBridge {
       case 'unregisterPage': {
         const [pageId] = args as [string];
         if (this.runtimePageOwners.get(pageId) !== callerName) {
-          throw new Error(`Plugin '${callerName}': page '${String(pageId)}' was not registered by this plugin.`);
+          throw new Error(
+            `Plugin '${callerName}': page '${String(pageId)}' was not added by this plugin through registerPage. ` +
+              'Pages from contributes.pages are removed when the plugin unloads.',
+          );
         }
         const group = this.getOrCreatePluginGroup(callerName);
         const key = `workbenchPage:${pageId}`;
@@ -1126,10 +1133,14 @@ export class PluginHostBridge {
   private handleMenuBarApi(method: string, args: unknown[], callerName: string): unknown {
     switch (method) {
       case 'registerMenuBarItem': {
-        const [area, items, options] = args as ['header', { type?: string }[], { pages?: string[] } | undefined];
-        if (area !== 'header') {
+        const [area, items, options] = args as [
+          MenuBarItemArea,
+          { type?: string }[],
+          { pages?: string[] } | undefined,
+        ];
+        if (!MENU_BAR_AREAS.includes(area)) {
           throw new Error(
-            `Plugin '${callerName}': menu bar area '${String(area)}' is not available. Plugins register menu bar items in the 'header' area (Plugin API 2.0.0).`,
+            `Plugin '${callerName}': menu bar area '${String(area)}' is not available. Use 'header', 'pageBarCenter' or 'pageBarEnd' (Plugin API 2.0.0).`,
           );
         }
         if (items.some((item) => item.type === 'pane_content_toggle')) {

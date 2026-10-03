@@ -11,6 +11,8 @@ The Bifrost Forge World SDK for plugin developers. Provides type definitions, re
 | `src/webview/studio-webview-theme.css` | Documentation of `--theme-*` tokens with Bifrost Night fallbacks (not loaded at runtime)                                                    |
 | `src/components/`                      | Webview-safe content controls (see below)                                                                                                   |
 
+**Workbench pages:** `api.workbench.registerPage(definition)` (`PluginPageDefinition`) and `contributes.pages` in the manifest add pages to existing categories, for example `measure/insights`. Pages go away when the plugin unloads and are not restored after a restart.
+
 Internal Studio modules do **not** use this package as a host facade. They type `Bifrost` from `#bifrost/Bifrost`. Plugin authors type `StudioPluginApi`.
 
 ## Content controls

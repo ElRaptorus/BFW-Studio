@@ -345,6 +345,14 @@ export class Bifrost {
         description: 'When enabled, single-clicked files open in a temporary tab that gets replaced by the next file.',
         default: false,
       },
+      'workbench.design.detailLevel': {
+        type: 'string',
+        label: 'Design Detail Level',
+        description: 'Business hides technical property groups (Scripts, Data Flow) on Design pages.',
+        default: 'technical',
+        enum: ['technical', 'business'],
+        enumLabels: { technical: 'Technical', business: 'Business' },
+      },
       'workbench.categories.showEmpty': {
         type: 'boolean',
         label: 'Show Empty Categories',

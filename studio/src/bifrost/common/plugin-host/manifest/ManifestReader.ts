@@ -340,7 +340,7 @@ function validateContributes(
   }
 
   if (raw.pages != null) {
-    result.pages = validatePages(raw.pages, errors);
+    result.pages = validatePages(raw.pages, errors, warnings);
   }
 
   const knownContributes = new Set([
@@ -1033,6 +1033,16 @@ function validateDmnContextPad(raw: unknown, errors: ManifestError[]): ManifestD
 
 // ─── Pages ───────────────────────────────────────────────────
 
+const PAGE_CONTRIBUTION_FIELDS = new Set([
+  'id',
+  'label',
+  'icon',
+  'order',
+  'defaultDocumentUri',
+  'editorTabsVisible',
+  'paneAreas',
+]);
+
 /**
  * Validates one page definition (manifest entry or `api.workbench.registerPage` argument). Pushes the problems to
  * `errors` and returns null when there are any. Whether the category exists is the registry's concern.
@@ -1041,6 +1051,7 @@ export function readPageContribution(
   entry: unknown,
   entryPath: string,
   errors: ManifestError[],
+  warnings: ManifestWarning[],
 ): ManifestPageContribution | null {
   if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
     errors.push({ path: entryPath, message: 'Must be an object' });
@@ -1048,6 +1059,12 @@ export function readPageContribution(
   }
   const obj = entry as Record<string, unknown>;
   const errorCountBefore = errors.length;
+
+  for (const key of Object.keys(obj)) {
+    if (!PAGE_CONTRIBUTION_FIELDS.has(key)) {
+      warnings.push({ path: `${entryPath}.${key}`, message: `Unknown page field "${key}" (ignored)` });
+    }
+  }
 
   if (typeof obj.id !== 'string' || !PAGE_ID_PATTERN.test(obj.id)) {
     errors.push({
@@ -1097,7 +1114,7 @@ export function readPageContribution(
   };
 }
 
-function validatePages(raw: unknown, errors: ManifestError[]): ManifestPageContribution[] {
+function validatePages(raw: unknown, errors: ManifestError[], warnings: ManifestWarning[]): ManifestPageContribution[] {
   const basePath = 'bifrostStudio.contributes.pages';
   if (!Array.isArray(raw)) {
     errors.push({ path: basePath, message: 'Must be an array' });
@@ -1107,7 +1124,7 @@ function validatePages(raw: unknown, errors: ManifestError[]): ManifestPageContr
   const result: ManifestPageContribution[] = [];
   const seenIds = new Set<string>();
   raw.forEach((entry, index) => {
-    const page = readPageContribution(entry, `${basePath}[${index}]`, errors);
+    const page = readPageContribution(entry, `${basePath}[${index}]`, errors, warnings);
     if (page == null) {
       return;
     }

@@ -10,7 +10,7 @@ export function initializePanes(bifrost: Bifrost): void {
     'plugins',
     [
       bifrost.panes.getPaneViaPaneProvider(
-        'pane/left/plugins',
+        'control/plugins/plugins',
         'plugins/pane-providers/PluginsPane',
         PluginsPaneModule,
       ),
@@ -31,7 +31,7 @@ export function initializePanes(bifrost: Bifrost): void {
     'plugin-console',
     [
       bifrost.panes.getPaneViaPaneProvider(
-        'pane/bottom/plugin-host-console',
+        'control/plugins/plugin-host-console',
         'plugins/pane-providers/PluginHostConsole',
         PluginHostConsolePaneModule,
       ),

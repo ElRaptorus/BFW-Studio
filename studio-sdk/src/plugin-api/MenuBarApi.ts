@@ -11,7 +11,7 @@ export interface MenuBarApi {
   /**
    * Register menu bar items in a given area.
    *
-   * @param area - Target area: `'header'` (the only area plugins can use).
+   * @param area - Target area: `'header'` (top row), `'pageBarCenter'` or `'pageBarEnd'` (page bar).
    * @param items - Static array of {@link MenuBarItem} POJOs.
    * @param options - `pages` limits the items to the listed workbench pages, as page IDs (`design/workspace`) or category wildcards (`design/*`). Default: every page.
    */

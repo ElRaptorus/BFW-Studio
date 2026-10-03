@@ -108,3 +108,64 @@ describe('PaneManager pages', () => {
     );
   });
 });
+
+describe('PaneManager detail level', () => {
+  let paneManager: PaneManager;
+
+  const rightGroupIds = () => paneManager.getViewData().right.paneGroups.map((group) => group.groupId);
+
+  beforeEach(() => {
+    paneManager = new PaneManager();
+    paneManager.configurePages(
+      () => ['left', 'right', 'bottom'],
+      (pageId) => paneManager.setActivePage(pageId),
+    );
+    paneManager.registerPaneGroup('left', 'explorer', [pane('explorer-pane')], { pages: ['design/workspace'] });
+    paneManager.registerPaneGroup('left', 'engines', [pane('engines-pane')], { pages: ['debug/engines'] });
+    paneManager.registerPaneGroup('right', 'property', [pane('property-pane')]);
+    paneManager.registerPaneGroup('right', 'scripting', [pane('scripting-pane'), pane('scripting-second-pane')], {
+      detailLevel: 'technical',
+    });
+    paneManager.registerPaneGroup('right', 'dataflow', [pane('dataflow-pane')], { detailLevel: 'technical' });
+    paneManager.setActivePage('design/workspace');
+  });
+
+  it('shows technical groups by default', () => {
+    assert.deepStrictEqual(rightGroupIds(), ['property', 'scripting', 'dataflow']);
+  });
+
+  it('hides technical groups on Design pages only in business mode', () => {
+    paneManager.setDetailLevel('business');
+    assert.deepStrictEqual(rightGroupIds(), ['property']);
+    paneManager.setActivePage('debug/engines');
+    assert.deepStrictEqual(rightGroupIds(), ['property', 'scripting', 'dataflow']);
+  });
+
+  it('falls back to the first shown group when the active group is hidden and restores on switching back', () => {
+    paneManager.setActiveGroupInArea('right', 'scripting');
+    paneManager.setDetailLevel('business');
+    assert.deepStrictEqual(
+      paneManager.getViewData().right.paneGroups.map((group) => [group.groupId, group.visible]),
+      [['property', true]],
+    );
+    paneManager.setDetailLevel('technical');
+    assert.deepStrictEqual(rightGroupIds(), ['property', 'scripting', 'dataflow']);
+  });
+
+  it('keeps the active pane of a hidden group across a detail level round trip', () => {
+    paneManager.setVisibilityOfPaneAreaByPaneId('scripting-second-pane', true);
+    paneManager.setDetailLevel('business');
+    assert.strictEqual(paneManager.getActivePaneIdForArea('right'), 'property-pane');
+    paneManager.setDetailLevel('technical');
+    paneManager.setActiveGroupInArea('right', 'scripting');
+    assert.strictEqual(paneManager.getActivePaneIdForArea('right'), 'scripting-second-pane');
+  });
+
+  it('ignores a reveal of a hidden technical pane', () => {
+    paneManager.setDetailLevel('business');
+    paneManager.setVisibilityOfPaneAreaByPaneId('scripting-pane', true);
+    paneManager.togglePaneAreaByPaneId('dataflow-pane');
+    assert.deepStrictEqual(rightGroupIds(), ['property']);
+    assert.strictEqual(paneManager.getViewData().right.paneGroups[0].visible, true);
+  });
+});

@@ -63,11 +63,11 @@ Menu bar items are typed POJOs produced by factory and modifier functions regist
 | `icon` | `<span>` with Icon | Static icon display |
 | `text` | `<div>` | Static text display |
 
-`pane_content_toggle` no longer exists; panes are reached through the page bar, the left tab strip and View › Go to.
+Panes are reached through the page bar, the left tab strip and View › Go to; there is no pane toggle item type.
 
 ## Left Side: Page Bar and Tab Strip
 
-The left menu bar, its overflow menu and `PANE_FOCUS_COMMANDS` are gone. A left group is selected by navigating to its page (header category, then page bar) and, when a page has two or more displayable left groups, by the text tab strip at the top of `PaneAreaLeft`. `design/workspace` holds `explorer` (label `Explorer`) and `search` (label `Search`); the other pages show their single group without a strip. Left groups need a `label` for the strip (see `pane-group-registration.mdc`).
+A left group is selected by navigating to its page (header category, then page bar) and, when a page has two or more displayable left groups, by the text tab strip at the top of `PaneAreaLeft`. `design/workspace` holds `explorer` (label `Explorer`) and `search` (label `Search`); the other pages show their single group without a strip. Left groups need a `label` for the strip (see `pane-group-registration.mdc`).
 
 The View menu keeps static `Explorer` (`std.workbench.focusExplorer`, `view/explorer`) and `Search` (`std.workbench.focusSearch`, `view/search`) entries, plus the `view/go-to` submenu (see [workbench-categories.md](workbench-categories.md)). Source Control, Engines and Plugins are reached through Go to and the page bar. Ctrl/Cmd+B remains `std.workbench.togglePanels`. View → Appearance still exposes Sidebar, Property Panel and Inspector Panel.
 

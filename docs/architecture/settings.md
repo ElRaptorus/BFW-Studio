@@ -327,6 +327,7 @@ Examples:
 
 - `workbench.general.theme`
 - `workbench.editor.temporaryTabs`
+- `workbench.design.detailLevel` (`technical` | `business`; Business hides the technical right groups on Design pages, see [panes.md](panes.md))
 - `bpmn.editor.showGrid`
 - `std.fileExplorer.exclude`
 - `engine.processExplorer.autoRefresh`

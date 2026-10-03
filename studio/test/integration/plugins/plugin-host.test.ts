@@ -62,8 +62,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('pane/plugin-listing: shows plugin cards with correct metadata', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
-      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('control/plugins/plugins');
 
       await studioAgent.assertVisible('[data-test--plugins-pane-list]', ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
@@ -87,8 +87,8 @@ describe('plugin-host/integration', () => {
         { pluginsDirectory: PLUGINS_EMPTY_DIR },
       );
 
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
-      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('control/plugins/plugins');
 
       await studioAgent.assertVisible('[data-test--plugins-pane-empty]', ASSERT_VISIBLE_TIMEOUT);
     });
@@ -97,8 +97,8 @@ describe('plugin-host/integration', () => {
       const resultBefore = await studioAgent.executeCommand('plugin.happy-plugin.greet', ['Pre']);
       assert.strictEqual(resultBefore, 'Hello, Pre!');
 
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
-      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('control/plugins/plugins');
 
       await studioAgent.executeCommand('plugins.refreshPluginList');
 
@@ -124,7 +124,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('toggle/disable: disabling a plugin updates the setting and marks the card', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -142,7 +142,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('toggle/re-enable: re-enabling a plugin removes it from the disabled list', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -165,7 +165,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('toggle/disabled-on-refresh: disabled plugins are not loaded after refresh', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -206,7 +206,7 @@ describe('plugin-host/integration', () => {
       const beforeDisable = await studioAgent.pluginHost.isCommandRegistered('plugin.happy-plugin.greet');
       assert.strictEqual(beforeDisable, true, 'command should be registered before disable');
 
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -219,7 +219,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('selective/reload-restores-command: re-enabling a plugin re-registers its commands', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -243,7 +243,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('selective/isolation: other plugins retain state when one is selectively unloaded', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -264,7 +264,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('selective/plugin-list-update: plugin list reflects status change after selective unload', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -287,7 +287,7 @@ describe('plugin-host/integration', () => {
         (window as any).bifrost.settings.set('plugin.lifecycle-plugin.deactivatedAt', '');
       });
 
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="lifecycle-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="lifecycle-plugin"]');
@@ -337,7 +337,7 @@ describe('plugin-host/integration', () => {
       const originalSource = await fs.readFile(pluginIndexPath, 'utf-8');
       await fs.writeFile(pluginIndexPath, originalSource.replace('Hello,', 'Hola,'), 'utf-8');
 
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-menu-trigger="happy-plugin"]');
@@ -465,6 +465,15 @@ describe('plugin-host/integration', () => {
       assert.strictEqual(errors.length, 2);
       assert.ok(errors[0].includes("'nowhere/page'"), errors[0]);
       assert.ok(errors[1].includes("'design/workspace'"), errors[1]);
+    });
+
+    it('disabling the plugin while its only Measure page is active falls back to Design › Workspace', async () => {
+      await studioAgent.executeCommand('std.workbench.activatePage', ['measure/insights']);
+      await studioAgent.assertVisible(activePage('measure/insights'), ASSERT_VISIBLE_TIMEOUT);
+
+      await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'disabled');
+      await studioAgent.assertNotVisible(category('measure'));
+      await studioAgent.assertVisible(activePage('design/workspace'), ASSERT_VISIBLE_TIMEOUT);
     });
 
     it('disabling the plugin removes its pages and enabling brings them back', async () => {
@@ -1023,8 +1032,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('readme/open-with-content: clicking a plugin card opens its README as an editor tab', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
-      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="happy-plugin"]');
@@ -1043,7 +1052,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('readme/rendered-markdown: README content contains rendered HTML elements', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="kitchen-sink"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="kitchen-sink"]');
@@ -1076,7 +1085,7 @@ describe('plugin-host/integration', () => {
     });
 
     it('readme/simple-readme: short README renders correctly', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="lifecycle-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="lifecycle-plugin"]');
@@ -1166,8 +1175,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('settings/with-category: opens settings GUI and navigates to the plugin category', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
-      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="settings-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.getTestDriver().client!.execute(() => {
@@ -1196,8 +1205,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('settings/without-category: opens settings GUI without category navigation', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
-      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.getTestDriver().client!.execute(() => {
@@ -1340,8 +1349,8 @@ describe('plugin-host/integration', () => {
     });
 
     it('metadata/missing-author-warning: plugin card shows orange warning for missing author', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
-      await studioAgent.navigation.assertLeftPaneIsActive('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
+      await studioAgent.navigation.assertLeftPaneIsActive('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="error-on-activate"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.assertVisible(
@@ -1351,14 +1360,14 @@ describe('plugin-host/integration', () => {
     });
 
     it('metadata/deprecated-indicator: plugin card shows yellow warning for deprecated plugin', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.assertVisible('[data-test--plugin-card-deprecated="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
     });
 
     it('metadata/readme-logo: README viewer renders logo for plugin with LOGO.png', async () => {
-      await studioAgent.navigation.showLeftPane('pane/left/plugins');
+      await studioAgent.navigation.showLeftPane('control/plugins/plugins');
       await studioAgent.assertVisible('[data-test--plugin-card="happy-plugin"]', ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.clickOn('[data-test--plugin-card="happy-plugin"]');

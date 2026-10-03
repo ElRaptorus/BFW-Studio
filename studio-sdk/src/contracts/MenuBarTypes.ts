@@ -1,5 +1,8 @@
-/** Plugins register menu bar items in the workbench header. */
-export type MenuBarItemArea = 'header';
+/**
+ * `header` is the end of the workbench header's top row, `pageBarCenter` the centered section of the page bar and
+ * `pageBarEnd` its right-pinned section.
+ */
+export type MenuBarItemArea = 'header' | 'pageBarCenter' | 'pageBarEnd';
 
 export type MenuBarItem =
   | MenuBarItem_Button

@@ -11,6 +11,9 @@ export interface WorkbenchApi {
    */
   registerPage(definition: PluginPageDefinition): Promise<void>;
 
-  /** Removes a page this plugin added. Rejects for pages registered by someone else. */
+  /**
+   * Removes a page this plugin added through `registerPage`. Rejects for other pages, including the plugin's own
+   * `contributes.pages` entries, which are removed when the plugin unloads.
+   */
   unregisterPage(pageId: string): Promise<void>;
 }

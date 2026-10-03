@@ -841,7 +841,7 @@ export class StudioAgent {
 
   async jumpToFileInSolution(filename: string, expectedDocumentType: string = 'bpmn'): Promise<void> {
     // Closing documents keeps the page, so a test that ended on another page would hide the Explorer.
-    await this.navigation.showLeftPane('pane/left/explorer');
+    await this.navigation.showLeftPane('design/workspace/explorer');
     await this.assertVisible(`.treeview__label=${filename}`, ASSERT_VISIBLE_TIMEOUT);
     await this.openViaQuickJump(filename);
 

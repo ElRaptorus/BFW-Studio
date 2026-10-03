@@ -5,11 +5,11 @@ const HEADER_SELECTOR = '.workbench-header-container';
 
 /** The page and pane group each left pane lives in. A tab strip appears when a page has two or more left groups. */
 const LEFT_PANE_LOCATIONS: Record<string, { pageId: string; groupId: string; hasTabStrip: boolean }> = {
-  'pane/left/explorer': { pageId: 'design/workspace', groupId: 'explorer', hasTabStrip: true },
-  'pane/left/search': { pageId: 'design/workspace', groupId: 'search', hasTabStrip: true },
-  'pane/left/git': { pageId: 'design/source', groupId: 'git', hasTabStrip: false },
-  'pane/left/engines': { pageId: 'debug/engines', groupId: 'engines', hasTabStrip: false },
-  'pane/left/plugins': { pageId: 'control/plugins', groupId: 'plugins', hasTabStrip: false },
+  'design/workspace/explorer': { pageId: 'design/workspace', groupId: 'explorer', hasTabStrip: true },
+  'design/workspace/search': { pageId: 'design/workspace', groupId: 'search', hasTabStrip: true },
+  'design/source/git': { pageId: 'design/source', groupId: 'git', hasTabStrip: false },
+  'debug/engines/engines': { pageId: 'debug/engines', groupId: 'engines', hasTabStrip: false },
+  'control/plugins/plugins': { pageId: 'control/plugins', groupId: 'plugins', hasTabStrip: false },
 };
 
 /** Drives the header categories, the page bar and the left tab strip. */

@@ -236,7 +236,6 @@ Prefer `data-test--` attributes over CSS classes for element identification. The
 await studioAgent.assertVisible('[data-test--tree="std/file-explorer/open-solution"]');
 await studioAgent.assertVisible('[data-test--editors--focused-document-type="bpmn"]');
 await studioAgent.assertVisible('[data-test--pane="activities/search"]');
-await studioAgent.assertVisible('[data-menu-bar-item-id="pane/left/search"]');
 ```
 
 For tree entries, the following `data-test` attributes are available:
@@ -378,7 +377,7 @@ Hide/show of the pane areas uses layout toggle **buttons** in the header (`build
 
 - **Property Panel**: `[data-test--menubar--button-for-command="std.workbench.togglePropertyPanel"]` (id `header-layout-toggle-right`). Prefer `clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel')`. The button stays in the header after the area hides. Assert the area with `.app-layout__panes-right`.
 - **Sidebar**: `[data-test--menubar--button-for-command="std.workbench.toggleSidebar"]` (id `header-layout-toggle-left`). Assert the area with `.app-layout__panes-left`. The bottom area uses `std.workbench.toggleInspectorPanel`.
-- Left panes are reached through the page bar and the left tab strip: `studioAgent.navigation.showLeftPane('pane/left/explorer')` and `assertLeftPaneIsActive(...)`. `navigation` is `StudioAgent/WorkbenchNavigation.ts` (`activateCategory`, `activatePage`, `assertActivePage`, `assertActiveCategory` (a category reopens its last page, so use this when the page does not matter), `showLeftPane`, `assertLeftPaneIsActive`, `assertLeftPaneIsNotActive`). It maps explorer and search to `design/workspace` (tab strip), git to `design/source`, engines to `debug/engines` and plugins to `control/plugins`. The active tab carries `data-test--active`.
+- Left panes are reached through the page bar and the left tab strip: `studioAgent.navigation.showLeftPane('design/workspace/explorer')` and `assertLeftPaneIsActive(...)`. `navigation` is `StudioAgent/WorkbenchNavigation.ts` (`activateCategory`, `activatePage`, `assertActivePage`, `assertActiveCategory` (a category reopens its last page, so use this when the page does not matter), `showLeftPane`, `assertLeftPaneIsActive`, `assertLeftPaneIsNotActive`). It maps explorer and search to `design/workspace` (tab strip), git to `design/source`, engines to `debug/engines` and plugins to `control/plugins`. The active tab carries `data-test--active`.
 - Category shortcuts (`alt-1…6` on Windows and Linux, `cmd-alt-1…6` on macOS) are testable through `executeCommand('std.workbench.goTo<Category>')`. The binding table itself is covered by the unit test `test/unit/std/categoryKeyBindings.test.ts`.
 - Reset both areas with `executeCommand('std.workbench.showPanels')` at the start of a test when the shared agent may have left a pane hidden.
 - Ctrl/Cmd+B is still `std.workbench.togglePanels` (both sides). View → Appearance remains the menu path.

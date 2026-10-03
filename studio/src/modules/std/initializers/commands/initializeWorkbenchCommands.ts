@@ -122,7 +122,7 @@ export function initializeWorkbenchCommands(bifrost: Bifrost): void {
   commands.register(
     'std.workbench.focusExplorer',
     () => {
-      bifrost.panes.setVisibilityOfPaneAreaByPaneId('pane/left/explorer', true);
+      bifrost.panes.setVisibilityOfPaneAreaByPaneId('design/workspace/explorer', true);
     },
     { visibleInSearch: true },
   );
@@ -130,14 +130,14 @@ export function initializeWorkbenchCommands(bifrost: Bifrost): void {
   commands.register(
     'std.workbench.focusSearch',
     () => {
-      const isAlreadyActive = bifrost.panes.isPaneGroupVisibleByPaneId('pane/left/search');
+      const isAlreadyActive = bifrost.panes.isPaneGroupVisibleByPaneId('design/workspace/search');
       const isAlreadyFocused =
         document.activeElement != null && document.activeElement.classList.contains('global-search-pane-phrase-input');
 
       if (isAlreadyActive && !isAlreadyFocused) {
         bifrost.searchView.focusAndSelect();
       } else {
-        bifrost.panes.setVisibilityOfPaneAreaByPaneId('pane/left/search', true);
+        bifrost.panes.setVisibilityOfPaneAreaByPaneId('design/workspace/search', true);
       }
     },
     { visibleInSearch: true },
@@ -366,6 +366,18 @@ export function initializeWorkbenchCommands(bifrost: Bifrost): void {
       bifrost.editors.setEditorTabsVisibility(false);
     },
     { visibleInSearch: true },
+  );
+
+  commands.register(
+    'std.workbench.toggleDetailLevel',
+    () => {
+      const isBusiness = bifrost.settings.get('workbench.design.detailLevel') === 'business';
+      bifrost.settings.set('workbench.design.detailLevel', isBusiness ? 'technical' : 'business');
+    },
+    {
+      visibleInSearch: true,
+      description: ['Workbench: Toggle detail level', 'business view', 'technical view'],
+    },
   );
 
   commands.register('std.workbench.toggleTemporaryTabs', () => {

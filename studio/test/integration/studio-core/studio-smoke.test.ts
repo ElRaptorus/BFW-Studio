@@ -49,15 +49,15 @@ describe('studio/smoke', () => {
   it('smoke/pane-content: should switch between the Explorer and Search tabs of the left tab strip', async () => {
     await studioAgent.sendKeyboardInput([FOCUS_SEARCH]);
     await studioAgent.navigation.assertActivePage('design/workspace');
-    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/search');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/search');
 
-    await studioAgent.navigation.showLeftPane('pane/left/explorer');
-    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/explorer');
+    await studioAgent.navigation.showLeftPane('design/workspace/explorer');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/explorer');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
 
     await studioAgent.sendKeyboardInput([FOCUS_SEARCH]);
-    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/search');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/search');
 
     await studioAgent.sendKeyboardInput('how to deploy'.split('').concat(['space', '?', '?']));
 
@@ -141,8 +141,8 @@ describe('studio/smoke', () => {
   });
 
   it('smoke/workbench: should toggle the sidebar from the left-side layout toggle in the header', async () => {
-    await studioAgent.navigation.showLeftPane('pane/left/explorer');
-    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/explorer');
+    await studioAgent.navigation.showLeftPane('design/workspace/explorer');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/explorer');
 
     await studioAgent.assertVisible(SIDEBAR_TOGGLE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.clickOnMenubarButtonForCommand('std.workbench.toggleSidebar');
@@ -153,7 +153,7 @@ describe('studio/smoke', () => {
 
     await studioAgent.clickOnMenubarButtonForCommand('std.workbench.toggleSidebar');
     await studioAgent.assertVisible('.app-layout__panes-left', ASSERT_VISIBLE_TIMEOUT);
-    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/explorer');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/explorer');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

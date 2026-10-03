@@ -51,6 +51,8 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
   private allowedAreasOfPage: (pageId: string) => readonly PaneAreaName[] = () => ALL_PANE_AREA_NAMES;
   private requestPageActivation: (pageId: string) => void = () => {};
   private pagesConfigured = false;
+  private readonly technicalGroupIds = new Set<string>();
+  private detailLevel: 'technical' | 'business' = 'technical';
 
   constructor() {
     super();
@@ -149,8 +151,37 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
     return pages == null || pageId == null || pages.includes(pageId);
   }
 
+  /** On the page and not hidden by the detail level; this is what the view, capture and restore see. */
+  private isGroupShownOnPage(group: PaneGroupObject, pageId: string | null): boolean {
+    return this.isGroupOnPage(group, pageId) && !this.isHiddenByDetailLevel(group, pageId);
+  }
+
+  /** Business mode hides the technical groups on Design pages only. */
+  private isHiddenByDetailLevel(group: PaneGroupObject, pageId: string | null): boolean {
+    return (
+      this.detailLevel === 'business' &&
+      this.technicalGroupIds.has(group.groupId) &&
+      (pageId?.startsWith('design/') ?? false)
+    );
+  }
+
+  /** Switches the detail level; the active right group falls back to the first group still shown. */
+  setDetailLevel(level: 'technical' | 'business'): void {
+    if (level === this.detailLevel) {
+      return;
+    }
+    if (this.activePageId != null) {
+      this.pageStates[this.activePageId] = this.captureCurrentPageState();
+    }
+    this.detailLevel = level;
+    if (this.activePageId != null) {
+      this.applyPageState(this.activePageId);
+    }
+    this.emit(EVENT_PANE_LAYOUT_UPDATED);
+  }
+
   private getGroupsOnActivePage(name: PaneAreaName): PaneGroupObject[] {
-    return this.paneAreas[name].paneGroups.filter((group) => this.isGroupOnPage(group, this.activePageId));
+    return this.paneAreas[name].paneGroups.filter((group) => this.isGroupShownOnPage(group, this.activePageId));
   }
 
   private captureCurrentPageState(): PagePaneState {
@@ -164,7 +195,7 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
         activeGroupId: this.getGroupsOnActivePage(name).find((group) => group.visible)?.groupId ?? null,
         lastActivePaneId: this.lastActivePaneIdPerArea[name],
       };
-      for (const group of this.getGroupsOnActivePage(name)) {
+      for (const group of area.paneGroups.filter((candidate) => this.isGroupOnPage(candidate, this.activePageId))) {
         activePaneIndexPerGroup[group.groupId] = group.activePaneIndex ?? 0;
       }
     }
@@ -181,12 +212,21 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
       area.sizeInPixels = saved?.sizeInPixels ?? defaults[name].sizeInPixels;
       this.lastActivePaneIdPerArea[name] = saved?.lastActivePaneId ?? null;
 
-      const groups = area.paneGroups.filter((group) => this.isGroupOnPage(group, pageId));
+      for (const group of area.paneGroups.filter((candidate) => this.isGroupOnPage(candidate, pageId))) {
+        const savedIndex = state?.activePaneIndexPerGroup?.[group.groupId] ?? 0;
+        group.activePaneIndex = savedIndex < group.panes.length ? savedIndex : 0;
+      }
+      const groups = area.paneGroups.filter((group) => this.isGroupShownOnPage(group, pageId));
       const activeGroup = groups.find((group) => group.groupId === saved?.activeGroupId) ?? groups[0];
       for (const group of groups) {
         group.visible = group === activeGroup;
-        const savedIndex = state?.activePaneIndexPerGroup?.[group.groupId] ?? 0;
-        group.activePaneIndex = savedIndex < group.panes.length ? savedIndex : 0;
+      }
+      const lastActivePaneId = this.lastActivePaneIdPerArea[name];
+      if (
+        lastActivePaneId != null &&
+        !groups.some((group) => group.panes.some((pane) => pane.id === lastActivePaneId))
+      ) {
+        this.lastActivePaneIdPerArea[name] = activeGroup?.panes[activeGroup.activePaneIndex ?? 0]?.id ?? null;
       }
     }
   }
@@ -241,6 +281,10 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
     const { paneArea, paneGroup } = this.getPaneAreaAndGroupContainingPane(paneId);
     const paneAreaName = this.getPaneAreaNameForObject(paneArea);
 
+    if (visible && this.isHiddenByDetailLevel(paneGroup, this.activePageId)) {
+      return;
+    }
+
     if (visible) {
       paneArea.paneGroups.forEach((otherPaneGroup: PaneGroupObject) => {
         otherPaneGroup.visible = false;
@@ -262,6 +306,9 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
   // TODO: the concept of pane groups with names/ids does not work well with draggable panes
   togglePaneAreaByPaneId(paneId: string): void {
     this.ensurePageOfPane(paneId);
+    if (this.isHiddenByDetailLevel(this.getPaneAreaAndGroupContainingPane(paneId).paneGroup, this.activePageId)) {
+      return;
+    }
     for (const paneAreaName of Object.keys(this.paneAreas)) {
       const paneArea: PaneAreaObject = this.paneAreas[paneAreaName as PaneAreaName];
 
@@ -334,7 +381,7 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
     paneArea: PaneAreaName,
     paneGroupId: string,
     paneProviders: PaneObject[],
-    options?: { label?: string; icon?: string | (() => string); pages?: string[] },
+    options?: { label?: string; icon?: string | (() => string); pages?: string[]; detailLevel?: 'technical' },
   ): void {
     const paneAreaObject: PaneAreaObject = this.paneAreas[paneArea];
     if (paneAreaObject == null) {
@@ -345,6 +392,9 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
     }
 
     this.pagesPerGroup.set(paneGroupId, options?.pages ?? null);
+    if (options?.detailLevel === 'technical') {
+      this.technicalGroupIds.add(paneGroupId);
+    }
     const pages = options?.pages ?? null;
     const sharesPageWithExistingGroup = paneAreaObject.paneGroups.some((existing) => {
       const existingPages = this.pagesPerGroup.get(existing.groupId);
@@ -386,6 +436,7 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
       if (index !== -1) {
         area.paneGroups.splice(index, 1);
         this.pagesPerGroup.delete(paneGroupId);
+        this.technicalGroupIds.delete(paneGroupId);
         this.emit(EVENT_PANE_LAYOUT_UPDATED);
         return;
       }
@@ -396,7 +447,9 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
     const paneArea: PaneAreaObject = this.paneAreas[area];
 
     let found = false;
-    for (const group of paneArea.paneGroups.filter((candidate) => this.isGroupOnPage(candidate, this.activePageId))) {
+    for (const group of paneArea.paneGroups.filter((candidate) =>
+      this.isGroupShownOnPage(candidate, this.activePageId),
+    )) {
       if (group.groupId === groupId) {
         group.visible = true;
         found = true;
@@ -511,7 +564,7 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
   isPaneGroupVisibleByPaneId(paneId: string): boolean {
     try {
       const { paneArea, paneGroup } = this.getPaneAreaAndGroupContainingPane(paneId);
-      return paneArea.visible && paneGroup.visible && this.isGroupOnPage(paneGroup, this.activePageId);
+      return paneArea.visible && paneGroup.visible && this.isGroupShownOnPage(paneGroup, this.activePageId);
     } catch {
       return false;
     }

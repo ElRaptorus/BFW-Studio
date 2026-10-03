@@ -55,8 +55,8 @@ describe('git-cruiser/smoke', () => {
   });
 
   it('smoke/git-pane: should show the Git pane through the Source page', async () => {
-    await studioAgent.navigation.showLeftPane('pane/left/git');
-    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/git');
+    await studioAgent.navigation.showLeftPane('design/source/git');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/source/git');
 
     await studioAgent.assertVisible('[data-test--git-pane]', ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -67,12 +67,12 @@ describe('git-cruiser/smoke', () => {
     await studioAgent.executeCommand('git.focusGitPane');
 
     await studioAgent.navigation.assertActivePage('design/source');
-    await studioAgent.navigation.assertLeftPaneIsActive('pane/left/git');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/source/git');
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
   it('smoke/git-detect: should detect the git repo after opening solution', async () => {
-    await studioAgent.navigation.showLeftPane('pane/left/git');
+    await studioAgent.navigation.showLeftPane('design/source/git');
     await studioAgent.assertGitPaneVisible();
 
     const branchLabel = await studioAgent.getGitPaneBranchLabel();
@@ -90,7 +90,7 @@ describe('git-cruiser/smoke', () => {
     await studioAgent.openViaCommandSearch('Git: Refresh Status');
     await studioAgent.pause(1000);
 
-    await studioAgent.navigation.showLeftPane('pane/left/git');
+    await studioAgent.navigation.showLeftPane('design/source/git');
     await studioAgent.assertGitPaneVisible();
     await studioAgent.pause(1000);
 

@@ -175,7 +175,7 @@ Pages added to **existing** workbench categories. Registered at discovery time b
 | `editorTabsVisible` | `boolean` | No | Default `true` |
 | `paneAreas` | `('left'\|'right'\|'bottom')[]` | No | Default: all three |
 
-Validation rejects non-array values, non-object entries, malformed IDs, blank `label`/`icon`, a non-finite `order`, wrongly typed optional fields, unknown `paneAreas` entries and duplicate IDs within a plugin. The registry then refuses an unknown category or a taken ID: the page is skipped, `console.error` logs it and an error notification reads `Plugin '<name>': page '<id>' was not added: <reason>`. The plugin itself still loads.
+Unknown fields in an entry are a warning and are ignored. Validation rejects non-array values, non-object entries, malformed IDs, blank `label`/`icon`, a non-finite `order`, wrongly typed optional fields, unknown `paneAreas` entries and duplicate IDs within a plugin. The registry then refuses an unknown category or a taken ID: the page is skipped, `console.error` logs it and an error notification reads `Plugin '<name>': page '<id>' was not added: <reason>`. The plugin itself still loads.
 
 #### `contributes.editorDocumentTypes`
 
@@ -262,9 +262,9 @@ The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `2.0.0`, defined in `s
 - Plugin's minor ≤ Studio's minor (plugin can't require features the Studio doesn't have)
 - Patch version is ignored for compatibility
 
-**2.0.0 (additive after the breaking change):** `contributes.pages` and `api.workbench` add to 2.0.0 without a bump.
-
 **2.0.0 (breaking):** `editorDocumentTypes[].page` is required, left `panes[].pages` is required, `paneToggles` is removed, and the menu bar API is header-only: `pages` accepts page ids and `<categoryId>/*` wildcards, and modifiers cannot touch other areas or insert `pane_content_toggle` (see [workbench-categories.md](workbench-categories.md)).
+
+`contributes.pages` and `api.workbench` were added to 2.0.0 without a bump, because they only add to it.
 
 Incompatible plugins are rejected at discovery with a clear error notification.
 
@@ -280,7 +280,7 @@ discoverAndLoadPlugins()
        → If incompatible → reject (status: 'error', show notification)
     5. ContributionRegistrar.registerContributions(manifest)
        → Register stub commands, icons, keybindings, menus, settings, panes,
-         editor document type placeholders, service task types, themes
+         editor document type placeholders, pages, service task types, themes
     6. If activationEvents OR contributes.editorDocumentTypes present
        → ActivationManager.registerActivationEvents()
        → Plugin status: 'pending' (lazy)
@@ -299,6 +299,7 @@ discoverAndLoadPlugins()
 | Settings | `SettingsMediator.unregisterSettings()`. Values preserved, schema removed. |
 | Panes | `PaneMediator.unregisterPane()` + `unregisterPaneProvider()` |
 | Editor Document Types | `SolutionMediator.unregisterDefaultIncludedFiles()`; the placeholder document type is unregistered via `EditorMediator.unregisterDocumentType()` only if it has not already been replaced by the plugin's real `registerWebviewDocumentType()` registration (which owns its own disposer in `PluginHostBridge`) |
+| Pages | `CategoryMediator.unregisterPage()`; open documents move to the page of their type (else `design/workspace`), and a category left without pages falls back to `design/workspace` |
 | Service Task Types | `bpmn.serviceTasks.removeCustomType` command |
 | Themes | `ThemeManager.unregisterTheme()` + injected `<style>` removal + type-aware fallback if active |
 | bpmnPalette | `PluginBpmnContributionStore.removePaletteEntries(pluginName)` |

@@ -1,6 +1,7 @@
 import { EditorMediator } from '#bifrost/browser/EditorMediator';
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { CategoryManager } from '#bifrost/common/CategoryManager';
+import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import assert from 'node:assert';
 import { beforeEach, describe, it, vi } from 'vitest';
 
@@ -344,5 +345,26 @@ describe('EditorMediator removed pages', () => {
       ['file:///a.plg'],
     );
     assert.strictEqual(fixture.mediator.getEditorDocumentByUri('file:///a.plg')?.data.current, 'unsaved');
+  });
+
+  it('reports the focus change when moved documents land on the empty active page', () => {
+    const fixture = createFixture();
+    fixture.categories.registerPage({
+      id: 'design/plugin',
+      categoryId: 'design',
+      label: 'Plugin',
+      icon: 'x',
+      order: 9,
+    });
+    fixture.register('plugin-type', /\.plg$/, 'design/plugin');
+    fixture.mediator.focusOrOpenEditorDocument('file:///a.plg');
+    const focusEvents: unknown[] = [];
+    fixture.mediator.on(EVENT_EDITOR_AREA_FOCUS_UPDATED, (focused: any) => focusEvents.push(focused?.uri ?? null));
+
+    fixture.categories.unregisterPage('design/plugin');
+
+    assert.strictEqual(fixture.categories.getActivePageId(), 'design/workspace');
+    assert.strictEqual(fixture.mediator.getFocusedEditorDocument()?.uri, 'file:///a.plg');
+    assert.strictEqual(focusEvents.at(-1), 'file:///a.plg');
   });
 });

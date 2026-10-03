@@ -96,7 +96,7 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
         label: 'Manage Engines',
         id: 'engine/header/connection/manage-engines',
         command: 'std.workbench.toggleLeftPaneAreaItem',
-        commandArgs: ['pane/left/engines'],
+        commandArgs: ['debug/engines/engines'],
       },
     ];
   });

@@ -12,12 +12,12 @@ export function initializePanes(bifrost: Bifrost): void {
     'explorer',
     [
       bifrost.panes.getPaneViaPaneProvider(
-        'pane/left/open-editors',
+        'design/workspace/open-editors',
         'std/pane-providers/activities/explorer/OpenEditorsPane',
         OpenEditorsPane,
       ),
       bifrost.panes.getPaneViaPaneProvider(
-        'pane/left/explorer',
+        'design/workspace/explorer',
         'std/pane-providers/activities/explorer/SolutionPane',
         SolutionPane,
       ),
@@ -29,7 +29,7 @@ export function initializePanes(bifrost: Bifrost): void {
     'search',
     [
       bifrost.panes.getPaneViaPaneProvider(
-        'pane/left/search',
+        'design/workspace/search',
         'std/pane-providers/activities/search/GlobalSearchPane',
         GlobalSearchPane,
       ),
@@ -38,9 +38,27 @@ export function initializePanes(bifrost: Bifrost): void {
   );
 
   bifrost.panes.registerPaneGroup('right', 'property', [], { label: 'Properties', icon: 'ph ph-list-dashes' });
-  bifrost.panes.registerPaneGroup('right', 'scripting', [], { label: 'Scripts', icon: 'ph ph-scroll' });
+  bifrost.panes.registerPaneGroup('right', 'scripting', [], {
+    label: 'Scripts',
+    icon: 'ph ph-scroll',
+    detailLevel: 'technical',
+  });
   bifrost.panes.registerPaneGroup('right', 'documentation', [], { label: 'Documentation', icon: 'ph ph-note-pencil' });
-  bifrost.panes.registerPaneGroup('right', 'dataflow', [], { label: 'Data Flow', icon: 'ph ph-line-segment' });
+  bifrost.panes.registerPaneGroup('right', 'dataflow', [], {
+    label: 'Data Flow',
+    icon: 'ph ph-line-segment',
+    detailLevel: 'technical',
+  });
+
+  const applyDetailLevel = (value: unknown): void => {
+    bifrost.panes.setDetailLevel(value === 'business' ? 'business' : 'technical');
+  };
+  bifrost.events.on('settingsUpdate', (key: string, value: unknown) => {
+    if (key === 'workbench.design.detailLevel') {
+      applyDetailLevel(value);
+    }
+  });
+  applyDetailLevel(bifrost.settings.get('workbench.design.detailLevel'));
 
   bifrost.panes.registerPaneGroup('bottom', 'inspectors', [
     bifrost.panes.getPaneViaPaneProvider(

@@ -41,7 +41,7 @@ describe('studio/engine-deploy', () => {
   it('shows the Deploy category with the plan page and its explorer', async () => {
     await studioAgent.assertVisible('.workbench-header__category[data-category-id="deploy"]', TIMEOUT);
     await studioAgent.assertVisible('.workbench-header-container[data-page-id="deploy/plan"]', TIMEOUT);
-    await studioAgent.assertPaneVisible('pane/left/deploy-explorer');
+    await studioAgent.assertPaneVisible('deploy/plan/deploy-explorer');
     await studioAgent.assertVisible('[data-test--deploy-button]', TIMEOUT);
   });
 
@@ -86,7 +86,7 @@ describe('studio/engine-deploy', () => {
   });
 
   it('F2 in the Design File Explorer still opens the rename dialog', async () => {
-    await studioAgent.navigation.showLeftPane('pane/left/explorer');
+    await studioAgent.navigation.showLeftPane('design/workspace/explorer');
     await studioAgent.clickOn(label('payment-process.bpmn'));
     await studioAgent.sendKeyboardInput([Key.F2], false);
 

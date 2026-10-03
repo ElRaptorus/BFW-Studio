@@ -135,7 +135,7 @@ export function initializeEditorCommands(bifrost: Bifrost): void {
 
       bifrost.editors.focusOrOpenEditorDocument(targetUri);
 
-      bifrost.panes.setPaneCollapsed('pane/left/explorer', false);
+      bifrost.panes.setPaneCollapsed('design/workspace/explorer', false);
 
       await bifrost.solution.onElementAdded(targetUri);
       try {

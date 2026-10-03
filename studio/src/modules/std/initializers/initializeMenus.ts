@@ -478,6 +478,13 @@ function registerApplicationMenu(bifrost: Bifrost): void {
                 checked: bifrost.statusBar.isVisible(),
                 command: 'std.workbench.toggleStatusBar',
               },
+              {
+                type: 'command',
+                label: 'Business Detail Level (Design)',
+                id: 'view/appearance/business-detail-level',
+                checked: bifrost.settings.get('workbench.design.detailLevel') === 'business',
+                command: 'std.workbench.toggleDetailLevel',
+              },
 
               { type: 'divider' },
 

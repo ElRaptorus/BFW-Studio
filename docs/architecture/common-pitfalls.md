@@ -348,7 +348,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## `insertAfterMenuBarItem` requires the anchor to exist
 
-**Mistake**: Inserting after `engine-menubar/engine-select` from a module that loads before `engine-workspace`.
+**Mistake**: Inserting after `engine-header/engine-select` from a module that loads before `engine-workspace`.
 
 **Why**: The modifier throws on the first menu bar rebuild. `MenuBarManager` logs and skips it, so the item silently never appears.
 

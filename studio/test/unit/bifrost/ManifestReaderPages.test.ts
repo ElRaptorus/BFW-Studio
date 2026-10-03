@@ -72,6 +72,13 @@ describe('ManifestReader contributes.pages', () => {
     assert.ok(result.errors.some((error) => error.path === `bifrostStudio.contributes.pages[0].${field}`));
   });
 
+  it('warns about and ignores unknown page fields', () => {
+    const result = read({ pages: [{ ...valid, categoryId: 'measure' }] });
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.warnings.some((warning) => warning.path === 'bifrostStudio.contributes.pages[0].categoryId'));
+    assert.strictEqual(result.manifest?.contributes?.pages?.length, 1);
+  });
+
   it('rejects non-arrays, non-objects and duplicate ids within one plugin', () => {
     assert.ok(read({ pages: 'x' }).errors.some((error) => error.path.endsWith('.pages')));
     assert.ok(read({ pages: [3] }).errors.some((error) => error.path.endsWith('pages[0]')));

@@ -23,7 +23,8 @@ type MenuBarItemModifier = {
 
 type MenuBarItemFactoryMap = {
   header: MenuBarItemFactory[];
-  pageBar: MenuBarItemFactory[];
+  pageBarCenter: MenuBarItemFactory[];
+  pageBarEnd: MenuBarItemFactory[];
 };
 
 export class MenuBarManager extends AbstractEmitter implements ISerializable {
@@ -38,13 +39,15 @@ export class MenuBarManager extends AbstractEmitter implements ISerializable {
     this.menuBarItemModifiers = [];
     this.menuBarItems = {
       header: [],
-      pageBar: [],
+      pageBarCenter: [],
+      pageBarEnd: [],
     };
     this.serialized = {
       visible: this.visible,
       items: {
         header: [],
-        pageBar: [],
+        pageBarCenter: [],
+        pageBarEnd: [],
       },
     };
   }
@@ -123,7 +126,8 @@ export class MenuBarManager extends AbstractEmitter implements ISerializable {
   updateMenuBarItems(factoryFnArgs: any[]): void {
     const unmodifiedMenuBarItemMap: MenuBarItemMap = {
       header: this.buildMenuBarItemObjects(this.menuBarItems.header, factoryFnArgs),
-      pageBar: this.buildMenuBarItemObjects(this.menuBarItems.pageBar, factoryFnArgs),
+      pageBarCenter: this.buildMenuBarItemObjects(this.menuBarItems.pageBarCenter, factoryFnArgs),
+      pageBarEnd: this.buildMenuBarItemObjects(this.menuBarItems.pageBarEnd, factoryFnArgs),
     };
 
     const menuBarItemMap = this.menuBarItemModifiers.reduce(

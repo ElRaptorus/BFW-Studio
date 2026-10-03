@@ -11,37 +11,37 @@ import * as LiteralExpressionPane from '../panes/LiteralExpressionPane';
 export default function initializePanes(bifrost: Bifrost): void {
   bifrost.panes.prependToPaneGroup('right', 'property', [
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/definition-info',
+      'debug/engines/definition-info',
       'engine-decision-viewer/pane-providers/DefinitionInfoPane',
       DefinitionInfoPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/decision-detail',
+      'debug/engines/decision-detail',
       'engine-decision-viewer/pane-providers/DecisionDetailPane',
       DecisionDetailPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/decision-table-detail',
+      'debug/engines/decision-table-detail',
       'engine-decision-viewer/pane-providers/DecisionTableDetailPane',
       DecisionTableDetailPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/literal-expression',
+      'debug/engines/literal-expression',
       'engine-decision-viewer/pane-providers/LiteralExpressionPane',
       LiteralExpressionPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/bkm-detail',
+      'debug/engines/bkm-detail',
       'engine-decision-viewer/pane-providers/BkmDetailPane',
       BkmDetailPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/item-definition-detail',
+      'debug/engines/item-definition-detail',
       'engine-decision-viewer/pane-providers/ItemDefinitionDetailPane',
       ItemDefinitionDetailPane,
     ),
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/decision-service-detail',
+      'debug/engines/decision-service-detail',
       'engine-decision-viewer/pane-providers/DecisionServiceDetailPane',
       DecisionServiceDetailPane,
     ),

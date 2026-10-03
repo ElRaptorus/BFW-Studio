@@ -170,14 +170,14 @@ describe('solutions', () => {
     it('should search across multiple projects', async () => {
       await studioAgent.openSolutionFileFromFixtures('test-solution-multi.bfwsln');
 
-      await studioAgent.navigation.showLeftPane('pane/left/search');
-      await studioAgent.assertPaneVisible('pane/left/search');
+      await studioAgent.navigation.showLeftPane('design/workspace/search');
+      await studioAgent.assertPaneVisible('design/workspace/search');
 
       await studioAgent.sendKeyboardInput([...'Start'.split(''), 'enter']);
       await studioAgent.pause(2000);
 
       const searchResultCount = await studioAgent.getElementCount(
-        '[data-test--pane="pane/left/search"] .treeview__entry',
+        '[data-test--pane="design/workspace/search"] .treeview__entry',
       );
       assert.ok(searchResultCount > 0, 'Search should find results across projects');
 

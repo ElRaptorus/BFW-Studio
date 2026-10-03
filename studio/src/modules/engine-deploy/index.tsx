@@ -49,7 +49,7 @@ export function onLoad(bifrost: Bifrost): void {
     'deploy-explorer',
     [
       bifrost.panes.getPaneViaPaneProvider(
-        'pane/left/deploy-explorer',
+        'deploy/plan/deploy-explorer',
         'engine-deploy/pane-providers/DeployExplorerPane',
         DeployExplorerPane,
       ),
@@ -59,7 +59,7 @@ export function onLoad(bifrost: Bifrost): void {
 
   bifrost.panes.prependToPaneGroup('right', 'property', [
     bifrost.panes.getPaneViaPaneProvider(
-      'pane/right/deploy-item-details',
+      'deploy/plan/deploy-item-details',
       'engine-deploy/pane-providers/DeployItemDetailsPane',
       DeployItemDetailsPane,
     ),
