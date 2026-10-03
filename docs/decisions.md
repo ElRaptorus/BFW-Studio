@@ -6,7 +6,7 @@
 
 **Options:** Keep one workbench and add filters; separate windows per task; categories containing pages with their own editor area and pane groups.
 
-**Decision:** Header categories (Home, Design, Measure, Deploy, Debug, Control) contain pages. Each page has its own editor area; pane groups are assigned to pages (left groups mandatory, right and bottom default to all). Measure stays hidden while empty (`workbench.categories.showEmpty`). Plugin API 2.0.0 is one breaking change: `page` and `pages` are required, `paneToggles` is removed, the menu bar API is header-only. No migration of old layout state.
+**Decision:** Header categories (Home, Design, Discover, Deploy, Debug, Control) contain pages. Each page has its own editor area; pane groups are assigned to pages (left groups mandatory, right and bottom default to all). Discover stays hidden while empty (`workbench.categories.showEmpty`). Plugin API 2.0.0 is one breaking change: `page` and `pages` are required, `paneToggles` is removed, the menu bar API offers the header and the page bar areas. No migration of old layout state.
 
 **Rationale:** Tasks get focused surfaces without separate windows, and unversioned old state is cheaper to drop than to migrate this early.
 

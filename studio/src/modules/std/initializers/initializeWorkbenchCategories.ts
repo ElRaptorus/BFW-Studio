@@ -4,7 +4,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 export const GO_TO_CATEGORY_COMMANDS: readonly { categoryId: string; label: string; command: string }[] = [
   { categoryId: 'home', label: 'Home', command: 'std.workbench.goToHome' },
   { categoryId: 'design', label: 'Design', command: 'std.workbench.goToDesign' },
-  { categoryId: 'measure', label: 'Measure', command: 'std.workbench.goToMeasure' },
+  { categoryId: 'discover', label: 'Discover', command: 'std.workbench.goToDiscover' },
   { categoryId: 'deploy', label: 'Deploy', command: 'std.workbench.goToDeploy' },
   { categoryId: 'debug', label: 'Debug', command: 'std.workbench.goToDebug' },
   { categoryId: 'control', label: 'Control', command: 'std.workbench.goToControl' },
@@ -20,7 +20,7 @@ export function initializeWorkbenchCategories(bifrost: Bifrost): void {
   bifrost.icons.registerIcons({
     'std/category/home': 'ph ph-house',
     'std/category/design': 'ph ph-pencil-ruler',
-    'std/category/measure': 'ph ph-chart-line-up',
+    'std/category/discover': 'ph ph-binoculars',
     'std/category/deploy': 'ph ph-rocket-launch',
     'std/category/debug': 'ph ph-bug',
     'std/category/control': 'ph ph-gear',
@@ -35,9 +35,9 @@ export function initializeWorkbenchCategories(bifrost: Bifrost): void {
     order: 10,
   });
   categories.registerCategory({
-    id: 'measure',
-    label: 'Measure',
-    icon: 'std/category/measure',
+    id: 'discover',
+    label: 'Discover',
+    icon: 'std/category/discover',
     placement: 'main',
     order: 20,
   });

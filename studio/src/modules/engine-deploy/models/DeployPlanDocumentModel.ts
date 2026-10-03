@@ -8,6 +8,8 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 import { analyzeDeployPlan, collectReferencedIds, getDeployBlockedReason } from '../analysis/analyzeDeployPlan';
+import type { DeployExplorerMode } from '../analysis/buildDeployExplorerTree';
+import { toFilePath } from '../analysis/deployPackages';
 import type { DeployPlanFile } from '../analysis/executeDeployPlan';
 import { executeDeployPlan, toFailedResult } from '../analysis/executeDeployPlan';
 import { fetchEngineSnapshot } from '../analysis/fetchEngineSnapshot';
@@ -24,10 +26,6 @@ export const DEPLOY_PLAN_URI = 'deploy://plan';
 
 const LOCAL_RECOMPUTE_DELAY_MS = 300;
 const EMPTY_ANALYSIS: DeployAnalysis = { globalBlockers: [], items: [], dependencies: [] };
-
-function toFilePath(uri: string): string {
-  return uri.startsWith('file://') ? uri.slice('file://'.length) : uri;
-}
 
 /**
  * The deployment plan: the files the user wants to deploy, and their analysis against the active Engine.
@@ -51,6 +49,7 @@ export default class DeployPlanDocumentModel extends EditorDocumentModel {
   private analysis: DeployAnalysis = EMPTY_ANALYSIS;
   private results = new Map<string, DeployItemResult>();
   private deploying = false;
+  private explorerMode: DeployExplorerMode = 'file';
   private loading = false;
 
   private analysisRevision = 0;
@@ -68,11 +67,15 @@ export default class DeployPlanDocumentModel extends EditorDocumentModel {
   static async create(
     uri: string,
     _restoredCurrentData: unknown,
-    _restoredMetadata: unknown,
+    restoredMetadata: unknown,
     _fileLoader: unknown,
     bifrost: Bifrost,
   ): Promise<DeployPlanDocumentModel> {
-    return new DeployPlanDocumentModel(uri, bifrost);
+    const model = new DeployPlanDocumentModel(uri, bifrost);
+    if ((restoredMetadata as { explorerMode?: string } | null)?.explorerMode === 'project') {
+      model.explorerMode = 'project';
+    }
+    return model;
   }
 
   onEditorDocumentModelDidRegister(): void {
@@ -128,6 +131,16 @@ export default class DeployPlanDocumentModel extends EditorDocumentModel {
 
   getIncludedUris(): ReadonlySet<string> {
     return this.includedUris;
+  }
+
+  /** Whether the Deploy Explorer lists files or folders. The plan shows the same granularity. */
+  /** Increases on every change to what the plan tables show; use it as a memo key. */
+  getRevision(): number {
+    return this.analysisRevision;
+  }
+
+  getExplorerMode(): DeployExplorerMode {
+    return this.explorerMode;
   }
 
   getSelectedUri(): string | null {
@@ -207,15 +220,45 @@ export default class DeployPlanDocumentModel extends EditorDocumentModel {
   }
 
   async removeItem(uri: string): Promise<void> {
-    this.planUris = this.planUris.filter((planUri) => planUri !== uri);
-    this.includedUris.delete(uri);
-    this.defaultedUris.delete(uri);
-    this.defaultedWithoutEngineState.delete(uri);
-    this.results.delete(uri);
-    if (this.selectedUri === uri) {
+    await this.removeItems([uri]);
+  }
+
+  async removeItems(uris: readonly string[]): Promise<void> {
+    this.planUris = this.planUris.filter((planUri) => !uris.includes(planUri));
+    for (const uri of uris) {
+      this.includedUris.delete(uri);
+      this.defaultedUris.delete(uri);
+      this.defaultedWithoutEngineState.delete(uri);
+      this.results.delete(uri);
+    }
+    if (this.selectedUri != null && uris.includes(this.selectedUri)) {
       this.selectItem(null);
     }
     await this.refresh();
+  }
+
+  /** Empties the plan and adds the given files, as when a deploy package is loaded. */
+  async replaceItems(uris: readonly string[]): Promise<void> {
+    this.planUris = [];
+    this.includedUris.clear();
+    this.defaultedUris.clear();
+    this.defaultedWithoutEngineState.clear();
+    this.results.clear();
+    this.selectItem(null);
+    if (uris.length === 0) {
+      await this.refresh();
+      return;
+    }
+    await this.addItems(uris);
+  }
+
+  setExplorerMode(mode: DeployExplorerMode): void {
+    if (mode === this.explorerMode) {
+      return;
+    }
+    this.explorerMode = mode;
+    this.updateMetadata({ explorerMode: mode });
+    this.publishAnalysisRevision();
   }
 
   async addMissingDependencies(): Promise<void> {
@@ -223,11 +266,17 @@ export default class DeployPlanDocumentModel extends EditorDocumentModel {
   }
 
   setIncluded(uri: string, included: boolean): void {
-    this.defaultedWithoutEngineState.delete(uri);
-    if (included) {
-      this.includedUris.add(uri);
-    } else {
-      this.includedUris.delete(uri);
+    this.setManyIncluded([uri], included);
+  }
+
+  setManyIncluded(uris: readonly string[], included: boolean): void {
+    for (const uri of uris) {
+      this.defaultedWithoutEngineState.delete(uri);
+      if (included) {
+        this.includedUris.add(uri);
+      } else {
+        this.includedUris.delete(uri);
+      }
     }
     this.publishAnalysisRevision();
   }

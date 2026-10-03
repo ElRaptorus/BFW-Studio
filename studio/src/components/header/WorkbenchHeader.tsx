@@ -14,16 +14,17 @@ import { useBifrost } from '../../bifrostContext';
 import { Icon } from '../Icon';
 import MenuBarSection from '../menu_bar/MenuBarSection';
 import { buildLayoutToggleItems } from './headerLayoutToggles';
+import { buildPageBarSections } from './pageBarSections';
 
 const WEB_HAMBURGER_ITEMS: MenuBarItem[] = [
   { type: 'menu', id: 'header-hamburger', icon: 'std/menubar/hamburger', menu: 'std/application/main' },
 ];
 
 /**
- * The header: Home and the web hamburger (start), the main categories (centered), and at the end the
- * header menu bar items (Engine cluster, plugins), the layout toggles and Control. Below it sits the
- * page bar of the active category. Categories without pages are hidden unless
- * `workbench.categories.showEmpty` is set.
+ * The header: Home and the web hamburger (start), the main categories (centered on the window) and at the end the
+ * header menu bar items (plugins) and Control. Below it sits the page bar of the active category: the page tabs
+ * (start), the `pageBarCenter` items such as the Engine cluster (centered), and the `pageBarEnd` items, a divider and
+ * the layout toggles (end). Categories without pages are hidden unless `workbench.categories.showEmpty` is set.
  */
 export default function WorkbenchHeader(): React.JSX.Element {
   const bifrost = useBifrost();
@@ -49,9 +50,15 @@ export default function WorkbenchHeader(): React.JSX.Element {
     item.pages == null || (activePageId != null && matchesPage(item.pages, activePageId));
   const menuBarItems = bifrost.menuBar.getViewData().items;
   const headerMenuBarItems = menuBarItems.header.filter(isOnActivePage);
-  const pageBarMenuBarItems = menuBarItems.pageBar.filter(isOnActivePage);
+  const pageBarCenterItems = menuBarItems.pageBarCenter.filter(isOnActivePage);
+  const pageBarEndItems = menuBarItems.pageBarEnd.filter(isOnActivePage);
 
-  const layoutToggleItems = buildLayoutToggleItems(bifrost.panes.getViewData());
+  const pageBar = buildPageBarSections({
+    pageCount: pagesOfActiveCategory.length,
+    centerItems: pageBarCenterItems,
+    endItems: pageBarEndItems,
+    layoutToggleItems: buildLayoutToggleItems(bifrost.panes.getViewData()),
+  });
 
   const renderCategory = (category: WorkbenchCategoryDefinition): React.JSX.Element => (
     <button
@@ -85,35 +92,36 @@ export default function WorkbenchHeader(): React.JSX.Element {
         </div>
         <div className="workbench-header__group workbench-header__group--end">
           {headerMenuBarItems.length > 0 && <MenuBarSection items={headerMenuBarItems} align="right" />}
-          {layoutToggleItems.length > 0 && (
-            <>
-              <div className="menu-bar__divider" />
-              <MenuBarSection items={layoutToggleItems} align="right" />
-            </>
-          )}
           {visibleCategories.filter((category) => category.placement === 'end').map(renderCategory)}
         </div>
       </div>
-      {(pagesOfActiveCategory.length > 1 || pageBarMenuBarItems.length > 0) && (
+      {pageBar.visible && (
         <div className="workbench-page-bar">
-          {pagesOfActiveCategory.map((page) => (
-            <button
-              key={page.id}
-              type="button"
-              className={`workbench-page-bar__page${page.id === activePageId ? ' workbench-page-bar__page--active' : ''}`}
-              data-page-id={page.id}
-              aria-current={page.id === activePageId ? 'page' : undefined}
-              onClick={() => bifrost.commands.executeCommand('std.workbench.activatePage', [page.id])}
-            >
-              <Icon id={page.icon} />
-              <span>{page.label}</span>
-            </button>
-          ))}
-          {pageBarMenuBarItems.length > 0 && (
-            <div className="workbench-page-bar__items">
-              <MenuBarSection items={pageBarMenuBarItems} align="right" />
-            </div>
-          )}
+          <div className="workbench-page-bar__pages">
+            {pagesOfActiveCategory.map((page) => (
+              <button
+                key={page.id}
+                type="button"
+                className={`workbench-page-bar__page${page.id === activePageId ? ' workbench-page-bar__page--active' : ''}`}
+                data-page-id={page.id}
+                aria-current={page.id === activePageId ? 'page' : undefined}
+                onClick={() => bifrost.commands.executeCommand('std.workbench.activatePage', [page.id])}
+              >
+                <Icon id={page.icon} />
+                <span>{page.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="workbench-page-bar__section workbench-page-bar__section--center">
+            {pageBar.centerItems.length > 0 && <MenuBarSection items={[...pageBar.centerItems]} align="center" />}
+          </div>
+          <div className="workbench-page-bar__items">
+            {pageBar.endItems.length > 0 && <MenuBarSection items={[...pageBar.endItems]} align="right" />}
+            {pageBar.showDivider && <div className="menu-bar__divider" />}
+            {pageBar.layoutToggleItems.length > 0 && (
+              <MenuBarSection items={[...pageBar.layoutToggleItems]} align="right" />
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -46,24 +46,29 @@
     font-size: 0.85em;
   }
 
-  &__table {
-    width: 100%;
-    border-collapse: collapse;
+  &__file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
 
-    th,
-    td {
-      padding: 6px 8px;
-      text-align: left;
-      border-bottom: 1px solid var(--theme-surface-inset);
+    > div,
+    > span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
-  &__row {
-    cursor: pointer;
+  &__data-table {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
 
-    &--selected {
-      background: var(--theme-surface-inset);
-    }
+  &__muted {
+    color: var(--theme-fg-muted);
   }
 
   &__result--failed {
@@ -98,4 +103,62 @@
     gap: 8px;
     padding: 2px 0;
   }
+}
+
+.deploy-badge-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.deploy-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+
+  &--positive {
+    background-color: var(--theme-engine-ws-badge-running-bg);
+    color: var(--theme-engine-ws-badge-running-fg);
+  }
+
+  &--neutral {
+    background-color: var(--theme-engine-ws-badge-aborted-bg);
+    color: var(--theme-engine-ws-badge-aborted-fg);
+  }
+
+  &--warning {
+    background-color: var(--theme-engine-ws-badge-escalated-bg);
+    color: var(--theme-engine-ws-badge-escalated-fg);
+  }
+
+  &--error {
+    background-color: var(--theme-engine-ws-badge-error-bg);
+    color: var(--theme-engine-ws-badge-error-fg);
+  }
+
+  // The linter badges reuse the linter's own verdict colours.
+  &--linter {
+    border: 1px solid currentColor;
+    background: transparent;
+  }
+
+  &--linter-valid {
+    color: var(--lint-clean-text);
+  }
+
+  &--linter-risky {
+    color: var(--lint-warning-text);
+  }
+
+  &--linter-failed {
+    color: var(--lint-error-text);
+  }
+}
+
+.deploy-plan__muted {
+  color: var(--theme-fg-muted);
 }

@@ -16,10 +16,9 @@
   }
 
   .workbench-header {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
     height: 40px;
     flex: 0 0 40px;
     padding: 0 0.45rem;
@@ -36,10 +35,9 @@
     min-width: 0;
   }
 
-  // Start and end keep their natural width; the main group takes the space between them and shrinks first.
-  .workbench-header__group--start,
-  .workbench-header__group--end {
-    flex: 0 0 auto;
+  // The side columns share the free width equally, so the main categories sit in the middle of the window.
+  .workbench-header__group--start {
+    justify-content: flex-start;
   }
 
   .workbench-header__group--end {
@@ -61,7 +59,6 @@
   }
 
   .workbench-header__group--main {
-    flex: 1 1 0;
     justify-content: center;
     overflow: hidden;
   }
@@ -97,8 +94,8 @@
   }
 
   .workbench-page-bar {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: stretch;
     height: 32px;
     flex: 0 0 32px;
@@ -133,11 +130,24 @@
     border-bottom-color: var(--theme-workbench-page-bar-active-border, var(--theme-accent));
   }
 
+  .workbench-page-bar__pages {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .workbench-page-bar__section--center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .workbench-page-bar__items {
     display: flex;
     align-items: center;
-    flex: 0 0 auto;
-    margin-left: auto;
+    justify-content: flex-end;
+    min-width: 0;
   }
 }
 

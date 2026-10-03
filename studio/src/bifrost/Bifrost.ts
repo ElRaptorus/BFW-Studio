@@ -356,7 +356,7 @@ export class Bifrost {
       'workbench.categories.showEmpty': {
         type: 'boolean',
         label: 'Show Empty Categories',
-        description: 'Show workbench categories that have no pages (for example Measure) in the header.',
+        description: 'Show workbench categories that have no pages (for example Discover) in the header.',
         default: false,
       },
       'dialog.defaultDirectory': {

@@ -8,6 +8,8 @@ import { readPageContribution } from '#bifrost/common/plugin-host/manifest/Manif
 import { canAccessCommand, checkCommandAccess } from '#bifrost/common/plugin-host/permissions/CommandDenylist';
 import { PermissionDeniedError, PermissionGate } from '#bifrost/common/plugin-host/permissions/PermissionGate';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { MenuBarItemArea } from '#bifrost/contracts/MenuBarTypes';
+import { isMenuBarItemArea } from '#bifrost/contracts/MenuBarTypes';
 import {
   type ApiRequestPayload,
   type CallbackInvocationPayload,
@@ -1133,12 +1135,8 @@ export class PluginHostBridge {
   private handleMenuBarApi(method: string, args: unknown[], callerName: string): unknown {
     switch (method) {
       case 'registerMenuBarItem': {
-        const [area, items, options] = args as [
-          MenuBarItemArea,
-          { type?: string }[],
-          { pages?: string[] } | undefined,
-        ];
-        if (!MENU_BAR_AREAS.includes(area)) {
+        const [area, items, options] = args as [MenuBarItemArea, { type?: string }[], { pages?: string[] } | undefined];
+        if (!isMenuBarItemArea(area)) {
           throw new Error(
             `Plugin '${callerName}': menu bar area '${String(area)}' is not available. Use 'header', 'pageBarCenter' or 'pageBarEnd' (Plugin API 2.0.0).`,
           );

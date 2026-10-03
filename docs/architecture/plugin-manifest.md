@@ -163,7 +163,7 @@ Array of pane placeholder declarations.
 
 #### `contributes.pages`
 
-Pages added to **existing** workbench categories. Registered at discovery time by `registerPluginPage()` (`ContributionRegistrar.ts`), so a category that was empty (Measure) becomes visible while the plugin is still `pending`. Validated by `readPageContribution()` (`ManifestReader.ts`), which `api.workbench.registerPage` shares.
+Pages added to **existing** workbench categories. Registered at discovery time by `registerPluginPage()` (`ContributionRegistrar.ts`), so a category that was empty (Discover) becomes visible while the plugin is still `pending`. Validated by `readPageContribution()` (`ManifestReader.ts`), which `api.workbench.registerPage` shares.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -262,7 +262,7 @@ The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `2.0.0`, defined in `s
 - Plugin's minor ≤ Studio's minor (plugin can't require features the Studio doesn't have)
 - Patch version is ignored for compatibility
 
-**2.0.0 (breaking):** `editorDocumentTypes[].page` is required, left `panes[].pages` is required, `paneToggles` is removed, and the menu bar API is header-only: `pages` accepts page ids and `<categoryId>/*` wildcards, and modifiers cannot touch other areas or insert `pane_content_toggle` (see [workbench-categories.md](workbench-categories.md)).
+**2.0.0 (breaking):** `editorDocumentTypes[].page` is required, left `panes[].pages` is required, `paneToggles` is removed, and the menu bar API offers the `header`, `pageBarCenter` and `pageBarEnd` areas: `pages` accepts page ids and `<categoryId>/*` wildcards, and modifiers only search the header list and cannot insert `pane_content_toggle` (see [workbench-categories.md](workbench-categories.md)).
 
 `contributes.pages` and `api.workbench` were added to 2.0.0 without a bump, because they only add to it.
 

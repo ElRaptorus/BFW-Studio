@@ -36,6 +36,11 @@ type EditorToolbarButtonProps = {
    * Optional arguments to the command that should be executed.
    */
   commandArgs?: any[];
+
+  /**
+   * Optional test hook, rendered as the attribute `data-test--<dataTestId>`.
+   */
+  dataTestId?: string;
 };
 
 /**
@@ -57,7 +62,12 @@ export function EditorToolbarButton(props: EditorToolbarButtonProps): React.JSX.
   }
 
   return (
-    <button className={classNames.join(' ')} title={props.tooltip} {...htmlProps}>
+    <button
+      className={classNames.join(' ')}
+      title={props.tooltip}
+      {...htmlProps}
+      {...(props.dataTestId != null ? { [`data-test--${props.dataTestId}`]: true } : {})}
+    >
       {props.icon && <Icon id={props.icon} />} {props.label}
     </button>
   );

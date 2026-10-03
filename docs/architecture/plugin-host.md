@@ -225,7 +225,7 @@ export async function activate(api: StudioPluginApi): Promise<void> {
 | `editors` | `bifrost.editors` (EditorMediator) via `PluginHostBridge` |
 | `panes` | `bifrost.panes` (PaneMediator) via `PluginHostBridge` |
 | `statusBar` | `bifrost.statusBar` (StatusBarMediator / StatusBarManager) via `PluginHostBridge` |
-| `menuBar` | `bifrost.menuBar` (MenuBarMediator / MenuBarManager) via `PluginHostBridge`; plugins may only use the `header` area |
+| `menuBar` | `bifrost.menuBar` (MenuBarMediator / MenuBarManager) via `PluginHostBridge`; plugins may use the `header`, `pageBarCenter` and `pageBarEnd` areas |
 | `menus` | `bifrost.menus` (MenuMediator) via `PluginHostBridge` |
 | `workbench` | `bifrost.categories.registerPage` / `unregisterPage` via `PluginHostBridge.handleWorkbenchApi`; the bridge remembers the owning plugin per page, so `unregisterPage` only removes pages the caller added, and the page is part of the plugin's disposer group |
 | `workspace` | `bifrost.files` (FileHandlingService) + `bifrost.solution` (SolutionMediator) via `PluginHostBridge` |

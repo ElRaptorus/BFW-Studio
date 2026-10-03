@@ -65,5 +65,5 @@ export function buildLinterPageBarItems(bifrost: Bifrost): MenuBarItem[] {
 }
 
 export function initializePageBarItems(bifrost: Bifrost): void {
-  bifrost.menuBar.registerMenuBarItem('pageBar', () => buildLinterPageBarItems(bifrost), { pages: ['design/*'] });
+  bifrost.menuBar.registerMenuBarItem('pageBarEnd', () => buildLinterPageBarItems(bifrost), { pages: ['design/*'] });
 }

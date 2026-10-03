@@ -1,16 +1,23 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { showContextMenu } from '#components/ContextMenuFunctions';
 import { Icon } from '#components/Icon';
 import { Tree } from '#components/Tree/Tree';
 import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
+import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
 import type { SolutionModelEntry } from '#modules/solution-models/types';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { DeployExplorerMode } from '../analysis/buildDeployExplorerTree';
 import { buildDeployExplorerTree } from '../analysis/buildDeployExplorerTree';
-import { DEPLOY_EXPLORER_VIEW_ID } from '../commands';
+import {
+  DEPLOY_EXPLORER_VIEW_ID,
+  DEPLOY_PACKAGES_MENU_ID,
+  getPlanModelIfPresent,
+  onExplorerRescanRequested,
+} from '../commands';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: () => 'Deploy Explorer',
@@ -21,7 +28,30 @@ export const paneProvider: PaneProvider = {
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
   return (
     <Pane classNames="app-layout__full-height-pane">
-      <PaneHeader studio={props.studio} title="Deploy Explorer" paneId={props.paneId} collapsed={props.collapsed} />
+      <PaneHeader studio={props.studio} title="Deploy Explorer" paneId={props.paneId} collapsed={props.collapsed}>
+        {props.collapsed !== true && (
+          <>
+            <a
+              className="pane-header__icon"
+              title="Deploy packages"
+              data-bs-toggle="tooltip"
+              tabIndex={0}
+              href="#"
+              data-test--deploy-packages-menu
+              onClick={(event) => void showContextMenu(event, DEPLOY_PACKAGES_MENU_ID)}
+            >
+              <Icon id="ph ph-package" />
+            </a>
+            <PaneHeaderIcon
+              studio={props.studio}
+              icon="ph ph-arrows-clockwise"
+              tooltip="Rescan the solution"
+              command="engine.deploy.rescanExplorer"
+              dataTestId="deploy-explorer-rescan"
+            />
+          </>
+        )}
+      </PaneHeader>
       {props.collapsed !== true && <PaneContent {...props} />}
     </Pane>
   );
@@ -29,9 +59,17 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost: Bifrost = props.studio;
-  const [mode, setMode] = useState<DeployExplorerMode>('file');
+  const planModel = getPlanModelIfPresent(bifrost);
+  const mode: DeployExplorerMode = planModel?.getExplorerMode() ?? 'file';
+  const setMode = (nextMode: DeployExplorerMode): void => {
+    void bifrost.commands.executeCommand('engine.deploy.setExplorerMode', [nextMode]);
+  };
   const [entries, setEntries] = useState<SolutionModelEntry[]>([]);
   const [scanRevision, setScanRevision] = useState(0);
+  useEffect(() => {
+    const subscription = onExplorerRescanRequested(() => setScanRevision((revision) => revision + 1));
+    return () => subscription.dispose();
+  }, []);
   const solution = bifrost.solution.getSolution();
 
   useEffect(() => {
@@ -86,14 +124,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           onClick={() => setMode('project')}
         >
           Folders
-        </button>
-        <button
-          type="button"
-          className="btn btn-sm btn-secondary"
-          title="Rescan the solution"
-          onClick={() => setScanRevision((revision) => revision + 1)}
-        >
-          <Icon id="ph ph-arrows-clockwise" />
         </button>
       </div>
       {solution == null ? (

@@ -51,6 +51,11 @@ The plan table shows icon, file name with the folder as a muted second line (`de
 | `engine.deploy.removeFromPlan(uri)` | Remove a file |
 | `engine.deploy.addMissingDependencies` | Add the `localNotInPlan` dependencies |
 | `engine.deploy.refreshPlan` | Rescan and re-fetch |
+| `engine.deploy.rescanExplorer` | Rescan the solution in the Explorer (module-local event, `onExplorerRescanRequested`) |
+| `engine.deploy.setExplorerMode(mode)` | Set `file` or `project` on the plan model (shared by Explorer and plan page) |
+| `engine.deploy.loadPackage(name)` | Replace the plan with a package; vanished files are skipped with a warning |
+| `engine.deploy.savePlanAsPackage` | Prompt for a name (overwrite is confirmed) and save the plan |
+| `engine.deploy.deletePackage(name)` | Confirm and delete |
 | `engine.deploy.deployPlan` | Deploy; `enabledWhen` is `model.canDeploy()` |
 | `engine.workspace.deployBpmnFile(engineId, filePath, options?)` | Registered by `engine-workspace`; reusable single-file BPMN deploy |
 
@@ -62,7 +67,19 @@ The header Deploy button is hidden on `deploy/*` (`ENGINE_HEADER_DEPLOY_PAGES`).
 
 ## Explorer
 
-The pane toolbar holds the Files / Folders toggle and the rescan button; the plan's own Refresh is in the plan toolbar. Both modes show the folder tree below the solution roots (a single root is flattened). **Files** adds the model files as leaves (invalid entries carry an error badge); **Project** shows folders only, each with a model-count badge. Items carry `DeployExplorerMetadata` (`kind`, `uri`, `modelUris`); folder metadata has a `uri` because context-menu selection compares metadata by `uri`. Double-click and Enter add to the plan; the context menus are `engine/deploy-explorer/item` and `engine/deploy-explorer/multi-selection`.
+The pane header holds a packages dropdown icon and the rescan icon; the pane toolbar holds the Files / Folders toggle. The mode lives on `DeployPlanDocumentModel` (`getExplorerMode` / `setExplorerMode`, view state in metadata) and also switches the plan page between the file view and the folder view. The plan's own Refresh is in the plan toolbar. Both modes show the folder tree below the solution roots (a single root is flattened). **Files** adds the model files as leaves (invalid entries carry an error badge); **Project** shows folders only, each with a model-count badge. Items carry `DeployExplorerMetadata` (`kind`, `uri`, `modelUris`); folder metadata has a `uri` because context-menu selection compares metadata by `uri`. Double-click and Enter add to the plan; the context menus are `engine/deploy-explorer/item` and `engine/deploy-explorer/multi-selection`.
+
+## Plan page
+
+`DeployPlanRenderer` uses the Engine Workspace layout: `EditorTitle` (rocket icon, `EngineContextBreadcrumb`), then a toolbar (count line left; add-missing-dependencies, filter input, refresh centered; settings, auth key, Deploy right). Row arrays are memoized on `DeployPlanDocumentModel.getRevision()` (bumped by every change the tables show); a new `data` identity would reset the table's page index. Both views are the shared `Table` with `manualFiltering` (the components filter themselves), client-side pagination (default 50, options 25/50/100/250) and column filters.
+
+- **File view** (`DeployPlanFilesTable`): the row selection *is* the include state; selection changes are applied to the model as a diff (`setManyIncluded`). Unreadable files cannot be ticked. Columns: File (with muted folder), Kind, Status, Versions, Dependencies, Linter, Result, remove. Versions and Linter sort (Linter by the file's lowest stored score; files without a score last). The column filters live in the renderer so the count line can show `· N shown by filter`.
+- **Folder view** (`DeployPlanFoldersTable`, `summarizeDeployFolders`): one row per direct parent folder, with a tri-state include checkbox, status badges with counts, and the average stored linter score per ruleset coloured by the worst verdict in the folder. Versions and Dependencies are not shown.
+- **Badges** (`components/formatDeployBadges.ts`, `DeployBadges.tsx`): status is a short coloured badge with the explanation as tooltip; linter scores read `Dev: 92,6%` / `Prod: 77,3%` and are coloured by the stored compliance status (`valid` / `risky` / `failed`).
+
+## Packages
+
+Setting `engine.deploy.packages` (scope `solution`): `{ name, files[] }[]`, files relative to the folder of the `.bfwsln` (or the opened folder). Reads and writes pass the first project root as the resource so the value lands in the Solution layer. The Explorer dropdown is the menu `engine/deploy-explorer/packages`, rebuilt from the setting each time it opens (Load entries, Save Plan as Package…, Delete Package submenu). Pure helpers: `analysis/deployPackages.ts`.
 
 ## Keybinding scope
 
@@ -70,4 +87,4 @@ The File Explorer tree keys (Enter and F2 rename, Backspace and Delete) are boun
 
 ## Test hooks
 
-`data-test--deploy-button`, `data-test--deploy-add-missing-dependencies`, `data-test--deploy-blocked-reason`, `data-test--deploy-item="<file uri>"`, `data-test--deploy-item-status`, `data-test--deploy-explorer-mode="file|project"`, tree `data-test--tree="engine/deploy-explorer"`. Tests: `test/unit/engine-deploy/`, `test/integration/deploy/engine-deploy.test.ts`.
+`data-test--deploy-button`, `data-test--deploy-add-missing-dependencies`, `data-test--deploy-blocked-reason`, plan rows `data-test--table-row="<file uri>"` (folder view: folder path), `data-test--deploy-item-status` (file rows), `data-test--deploy-folder-status` (folder rows), `data-test--deploy-folder-include="<folder>"`, `data-test--deploy-explorer-mode="file|project"`, `data-test--deploy-explorer-rescan`, `data-test--deploy-packages-menu`, tree `data-test--tree="engine/deploy-explorer"`. Tests: `test/unit/engine-deploy/`, `test/integration/deploy/engine-deploy.test.ts`.

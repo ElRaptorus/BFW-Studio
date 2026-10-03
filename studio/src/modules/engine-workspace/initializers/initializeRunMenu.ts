@@ -10,7 +10,7 @@ import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
 import type { BpmnFileDeployOptions } from '../deploy/deployBpmnFile';
 import { deployBpmnFile } from '../deploy/deployBpmnFile';
-import { buildEngineHeaderItems } from './engineHeaderItems';
+import { addEngineHeaderItems, buildEngineHeaderItems } from './engineHeaderItems';
 
 const DEPLOYABLE_EXTENSIONS = ['.bpmn', '.dmn'];
 
@@ -630,7 +630,7 @@ export default function initializeRunMenu(bifrost: Bifrost, connectionManager: E
       isViewingModelViewer: isFocusedDocumentModelViewer(bifrost),
     });
 
-    return { ...menuBarItems, header: [...menuBarItems.header, ...engineHeaderItems] };
+    return addEngineHeaderItems(menuBarItems, engineHeaderItems);
   });
 
   // ─── Engine event subscriptions for menubar refresh ───────────────

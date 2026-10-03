@@ -402,7 +402,7 @@ A floating React component mounted inside `.editor__content` via DOM injection. 
 
 **Path:** `studio/src/modules/bpmn-linter/initializers/initializePageBarItems.ts`
 
-`initializePageBarItems` registers `buildLinterPageBarItems` in the internal `pageBar` menu bar area with `pages: ['design/*']`, so the items sit right-pinned in the Design page bar ([workbench-categories.md](workbench-categories.md) §Header). Items: an icon `bpmn-linter-rule-selection-icon` (`ph ph-fill ph-highlighter`, tooltip `Current Linter Ruleset<origin>`) and a select `bpmn-linter-profile-select` (tooltip `Select Linter Ruleset<origin>`). The Findings pane has no select.
+`initializePageBarItems` registers `buildLinterPageBarItems` in the `pageBarEnd` menu bar area with `pages: ['design/*']`, so the items sit at the end of the Design page bar ([workbench-categories.md](workbench-categories.md) §Header). Items: an icon `bpmn-linter-rule-selection-icon` (`ph ph-fill ph-highlighter`, tooltip `Current Linter Ruleset<origin>`) and a select `bpmn-linter-profile-select` (tooltip `Select Linter Ruleset<origin>`). The Findings pane has no select.
 
 - **Visibility**: whenever a BPMN document is focused, regardless of `bpmnLinter.enabled`; the factory returns `[]` otherwise.
 - **Data source**: `bpmnLinter.profile` plus built-in Development / Production Ready names and `bpmnLinter.customRulesets` keys (`listLinterProfileEntries`; an unknown profile falls back to `bpmn-development`). `profileOriginSuffix` appends ` (Solution)` or ` (Project: <name>)` when the profile comes from that scope. The menu bar rebuilds on `EVENT_CONTENT_UPDATE` (focus, settings, solution).

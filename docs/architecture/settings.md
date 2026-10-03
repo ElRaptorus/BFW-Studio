@@ -27,7 +27,7 @@ User settings are **app-wide** (not per-window), persisted in JSON format via `l
 
 ## Scopes (User / Solution / Project)
 
-Resolution order is Default, then User (`localStorage`), then Solution (the `settings` object in the open `.bfwsln`), then Project (`<project>/.bifrostfw/settings.json`). The most specific defined, eligible, and valid value wins. Arrays and objects are replaced as a whole.
+Resolution order is Default, then User (`localStorage`), then Solution (the `settings` object in the open `.bfwsln`), then Project (`<project>/.bifrostfw/settings.json`). The most specific defined, eligible, and valid value wins. Arrays and objects are replaced as a whole. `engine.deploy.packages` is an example of a `scope: 'solution'` array-of-objects setting (`{ name, files[] }`, with an `items` schema).
 
 A descriptor field `scope` (`'application' | 'solution' | 'project'`, default `'application'`) is hierarchical: `'solution'` may be stored on User and Solution, `'project'` on User, Solution, and Project. Ineligible or invalid layer entries are ignored and left in the file. There is no Solution layer unless `solution.solutionFileUri` is set. `buffer:` URIs and files outside the solution resolve as User only. A resource belongs to the project whose `baseUri` is a prefix of its URI on a `/` boundary.
 

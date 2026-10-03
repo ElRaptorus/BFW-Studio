@@ -42,7 +42,7 @@ describe('ManifestReader pages (Plugin API 2.0.0)', () => {
 });
 
 describe('ManifestReader contributes.pages', () => {
-  const valid = { id: 'measure/insights', label: 'Insights', icon: 'ph-chart-line' };
+  const valid = { id: 'discover/insights', label: 'Insights', icon: 'ph-chart-line' };
 
   it('accepts a page and keeps its optional fields', () => {
     const page = {
@@ -54,12 +54,12 @@ describe('ManifestReader contributes.pages', () => {
     };
     const result = read({ pages: [page] });
     assert.deepStrictEqual(result.errors, []);
-    assert.strictEqual(result.manifest?.contributes?.pages?.[0].id, 'measure/insights');
+    assert.strictEqual(result.manifest?.contributes?.pages?.[0].id, 'discover/insights');
     assert.deepStrictEqual(result.manifest?.contributes?.pages?.[0].paneAreas, ['left', 'bottom']);
   });
 
   it.each([
-    ['id', { ...valid, id: 'Measure' }],
+    ['id', { ...valid, id: 'Discover' }],
     ['id', { ...valid, id: 'noslash' }],
     ['label', { ...valid, label: ' ' }],
     ['icon', { ...valid, icon: undefined }],
@@ -73,7 +73,7 @@ describe('ManifestReader contributes.pages', () => {
   });
 
   it('warns about and ignores unknown page fields', () => {
-    const result = read({ pages: [{ ...valid, categoryId: 'measure' }] });
+    const result = read({ pages: [{ ...valid, categoryId: 'discover' }] });
     assert.deepStrictEqual(result.errors, []);
     assert.ok(result.warnings.some((warning) => warning.path === 'bifrostStudio.contributes.pages[0].categoryId'));
     assert.strictEqual(result.manifest?.contributes?.pages?.length, 1);

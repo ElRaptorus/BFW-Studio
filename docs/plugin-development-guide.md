@@ -151,7 +151,7 @@ Command IDs in the manifest are local (`hello`); the public ID is `plugin.<name>
 
 `contributes.editorDocumentTypes` is a **placeholder**. You must call `api.editors.registerWebviewDocumentType({ id: <same id>, … })` in `activate()` or the tab stays on “Plugin activated but did not register an editor”. Since API 2.0.0 both the manifest entry and the call carry `page` (`<category>/<name>` such as `design/workspace`, or `active`), and left panes carry `pages`; see [architecture/workbench-categories.md](architecture/workbench-categories.md).
 
-`contributes.pages` (or `api.workbench.registerPage`) adds a page to an existing category, for example `measure/insights`. The ID must be unused, the page disappears when the plugin unloads, and it is not restored after a restart.
+`contributes.pages` (or `api.workbench.registerPage`) adds a page to an existing category, for example `discover/insights`. The ID must be unused, the page disappears when the plugin unloads, and it is not restored after a restart.
 
 Schema, contribution keys, and cleanup: [architecture/plugin-manifest.md](architecture/plugin-manifest.md).
 

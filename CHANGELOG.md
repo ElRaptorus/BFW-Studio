@@ -137,6 +137,9 @@ The Deploy category builds a deployment plan from the solution's BPMN and DMN fi
 - Dependencies (called processes, decision references) are added automatically, so groups deploy together with what they need
 - Blockers, such as unsaved changes, an offline engine, invalid files or missing deploy permissions, disable the deploy button with a reason
 - The deployment result is shown per item, including linter gate rejections from the engine
+- Status and linter scores are compact badges (`Dev: 92,6%`, coloured by verdict); the plan is a searchable, filterable, sortable table with pagination
+- Switching the Explorer to Folders groups the plan by folder, with tri-state selection and average linter scores
+- Named deploy packages store a set of files in the solution and load it back into the plan with one click
 
 See [architecture](./docs/architecture/deploy.md).
 
@@ -174,7 +177,7 @@ A WebSocket-driven overlay that visualizes process execution in real time.
 
 ### Workbench Categories & Pages
 
-The header groups the Studio into categories: **Home**, **Design**, **Deploy**, **Debug** and **Control**. Measure stays hidden until it has pages (or *Show Empty Categories* is on).
+The header groups the Studio into categories: **Home**, **Design**, **Deploy**, **Debug** and **Control**. Discover stays hidden until it has pages (or *Show Empty Categories* is on).
 
 - Each category holds pages, selected in the page bar below the header
 - Every page has its own editor area, tabs and pane layout, restored after a restart
@@ -266,7 +269,7 @@ A process-isolated, permission-gated plugin architecture.
 - Plugins are individually toggleable with a dedicated management pane
 - Permissions must be declared upfront (filesystem, commands, renderer modules, native access, etc.)
     - Network access via Node.js native libraries is blocked. Period.
-- **Plugin API 2.0.0:** document types must name their `page`, left panes name their `pages`, the menu bar API targets the header only, and plugins can add pages to built-in categories (`contributes.pages`, `api.workbench.registerPage`)
+- **Plugin API 2.0.0:** document types must name their `page`, left panes name their `pages`, the menu bar API targets the header and the page bar areas (`header`, `pageBarCenter`, `pageBarEnd`), and plugins can add pages to built-in categories (`contributes.pages`, `api.workbench.registerPage`)
 - Declarative feature manifest for commands, panes, webview-based documents, menus, settings, themes, and more
 - Full API bridge for runtime interaction with the Studio
 - The Studio SDK provides fully typed contracts and interfaces, which Plugin developers can use for properly accessing the Studio's Plugin Host

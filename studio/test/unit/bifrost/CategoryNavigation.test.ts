@@ -35,7 +35,7 @@ describe('category navigation commands', () => {
   it('registers one go-to command per category in header order', () => {
     assert.deepStrictEqual(
       GO_TO_CATEGORY_COMMANDS.map((entry) => entry.categoryId),
-      ['home', 'design', 'measure', 'deploy', 'debug', 'control'],
+      ['home', 'design', 'discover', 'deploy', 'debug', 'control'],
     );
     for (const { command } of GO_TO_CATEGORY_COMMANDS) {
       assert.ok(commands.has(command), `${command} is registered`);

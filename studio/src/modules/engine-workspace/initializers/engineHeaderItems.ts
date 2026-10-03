@@ -1,4 +1,4 @@
-import type { MenuBarItem } from '#bifrost/contracts/MenuBarTypes';
+import type { MenuBarItem, MenuBarItemMap } from '#bifrost/contracts/MenuBarTypes';
 import type { EngineConnection, EngineConnectionState } from '#modules/engine-core';
 
 /** The Engine cluster is only meaningful on pages that talk to an engine. */
@@ -25,7 +25,7 @@ export function formatEngineLabel(connection: { displayName: string | null; url:
 }
 
 /**
- * Builds the Engine cluster of the workbench header: status icon, engine select (or "No engine"),
+ * Builds the Engine cluster, shown in the centered section of the page bar: status icon, engine select (or "No engine"),
  * connection menu, open dashboard, deploy and play.
  */
 export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarItem[] {
@@ -98,4 +98,9 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
     ...item,
     pages: item.id === 'engine-header/deploy' ? ENGINE_HEADER_DEPLOY_PAGES : ENGINE_HEADER_PAGES,
   }));
+}
+
+/** The Engine cluster lives in the page bar's center section; the other areas stay untouched. */
+export function addEngineHeaderItems(menuBarItems: MenuBarItemMap, engineHeaderItems: MenuBarItem[]): MenuBarItemMap {
+  return { ...menuBarItems, pageBarCenter: [...menuBarItems.pageBarCenter, ...engineHeaderItems] };
 }

@@ -32,11 +32,11 @@ describe('studio/workbench-categories', () => {
     await studioAgent?.stop();
   });
 
-  it('header: shows Home, Design, Deploy, Debug and Control; Measure is hidden while empty', async () => {
+  it('header: shows Home, Design, Deploy, Debug and Control; Discover is hidden while empty', async () => {
     for (const id of ['home', 'design', 'deploy', 'debug', 'control']) {
       await studioAgent.assertVisible(category(id), TIMEOUT);
     }
-    await studioAgent.assertNotVisible(category('measure'));
+    await studioAgent.assertNotVisible(category('discover'));
   });
 
   it('categories: activating a category shows its page bar and pages', async () => {
@@ -52,7 +52,7 @@ describe('studio/workbench-categories', () => {
 
   it('categories: activating a hidden category does nothing', async () => {
     await studioAgent.executeCommand('std.workbench.activatePage', ['design/workspace']);
-    await studioAgent.executeCommand('std.workbench.activateCategory', ['measure']);
+    await studioAgent.executeCommand('std.workbench.activateCategory', ['discover']);
     await studioAgent.assertVisible(activePage('design/workspace'), TIMEOUT);
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

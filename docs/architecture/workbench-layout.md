@@ -32,7 +32,7 @@ The column layout is achieved via nested `SplitterLayout` components:
 
 ## Header Menu Bar
 
-`MenuBarItemArea` is `'header' | 'pageBar'`; `MenuBarItemMap` and `MenuBarSerialized` carry a `header` and a `pageBar` list. `pageBar` is internal (plugins only get `header`) and is rendered right-pinned in the page bar ([workbench-categories.md](workbench-categories.md) §Header). `insertAfterMenuBarItem` / `insertBeforeMenuBarItem` search only the header list and throw when the anchor id is missing. The fixed header chrome (Home, web hamburger, categories, layout toggles, Control) is rendered by `WorkbenchHeader` itself and is **not** registered as menu bar items; registered header items (Engine cluster, plugin items) are filtered by `pages` and rendered through `MenuBarSection` between the main categories and the layout toggles.
+`MenuBarItemArea` is `'header' | 'pageBarCenter' | 'pageBarEnd'`; `MenuBarItemMap` and `MenuBarSerialized` carry one list per area. `pageBarCenter` and `pageBarEnd` render in the page bar's center and end columns ([workbench-categories.md](workbench-categories.md) §Header); plugins may register in all three. `insertAfterMenuBarItem` / `insertBeforeMenuBarItem` search only the header list and throw when the anchor id is missing. The fixed header chrome (Home, web hamburger, categories, Control) is rendered by `WorkbenchHeader` itself and is **not** registered as menu bar items; registered header items (Engine cluster, plugin items) are filtered by `pages` and rendered through `MenuBarSection` between the main categories and the end categories. The layout toggles belong to the page bar: they follow the `pageBarEnd` items.
 
 **Layout toggles.** `buildLayoutToggleItems(paneAreas)` (`components/header/headerLayoutToggles.ts`) returns one `button` per pane area that has groups on the active page (`paneGroups.length > 0`), in the order left, bottom, right. A page with `paneAreas: []` gets none.
 
@@ -174,7 +174,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 ## Interaction Model
 
 - **Left tab strip**: Click switches the active left group on the page. Not rendered with fewer than two displayable groups.
-- **Layout toggles** (header): `std.workbench.toggleSidebar` hides or shows the left area (hiding calls `hidePaneArea('left')`, showing calls `selectLastActivePaneInArea('left')`); `togglePropertyPanel` toggles `bifrost.panes.togglePaneArea('right')`; `toggleInspectorPanel` toggles the bottom area. The buttons live in the header and stay mounted when an area hides.
+- **Layout toggles** (page bar end): `std.workbench.toggleSidebar` hides or shows the left area (hiding calls `hidePaneArea('left')`, showing calls `selectLastActivePaneInArea('left')`); `togglePropertyPanel` toggles `bifrost.panes.togglePaneArea('right')`; `toggleInspectorPanel` toggles the bottom area. The buttons live in the header and stay mounted when an area hides.
 - **Right pane group tabs** (icon variant): Click switches active group. Right-click opens context menu listing all displayable groups with labels.
 - **Bottom pane group tabs** (text variant): Click switches active group. Pane-level tabs below update to show the selected group's panes.
 
@@ -183,7 +183,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | File | Purpose |
 |---|---|
 | `studio/src/components/Workbench.tsx` | Top-level layout, event subscriptions, column structure |
-| `studio/src/components/header/WorkbenchHeader.tsx` | Header chrome: categories, page bar, hamburger, header items, layout toggles |
+| `studio/src/components/header/WorkbenchHeader.tsx` | Header chrome: categories, hamburger, header items; page bar: pages, center and end items, layout toggles (`pageBarSections.ts` decides visibility) |
 | `studio/src/components/header/headerLayoutToggles.ts` | Pure `buildLayoutToggleItems(paneAreas)` |
 | `studio/src/components/panes/PaneAreaLeft.tsx` | Left pane area renderer (one visible group, text tab strip with two or more groups) |
 | `studio/src/components/panes/PaneAreaRight.tsx` | Right pane area renderer (multi-group with icon tab bar) |
@@ -196,7 +196,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `studio/src/components/menu_bar/MenuBarButton.tsx` | Generic button with command execution and `active` CSS class |
 | `studio/src/components/menu_bar/workbench.menu-bar.scss` | Menu bar item styles (`.menu-bar-section`, `.menu-bar__button--active`) |
 | `studio/src/bifrost/styles/workbench.app-layout.scss` | Column layout (`.app-layout__column`) |
-| `studio/src/bifrost/contracts/MenuBarTypes.ts` | All `MenuBarItem` type definitions (`MenuBarItemArea`: `header`, internal `pageBar`) |
+| `studio/src/bifrost/contracts/MenuBarTypes.ts` | All `MenuBarItem` type definitions (`MenuBarItemArea`: `header`, `pageBarCenter`, `pageBarEnd`) |
 | `studio/src/bifrost/common/PaneManager.ts` | Pane area state, visibility, `lastActivePaneIdPerArea`, `setActiveGroupInArea()`, `requestPaneLayoutUpdate()` |
 | `studio/src/bifrost/common/PaneMediator.ts` | Public API for PaneManager, persistence, pane provider registration |
 | `studio/src/bifrost/contracts/PaneTypes.ts` | `PaneGroupObject` type with `label`, `icon` fields |

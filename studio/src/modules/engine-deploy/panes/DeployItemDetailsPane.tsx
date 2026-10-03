@@ -9,6 +9,7 @@ import React from 'react';
 
 import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
+import { describeDeployStatus, describeStoredLinterScore, formatPercent } from '../components/formatDeployBadges';
 import type DeployPlanDocumentModel from '../models/DeployPlanDocumentModel';
 import { DEPLOY_PLAN_URI } from '../models/DeployPlanDocumentModel';
 
@@ -45,7 +46,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   return (
     <div className="deploy-item-details" data-test--deploy-item-details={item.uri}>
       <PaneProperty type="text" label="File" value={item.uri.replace(/^file:\/\//, '')} disabled />
-      <PaneProperty type="text" label="Status" value={item.status} disabled />
+      <PaneProperty type="text" label="Status" value={describeDeployStatus(item.status).label} disabled />
       {item.processes.map((process) => (
         <PaneProperty
           key={process.processId}
@@ -56,15 +57,22 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
         />
       ))}
       {item.linterInfo != null && <p className="deploy-item-details__info">{item.linterInfo}</p>}
-      {item.storedLinterScores.map((score) => (
-        <PaneProperty
-          key={score.rulesetId}
-          type="text"
-          label={`Linter: ${score.rulesetId}`}
-          value={`${score.scorePercent}% · ${score.complianceStatus}`}
-          disabled
-        />
-      ))}
+      {item.storedLinterScores.map((score) => {
+        const presentation = describeStoredLinterScore(score);
+        return (
+          <PaneProperty
+            key={score.rulesetId}
+            type="text"
+            label={`Linter: ${score.rulesetId}`}
+            value={
+              presentation == null
+                ? score.scorePercent
+                : `${formatPercent(Number(score.scorePercent))} · ${presentation.verdict}`
+            }
+            disabled
+          />
+        );
+      })}
       {item.blockers.map((blocker) => (
         <p key={blocker} className="deploy-item-details__blocker">
           {blocker}

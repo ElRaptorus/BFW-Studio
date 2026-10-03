@@ -1,6 +1,7 @@
 import {
   ENGINE_HEADER_DEPLOY_PAGES,
   ENGINE_HEADER_PAGES,
+  addEngineHeaderItems,
   buildEngineHeaderItems,
 } from '#modules/engine-workspace/initializers/engineHeaderItems';
 import type { EngineHeaderState } from '#modules/engine-workspace/initializers/engineHeaderItems';
@@ -106,5 +107,20 @@ describe('buildEngineHeaderItems', () => {
     };
     assert.match(playTooltip(true), /^Start Current Process in Debugger/);
     assert.match(playTooltip(false), /^Quick Deploy & Start in Debugger \(F5\)/);
+  });
+});
+
+describe('addEngineHeaderItems', () => {
+  it('appends the cluster to the page bar center and leaves the other areas alone', () => {
+    const existing = { type: 'button', id: 'existing' } as const;
+    const result = addEngineHeaderItems(
+      { header: [existing], pageBarCenter: [existing], pageBarEnd: [existing] },
+      buildEngineHeaderItems(createState()),
+    );
+
+    assert.strictEqual(result.header.length, 1);
+    assert.strictEqual(result.pageBarEnd.length, 1);
+    assert.strictEqual(result.pageBarCenter[0], existing);
+    assert.strictEqual(result.pageBarCenter[1].id, 'engine-header/engine-status');
   });
 });

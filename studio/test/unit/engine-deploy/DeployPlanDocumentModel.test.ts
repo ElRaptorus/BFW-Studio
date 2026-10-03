@@ -206,4 +206,49 @@ describe('DeployPlanDocumentModel', () => {
     expect(await model.deploy()).toEqual([]);
     expect(deployed).toEqual([]);
   });
+
+  it('bumps its revision on every change the tables show', async () => {
+    const { model } = await setup();
+    await model.addItems([fixtureUri('order-process.bpmn'), fixtureUri('payment-process.bpmn')]);
+
+    const revisions = [model.getRevision()];
+    const step = () => revisions.push(model.getRevision());
+    model.setManyIncluded([fixtureUri('order-process.bpmn')], false);
+    step();
+    model.setExplorerMode('project');
+    step();
+    await model.removeItems([fixtureUri('payment-process.bpmn')]);
+    step();
+    await model.replaceItems([fixtureUri('payment-process.bpmn')]);
+    step();
+
+    expect(new Set(revisions).size).toBe(revisions.length);
+  });
+
+  it('replaces the plan, dropping earlier choices and the selection', async () => {
+    const { model } = await setup();
+    await model.addItems([fixtureUri('order-process.bpmn')]);
+    model.setIncluded(fixtureUri('order-process.bpmn'), false);
+
+    await model.replaceItems([fixtureUri('payment-process.bpmn')]);
+
+    expect(model.getPlanUris()).toEqual([fixtureUri('payment-process.bpmn')]);
+    expect(model.isIncluded(fixtureUri('order-process.bpmn'))).toBe(false);
+    expect(model.getSelectedUri()).toBe(fixtureUri('payment-process.bpmn'));
+
+    await model.replaceItems([]);
+    expect(model.getPlanUris()).toEqual([]);
+  });
+
+  it('keeps the explorer mode, publishes it once and ignores the same mode', async () => {
+    const { model } = await setup();
+    expect(model.getExplorerMode()).toBe('file');
+
+    model.setExplorerMode('project');
+    const revision = model.getRevision();
+    model.setExplorerMode('project');
+
+    expect(model.getExplorerMode()).toBe('project');
+    expect(model.getRevision()).toBe(revision);
+  });
 });

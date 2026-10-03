@@ -15,9 +15,9 @@
     "contributes": {
       "pages": [
         {
-          "id": "measure/insights",
+          "id": "discover/insights",
           "label": "Insights",
-          "icon": "ph ph-chart-line-up"
+          "icon": "ph ph-binoculars"
         }
       ]
     }

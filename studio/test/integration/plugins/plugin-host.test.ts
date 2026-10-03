@@ -446,9 +446,9 @@ describe('plugin-host/integration', () => {
     });
 
     it('a manifest page makes its category visible and can be opened', async () => {
-      await studioAgent.assertVisible(category('measure'), ASSERT_VISIBLE_TIMEOUT);
-      await studioAgent.executeCommand('std.workbench.activatePage', ['measure/insights']);
-      await studioAgent.assertVisible(activePage('measure/insights'), ASSERT_VISIBLE_TIMEOUT);
+      await studioAgent.assertVisible(category('discover'), ASSERT_VISIBLE_TIMEOUT);
+      await studioAgent.executeCommand('std.workbench.activatePage', ['discover/insights']);
+      await studioAgent.assertVisible(activePage('discover/insights'), ASSERT_VISIBLE_TIMEOUT);
     });
 
     it('a runtime page shows in the page bar of its category', async () => {
@@ -467,12 +467,12 @@ describe('plugin-host/integration', () => {
       assert.ok(errors[1].includes("'design/workspace'"), errors[1]);
     });
 
-    it('disabling the plugin while its only Measure page is active falls back to Design › Workspace', async () => {
-      await studioAgent.executeCommand('std.workbench.activatePage', ['measure/insights']);
-      await studioAgent.assertVisible(activePage('measure/insights'), ASSERT_VISIBLE_TIMEOUT);
+    it('disabling the plugin while its only Discover page is active falls back to Design › Workspace', async () => {
+      await studioAgent.executeCommand('std.workbench.activatePage', ['discover/insights']);
+      await studioAgent.assertVisible(activePage('discover/insights'), ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'disabled');
-      await studioAgent.assertNotVisible(category('measure'));
+      await studioAgent.assertNotVisible(category('discover'));
       await studioAgent.assertVisible(activePage('design/workspace'), ASSERT_VISIBLE_TIMEOUT);
     });
 
@@ -481,13 +481,13 @@ describe('plugin-host/integration', () => {
       await studioAgent.assertVisible(activePage('design/demo-board'), ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'disabled');
-      await studioAgent.assertNotVisible(category('measure'));
+      await studioAgent.assertNotVisible(category('discover'));
       await studioAgent.assertNotVisible(pageButton('design/demo-board'));
       await studioAgent.assertNotVisible(activePage('design/demo-board'));
       await studioAgent.assertVisible(`.workbench-header-container[data-category-id="design"]`, ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'loaded');
-      await studioAgent.assertVisible(category('measure'), ASSERT_VISIBLE_TIMEOUT);
+      await studioAgent.assertVisible(category('discover'), ASSERT_VISIBLE_TIMEOUT);
       await studioAgent.executeCommand('std.workbench.activateCategory', ['design']);
       await studioAgent.assertVisible(pageButton('design/demo-board'), ASSERT_VISIBLE_TIMEOUT);
     });

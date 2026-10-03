@@ -8,9 +8,9 @@ import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioA
 
 const TIMEOUT = ASSERT_VISIBLE_TIMEOUT;
 const FIXTURE = 'test-solution-deploy';
-const PLAN_ROW = '[data-test--deploy-item]';
+
 const label = (fileName: string) => `.treeview__label=${fileName}`;
-const planRow = (fileName: string) => `${PLAN_ROW}[data-test--deploy-item$="/${fileName}"]`;
+const planRow = (fileName: string) => `[data-test--table-row$="/${fileName}"]`;
 
 describe('studio/engine-deploy', () => {
   let studioAgent: StudioAgent;
@@ -63,6 +63,7 @@ describe('studio/engine-deploy', () => {
 
     await studioAgent.clickOn('[data-test--deploy-explorer-mode="file"]');
     await studioAgent.assertVisible(label('order-process.bpmn'), TIMEOUT);
+    await studioAgent.assertVisible('[data-test--deploy-explorer-rescan]', TIMEOUT);
   });
 
   it('builds a plan: Enter adds without renaming, dependencies are added, Deploy is blocked offline', async () => {
@@ -79,9 +80,14 @@ describe('studio/engine-deploy', () => {
     await studioAgent.assertVisible(planRow('discount-rules.dmn'), TIMEOUT);
     await studioAgent.assertNotVisible(planRow('draft-process.bpmn'));
 
+    await studioAgent.clickOn('[data-test--deploy-explorer-mode="project"]');
+    await studioAgent.assertVisible('[data-test--deploy-folder-include]', TIMEOUT);
+    await studioAgent.clickOn('[data-test--deploy-explorer-mode="file"]');
+    await studioAgent.assertVisible(planRow('order-process.bpmn'), TIMEOUT);
+
     await studioAgent.assertVisible('[data-test--deploy-blocked-reason]', TIMEOUT);
     expect(await studioAgent.getText('[data-test--deploy-blocked-reason]')).toContain('No Engine is selected.');
-    expect(await studioAgent.getAttribute('[data-test--deploy-button]', 'disabled')).toBeTruthy();
+    await studioAgent.assertVisible('[data-test--deploy-button].editor-toolbar__button--disabled', TIMEOUT);
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 

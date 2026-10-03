@@ -9,7 +9,7 @@ import { beforeEach, describe, it } from 'vitest';
 function createManager(): CategoryManager {
   const manager = new CategoryManager();
   manager.registerCategory({ id: 'design', label: 'Design', icon: 'ph-pencil', placement: 'main', order: 1 });
-  manager.registerCategory({ id: 'measure', label: 'Measure', icon: 'ph-chart-line', placement: 'main', order: 2 });
+  manager.registerCategory({ id: 'discover', label: 'Discover', icon: 'ph-chart-line', placement: 'main', order: 2 });
   manager.registerPage({ id: 'design/workspace', categoryId: 'design', label: 'Workspace', icon: 'x', order: 1 });
   manager.registerPage({ id: 'design/source', categoryId: 'design', label: 'Source', icon: 'x', order: 2 });
   return manager;
@@ -27,7 +27,7 @@ describe('CategoryManager', () => {
     assert.throws(() => manager.registerPage({ id: 'nope/page', categoryId: 'nope', label: 'x', icon: 'x', order: 0 }));
     assert.throws(() => manager.registerPage({ id: 'design', categoryId: 'design', label: 'x', icon: 'x', order: 0 }));
     assert.throws(() =>
-      manager.registerPage({ id: 'measure/page', categoryId: 'design', label: 'x', icon: 'x', order: 0 }),
+      manager.registerPage({ id: 'discover/page', categoryId: 'design', label: 'x', icon: 'x', order: 0 }),
     );
     assert.throws(() =>
       manager.registerPage({ id: 'design/workspace', categoryId: 'design', label: 'x', icon: 'x', order: 0 }),
@@ -42,7 +42,7 @@ describe('CategoryManager', () => {
     manager.setShowEmptyCategories(true);
     assert.deepStrictEqual(
       manager.getVisibleCategories().map((category) => category.id),
-      ['design', 'measure'],
+      ['design', 'discover'],
     );
   });
 
@@ -52,9 +52,9 @@ describe('CategoryManager', () => {
 
     manager.activatePage('design/source');
     manager.setShowEmptyCategories(true);
-    manager.activateCategory('measure');
+    manager.activateCategory('discover');
     assert.strictEqual(manager.getActivePageId(), null);
-    assert.strictEqual(manager.getActiveCategoryId(), 'measure');
+    assert.strictEqual(manager.getActiveCategoryId(), 'discover');
 
     manager.activateCategory('design');
     assert.strictEqual(manager.getActivePageId(), 'design/source');
@@ -62,7 +62,7 @@ describe('CategoryManager', () => {
 
   it('does nothing when activating a hidden category (shortcut on a hidden category)', () => {
     manager.activateCategory('design');
-    manager.activateCategory('measure');
+    manager.activateCategory('discover');
     assert.strictEqual(manager.getActiveCategoryId(), 'design');
     assert.strictEqual(manager.getActivePageId(), 'design/workspace');
   });
@@ -150,10 +150,10 @@ describe('CategoryManager page patterns and fallbacks', () => {
 
   it('falls back to the fallback page when the only page of the active category is removed', () => {
     const manager = createManager();
-    manager.registerPage({ id: 'measure/insights', categoryId: 'measure', label: 'Insights', icon: 'x', order: 1 });
-    manager.activatePage('measure/insights');
-    manager.unregisterPage('measure/insights');
-    assert.ok(!manager.isCategoryVisible('measure'));
+    manager.registerPage({ id: 'discover/insights', categoryId: 'discover', label: 'Insights', icon: 'x', order: 1 });
+    manager.activatePage('discover/insights');
+    manager.unregisterPage('discover/insights');
+    assert.ok(!manager.isCategoryVisible('discover'));
     manager.ensureActivePage('design/workspace');
     assert.strictEqual(manager.getActivePageId(), 'design/workspace');
   });
@@ -161,7 +161,7 @@ describe('CategoryManager page patterns and fallbacks', () => {
   it('leaves a hidden empty active category for the fallback page', () => {
     const manager = createManager();
     manager.setShowEmptyCategories(true);
-    manager.activateCategory('measure');
+    manager.activateCategory('discover');
     assert.strictEqual(manager.getActivePageId(), null);
     manager.ensureActivePage('design/workspace');
     assert.strictEqual(manager.getActivePageId(), null);
