@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
 import type DmnDocumentModel from '#modules/dmn-editor/DmnDocumentModel';
 
 import { buildDmnSanitizerFixCommands } from '../../dmn-core/sanitizer/DmnSanitizerFixer';
@@ -74,10 +75,13 @@ export function initializeDmnSanitizerCommands(bifrost: Bifrost): void {
     const treeview = await bifrost.views.waitForAndGetById('dmnEditorInspector');
     await treeview.waitForAndSelectEntriesByMetadataFilter((metadata) => metadata.action === 'show-sanitizer');
 
-    const selectedEntry = document.querySelector(
-      treeview.domSelector + ' .treeview__entry--selected',
-    ) as HTMLElement | null;
-    selectedEntry?.click();
+    const selectedEntrySelector = treeview.domSelector + ' .treeview__entry--selected';
+    // The selection is rendered asynchronously; clicking before the entry exists would silently skip the content switch.
+    await waitForAcceptance(
+      () => document.querySelector(selectedEntrySelector) != null,
+      'Selected sanitizer entry did not appear in the inspector.',
+    );
+    (document.querySelector(selectedEntrySelector) as HTMLElement).click();
   };
 
   bifrost.commands.register('dmn.sanitizer.showInInspector', showInInspector, {

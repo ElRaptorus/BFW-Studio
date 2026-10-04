@@ -1023,6 +1023,8 @@ describe('dmn/elements', () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    // The pane group persists between tests; the Decision pane lives in the property group.
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.switchToPaneGroup('documentation');
     await studioAgent.waitForPaneVisible(DOCUMENTATION_PANE);
@@ -1034,6 +1036,8 @@ describe('dmn/elements', () => {
     await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
+    // The pane group persists between tests; the Decision pane lives in the property group.
+    await studioAgent.switchToPaneGroup('property');
     await studioAgent.selectDmnElementByIdAndWaitForElement('Decision_Discount', DECISION_PANE, ASSERT_VISIBLE_TIMEOUT);
     await studioAgent.switchToPaneGroup('documentation');
     await studioAgent.waitForPaneVisible(DOCUMENTATION_PANE);

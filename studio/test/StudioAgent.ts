@@ -302,6 +302,12 @@ export class StudioAgent {
   }
 
   async stopAndRecordErrors(warnAboutAppNotRunning: boolean = true): Promise<void> {
+    // Every finished test sets a state in its afterEach hook. A missing state at stop time means the setup
+    // (beforeAll) crashed before any test completed, so its screenshot, logs and data backup must be kept.
+    if (this.testContext.state == null) {
+      this.testContext = { ...this.testContext, state: 'failed' };
+    }
+
     if (this.appIsRunning()) {
       await this.recordErrors();
       await this.stopApp();
@@ -607,15 +613,27 @@ export class StudioAgent {
   }
 
   async openDirectoryAsSolution(directory: string): Promise<void> {
-    await this.openViaCommandSearch('Test: Open URI as solution');
-    await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
+    try {
+      await this.typeSolutionUriIntoOpenDialog(`file://${directory}`);
+    } catch {
+      // A freshly started app can swallow the first keystrokes; dismiss leftovers and try once more.
+      await this.sendKeyboardInput(['Escape']);
+      await this.pause(500);
+      await this.typeSolutionUriIntoOpenDialog(`file://${directory}`);
+    }
 
-    await this.sendKeyboardInput([...`file://${directory}`.split(''), 'enter'], false);
-
-    await this.assertVisible('[data-test--tree="std/file-explorer/open-solution"]', ASSERT_VISIBLE_TIMEOUT);
     await this.waitForNotVisible(
       '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--loading-indicator',
     );
+  }
+
+  private async typeSolutionUriIntoOpenDialog(uri: string): Promise<void> {
+    await this.openViaCommandSearch('Test: Open URI as solution');
+    await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
+
+    await this.sendKeyboardInput([...uri.split(''), 'enter'], false);
+
+    await this.assertVisible('[data-test--tree="std/file-explorer/open-solution"]', ASSERT_VISIBLE_TIMEOUT);
   }
 
   async openSolutionFileFromFixtures(solutionFilename: string): Promise<void> {

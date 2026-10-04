@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
 import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 
 import { buildSanitizerFixCommands } from '../../bpmn-core/sanitizer/BpmnSanitizerFixer';
@@ -53,10 +54,13 @@ export function initializeSanitizerCommands(bifrost: Bifrost): void {
     const treeview = await bifrost.views.waitForAndGetById('editorInspector');
     await treeview.waitForAndSelectEntriesByMetadataFilter((metadata) => metadata.action === 'show-sanitizer');
 
-    const selectedEntry = document.querySelector(
-      treeview.domSelector + ' .treeview__entry--selected',
-    ) as HTMLElement | null;
-    selectedEntry?.click();
+    const selectedEntrySelector = treeview.domSelector + ' .treeview__entry--selected';
+    // The selection is rendered asynchronously; clicking before the entry exists would silently skip the content switch.
+    await waitForAcceptance(
+      () => document.querySelector(selectedEntrySelector) != null,
+      'Selected sanitizer entry did not appear in the inspector.',
+    );
+    (document.querySelector(selectedEntrySelector) as HTMLElement).click();
   };
 
   bifrost.commands.register('bpmn.sanitizer.showInInspector', showInInspector, {
