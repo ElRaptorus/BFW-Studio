@@ -9,6 +9,7 @@ import { EditorToolbar } from '#components/editor/EditorToolbar';
 import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
 import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
 import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarMenu } from '#components/editor/EditorToolbarMenu';
 import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import { EditorToolbarText } from '#components/editor/EditorToolbarText';
 import { EditorToolbarTextInput } from '#components/editor/EditorToolbarTextInput';
@@ -18,6 +19,7 @@ import { useEditorModel } from '#modules/engine-workspace/hooks/useEditorModel';
 
 import React, { useMemo, useState } from 'react';
 
+import { DEPLOY_PACKAGES_MENU_ID } from '../commands';
 import { DeployPlanFilesTable, buildDeployFileRows, filterDeployFileRows } from '../components/DeployPlanFilesTable';
 import { DeployPlanFoldersTable } from '../components/DeployPlanFoldersTable';
 import '../engine-deploy.scss';
@@ -82,9 +84,26 @@ export default function DeployPlanRenderer(props: EditorDocumentRendererProps): 
 
       <EditorToolbar>
         <EditorToolbarLeft>
+          <div className="form-check form-switch deploy-plan__group-switch">
+            <input
+              id="deploy-group-by-folders"
+              className="form-check-input"
+              type="checkbox"
+              role="switch"
+              checked={folderMode}
+              data-test--deploy-group-by-folders
+              onChange={(event) =>
+                void studio.commands.executeCommand('engine.deploy.setExplorerMode', [
+                  event.target.checked ? 'project' : 'file',
+                ])
+              }
+            />
+            <label htmlFor="deploy-group-by-folders">Project View</label>
+          </div>
           <EditorToolbarText
             studio={studio}
-            label={`${items.length} files · ${includedCount} selected${filtered ? ` · ${shownCount} shown by filter` : ''}`}
+            tooltip="Checked entries are sent to the Engine by Deploy. Unchecked entries stay in the plan but are skipped."
+            label={`${items.length} files · ${includedCount} selected for deployment${filtered ? ` · ${shownCount} shown by filter` : ''}`}
           />
         </EditorToolbarLeft>
         <EditorToolbarCenter>
@@ -98,6 +117,13 @@ export default function DeployPlanRenderer(props: EditorDocumentRendererProps): 
             }
             command="engine.deploy.addMissingDependencies"
             dataTestId="deploy-add-missing-dependencies"
+          />
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-minus-square"
+            tooltip="Remove the selected files from the plan (files and Engine stay untouched)"
+            command="engine.deploy.removeSelectedFromPlan"
+            dataTestId="deploy-remove-selected"
           />
           <EditorToolbarTextInput
             studio={studio}
@@ -116,9 +142,23 @@ export default function DeployPlanRenderer(props: EditorDocumentRendererProps): 
         <EditorToolbarRight>
           <EditorToolbarButton
             studio={studio}
+            icon="ph ph-broom"
+            tooltip="Reset the plan (remove all files)"
+            command="engine.deploy.resetPlan"
+            dataTestId="deploy-reset-plan"
+          />
+          <EditorToolbarMenu
+            studio={studio}
+            icon="ph ph-package"
+            tooltip="Deploy packages"
+            menuId={DEPLOY_PACKAGES_MENU_ID}
+          />
+          <EditorToolbarButton
+            studio={studio}
             tooltip="Settings"
             icon="ph ph-gear"
-            command="std.settings.openUserSettings"
+            command="std.settings.openUserSettingsAtCategory"
+            commandArgs={['Deploy']}
           />
           {engineUrl !== '' && (
             <EditorToolbarButton
@@ -136,6 +176,14 @@ export default function DeployPlanRenderer(props: EditorDocumentRendererProps): 
             tooltip={blockedReason ?? 'Deploy the selected files'}
             command="engine.deploy.deployPlan"
             dataTestId="deploy-button"
+          />
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-question"
+            tooltip="What is Deploy?"
+            command="std.help.openToTheSide"
+            commandArgs={['deploy/plan']}
+            dataTestId="deploy-help"
           />
         </EditorToolbarRight>
       </EditorToolbar>

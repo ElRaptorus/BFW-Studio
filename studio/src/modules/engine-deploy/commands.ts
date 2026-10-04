@@ -205,6 +205,50 @@ export function registerDeployPlanCommands(bifrost: Bifrost): void {
     { enabledWhen: () => (getPlanModelIfPresent(bifrost)?.getMissingLocalDependencyUris().length ?? 0) > 0 },
   );
 
+  bifrost.commands.register(
+    'engine.deploy.removeSelectedFromPlan',
+    async () => {
+      const model = getPlanModelIfPresent(bifrost);
+      const selectedUris = [...(model?.getIncludedUris() ?? [])];
+      if (model == null || selectedUris.length === 0) {
+        return;
+      }
+      if (
+        await confirmAction(
+          bifrost,
+          'Remove Selected from Plan',
+          `Remove the ${selectedUris.length} selected ${selectedUris.length === 1 ? 'file' : 'files'} from the plan? Your files and the Engine are not touched.`,
+          'Remove',
+        )
+      ) {
+        await model.removeItems(selectedUris);
+      }
+    },
+    { enabledWhen: () => (getPlanModelIfPresent(bifrost)?.getIncludedUris().size ?? 0) > 0 },
+  );
+
+  bifrost.commands.register(
+    'engine.deploy.resetPlan',
+    async () => {
+      const model = getPlanModelIfPresent(bifrost);
+      if (model == null) {
+        return;
+      }
+      const count = model.getPlanUris().length;
+      if (
+        await confirmAction(
+          bifrost,
+          'Reset Deploy Plan',
+          `Remove all ${count} ${count === 1 ? 'file' : 'files'} from the plan? Saved packages are not affected.`,
+          'Reset',
+        )
+      ) {
+        await model.replaceItems([]);
+      }
+    },
+    { enabledWhen: () => (getPlanModelIfPresent(bifrost)?.getPlanUris().length ?? 0) > 0 },
+  );
+
   bifrost.commands.register('engine.deploy.refreshPlan', async () => {
     await getPlanModelIfPresent(bifrost)?.refresh();
   });

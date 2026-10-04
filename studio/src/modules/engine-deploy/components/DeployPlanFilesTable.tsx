@@ -124,6 +124,7 @@ export function DeployPlanFilesTable(props: {
         <input
           type="checkbox"
           aria-label="Include all shown files"
+          title="Include or exclude all shown files from the deployment"
           checked={table.getIsAllRowsSelected()}
           ref={(input) => {
             if (input) {
@@ -138,6 +139,7 @@ export function DeployPlanFilesTable(props: {
         <input
           type="checkbox"
           aria-label={`Include ${row.original.fileName}`}
+          title="Include in the deployment"
           checked={row.getIsSelected()}
           disabled={!row.getCanSelect()}
           onChange={row.getToggleSelectedHandler()}
@@ -229,14 +231,14 @@ export function DeployPlanFilesTable(props: {
       cell: ({ row }) => (
         <button
           type="button"
-          className="btn btn-sm btn-secondary"
+          className="btn btn-sm btn-secondary deploy-plan__icon-button"
           title="Remove from plan"
           onClick={(event) => {
             event.stopPropagation();
             void model.removeItem(row.original.item.uri);
           }}
         >
-          <Icon id="ph ph-x" />
+          <Icon id="ph ph-minus-circle" />
         </button>
       ),
       meta: { disableSorting: true },

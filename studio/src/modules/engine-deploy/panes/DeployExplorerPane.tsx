@@ -1,6 +1,7 @@
-import type { Bifrost } from '#bifrost/Bifrost';
+import { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
-import { showContextMenu } from '#components/ContextMenuFunctions';
 import { Icon } from '#components/Icon';
 import { Tree } from '#components/Tree/Tree';
 import { Pane } from '#components/panes/Pane';
@@ -12,36 +13,34 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { DeployExplorerMode } from '../analysis/buildDeployExplorerTree';
 import { buildDeployExplorerTree } from '../analysis/buildDeployExplorerTree';
-import {
-  DEPLOY_EXPLORER_VIEW_ID,
-  DEPLOY_PACKAGES_MENU_ID,
-  getPlanModelIfPresent,
-  onExplorerRescanRequested,
-} from '../commands';
+import { DEPLOY_EXPLORER_VIEW_ID, getPlanModelIfPresent, onExplorerRescanRequested } from '../commands';
 
 export const paneProvider: PaneProvider = {
-  getPaneTitle: () => 'Deploy Explorer',
+  getPaneTitle: getPaneTitle,
   Pane: PaneFull,
   PaneContent: PaneContent,
 };
 
+/** Like the File Explorer, the pane is titled with the name of the opened folder or solution. */
+function getPaneTitle(
+  _editorDocument: EditorDocument,
+  _editorDocumentModel: EditorDocumentModel,
+  studio: Bifrost,
+): string {
+  return Bifrost.cast(studio).fileExplorerView.getViewData().solution?.label ?? 'Deploy Explorer';
+}
+
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
   return (
     <Pane classNames="app-layout__full-height-pane">
-      <PaneHeader studio={props.studio} title="Deploy Explorer" paneId={props.paneId} collapsed={props.collapsed}>
+      <PaneHeader
+        studio={props.studio}
+        title={getPaneTitle(props.editorDocument, props.editorDocumentModel, props.studio)}
+        paneId={props.paneId}
+        collapsed={props.collapsed}
+      >
         {props.collapsed !== true && (
           <>
-            <a
-              className="pane-header__icon"
-              title="Deploy packages"
-              data-bs-toggle="tooltip"
-              tabIndex={0}
-              href="#"
-              data-test--deploy-packages-menu
-              onClick={(event) => void showContextMenu(event, DEPLOY_PACKAGES_MENU_ID)}
-            >
-              <Icon id="ph ph-package" />
-            </a>
             <PaneHeaderIcon
               studio={props.studio}
               icon="ph ph-arrows-clockwise"
@@ -61,9 +60,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost: Bifrost = props.studio;
   const planModel = getPlanModelIfPresent(bifrost);
   const mode: DeployExplorerMode = planModel?.getExplorerMode() ?? 'file';
-  const setMode = (nextMode: DeployExplorerMode): void => {
-    void bifrost.commands.executeCommand('engine.deploy.setExplorerMode', [nextMode]);
-  };
   const [entries, setEntries] = useState<SolutionModelEntry[]>([]);
   const [scanRevision, setScanRevision] = useState(0);
   useEffect(() => {
@@ -108,24 +104,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   return (
     <div className="deploy-explorer">
-      <div className="deploy-explorer__toolbar" role="group" aria-label="Explorer mode">
-        <button
-          type="button"
-          className={`btn btn-sm ${mode === 'file' ? 'btn-primary' : 'btn-secondary'}`}
-          data-test--deploy-explorer-mode="file"
-          onClick={() => setMode('file')}
-        >
-          Files
-        </button>
-        <button
-          type="button"
-          className={`btn btn-sm ${mode === 'project' ? 'btn-primary' : 'btn-secondary'}`}
-          data-test--deploy-explorer-mode="project"
-          onClick={() => setMode('project')}
-        >
-          Folders
-        </button>
-      </div>
       {solution == null ? (
         <p className="deploy-explorer__empty">Open a solution to choose files to deploy.</p>
       ) : (

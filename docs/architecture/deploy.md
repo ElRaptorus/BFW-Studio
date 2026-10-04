@@ -12,6 +12,7 @@ The `engine-deploy` module owns the Deploy category's page `deploy/plan`. The us
 | Model | `models/DeployPlanDocumentModel.ts` | Session-only plan state; one document, `DEPLOY_PLAN_URI = 'deploy://plan'` |
 | Renderer | `renderers/DeployPlanRenderer.tsx` | Toolbar, blocked-reason notice, item table |
 | Panes | `panes/DeployExplorerPane.tsx`, `panes/DeployItemDetailsPane.tsx` | Read-only explorer (left); selected item details (right `property`, shown for `deploy://plan` while an item is selected) |
+| Help text | `texts/deploy-plan.md` | Help topic `deploy/plan`, registered in `onLoad`; linked from the `?` button at the far right of the plan toolbar (`std.help.openToTheSide`; the Deploy Item pane is hidden without a selection, so it cannot hold the link) |
 | Commands | `commands.ts` | See below |
 | Analysis | `analysis/*` | Pure functions, no Bifrost access |
 
@@ -52,6 +53,8 @@ The plan table shows icon, file name with the folder as a muted second line (`de
 | `engine.deploy.addMissingDependencies` | Add the `localNotInPlan` dependencies |
 | `engine.deploy.refreshPlan` | Rescan and re-fetch |
 | `engine.deploy.rescanExplorer` | Rescan the solution in the Explorer (module-local event, `onExplorerRescanRequested`) |
+| `engine.deploy.removeSelectedFromPlan` | Confirm, then drop the checked (included) files from the plan; local files and the Engine are untouched |
+| `engine.deploy.resetPlan` | Confirm, then empty the plan (`replaceItems([])`); toolbar broom button next to Add missing dependencies |
 | `engine.deploy.setExplorerMode(mode)` | Set `file` or `project` on the plan model (shared by Explorer and plan page) |
 | `engine.deploy.loadPackage(name)` | Replace the plan with a package; vanished files are skipped with a warning |
 | `engine.deploy.savePlanAsPackage` | Prompt for a name (overwrite is confirmed) and save the plan |
@@ -67,7 +70,7 @@ The header Deploy button is hidden on `deploy/*` (`ENGINE_HEADER_DEPLOY_PAGES`).
 
 ## Explorer
 
-The pane header holds a packages dropdown icon and the rescan icon; the pane toolbar holds the Files / Folders toggle. The mode lives on `DeployPlanDocumentModel` (`getExplorerMode` / `setExplorerMode`, view state in metadata) and also switches the plan page between the file view and the folder view. The plan's own Refresh is in the plan toolbar. Both modes show the folder tree below the solution roots (a single root is flattened). **Files** adds the model files as leaves (invalid entries carry an error badge); **Project** shows folders only, each with a model-count badge. Items carry `DeployExplorerMetadata` (`kind`, `uri`, `modelUris`); folder metadata has a `uri` because context-menu selection compares metadata by `uri`. Double-click and Enter add to the plan; the context menus are `engine/deploy-explorer/item` and `engine/deploy-explorer/multi-selection`.
+The pane is titled with the solution (or folder) name like the File Explorer and its header holds the rescan icon. The mode is the plan toolbar's "Group by folders" switch (left of the counter); the packages dropdown (`EditorToolbarMenu`) sits left of Settings in the plan toolbar. The mode lives on `DeployPlanDocumentModel` (`getExplorerMode` / `setExplorerMode`, view state in metadata) and also switches the plan page between the file view and the folder view. The plan's own Refresh is in the plan toolbar. Both modes show the folder tree below the solution roots (a single root is flattened). **Files** adds the model files as leaves (invalid entries carry an error badge); **Project** shows folders only, each with a model-count badge. Items carry `DeployExplorerMetadata` (`kind`, `uri`, `modelUris`); folder metadata has a `uri` because context-menu selection compares metadata by `uri`. Double-click and Enter add to the plan; the context menus are `engine/deploy-explorer/item` and `engine/deploy-explorer/multi-selection`.
 
 ## Plan page
 
@@ -79,7 +82,7 @@ The pane header holds a packages dropdown icon and the rescan icon; the pane too
 
 ## Packages
 
-Setting `engine.deploy.packages` (scope `solution`): `{ name, files[] }[]`, files relative to the folder of the `.bfwsln` (or the opened folder). Reads and writes pass the first project root as the resource so the value lands in the Solution layer. The Explorer dropdown is the menu `engine/deploy-explorer/packages`, rebuilt from the setting each time it opens (Load entries, Save Plan as Package…, Delete Package submenu). Pure helpers: `analysis/deployPackages.ts`.
+Setting `engine.deploy.packages` (scope `solution`): `{ name, files[] }[]`, files relative to the folder of the `.bfwsln` (or the opened folder). Reads and writes pass the first project root as the resource so the value lands in the Solution layer. The plan toolbar dropdown (`EditorToolbarMenu`, flat menus only — it cannot render submenus) is the menu `engine/deploy-explorer/packages`, rebuilt from the setting each time it opens (Load entries, Save Plan as Package…, one Delete entry per package). Pure helpers: `analysis/deployPackages.ts`.
 
 ## Keybinding scope
 
@@ -87,4 +90,4 @@ The File Explorer tree keys (Enter and F2 rename, Backspace and Delete) are boun
 
 ## Test hooks
 
-`data-test--deploy-button`, `data-test--deploy-add-missing-dependencies`, `data-test--deploy-blocked-reason`, plan rows `data-test--table-row="<file uri>"` (folder view: folder path), `data-test--deploy-item-status` (file rows), `data-test--deploy-folder-status` (folder rows), `data-test--deploy-folder-include="<folder>"`, `data-test--deploy-explorer-mode="file|project"`, `data-test--deploy-explorer-rescan`, `data-test--deploy-packages-menu`, tree `data-test--tree="engine/deploy-explorer"`. Tests: `test/unit/engine-deploy/`, `test/integration/deploy/engine-deploy.test.ts`.
+`data-test--deploy-button`, `data-test--deploy-add-missing-dependencies`, `data-test--deploy-blocked-reason`, plan rows `data-test--table-row="<file uri>"` (folder view: folder path), `data-test--deploy-item-status` (file rows), `data-test--deploy-folder-status` (folder rows), `data-test--deploy-folder-include="<folder>"`, `data-test--deploy-group-by-folders` (toolbar switch, mode `file`/`project`), `data-test--deploy-reset-plan`, `data-test--deploy-explorer-rescan`, tree `data-test--tree="engine/deploy-explorer"`. Tests: `test/unit/engine-deploy/`, `test/integration/deploy/engine-deploy.test.ts`.

@@ -33,30 +33,24 @@ function buildPackagesMenu(bifrost: Bifrost): Menu {
           command: 'engine.deploy.loadPackage',
           commandArgs: [deployPackage.name],
         }));
-  const deleteItems: Menu =
-    packages.length === 0
-      ? []
-      : [
-          {
-            type: 'menu',
-            label: 'Delete Package',
-            submenu: packages.map((deployPackage) => ({
-              type: 'command',
-              label: deployPackage.name,
-              command: 'engine.deploy.deletePackage',
-              commandArgs: [deployPackage.name],
-            })),
-          },
-        ];
+  // The editor toolbar dropdown renders flat menus only, so no submenu here.
+  const deleteItems: Menu = packages.map((deployPackage) => ({
+    type: 'command',
+    label: `Delete '${deployPackage.name}'`,
+    command: 'engine.deploy.deletePackage',
+    commandArgs: [deployPackage.name],
+  }));
   return [
     ...loadItems,
     { type: 'divider' },
     { type: 'command', label: 'Save Plan as Package…', command: 'engine.deploy.savePlanAsPackage' },
-    ...deleteItems,
+    ...(deleteItems.length > 0 ? [{ type: 'divider' } as const, ...deleteItems] : []),
   ];
 }
 
 export function onLoad(bifrost: Bifrost): void {
+  bifrost.helpTexts.registerHelpText('deploy/plan', require('./texts/deploy-plan.md'));
+
   bifrost.settings.register({
     [DEPLOY_PACKAGES_SETTING]: {
       category: 'Deploy',

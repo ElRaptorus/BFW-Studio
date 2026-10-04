@@ -123,7 +123,7 @@ export function DmnSanitizerInspector(props: DmnSanitizerInspectorProps): React.
             className="sanitizer-inspector__header-btn"
             type="button"
             data-test--sanitizer-help-btn
-            onClick={() => studio.commands.executeCommand('help.openToTheSide', ['dmn/sanitizer'])}
+            onClick={() => studio.commands.executeCommand('std.help.openToTheSide', ['dmn/sanitizer'])}
             title="What is this?"
           >
             <i className="ph ph-question" />

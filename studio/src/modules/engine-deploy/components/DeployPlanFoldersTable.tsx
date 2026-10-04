@@ -144,11 +144,11 @@ export function DeployPlanFoldersTable(props: {
       cell: ({ row }) => (
         <button
           type="button"
-          className="btn btn-sm btn-secondary"
+          className="btn btn-sm btn-secondary deploy-plan__icon-button"
           title="Remove the folder's files from the plan"
           onClick={() => void model.removeItems(row.original.fileUris)}
         >
-          <Icon id="ph ph-x" />
+          <Icon id="ph ph-minus-circle" />
         </button>
       ),
       meta: { disableSorting: true },

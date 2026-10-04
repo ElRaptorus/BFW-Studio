@@ -56,12 +56,12 @@ describe('studio/engine-deploy', () => {
       await studioAgent.assertVisible(label(fileName), TIMEOUT);
     }
 
-    await studioAgent.clickOn('[data-test--deploy-explorer-mode="project"]');
+    await studioAgent.executeCommand('engine.deploy.setExplorerMode', ['project']);
     await studioAgent.assertNotVisible(
       '[data-test--tree="engine/deploy-explorer"] [data-test--tree-entry-type="file"]',
     );
 
-    await studioAgent.clickOn('[data-test--deploy-explorer-mode="file"]');
+    await studioAgent.executeCommand('engine.deploy.setExplorerMode', ['file']);
     await studioAgent.assertVisible(label('order-process.bpmn'), TIMEOUT);
     await studioAgent.assertVisible('[data-test--deploy-explorer-rescan]', TIMEOUT);
   });
@@ -80,9 +80,9 @@ describe('studio/engine-deploy', () => {
     await studioAgent.assertVisible(planRow('discount-rules.dmn'), TIMEOUT);
     await studioAgent.assertNotVisible(planRow('draft-process.bpmn'));
 
-    await studioAgent.clickOn('[data-test--deploy-explorer-mode="project"]');
+    await studioAgent.clickOn('[data-test--deploy-group-by-folders]');
     await studioAgent.assertVisible('[data-test--deploy-folder-include]', TIMEOUT);
-    await studioAgent.clickOn('[data-test--deploy-explorer-mode="file"]');
+    await studioAgent.clickOn('[data-test--deploy-group-by-folders]');
     await studioAgent.assertVisible(planRow('order-process.bpmn'), TIMEOUT);
 
     await studioAgent.assertVisible('[data-test--deploy-blocked-reason]', TIMEOUT);
