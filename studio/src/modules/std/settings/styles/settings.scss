@@ -52,6 +52,13 @@
   padding: 4px 8px;
 }
 
+// The native dropdown popup takes its colors from the select/option elements, not from the transparent control.
+.settings-gui__scope-select,
+.settings-gui__scope-select option {
+  background-color: var(--theme-select-bg);
+  color: var(--theme-select-fg);
+}
+
 .settings-gui__scope-button.is-active {
   font-weight: 600;
 }

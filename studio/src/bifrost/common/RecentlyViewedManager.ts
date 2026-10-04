@@ -1,5 +1,4 @@
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
-import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 import type { ISerializable, SerializedData } from '../contracts/SerializableTypes';
 
@@ -60,7 +59,11 @@ export class RecentlyViewedManager extends AbstractEmitter implements ISerializa
 
   updateCurrentItem(type: string, item: any): void {
     const existingHistory = this.recentlyViewed[type];
-    assertNotNull(existingHistory, 'existingHistory');
+    // A blurred document may never have been recorded (e.g. restored session, history not deserialized).
+    // Then there is no current item to update; the caller records the newly focused item next.
+    if (existingHistory == null) {
+      return;
+    }
 
     const newItemAsString = JSON.stringify(item);
     const newItem: any = JSON.parse(newItemAsString);
