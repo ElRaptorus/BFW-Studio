@@ -1,7 +1,7 @@
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 
 import type DmnModelerComponentAdapter from '../dmn-core/DmnModelerComponentAdapter';
-import { DmnValidator, type DmnViolation } from '../dmn-core/validation/DmnValidator';
+import { type DmnImportIndex, DmnValidator, type DmnViolation } from '../dmn-core/validation/DmnValidator';
 
 export const EVENT_DMN_VALIDATION_UPDATED = 'EVENT_DMN_VALIDATION_UPDATED';
 
@@ -15,6 +15,7 @@ export default class DmnValidationOverlayManager extends AbstractEmitter {
   private overlayIds: string[] = [];
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private enabled: boolean = true;
+  private importIndex: DmnImportIndex | undefined;
 
   constructor(adapter: DmnModelerComponentAdapter) {
     super();
@@ -47,6 +48,12 @@ export default class DmnValidationOverlayManager extends AbstractEmitter {
     }
   }
 
+  /** `undefined` means "no solution": the import resolution rules are skipped. */
+  setImportIndex(importIndex: DmnImportIndex | undefined): void {
+    this.importIndex = importIndex;
+    this.requestValidation();
+  }
+
   requestValidation(): void {
     if (!this.enabled) {
       return;
@@ -77,7 +84,7 @@ export default class DmnValidationOverlayManager extends AbstractEmitter {
         return;
       }
 
-      this.violations = this.validator.validate(definitions);
+      this.violations = this.validator.validate(definitions, this.importIndex);
       this.updateOverlays();
       this.emit(EVENT_DMN_VALIDATION_UPDATED, [this.violations]);
     } catch {

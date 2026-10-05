@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { type CallbackInvocationPayload, PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
+import type { PluginApiNamespaceContext } from '#bifrost/contracts/PluginHostTypes';
 
 import type {
   DmnElementDetailSnapshot,
@@ -8,7 +9,6 @@ import type {
 } from '@elraptorus/bfw_studio_sdk';
 import { PluginDmnOverlayPosition } from '@elraptorus/bfw_studio_sdk';
 
-import type { PluginHost } from '../../bifrost/electron-renderer/plugin-host/PluginHost';
 import type DmnModelerComponentAdapter from '../dmn-core/DmnModelerComponentAdapter';
 
 const FACTORY_TIMEOUT_MS = 500;
@@ -37,7 +37,7 @@ interface TrackedOverlay {
  * a single component, instantiated once by `DmnApiBridge`.
  */
 export class DmnPluginOverlayManager {
-  private pluginHost: PluginHost;
+  private pluginHost: PluginApiNamespaceContext['pluginHost'];
   private bifrost: Bifrost;
   private factories = new Map<string, RegisteredFactory>();
   private cachedFingerprintByUri = new Map<string, string>();
@@ -46,7 +46,7 @@ export class DmnPluginOverlayManager {
 
   private refreshRequestCallback: (() => void) | null = null;
 
-  constructor(pluginHost: PluginHost, bifrost: Bifrost) {
+  constructor(pluginHost: PluginApiNamespaceContext['pluginHost'], bifrost: Bifrost) {
     this.pluginHost = pluginHost;
     this.bifrost = bifrost;
   }

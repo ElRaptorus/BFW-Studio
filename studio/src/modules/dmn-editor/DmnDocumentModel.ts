@@ -6,10 +6,10 @@ import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { dmnModelerModuleRegistry } from '#modules/dmn-core/DmnModelerModuleRegistry';
+import type { SolutionModelEntry } from '#modules/solution-models/types';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 
-import { PLUGIN_DMN_OVERLAY_MANAGER_KEY } from '../../bifrost/electron-renderer/plugin-host/DmnApiBridge';
 import DmnModelerComponentAdapter, {
   type DmnView,
   type DmnViewType,
@@ -22,6 +22,8 @@ import DmnDocumentElementAccess, { EVENT_DMN_ELEMENT_PROPERTY_UPDATED } from './
 import DmnDocumentSelection, { EVENT_DMN_SELECTION_ELEMENTS_UPDATED } from './DmnDocumentSelection';
 import type { DmnPluginOverlayManager } from './DmnPluginOverlayManager';
 import DmnValidationOverlayManager from './DmnValidationOverlayManager';
+import { buildDmnImportIndex } from './buildDmnImportIndex';
+import { PLUGIN_DMN_OVERLAY_MANAGER_KEY } from './plugin-api/DmnApiBridge';
 
 const MERGE_CONFLICT_MARKER_REGEX = /^<{7}\s/m;
 
@@ -130,9 +132,13 @@ export default class DmnDocumentModel extends EditorDocumentModel {
       studio.events.on('pluginDmnOverlayFactoriesChanged', () => {
         this.refreshPluginOverlays();
       }),
+      studio.events.on('solutionChanged', () => {
+        void this.refreshImportIndex();
+      }),
     );
 
     this.onceInteractive(() => {
+      void this.refreshImportIndex();
       this.toggleGrid();
       this.toggleMinimap();
       this.refreshPluginOverlays();
@@ -214,6 +220,25 @@ export default class DmnDocumentModel extends EditorDocumentModel {
     this.validationManager.requestValidation();
   }
 
+  /** Rebuilds the solution import index (namespace → element ids) for the import validation rules. */
+  async refreshImportIndex(): Promise<void> {
+    try {
+      const entries =
+        this.studio.solution.getSolution() == null
+          ? undefined
+          : await this.studio.commands.executeCommand<Promise<SolutionModelEntry[]>>('solution.models.scan', []);
+      // The document may have been closed while the scan ran.
+      this.validationManager?.setImportIndex(entries == null ? undefined : buildDmnImportIndex(entries));
+    } catch (error) {
+      this.log('import index refresh failed: %O', error);
+    }
+  }
+
+  /** Other files of the solution may have changed while this tab was in the background. */
+  onEditorDocumentDidFocus(): void {
+    void this.refreshImportIndex();
+  }
+
   onEditorDocumentWillSave(willCloseAfterSave = false): void {
     this.watcherDisposable?.dispose();
     if (!willCloseAfterSave && this.studio.env.isMac) {
@@ -226,6 +251,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
       return;
     }
     this.originalXml = this.xml = this.getCurrentData();
+    void this.refreshImportIndex();
     this.updateMetadata({
       errorOnReloadingFile: null,
       fileChangedFromOutside: false,

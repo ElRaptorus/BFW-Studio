@@ -14,10 +14,13 @@ import { initializeDmnSanitizerCommands } from './initializers/initializeDmnSani
 import { initializeDmnSettings } from './initializers/initializeDmnSettings';
 import DmnMergeResolver from './merge/DmnMergeResolver';
 import { DmnEditorDocumentInspector } from './panes/inspector/DmnEditorDocumentInspector';
+import { DmnApiBridge } from './plugin-api/DmnApiBridge';
 
 export const DMN_DOCUMENT_TYPE = 'dmn';
 
 export function onLoad(bifrost: Bifrost): void {
+  bifrost.plugins.registerApiNamespace((context) => new DmnApiBridge(bifrost, context));
+
   bifrost.editors.registerDocumentType(DMN_DOCUMENT_TYPE, {
     page: 'design/workspace',
     uriMatch: /\.dmn$/,

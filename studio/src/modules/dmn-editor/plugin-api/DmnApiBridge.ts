@@ -1,9 +1,23 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import type { BifrostStudioManifest } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { CallbackInvocationPayload, RegisterCallbackPayload } from '#bifrost/contracts/PluginHostProtocol';
 import { PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
+import type {
+  PluginApiNamespace,
+  PluginApiNamespaceContext,
+  PluginCallbackGroup,
+} from '#bifrost/contracts/PluginHostTypes';
 import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '#bifrost/contracts/internal/EditorEvents';
+import type DmnModelerComponentAdapter from '#modules/dmn-core/DmnModelerComponentAdapter';
+import {
+  EVENT_DMN_ADAPTER_SELECTION_CHANGED,
+  EVENT_DMN_ADAPTER_VIEW_CHANGED,
+  EVENT_DMN_ADAPTER_XML_CHANGED,
+} from '#modules/dmn-core/DmnModelerComponentAdapter';
+import { pluginDmnContributionStore } from '#modules/dmn-core/PluginDmnContributionStore';
+import { pluginDmnModuleLoader } from '#modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
 
 import type {
   DmnElementDetailSnapshot,
@@ -17,18 +31,9 @@ import type {
   PluginDmnOverlay,
 } from '@elraptorus/bfw_studio_sdk';
 
-import type DmnModelerComponentAdapter from '../../../modules/dmn-core/DmnModelerComponentAdapter';
-import {
-  EVENT_DMN_ADAPTER_SELECTION_CHANGED,
-  EVENT_DMN_ADAPTER_VIEW_CHANGED,
-  EVENT_DMN_ADAPTER_XML_CHANGED,
-} from '../../../modules/dmn-core/DmnModelerComponentAdapter';
-import { pluginDmnContributionStore } from '../../../modules/dmn-core/PluginDmnContributionStore';
-import { pluginDmnModuleLoader } from '../../../modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
-import type DmnDocumentModel from '../../../modules/dmn-editor/DmnDocumentModel';
-import type { DmnElement } from '../../../modules/dmn-editor/DmnElementTypes';
-import { DmnPluginOverlayManager } from '../../../modules/dmn-editor/DmnPluginOverlayManager';
-import type { PluginHost } from './PluginHost';
+import type DmnDocumentModel from '../DmnDocumentModel';
+import type { DmnElement } from '../DmnElementTypes';
+import { DmnPluginOverlayManager } from '../DmnPluginOverlayManager';
 
 const DMN_DOCUMENT_TYPE = 'dmn';
 
@@ -55,9 +60,11 @@ interface EventSubscription {
  * operations are no-ops (or throw for mutating operations) — see the
  * DRD-gating checks on each handler.
  */
-export class DmnApiBridge {
+export class DmnApiBridge implements PluginApiNamespace {
+  readonly namespace = 'dmn';
+
   private bifrost: Bifrost;
-  private pluginHost: PluginHost;
+  private pluginHost: PluginApiNamespaceContext['pluginHost'];
 
   /** pluginName → uri → overlay tracking (direct setOverlays/clearOverlays API) */
   private pluginOverlays = new Map<string, Map<string, PluginOverlayEntry>>();
@@ -74,10 +81,11 @@ export class DmnApiBridge {
   /** Manages registered overlay factories and renders their output directly onto the DRD view. */
   readonly overlayManager: DmnPluginOverlayManager;
 
-  constructor(bifrost: Bifrost, pluginHost: PluginHost) {
+  constructor(bifrost: Bifrost, context: PluginApiNamespaceContext) {
     this.bifrost = bifrost;
-    this.pluginHost = pluginHost;
-    this.overlayManager = new DmnPluginOverlayManager(pluginHost, bifrost);
+    this.pluginHost = context.pluginHost;
+    pluginDmnModuleLoader.setSendFunction(context.deliverRendererModuleMessage);
+    this.overlayManager = new DmnPluginOverlayManager(context.pluginHost, bifrost);
     this.overlayManager.onRefreshRequested(() => {
       this.emitPluginOverlayFactoriesChanged();
     });
@@ -189,7 +197,7 @@ export class DmnApiBridge {
 
   registerCallback(
     payload: RegisterCallbackPayload,
-    getOrCreatePluginGroup: (pluginName: string) => Map<string, { disposer: () => void }>,
+    getOrCreatePluginGroup: (pluginName: string) => PluginCallbackGroup,
   ): void {
     const { callbackId, method, args, pluginName: callerName } = payload;
     const pluginName = callerName ?? '_unknown';
@@ -341,6 +349,89 @@ export class DmnApiBridge {
     this.eventSubscriptions.get(pluginName)!.set(callbackId, subscription);
 
     getOrCreatePluginGroup(pluginName).set(callbackId, { disposer });
+  }
+
+  registerContributions(
+    pluginName: string,
+    pluginPath: string | undefined,
+    manifest: BifrostStudioManifest,
+  ): (() => void)[] {
+    const disposers: (() => void)[] = [];
+    const contributes = manifest.contributes;
+    if (contributes == null) {
+      return disposers;
+    }
+
+    // ── DMN Palette ─────────────────────────────────────────
+    if (contributes.dmnPalette != null && contributes.dmnPalette.length > 0) {
+      const hasDmnModelling =
+        manifest.permissions?.includes('dmn.modelling') === true ||
+        manifest.permissions?.includes('dmn.renderer') === true;
+      if (hasDmnModelling) {
+        pluginDmnContributionStore.setPaletteEntries(pluginName, contributes.dmnPalette);
+        disposers.push(() => pluginDmnContributionStore.removePaletteEntries(pluginName));
+      }
+    }
+
+    // ── DMN Context Pad ─────────────────────────────────────
+    if (contributes.dmnContextPad != null && contributes.dmnContextPad.length > 0) {
+      const hasDmnModelling =
+        manifest.permissions?.includes('dmn.modelling') === true ||
+        manifest.permissions?.includes('dmn.renderer') === true;
+      if (hasDmnModelling) {
+        pluginDmnContributionStore.setContextPadEntries(pluginName, contributes.dmnContextPad);
+        disposers.push(() => pluginDmnContributionStore.removeContextPadEntries(pluginName));
+      }
+    }
+
+    // ── DMN Renderer Modules ─────────────────────────────────
+    if (contributes.dmnModules != null && contributes.dmnModules.length > 0 && pluginPath != null) {
+      const hasDmnRenderer = manifest.permissions?.includes('dmn.renderer') === true;
+      if (hasDmnRenderer) {
+        const result = pluginDmnModuleLoader.loadPluginModules(pluginName, pluginPath, contributes.dmnModules);
+        if (result.success) {
+          this.forceReopenDmnEditors(pluginName, 'enabled');
+          disposers.push(() => {
+            pluginDmnModuleLoader.unloadPluginModules(pluginName);
+            this.forceReopenDmnEditors(pluginName, 'disabled');
+          });
+        } else {
+          console.error(`[DmnApiBridge] Plugin '${pluginName}' renderer module load failed: ${result.error}`);
+          this.bifrost.notifications.open({
+            type: 'error',
+            content: `Plugin '${pluginName}' failed to load renderer modules: ${result.error}`,
+            source: pluginName,
+          });
+        }
+      }
+    }
+
+    return disposers;
+  }
+
+  private forceReopenDmnEditors(pluginName: string, change: 'enabled' | 'disabled'): void {
+    const openDocs = this.bifrost.editors.getOpenEditorDocuments();
+    const dmnDocs = openDocs.filter((doc) => doc.documentType === DMN_DOCUMENT_TYPE);
+    if (dmnDocs.length === 0) {
+      return;
+    }
+
+    const uris = dmnDocs.map((doc) => doc.uri);
+
+    void (async () => {
+      for (const doc of dmnDocs) {
+        await this.bifrost.editors.closeEditorDocument(doc, false, true);
+      }
+      for (const uri of uris) {
+        this.bifrost.editors.focusOrOpenEditorDocument(uri);
+      }
+
+      this.bifrost.notifications.open({
+        type: 'info',
+        content: `Plugin '${pluginName}' ${change}. DMN editors have been reloaded.`,
+        source: 'Plugins',
+      });
+    })();
   }
 
   disposePlugin(pluginName: string): void {

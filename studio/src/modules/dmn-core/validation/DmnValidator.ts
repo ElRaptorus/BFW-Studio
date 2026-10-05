@@ -1,3 +1,5 @@
+import { splitQualifiedReference } from '../qualifiedReference';
+
 export type DmnValidationSeverity = 'error' | 'warning';
 
 export type DmnViolation = {
@@ -12,8 +14,32 @@ export type DmnViolation = {
 const VALID_HIT_POLICIES = new Set(['UNIQUE', 'FIRST', 'ANY', 'COLLECT', 'RULE ORDER', 'OUTPUT ORDER', 'PRIORITY']);
 const VALID_AGGREGATIONS = new Set(['SUM', 'MIN', 'MAX', 'COUNT']);
 
+/** The element types the Engine resolves through an import; decision services are not among them. */
+export type DmnImportedElementType = 'decision' | 'inputData' | 'businessKnowledgeModel';
+
+/**
+ * `namespace` → element id → type of every importable element in the DMN file with that namespace. `undefined` where
+ * an index is expected means "no solution": the rules that need it are skipped.
+ */
+export type DmnImportIndex = Map<string, Map<string, DmnImportedElementType>>;
+
+const IMPORTED_ELEMENT_TYPE_LABELS: Record<DmnImportedElementType, string> = {
+  decision: 'decision',
+  inputData: 'input data',
+  businessKnowledgeModel: 'business knowledge model',
+};
+
+/** The element id of a local reference (`#id` or `id`); references into another model (`namespace#id`) give `''`. */
+function localElementId(href: string | null | undefined): string {
+  if (href == null) {
+    return '';
+  }
+  const { namespace, elementId } = splitQualifiedReference(href);
+  return namespace == null ? elementId : '';
+}
+
 export class DmnValidator {
-  validate(definitions: any): DmnViolation[] {
+  validate(definitions: any, importIndex?: DmnImportIndex): DmnViolation[] {
     if (!definitions) {
       return [];
     }
@@ -45,6 +71,9 @@ export class DmnValidator {
     this.validateBkmCycles(drgElements, violations);
     this.validateItemDefinitions(definitions, violations);
     this.validateImports(definitions, violations);
+    if (importIndex != null) {
+      this.validateImportResolution(definitions, drgElements, importIndex, violations);
+    }
 
     return violations;
   }
@@ -547,7 +576,7 @@ export class DmnValidator {
     ];
 
     for (const ref of allRefs) {
-      const href = ref.href?.replace('#', '') ?? '';
+      const href = localElementId(ref.href);
       if (href && !drgElementIds.has(href)) {
         violations.push({
           elementId,
@@ -560,9 +589,9 @@ export class DmnValidator {
       }
     }
 
-    const outputIds = new Set(outputDecisions.map((ref: any) => ref.href?.replace('#', '')));
+    const outputIds = new Set(outputDecisions.map((ref: any) => localElementId(ref?.href)));
     const encapsulatedIds = new Set(
-      (decisionService.encapsulatedDecision ?? []).map((ref: any) => ref.href?.replace('#', '')),
+      (decisionService.encapsulatedDecision ?? []).map((ref: any) => localElementId(ref?.href)),
     );
     for (const outputId of outputIds) {
       if (outputId && encapsulatedIds.has(outputId)) {
@@ -588,7 +617,7 @@ export class DmnValidator {
         const requiredInput = requirement.requiredInput;
 
         if (requiredDecision) {
-          const href = requiredDecision.href?.replace('#', '') ?? '';
+          const href = localElementId(requiredDecision.href);
           if (href && !elementIds.has(href)) {
             violations.push({
               elementId: element.id ?? '',
@@ -601,7 +630,7 @@ export class DmnValidator {
           }
         }
         if (requiredInput) {
-          const href = requiredInput.href?.replace('#', '') ?? '';
+          const href = localElementId(requiredInput.href);
           if (href && !elementIds.has(href)) {
             violations.push({
               elementId: element.id ?? '',
@@ -630,7 +659,7 @@ export class DmnValidator {
       for (const requirement of requirements) {
         const requiredKnowledge = requirement.requiredKnowledge;
         if (requiredKnowledge) {
-          const href = requiredKnowledge.href?.replace('#', '') ?? '';
+          const href = localElementId(requiredKnowledge.href);
           if (href && !bkmIds.has(href)) {
             violations.push({
               elementId: element.id ?? '',
@@ -654,7 +683,7 @@ export class DmnValidator {
       const dependencyIds: string[] = [];
       const requirements: any[] = decision.informationRequirement ?? [];
       for (const requirement of requirements) {
-        const href = requirement.requiredDecision?.href?.replace('#', '');
+        const href = localElementId(requirement.requiredDecision?.href);
         if (href) {
           dependencyIds.push(href);
         }
@@ -683,7 +712,7 @@ export class DmnValidator {
       const dependencyIds: string[] = [];
       const requirements: any[] = bkm.knowledgeRequirement ?? [];
       for (const requirement of requirements) {
-        const href = requirement.requiredKnowledge?.href?.replace('#', '');
+        const href = localElementId(requirement.requiredKnowledge?.href);
         if (href) {
           dependencyIds.push(href);
         }
@@ -790,5 +819,91 @@ export class DmnValidator {
         });
       }
     }
+  }
+
+  private validateImportResolution(
+    definitions: any,
+    drgElements: any[],
+    importIndex: DmnImportIndex,
+    violations: DmnViolation[],
+  ): void {
+    const declaredNamespaces = new Set<string>();
+    for (const importElement of definitions.import ?? []) {
+      const namespace: string = importElement.namespace ?? '';
+      if (namespace.trim() === '') {
+        continue;
+      }
+      declaredNamespaces.add(namespace);
+      if (!importIndex.has(namespace)) {
+        violations.push({
+          elementId: importElement.id ?? '',
+          elementName: importElement.name ?? '',
+          elementType: 'Import',
+          message: `No DMN file in this solution uses the namespace "${namespace}".`,
+          severity: 'warning',
+          category: 'import',
+        });
+      }
+    }
+
+    for (const element of drgElements) {
+      const references: { href: string | null | undefined; expectedType: DmnImportedElementType }[] = [
+        ...(element.informationRequirement ?? []).flatMap((requirement: any) => [
+          { href: requirement.requiredDecision?.href, expectedType: 'decision' as const },
+          { href: requirement.requiredInput?.href, expectedType: 'inputData' as const },
+        ]),
+        ...(element.knowledgeRequirement ?? []).map((requirement: any) => ({
+          href: requirement.requiredKnowledge?.href,
+          expectedType: 'businessKnowledgeModel' as const,
+        })),
+      ];
+      for (const { href, expectedType } of references) {
+        if (href == null) {
+          continue;
+        }
+        const { namespace, elementId } = splitQualifiedReference(href);
+        if (namespace == null) {
+          continue;
+        }
+        const message = this.describeImportedReferenceProblem(
+          { namespace, elementId, expectedType },
+          declaredNamespaces,
+          importIndex,
+        );
+        if (message != null) {
+          violations.push({
+            elementId: element.id ?? '',
+            elementName: element.name ?? '',
+            elementType: element.$type?.replace('dmn:', '') ?? '',
+            message,
+            severity: 'warning',
+            category: 'import',
+          });
+        }
+      }
+    }
+  }
+
+  private describeImportedReferenceProblem(
+    reference: { namespace: string; elementId: string; expectedType: DmnImportedElementType },
+    declaredNamespaces: Set<string>,
+    importIndex: DmnImportIndex,
+  ): string | null {
+    const { namespace, elementId, expectedType } = reference;
+    if (!declaredNamespaces.has(namespace)) {
+      return `Requirement references "${elementId}" in namespace "${namespace}", which is not declared as an import.`;
+    }
+    const importedElements = importIndex.get(namespace);
+    if (importedElements == null) {
+      return null;
+    }
+    const actualType = importedElements.get(elementId);
+    if (actualType == null) {
+      return `Imported model "${namespace}" has no element "${elementId}".`;
+    }
+    if (actualType !== expectedType) {
+      return `Requirement references "${elementId}" in "${namespace}", which is a ${IMPORTED_ELEMENT_TYPE_LABELS[actualType]}; it must be a ${IMPORTED_ELEMENT_TYPE_LABELS[expectedType]}.`;
+    }
+    return null;
   }
 }

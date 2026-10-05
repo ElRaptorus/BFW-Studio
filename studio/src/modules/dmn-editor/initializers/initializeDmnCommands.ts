@@ -3,21 +3,11 @@ import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { FileOrDirectory } from '#bifrost/contracts/FileSystemTypes';
+import type { ProjectDmnDecision, ProjectDmnModel } from '#modules/dmn-core';
 import * as path from 'path';
 
 import type DmnDocumentModel from '../DmnDocumentModel';
 import { DMN_DOCUMENT_TYPE } from '../index';
-
-export type ProjectDmnModel = {
-  definitionsId: string;
-  name: string;
-  filename: string;
-};
-
-export type ProjectDmnDecision = {
-  decisionId: string;
-  name: string;
-};
 
 export function initializeDmnCommands(bifrost: Bifrost): void {
   bifrost.commands.register(

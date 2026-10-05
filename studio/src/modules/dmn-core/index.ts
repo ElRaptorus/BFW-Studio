@@ -5,6 +5,8 @@ import PluginDmnContextPadProviderModule from './dmn-js/Provider/PluginDmnContex
 import PluginDmnPaletteProviderModule from './dmn-js/Provider/PluginDmnPaletteProvider';
 import './sanitizer/sanitizer.scss';
 
+export { EvaluationResultView } from './evaluation-result/EvaluationResultView';
+export type { ProjectDmnDecision, ProjectDmnModel } from './ProjectDmnTypes';
 export { DmnValidator } from './validation/DmnValidator';
 export type { DmnViolation, DmnValidationSeverity } from './validation/DmnValidator';
 

@@ -839,7 +839,7 @@ describe('dmn/elements', () => {
     await studioAgent.switchToPaneGroup('scripting');
     await studioAgent.waitForPaneVisible(IMPORTS_PANE);
 
-    const namespace = await studioAgent.getDmnPropertyValue('data-test--dmn-import-namespace');
+    const namespace = await studioAgent.getSuggestionSelectValue('#dmn-import-namespace-0');
     assert.strictEqual(namespace, 'https://bifrostforge.world/test/shared');
 
     const locationUri = await studioAgent.getDmnPropertyValue('data-test--dmn-import-location');

@@ -23,6 +23,12 @@ export function initializeDmnPanes(bifrost: Bifrost): void {
     ),
 
     bifrost.panes.getPaneViaPaneProvider(
+      'dmn/panes/properties/PropertiesImportedRequirements',
+      'dmn/pane-providers/properties/PropertiesImportedRequirements',
+      require('../panes/properties/ImportedRequirements/PropertiesImportedRequirements'),
+    ),
+
+    bifrost.panes.getPaneViaPaneProvider(
       'dmn/panes/properties/PropertiesInputData',
       'dmn/pane-providers/properties/PropertiesInputData',
       require('../panes/properties/InputData/PropertiesInputData'),

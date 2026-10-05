@@ -1,0 +1,370 @@
+// Derived from the theme tokens every theme defines, so no theme file needs a simulator block.
+.bifrost {
+  --dmn-sim-value-fg: var(--theme-icon-green);
+  --dmn-sim-value-bg: color-mix(in srgb, var(--theme-icon-green) 18%, transparent);
+  --dmn-sim-error-fg: var(--theme-icon-red);
+  --dmn-sim-error-bg: color-mix(in srgb, var(--theme-icon-red) 18%, transparent);
+  --dmn-sim-matched: color-mix(in srgb, var(--theme-icon-green) 28%, transparent);
+  --dmn-sim-unmatched: color-mix(in srgb, var(--theme-fg) 7%, transparent);
+  --dmn-sim-panel-bg: var(--theme-surface-elevated);
+  --dmn-sim-panel-fg: var(--theme-fg);
+  --dmn-sim-panel-border: var(--theme-border);
+  --dmn-sim-active-bg: var(--theme-accent);
+  --dmn-sim-active-fg: var(--theme-fg-on-accent);
+}
+
+.dmn-sim-host {
+  position: relative;
+}
+
+.dmn-sim-palette-entry--active {
+  color: var(--dmn-sim-value-fg);
+}
+
+.djs-element.dmn-sim-evaluated .djs-visual > :first-child {
+  stroke: #52b415 !important;
+  stroke-width: 2px !important;
+}
+
+.djs-element.dmn-sim-error .djs-visual > :first-child {
+  stroke: #d32f2f !important;
+  stroke-width: 2px !important;
+}
+
+.djs-element.dmn-sim-current .djs-visual > :first-child {
+  filter: drop-shadow(0 0 4px #2979ff);
+}
+
+.djs-element.dmn-sim-target .djs-visual > :first-child {
+  outline: 2px dashed #2979ff;
+  outline-offset: 3px;
+}
+
+.djs-connection.dmn-sim-evaluated-edge .djs-visual > path {
+  stroke: #52b415 !important;
+  stroke-width: 2px !important;
+}
+
+.dmn-sim-table-legend {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: var(--dmn-sim-matched);
+  color: var(--dmn-sim-panel-fg);
+  pointer-events: none;
+}
+
+.dmn-sim-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 180px;
+  padding: 2px 6px;
+  border: 1px solid var(--dmn-sim-panel-border);
+  border-radius: 4px;
+  background: var(--dmn-sim-panel-bg);
+  color: var(--dmn-sim-panel-fg);
+  font: 12px monospace;
+  cursor: pointer;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &--unset span {
+    font-style: italic;
+    opacity: 0.6;
+  }
+
+  &:hover {
+    border-color: var(--theme-focus);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-focus);
+    outline-offset: 1px;
+  }
+}
+
+.dmn-sim-play {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #52b415;
+  font-size: 20px;
+  padding: 0;
+}
+
+.dmn-sim-badge {
+  font: 12px monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &--value {
+    background: var(--dmn-sim-value-bg);
+    color: var(--dmn-sim-value-fg);
+  }
+
+  &--error {
+    background: var(--dmn-sim-error-bg);
+    color: var(--dmn-sim-error-fg);
+  }
+}
+
+// Decision-table rows, annotated by the table highlighter
+.dmn-sim-rule-matched td {
+  background: var(--dmn-sim-matched) !important;
+}
+
+.dmn-sim-rule-unmatched td {
+  background: var(--dmn-sim-unmatched) !important;
+}
+
+// Control pad: placed like the Token Simulator toolbar, and above the minimap (z-index 175) but below the
+// diagram-js popup menus (200 and 1000).
+.dmn-sim-panel-container {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 176;
+  width: min(420px, calc(100% - 24px));
+  max-height: calc(100% - 20px);
+  display: flex;
+}
+
+.dmn-sim-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--dmn-sim-panel-bg);
+  color: var(--dmn-sim-panel-fg);
+  border: 1px solid var(--dmn-sim-panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  user-select: none;
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 8px;
+  }
+
+  &__button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--theme-fg) 12%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--theme-focus);
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    &--active,
+    &--active:hover:not(:disabled) {
+      background: var(--dmn-sim-active-bg);
+      color: var(--dmn-sim-active-fg);
+    }
+  }
+
+  &__attention {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--theme-accent);
+  }
+
+  &__separator {
+    width: 1px;
+    height: 20px;
+    margin: 0 4px;
+    background: var(--dmn-sim-panel-border);
+  }
+
+  &__counter {
+    min-width: 32px;
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  &__strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-top: 1px solid var(--dmn-sim-panel-border);
+
+    &--value {
+      font-family: monospace;
+    }
+
+    &--hint {
+      opacity: 0.7;
+    }
+
+    &--stale {
+      background: var(--dmn-sim-unmatched);
+    }
+
+    &--error {
+      color: var(--dmn-sim-error-fg);
+    }
+  }
+
+  &__strip-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__tag {
+    flex: 0 0 auto;
+    padding: 0 6px;
+    border-radius: 3px;
+    font: 10px sans-serif;
+    text-transform: uppercase;
+    background: var(--dmn-sim-value-bg);
+    color: var(--dmn-sim-value-fg);
+  }
+
+  &__duration {
+    flex: 0 0 auto;
+    opacity: 0.7;
+  }
+
+  &__drawer {
+    max-height: 45vh;
+    overflow: auto;
+    padding: 8px 10px;
+    border-top: 1px solid var(--dmn-sim-panel-border);
+    user-select: text;
+  }
+
+  &__open {
+    margin-left: 6px;
+    font-size: 11px;
+  }
+
+  &__step button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  &__section {
+    margin-bottom: 10px;
+  }
+
+  &__section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+
+  &__warning {
+    background: var(--dmn-sim-error-bg);
+    color: var(--dmn-sim-error-fg);
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+
+  &__error-detail {
+    background: var(--dmn-sim-error-bg);
+    color: var(--dmn-sim-error-fg);
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+
+  &__field {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 4px;
+
+    > span {
+      flex: 0 0 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dmn-sim-input {
+      flex: 1;
+      max-width: none;
+    }
+  }
+
+  &__steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__step {
+    display: flex;
+    align-items: center;
+
+    button {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+      font: 12px monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &--current {
+      background: var(--dmn-sim-matched);
+    }
+
+    &--error {
+      color: var(--dmn-sim-error-fg);
+    }
+
+    &--pending {
+      opacity: 0.4;
+    }
+  }
+}

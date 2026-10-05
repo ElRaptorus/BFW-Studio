@@ -12,7 +12,7 @@ import { SplitterLayout } from '#components/splitter/SplitterLayout';
 import React from 'react';
 
 import '../../bpmn-core/diff/styles/component.bpmn-diff-infrastructure.scss';
-import '../../bpmn-editor/merge/styles/component.bpmn-merge.scss';
+import '../../bpmn-core/diff/styles/component.bpmn-merge.scss';
 import { DmnDiff, type DmnDiffChange, type DmnDiffChangesByAction, DmnViewerWithSync } from '../../dmn-core/diff';
 import DmnMergeResultModeler, { type DmnClassifiedElement } from './DmnMergeResultModeler';
 

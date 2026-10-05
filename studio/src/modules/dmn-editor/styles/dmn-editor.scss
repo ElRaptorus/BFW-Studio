@@ -103,6 +103,12 @@
     }
   }
 
+  &__unresolved {
+    padding: 0 12px 4px;
+    color: var(--theme-warning, var(--theme-fg-muted));
+    font-size: 0.75rem;
+  }
+
   &__entry-actions {
     padding: 4px 12px;
   }

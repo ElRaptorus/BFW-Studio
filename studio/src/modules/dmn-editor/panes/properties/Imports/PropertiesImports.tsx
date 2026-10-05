@@ -1,3 +1,4 @@
+import type { Bifrost } from '#bifrost/Bifrost';
 import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
@@ -6,12 +7,16 @@ import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
+import type { Suggestion } from '@elraptorus/bfw_studio_sdk';
 import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 
 import type DmnDocumentModel from '../../../DmnDocumentModel';
 import { getDmnModel, shouldBeDisplayedForDmnDrdNoSelection } from '../../PropertiesPaneFunctions';
+import type { DmnSolutionModel } from '../../components/DmnImportLookup';
+import { fileNameOf, findImportedModel, listOtherDmnModels } from '../../components/DmnImportLookup';
+import { DmnJumpLink } from '../../components/DmnJumpLink';
 
 const DMN_IMPORT_TYPE_URI = 'https://www.omg.org/spec/DMN/20191111/MODEL/';
 
@@ -55,7 +60,9 @@ function ImportsContent(props: PaneComponentProps): React.JSX.Element | null {
   const [refreshKey, setRefreshKey] = useState(0);
   const imports: any[] = model.elements.getImports();
 
-  const refresh = useCallback(() => setRefreshKey((previous) => previous + 1), []);
+  const refresh = useCallback(() => {
+    setRefreshKey((previous) => previous + 1);
+  }, []);
 
   const addImport = useCallback(() => {
     model.elements.addImport({
@@ -90,10 +97,13 @@ function ImportsContent(props: PaneComponentProps): React.JSX.Element | null {
         </div>
       )}
 
-      {imports.map((importElement: any) => (
+      {imports.map((importElement: any, index: number) => (
         <ImportEntry
           key={importElement.id}
+          index={index}
           importElement={importElement}
+          studio={props.studio}
+          ownUri={props.editorDocument.uri}
           onUpdate={updateImport}
           onRemove={removeImport}
         />
@@ -110,22 +120,62 @@ function ImportsContent(props: PaneComponentProps): React.JSX.Element | null {
 
 type ImportEntryProps = {
   importElement: any;
+  index: number;
+  studio: Bifrost;
+  ownUri: string;
   onUpdate: (importElement: any, propertyName: string, value: any) => void;
   onRemove: (importElement: any) => void;
 };
 
 function ImportEntry(props: ImportEntryProps): React.JSX.Element {
   const { importElement, onUpdate, onRemove } = props;
+  const namespace: string = importElement.namespace ?? '';
+  const [lookup, setLookup] = useState<{ namespace: string; model: DmnSolutionModel | null } | null>(null);
+  const resolved = lookup?.namespace === namespace ? lookup.model : undefined;
+
+  useEffect(() => {
+    let cancelled = false;
+    findImportedModel(props.studio, namespace).then((model) => {
+      if (!cancelled) {
+        setLookup({ namespace, model });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [props.studio, namespace]);
+
+  const getNamespaceSuggestions = async (): Promise<Suggestion[]> =>
+    (await listOtherDmnModels(props.studio, props.ownUri)).map((model) => ({
+      label: model.namespace ?? '',
+      sublabel: fileNameOf(model.uri),
+      value: model.namespace ?? '',
+    }));
 
   return (
     <div className="dmn-imports__entry" data-test--dmn-import-entry={importElement.namespace ?? importElement.id}>
       <PaneProperty
-        label="Namespace"
-        type="text"
-        value={importElement.namespace ?? ''}
+        label={
+          <>
+            Namespace{' '}
+            {resolved != null && (
+              <DmnJumpLink studio={props.studio} uri={resolved.uri} elementId={resolved.definitionsId ?? ''} />
+            )}
+          </>
+        }
+        type="text-with-suggestions"
+        placeholder="Type or pick a namespace..."
+        value={namespace}
         onCommit={(value: any) => onUpdate(importElement, 'namespace', value)}
-        htmlAttributes={{ 'data-test--dmn-import-namespace': true }}
+        suggestions={getNamespaceSuggestions()}
+        isClearable={true}
+        htmlId={`dmn-import-namespace-${props.index}`}
       />
+      {resolved === null && namespace !== '' && (
+        <div className="dmn-imports__unresolved" data-test--dmn-import-unresolved={true}>
+          No DMN file in this solution uses this namespace.
+        </div>
+      )}
       <PaneProperty
         label="Location URI"
         type="text"

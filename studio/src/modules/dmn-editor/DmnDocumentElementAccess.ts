@@ -6,6 +6,13 @@ import type DmnModelerComponentAdapter from '../dmn-core/DmnModelerComponentAdap
 import { CmdHelper } from '../dmn-core/dmn-js/CommandHandler/Helper/CmdHelper';
 import type { DmnElement, DmnElementType, DmnExpressionType } from './DmnElementTypes';
 import { getExpressionType, resolveElementType } from './DmnElementTypes';
+import type { ImportedRequirement, ImportedRequirementType } from './ImportedRequirements';
+import {
+  createImportedRequirement,
+  readImportedRequirements,
+  referenceOf,
+  requirementListName,
+} from './ImportedRequirements';
 
 export const EVENT_DMN_ELEMENT_PROPERTY_UPDATED = 'EVENT_DMN_ELEMENT_PROPERTY_UPDATED';
 
@@ -365,6 +372,67 @@ export default class DmnDocumentElementAccess extends AbstractEmitter {
   }
 
   //#endregion Imports
+
+  //#region Imported Requirements
+
+  getImportedRequirements(elementId: string): ImportedRequirement[] {
+    return readImportedRequirements(this.getBusinessObject(elementId));
+  }
+
+  addImportedRequirement(elementId: string, type: ImportedRequirementType, href: string): void {
+    const businessObject = this.getBusinessObject(elementId);
+    const commandStack = this.getDrdCommandStack();
+    if (!businessObject || !commandStack) {
+      return;
+    }
+
+    const requirement = createImportedRequirement(this.adapter.getModdle(), type, href);
+    requirement.$parent = businessObject;
+    const listName = requirementListName(type);
+    const element = this.getDrdElementRegistry()?.get(elementId);
+    const descriptor = CmdHelper.addElementsToList(element, businessObject, listName, [requirement]);
+    commandStack.execute(descriptor.cmd, descriptor.context);
+
+    this.emit(EVENT_DMN_ELEMENT_PROPERTY_UPDATED, [{ elementId, propertyName: listName, value: requirement }]);
+  }
+
+  removeImportedRequirement(elementId: string, importedRequirement: ImportedRequirement): void {
+    const businessObject = this.getBusinessObject(elementId);
+    const commandStack = this.getDrdCommandStack();
+    if (!businessObject || !commandStack) {
+      return;
+    }
+
+    const listName = requirementListName(importedRequirement.type);
+    const element = this.getDrdElementRegistry()?.get(elementId);
+    const descriptor = CmdHelper.removeElementsFromList(element, businessObject, listName, undefined, [
+      importedRequirement.requirement,
+    ]);
+    commandStack.execute(descriptor.cmd, descriptor.context);
+
+    this.emit(EVENT_DMN_ELEMENT_PROPERTY_UPDATED, [{ elementId, propertyName: listName, value: null }]);
+  }
+
+  /** Points an existing imported requirement at another element of the same imported model (one undo step). */
+  retargetImportedRequirement(
+    elementId: string,
+    importedRequirement: ImportedRequirement,
+    targetElementId: string,
+  ): void {
+    const commandStack = this.getDrdCommandStack();
+    if (!commandStack) {
+      return;
+    }
+
+    const element = this.getDrdElementRegistry()?.get(elementId);
+    const href = `${importedRequirement.namespace}#${targetElementId}`;
+    const descriptor = CmdHelper.updateBusinessObject(element, referenceOf(importedRequirement), { href });
+    commandStack.execute(descriptor.cmd, descriptor.context);
+
+    this.emit(EVENT_DMN_ELEMENT_PROPERTY_UPDATED, [{ elementId, propertyName: 'href', value: href }]);
+  }
+
+  //#endregion Imported Requirements
 
   //#region Expression View Accessors
 
