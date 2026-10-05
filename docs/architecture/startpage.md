@@ -13,6 +13,10 @@ The start page uses a vertically stacked, single-column layout (max-width 900px,
 5. **Footer** — "Show Welcome Page at startup" checkbox + "Did you know?" tip
 6. **Flavor text** — Three hardcoded lore strings placed between sections
 
+## Leaving the Welcome page
+
+Opening a document activates the page of its document type (`EditorMediator`), so files and new BPMN/DMN documents already leave Home for `design/workspace`. Solutions have no page of their own: `std.solution.openDirectory` (recent items, Open Folder, Open File on a folder) and `std.solution.createSolution` call `leaveWelcomePageForWorkspace`, which activates `design/workspace` only while `home/welcome` is the active page, so a user on another page stays there.
+
 ## File Structure
 
 | File | Role |

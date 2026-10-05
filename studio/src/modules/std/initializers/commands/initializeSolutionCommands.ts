@@ -127,6 +127,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       await bifrost.files.save(solutionFileUri, serialized);
 
       await bifrost.solution.openSolutionFile(solutionFileUri);
+      leaveWelcomePageForWorkspace(bifrost);
     },
     { visibleInSearch: true, description: 'Solution: Create New Solution...' },
   );
@@ -941,6 +942,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
     if (isElectron) {
       if (isTargetAlreadyOpenHere(bifrost, uri)) {
+        leaveWelcomePageForWorkspace(bifrost);
         return;
       }
 
@@ -961,12 +963,20 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
     }
 
     await openSolutionOrDirectory(bifrost, uri, localPath);
+    leaveWelcomePageForWorkspace(bifrost);
   });
 
   commands.register('std.solution.toggleHiddenFiles', () => bifrost.solution.toggleHiddenFiles(), {
     visibleInSearch: true,
     enabledWhen: () => bifrost.solution.hasOpenSolution(),
   });
+}
+
+/** Opening a solution from the Welcome page would otherwise look like nothing happened. Other pages stay put. */
+function leaveWelcomePageForWorkspace(bifrost: Bifrost): void {
+  if (bifrost.categories.getActivePageId() === 'home/welcome' && bifrost.categories.hasPage('design/workspace')) {
+    bifrost.categories.activatePage('design/workspace');
+  }
 }
 
 type OpenAction = 'open-here' | 'open-new-window' | 'cancel';
