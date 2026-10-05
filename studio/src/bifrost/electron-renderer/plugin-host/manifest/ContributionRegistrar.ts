@@ -11,13 +11,10 @@ import type {
   ManifestTheme,
 } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
 import type { BifrostOperatingSystem } from '#bifrost/contracts/BifrostTypes';
+import type { PluginApiNamespace } from '#bifrost/contracts/PluginHostTypes';
 
 import type { SettingDescriptor } from '@elraptorus/bfw_studio_sdk';
 
-import { pluginBpmnContributionStore } from '../../../../modules/bpmn-core/PluginBpmnContributionStore';
-import { pluginModuleLoader } from '../../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
-import { pluginDmnContributionStore } from '../../../../modules/dmn-core/PluginDmnContributionStore';
-import { pluginDmnModuleLoader } from '../../../../modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
 import { createPlaceholderEditorDocumentRenderer } from './PlaceholderEditorDocumentRenderer';
 import { createPlaceholderPaneProvider } from './PlaceholderPaneProvider';
 
@@ -72,8 +69,11 @@ export class ContributionRegistrar {
    */
   readonly placeholderEditorDocumentTypeIds = new Set<string>();
 
-  constructor(bifrost: Bifrost) {
+  private getApiNamespaces: () => Iterable<PluginApiNamespace>;
+
+  constructor(bifrost: Bifrost, getApiNamespaces: () => Iterable<PluginApiNamespace>) {
     this.bifrost = bifrost;
+    this.getApiNamespaces = getApiNamespaces;
   }
 
   registerContributions(
@@ -184,92 +184,9 @@ export class ContributionRegistrar {
       }
     }
 
-    // ── BPMN Palette ─────────────────────────────────────────
-    if (contributes.bpmnPalette != null && contributes.bpmnPalette.length > 0) {
-      const hasBpmnModelling =
-        manifest.permissions?.includes('bpmn.modelling') === true ||
-        manifest.permissions?.includes('bpmn.renderer') === true;
-      if (hasBpmnModelling) {
-        pluginBpmnContributionStore.setPaletteEntries(pluginName, contributes.bpmnPalette);
-        disposers.push(() => pluginBpmnContributionStore.removePaletteEntries(pluginName));
-      }
-    }
-
-    // ── BPMN Context Pad ─────────────────────────────────────
-    if (contributes.bpmnContextPad != null && contributes.bpmnContextPad.length > 0) {
-      const hasBpmnModelling =
-        manifest.permissions?.includes('bpmn.modelling') === true ||
-        manifest.permissions?.includes('bpmn.renderer') === true;
-      if (hasBpmnModelling) {
-        pluginBpmnContributionStore.setContextPadEntries(pluginName, contributes.bpmnContextPad);
-        disposers.push(() => pluginBpmnContributionStore.removeContextPadEntries(pluginName));
-      }
-    }
-
-    // ── BPMN Renderer Modules ─────────────────────────────────
-    if (contributes.bpmnModules != null && contributes.bpmnModules.length > 0 && pluginPath != null) {
-      const hasBpmnRenderer = manifest.permissions?.includes('bpmn.renderer') === true;
-      if (hasBpmnRenderer) {
-        const result = pluginModuleLoader.loadPluginModules(pluginName, pluginPath, contributes.bpmnModules);
-        if (result.success) {
-          this.forceReopenBpmnEditors(pluginName);
-          disposers.push(() => {
-            pluginModuleLoader.unloadPluginModules(pluginName);
-            this.forceReopenBpmnEditors(pluginName);
-          });
-        } else {
-          console.error(`[ContributionRegistrar] Plugin '${pluginName}' renderer module load failed: ${result.error}`);
-          this.bifrost.notifications.open({
-            type: 'error',
-            content: `Plugin '${pluginName}' failed to load renderer modules: ${result.error}`,
-            source: pluginName,
-          });
-        }
-      }
-    }
-
-    // ── DMN Palette ──────────────────────────────────────────
-    if (contributes.dmnPalette != null && contributes.dmnPalette.length > 0) {
-      const hasDmnModelling =
-        manifest.permissions?.includes('dmn.modelling') === true ||
-        manifest.permissions?.includes('dmn.renderer') === true;
-      if (hasDmnModelling) {
-        pluginDmnContributionStore.setPaletteEntries(pluginName, contributes.dmnPalette);
-        disposers.push(() => pluginDmnContributionStore.removePaletteEntries(pluginName));
-      }
-    }
-
-    // ── DMN Context Pad ──────────────────────────────────────
-    if (contributes.dmnContextPad != null && contributes.dmnContextPad.length > 0) {
-      const hasDmnModelling =
-        manifest.permissions?.includes('dmn.modelling') === true ||
-        manifest.permissions?.includes('dmn.renderer') === true;
-      if (hasDmnModelling) {
-        pluginDmnContributionStore.setContextPadEntries(pluginName, contributes.dmnContextPad);
-        disposers.push(() => pluginDmnContributionStore.removeContextPadEntries(pluginName));
-      }
-    }
-
-    // ── DMN Renderer Modules ──────────────────────────────────
-    if (contributes.dmnModules != null && contributes.dmnModules.length > 0 && pluginPath != null) {
-      const hasDmnRenderer = manifest.permissions?.includes('dmn.renderer') === true;
-      if (hasDmnRenderer) {
-        const result = pluginDmnModuleLoader.loadPluginModules(pluginName, pluginPath, contributes.dmnModules);
-        if (result.success) {
-          this.forceReopenDmnEditors(pluginName);
-          disposers.push(() => {
-            pluginDmnModuleLoader.unloadPluginModules(pluginName);
-            this.forceReopenDmnEditors(pluginName);
-          });
-        } else {
-          console.error(`[ContributionRegistrar] Plugin '${pluginName}' renderer module load failed: ${result.error}`);
-          this.bifrost.notifications.open({
-            type: 'error',
-            content: `Plugin '${pluginName}' failed to load renderer modules: ${result.error}`,
-            source: pluginName,
-          });
-        }
-      }
+    // ── Module-provided namespaces (bpmn, dmn, …) ──────────
+    for (const apiNamespace of this.getApiNamespaces()) {
+      disposers.push(...apiNamespace.registerContributions(pluginName, pluginPath, manifest));
     }
 
     return {
@@ -685,60 +602,6 @@ export class ContributionRegistrar {
         this.bifrost.theme.setTheme(fallback);
       }
     };
-  }
-
-  // ── BPMN Editor Force-Reopen ─────────────────────────────────
-
-  private forceReopenBpmnEditors(pluginName: string): void {
-    const openDocs = this.bifrost.editors.getOpenEditorDocuments();
-    const bpmnDocs = openDocs.filter((doc) => doc.documentType === 'bpmn');
-    if (bpmnDocs.length === 0) {
-      return;
-    }
-
-    const uris = bpmnDocs.map((doc) => doc.uri);
-
-    void (async () => {
-      for (const doc of bpmnDocs) {
-        await this.bifrost.editors.closeEditorDocument(doc, false, true);
-      }
-      for (const uri of uris) {
-        this.bifrost.editors.focusOrOpenEditorDocument(uri);
-      }
-
-      this.bifrost.notifications.open({
-        type: 'info',
-        content: `Plugin '${pluginName}' disabled. BPMN editors have been reloaded.`,
-        source: 'Plugins',
-      });
-    })();
-  }
-
-  // ── DMN Editor Force-Reopen ──────────────────────────────────
-
-  private forceReopenDmnEditors(pluginName: string): void {
-    const openDocs = this.bifrost.editors.getOpenEditorDocuments();
-    const dmnDocs = openDocs.filter((doc) => doc.documentType === 'dmn');
-    if (dmnDocs.length === 0) {
-      return;
-    }
-
-    const uris = dmnDocs.map((doc) => doc.uri);
-
-    void (async () => {
-      for (const doc of dmnDocs) {
-        await this.bifrost.editors.closeEditorDocument(doc, false, true);
-      }
-      for (const uri of uris) {
-        this.bifrost.editors.focusOrOpenEditorDocument(uri);
-      }
-
-      this.bifrost.notifications.open({
-        type: 'info',
-        content: `Plugin '${pluginName}' disabled. DMN editors have been reloaded.`,
-        source: 'Plugins',
-      });
-    })();
   }
 
   // ── Service Task Types ─────────────────────────────────────

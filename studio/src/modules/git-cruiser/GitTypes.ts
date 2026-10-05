@@ -1,3 +1,5 @@
+import type { MergeFileType } from '#bifrost/contracts/MergeTypes';
+
 export type GitFileStatusCode =
   'modified' | 'added' | 'deleted' | 'renamed' | 'copied' | 'untracked' | 'ignored' | 'conflicted';
 
@@ -100,10 +102,6 @@ export type GitRemoteBranch = {
   isHead: boolean;
 };
 
-export type MergeConflictKind = 'content' | 'ours-deleted' | 'theirs-deleted' | 'added-by-both';
-
-export type MergeFileType = 'bpmn' | 'dmn';
-
 export type MergeFileEntry = {
   relativePath: string;
   uri: string;
@@ -116,8 +114,5 @@ export type MergeProgress = {
   total: number;
   remaining: number;
 };
-
-export const EVENT_MERGE_FILE_CHANGED = 'EVENT_MERGE_FILE_CHANGED';
-export const EVENT_RESOLUTION_CHANGED = 'EVENT_RESOLUTION_CHANGED';
 
 export const MERGE_URI = 'merge://resolver';

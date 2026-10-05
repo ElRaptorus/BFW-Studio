@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+  xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+  xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+  xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+  id="Definitions_Shared"
+  name="Shared Decisions"
+  namespace="https://bifrostforge.world/test/shared">
+
+  <inputData id="InputData_SharedBase" name="Shared Base" />
+
+  <decision id="Decision_SharedDouble" name="Shared Double">
+    <variable id="Variable_SharedDouble" name="Shared Double" typeRef="number" />
+    <informationRequirement id="IR_SharedBase">
+      <requiredInput href="#InputData_SharedBase" />
+    </informationRequirement>
+    <literalExpression id="LiteralExpression_SharedDouble">
+      <text>Shared Base * 2</text>
+    </literalExpression>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_Shared">
+      <dmndi:DMNShape id="Shape_InputData_SharedBase" dmnElementRef="InputData_SharedBase">
+        <dc:Bounds x="100" y="200" width="125" height="45" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="Shape_Decision_SharedDouble" dmnElementRef="Decision_SharedDouble">
+        <dc:Bounds x="100" y="60" width="180" height="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="Edge_IR_SharedBase" dmnElementRef="IR_SharedBase">
+        <di:waypoint x="162" y="200" />
+        <di:waypoint x="190" y="140" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

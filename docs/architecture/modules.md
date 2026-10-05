@@ -31,16 +31,17 @@ The load order is explicit and defined in `studio/src/createAndInitializeBifrost
  8. dmn-core
  9. dmn-editor
 10. dmn-diff
-11. git-cruiser
-12. machine-sanctum
+11. dmn-decision-simulator (DRD module registered via dmn.modeler.registerModule)
+12. git-cruiser
 13. solution-models        (scans the solution's BPMN/DMN files)
-14. engine-core            (registers EngineConnectionManager shared resource)
-15. engine-workspace       (sidebar, catalogs, menubar/run controls)
-16. engine-deploy          (Deploy category: plan page and explorer)
-17. engine-model-viewer    (read-only deployed BPMN viewer)
-18. engine-decision-viewer (read-only deployed DMN viewer)
-19. engine-debugger        (live PI debugger)
-20. plugins
+14. machine-sanctum
+15. engine-core            (registers EngineConnectionManager shared resource)
+16. engine-workspace       (sidebar, catalogs, menubar/run controls)
+17. engine-deploy          (Deploy category: plan page and explorer)
+18. engine-model-viewer    (read-only deployed BPMN viewer)
+19. engine-decision-viewer (read-only deployed DMN viewer)
+20. engine-debugger        (live PI debugger)
+21. plugins
 ```
 
 This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then `solution-models` (before the engine modules that call its commands), then engine modules (`engine-core` first as foundation, then workspace/viewers/debugger), then plugin management (`plugins`) last.
@@ -76,12 +77,12 @@ Registers ten additional color themes beyond the two core themes (`light`/`dark`
 
 #### bpmn-core
 
-Shared BPMN infrastructure. Contains the bpmn-js modeler/viewer adapter, overlay factories, export functions, BPMN-specific solution/project types, the context pad provider, the modeler module discovery registry, the element types it needs itself (`BpmnElementCoreTypes.ts`, re-exported by `bpmn-editor/BpmnElementTypes.ts`), and the User Task form contract (`form-renderer/FormModel.ts`) that the editor authors and the engine modules render.
+Shared BPMN infrastructure. Contains the bpmn-js modeler/viewer adapter, overlay factories, export functions, BPMN-specific solution/project types, the context pad provider, the modeler module discovery registry, the element types it needs itself (`BpmnElementCoreTypes.ts`, re-exported by `bpmn-editor/BpmnElementTypes.ts`), the User Task form contract (`form-renderer/FormModel.ts`) that the editor authors and the engine modules render, `components/BpmnElementColorPicker.tsx`, and the merge styles shared by the BPMN and DMN merge resolvers (`diff/styles/component.bpmn-merge.scss`).
 
 - **Entry:** `studio/src/modules/bpmn-core/index.tsx`
 - **Commands registered:** `bpmn.modeler.registerModule` (allows modules to inject diagram-js modules into every BpmnModeler instance); `bpmn.suggestNextVersion` (`commands/registerVersionCommands.ts`) — next version string from a SemVer patch bump, integer increment, trailing-number increment, or `-1` suffix. No engine connection.
 - **Dependencies:** None
-- **Depended on by:** `bpmn-editor`, `engine-model-viewer`, `engine-debugger` (via direct imports); `engine-workspace` (moddle descriptor only); any module that calls `bpmn.modeler.registerModule` (via command)
+- **Depended on by:** `bpmn-editor`, `dmn-editor` (merge styles), `engine-model-viewer`, `engine-debugger` (via direct imports); `engine-workspace` (moddle descriptor only); any module that calls `bpmn.modeler.registerModule` (via command)
 
 #### bpmn-editor
 
@@ -89,7 +90,8 @@ The primary BPMN 2.0 process model editor. Provides the interactive modeler, pro
 
 - **Entry:** `studio/src/modules/bpmn-editor/index.tsx`
 - **Dependencies (commands):** `std` (incl. `std.help.open`), `bpmn-diff`
-- **Dependencies (imports):** `bpmn-core`
+- **Dependencies (imports):** `bpmn-core`, `dmn-core` (`ProjectDmnModel` / `ProjectDmnDecision` for the Business Rule Task pane)
+- **Plugin API:** registers the `api.bpmn` namespace (`plugin-api/BpmnApiBridge.ts`), see [plugin-host.md](plugin-host.md) §Module API Namespaces
 - **Depended on by:** `engine-workspace/initializeRunMenu` (via imports)
 
 #### bpmn-diff
@@ -103,22 +105,32 @@ Diff view for comparing two BPMN process models side by side.
 
 #### dmn-core
 
-Shared DMN infrastructure: `DmnModelerComponentAdapter` wrapping `dmn-js`, DMN diff engine (XML structural comparison), moddle extensions, custom command handlers, shared types.
+Shared DMN infrastructure: `DmnModelerComponentAdapter` wrapping `dmn-js`, DMN diff engine (XML structural comparison), moddle extensions, custom command handlers, shared types, the Business Rule Task bridge types `ProjectDmnModel` / `ProjectDmnDecision` (`ProjectDmnTypes.ts`), and `EvaluationResultView` (`evaluation-result/`), the decision result view used by the simulator and the Engine decision viewer.
 
 - **Entry:** `studio/src/modules/dmn-core/index.ts`
 - **Commands registered:** `dmn.modeler.registerModule`
 - **Dependencies:** None
-- **Depended on by:** `dmn-editor`, `dmn-diff` (via direct imports)
+- **Depended on by:** `dmn-editor`, `dmn-diff`, `dmn-decision-simulator`, `bpmn-editor`, `engine-decision-viewer`, `engine-debugger` (via direct imports)
 
 #### dmn-editor
 
 The DMN 1.5 decision model editor. Provides the interactive DRD modeler, decision table editor, literal expression editor, boxed expression editor, right-area panes in four groups (`property`, `scripting`, `documentation`, `validation`), merge resolver, and all editing functionality. Mirrors the `bpmn-editor` module structure.
 
 - **Entry:** `studio/src/modules/dmn-editor/index.ts`
-- **Dependencies (imports):** `dmn-core`
+- **Dependencies (imports):** `dmn-core`, `bpmn-core` (merge styles)
+- **Plugin API:** registers the `api.dmn` namespace (`plugin-api/DmnApiBridge.ts`)
 - **Document types registered:** `dmn` (`.dmn` files)
 - **Panes registered:** Definitions / DRG element / Decision Table / Literal Expression (`property`); Item Definitions + Imports (`scripting`); Documentation; Validation (own right group). Merge overview on merge documents.
 - **Merge resolver:** `DmnMergeResolver` + `DmnMergeResultModeler` (per-element resolution via three-panel DRD layout and `dmnXmlMergeEngine`)
+
+#### dmn-decision-simulator
+
+Evaluates a decision or decision service of the open DMN diagram in the Studio, without an Engine: DRD overlays (inputs, play buttons, result badges), a side panel with replay, and rule highlighting in decision tables. See [dmn-decision-simulator.md](dmn-decision-simulator.md).
+
+- **Entry:** `studio/src/modules/dmn-decision-simulator/index.ts`
+- **Command:** `dmn.simulator.toggle` (optional bridge argument; DRD view only)
+- **Help text:** `dmn/simulator`
+- **Uses:** `solution.models.scan` to resolve imports
 
 #### dmn-diff
 
@@ -194,7 +206,7 @@ Read-only DRD viewer for deployed DMN decision definitions, with ad-hoc evaluati
 
 - **Entry:** `studio/src/modules/engine-decision-viewer/index.ts`
 - **Dependencies (commands):** `std`, `engine-core`
-- **Dependencies (imports):** `engine-core`, `dmn-core` (viewer adapter)
+- **Dependencies (imports):** `engine-core`, `dmn-core` (viewer adapter, `EvaluationResultView`)
 - **Document types registered:** `engine-decision-viewer` (URI: `engine-decision://{engineId}/{decisionModelId}`)
 - **Panes registered:** `DefinitionInfoPane`, `DecisionDetailPane`, `DecisionTableDetailPane`, `LiteralExpressionPane`, `BkmDetailPane`, `ItemDefinitionDetailPane`, `DecisionServiceDetailPane` (right/property)
 - **Depended on by:** `engine-debugger` (types import for DMN trace UI)
@@ -250,10 +262,10 @@ Management UI for the Plugin Host. Provides the Plugins pane (left sidebar), plu
 Scans the open solution's `.bpmn` and `.dmn` files (process ids, versions, call-activity and decision references, stored linter scores, SHA-256) and finds the file that defines a process or decision. No cache: every call re-reads the files.
 
 - **Entry:** `studio/src/modules/solution-models/index.ts` (scanner: `scanSolutionModels.ts`, types: `types.ts`)
-- **Commands:** `solution.models.scan`, `solution.models.findProcessFile(processId)`, `solution.models.findDecisionFile(definitionsId)`
+- **Commands:** `solution.models.scan`, `solution.models.findProcessFile(processId)`, `solution.models.findDecisionFile(definitionsId)`, `solution.models.findDecisionModelByNamespace(namespace)`
 - **Entry shape (`SolutionModelEntry`, sorted by URI):**
   - `bpmn`: `uri`, `sha256`, `processes` (`id`, `name`, `version`, `isExecutable`, `callActivities` with `calledElement` / `calledProcessVersion`, `decisionRefs`; both include nested subprocesses), `storedLinterScores`.
-  - `dmn`: `uri`, `sha256`, `definitionsId`.
+  - `dmn`: `uri`, `sha256`, `definitionsId`, `namespace` (the `<definitions>` target namespace, `null` if absent), `elements` (`decisions`, `inputData`, `businessKnowledgeModels`, each with `id` and `name`; decision services are not listed because they cannot be imported).
   - `invalid`: `uri`, `error`. A file that cannot be read, fails to parse, or has no complete `<definitions>` root closing the file.
 - **Stored scores:** `StoredLinterScore` is `BfwLinterRulesetScorePayload`; every value is the attribute text. Callers that compare scores parse the numbers themselves.
 
@@ -276,7 +288,7 @@ std ─────────────────────────�
 themes ─────────────────────────────────────────────────┤ (no module deps)
                                                         │
 bpmn-core ──────────────────────────────────────────────┤ (no module deps)
-bpmn-editor ← bpmn-core (import)                        │
+bpmn-editor ← bpmn-core, dmn-core (import)              │
             ← std (incl. std.help.open), bpmn-diff (cmd)│
 bpmn-linter ← bpmn-core (import),                       |
             - std, bpmn-editor (cmd)                    │
@@ -285,7 +297,7 @@ bpmn-token-simulator ← bpmn-core (import)               |
 bpmn-diff ← bpmn-editor (cmd)                           │
                                                         │
 dmn-core ───────────────────────────────────────────────┤ (no module deps)
-dmn-editor ← dmn-core (import)                          │
+dmn-editor ← dmn-core, bpmn-core (import)               │
 dmn-diff ← dmn-core/diff (import)                       │
                                                         │
 git-cruiser ← std (cmd), bpmn-diff, dmn-diff (cmd)      │
@@ -313,6 +325,9 @@ plugins ← std (cmd: std.settings.openUserSettingsAtCategory)│
 ```
 
 ## Known Architectural Notes
+
+- Import direction between modules (engine → bpmn/dmn/neutral, never back; bpmn ↔ dmn only through the `-core` modules; no module imports from `bifrost/` or `components/`) is enforced by ESLint, see [imports-and-modules.md](imports-and-modules.md) §Module Dependency Direction.
+- Generic helpers live in Bifrost core, e.g. `getHumanizedDuration` in `bifrost/common/DurationFunctions.ts` (used by the engine modules and `EvaluationResultView`).
 
 ## File Path Reference
 

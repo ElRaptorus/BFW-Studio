@@ -29,7 +29,7 @@ import {
   IPC_INVOKE_GIT_STATUS,
   IPC_INVOKE_GIT_UNSTAGE,
   IPC_MESSAGE_GIT_CLONE_PROGRESS,
-} from '#modules/git-cruiser/GitIpcChannels';
+} from '#bifrost/contracts/GitIpcChannels';
 import { ipcMain } from 'electron';
 import * as fs from 'fs/promises';
 import * as os from 'os';

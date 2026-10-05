@@ -55,6 +55,11 @@ describe('scanSolutionModels', () => {
 
     const [decision, draft, order, , unversioned] = entries;
     expect(decision).toMatchObject({ kind: 'dmn', definitionsId: 'discount-rules' });
+    if (decision.kind !== 'dmn') {
+      throw new Error('discount-rules.dmn must scan as DMN');
+    }
+    expect(decision.elements.decisions.length).toBeGreaterThan(0);
+    expect(decision.namespace).toEqual(expect.any(String));
     expect(draft).toMatchObject({ kind: 'bpmn', processes: [{ id: 'draft-process', isExecutable: false }] });
     expect(unversioned).toMatchObject({ kind: 'bpmn', processes: [{ id: 'unversioned-process', version: null }] });
 

@@ -113,7 +113,24 @@ Inspect deployed DMN definitions on a connected engine and test them interactive
 - Import-chain navigation for multi-model decision graphs
 - Ad-hoc evaluation panel — provide input values and execute the decision against the engine without needing a running process instance
 
-**Planned:** Decision Simulator (analogous to the BPMN Token Simulator), cross-diagram import resolution for multi-model decision graphs.
+### Decision Simulator
+
+Evaluate a decision or decision service right in the DRD, without an Engine — the DMN counterpart of the Token Simulator:
+
+- Set FEEL values with the wrench under input data shapes (multi-line editor dialog), press play on a decision, and see values or errors as badges (run errors also as notifications), with evaluated requirement edges highlighted
+- Control pad at the top of the canvas with Run, Run again, Reset, an animated step-by-step replay, a one-line result, details and help; follows every theme
+- Matched and unmatched rules are highlighted in decision tables, with a legend; results are marked stale when the model changes
+- Mirrors the Engine's evaluation: hit policies, boxed expressions, business knowledge models, decision services, imports
+
+See [architecture](./docs/architecture/dmn-decision-simulator.md).
+
+### Cross-Diagram Import Resolution
+
+Multi-model decision graphs are now first-class in the editor:
+
+- The Imports pane resolves each import to its solution file and links to it
+- The Imported Requirements pane lists, adds, retargets and removes requirements that point into imported models
+- The validator warns about imports without a solution file, undeclared namespaces, and missing target elements
 
 
 ---
@@ -288,7 +305,5 @@ Ideas under consideration for future development:
 - Process Landscape Map as a solution-level feature
 - Project organization tools (grouping, tagging, folder organization by tags) — potentially combined with the landscape map
 - Cross-process data and message flow visualization ("Flow Chart") with optional debugger integration
-- DMN Decision Simulator
-- DMN cross-diagram import resolution
 - Collaborative modeling tools
 - Multi-platform format support (read and convert diagrams from other BPM platforms)

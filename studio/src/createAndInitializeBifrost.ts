@@ -30,6 +30,7 @@ export async function createAndInitializeBifrost(
     await bifrost.modules.requirePackagedModule('dmn-core');
     await bifrost.modules.requirePackagedModule('dmn-editor');
     await bifrost.modules.requirePackagedModule('dmn-diff');
+    await bifrost.modules.requirePackagedModule('dmn-decision-simulator');
 
     await bifrost.modules.requirePackagedModule('git-cruiser');
 

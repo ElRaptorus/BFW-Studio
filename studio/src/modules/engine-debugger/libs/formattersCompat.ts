@@ -1,5 +1,5 @@
+import { getHumanizedDuration } from '#bifrost/common/DurationFunctions';
 import { getShortId } from '#modules/engine-core';
-import { getHumanizedDuration } from '#modules/engine-core/Formatters';
 
 /** Local helper — not exported from engine-core Formatters. */
 export function getHumanReadableFlowNodeInstancePropertyName(propertyName: string): string {

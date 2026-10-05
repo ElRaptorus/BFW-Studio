@@ -177,7 +177,7 @@ For advanced use cases (custom highlighting, requirement tracing, decision-servi
 
 ### Loading flow
 
-1. `ContributionRegistrar` detects `dmnModules` + `dmn.renderer` permission
+1. `ContributionRegistrar` calls `DmnApiBridge.registerContributions()`, which detects `dmnModules` + `dmn.renderer` permission
 2. `PluginDmnModuleLoader.loadPluginModules(name, path, modules)`:
    - Creates a `PluginChannel` for bidirectional communication
    - Registers the channel under a **unique DI name** `pluginChannel__<pluginName>` (prevents multi-plugin collisions in the flat DI container)
@@ -185,7 +185,7 @@ For advanced use cases (custom highlighting, requirement tracing, decision-servi
    - Loads each bundle via `__non_webpack_require__()` (runtime Node.js require)
    - Rewrites `$inject` arrays in the loaded module: replaces `'pluginChannel'` with the plugin-specific DI name (`rewriteChannelInjections`)
    - Registers all modules in `DmnModelerModuleRegistry`
-3. On success, `ContributionRegistrar.forceReopenDmnEditors()` closes and reopens all open DMN editors so the new DRD modeler instances include the freshly registered modules
+3. On success, `DmnApiBridge.forceReopenDmnEditors()` (called from its `registerContributions`) closes and reopens all open DMN editors so the new DRD modeler instances include the freshly registered modules
 4. `DmnModelerModuleRegistry.getAll()` returns both internal (core) and plugin modules
 
 ### PluginChannel message pipe
@@ -232,7 +232,7 @@ When a plugin with renderer modules is disabled:
 | File | Purpose |
 |------|---------|
 | `bifrost/common/plugin-host/sandbox/sandbox-worker.ts` | `createPluginApi()` — the runtime `api.dmn` object exposed inside the plugin sandbox (mirrors `api.bpmn` in the same file) |
-| `bifrost/electron-renderer/plugin-host/DmnApiBridge.ts` | Renderer-side DMN API executor |
+| `modules/dmn-editor/plugin-api/DmnApiBridge.ts` | Renderer-side DMN API executor; the `dmn` `PluginApiNamespace`, registered in `dmn-editor`'s `onLoad` |
 | `bifrost/electron-renderer/plugin-host/PluginHostBridge.ts` | Namespace dispatch + permission gating (shared with BPMN) |
 | `bifrost/common/plugin-host/permissions/PermissionTypes.ts` | Permission types + hierarchy (shared with BPMN) |
 | `bifrost/common/plugin-host/permissions/PermissionGate.ts` | Runtime permission enforcement (shared with BPMN) |

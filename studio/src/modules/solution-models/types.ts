@@ -20,6 +20,14 @@ export type SolutionProcessEntry = {
   decisionRefs: string[];
 };
 
+export type SolutionDmnElement = { id: string; name: string | null };
+
+export type SolutionDmnElements = {
+  decisions: SolutionDmnElement[];
+  businessKnowledgeModels: SolutionDmnElement[];
+  inputData: SolutionDmnElement[];
+};
+
 export type SolutionModelEntry =
   | {
       kind: 'bpmn';
@@ -28,5 +36,12 @@ export type SolutionModelEntry =
       processes: SolutionProcessEntry[];
       storedLinterScores: StoredLinterScore[];
     }
-  | { kind: 'dmn'; uri: string; sha256: string; definitionsId: string | null }
+  | {
+      kind: 'dmn';
+      uri: string;
+      sha256: string;
+      definitionsId: string | null;
+      namespace: string | null;
+      elements: SolutionDmnElements;
+    }
   | { kind: 'invalid'; uri: string; error: string };

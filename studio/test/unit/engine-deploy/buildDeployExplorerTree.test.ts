@@ -15,7 +15,10 @@ const dmn = (relativePath: string): SolutionModelEntry => ({
   uri: `${root}/${relativePath}`,
   sha256: 'x',
   definitionsId: relativePath,
+  namespace: null,
+  elements: { decisions: [], businessKnowledgeModels: [], inputData: [] },
 });
+const dmnEntryAt = (uri: string): SolutionModelEntry => ({ ...dmn('x.dmn'), uri });
 const entries: SolutionModelEntry[] = [
   bpmn('top.bpmn'),
   bpmn('orders/order.bpmn'),
@@ -72,7 +75,7 @@ describe('buildDeployExplorerTree', () => {
   it('keeps one node per project in a multi-root solution', () => {
     const other = 'file:///work/other';
     const tree = buildDeployExplorerTree(
-      [...entries, { kind: 'dmn', uri: `${other}/x.dmn`, sha256: 'x', definitionsId: 'x' }],
+      [...entries, dmnEntryAt(`${other}/x.dmn`)],
       [
         { name: 'solution', uri: root },
         { name: 'other', uri: other },

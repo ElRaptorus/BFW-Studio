@@ -24,4 +24,16 @@ See [workbench-categories.md](architecture/workbench-categories.md).
 
 See [settings.md](architecture/settings.md).
 
+## One-way module dependency direction
+
+**Context:** Imports crossed the module families in both directions: bpmn and dmn editors reached into engine and `git-cruiser` code, `components/` into `bpmn-core`, and the plugin host hard-wired the BPMN and DMN API bridges.
+
+**Options:** Document the direction only; or document it, move the crossing code, and enforce it with ESLint. For the plugin bridges: keep them in the host, or let modules register them through a contract.
+
+**Decision:** `bifrost/` and `components/` import no module. Engine modules may import everything; nothing imports them. bpmn and dmn modules may import only the other family's `-core` module, because the Business Rule Task couples the two. Editors never import `git-cruiser`. Shared pure functions go to `bifrost/common/`, and a one-liner is repeated instead of extracted. Modules register `api.bpmn` / `api.dmn` as `PluginApiNamespace`. ESLint zones enforce the direction.
+
+**Rationale:** A rule that is not enforced erodes again, and inverting the plugin bridges is the only way to keep the host free of module code.
+
+See [imports-and-modules.md](architecture/imports-and-modules.md) and [plugin-host.md](architecture/plugin-host.md).
+
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

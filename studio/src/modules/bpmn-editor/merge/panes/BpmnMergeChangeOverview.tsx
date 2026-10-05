@@ -1,12 +1,17 @@
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
-import type { ConflictKey, ElementResolutionStatus, MergeResolutionProgress } from '#bifrost/contracts/MergeTypes';
+import {
+  type ConflictKey,
+  EVENT_MERGE_FILE_CHANGED,
+  EVENT_RESOLUTION_CHANGED,
+  type ElementResolutionStatus,
+  type MergeResolutionProgress,
+  type MergeResolverHost,
+} from '#bifrost/contracts/MergeTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
 import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED } from '#modules/git-cruiser/GitTypes';
-import type BpmnMergeResultModeler from '#modules/git-cruiser/merge/MergeDocumentModel';
 
 import React, { useEffect, useState } from 'react';
 
@@ -20,7 +25,7 @@ import { makeBaseKey, parseConflictKey } from '../BpmnMergeResultModeler';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: () => 'Merge Changes',
-  shouldBeDisplayed: (document: EditorDocument, model: BpmnMergeResultModeler) =>
+  shouldBeDisplayed: (document: EditorDocument, model: MergeResolverHost) =>
     document?.modelKey === 'MergeDocumentModel' && model?.currentFileType === 'bpmn',
   Pane: PaneFull,
   PaneContent: PaneContentWrapper,
@@ -44,7 +49,7 @@ function PaneContentWrapper(props: PaneComponentProps): React.JSX.Element {
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
-  const model = props.editorDocumentModel as BpmnMergeResultModeler | null;
+  const model = props.editorDocumentModel as MergeResolverHost | null;
   const resolverApi = model?.resolverRef?.current;
 
   const [elements, setElements] = useState<ClassifiedElement[]>(() => resolverApi?.getClassifiedElements?.() ?? []);

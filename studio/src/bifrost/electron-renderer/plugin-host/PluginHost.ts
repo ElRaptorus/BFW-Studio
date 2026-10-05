@@ -26,7 +26,11 @@ import {
   type TrustAndReEnablePayload,
   type UnloadPluginPayload,
 } from '#bifrost/contracts/PluginHostProtocol';
-import { EVENT_PLUGIN_LIST_CHANGED, type IPluginHost } from '#bifrost/contracts/PluginHostTypes';
+import {
+  EVENT_PLUGIN_LIST_CHANGED,
+  type IPluginHost,
+  type PluginApiNamespaceFactory,
+} from '#bifrost/contracts/PluginHostTypes';
 import { type PluginInfo } from '#bifrost/contracts/PluginHostTypes';
 import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 import { getPluginsDir } from '#bifrost/node/BifrostPathFunctions';
@@ -36,8 +40,6 @@ import type { Dirent } from 'fs';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import { pluginModuleLoader } from '../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
-import { pluginDmnModuleLoader } from '../../../modules/dmn-core/plugin-modules/PluginDmnModuleLoader';
 import { checkApiVersionCompatibility } from '../../common/plugin-host/manifest/ApiVersionCheck';
 import { readManifest } from '../../common/plugin-host/manifest/ManifestReader';
 import type {
@@ -275,7 +277,7 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
     super();
     this.bifrost = bifrost;
     this.pluginIframeManager = new PluginIframeManager();
-    this.contributionRegistrar = new ContributionRegistrar(bifrost);
+    this.contributionRegistrar = new ContributionRegistrar(bifrost, () => this.bridge.getApiNamespaces());
     this.permissionStore = new PluginPermissionStore(bifrost.getLocalStorage('PluginPermissions'));
     this.activationManager = new ActivationManager(bifrost, this, async (pluginName, permissions) => {
       const info = this.pluginList.find((entry) => entry.name === pluginName);
@@ -290,6 +292,10 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
       const themeType = bifrost.theme.getCurrentThemeType();
       this.pluginIframeManager.broadcastThemeTokens(tokens, themeType);
     });
+  }
+
+  registerApiNamespace(factory: PluginApiNamespaceFactory): void {
+    this.bridge.registerApiNamespace(factory);
   }
 
   getPluginIframeManager(): PluginIframeManager {
@@ -354,14 +360,6 @@ export class PluginHost extends AbstractEmitter implements IPluginHost {
 
     this.connection = new PluginHostConnection((msg) => {
       this.childProcess?.send(msg);
-    });
-
-    pluginModuleLoader.setSendFunction((pluginName, data) => {
-      this.bridge.deliverRendererModuleMessage(pluginName, data);
-    });
-
-    pluginDmnModuleLoader.setSendFunction((pluginName, data) => {
-      this.bridge.deliverRendererModuleMessage(pluginName, data);
     });
 
     this.childProcess.stdout?.on('data', (data: Buffer) => {

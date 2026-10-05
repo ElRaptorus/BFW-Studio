@@ -81,7 +81,7 @@ Registers `ipcMain.handle` for all `IPC_INVOKE_GIT_*` channels. Each handler ins
 
 ### IPC Channels
 
-**Path:** `studio/src/modules/git-cruiser/GitIpcChannels.ts`
+**Path:** `studio/src/bifrost/contracts/GitIpcChannels.ts` (a contract, because the Electron main process and the renderer both import it)
 
 All channel constants are defined here and re-exported via `IpcEvents.ts`.
 
@@ -508,7 +508,7 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | Module entry | `studio/src/modules/git-cruiser/index.ts` |
 | GitService | `studio/src/modules/git-cruiser/GitService.ts` |
 | GitTypes | `studio/src/modules/git-cruiser/GitTypes.ts` |
-| IPC Channels | `studio/src/modules/git-cruiser/GitIpcChannels.ts` |
+| IPC Channels | `studio/src/bifrost/contracts/GitIpcChannels.ts` |
 | Main process handlers | `studio/src/bifrost/electron-main/registerGitHandlers.ts` |
 | Commands | `studio/src/modules/git-cruiser/initializers/initializeCommands.ts` |
 | Menus | `studio/src/modules/git-cruiser/initializers/initializeMenus.ts` |
@@ -532,7 +532,7 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | **Merge Styles (generic)** | `studio/src/modules/git-cruiser/merge/styles/component.merge-editor.scss` |
 | **BPMN Merge Resolver** | `studio/src/modules/bpmn-editor/merge/BpmnMergeResolver.tsx` |
 | **BPMN Merge Change Overview Pane** | `studio/src/modules/bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx` |
-| **BPMN Merge Styles** | `studio/src/modules/bpmn-editor/merge/styles/component.bpmn-merge.scss` |
+| **BPMN Merge Styles** | `studio/src/modules/bpmn-core/diff/styles/component.bpmn-merge.scss` (shared by the BPMN and DMN merge resolvers) |
 
 ## Merge Conflict Resolution
 
@@ -564,14 +564,16 @@ BPMN three-panel visualization, `xmlMergeEngine`, and per-attribute resolution: 
 | `GitMergeStateKind` | `GitTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
 | `GitMergeState` | `GitTypes.ts` | Merge kind + list of conflicted `GitFileStatus` entries |
 | `GitConflictBlobs` | `GitTypes.ts` | `{ base, ours, theirs }` — each `string \| null` |
-| `MergeConflictKind` | `MergeDocumentModel.ts` | `'content' \| 'ours-deleted' \| 'theirs-deleted'` |
-| `MergeFileType` | `GitTypes.ts` | `'bpmn' \| 'dmn'` — only diagram files enter the merge resolver |
+| `MergeConflictKind` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'content' \| 'ours-deleted' \| 'theirs-deleted' \| 'added-by-both'` |
+| `MergeFileType` | `bifrost/contracts/MergeTypes.ts` | `'bpmn' \| 'dmn'` — only diagram files enter the merge resolver |
 | `MergeFileEntry` | `MergeDocumentModel.ts` | Per-file tracking: path, URI, resolved flag, fileType |
 | `MergeResolverProps` | `studio/src/bifrost/contracts/MergeTypes.ts` | Props contract for resolver components (blobs, conflictKind, operationKind, entry, resolverRef, callbacks) |
 | `MergeOperationKind` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
 | `ElementResolutionStatus` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'auto-applied' \| 'pending' \| 'accepted-ours' \| 'accepted-theirs' \| 'custom'` |
 | `ElementResolution` | `studio/src/bifrost/contracts/MergeTypes.ts` | `{ elementId, status }` |
 | `MergeResolutionProgress` | `studio/src/bifrost/contracts/MergeTypes.ts` | `{ totalConflicts, resolvedConflicts, isComplete }` |
+| `MergeResolverHost` | `studio/src/bifrost/contracts/MergeTypes.ts` | What the BPMN/DMN merge change-overview panes read from `MergeDocumentModel` (`currentFileType`, `resolverRef`, `getResolutionProgress()`), so editors never import `git-cruiser`; `MergeDocumentModel` implements it |
+| `EVENT_MERGE_FILE_CHANGED`, `EVENT_RESOLUTION_CHANGED` | `studio/src/bifrost/contracts/MergeTypes.ts` | Events `MergeDocumentModel` emits for those panes |
 
 ### IPC channels
 

@@ -285,6 +285,30 @@ Each Worker Thread maintains its own callback registry. When a `PH_CALLBACK_INVO
 
 `PluginHostBridge` runs in the renderer process and executes API requests against the real `Bifrost` instance. It is created internally by `PluginHost` — no separate initialization needed.
 
+### Module API Namespaces
+
+The plugin host imports no module code. Namespaces backed by a module (`api.bpmn`, `api.dmn`) implement `PluginApiNamespace` from `bifrost/contracts/PluginHostTypes.ts` and register in the module's `onLoad`:
+
+```typescript
+bifrost.plugins.registerApiNamespace((context) => new BpmnApiBridge(bifrost, context));
+```
+
+| Member | Called by | Purpose |
+|---|---|---|
+| `namespace` | `PluginHostBridge` | Routing key; limited to `'bpmn' \| 'dmn'` because each needs `<namespace>`, `.modelling` and `.renderer` entries in `PluginPermission` |
+| `handleApiRequest(method, args, pluginName)` | `PluginHostBridge.executeApiRequest` | After the generic gate: `<namespace>` always, `<namespace>.modelling` for palette/context-pad registration and `modeling.*`, `<namespace>.renderer` for `postToRendererModule` |
+| `registerCallback(payload, getOrCreatePluginGroup)` | `PluginHostBridge.registerCallback` | Event subscriptions; `onRendererModuleMessage` also needs `<namespace>.renderer` |
+| `deliverRendererModuleMessage(pluginName, data)` | `PluginHostBridge` fan-out | Renderer-module → plugin messages |
+| `registerContributions(pluginName, pluginPath, manifest)` | `ContributionRegistrar` | Manifest contributions (diagram-js modules, overlays); returns disposers |
+| `disposePlugin(pluginName)`, `dispose()` | `PluginHostBridge` | Cleanup |
+
+`PluginApiNamespaceContext` gives the factory `pluginHost.getConnection()` and `deliverRendererModuleMessage`; the bridges pass the latter to their renderer-module loader's `setSendFunction`. A second registration of the same namespace throws. An API request to an unregistered namespace fails with `Unknown API namespace`; a callback registration on one only logs a `console.warn`. `NullPluginHost` ignores registrations.
+
+| Namespace | Implementation |
+|---|---|
+| `bpmn` | `modules/bpmn-editor/plugin-api/BpmnApiBridge.ts` (+ `PluginOverlayStore.ts`) |
+| `dmn` | `modules/dmn-editor/plugin-api/DmnApiBridge.ts` |
+
 ### IPC caller attestation
 
 `ApiRequestPayload` includes an optional `pluginName` field. Plugin code inside a Worker cannot set this field in a way the renderer trusts: `SandboxManager.handleWorkerMessage()` **overwrites** `pluginName` on every `PH_API_REQUEST` at the Worker message boundary before forwarding to the renderer. `PluginHostBridge` uses the attested name for permission checks, settings write scoping, and workspace path validation.
@@ -318,7 +342,7 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 - **Read**: Unrestricted (user preferences, not secrets)
 - **Register**: Descriptor keys must start with `plugin.<name>.`
 
-- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workbench, workspace, views, themes, bpmn, dmn). The `bpmn` namespace is handled by `BpmnApiBridge` and enforces tiered permissions (`bpmn` → `bpmn.modelling` → `bpmn.renderer`). The `dmn` namespace is handled by `DmnApiBridge` and enforces the parallel tiered permissions (`dmn` → `dmn.modelling` → `dmn.renderer`), with every modeling/renderer operation additionally gated on the DRD view being active.
+- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workbench, workspace, views, themes) plus every module-registered `PluginApiNamespace` (see §Module API Namespaces). The `bpmn` namespace is handled by `BpmnApiBridge` and the `dmn` namespace by `DmnApiBridge`; the bridge enforces the tiered permissions `<namespace>` → `<namespace>.modelling` → `<namespace>.renderer` for both, and every DMN modeling/renderer operation is additionally gated on the DRD view being active.
 - **Command registration**: Handled via `PH_REGISTER_CALLBACK` with `namespace: 'commands'` and `method: 'register'`. The bridge creates a proxy handler in `bifrost.commands` that forwards invocations to the plugin Worker via `PH_CALLBACK_INVOCATION`. Manifest stub commands are unregistered and replaced when the real handler registers.
 - **Settings change listeners**: Subscribes to `EVENT_SETTINGS_CHANGED` with key filtering, invokes callbacks via the connection.
 - **Webview messaging**: `postMessage` forwards data to `PluginIframeManager.postMessageToIframe()`. `onMessage` sets a `messageHandler` on the iframe entry which routes incoming iframe messages back to the child process via `PH_CALLBACK_INVOCATION`. `createPanel` returns a deterministic `iframeId`.
@@ -620,7 +644,7 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the Studio `Tree` component |
 | `studio/src/bifrost/electron-renderer/plugin-host/ActivationManager.ts` | Renderer | Event-driven lazy activation: subscribes to activation events, defers `PH_LOAD_PLUGIN` until trigger fires. Stores a `pendingActivations` promise so concurrent callers (e.g. stub callbacks) join an in-flight activation instead of returning early |
-| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders (with their `pages`), editor document type placeholders (with their `page`), service task types, themes, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules |
+| `studio/src/bifrost/electron-renderer/plugin-host/manifest/ContributionRegistrar.ts` | Renderer | Processes `bifrostStudio.contributes` at discovery time: registers stub commands, icons, keybindings, menus, settings, pane placeholders (with their `pages`), editor document type placeholders (with their `page`), service task types, themes; hands the rest to each registered `PluginApiNamespace.registerContributions()` (bpmn and dmn palette, context pad and renderer modules) |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderPaneProvider.tsx` | Renderer | Pane UI showing "Activating plugin…" while the plugin is pending activation |
 | `studio/src/bifrost/electron-renderer/plugin-host/manifest/PlaceholderEditorDocumentRenderer.tsx` | Renderer | Editor tab UI shown for a `contributes.editorDocumentTypes` placeholder: triggers activation on mount, force-reopens the tab once replaced by the real registration, or renders a terminal "denied"/"failed"/"mismatch" error state |
 | `studio/src/bifrost/common/plugin-host/manifest/ManifestTypes.ts` | Shared | TypeScript interfaces for the `bifrostStudio` manifest section |

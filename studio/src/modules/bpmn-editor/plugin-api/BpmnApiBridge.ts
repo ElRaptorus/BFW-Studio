@@ -1,9 +1,19 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import type { BifrostStudioManifest } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { CallbackInvocationPayload, RegisterCallbackPayload } from '#bifrost/contracts/PluginHostProtocol';
 import { PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
+import type {
+  PluginApiNamespace,
+  PluginApiNamespaceContext,
+  PluginCallbackGroup,
+} from '#bifrost/contracts/PluginHostTypes';
 import { EVENT_EDITOR_AREA_DOCUMENT_CLOSED } from '#bifrost/contracts/internal/EditorEvents';
+import { EVENT_BPMN_MODELER_ADAPTER_SELECTION_CHANGED } from '#modules/bpmn-core/BpmnModelerComponentAdapter';
+import type BpmnModelerComponentAdapter from '#modules/bpmn-core/BpmnModelerComponentAdapter';
+import { pluginBpmnContributionStore } from '#modules/bpmn-core/PluginBpmnContributionStore';
+import { pluginModuleLoader } from '#modules/bpmn-core/plugin-modules/PluginModuleLoader';
 
 import type {
   BpmnElementDetailSnapshot,
@@ -15,12 +25,7 @@ import type {
   PluginBpmnOverlay,
 } from '@elraptorus/bfw_studio_sdk';
 
-import { EVENT_BPMN_MODELER_ADAPTER_SELECTION_CHANGED } from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
-import type BpmnModelerComponentAdapter from '../../../modules/bpmn-core/BpmnModelerComponentAdapter';
-import { pluginBpmnContributionStore } from '../../../modules/bpmn-core/PluginBpmnContributionStore';
-import { pluginModuleLoader } from '../../../modules/bpmn-core/plugin-modules/PluginModuleLoader';
-import type BpmnDocumentModel from '../../../modules/bpmn-editor/BpmnDocumentModel';
-import type { PluginHost } from './PluginHost';
+import type BpmnDocumentModel from '../BpmnDocumentModel';
 import { PluginOverlayStore } from './PluginOverlayStore';
 
 const BPMN_DOCUMENT_TYPE = 'bpmn';
@@ -43,9 +48,11 @@ interface EventSubscription {
  * Renderer-side bridge for the `api.bpmn` namespace.
  * Executes BPMN API requests against real diagram-js services.
  */
-export class BpmnApiBridge {
+export class BpmnApiBridge implements PluginApiNamespace {
+  readonly namespace = 'bpmn';
+
   private bifrost: Bifrost;
-  private pluginHost: PluginHost;
+  private pluginHost: PluginApiNamespaceContext['pluginHost'];
 
   /** pluginName → uri → overlay tracking */
   private pluginOverlays = new Map<string, Map<string, PluginOverlayEntry>>();
@@ -59,10 +66,11 @@ export class BpmnApiBridge {
   /** Store for plugin overlay factories (one per plugin, auto-render model). */
   readonly overlayStore: PluginOverlayStore;
 
-  constructor(bifrost: Bifrost, pluginHost: PluginHost) {
+  constructor(bifrost: Bifrost, context: PluginApiNamespaceContext) {
     this.bifrost = bifrost;
-    this.pluginHost = pluginHost;
-    this.overlayStore = new PluginOverlayStore(pluginHost, bifrost);
+    this.pluginHost = context.pluginHost;
+    pluginModuleLoader.setSendFunction(context.deliverRendererModuleMessage);
+    this.overlayStore = new PluginOverlayStore(context.pluginHost, bifrost);
     this.overlayStore.onRefreshRequested(() => {
       this.emitPluginOverlayFactoriesChanged();
     });
@@ -166,7 +174,7 @@ export class BpmnApiBridge {
 
   registerCallback(
     payload: RegisterCallbackPayload,
-    getOrCreatePluginGroup: (pluginName: string) => Map<string, { disposer: () => void }>,
+    getOrCreatePluginGroup: (pluginName: string) => PluginCallbackGroup,
   ): void {
     const { callbackId, method, args, pluginName: callerName } = payload;
     const pluginName = callerName ?? '_unknown';
@@ -311,6 +319,89 @@ export class BpmnApiBridge {
     this.eventSubscriptions.get(pluginName)!.set(callbackId, subscription);
 
     getOrCreatePluginGroup(pluginName).set(callbackId, { disposer });
+  }
+
+  registerContributions(
+    pluginName: string,
+    pluginPath: string | undefined,
+    manifest: BifrostStudioManifest,
+  ): (() => void)[] {
+    const disposers: (() => void)[] = [];
+    const contributes = manifest.contributes;
+    if (contributes == null) {
+      return disposers;
+    }
+
+    // ── BPMN Palette ─────────────────────────────────────────
+    if (contributes.bpmnPalette != null && contributes.bpmnPalette.length > 0) {
+      const hasBpmnModelling =
+        manifest.permissions?.includes('bpmn.modelling') === true ||
+        manifest.permissions?.includes('bpmn.renderer') === true;
+      if (hasBpmnModelling) {
+        pluginBpmnContributionStore.setPaletteEntries(pluginName, contributes.bpmnPalette);
+        disposers.push(() => pluginBpmnContributionStore.removePaletteEntries(pluginName));
+      }
+    }
+
+    // ── BPMN Context Pad ─────────────────────────────────────
+    if (contributes.bpmnContextPad != null && contributes.bpmnContextPad.length > 0) {
+      const hasBpmnModelling =
+        manifest.permissions?.includes('bpmn.modelling') === true ||
+        manifest.permissions?.includes('bpmn.renderer') === true;
+      if (hasBpmnModelling) {
+        pluginBpmnContributionStore.setContextPadEntries(pluginName, contributes.bpmnContextPad);
+        disposers.push(() => pluginBpmnContributionStore.removeContextPadEntries(pluginName));
+      }
+    }
+
+    // ── BPMN Renderer Modules ─────────────────────────────────
+    if (contributes.bpmnModules != null && contributes.bpmnModules.length > 0 && pluginPath != null) {
+      const hasBpmnRenderer = manifest.permissions?.includes('bpmn.renderer') === true;
+      if (hasBpmnRenderer) {
+        const result = pluginModuleLoader.loadPluginModules(pluginName, pluginPath, contributes.bpmnModules);
+        if (result.success) {
+          this.forceReopenBpmnEditors(pluginName, 'enabled');
+          disposers.push(() => {
+            pluginModuleLoader.unloadPluginModules(pluginName);
+            this.forceReopenBpmnEditors(pluginName, 'disabled');
+          });
+        } else {
+          console.error(`[BpmnApiBridge] Plugin '${pluginName}' renderer module load failed: ${result.error}`);
+          this.bifrost.notifications.open({
+            type: 'error',
+            content: `Plugin '${pluginName}' failed to load renderer modules: ${result.error}`,
+            source: pluginName,
+          });
+        }
+      }
+    }
+
+    return disposers;
+  }
+
+  private forceReopenBpmnEditors(pluginName: string, change: 'enabled' | 'disabled'): void {
+    const openDocs = this.bifrost.editors.getOpenEditorDocuments();
+    const bpmnDocs = openDocs.filter((doc) => doc.documentType === BPMN_DOCUMENT_TYPE);
+    if (bpmnDocs.length === 0) {
+      return;
+    }
+
+    const uris = bpmnDocs.map((doc) => doc.uri);
+
+    void (async () => {
+      for (const doc of bpmnDocs) {
+        await this.bifrost.editors.closeEditorDocument(doc, false, true);
+      }
+      for (const uri of uris) {
+        this.bifrost.editors.focusOrOpenEditorDocument(uri);
+      }
+
+      this.bifrost.notifications.open({
+        type: 'info',
+        content: `Plugin '${pluginName}' ${change}. BPMN editors have been reloaded.`,
+        source: 'Plugins',
+      });
+    })();
   }
 
   disposePlugin(pluginName: string): void {

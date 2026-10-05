@@ -7,6 +7,8 @@
  */
 import type { AbstractSubscription } from '../common/AbstractEmitter';
 import type { PluginPermissionStore } from '../common/plugin-host/PluginPermissionStore';
+import type { BifrostStudioManifest } from '../common/plugin-host/manifest/ManifestTypes';
+import type { PluginHostConnection } from './PluginHostConnection';
 
 // ─── Plugin Host events ─────────────────────────────────────────────
 
@@ -31,7 +33,45 @@ export interface IPluginHost {
   getLog(): string[];
   onLog(handler: (line: string) => void): void;
   clearLog(): void;
+  registerApiNamespace(factory: PluginApiNamespaceFactory): void;
 }
+
+// ─── Module-provided plugin API namespaces ──────────────────────────
+
+/** Callback disposers of one plugin, keyed by callback ID. */
+export type PluginCallbackGroup = Map<string, { disposer: () => void }>;
+
+export type PluginApiNamespaceContext = {
+  pluginHost: { getConnection(): PluginHostConnection | null };
+  /** Forwards a message from a renderer module to every namespace's `onRendererModuleMessage` subscribers. */
+  deliverRendererModuleMessage: (pluginName: string, data: unknown) => void;
+};
+
+/**
+ * A plugin API namespace (`api.<namespace>.*`) contributed by a module, so the plugin host stays free of
+ * module code. The host gates `<namespace>`, `<namespace>.modelling` and `<namespace>.renderer` permissions
+ * before delegating.
+ */
+export interface PluginApiNamespace {
+  /** Limited to namespaces with `<namespace>`, `.modelling` and `.renderer` entries in `PluginPermission`. */
+  readonly namespace: 'bpmn' | 'dmn';
+  handleApiRequest(method: string, args: unknown[], pluginName: string): Promise<unknown>;
+  registerCallback(
+    payload: RegisterCallbackPayload,
+    getOrCreatePluginGroup: (pluginName: string) => PluginCallbackGroup,
+  ): void;
+  deliverRendererModuleMessage(pluginName: string, data: unknown): void;
+  /** Applies the namespace's manifest contributions and returns their disposers. */
+  registerContributions(
+    pluginName: string,
+    pluginPath: string | undefined,
+    manifest: BifrostStudioManifest,
+  ): (() => void)[];
+  disposePlugin(pluginName: string): void;
+  dispose(): void;
+}
+
+export type PluginApiNamespaceFactory = (context: PluginApiNamespaceContext) => PluginApiNamespace;
 
 // ─── Protocol payloads ──────────────────────────────────────────────
 

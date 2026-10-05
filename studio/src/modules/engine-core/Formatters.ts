@@ -93,32 +93,6 @@ export function getHumanizedDateTime(date: string | Date | undefined | null): st
   return parsed.format('YYYY-MM-DD HH:mm:ss');
 }
 
-export function getHumanizedDuration(milliseconds: number | undefined | null): string {
-  if (!milliseconds) {
-    return '--';
-  }
-
-  const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((milliseconds / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((milliseconds / (1000 * 60)) % 60);
-  const seconds = Math.floor((milliseconds / 1000) % 60);
-
-  if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-  }
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  }
-  if (seconds > 0) {
-    return `${seconds}s`;
-  }
-
-  return `${milliseconds}ms`;
-}
-
 export function getProcessInstanceStateName(state: string): string {
   const labels: Record<string, string> = {
     running: 'Running',

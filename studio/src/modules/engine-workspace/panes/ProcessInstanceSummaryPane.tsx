@@ -1,9 +1,10 @@
+import { getHumanizedDuration } from '#bifrost/common/DurationFunctions';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import { ProcessInstanceStateBadge, getHumanizedDateTime, getHumanizedDuration } from '#modules/engine-core';
+import { ProcessInstanceStateBadge, getHumanizedDateTime } from '#modules/engine-core';
 import dayjs from 'dayjs';
 
 import React from 'react';

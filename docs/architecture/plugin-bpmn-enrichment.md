@@ -148,7 +148,7 @@ For advanced use cases (Token Simulator, custom renderers, path highlighting), p
 
 ### Loading flow
 
-1. `ContributionRegistrar` detects `bpmnModules` + `bpmn.renderer` permission
+1. `ContributionRegistrar` calls `BpmnApiBridge.registerContributions()`, which detects `bpmnModules` + `bpmn.renderer` permission
 2. `PluginModuleLoader.loadPluginModules(name, path, modules)`:
    - Creates a `PluginChannel` for bidirectional communication
    - Registers the channel under a **unique DI name** `pluginChannel__<pluginName>` (prevents multi-plugin collisions in the flat DI container)
@@ -156,7 +156,7 @@ For advanced use cases (Token Simulator, custom renderers, path highlighting), p
    - Loads each bundle via `__non_webpack_require__()` (runtime Node.js require)
    - Rewrites `$inject` arrays in the loaded module: replaces `'pluginChannel'` with the plugin-specific DI name (`rewriteChannelInjections`)
    - Registers all modules in `BpmnModelerModuleRegistry`
-3. On success, `forceReopenBpmnEditors()` closes and reopens all open BPMN editors so the new modeler instances include the freshly registered modules
+3. On success, `BpmnApiBridge.forceReopenBpmnEditors()` (called from its `registerContributions`) closes and reopens all open BPMN editors so the new modeler instances include the freshly registered modules
 4. The modeler's `getAll()` returns both internal and plugin modules
 
 ### PluginChannel message pipe
@@ -202,7 +202,8 @@ When a plugin with renderer modules is disabled:
 | File | Purpose |
 |------|---------|
 | `bifrost/common/plugin-host/api/BpmnApi.ts` | Plugin-facing BPMN API (host side) |
-| `bifrost/electron-renderer/plugin-host/BpmnApiBridge.ts` | Renderer-side BPMN API executor |
+| `modules/bpmn-editor/plugin-api/BpmnApiBridge.ts` | Renderer-side BPMN API executor; the `bpmn` `PluginApiNamespace`, registered in `bpmn-editor`'s `onLoad` |
+| `modules/bpmn-editor/plugin-api/PluginOverlayStore.ts` | Per-plugin overlay factories and fingerprint cache |
 | `bifrost/electron-renderer/plugin-host/PluginHostBridge.ts` | Namespace dispatch + permission gating |
 | `bifrost/common/plugin-host/permissions/PermissionTypes.ts` | Permission types + hierarchy |
 | `bifrost/common/plugin-host/permissions/PermissionGate.ts` | Runtime permission enforcement |

@@ -2,6 +2,11 @@ import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import type { MergeResolverProps } from '#bifrost/contracts/MergeTypes';
+import {
+  EVENT_MERGE_FILE_CHANGED,
+  EVENT_RESOLUTION_CHANGED,
+  type MergeConflictKind,
+} from '#bifrost/contracts/MergeTypes';
 import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { Icon } from '#components/Icon';
 import { Editor } from '#components/editor/Editor';
@@ -18,7 +23,6 @@ import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 
 import React from 'react';
 
-import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED, type MergeConflictKind } from '../GitTypes';
 import type MergeDocumentModel from './MergeDocumentModel';
 import './styles/component.merge-editor.scss';
 

@@ -1,11 +1,11 @@
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
-import { BpmnElementColorPicker, generateRandomColor } from '#components/BpmnElementColorPicker';
 import { Icon } from '#components/Icon';
 import { Pane } from '#components/panes/Pane';
 import { PaneBody } from '#components/panes/PaneBody';
 import { PaneHeader } from '#components/panes/PaneHeader';
+import { BpmnElementColorPicker, generateRandomColor } from '#modules/bpmn-core/components/BpmnElementColorPicker';
 import type { BpmnElementColor } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';

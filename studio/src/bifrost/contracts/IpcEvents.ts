@@ -84,4 +84,4 @@ export {
   IPC_INVOKE_GIT_BRANCH_CREATE,
   IPC_INVOKE_GIT_SHOW,
   IPC_INVOKE_GIT_LOG,
-} from '#modules/git-cruiser/GitIpcChannels';
+} from '#bifrost/contracts/GitIpcChannels';

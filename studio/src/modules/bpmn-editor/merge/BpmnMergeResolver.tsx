@@ -8,6 +8,7 @@ import type {
 import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { Icon } from '#components/Icon';
 import { SplitterLayout } from '#components/splitter/SplitterLayout';
+import '#modules/bpmn-core/diff/styles/component.bpmn-merge.scss';
 
 import React from 'react';
 
@@ -29,7 +30,6 @@ import {
   stringifyValue,
 } from '../../bpmn-core/diff';
 import BpmnMergeResultModeler from './BpmnMergeResultModeler';
-import './styles/component.bpmn-merge.scss';
 
 export type MergeElementClassification = 'ours-only' | 'theirs-only' | 'both' | 'identical';
 

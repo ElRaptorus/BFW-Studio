@@ -1,0 +1,45 @@
+---
+description: Import direction between bifrost, components, and the built-in modules; where generic code goes
+alwaysApply: true
+---
+
+# Module Boundaries
+
+Imports between `studio/src/bifrost/`, `studio/src/components/`, and `studio/src/modules/*` flow in one direction. A module that needs something from a module it may not import uses a bridge instead.
+
+## Direction
+
+| Importer | May import | Must not import |
+|---|---|---|
+| `bifrost/`, `components/` | `bifrost/`, `components/` | any module |
+| neutral modules (every module outside the engine, bpmn and dmn families: `solution-models`, `std`, `themes`, `git-cruiser`, `plugins`, `machine-sanctum`) | `bifrost/`, `components/`, any non-engine module | `engine-*` |
+| bpmn modules (`bpmn-*`) | `bifrost/`, `components/`, neutral modules except `git-cruiser`, own family, **`dmn-core` only** from the dmn family | `engine-*`, `git-cruiser`, `dmn-*` other than `dmn-core` |
+| dmn modules (`dmn-*`) | `bifrost/`, `components/`, neutral modules except `git-cruiser`, own family, **`bpmn-core` only** from the bpmn family | `engine-*`, `git-cruiser`, `bpmn-*` other than `bpmn-core` |
+| engine modules (`engine-*`) | everything | — |
+
+**Why the `-core` exception:** the Business Rule Task couples BPMN to DMN. Shared types and views that bridge the two families live in the family's `-core` module, so the other family may import them.
+
+- `dmn-editor` may import `bpmn-core`, but not `bpmn-editor`, `bpmn-diff`, `bpmn-linter`, or `bpmn-token-simulator`.
+- `bpmn-editor` may import `dmn-core`, but not `dmn-editor`, `dmn-diff`, or `dmn-decision-simulator`.
+
+## Bridges
+
+When the direction forbids an import, use one of:
+
+- **Commands** — `bifrost.commands.executeCommand(...)`.
+- **Mediator events** on shared mediators.
+- **Contracts** in `bifrost/contracts/` — types, event names, IPC channel names, and registration interfaces (e.g. `PluginApiNamespace`, `MergeResolverHost`) that a module implements and the core consumes.
+
+## Where generic code goes
+
+| Kind | Location |
+|---|---|
+| Synchronous pure function | `bifrost/common/*Functions.ts` |
+| React UI piece without module knowledge | `components/` |
+| Async cross-module operation | a command in `std` |
+
+**One-liner rule:** a one-line expression needed in several places is repeated, not extracted. Extract only when the logic is longer than one line or must stay identical.
+
+## Enforcement
+
+`studio/eslint.config.mjs` enforces the table with `no-restricted-imports` zones (`npm run lint:fix` fails on a violation). The dynamic `require` in `ModuleManager.ts` is not checked. Details: `docs/architecture/imports-and-modules.md` §Module Dependency Direction.

@@ -1,17 +1,16 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
+import {
+  EVENT_MERGE_FILE_CHANGED,
+  EVENT_RESOLUTION_CHANGED,
+  type MergeConflictKind,
+  type MergeFileType,
+  type MergeResolverHost,
+} from '#bifrost/contracts/MergeTypes';
 
 import type { GitService } from '../GitService';
-import { EVENT_MERGE_FILE_CHANGED, EVENT_RESOLUTION_CHANGED } from '../GitTypes';
-import type {
-  GitConflictBlobs,
-  GitMergeStateType,
-  MergeConflictKind,
-  MergeFileEntry,
-  MergeFileType,
-  MergeProgress,
-} from '../GitTypes';
+import type { GitConflictBlobs, GitMergeStateType, MergeFileEntry, MergeProgress } from '../GitTypes';
 
 function classifyFileType(filePath: string): MergeFileType | null {
   if (filePath.endsWith('.bpmn')) {
@@ -31,7 +30,7 @@ function classifyFileType(filePath: string): MergeFileType | null {
  * visualized. Type-specific behaviour is delegated via the registered
  * merge resolver component and the command dispatch pattern.
  */
-export default class MergeDocumentModel extends EditorDocumentModel {
+export default class MergeDocumentModel extends EditorDocumentModel implements MergeResolverHost {
   public bifrost: Bifrost;
   public fileLoader: ILoadable;
 

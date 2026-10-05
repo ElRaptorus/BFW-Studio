@@ -5,7 +5,13 @@ import type { Solution } from '#bifrost/contracts/SolutionTypes';
 import type { BpmnProcess, FlowNode } from '@elraptorus/bfw_engine_sdk';
 import { parseBpmn, parseDmn } from '@elraptorus/bfw_engine_sdk';
 
-import type { SolutionCallActivityEntry, SolutionModelEntry, SolutionProcessEntry, StoredLinterScore } from './types';
+import type {
+  SolutionCallActivityEntry,
+  SolutionDmnElement,
+  SolutionModelEntry,
+  SolutionProcessEntry,
+  StoredLinterScore,
+} from './types';
 
 const MODEL_FILE_PATTERN = /\.(bpmn|dmn)$/i;
 const SCORE_ELEMENT_PATTERN = /<(?:[\w-]+:)?linterRulesetScore\b([^>]*?)\/?>/g;
@@ -97,7 +103,21 @@ async function toEntry(uri: string, text: string): Promise<SolutionModelEntry> {
   }
   const sha256 = await sha256Hex(text);
   if (uri.toLowerCase().endsWith('.dmn')) {
-    return { kind: 'dmn', uri, sha256, definitionsId: parseDmn(text).id };
+    const definitions = parseDmn(text);
+    const toElements = (items: { id: string; name: string | null }[]): SolutionDmnElement[] =>
+      items.map((item) => ({ id: item.id, name: item.name }));
+    return {
+      kind: 'dmn',
+      uri,
+      sha256,
+      definitionsId: definitions.id,
+      namespace: definitions.namespace,
+      elements: {
+        decisions: toElements(definitions.decisions),
+        businessKnowledgeModels: toElements(definitions.businessKnowledgeModels),
+        inputData: toElements(definitions.inputData),
+      },
+    };
   }
   return {
     kind: 'bpmn',

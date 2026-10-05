@@ -1,7 +1,7 @@
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { type PluginInfo } from '#bifrost/contracts/PluginHostTypes';
 
-import type { IPluginHost } from '../../contracts/PluginHostTypes';
+import type { IPluginHost, PluginApiNamespaceFactory } from '../../contracts/PluginHostTypes';
 import { PluginPermissionStore } from './PluginPermissionStore';
 
 const NULL_STORAGE = {
@@ -45,4 +45,5 @@ export class NullPluginHost extends AbstractEmitter implements IPluginHost {
   }
   onLog(_handler: (line: string) => void): void {}
   clearLog(): void {}
+  registerApiNamespace(_factory: PluginApiNamespaceFactory): void {}
 }

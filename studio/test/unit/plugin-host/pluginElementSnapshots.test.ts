@@ -5,7 +5,7 @@ import { describe, it } from 'vitest';
 
 import { PluginBpmnElementType, PluginDmnElementType } from '@elraptorus/bfw_studio_sdk';
 
-import { toBpmnElementDetailSnapshots } from '../../../src/bifrost/electron-renderer/plugin-host/PluginOverlayStore';
+import { toBpmnElementDetailSnapshots } from '../../../src/modules/bpmn-editor/plugin-api/PluginOverlayStore';
 
 function userTaskStub(overrides: Partial<BpmnElement> = {}): BpmnElement {
   return {

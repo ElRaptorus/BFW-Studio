@@ -31,10 +31,13 @@ import BpmnTextFragmentRenderer from './open-in-new-tab-renderer/BpmnTextFragmen
 import BpmnUserTaskAssigneesFragmentRenderer from './open-in-new-tab-renderer/BpmnUserTaskAssigneesFragmentRenderer';
 import EditorInspectorItemFragmentRenderer from './panes/inspector/EditorInspectorItemFragmentRenderer';
 import { BpmnEditorDocumentInspector } from './panes/inspector/EditorInspectorPane';
+import { BpmnApiBridge } from './plugin-api/BpmnApiBridge';
 
 export const BPMN_DOCUMENT_TYPE = 'bpmn';
 
 export function onLoad(bifrost: Bifrost): void {
+  bifrost.plugins.registerApiNamespace((context) => new BpmnApiBridge(bifrost, context));
+
   bifrost.icons.registerIcons({ 'std/page/workspace': 'ph ph-folders' });
   bifrost.categories.registerPage({
     id: 'design/workspace',

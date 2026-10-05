@@ -11,7 +11,7 @@ import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderHelpIcon } from '#components/panes/PaneHeaderHelpIcon';
 import type BpmnDocumentModel from '#modules/bpmn-editor/BpmnDocumentModel';
 import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
-import type { ProjectDmnDecision, ProjectDmnModel } from '#modules/dmn-editor/initializers/initializeDmnCommands';
+import type { ProjectDmnDecision, ProjectDmnModel } from '#modules/dmn-core';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 

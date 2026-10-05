@@ -1,7 +1,4 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import { ipcRenderer } from 'electron';
-import debounce from 'lodash.debounce';
-
 import {
   IPC_INVOKE_GIT_BRANCH_CREATE,
   IPC_INVOKE_GIT_BRANCH_LIST,
@@ -33,7 +30,10 @@ import {
   IPC_INVOKE_GIT_STATUS,
   IPC_INVOKE_GIT_UNSTAGE,
   IPC_MESSAGE_GIT_CLONE_PROGRESS,
-} from './GitIpcChannels';
+} from '#bifrost/contracts/GitIpcChannels';
+import { ipcRenderer } from 'electron';
+import debounce from 'lodash.debounce';
+
 import type {
   GitCommitOptions,
   GitConflictBlobs,

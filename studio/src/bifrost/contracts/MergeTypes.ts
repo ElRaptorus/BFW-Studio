@@ -1,6 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 
 export type MergeConflictKind = 'content' | 'ours-deleted' | 'theirs-deleted' | 'added-by-both';
+
+export type MergeFileType = 'bpmn' | 'dmn';
+
+export const EVENT_MERGE_FILE_CHANGED = 'EVENT_MERGE_FILE_CHANGED';
+export const EVENT_RESOLUTION_CHANGED = 'EVENT_RESOLUTION_CHANGED';
 
 export type MergeOperationKind = 'merge' | 'rebase' | 'cherry-pick' | null;
 
@@ -25,6 +31,13 @@ export type MergeResolutionProgress = {
   readonly resolvedConflicts: number;
   readonly isComplete: boolean;
 };
+
+/** What type-specific merge panes may read from the merge document model. */
+export interface MergeResolverHost extends EditorDocumentModel {
+  readonly currentFileType: MergeFileType;
+  resolverRef: { current: any } | null;
+  getResolutionProgress(): MergeResolutionProgress | null;
+}
 
 export type MergeResolverProps = {
   readonly studio: Bifrost;

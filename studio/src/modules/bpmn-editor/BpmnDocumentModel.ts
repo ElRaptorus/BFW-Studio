@@ -13,8 +13,6 @@ import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 
-import { PLUGIN_OVERLAY_STORE_KEY } from '../../bifrost/electron-renderer/plugin-host/BpmnApiBridge';
-import type { PluginOverlayStore } from '../../bifrost/electron-renderer/plugin-host/PluginOverlayStore';
 import BpmnModelerComponentAdapter, {
   EVENT_BPMN_MODELER_ADAPTER_LOCATION_CHANGED,
   EVENT_BPMN_MODELER_ADAPTER_ROOT_CHANGED,
@@ -23,6 +21,8 @@ import BpmnModelerComponentAdapter, {
 import BpmnDocumentElementAccess, { EVENT_BPMN_ELEMENT_ID_UPDATED } from './BpmnDocumentElementAccess';
 import BpmnDocumentSelection, { EVENT_BPMN_SELECTION_ELEMENTS_UPDATED } from './BpmnDocumentSelection';
 import { createFlowNodeOverlays } from './OverlayFactory';
+import { PLUGIN_OVERLAY_STORE_KEY } from './plugin-api/BpmnApiBridge';
+import type { PluginOverlayStore } from './plugin-api/PluginOverlayStore';
 
 export const EVENT_BPMN_PROPERTY_UPDATED = 'EVENT_BPMN_PROPERTY_UPDATED';
 

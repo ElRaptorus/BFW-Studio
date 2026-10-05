@@ -27,4 +27,13 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
       return match?.uri ?? null;
     },
   );
+
+  bifrost.commands.register(
+    'solution.models.findDecisionModelByNamespace',
+    async (namespace: string): Promise<Extract<SolutionModelEntry, { kind: 'dmn' }> | null> => {
+      const entries = await scan();
+      const match = entries.find((entry) => entry.kind === 'dmn' && entry.namespace === namespace);
+      return match?.kind === 'dmn' ? match : null;
+    },
+  );
 }

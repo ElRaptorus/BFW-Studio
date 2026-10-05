@@ -1,5 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { type CallbackInvocationPayload, PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
+import type { PluginApiNamespaceContext } from '#bifrost/contracts/PluginHostTypes';
+import type { Overlay } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
+import { OverlayPosition, type Overlay_Positioned } from '#modules/bpmn-core/overlays/BpmnElementOverlayManager';
 import type { BpmnElement } from '#modules/bpmn-editor/BpmnElementTypes';
 
 import React from 'react';
@@ -11,13 +14,6 @@ import type {
   PluginBpmnElementType,
 } from '@elraptorus/bfw_studio_sdk';
 import { PluginBpmnOverlayPosition } from '@elraptorus/bfw_studio_sdk';
-
-import type { Overlay } from '../../../modules/bpmn-core/overlays/BpmnElementOverlayManager';
-import {
-  OverlayPosition,
-  type Overlay_Positioned,
-} from '../../../modules/bpmn-core/overlays/BpmnElementOverlayManager';
-import type { PluginHost } from './PluginHost';
 
 const FACTORY_TIMEOUT_MS = 500;
 
@@ -90,7 +86,7 @@ interface RegisteredFactory {
  * - Error isolation: one factory failure doesn't break the chain.
  */
 export class PluginOverlayStore {
-  private pluginHost: PluginHost;
+  private pluginHost: PluginApiNamespaceContext['pluginHost'];
   private bifrost: Bifrost;
   private factories = new Map<string, RegisteredFactory>();
   private cachedFingerprint: string | null = null;
@@ -98,7 +94,7 @@ export class PluginOverlayStore {
 
   private refreshRequestCallback: (() => void) | null = null;
 
-  constructor(pluginHost: PluginHost, bifrost: Bifrost) {
+  constructor(pluginHost: PluginApiNamespaceContext['pluginHost'], bifrost: Bifrost) {
     this.pluginHost = pluginHost;
     this.bifrost = bifrost;
   }

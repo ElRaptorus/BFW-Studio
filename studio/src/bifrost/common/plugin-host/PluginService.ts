@@ -2,7 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
 import { IPC_INVOKE_UNINSTALL_PLUGIN, IPC_MESSAGE_PLUGIN_STATE_CHANGED } from '#bifrost/contracts/IpcEvents';
-import type { IPluginHost } from '#bifrost/contracts/PluginHostTypes';
+import type { IPluginHost, PluginApiNamespaceFactory } from '#bifrost/contracts/PluginHostTypes';
 import { EVENT_PLUGIN_LIST_CHANGED } from '#bifrost/contracts/PluginHostTypes';
 import type { PluginInfo } from '#bifrost/contracts/PluginHostTypes';
 import * as fsPromises from 'fs/promises';
@@ -57,6 +57,11 @@ export class PluginService extends AbstractEmitter {
         source: 'Plugin Host',
       });
     }
+  }
+
+  /** Registers a module's `api.<namespace>.*` implementation with the plugin host. Call from the module's `onLoad`. */
+  registerApiNamespace(factory: PluginApiNamespaceFactory): void {
+    this.pluginHost.registerApiNamespace(factory);
   }
 
   async shutdown(): Promise<void> {

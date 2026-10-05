@@ -199,7 +199,7 @@ For `content` conflicts the resolver is a nested splitter: ours | theirs on top,
 
 Resolution is per **conflict key** (`{elementId}` or `{elementId}:cp:{propertyName}`): `auto-applied` | `pending` | `accepted-ours` | `accepted-theirs`. Rebuild uses an effective skip set: apply-side-accepted keys leave the skip set; reverted auto-applies re-enter it. Progress counts conflict keys on `'both'` elements. `onResolutionChanged` updates `MergeDocumentModel`.
 
-Paths: `studio/src/modules/bpmn-editor/merge/` (`BpmnMergeResolver.tsx`, `BpmnMergeResultModeler.tsx`, `autoApplyEngine.ts`, `panes/BpmnMergeChangeOverview.tsx`).
+Paths: `studio/src/modules/bpmn-editor/merge/` (`BpmnMergeResolver.tsx`, `BpmnMergeResultModeler.tsx`, `autoApplyEngine.ts`, `panes/BpmnMergeChangeOverview.tsx`). Merge styles: `studio/src/modules/bpmn-core/diff/styles/component.bpmn-merge.scss`, shared with the DMN merge resolver.
 
 ---
 

@@ -391,6 +391,15 @@ export class StudioAgent {
     );
   }
 
+  async closeAllNotifications(): Promise<void> {
+    await this.testDriver.client!.execute(() => {
+      const notifications = (window as any).bifrost.notifications;
+      notifications.close(
+        ...notifications.getAllNotifications().map((notification: { id: string }) => notification.id),
+      );
+    });
+  }
+
   async closeActiveDialog(): Promise<void> {
     await this.testDriver.client!.execute(() => {
       (window as any).bifrost.dialog.close();

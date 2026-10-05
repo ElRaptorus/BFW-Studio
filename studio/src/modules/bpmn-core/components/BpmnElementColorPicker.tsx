@@ -1,12 +1,11 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import type { BpmnElementColor } from '#modules/bpmn-editor/BpmnElementTypes';
+import { ColorPicker } from '#components/ColorPicker';
+import { Icon } from '#components/Icon';
+import type { BpmnElementColor } from '#modules/bpmn-core/BpmnElementCoreTypes';
 
 import React, { Fragment, useCallback, useMemo } from 'react';
 
 import { PaneProperty, type SelectOption } from '@elraptorus/bfw_studio_sdk';
-
-import { ColorPicker } from './ColorPicker';
-import { Icon } from './Icon';
 
 export const PREDEFINED_COLORS: BpmnElementColor[] = [
   {
