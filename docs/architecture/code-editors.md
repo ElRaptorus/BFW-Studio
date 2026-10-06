@@ -59,7 +59,7 @@ Side-by-side `@codemirror/merge` `MergeView`. Used by dialog `diff` content (`Di
 | `json5SchemaExtensions.ts` | Settings JSON5 schema bundle; unknown keys → warning `Unknown setting.` |
 | `unknownSettingDiagnostics.ts` | Rewrites json-schema-library additional-property errors to `Unknown setting.` |
 | `rainbowBrackets.ts` | In-house `ViewPlugin`; viewport decorations `cm-rainbow-bracket-0` … `5` |
-| `component.code-editor.scss` | `--theme-cm-*` aliases on `.bifrost` (including `--theme-cm-diff-*`); `tok-*` syntax colors; six bracket colors; merge-view highlight overrides |
+| `component.code-editor.scss` | `--theme-cm-*` aliases on `.bifrost` (including `--theme-cm-diff-*`); `tok-*` syntax colors; six bracket colors; search panel (Ctrl+F: panel, text fields, buttons) and search-match highlights through `--theme-feel-*` (selectors under `.bifrost .cm-editor` outrank CodeMirror's `&dark` base theme); merge-view highlight overrides |
 
 Language map (only ids host wrappers pass): `json`, `javascript`, `html`, `xml`. Unknown ids, `plaintext`, and `''` (documentation fragments) get no language package. FEEL is not in this map — it uses `FeelEditor`. Do not add `@codemirror/legacy-modes` or extra `@codemirror/lang-*` packages unless a real callsite needs them.
 

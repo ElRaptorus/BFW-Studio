@@ -76,6 +76,77 @@
   }
 }
 
+// The search panel (Ctrl+F) and the match highlights. CodeMirror's base theme paints fixed light/dark colours and a
+// gradient on the buttons; the extra `.bifrost` selector outranks its `&dark` variants.
+.bifrost .cm-editor {
+  .cm-panels {
+    background-color: var(--theme-feel-gutter-bg);
+    color: var(--theme-feel-fg);
+    border-color: var(--theme-feel-border);
+  }
+
+  .cm-panel.cm-search {
+    font-size: 0.9em;
+
+    label {
+      color: var(--theme-feel-fg);
+    }
+
+    input[type='checkbox'] {
+      accent-color: var(--theme-feel-keyword);
+    }
+
+    .cm-textfield {
+      background-color: var(--theme-feel-bg);
+      color: var(--theme-feel-fg);
+      border: 1px solid var(--theme-feel-border);
+      border-radius: 3px;
+
+      &:focus {
+        outline: none;
+        border-color: var(--theme-feel-cursor);
+      }
+
+      &::placeholder {
+        color: var(--theme-feel-comment);
+      }
+    }
+
+    .cm-button {
+      background-image: none;
+      background-color: var(--theme-feel-bg);
+      color: var(--theme-feel-fg);
+      border: 1px solid var(--theme-feel-border);
+      border-radius: 3px;
+      cursor: pointer;
+
+      &:hover,
+      &:focus-visible {
+        background-color: var(--theme-feel-active-line-bg);
+      }
+
+      &:active {
+        background-image: none;
+        background-color: var(--theme-feel-selection-bg);
+      }
+    }
+
+    button[name='close'] {
+      color: var(--theme-feel-fg);
+      background-color: transparent;
+    }
+  }
+
+  .cm-searchMatch {
+    background-color: color-mix(in srgb, var(--theme-feel-keyword) 30%, transparent);
+    outline: 1px solid color-mix(in srgb, var(--theme-feel-keyword) 60%, transparent);
+
+    &.cm-searchMatch-selected {
+      background-color: color-mix(in srgb, var(--theme-feel-keyword) 55%, transparent);
+    }
+  }
+}
+
 [data-code-editor] {
   .cm-editor {
     height: 100%;
