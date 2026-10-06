@@ -125,7 +125,7 @@ export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositorySto
       },
       {
         type: 'command',
-        label: 'Show Git Changes',
+        label: 'Show Changes',
         id: 'git-cruiser/editor-tab/show-diff',
         icon: 'git-cruiser/diff',
         command: 'git.showGitDiff',
@@ -151,6 +151,14 @@ export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositorySto
     return [
       {
         type: 'command',
+        label: 'Show Changes',
+        id: 'git-cruiser/pane-file/show-diff',
+        icon: 'git-cruiser/diff',
+        command: 'git.showGitDiff',
+        commandArgs: [uri],
+      },
+      {
+        type: 'command',
         label: isStaged ? 'Unstage' : 'Stage',
         id: 'git-cruiser/pane-file/toggle-stage',
         icon: isStaged ? 'git-cruiser/unstage' : 'git-cruiser/stage',
@@ -167,14 +175,6 @@ export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositorySto
         visible: isRevertable,
       },
       { type: 'divider' },
-      {
-        type: 'command',
-        label: 'Show Git Changes',
-        id: 'git-cruiser/pane-file/show-diff',
-        icon: 'git-cruiser/diff',
-        command: 'git.showGitDiff',
-        commandArgs: [uri],
-      },
       {
         type: 'command',
         label: 'Open File',
@@ -297,7 +297,7 @@ export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositorySto
         { type: 'divider' },
         {
           type: 'command',
-          label: 'Show Git Changes',
+          label: 'Show Changes',
           id: 'git-cruiser/bpmn-element/show-diff',
           icon: 'git-cruiser/diff',
           command: 'git.showGitDiff',

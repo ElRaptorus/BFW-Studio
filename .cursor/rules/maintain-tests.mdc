@@ -44,7 +44,11 @@ If a new test pattern requires interacting with the Studio in a way `StudioAgent
 - **For queries** (reading state): Add a StudioAgent helper method that uses `this.testDriver.client!.execute()` internally and returns a typed result.
 - **Never use `executeInRenderer` in test files.** All interactions must go through StudioAgent methods. Actions should flow through registered test commands (just like a real user uses the command search), not direct JS execution in the renderer.
 
-### 5. Verify TypeScript Compilation
+### 5. Never Shape Production Code Around a Test
+
+Do not export, extract or add parameters to production code just so a unit test can reach it. Test through the nearest public access; if there is none, rely on integration tests. See `module-boundaries.mdc` §Tests never shape production code.
+
+### 6. Verify TypeScript Compilation
 
 After modifying test files:
 

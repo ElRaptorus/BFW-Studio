@@ -57,7 +57,9 @@ function registerStatusBarItems(bifrost: Bifrost): void {
     'left',
     'std/problems',
     () => {
-      const { errors, warnings } = bifrost.diagnostics.getCount();
+      const focusedUri = bifrost.editors.getFocusedEditorDocument()?.uri;
+      const { errors, warnings } =
+        focusedUri == null ? { errors: 0, warnings: 0 } : bifrost.diagnostics.getCount(focusedUri);
       const errorLabel = errors === 1 ? '1 Error' : `${errors} Errors`;
       const warningLabel = warnings === 1 ? '1 Warning' : `${warnings} Warnings`;
 

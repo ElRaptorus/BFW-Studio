@@ -95,6 +95,7 @@ export class SourceControlServiceElectron extends SourceControlService {
       path: file.path,
       indexStatus: file.indexStatus,
       workingTreeStatus: file.workingTreeStatus,
+      previousPath: file.previousPath,
     }));
 
     const conflictedFiles = files.filter(

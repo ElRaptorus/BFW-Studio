@@ -8,6 +8,8 @@ The DMN editor is a three-module system for modeling, diffing, and merging DMN 1
 
 All three modules are internal (bundled with the Studio), loaded sequentially in `createAndInitializeBifrost.ts` as `dmn-core` → `dmn-editor` → `dmn-diff`.
 
+The DMN history preview styles its mode button and hero icon like the BPMN one (`--theme-editor-toolbar-icon`, `--theme-icon-purple`, see [bpmn-diff.md](bpmn-diff.md)); the DMN XML view shares the single-scroller rule of the CodeMirror `MergeView`.
+
 DMN documents open on `design/workspace`; `dmn.diff` and the DMN history preview open on `design/source` ([git-cruiser.md](git-cruiser.md) §Design › Source page). The DMN right groups are registered without `pages` and show on every page while a DMN document is focused.
 
 ---
@@ -232,7 +234,7 @@ Read-only `NavigatedViewer` (DRD only) with viewbox sync, selection sync, and di
 | Command | Description |
 |---------|-------------|
 | `dmn.diff.openDiffOriginalDataVsCurrentData` | Working copy diff for the focused DMN (command search) |
-| `dmn.diff.openDiffTwoFiles` | Compare two files by URI (called by git-cruiser). Optional third argument `{ label?, sourceFileUri? }` as for `bpmn.diff.openDiffTwoFiles` |
+| `dmn.diff.openDiffTwoFiles` | Compare two files by URI (called by git-cruiser). Optional third argument `{ label?, sourceFileUri?, beforeLabel?, afterLabel? }` as for `bpmn.diff.openDiffTwoFiles` |
 | `dmn.diff.showChangeSummaryDialog` | Markdown summary dialog from the computed `DmnDiffDocumentModel`. Toolbar passes `editorDocument`; `enabledWhen` and the handler fall back to the focused `dmn.diff` document when invoked with no args. The handler awaits `bifrost.dialog.open` until Close/Copy; integration tests must use `executeCommandWithoutBlocking`, not `executeCommand` |
 | `dmn.diff.getChangeSummaryMarkdown` | Markdown summary for two XMLs (git-cruiser commit preview) |
 | `dmn.diff.getChangeDigest` | `(beforeXml \| null, afterXml \| null)` → `ModelChangeDigest`; built by `buildModelChangeDigestForXmlPair` from `bpmn-core/diff/modelChangeDigest.ts` with root element `definitions`, so the model name is the `name` of the `<definitions>` root. Contract as for `bpmn.diff.getChangeDigest` |

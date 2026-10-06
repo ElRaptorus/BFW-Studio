@@ -16,6 +16,11 @@ import { initializeSettings } from './initializers/initializeSettings';
 import { initializeStatusBar } from './initializers/initializeStatusBar';
 import MergeDocumentModel from './merge/MergeDocumentModel';
 import MergeDocumentRenderer from './merge/MergeDocumentRenderer';
+import SourceOverviewDocumentModel, { SOURCE_OVERVIEW_URI } from './overview/SourceOverviewDocumentModel';
+import SourceOverviewDocumentRenderer from './overview/SourceOverviewDocumentRenderer';
+import { registerOverviewCommands } from './overview/overviewCommands';
+import TextDiffDocumentModel from './textDiff/TextDiffDocumentModel';
+import TextDiffDocumentRenderer from './textDiff/TextDiffDocumentRenderer';
 
 type Disposable = { dispose: () => void };
 
@@ -23,6 +28,8 @@ let repositoryStore: RepositoryStore;
 const configWatchers: Disposable[] = [];
 
 const MERGE_DOCUMENT_TYPE = 'merge';
+const TEXT_DIFF_DOCUMENT_TYPE = 'git.text-diff';
+const OVERVIEW_DOCUMENT_TYPE = 'git.overview';
 
 export async function onLoad(bifrost: Bifrost): Promise<void> {
   bifrost.icons.registerIcons({ 'std/page/source': 'ph ph-git-branch' });
@@ -32,7 +39,9 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
     label: 'Source',
     icon: 'std/page/source',
     order: 10,
+    defaultDocumentUri: SOURCE_OVERVIEW_URI,
   });
+  bifrost.helpTexts.registerHelpText('git/overview', require('./texts/source-overview.md'));
 
   initializeIcons(bifrost);
   initializeSettings(bifrost);
@@ -57,6 +66,27 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
     rendererConstructor: MergeDocumentRenderer,
     icon: 'ph ph-git-merge',
   });
+
+  bifrost.editors.registerDocumentType(TEXT_DIFF_DOCUMENT_TYPE, {
+    page: 'design/source',
+    uriMatch: /^fragment\+git\.text-diff:/,
+    modelKey: 'TextDiffDocumentModel',
+    modelConstructor: TextDiffDocumentModel,
+    rendererKey: 'TextDiffDocumentRenderer',
+    rendererConstructor: TextDiffDocumentRenderer,
+    icon: 'ph ph-git-diff',
+  });
+
+  bifrost.editors.registerDocumentType(OVERVIEW_DOCUMENT_TYPE, {
+    page: 'design/source',
+    uriMatch: /^git:overview$/,
+    modelKey: 'SourceOverviewDocumentModel',
+    modelConstructor: SourceOverviewDocumentModel,
+    rendererKey: 'SourceOverviewDocumentRenderer',
+    rendererConstructor: SourceOverviewDocumentRenderer,
+    icon: 'ph ph-git-branch',
+  });
+  registerOverviewCommands(bifrost);
 
   bifrost.commands.register('git.merge.openResolver', () => {
     bifrost.editors.focusOrOpenEditorDocument(MERGE_URI, 'Merge Conflicts');

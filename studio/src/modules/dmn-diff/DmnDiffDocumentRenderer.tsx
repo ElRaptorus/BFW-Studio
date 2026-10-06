@@ -201,8 +201,16 @@ export default function DmnDiffDocumentRenderer(props: EditorDocumentRendererPro
   const beforeUri = model.getBeforeUri();
   const afterUri = model.getAfterUri();
 
+  const { beforeLabel, afterLabel } = parsedFragmentUri.data;
+
   let sublabel: React.JSX.Element;
-  if (diffMode === DiffMode.TwoFiles) {
+  if (beforeLabel != null && afterLabel != null) {
+    sublabel = (
+      <>
+        Comparing {beforeLabel} with {afterLabel}.
+      </>
+    );
+  } else if (diffMode === DiffMode.TwoFiles) {
     sublabel = (
       <>
         Comparing &apos;

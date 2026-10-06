@@ -1,16 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
-export type GitCruiserProjectConfig = {
+type GitCruiserProjectConfig = {
   protectedDiagrams?: string[];
 };
 
 const CONFIG_FILENAME = '.bifrostfw/git-cruiser.json';
 
 let projectConfig: GitCruiserProjectConfig | null = null;
-
-export function getProjectConfig(): GitCruiserProjectConfig | null {
-  return projectConfig;
-}
 
 export function getProtectedDiagramPatterns(bifrost: Bifrost): string[] {
   if (projectConfig?.protectedDiagrams) {

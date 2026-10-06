@@ -208,4 +208,7 @@ export function initializeStatusBar(bifrost: Bifrost, repositoryStore: Repositor
   bifrost.events.on('sourceControlStatusChanged', () => {
     bifrost.statusBar.updateStatusBarItems();
   });
+  bifrost.events.on('sourceControlSelectedRepositoryChanged', () => {
+    bifrost.statusBar.updateStatusBarItems();
+  });
 }

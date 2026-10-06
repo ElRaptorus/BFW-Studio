@@ -44,7 +44,7 @@ The host div carries `data-code-editor="multiline"`. Tests click `.cm-content` i
 
 **Path:** `studio/src/components/DiffEditor.tsx`
 
-Side-by-side `@codemirror/merge` `MergeView`. Used by dialog `diff` content (`DialogRenderer`). Not used by Git Cruiser — merge visualization is BPMN/DMN only. Left (`a`) is read-only ours; right (`b`) is theirs/result and is editable unless `readOnly`. `getCurrentValue()` returns the `b` document. `layout()` is a no-op. Host div: `data-code-editor="diff"`. The merge highlights (changed lines, changed text, change gutter) are themed in `component.code-editor.scss` through `--theme-cm-diff-*` aliases derived from `--theme-validation-success-fg` / `--theme-validation-error-fg`; the `@codemirror/merge` base theme colours are overridden, not used. Also used read-only for the Visual | XML view of `bpmn.diff` / `dmn.diff` documents.
+Side-by-side `@codemirror/merge` `MergeView`. Used by dialog `diff` content (`DialogRenderer`). Also used by the Git Cruiser text diff (`git.text-diff`) and by the XML view of `bpmn.diff` / `dmn.diff`. Left (`a`) is read-only ours; right (`b`) is theirs/result and is editable unless `readOnly`. `getCurrentValue()` returns the `b` document. `layout()` is a no-op. Host div: `data-code-editor="diff"`. The merge highlights (changed lines, changed text, change gutter) are themed in `component.code-editor.scss` through `--theme-cm-diff-*` aliases derived from `--theme-validation-success-fg` / `--theme-validation-error-fg`; the `@codemirror/merge` base theme colours are overridden, not used. Also used read-only for the Visual | XML view of `bpmn.diff` / `dmn.diff` documents.
 
 #### Shared kit
 

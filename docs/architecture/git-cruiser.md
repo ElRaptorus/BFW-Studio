@@ -10,7 +10,7 @@
 
 ## Design › Source page
 
-git-cruiser registers the page `design/source` (`index.ts`) and its left group `git` with `pages: ['design/source']` (`initializers/initializePanes.ts`). The Source-only document types are `bpmn.diff` and the BPMN history preview (`bpmn-diff`), `dmn.diff` and the DMN history preview (`dmn-diff`), and `merge:` (`MERGE_DOCUMENT_TYPE`). Show Diff, File History and the merge resolver therefore land on Source through routing rule R1 ([workbench-categories.md](workbench-categories.md)). `git.focusGitPane` calls `setVisibilityOfPaneAreaByPaneId('design/source/git', true)`, which activates `design/source` first. The branch status bar item keeps `git.switchBranch` on click; during a merge it runs `git.merge.openResolver`, which opens on Source.
+git-cruiser registers the page `design/source` (`index.ts`) and its left group `git` with `pages: ['design/source']` (`initializers/initializePanes.ts`). The default document of the page is the Source Overview (`defaultDocumentUri: 'git:overview'`, see below). The Source-only document types are `git.overview`, `git.text-diff`, `bpmn.diff` and the BPMN history preview (`bpmn-diff`), `dmn.diff` and the DMN history preview (`dmn-diff`), and `merge:` (`MERGE_DOCUMENT_TYPE`). Show Diff, File History and the merge resolver therefore land on Source through routing rule R1 ([workbench-categories.md](workbench-categories.md)). `git.focusGitPane` calls `setVisibilityOfPaneAreaByPaneId('design/source/git', true)`, which activates `design/source` first. The branch status bar item keeps `git.switchBranch` on click; during a merge it runs `git.merge.openResolver`, which opens on Source.
 
 ---
 
@@ -47,8 +47,8 @@ Module-level instance created in `index.ts`; documents and panes reach it throug
 - **Debounced refresh**: Uses `lodash.debounce` on `scheduleRefresh()` to coalesce multiple triggers
 - **Operation methods** (each refreshes the repository afterwards): `stage`, `unstage`, `commit` (joins title and body with a blank line), `push`, `pull`, `revert`, `stash`, `stashApply`, `switchBranch`, `createBranch`, `remove`, `mergeAbort`, `rebaseAbort`, `rebaseContinue`, `cherryPickAbort`, `cherryPickContinue`; `clone` and `connectFolderToRemote` re-detect repositories. `pull` also reports `merge-conflicts` when a successful pull left conflicted files.
 - **Read-only queries** (`getFileContentAtRevision`, `getLog`, `getBranches`, `stashList`, `getConflictBlobs`, `getChangedFilesBetween`, `getMergeBase`, `listRemoteBranches`, `onCloneProgress`, `fetch`) are not wrapped; callers use `bifrost.sourceControl` directly.
-- **History paging**: `getHistory(repositoryRoot, skip, maxCount = 100)` adds the branch's upstream from the cached state and returns a `HistoryPage` (`{ entries, hasMore }`). `commit` takes `CommitOptions` (`{ title, body? }`); both types live in `GitTypes.ts`. `formatCommitAge.ts` formats commit dates for the history ("12 minutes ago").
-- **Selected repository**: `setSelectedRepo` emits `sourceControlSelectedRepositoryChanged` when the value actually changes, so documents that follow the Git pane's repository selector can reload.
+- **History paging**: `getHistory(repositoryRoot, skip, searchText = '', maxCount = 100)` adds the branch's upstream from the cached state and returns a `HistoryPage` (`{ entries, hasMore }`). `commit` takes `CommitOptions` (`{ title, body? }`); both types live in `GitTypes.ts`.
+- **Selected repository**: `setSelectedRepo` emits `sourceControlSelectedRepositoryChanged` when the value actually changes, so everything that follows the selected repository reloads: the Git pane, the git status bar items and the Source Overview.
 - **Sync state flag**: `isSyncing: boolean` — set `true` during sync/fetch operations; drives the spinning status bar icon
 
 Each operation method calls `refreshRepo()` after completing, which emits `sourceControlStatusChanged` and delegates to the `GitDecorationProvider.refresh()` for targeted UI updates (see [Tree Item Decorations](#tree-item-decorations)).
@@ -179,16 +179,44 @@ The git-cruiser module has **no BPMN-specific rendering, parsing, or document mo
 ### Delegation Pattern
 
 1. **Git primitives exposed as commands** — `git.getFileAtRef`, `git.getLog`, `git.getHeadContent`, `git.createBranchInRepoOf`, `git.restoreFileContent`. These know nothing about BPMN or DMN; they operate on URIs and refs.
-2. **Dispatch commands** — `git.showGitDiff` and `git.showFileHistory` are dispatchers that still live here because they need synchronous `RepositoryStore` enablement checks (`hasModifications`, `hasFileHistory`). Internally they call orchestrator functions (`diffFromGit.ts`, `fileHistory.ts`) that route to the appropriate diff module based on file extension (`.bpmn` → `bpmn-diff`, `.dmn` → `dmn-diff`).
+2. **Dispatch commands** — `git.showGitDiff` and `git.showFileHistory` are dispatchers that still live here because they need synchronous `RepositoryStore` enablement checks (`hasModifications`, `hasFileHistory`). Internally they call orchestrator functions (`diffFromGit.ts`, `fileHistory.ts`) that route to the appropriate diff module based on file extension (`.bpmn` → `bpmn-diff`, `.dmn` → `dmn-diff`, everything else → `git.text-diff`).
 3. **Module-side wrapper commands** — Each diff module registers its own command set:
-   - **bpmn-diff**: `bpmn.diff.openHistoryPreview`, `bpmn.diff.history.restoreFile`, `bpmn.diff.historyPreview.changeViewMode`, `bpmn.diff.suggestBranchNameForProcess`, `bpmn.diff.getChangeSummaryMarkdown`
-   - **dmn-diff**: `dmn.diff.openHistoryPreview`, `dmn.diff.history.restoreFile`, `dmn.diff.historyPreview.changeViewMode`, `dmn.diff.getChangeSummaryMarkdown`
+   - **bpmn-diff**: `bpmn.diff.openDiffTwoFiles`, `bpmn.diff.getChangeDigest`, `bpmn.diff.openHistoryPreview`, `bpmn.diff.history.restoreFile`, `bpmn.diff.historyPreview.changeViewMode`, `bpmn.diff.suggestBranchNameForProcess`, `bpmn.diff.getChangeSummaryMarkdown`
+   - **dmn-diff**: `dmn.diff.openDiffTwoFiles`, `dmn.diff.getChangeDigest`, `dmn.diff.openHistoryPreview`, `dmn.diff.history.restoreFile`, `dmn.diff.historyPreview.changeViewMode`, `dmn.diff.getChangeSummaryMarkdown`
 
 ### Visual Diff
 
 **Path:** `studio/src/modules/git-cruiser/diffFromGit.ts`
 
-Retrieves `HEAD` version via `git show`, writes to OS temp directory, and dispatches to the appropriate diff module based on file extension: `bpmn.diff.openDiffTwoFiles` for `.bpmn` files, `dmn.diff.openDiffTwoFiles` for `.dmn` files. Temp files are cleaned up on module reload.
+`openChangeDiff(bifrost, { repositoryRoot, relativePath, previousRelativePath, beforeRef, afterRef })` is the ref-to-ref diff router behind `git.showGitDiff` and `git.showChangeDiff`. A ref is a commit hash, `HEAD`, `WORKING` (file on disk) or `NONE` (side does not exist). The before side reads `previousRelativePath ?? relativePath` (renames).
+
+| Case | Target |
+|---|---|
+| `.bpmn` / `.dmn`, both sides exist, diff command registered | `bpmn.diff.openDiffTwoFiles` / `dmn.diff.openDiffTwoFiles` with `{ label, sourceFileUri, beforeLabel, afterLabel }`; committed sides are written to temp copies |
+| Anything else (other file types, one side `NONE`, diff module missing) | `git.text-diff` document |
+
+`showGitDiffForFile(bifrost, repositoryStore, uri)` derives the refs from the file status: `HEAD` → `WORKING` for modified files, `NONE` → `WORKING` for untracked/added files, `HEAD` → `NONE` for files deleted on disk. Labels read "Last commit", "Your changes" or the short hash. Temp files are content-addressed (`<tmp>/<sha1 of content>/<relative path>`), so two diffs of the same path never share a file and an open tab never shows a stale before side. They are cleaned up on module reload.
+
+### Text Diff (`git.text-diff`)
+
+**Path:** `studio/src/modules/git-cruiser/textDiff/`
+
+Fragment document type (page `design/source`) on top of the shared `DiffEditor`. The URI is `fragment+git.text-diff:` with fragment data `repositoryRoot`, `path`, optional `previousPath`, `beforeRef`, `afterRef`, `beforeLabel`, `afterLabel`. `TextDiffDocumentModel` loads both sides through `bifrost.sourceControl.getFileContentAtRevision` (`WORKING` via `bifrost.files.load`, `NONE` as empty text). Texts are private fields behind getters; the only metadata is a `revision` counter, incremented when a `WORKING` side changed on focus. `textDiffContent.ts` maps the file extension to an editor language and guards binary (NUL byte) and oversized (> 2 MiB) content; a guarded file shows a notice instead of the editor.
+
+### Source Overview (`git.overview`)
+
+**Path:** `studio/src/modules/git-cruiser/overview/`
+
+Singleton document `git:overview` (page `design/source`, also its `defaultDocumentUri`). `SourceOverviewDocumentModel` derives everything from `RepositoryStore` (selected repository, state, `getHistory`) and refreshes, debounced, on `sourceControlStatusChanged` and `sourceControlSelectedRepositoryChanged`. Data lives in private fields behind getters; metadata only carries `revision`, `mode` (`uncommitted` | `comparison` | `history`) and `comparisonBase`. Each mode is a toolbar tab ("Uncommitted changes" | "Current Branch" | "Current vs. <base>") and renders only its own content. Model changes within one task are coalesced (`markChanged` → one `updateMetadata` per microtask), so a refresh re-renders once.
+
+| Part | Behavior |
+|------|----------|
+| Uncommitted changes | A clean branch shows the placeholder "No uncommitted changes on the current branch.". `OverviewFile` per changed path (`status`, `beforeRef`, `afterRef`, `previousPath`); conflicted files from `mergeState` get status `conflicted` and open the resolver |
+| Current vs. base (`comparison`) | A hint line says "Shows committed changes only.". Base defaults to the first existing of `main`, `master`, `origin/main`, `origin/master` that is not the current branch (the branch `origin/HEAD` points to is not read); `getMergeBase(base, 'HEAD')` → `getChangedFilesBetween(mergeBase, 'HEAD')`. `loading` (files not read yet), `on-base`, `no-base` and `failed` (git could not read the changes; the notice asks for a refresh) states render notices; a restored or chosen base that no longer exists falls back to the default, and the chosen base is dropped when another repository is selected. The toolbar menu `git-cruiser/overview-base` lists the other branches |
+| Digests | BPMN/DMN files are summarized through `bpmn.diff.getChangeDigest` / `dmn.diff.getChangeDigest` (rendered by a private function in `ChangeRow.tsx`). Keyed by repository, path and refs; SHA-1 hashes of both texts are remembered, so an unchanged pair is not summarized twice. A status-triggered refresh (`refresh(false)`) does not read already summarized files again; opening, focusing and the refresh button do. Only the first 20 model files are summarized automatically, the row's "Summarize" link does the rest |
+| Current Branch (`history`) | `SourceHistory` lists commits (refs, "Merged <branch>", "Not pushed", age via a private `formatCommitAge`) along a rail: a dot per commit, a rotated square for merges, the accent colour for the commit carrying the `head` ref; the rail is a `::before` line on `.source-overview__commit`. Right-click opens the menu `git-cruiser/overview-history-entry` ("Copy Commit Hash" → `git.copyCommitHash`). The toolbar (history mode only) holds a search field (`HistorySearchField`, `EditorToolbarTextInput` with `dataTestId="history-search"`, debounced 300 ms, rebuilt per repository): `setHistorySearchText` trims the text (at most `MAXIMUM_HISTORY_SEARCH_LENGTH` = 200 characters), reloads the first page and keeps the text in a private model field (not metadata; a repository change clears it). git searches the whole history (`--grep`, `--fixed-strings`, `--regexp-ignore-case`, so literal and case-insensitive, over subject and body); a search without results shows `data-test--history-no-match`. History loads carry a sequence number (`historySequence`): a result of a load that is no longer the latest is dropped, and `loadMoreHistory` does nothing while a reload or another page is loading. Commits that leave the list are removed from the expanded ones. Expanding a commit loads `getChangedFilesBetween(firstParent | null, hash)` and lists the files as `ChangeRow`s; model files that still exist get the `git.previewFileVersion` icon button ("Preview this version") |
+
+Components: `ChangeRow`, `ChangeBadge`, `SourceHistory`. `ChangeRow` is one changed file, used by both change tabs (model files first) and by expanded commits: type icon (process / decision / file), status badge, model name with the muted path (path only without a model name), icon buttons on the right (preview for commits, Open File for `WORKING` files), and a summary line for models. The row is a container with the main `<button>` (type, badge, name, path, summary) and the action buttons as its siblings, so no interactive element is nested: the main button opens `git.showChangeDiff`, or `git.merge.openResolver` for a conflicted model file (any other conflicted file opens through `std.editor.focusOrOpenDocument`). Styles: `styles/source-overview.scss`, which uses `--theme-*` tokens only (status colours come from `--theme-git-*`). Commands (`overviewCommands.ts`): `git.overview.open`, `git.overview.showUncommitted`, `git.overview.showComparison`, `git.overview.showHistory`, `git.overview.setComparisonBase`, `git.overview.refresh`, `git.overview.toggleCommit(model, hash)`, `git.overview.loadMoreHistory(model)`, `git.overview.summarizeFile(model, file)` (all but `open` take the model as first argument; `open` is listed in the command search). The renderer reaches the model's actions only through these commands. The scrolling area (`.source-overview`) uses `useScrollPositionManager` with the key `source-overview:<document uri>:<mode>`, so each tab keeps its scroll position while a diff or another tab is in front (in memory, not persisted). Help text `git/overview` is opened by the toolbar help button.
 
 ### Semantic Change Summary
 
@@ -328,13 +356,17 @@ The current branch is marked with a `current` text badge. When `branchName` is p
 | `git.switchBranch` | Git: Switch Branch | Command search, status bar |
 | `git.createBranch` | Git: Create Branch | Command search |
 | `git.createBranchForProcess` | Git: Create Branch for This Process | Command search |
-| `git.showGitDiff` | Git: Show Changes for This File | BPMN toolbar (static), context menus; accepts `uri: string` |
+| `git.suggestCommitTitle` | Git pane wand button | `(repoRoot)` → suggested title or `null` |
+| `git.showGitDiff` | Git: Show Changes for This File | BPMN toolbar (static), context menus; accepts `uri: string`; enabled for every file with a git status (incl. untracked) |
+| `git.showChangeDiff` | — | Internal; `(repositoryRoot, relativePath, previousRelativePath, beforeRef, afterRef)` |
+| `git.previewFileVersion` | — | Internal; `(fileUri, hash, subject, author, date)` → `bpmn.diff.openHistoryPreview` / `dmn.diff.openHistoryPreview` |
+| `git.copyCommitHash` | Source Overview history row context menu | `(hash)` copies to the clipboard |
 | `git.getHeadContent` | — | Internal (data service for bpmn-diff commit preview) |
 | `git.getFileAtRef` | — | Internal (retrieve file at arbitrary Git ref) |
 | `git.showFileHistory` | — | BPMN toolbar (static); accepts `uri: string` |
 | `git.openHistoryPreview` | — | Internal (opens history fragment from QuickJump) |
 | `git.restoreFileFromCommit` | — | History preview toolbar "Restore" button |
-| `git.showInGitPane` | — | Context menus |
+| `git.showInGitPane` | — | Context menus; `(uri?)` selects the repository containing the URI (`getRepoRootForUri`: path boundary, innermost root wins), then shows the pane |
 | `git.suggestGitignore` | — | Internal |
 | `git.showGitNotFoundInfo` | — | Status bar click |
 | `git.cloneRepository` | Git: Clone Repository... | Command search, File menu, Start Page, Editor empty state, Git pane empty state |
@@ -360,7 +392,11 @@ The Tree-level `onActionIconClick` callback receives the item data with an injec
 
 ### Row Click Behavior
 
-Clicking a file entry opens it in the editor via `bifrost.editors.focusOrOpenEditorDocument`. Deleted files are intercepted — a notification informs the user to use "Revert Changes" to restore the file, instead of attempting to open a non-existent file.
+Clicking a file entry runs `git.showGitDiff(uri)` (HEAD against the file on disk; new, untracked and deleted files open a text diff with one empty side). A conflicted BPMN or DMN file runs `git.merge.openResolver`; any other conflicted file is opened in the editor. "Open File" stays in the `git-cruiser/pane-file` context menu.
+
+### Commit Title Suggestion
+
+The ghost button `ph ph-magic-wand` ("Suggest a title from your staged model changes", `data-test--git-suggest-title`) in the commit action bar runs `git.suggestCommitTitle(repositoryRoot)`, which returns `string | null`. The command digests every staged, non-conflicted `.bpmn` / `.dmn` file (`HEAD` against the file on disk, through `bpmn.diff.getChangeDigest` / `dmn.diff.getChangeDigest`; a file deleted on disk counts as removed, and a file whose digest fails is only named, as `update`) and hands the digests to a private `suggestCommitTitle` in `initializeCommands.ts`. Without a staged model file it shows the notification "Stage a BPMN or DMN file first." and returns `null`; the pane writes a result into the title field (`commitTitleRef` and state). Rule: one model → `<model name or file name>: <parts>` with `add model` / `remove model` for a new or deleted model, otherwise `add 'X'`, `change 'Y'`, `remove 'Z'` (first name per kind, ` +N` for more), `adjust layout` for a layout-only change, `update` for anything else; two models → `Update A, B`; more → `Update A, B and N more`; at most 72 characters, cut with `…`.
 
 ### Header
 
@@ -376,7 +412,7 @@ The pane uses the host `PaneHeader` (`#components/panes/PaneHeader`) with a `Pan
 
 ### Context Menus
 
-File entries use the `git-cruiser/pane-file` menu, which provides Stage/Unstage, Revert (hidden for untracked files), Show Git Changes, Open File, and Reveal in File Manager.
+File entries use the `git-cruiser/pane-file` menu, which provides Show Changes (first item), Stage/Unstage, Revert (hidden for untracked files), Open File, and Reveal in File Manager.
 
 ### Commit Split Button Menu
 
@@ -467,8 +503,8 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | Module entry | `studio/src/modules/git-cruiser/index.ts` |
 | Repository store | `studio/src/modules/git-cruiser/RepositoryStore.ts` |
 | UI status maps, merge types, commit options, history page | `studio/src/modules/git-cruiser/GitTypes.ts` |
-| Commit age formatting | `studio/src/modules/git-cruiser/formatCommitAge.ts` |
-| Change digest formatting | `studio/src/modules/git-cruiser/formatModelChangeDigest.ts` |
+| Source Overview (model, renderer, commands, components, styles) | `studio/src/modules/git-cruiser/overview/` |
+| Source Overview help text | `studio/src/modules/git-cruiser/texts/source-overview.md` |
 | Source control service, types, IPC, main process | [source-control.md](source-control.md) |
 | Commands | `studio/src/modules/git-cruiser/initializers/initializeCommands.ts` |
 | Menus | `studio/src/modules/git-cruiser/initializers/initializeMenus.ts` |

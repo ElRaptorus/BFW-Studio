@@ -48,4 +48,16 @@ See [imports-and-modules.md](architecture/imports-and-modules.md) and [plugin-ho
 
 See [source-control.md](architecture/source-control.md).
 
+## Source Overview as the default document of the Source page
+
+**Context:** Design › Source showed only the Git pane; the centre area was blank. Users could not see what their branch changed, find a commit, or look at a diff without opening files first.
+
+**Options:** Put the overview into page-level panes; make it an editor document that is the page's default; or show only the Git pane with richer rows.
+
+**Decision:** A singleton editor document `git:overview` (`defaultDocumentUri` of `design/source`) with three tabs: uncommitted changes, current-branch history (searchable through `git log --grep`) and the comparison with a base branch. A click on a changed file opens a diff on the same page: BPMN and DMN files open the visual diff (with a Visual | XML switch), every other file a text diff. Git pane rows open the same diffs. Everything crosses module boundaries through commands (digest commands, `git.showChangeDiff`, `git.previewFileVersion`).
+
+**Rationale:** A document keeps view state (tab, base branch) like any editor, reuses the existing diff documents and routing, and needs no new page mechanism.
+
+See [git-cruiser.md](architecture/git-cruiser.md).
+
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

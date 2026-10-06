@@ -367,6 +367,10 @@ it('should add folder to solution', async () => {
 - **Git operations**: stage, commit, git pane commands
 - **BPMN diff/history**: working-tree diff, history preview
 - **DMN diff/history**: working-tree diff, change navigation, summary dialog, history preview, preview/diff mode toggle, change overview pane
+- **Source Overview** (`git-overview.test.ts`): tabs, changed-file rows, comparison with a base branch, commit expansion with diff and preview, merge / tag / "Not pushed" markers, history search, paging, help text, detached HEAD; Git pane row click and title suggestion
+- **Multiple repositories** (`git-multi-repository.test.ts`): two repositories in one `.bfwsln`; "Show in Git Pane" selects the file's repository, the Git pane and the Source Overview follow, the problems counter counts only the focused document
+- **Text diff** (`git-text-diff.test.ts`): modified, new, deleted and binary files from Git pane rows
+- **Visual | XML switch**: both diff suites switch between the canvases and the XML text diff
 - **Merge resolver**: BPMN + DMN merge conflict detection, accept ours/theirs, resolver navigation
 
 ## Testing Workbench Layout

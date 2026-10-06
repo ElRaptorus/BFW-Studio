@@ -33,7 +33,7 @@
   gap: 6px;
   padding: 4px 12px;
   font-weight: 500;
-  font-size: var(--theme-font-size-small);
+  font-size: 0.85em;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--theme-foreground-muted);
@@ -80,7 +80,7 @@
   gap: 2px;
   padding: 4px 12px 4px 24px;
   cursor: pointer;
-  font-size: var(--theme-font-size-small);
+  font-size: 0.85em;
 
   &:hover {
     background-color: var(--theme-list-hoverBackground);

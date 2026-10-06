@@ -72,6 +72,17 @@ See [architecture](./docs/architecture/bpmn-diff.md).
 
 A dedicated editor for resolving BPMN merge conflicts — same visualization as the Diff View, plus interactive conflict resolution (per-conflict or in bulk).
 
+### Source Overview
+
+When viewing a project that is part of a Git repository, this will show you the current state of the repository.
+
+- **Uncommitted changes**, **Current Branch** and **Current vs. base** tabs; BPMN and DMN files come with a one-line summary of what changed
+- Searchable branch history with merges, tags and "Not pushed" markers; every commit expands into its files, with a preview of the file as it was
+- A click on a changed file opens its diff: visual (with a Visual | XML switch) for BPMN and DMN, text for everything else
+- The Git pane's rows open the same diffs, and a button suggests a commit title from the staged model changes
+
+See [architecture](./docs/architecture/git-cruiser.md).
+
 ### Version Restore
 
 Restore previous diagram versions from the Git commit history. Available for both BPMN and DMN files via the editor toolbar's History button.

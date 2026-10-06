@@ -73,12 +73,17 @@ export class DiagnosticsManager extends AbstractEmitter {
     return result;
   }
 
-  getCount(): DiagnosticCounts {
+  /** Counts the diagnostics of one URI, or of every URI when none is given. */
+  getCount(uri?: string): DiagnosticCounts {
     let errors = 0;
     let warnings = 0;
     let infos = 0;
 
-    for (const uriMap of this.store.values()) {
+    const uriMaps = uri != null ? [this.store.get(uri)] : this.store.values();
+    for (const uriMap of uriMaps) {
+      if (!uriMap) {
+        continue;
+      }
       for (const diagnostics of uriMap.values()) {
         for (const diagnostic of diagnostics) {
           switch (diagnostic.severity) {

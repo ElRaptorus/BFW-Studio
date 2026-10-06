@@ -232,8 +232,8 @@ export function onLoad(bifrost: Bifrost): void {
   // that opens the real file the compared versions belong to.
   bifrost.commands.register(
     'bpmn.diff.openDiffTwoFiles',
-    (beforeUri: string, afterUri: string, options: { label?: string; sourceFileUri?: string } = {}) => {
-      const uri = buildDiffUri(beforeUri, afterUri, 'original', 'original', options.sourceFileUri);
+    (beforeUri: string, afterUri: string, options: DiffOpenOptions = {}) => {
+      const uri = buildDiffUri(beforeUri, afterUri, 'original', 'original', options);
 
       const beforeFilename = bifrost.files.getLocalBasename(beforeUri);
       const afterFilename = bifrost.files.getLocalBasename(afterUri);
@@ -452,19 +452,25 @@ function slugify(name: string): string {
 
 type DiffDataType = 'original' | 'current';
 
+// `label` is the tab title. `beforeLabel` / `afterLabel` replace the file links in the sublabel, so users never open a
+// temporary copy as an editable model.
+type DiffOpenOptions = { label?: string; sourceFileUri?: string; beforeLabel?: string; afterLabel?: string };
+
 function buildDiffUri(
   beforeUri: string,
   afterUri: string | null = null,
   beforeData: DiffDataType = 'original',
   afterData: DiffDataType = 'current',
-  sourceFileUri?: string,
+  options: DiffOpenOptions = {},
 ): string {
   const uri = getUrlForOpenInNewTab('bpmn.diff', beforeUri, 'side-by-side', {
     beforeUri: beforeUri,
     beforeData: beforeData,
     afterUri: afterUri || beforeUri,
     afterData: afterData,
-    ...(sourceFileUri != null ? { sourceFileUri } : {}),
+    ...(options.sourceFileUri != null ? { sourceFileUri: options.sourceFileUri } : {}),
+    ...(options.beforeLabel != null ? { beforeLabel: options.beforeLabel } : {}),
+    ...(options.afterLabel != null ? { afterLabel: options.afterLabel } : {}),
   });
 
   return uri;

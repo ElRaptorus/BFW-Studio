@@ -7,6 +7,8 @@ export type SourceControlFileStatus = {
   readonly path: string;
   readonly indexStatus: SourceControlFileStatusCode | null;
   readonly workingTreeStatus: SourceControlFileStatusCode | null;
+  /** Relative path before a rename, `null` for every file that was not renamed. */
+  readonly previousPath: string | null;
 };
 
 export type SourceControlBranchInfo = {
@@ -76,9 +78,14 @@ export type SourceControlRefDecoration = {
   readonly name: string;
 };
 
+/** The longest search text a history request may carry. */
+export const MAXIMUM_HISTORY_SEARCH_LENGTH = 200;
+
 export type SourceControlHistoryRequest = {
   readonly skip: number;
   readonly maxCount: number;
+  /** Only commits whose message contains this text (case-insensitive, literal) are listed; empty means all. */
+  readonly searchText?: string;
   /** Upstream ref (e.g. `origin/main`) used to find unpushed commits, or `null` when the branch has none. */
   readonly upstream: string | null;
 };

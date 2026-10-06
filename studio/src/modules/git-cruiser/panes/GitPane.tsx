@@ -91,8 +91,12 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     };
 
     updateState();
-    const sub = bifrost.events.on('sourceControlStatusChanged', updateState);
-    return () => sub.dispose();
+    const statusSubscription = bifrost.events.on('sourceControlStatusChanged', updateState);
+    const selectionSubscription = bifrost.events.on('sourceControlSelectedRepositoryChanged', updateState);
+    return () => {
+      statusSubscription.dispose();
+      selectionSubscription.dispose();
+    };
   }, [bifrost, repositoryStore]);
 
   const repoOptions: SelectOption[] = useMemo(
@@ -113,9 +117,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
       repositoryStore.setSelectedRepo(option.value);
       const match = repositoryStore.getRepoState(option.value);
       setRepoState(match ?? null);
-      bifrost.statusBar.updateStatusBarItems();
     },
-    [repositoryStore, bifrost],
+    [repositoryStore],
   );
 
   const stagedFiles = useMemo(() => {
@@ -155,18 +158,32 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
       if (!metadata?.uri) {
         return;
       }
-      if (metadata.statusCode === 'deleted') {
-        bifrost.notifications.open({
-          type: 'info',
-          content: `This file has been deleted. Use "Revert Changes" to restore it.`,
-          source: 'Git Cruiser',
-        });
+      if (metadata.statusCode === 'conflicted') {
+        // The resolver only exists for diagrams; any other conflicted file is opened to edit its markers.
+        if (/\.(bpmn|dmn)$/i.test(metadata.uri)) {
+          bifrost.commands.executeCommand('git.merge.openResolver');
+        } else {
+          bifrost.commands.executeCommand('std.editor.focusOrOpenDocument', [metadata.uri]);
+        }
         return;
       }
-      bifrost.editors.focusOrOpenEditorDocument(metadata.uri);
+      bifrost.commands.executeCommand('git.showGitDiff', [metadata.uri]);
     },
     [bifrost],
   );
+
+  const suggestTitle = useCallback(async () => {
+    if (!repoState) {
+      return;
+    }
+    const suggestion = await bifrost.commands.executeCommand<string | null>('git.suggestCommitTitle', [
+      repoState.repositoryRoot,
+    ]);
+    if (suggestion != null) {
+      commitTitleRef.current = suggestion;
+      setCommitTitle(suggestion);
+    }
+  }, [bifrost, repoState]);
 
   const handleActionIconClick = useCallback(
     (data: any) => {
@@ -449,6 +466,13 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
             icon="ph ph-text-aa"
             tooltip="Add commit body"
             onClick={() => setShowBody(!showBody)}
+          />
+          <PaneActionButton
+            variant="ghost"
+            icon="ph ph-magic-wand"
+            tooltip="Suggest a title from your staged model changes"
+            htmlAttributes={{ 'data-test--git-suggest-title': true }}
+            onClick={() => void suggestTitle()}
           />
           <PaneActionSplitButton
             studio={bifrost}

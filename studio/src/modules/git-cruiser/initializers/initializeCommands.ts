@@ -2,6 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { DialogContentObject, DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type {
+  ModelChangeDigest,
   SourceControlFileStatus,
   SourceControlLogEntry,
   SourceControlRepositoryState,
@@ -26,10 +27,81 @@ import {
 } from '../dialogs/gitErrorNotification';
 import { handlePullResult } from '../dialogs/pullErrorDialog';
 import { suggestGitignore } from '../dialogs/suggestGitignoreDialog';
-import { showGitDiffForFile } from '../diffFromGit';
+import { openChangeDiff, showGitDiffForFile } from '../diffFromGit';
 import { showFileHistory } from '../fileHistory';
 import type MergeDocumentModel from '../merge/MergeDocumentModel';
 import { removeResolvedFile, writeResolvedFile } from '../merge/writeResolvedFile';
+import { DIGEST_COMMANDS } from '../overview/SourceOverviewDocumentModel';
+
+const MAXIMUM_TITLE_LENGTH = 72;
+const MAXIMUM_LISTED_MODELS = 2;
+
+type CommitTitleModel = {
+  /** Name of the file, shown when the model has no name of its own. */
+  readonly fileName: string;
+  /** `null` when the file could not be summarized; the model is then only named. */
+  readonly digest: ModelChangeDigest | null;
+};
+
+function nameOfModel(model: CommitTitleModel): string {
+  return model.digest?.modelName ?? model.fileName;
+}
+
+/** `add 'Approve'`, or `add 'Approve' +2` when more elements of that kind changed. */
+function describeCategory(verb: string, names: readonly string[]): string | null {
+  if (names.length === 0) {
+    return null;
+  }
+  const more = names.length > 1 ? ` +${names.length - 1}` : '';
+  return `${verb} '${names[0]}'${more}`;
+}
+
+function describeSingleModel(model: CommitTitleModel): string {
+  const { digest } = model;
+  const name = nameOfModel(model);
+
+  if (digest == null) {
+    return `${name}: update`;
+  }
+  if (digest.fileChange === 'added') {
+    return `${name}: add model`;
+  }
+  if (digest.fileChange === 'deleted') {
+    return `${name}: remove model`;
+  }
+
+  const parts = [
+    describeCategory('add', digest.addedElementNames),
+    describeCategory('change', digest.modifiedElementNames),
+    describeCategory('remove', digest.removedElementNames),
+  ].filter((part): part is string => part != null);
+
+  if (parts.length > 0) {
+    return `${name}: ${parts.join(', ')}`;
+  }
+  return `${name}: ${digest.layoutChangedCount > 0 ? 'adjust layout' : 'update'}`;
+}
+
+/**
+ * A commit title for the staged BPMN and DMN files: what happened in one model, or which models were updated.
+ * Returns `null` when no model changed. Titles are cut at 72 characters with an ellipsis.
+ */
+function suggestCommitTitle(models: readonly CommitTitleModel[]): string | null {
+  if (models.length === 0) {
+    return null;
+  }
+
+  let title: string;
+  if (models.length === 1) {
+    title = describeSingleModel(models[0]);
+  } else {
+    const listed = models.slice(0, MAXIMUM_LISTED_MODELS).map(nameOfModel).join(', ');
+    const more = models.length - MAXIMUM_LISTED_MODELS;
+    title = more > 0 ? `Update ${listed} and ${more} more` : `Update ${listed}`;
+  }
+
+  return title.length > MAXIMUM_TITLE_LENGTH ? `${title.substring(0, MAXIMUM_TITLE_LENGTH - 1)}…` : title;
+}
 
 function resolveRepoRoot(
   bifrost: Bifrost,
@@ -518,9 +590,65 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
     { visibleInSearch: true, description: 'Git: Create Branch for This Process' },
   );
 
+  // ponytail: like the rest of the Git pane, the staged files are compared as HEAD against the file on disk, not
+  // against the index. Ceiling: a file staged and then edited again is described with its unstaged edits too.
+  bifrost.commands.register('git.suggestCommitTitle', async (repositoryRoot: string): Promise<string | null> => {
+    const stagedModelFiles = (repositoryStore.getRepoState(repositoryRoot)?.files ?? []).filter((file) => {
+      const digestCommand = DIGEST_COMMANDS[path.extname(file.path).toLowerCase()];
+      return (
+        digestCommand != null &&
+        bifrost.commands.isRegistered(digestCommand) &&
+        file.indexStatus != null &&
+        file.indexStatus !== 'untracked' &&
+        file.indexStatus !== 'conflicted'
+      );
+    });
+    if (stagedModelFiles.length === 0) {
+      bifrost.notifications.open('Stage a BPMN or DMN file first.');
+      return null;
+    }
+
+    try {
+      const models = await Promise.all(
+        stagedModelFiles.map(async (file) => {
+          const digestCommand = DIGEST_COMMANDS[path.extname(file.path).toLowerCase()];
+          const beforeText =
+            file.indexStatus === 'added'
+              ? null
+              : await bifrost.sourceControl.getFileContentAtRevision(
+                  repositoryRoot,
+                  'HEAD',
+                  file.previousPath ?? file.path,
+                );
+          const afterText =
+            file.indexStatus === 'deleted' || file.workingTreeStatus === 'deleted'
+              ? null
+              : await bifrost.files.load(`file://${repositoryRoot}/${file.path}`);
+          let digest: ModelChangeDigest | null = null;
+          try {
+            digest = await bifrost.commands.executeCommand<ModelChangeDigest>(digestCommand, [beforeText, afterText]);
+          } catch {
+            // An unparsable model is only named in the title instead of failing the whole suggestion.
+          }
+          return { fileName: path.basename(file.path), digest };
+        }),
+      );
+      return suggestCommitTitle(models);
+    } catch (error: unknown) {
+      showGitError(bifrost, 'Could not suggest a title from the staged files', error);
+      return null;
+    }
+  });
+
   bifrost.commands.register(
     'git.showGitDiff',
-    async (uri: string) => await showGitDiffForFile(bifrost, repositoryStore, uri),
+    async (uri: string) => {
+      try {
+        await showGitDiffForFile(bifrost, repositoryStore, uri);
+      } catch (error: unknown) {
+        showGitError(bifrost, 'Could not show the changes of this file', error);
+      }
+    },
     {
       visibleInSearch: true,
       description: 'Git: Show Changes for This File',
@@ -532,6 +660,65 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
       },
     },
   );
+
+  // Any two versions of one file. A ref is a commit hash, `HEAD`, `WORKING` (the file on disk) or `NONE`.
+  bifrost.commands.register(
+    'git.showChangeDiff',
+    async (
+      repositoryRoot: string,
+      relativePath: string,
+      previousRelativePath: string | null,
+      beforeRef: string,
+      afterRef: string,
+    ) => {
+      try {
+        await openChangeDiff(bifrost, {
+          repositoryRoot,
+          relativePath,
+          previousRelativePath,
+          beforeRef,
+          afterRef,
+        });
+      } catch (error: unknown) {
+        showGitError(bifrost, 'Could not compare the two versions of this file', error);
+      }
+    },
+  );
+
+  // Opens the History Preview of a model file at a commit; restoring happens there.
+  bifrost.commands.register(
+    'git.previewFileVersion',
+    async (fileUri: string, hash: string, subject: string, author: string, date: string) => {
+      const previewCommand = getHistoryPreviewCommand(fileUri);
+      if (previewCommand == null || !bifrost.commands.isRegistered(previewCommand)) {
+        bifrost.notifications.open('Only BPMN and DMN files can be previewed.');
+        return;
+      }
+
+      const exists = await bifrost.files.doesFileOrDirectoryExist(bifrost.files.getLocalFilenameForUri(fileUri));
+      if (!exists) {
+        bifrost.notifications.open('This file no longer exists, so its earlier versions cannot be restored.');
+        return;
+      }
+
+      bifrost.commands.executeCommand(previewCommand, [fileUri, hash, subject, author, date]);
+    },
+    {
+      enabledWhen: (fileUri?: string): boolean => {
+        const previewCommand = fileUri == null ? null : getHistoryPreviewCommand(fileUri);
+        return previewCommand != null && bifrost.commands.isRegistered(previewCommand);
+      },
+    },
+  );
+
+  bifrost.commands.register('git.copyCommitHash', async (hash: string) => {
+    try {
+      await navigator.clipboard.writeText(hash);
+      bifrost.notifications.open(`Copied commit ${hash.substring(0, 7)}.`);
+    } catch {
+      bifrost.notifications.open({ type: 'error', content: 'Failed to copy to clipboard.', source: 'Git Cruiser' });
+    }
+  });
 
   bifrost.commands.register(
     'git.showFileHistory',
@@ -546,7 +733,11 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
     },
   );
 
-  bifrost.commands.register('git.showInGitPane', async (_uri?: string) => {
+  bifrost.commands.register('git.showInGitPane', async (uri?: string) => {
+    const repositoryRoot = uri ? repositoryStore.getRepoRootForUri(uri) : null;
+    if (repositoryRoot) {
+      repositoryStore.setSelectedRepo(repositoryRoot);
+    }
     bifrost.panes.setVisibilityOfPaneAreaByPaneId('design/source/git', true);
   });
 
@@ -652,6 +843,14 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
   if (process.env.APP_TEST === 'true') {
     initializeTestCommands(bifrost, repositoryStore);
   }
+}
+
+function getHistoryPreviewCommand(fileUri: string): string | null {
+  const lowerCaseUri = fileUri.toLowerCase();
+  if (lowerCaseUri.endsWith('.bpmn')) {
+    return 'bpmn.diff.openHistoryPreview';
+  }
+  return lowerCaseUri.endsWith('.dmn') ? 'dmn.diff.openHistoryPreview' : null;
 }
 
 function initializeMergeCommands(bifrost: Bifrost, repositoryStore: RepositoryStore): void {

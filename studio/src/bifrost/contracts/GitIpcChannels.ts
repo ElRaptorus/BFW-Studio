@@ -48,6 +48,7 @@ export type GitStatusPayload = {
     readonly path: string;
     readonly indexStatus: SourceControlFileStatusCode | null;
     readonly workingTreeStatus: SourceControlFileStatusCode | null;
+    readonly previousPath: string | null;
     readonly isConflicted: boolean;
   }[];
   readonly hasStash: boolean;

@@ -596,3 +596,12 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 **Correct approach**: Rename the field (`message`, `failure`, …) or return a string. See [`docs/testing.md`](../testing.md).
 
+---
+
+## CodeMirror `MergeView` has exactly one scroller
+
+**Mistake**: Giving `.cm-mergeViewEditors` (or the editors in it) a fixed `height: 100%`, or adding `overflow` to them.
+
+**Why**: `@codemirror/merge` renders both editors with `height: auto` inside `.cm-mergeView`, which is the only scrollable element. `.cm-mergeViewEditor` clips its overflow, so an editor limited to the viewport height can neither scroll by wheel nor stay in step with the other side.
+
+**Correct approach**: Size only `.cm-mergeView` (`height: 100%; overflow: auto`) and let the editors grow to their content. See `component.code-editor.scss`.

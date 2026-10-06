@@ -51,6 +51,17 @@ When the direction forbids an import, use one of:
 - A helper with one caller lives in the caller's file. Do not create a separate file for code with zero or one caller.
 - Split files by purpose, not by size. A file that holds one piece of business logic stays one file, even at 1000 lines.
 
+## Tests never shape production code
+
+Build tests around production code, never production code around a test.
+
+- Never export, widen or extract production code so a unit test can reach it. Internal functionality stays internal.
+- Never create a shared or utils-style module for testability. Extract only for real reuse (see "Where generic code goes").
+- No parameters, seams or injectable clocks that only tests use. Use the test framework instead (fake timers, module mocks).
+- A unit test targets the nearest public access: the exported function, component, command or model method that uses the code.
+- If no public access exists, there is no unit test. Integration tests cover that code.
+- Fix a missing seam in the test, not in the code under test.
+
 ## Enforcement
 
 `studio/eslint.config.mjs` enforces the table with `no-restricted-imports` zones (`npm run lint:fix` fails on a violation). The dynamic `require` in `ModuleManager.ts` is not checked. Details: `docs/architecture/imports-and-modules.md` §Module Dependency Direction.

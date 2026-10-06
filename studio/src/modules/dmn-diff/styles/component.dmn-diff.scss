@@ -10,20 +10,11 @@
   color: var(--color-dmn-diff-view-icon-primary);
 }
 
-.bifrost.bifrost-theme--dark {
-  --color-dmn-diff__history-preview--hero-icon: #209;
-  --backcolor-dmn-diff__history-previewmode--active: #666;
-}
-
-.bifrost.bifrost-theme--light {
-  --color-dmn-diff__history-preview--hero-icon: #52a;
-  --backcolor-dmn-diff__history-previewmode--active: #aaa;
-}
-
+// The active mode button is tinted with the toolbar icon colour, so the icon stays readable in every theme.
 .editor-toolbar__button.dmn-diff__history-previewmode--active {
-  background: var(--backcolor-dmn-diff__history-previewmode--active);
+  background: color-mix(in srgb, var(--theme-editor-toolbar-icon) 22%, transparent);
 }
 
 .dmn-diff__history-preview--hero-icon {
-  color: var(--color-dmn-diff__history-preview--hero-icon);
+  color: var(--theme-icon-purple);
 }

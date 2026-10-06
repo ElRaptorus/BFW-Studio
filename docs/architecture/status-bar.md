@@ -6,7 +6,7 @@
 
 The status bar is a 22px strip at the bottom of the workbench that displays contextual information and lightweight actions. Modules register factory functions that produce `StatusBarItem` arrays; these factories are re-evaluated whenever relevant state changes. Items are sorted by priority within their area (left, center, right). The status bar has `overflow: hidden` to prevent visual overflow from animated icons.
 
-The status bar also supports a progress indicator system for long-running operations and a workspace-wide diagnostics count (`std/problems`) fed by the BPMN linter and the BPMN/DMN sanitizers.
+The status bar also supports a progress indicator system for long-running operations and a diagnostics count of the focused document (`std/problems`) fed by the BPMN linter and the BPMN/DMN sanitizers.
 
 ---
 
@@ -75,7 +75,7 @@ Encoding is hardcoded to `UTF-8` (reflecting current file I/O). Line ending is d
 
 ### Diagnostics Count
 
-The `std/problems` item always renders one button: error icon + count, warning icon + count. Counts come from `bifrost.diagnostics.getCount()` (workspace-wide, all URIs). Click runs `std.workbench.showProblemsPane` (opens the right-area linter group with no BPMN-only `enabledWhen`, so the item stays clickable on DMN and engine views). Tooltip is always `${n} Error(s), ${n} Warning(s)`.
+The `std/problems` item always renders one button: error icon + count, warning icon + count. Counts come from `bifrost.diagnostics.getCount(uri)` for the focused editor document; without a focused document, or for a document nothing publishes diagnostics for (Source Overview, text diff), the item reads 0 / 0. `getCount()` without a URI stays workspace-wide (plugin API). Click runs `std.workbench.showProblemsPane` (opens the right-area linter group with no BPMN-only `enabledWhen`, so the item stays clickable on DMN and engine views). Tooltip is always `${n} Error(s), ${n} Warning(s)`.
 
 Producers: BPMN linter (`bpmn-linter`), BPMN sanitizer (`bpmn-sanitizer`), DMN sanitizer (`dmn-sanitizer`). Each modeler instance binds diagnostics to the document URI captured at `import.done` / first push, and clears **that** URI on `diagram.destroy`. Clearing the focused URI instead would leak diagnostics from closed tabs onto the next focused document.
 
@@ -123,7 +123,8 @@ type Diagnostic = { severity: DiagnosticSeverity; message: string; source: strin
 bifrost.diagnostics.setDiagnostics(uri, owner, diagnostics);
 bifrost.diagnostics.clearDiagnostics(owner);
 bifrost.diagnostics.getDiagnostics(uri?);   // Map<uri, Diagnostic[]>
-bifrost.diagnostics.getCount();             // { errors, warnings, infos }
+bifrost.diagnostics.getCount();             // { errors, warnings, infos } (all URIs)
+bifrost.diagnostics.getCount(uri);          // the same for one URI
 ```
 
 ### Storage Model

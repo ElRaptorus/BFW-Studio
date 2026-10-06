@@ -83,12 +83,14 @@ export class RepositoryStore {
 
   getRepoRootForUri(uri: string): string | null {
     const filePath = this.uriToPath(uri);
+    let innermostRoot: string | null = null;
     for (const [, repositoryRoot] of this.repoRootForProject) {
-      if (filePath.startsWith(repositoryRoot)) {
-        return repositoryRoot;
+      const containsFile = filePath === repositoryRoot || filePath.startsWith(`${repositoryRoot}/`);
+      if (containsFile && (innermostRoot == null || repositoryRoot.length > innermostRoot.length)) {
+        innermostRoot = repositoryRoot;
       }
     }
-    return null;
+    return innermostRoot;
   }
 
   getFileStatus(uri: string): SourceControlFileStatus | null {
@@ -127,8 +129,7 @@ export class RepositoryStore {
   }
 
   hasModifications(uri: string): boolean {
-    const status = this.getFileStatus(uri);
-    return status != null && status.workingTreeStatus !== 'untracked';
+    return this.getFileStatus(uri) != null;
   }
 
   /**
@@ -324,12 +325,18 @@ export class RepositoryStore {
   }
 
   /**
-   * First-parent history of the checked-out branch, newest first. `skip` and `maxCount` page through it; the upstream
-   * (when the branch has one) marks commits that are not pushed yet.
+   * First-parent history of the checked-out branch, newest first. `skip` and `maxCount` page through it (after the
+   * search is applied); `searchText` keeps only commits whose message contains it; the upstream (when the branch has
+   * one) marks commits that are not pushed yet.
    */
-  async getHistory(repositoryRoot: string, skip: number, maxCount = GIT_HISTORY_PAGE_SIZE): Promise<HistoryPage> {
+  async getHistory(
+    repositoryRoot: string,
+    skip: number,
+    searchText = '',
+    maxCount = GIT_HISTORY_PAGE_SIZE,
+  ): Promise<HistoryPage> {
     const upstream = this.repoStateMap.get(repositoryRoot)?.branch.tracking ?? null;
-    const entries = await this.sourceControl.getHistory(repositoryRoot, { skip, maxCount, upstream });
+    const entries = await this.sourceControl.getHistory(repositoryRoot, { skip, maxCount, upstream, searchText });
     // ponytail: a history whose length is an exact multiple of the page size offers "load more" once and then gets an
     // empty page. Upgrade path: request maxCount + 1 and drop the extra entry.
     return { entries, hasMore: maxCount > 0 && entries.length === maxCount };

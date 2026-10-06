@@ -1,0 +1,19 @@
+.text-diff__content {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.text-diff__notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--theme-card-border);
+  border-radius: 4px;
+  background-color: var(--theme-card-bg);
+  color: var(--theme-fg-secondary);
+}

@@ -31,7 +31,7 @@ Repositories are addressed by their absolute root path (`repositoryRoot`). File 
 |---|---|
 | `isAvailable()` | `true` when git is installed |
 | `findRepositoryRoot(directoryPath)` | Root of the containing repository, or `null` |
-| `getRepositoryState(repositoryRoot)` | `SourceControlRepositoryState`: branch info, file statuses (with `file://` URIs), stash flag, merge state with conflicted files |
+| `getRepositoryState(repositoryRoot)` | `SourceControlRepositoryState`: branch info, file statuses (with `file://` URIs and `previousPath`, the pre-rename relative path or `null`), stash flag, merge state with conflicted files |
 | `stage` / `unstage` / `remove` / `revert(repositoryRoot, filePaths)` | `git add` / `reset HEAD --` / `rm` / `checkout --` |
 | `commit(repositoryRoot, message)` | `SourceControlCommitResult` (`hash`, `summary`) |
 | `push(repositoryRoot, { setUpstream? })` | Pushes; sets the upstream when the branch has none |
@@ -42,7 +42,7 @@ Repositories are addressed by their absolute root path (`repositoryRoot`). File 
 | `switchBranch`, `createBranch(repositoryRoot, branchName, checkout)` | |
 | `getFileContentAtRevision(repositoryRoot, revision, relativePath)` | File content at a commit hash, branch or `HEAD` |
 | `getLog(repositoryRoot, { maxCount?, file? })` | `SourceControlLogEntry[]` |
-| `getHistory(repositoryRoot, { skip, maxCount, upstream })` | `SourceControlHistoryEntry[]`: first-parent history of the checked-out branch, newest first, with ref badges, merged branch name and unpushed flag; `[]` for a repository without commits |
+| `getHistory(repositoryRoot, { skip, maxCount, upstream, searchText? })` | `SourceControlHistoryEntry[]`: first-parent history of the checked-out branch, newest first, with ref badges, merged branch name and unpushed flag; `[]` for a repository without commits |
 | `getChangedFilesBetween(repositoryRoot, fromRevision \| null, toRevision)` | `SourceControlChangedFile[]`; `null` lists everything a root commit added |
 | `getMergeBase(repositoryRoot, first, second)` | Hash or `null` |
 | `getConflictBlobs(repositoryRoot, relativePath)` | Stages 1/2/3 (`base`, `ours`, `theirs`), each `null` when missing |
@@ -69,9 +69,8 @@ Repositories are addressed by their absolute root path (`repositoryRoot`). File 
 | File | Purpose |
 |---|---|
 | `registerGitHandlers.ts` | `ipcMain.handle` for every `IPC_INVOKE_GIT_*` channel; one `simple-git` instance per call, scoped to the given `cwd`. Called from `entrypoint-electron-main.ts` |
-| `gitCommandLine.ts` | Pure, testable without Electron: what goes to git and what comes back. Exports the argument builders for `log` (history), `rev-list` (unpushed), `diff --name-status` / `diff-tree --root`, `merge-base` and `show`, plus `mapStatusCode`, `parseHistoryOutput` and `parseNameStatus`. Privately holds the ref and number validation (no leading `-`, no whitespace; non-negative integers), `GIT_HISTORY_LOG_FORMAT` with its field / record separators, ref decoration parsing and merged-branch-name extraction |
 
-Every value that crosses IPC into a git argument list goes through the builders in `gitCommandLine.ts`. The history command pins `--decorate=full` (independent of the user's `log.decorate`), `--no-show-signature`, and a trailing `--` (a file named `HEAD` is not an ambiguous argument). `show` receives `<revision>:<relativePath>` as one argument, so paths with spaces need no quoting. All git output parsing happens in the main process; the renderer receives typed results.
+Every value that crosses IPC into a git argument list goes through the private argument builders at the top of `registerGitHandlers.ts` (ref and number validation, `GIT_HISTORY_LOG_FORMAT` with its separators, `parseHistoryOutput`, `parseNameStatus`, ref decoration parsing, merged-branch-name extraction); they are covered by the git integration suite, not by unit tests. The history command pins `--decorate=full` (independent of the user's `log.decorate`), `--no-show-signature`, and a trailing `--` (a file named `HEAD` is not an ambiguous argument). `show` receives `<revision>:<relativePath>` as one argument, so paths with spaces need no quoting. All git output parsing happens in the main process; the renderer receives typed results.
 
 ### IPC Channels
 
@@ -95,7 +94,7 @@ Every value that crosses IPC into a git argument list goes through the builders 
 | `IPC_INVOKE_GIT_BRANCH_CREATE` | `git checkout -b` or `git branch` |
 | `IPC_INVOKE_GIT_SHOW` | `git show <revision>:<path>` |
 | `IPC_INVOKE_GIT_LOG` | `git log` with optional count and file filter |
-| `IPC_INVOKE_GIT_HISTORY` | `git log --first-parent`, paged by `skip` / `maxCount`, plus `git rev-list <upstream>..HEAD` for unpushed commits; returns parsed entries |
+| `IPC_INVOKE_GIT_HISTORY` | `git log --first-parent`, paged by `skip` / `maxCount` after the optional `searchText` filter (`--grep=<text> --fixed-strings --regexp-ignore-case`; validated: a string of at most 200 characters without NUL), plus `git rev-list <upstream>..HEAD` for unpushed commits; returns parsed entries |
 | `IPC_INVOKE_GIT_DIFF_NAME_STATUS` | `git diff --name-status -M -z <from> <to>`, or `git diff-tree --root` when `from` is `null`; returns parsed files |
 | `IPC_INVOKE_GIT_MERGE_BASE` | `git merge-base <a> <b>`; `null` when there is none |
 | `IPC_INVOKE_GIT_MERGE_STATE` | Merge, rebase or cherry-pick in progress (`MERGE_HEAD` / `REBASE_HEAD` / `CHERRY_PICK_HEAD`) |

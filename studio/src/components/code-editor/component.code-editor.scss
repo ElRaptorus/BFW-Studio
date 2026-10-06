@@ -154,13 +154,11 @@
 }
 
 [data-code-editor='diff'] {
+  // The merge view is the only scroller. Both editors grow to their content inside it, so one scrollbar moves
+  // them together. Do not give `.cm-mergeViewEditors` a height: its children clip their overflow.
   .cm-mergeView {
     height: 100%;
     overflow: auto;
-  }
-
-  .cm-mergeViewEditors {
-    height: 100%;
   }
 }
 

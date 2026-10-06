@@ -25,7 +25,7 @@ export class DiagnosticsMediator extends AbstractEmitter {
     return this.diagnosticsManager.getDiagnostics(uri);
   }
 
-  getCount(): DiagnosticCounts {
-    return this.diagnosticsManager.getCount();
+  getCount(uri?: string): DiagnosticCounts {
+    return this.diagnosticsManager.getCount(uri);
   }
 }

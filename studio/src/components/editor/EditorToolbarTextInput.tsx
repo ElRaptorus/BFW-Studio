@@ -39,6 +39,11 @@ type EditorToolbarTextInputProps = {
    * Optional minimum width in pixels. Defaults to 160.
    */
   minWidth?: number;
+
+  /**
+   * Optional test hook, rendered as the attribute `data-test--<dataTestId>` on the input.
+   */
+  dataTestId?: string;
 };
 
 /**
@@ -65,6 +70,7 @@ export function EditorToolbarTextInput(props: EditorToolbarTextInputProps): Reac
         placeholder={props.placeholder}
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
+        {...(props.dataTestId != null ? { [`data-test--${props.dataTestId}`]: true } : {})}
       />
     </span>
   );

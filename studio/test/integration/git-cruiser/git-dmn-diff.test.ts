@@ -78,6 +78,29 @@ describe('git-cruiser/dmn-diff', () => {
     fs.writeFileSync(dmnPath, original);
   });
 
+  it('dmn-diff/view-switch: should switch between the visual and the XML view', async () => {
+    const dmnPath = path.join(repoDir, 'test-decision.dmn');
+    const original = fs.readFileSync(dmnPath, 'utf-8');
+    fs.writeFileSync(dmnPath, original.replace('name="Discount"', 'name="Switched Discount"'));
+
+    await studioAgent.jumpToFileInSolution('test-decision.dmn', 'dmn');
+    await studioAgent.pause(500);
+    await studioAgent.executeCommand('git.showGitDiff', [`file://${dmnPath}`]);
+    await studioAgent.assertVisible('[data-test--editors--focused-document-type="dmn.diff"]', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.clickOn('[data-test--diff-view-xml]');
+    await studioAgent.assertVisible('.diff-xml-view .cm-mergeView', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertNotVisible('.splitter-layout--bpmn-diff:not(.diff-view--hidden)');
+
+    await studioAgent.clickOn('[data-test--diff-view-visual]');
+    await studioAgent.assertVisible('.splitter-layout--bpmn-diff:not(.diff-view--hidden)', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.assertNotVisible('.diff-xml-view');
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+
+    fs.writeFileSync(dmnPath, original);
+  });
+
   it('dmn-diff/change-nav: should show change navigation in the diff title', async () => {
     const dmnPath = path.join(repoDir, 'test-decision.dmn');
     const original = fs.readFileSync(dmnPath, 'utf-8');
