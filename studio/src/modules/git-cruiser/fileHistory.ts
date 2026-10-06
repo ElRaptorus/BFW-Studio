@@ -1,9 +1,9 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
-import type { GitService } from './GitService';
+import type { RepositoryStore } from './RepositoryStore';
 
-export async function showFileHistory(bifrost: Bifrost, gitService: GitService, uri: string): Promise<void> {
-  const repoRoot = gitService.getRepoRootForUri(uri);
+export async function showFileHistory(bifrost: Bifrost, repositoryStore: RepositoryStore, uri: string): Promise<void> {
+  const repoRoot = repositoryStore.getRepoRootForUri(uri);
   if (!repoRoot) {
     bifrost.notifications.open('File is not in a Git repository.');
     return;
@@ -12,7 +12,7 @@ export async function showFileHistory(bifrost: Bifrost, gitService: GitService, 
   const filePath = uri.startsWith('file://') ? uri.substring('file://'.length) : uri;
   const relativePath = filePath.substring(repoRoot.length + 1);
 
-  const log = await gitService.getLog(repoRoot, { file: relativePath });
+  const log = await bifrost.sourceControl.getLog(repoRoot, { file: relativePath });
   if (log.length <= 1) {
     bifrost.notifications.open('This file has no prior versions to browse.');
     return;

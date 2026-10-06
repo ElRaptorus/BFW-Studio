@@ -72,7 +72,7 @@ import BifrostAppManager, {
   EVENT_NEW_WINDOW,
 } from './BifrostAppManager';
 import BifrostAppStorage from './BifrostAppStorage';
-import { registerGitHandlers } from './registerGitHandlers';
+import { registerGitHandlers } from './git/registerGitHandlers';
 
 let bifrostAppManager: BifrostAppManager | null;
 let bifrostAppStorage: BifrostAppStorage;

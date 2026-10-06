@@ -21,6 +21,12 @@ export type ElementLike = {
   businessObject?: any;
 } & Record<string, any>;
 
+/**
+ * `visual` shows the two canvases side by side, `xml` shows the two XML sources in a text diff.
+ * Kept in the document metadata, because it is view state.
+ */
+type DiffViewMode = 'visual' | 'xml';
+
 export default class DmnDiffDocumentModel extends EditorDocumentModel {
   protected bifrost: Bifrost;
   protected fileLoader: ILoadable;
@@ -35,6 +41,8 @@ export default class DmnDiffDocumentModel extends EditorDocumentModel {
   protected cachedChangeSummary: DmnChangeSummary | null = null;
 
   private shownXmlAsJson: string;
+  private viewMode: DiffViewMode;
+  private xmlRevision = 0;
   private restoredMetadata: any;
 
   constructor(uri: string, restoredCurrentData: any, restoredMetadata: any, fileLoader: ILoadable, bifrost: Bifrost) {
@@ -47,6 +55,7 @@ export default class DmnDiffDocumentModel extends EditorDocumentModel {
     this.fileLoader = fileLoader;
     this.bifrost = bifrost;
     this.restoredMetadata = restoredMetadata;
+    this.viewMode = restoredMetadata?.viewMode === 'xml' ? 'xml' : 'visual';
 
     this.dmnViewerBefore = new DmnViewerWithSync();
     this.dmnViewerAfter = new DmnViewerWithSync();
@@ -155,6 +164,34 @@ export default class DmnDiffDocumentModel extends EditorDocumentModel {
     return parseOpenInNewTabUrl(this.uri).data.afterUri;
   }
 
+  getBeforeXml(): string {
+    return this.dmnDiff?.beforeXml ?? '';
+  }
+
+  getAfterXml(): string {
+    return this.dmnDiff?.afterXml ?? '';
+  }
+
+  /**
+   * Increases whenever the compared XML changed, so a mounted XML diff can be re-created.
+   */
+  getXmlRevision(): number {
+    return this.xmlRevision;
+  }
+
+  getViewMode(): DiffViewMode {
+    return this.viewMode;
+  }
+
+  setViewMode(viewMode: DiffViewMode): void {
+    if (viewMode === this.viewMode) {
+      return;
+    }
+
+    this.viewMode = viewMode;
+    this.updateMetadata({ viewMode });
+  }
+
   getCurrentAndMaxChanges(): CurrentAndMaxChanges {
     const selectedElementId = this.getSelectedElementId();
     const allChangedElementIds = this.getAllChangedElementIds();
@@ -220,6 +257,7 @@ export default class DmnDiffDocumentModel extends EditorDocumentModel {
       return;
     }
     this.shownXmlAsJson = xmlAsJson;
+    this.xmlRevision++;
   }
 
   protected async initialize(): Promise<void> {

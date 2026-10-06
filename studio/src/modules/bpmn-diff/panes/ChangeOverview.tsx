@@ -60,6 +60,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   }
 
   const handleClick = (elementId: string): void => {
+    props.editorDocumentModel?.setViewMode?.('visual');
     props.editorDocumentModel?.selectElements?.([elementId]);
   };
 

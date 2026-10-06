@@ -45,6 +45,7 @@ import DialogServiceElectron from './DialogServiceElectron';
 import FileHandlingServiceElectron from './FileHandlingServiceElectron';
 import { HttpServiceElectron } from './HttpServiceElectron';
 import MenuManagerElectron from './MenuManagerElectron';
+import { SourceControlServiceElectron } from './SourceControlServiceElectron';
 import { initializeElectronCommands } from './initializeElectronCommands';
 import { PluginHost } from './plugin-host/PluginHost';
 
@@ -77,6 +78,7 @@ async function startRenderer(bifrostWindowOptions: any): Promise<void> {
     dialogServiceConstructor: DialogServiceElectron,
     fileHandlingConstructor: FileHandlingServiceElectron,
     httpServiceConstructor: HttpServiceElectron,
+    sourceControlServiceConstructor: SourceControlServiceElectron,
     menuManagerConstructor: MenuManagerElectron,
     searchIndexConstructor: SearchIndex,
     symbolIndexConstructor: SymbolIndex,

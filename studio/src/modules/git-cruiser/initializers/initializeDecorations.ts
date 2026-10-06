@@ -1,19 +1,23 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type {
+  SourceControlFileStatus,
+  SourceControlFileStatusCode,
+  SourceControlRepositoryState,
+} from '#bifrost/contracts/SourceControlTypes';
+import type {
   TreeBadge,
   TreeDecorationProvider,
   TreeItemDecoration,
   TreeItemStyles,
 } from '#bifrost/contracts/TreeTypes';
 
-import type { GitFileStatus, GitFileStatusCode, GitRepoState } from '../GitTypes';
 import { STATUS_BADGE_MAP, STATUS_COLOR_TOKEN_MAP, STATUS_SEVERITY } from '../GitTypes';
 
-function getEffectiveStatus(fileStatus: GitFileStatus): GitFileStatusCode | null {
+function getEffectiveStatus(fileStatus: SourceControlFileStatus): SourceControlFileStatusCode | null {
   return fileStatus.workingTreeStatus ?? fileStatus.indexStatus;
 }
 
-function buildDecoration(status: GitFileStatusCode): TreeItemDecoration {
+function buildDecoration(status: SourceControlFileStatusCode): TreeItemDecoration {
   const color: string = STATUS_COLOR_TOKEN_MAP[status];
   const badgeChar = STATUS_BADGE_MAP[status];
 
@@ -27,8 +31,8 @@ function buildDecoration(status: GitFileStatusCode): TreeItemDecoration {
   return { styles, badges };
 }
 
-function getWorstStatus(statuses: GitFileStatusCode[]): GitFileStatusCode | null {
-  let worst: GitFileStatusCode | null = null;
+function getWorstStatus(statuses: SourceControlFileStatusCode[]): SourceControlFileStatusCode | null {
+  let worst: SourceControlFileStatusCode | null = null;
   for (const status of statuses) {
     if (!worst || STATUS_SEVERITY[status] > STATUS_SEVERITY[worst]) {
       worst = status;
@@ -57,13 +61,13 @@ export class GitDecorationProvider implements TreeDecorationProvider {
     };
   }
 
-  refresh(repoStates: GitRepoState[]): void {
+  refresh(repoStates: SourceControlRepositoryState[]): void {
     const newCache = new Map<string, TreeItemDecoration>();
 
-    const directoryStatuses = new Map<string, GitFileStatusCode[]>();
+    const directoryStatuses = new Map<string, SourceControlFileStatusCode[]>();
 
     for (const state of repoStates) {
-      const repoUri = `file://${state.repoRoot}`;
+      const repoUri = `file://${state.repositoryRoot}`;
 
       for (const file of state.files) {
         const effectiveStatus = getEffectiveStatus(file);

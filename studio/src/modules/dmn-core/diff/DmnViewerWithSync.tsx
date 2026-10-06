@@ -189,6 +189,8 @@ export class DmnViewerWithSync extends AbstractEmitter {
     if (canvas == null) {
       return;
     }
+    // diagram-js caches the viewbox, including the container size it had when it was last hidden or resized.
+    canvas.resized();
     const viewbox = canvas.viewbox(false as any) as CanvasViewbox;
     if (viewbox.outer.width === 0 || viewbox.outer.height === 0) {
       return;

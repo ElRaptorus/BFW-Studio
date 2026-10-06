@@ -2,6 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import type { SourceControlFileStatus, SourceControlRepositoryState } from '#bifrost/contracts/SourceControlTypes';
 import type { TreeBadge, TreeItem } from '#bifrost/contracts/TreeTypes';
 import { Icon } from '#components/Icon';
 import { Tree } from '#components/Tree/Tree';
@@ -18,9 +19,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { PaneProperty, type SelectOption } from '@elraptorus/bfw_studio_sdk';
 
-import type { GitService } from '../GitService';
-import type { GitFileStatus, GitRepoState } from '../GitTypes';
 import { STATUS_BADGE_MAP, STATUS_COLOR_TOKEN_MAP } from '../GitTypes';
+import type { RepositoryStore } from '../RepositoryStore';
 import '../styles/git-cruiser.scss';
 
 const GIT_PANE_VIEW_MEDIATOR_ID = 'git-cruiser/pane-tree';
@@ -63,9 +63,9 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost = props.studio as Bifrost;
-  const gitService = bifrost.commands.executeCommand<GitService>('git.getGitServiceRef');
-  const [allStates, setAllStates] = useState<GitRepoState[]>([]);
-  const [repoState, setRepoState] = useState<GitRepoState | null>(null);
+  const repositoryStore = bifrost.commands.executeCommand<RepositoryStore>('git.getRepositoryStoreRef');
+  const [allStates, setAllStates] = useState<SourceControlRepositoryState[]>([]);
+  const [repoState, setRepoState] = useState<SourceControlRepositoryState | null>(null);
   const [commitTitle, setCommitTitle] = useState('');
   const [commitBody, setCommitBody] = useState('');
   const [showBody, setShowBody] = useState(false);
@@ -74,13 +74,13 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   useEffect(() => {
     const updateState = () => {
-      const states = gitService.getAllRepoStates();
+      const states = repositoryStore.getAllRepoStates();
       setAllStates(states);
 
-      const selected = gitService.getSelectedRepo();
-      const match = selected ? states.find((state) => state.repoRoot === selected) : null;
+      const selected = repositoryStore.getSelectedRepo();
+      const match = selected ? states.find((state) => state.repositoryRoot === selected) : null;
       const effective = match ?? states[0] ?? null;
-      gitService.setSelectedRepo(effective?.repoRoot ?? null);
+      repositoryStore.setSelectedRepo(effective?.repositoryRoot ?? null);
       setRepoState(effective);
 
       setCommitTitle(commitTitleRef.current);
@@ -91,31 +91,31 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     };
 
     updateState();
-    const sub = bifrost.events.on('gitStatusChanged', updateState);
+    const sub = bifrost.events.on('sourceControlStatusChanged', updateState);
     return () => sub.dispose();
-  }, [bifrost, gitService]);
+  }, [bifrost, repositoryStore]);
 
   const repoOptions: SelectOption[] = useMemo(
-    () => allStates.map((state) => ({ label: path.basename(state.repoRoot), value: state.repoRoot })),
+    () => allStates.map((state) => ({ label: path.basename(state.repositoryRoot), value: state.repositoryRoot })),
     [allStates],
   );
 
   const selectedRepoOption = useMemo(
-    () => repoOptions.find((opt) => opt.value === repoState?.repoRoot) ?? undefined,
+    () => repoOptions.find((opt) => opt.value === repoState?.repositoryRoot) ?? undefined,
     [repoOptions, repoState],
   );
 
   const handleRepoChange = useCallback(
     (option: SelectOption | null) => {
-      if (!option || !gitService) {
+      if (!option || !repositoryStore) {
         return;
       }
-      gitService.setSelectedRepo(option.value);
-      const match = gitService.getRepoState(option.value);
+      repositoryStore.setSelectedRepo(option.value);
+      const match = repositoryStore.getRepoState(option.value);
       setRepoState(match ?? null);
       bifrost.statusBar.updateStatusBarItems();
     },
-    [gitService, bifrost],
+    [repositoryStore, bifrost],
   );
 
   const stagedFiles = useMemo(() => {
@@ -171,7 +171,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const handleActionIconClick = useCallback(
     (data: any) => {
       const meta = data.metadata;
-      if (!meta || !gitService) {
+      if (!meta || !repositoryStore) {
         return;
       }
 
@@ -184,15 +184,15 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
       } else if (data.actionId === 'revert') {
         bifrost.commands.executeCommand('git.revert', [meta.path, meta.repoRoot]);
       } else if (meta.statusKey === 'indexStatus') {
-        gitService.unstage(meta.repoRoot, [meta.path]);
+        repositoryStore.unstage(meta.repoRoot, [meta.path]);
       } else {
-        gitService.stage(meta.repoRoot, [meta.path]);
+        repositoryStore.stage(meta.repoRoot, [meta.path]);
       }
     },
-    [bifrost, gitService],
+    [bifrost, repositoryStore],
   );
 
-  if (!gitService || !gitService.isEnabled) {
+  if (!repositoryStore || !repositoryStore.isEnabled) {
     return (
       <div className="git-pane__empty" data-test--git-pane-disabled>
         <p>Git integration is disabled.</p>
@@ -201,7 +201,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     );
   }
 
-  if (!gitService.isGitAvailable) {
+  if (!repositoryStore.isGitAvailable) {
     return (
       <div className="git-pane__empty" data-test--git-pane-no-git>
         <p>Git was not found on this system.</p>
@@ -236,7 +236,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     );
   }
 
-  function buildFileItem(file: GitFileStatus, statusKey: 'indexStatus' | 'workingTreeStatus'): TreeItem {
+  function buildFileItem(file: SourceControlFileStatus, statusKey: 'indexStatus' | 'workingTreeStatus'): TreeItem {
     const status = file[statusKey];
     const effectiveStatus = status ?? file.workingTreeStatus ?? file.indexStatus;
     const color = effectiveStatus ? STATUS_COLOR_TOKEN_MAP[effectiveStatus] : 'var(--theme-git-ignored)';
@@ -269,7 +269,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
       metadata: {
         uri: file.uri,
         path: file.path,
-        repoRoot: repoState!.repoRoot,
+        repoRoot: repoState!.repositoryRoot,
         statusKey,
         statusCode: file[statusKey],
       },
@@ -319,7 +319,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           metadata: {
             uri: gitFile.uri,
             path: gitFile.path,
-            repoRoot: repoState!.repoRoot,
+            repoRoot: repoState!.repositoryRoot,
             statusKey: 'conflicted',
             statusCode: 'conflicted',
             isBpmn,
@@ -380,7 +380,9 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           className="git-pane__repo-selector"
         />
       )}
-      {allStates.length === 1 && <div className="git-pane__repo-label">{path.basename(allStates[0].repoRoot)}</div>}
+      {allStates.length === 1 && (
+        <div className="git-pane__repo-label">{path.basename(allStates[0].repositoryRoot)}</div>
+      )}
 
       <PaneInfoBar data-test--git-pane-header>
         <PaneInfoBarItem icon="ph ph-git-branch" label={branchLabel} />
@@ -390,7 +392,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           icon="ph ph-tray-arrow-down"
           tooltip="Stash All Changes"
           command="git.stash"
-          commandArgs={[repoState.repoRoot]}
+          commandArgs={[repoState.repositoryRoot]}
           visible={hasAnyChanges}
         />
         <PaneInfoBarAction
@@ -398,7 +400,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           icon="ph ph-tray-arrow-up"
           tooltip="Apply Stash"
           command="git.stashApply"
-          commandArgs={[repoState.repoRoot]}
+          commandArgs={[repoState.repositoryRoot]}
           visible={repoState.hasStash}
         />
         {mergeStateKind != null && (

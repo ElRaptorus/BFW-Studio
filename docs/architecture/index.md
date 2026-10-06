@@ -32,7 +32,8 @@ Each file owns one topic. Point to other files; do not copy their tables.
 - **[workbench-layout.md](workbench-layout.md)** — Workbench layout: three-column layout, header menu bar and layout toggles, left tab strip, PaneManager pane area selection
 - **[imports-and-modules.md](imports-and-modules.md)** — Module resolution: subpath import aliases (`#bifrost/*`, `#components/*`, `#modules/*`), ambient declarations, TypeScript 6.0 configuration, per-target tsconfig layout
 - **[bpmn-diff.md](bpmn-diff.md)** — Side-by-side BPMN diff, history preview, change summary, three-panel merge UI
-- **[git-cruiser.md](git-cruiser.md)** — Git primitives: GitService, IPC, pane, status bar, merge framework (BPMN/DMN visualization in bpmn-diff)
+- **[source-control.md](source-control.md)** — `bifrost.sourceControl`: `SourceControlService` API, Electron implementation, main-process git handlers, IPC channels
+- **[git-cruiser.md](git-cruiser.md)** — Git UI module: `RepositoryStore`, pane, status bar, decorations, merge framework (BPMN/DMN visualization in bpmn-diff)
 - **[code-quality.md](code-quality.md)** — Code quality: ESLint flat config, Prettier setup, React Compiler rules, common patterns, suppression conventions, verification scripts
 - **[status-bar.md](status-bar.md)** — Status bar infrastructure: priority-based ordering, progress indicators, solution badge, encoding/line-ending items, diagnostics service and problems count
 - **[table.md](table.md)** — Host Table widget around TanStack Table v9: column definitions, pagination, column-header filters, theming tokens

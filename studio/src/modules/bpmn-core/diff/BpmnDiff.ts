@@ -41,7 +41,12 @@ export class BpmnDiff extends AbstractEmitter {
 
   async diff(): Promise<BpmnDiffChangesByAction> {
     const diffingClient = new BpmnDiffingWorkerClient();
-    const diffResult = await diffingClient.diff(this.beforeXml, this.afterXml);
+    let diffResult: any;
+    try {
+      diffResult = await diffingClient.diff(this.beforeXml, this.afterXml);
+    } finally {
+      diffingClient.terminate();
+    }
     const { _added, _changed, _layoutChanged, _removed } = diffResult;
 
     const added = this.convertChanges(_added, 'added');

@@ -44,7 +44,7 @@ The host div carries `data-code-editor="multiline"`. Tests click `.cm-content` i
 
 **Path:** `studio/src/components/DiffEditor.tsx`
 
-Side-by-side `@codemirror/merge` `MergeView`. Used by dialog `diff` content (`DialogRenderer`). Not used by Git Cruiser — merge visualization is BPMN/DMN only. Left (`a`) is read-only ours; right (`b`) is theirs/result and is editable unless `readOnly`. `getCurrentValue()` returns the `b` document. `layout()` is a no-op. Host div: `data-code-editor="diff"`.
+Side-by-side `@codemirror/merge` `MergeView`. Used by dialog `diff` content (`DialogRenderer`). Not used by Git Cruiser — merge visualization is BPMN/DMN only. Left (`a`) is read-only ours; right (`b`) is theirs/result and is editable unless `readOnly`. `getCurrentValue()` returns the `b` document. `layout()` is a no-op. Host div: `data-code-editor="diff"`. The merge highlights (changed lines, changed text, change gutter) are themed in `component.code-editor.scss` through `--theme-cm-diff-*` aliases derived from `--theme-validation-success-fg` / `--theme-validation-error-fg`; the `@codemirror/merge` base theme colours are overridden, not used. Also used read-only for the Visual | XML view of `bpmn.diff` / `dmn.diff` documents.
 
 #### Shared kit
 
@@ -59,7 +59,7 @@ Side-by-side `@codemirror/merge` `MergeView`. Used by dialog `diff` content (`Di
 | `json5SchemaExtensions.ts` | Settings JSON5 schema bundle; unknown keys → warning `Unknown setting.` |
 | `unknownSettingDiagnostics.ts` | Rewrites json-schema-library additional-property errors to `Unknown setting.` |
 | `rainbowBrackets.ts` | In-house `ViewPlugin`; viewport decorations `cm-rainbow-bracket-0` … `5` |
-| `component.code-editor.scss` | `--theme-cm-*` aliases on `.bifrost`; `tok-*` syntax colors; six bracket colors |
+| `component.code-editor.scss` | `--theme-cm-*` aliases on `.bifrost` (including `--theme-cm-diff-*`); `tok-*` syntax colors; six bracket colors; merge-view highlight overrides |
 
 Language map (only ids host wrappers pass): `json`, `javascript`, `html`, `xml`. Unknown ids, `plaintext`, and `''` (documentation fragments) get no language package. FEEL is not in this map — it uses `FeelEditor`. Do not add `@codemirror/legacy-modes` or extra `@codemirror/lang-*` packages unless a real callsite needs them.
 

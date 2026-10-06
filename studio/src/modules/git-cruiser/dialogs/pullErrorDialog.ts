@@ -1,14 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { SourceControlPullResult } from '#bifrost/contracts/SourceControlTypes';
 
-import type { GitService } from '../GitService';
-import type { GitPullResult } from '../GitTypes';
+import type { RepositoryStore } from '../RepositoryStore';
 import { showGitError, showPullError, showStashPopError } from './gitErrorNotification';
 
 export async function handlePullResult(
   bifrost: Bifrost,
-  gitService: GitService,
+  repositoryStore: RepositoryStore,
   repoRoot: string,
-  result: GitPullResult,
+  result: SourceControlPullResult,
 ): Promise<boolean> {
   if (result.success) {
     return true;
@@ -20,7 +20,7 @@ export async function handlePullResult(
   }
 
   if (result.recoverable === 'merge-conflicts') {
-    const state = gitService.getRepoState(repoRoot);
+    const state = repositoryStore.getRepoState(repoRoot);
     const conflictCount = state?.mergeState.conflictedFiles.length ?? 0;
     const bpmnCount = state?.mergeState.conflictedFiles.filter((file) => file.path.endsWith('.bpmn')).length ?? 0;
     const dmnCount = state?.mergeState.conflictedFiles.filter((file) => file.path.endsWith('.dmn')).length ?? 0;
@@ -80,7 +80,7 @@ export async function handlePullResult(
 
   if (dialogResult?.response === 'rebase') {
     try {
-      const retryResult = await gitService.pull(repoRoot, { rebase: true });
+      const retryResult = await repositoryStore.pull(repoRoot, { rebase: true });
       if (!retryResult.success) {
         showPullError(bifrost, retryResult.error ?? 'Rebase failed.');
         return false;
@@ -95,11 +95,11 @@ export async function handlePullResult(
 
   if (dialogResult?.response === 'stash-retry') {
     try {
-      await gitService.stash(repoRoot, 'Auto-stash before pull');
-      const retryResult = await gitService.pull(repoRoot);
+      await repositoryStore.stash(repoRoot, 'Auto-stash before pull');
+      const retryResult = await repositoryStore.pull(repoRoot);
       if (retryResult.success) {
         try {
-          await gitService.stashApply(repoRoot, 0);
+          await repositoryStore.stashApply(repoRoot, 0);
           return true;
         } catch (popError: any) {
           showStashPopError(bifrost, popError);

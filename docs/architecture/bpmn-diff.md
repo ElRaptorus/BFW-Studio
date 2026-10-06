@@ -41,7 +41,7 @@ The diff engine classes (`BpmnDiff`, `BpmnDiffingWorkerClient`, `BpmnDiffingWork
 
 **Path:** `studio/src/modules/bpmn-core/diff/BpmnDiff.ts`
 
-Core class that orchestrates the diff. Spawns a `BpmnDiffingWorkerClient` web worker, sends both XML strings, and maps the raw `bpmn-js-differ` buckets (`_added`, `_changed`, `_layoutChanged`, `_removed`) to internal categories (`added`, `moved`, `updated`, `deleted`). Applies a post-filter that rejects `Lane`, `Participant`, and `SequenceFlow` entries from the `moved` category.
+Core class that orchestrates the diff. Spawns a `BpmnDiffingWorkerClient` web worker per `diff()` call (terminated in a `finally` once the result is back), sends both XML strings, and maps the raw `bpmn-js-differ` buckets (`_added`, `_changed`, `_layoutChanged`, `_removed`) to internal categories (`added`, `moved`, `updated`, `deleted`). Applies a post-filter that rejects `Lane`, `Participant`, and `SequenceFlow` entries from the `moved` category.
 
 Key types:
 
@@ -123,7 +123,9 @@ CSS variables and shared classes for diff overlay positioning, colors, highlight
 | Model | `BpmnDiffDocumentModel` |
 | Renderer | `BpmnDiffDocumentRenderer` |
 
-The URI encodes `beforeUri`, `afterUri`, `beforeData` (`original` or `current`), and `afterData`.
+The URI encodes `beforeUri`, `afterUri`, `beforeData` (`original` or `current`), `afterData`, and optionally `sourceFileUri` (set via the `sourceFileUri` option of `bpmn.diff.openDiffTwoFiles`; shows an "Open File" toolbar button that runs `std.editor.focusOrOpenDocument`).
+
+**Visual | XML switch:** the toolbar-right buttons run `bpmn.diff.showVisualView` / `bpmn.diff.showXmlView`, which call `BpmnDiffDocumentModel.setViewMode()`. The mode lives in the document metadata (`viewMode`, view state) and is restored with the tab. XML mode mounts a read-only `DiffEditor` (`language="xml"`) lazily, fed by `getBeforeXml()` / `getAfterXml()` and re-created when `getXmlRevision()` changes. The `SplitterLayout` stays mounted with the class `diff-view--hidden` (`display: none`) so the viewers keep their state; switching back calls `zoomToViewport()` (then `zoomToElements()` for a current selection) because the canvases were measured while hidden. `BpmnViewerWithSync.resetZoom()` / `DmnViewerWithSync.resetZoom()` call `canvas.resized()` first, since diagram-js caches the viewbox including the container size, and skip the fit while the container is 0×0. In XML mode the zoom buttons and the "Change n / m" navigation are not rendered; clicking an entry in the Change Overview pane switches back to Visual. The History Preview documents do not have this switch.
 
 ### bpmn.history-preview
 
@@ -165,9 +167,11 @@ Visible when an element is selected in either a `bpmn.diff` or `bpmn.history-pre
 |---------|-------------|--------------|
 | `bpmn.diff.openDiffOriginalDataVsCurrentData` | Working copy diff for focused BPMN | Command search |
 | `bpmn.diff.openDiffCurrentDataVsOriginalData` | Reverse working copy diff | Internal |
-| `bpmn.diff.openDiffTwoFiles` | Compare two files by URI | Internal |
+| `bpmn.diff.openDiffTwoFiles` | Compare two files by URI. Optional third argument `{ label?, sourceFileUri? }` sets the tab title and the "Open File" target | Internal |
 | `bpmn.diff.showChangeSummaryDialog` | Show markdown summary dialog from computed diff data | Internal (diff view toolbar). `enabledWhen` and the handler fall back to the focused `bpmn.diff` document when invoked with no args (tests / command search / keybindings). |
 | `bpmn.diff.getChangeSummaryMarkdown` | Return markdown summary for two XMLs | Internal (called by git-cruiser commit preview) |
+| `bpmn.diff.getChangeDigest` | `(beforeXml \| null, afterXml \| null)` → `ModelChangeDigest` (`bifrost/contracts/SourceControlTypes.ts`, built by `buildModelChangeDigestForXmlPair` in `bpmn-core/diff/modelChangeDigest.ts` with root element `process`, which also reads the process name and decodes its XML entities; `git-cruiser/formatModelChangeDigest.ts` turns it into one line). A `null` side means the file was added or deleted; no diff runs. Shares `computeBpmnChangeSummary` with the markdown command. `fileDetailsChanged` is set when only definitions metadata or linter scores changed. Rejects for unparsable XML | Internal (Source Overview) |
+| `bpmn.diff.showVisualView` / `bpmn.diff.showXmlView` | Switch a `bpmn.diff` document between canvases and XML text diff | Internal (diff view toolbar) |
 | `bpmn.diff.exportBeforeToNewFile` | Export the "before" document | Internal |
 | `bpmn.diff.openHistoryPreview` | Open history preview for a BPMN file at a commit | Internal |
 | `bpmn.diff.historyPreview.changeViewMode` | Toggle between preview/diff in history preview | Internal |
@@ -178,7 +182,7 @@ Visible when an element is selected in either a `bpmn.diff` or `bpmn.history-pre
 
 `bpmn.diff.getChangeSummaryMarkdown` is called by git-cruiser's `buildChangeSummaryForFiles()` during the commit flow to produce detailed per-file summaries for the commit dialog.
 
-`bpmn.diff.openHistoryPreview` is called by git-cruiser's `fileHistory.ts` QuickJump entries. `bpmn.diff.history.restoreFile` is a wrapper that extracts the historical XML from its model and delegates to `git.restoreFileContent` for the actual file write and dialog. `bpmn.diff.suggestBranchNameForProcess` is called by `git.createBranchForProcess` to get a branch name suggestion using `bpmn-core/bpmnProcessUtils`.
+`bpmn.diff.openHistoryPreview` is called by git-cruiser's `fileHistory.ts` QuickJump entries. `bpmn.diff.history.restoreFile` is a wrapper that extracts the historical XML from its model and delegates to `git.restoreFileContent` for the actual file write and dialog. `bpmn.diff.suggestBranchNameForProcess` is called by `git.createBranchForProcess` to get a branch name suggestion; it reads the process name with one inline match (no entity decoding) and slugifies it.
 
 The history preview model fetches historical XML via `git.getFileAtRef`, maintaining a clean separation: git-cruiser provides raw Git data, bpmn-diff handles all BPMN-specific rendering and UI.
 
@@ -225,5 +229,4 @@ Paths: `studio/src/modules/bpmn-editor/merge/` (`BpmnMergeResolver.tsx`, `BpmnMe
 | ChangeOverview pane | `studio/src/modules/bpmn-diff/panes/ChangeOverview.tsx` |
 | ContentDiff pane | `studio/src/modules/bpmn-diff/panes/ContentDiff.tsx` |
 | Styles | `studio/src/modules/bpmn-diff/styles/component.bpmn-diff.scss` |
-| Process name utilities (shared) | `studio/src/modules/bpmn-core/bpmnProcessUtils.ts` |
 | Help text | `studio/src/modules/bpmn-diff/texts/bpmn-diff.md` |

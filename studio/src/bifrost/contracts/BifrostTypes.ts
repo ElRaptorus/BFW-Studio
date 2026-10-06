@@ -4,6 +4,7 @@ import type { HttpService } from '../browser/HttpService';
 import type { DialogService } from '../common/DialogService';
 import type { FileHandlingService } from '../common/FileHandlingService';
 import type { MenuManager } from '../common/MenuManager';
+import type { SourceControlService } from '../common/SourceControlService';
 import type { IPluginHost } from './PluginHostTypes';
 import type { ISymbolIndex } from './SymbolTypes';
 
@@ -24,6 +25,7 @@ export type BifrostOptions = {
   dialogServiceConstructor?: new () => DialogService;
   fileHandlingConstructor?: new () => FileHandlingService;
   httpServiceConstructor?: new () => HttpService;
+  sourceControlServiceConstructor?: new () => SourceControlService;
   menuManagerConstructor?: new () => MenuManager;
   searchIndexConstructor?: new () => ISearchIndex;
   symbolIndexConstructor?: new () => ISymbolIndex;
@@ -48,6 +50,7 @@ export type BifrostOptionsStrict = {
   dialogServiceConstructor: new () => DialogService;
   fileHandlingConstructor: new () => FileHandlingService;
   httpServiceConstructor: new () => HttpService;
+  sourceControlServiceConstructor: new () => SourceControlService;
   menuManagerConstructor: new () => MenuManager;
   searchIndexConstructor: new () => ISearchIndex;
   symbolIndexConstructor: new () => ISymbolIndex;

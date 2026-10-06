@@ -3,18 +3,18 @@ import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 
 import type { Menu } from '@elraptorus/bfw_studio_sdk';
 
-import type { GitService } from '../GitService';
+import type { RepositoryStore } from '../RepositoryStore';
 
-export function initializeMenus(bifrost: Bifrost, gitService: GitService): void {
+export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   bifrost.menus.registerMenuModifier('std/file-explorer/file', (menu: Menu, metadata: any) => {
     assertNotNull(metadata.uri, 'metadata.uri');
 
-    const repoRoot = gitService.getRepoRootForUri(metadata.uri);
-    if (!repoRoot || !gitService.isActive) {
+    const repoRoot = repositoryStore.getRepoRootForUri(metadata.uri);
+    if (!repoRoot || !repositoryStore.isActive) {
       return menu;
     }
 
-    const fileStatus = gitService.getFileStatus(metadata.uri);
+    const fileStatus = repositoryStore.getFileStatus(metadata.uri);
     const hasChanges = fileStatus != null;
     const isRevertable = hasChanges && fileStatus?.workingTreeStatus !== 'untracked';
 
@@ -44,8 +44,8 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
   bifrost.menus.registerMenuModifier('std/file-explorer/directory', (menu: Menu, metadata: any) => {
     assertNotNull(metadata.uri, 'metadata.uri');
 
-    const repoRoot = gitService.getRepoRootForUri(metadata.uri);
-    if (!repoRoot || !gitService.isActive) {
+    const repoRoot = repositoryStore.getRepoRootForUri(metadata.uri);
+    if (!repoRoot || !repositoryStore.isActive) {
       return menu;
     }
 
@@ -63,8 +63,8 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
   });
 
   bifrost.menus.registerMenuModifier('std/file-explorer/project', (menu: Menu, metadata: any) => {
-    const repoRoot = gitService.getRepoRootForUri(metadata.uri);
-    if (!repoRoot || !gitService.isActive) {
+    const repoRoot = repositoryStore.getRepoRootForUri(metadata.uri);
+    if (!repoRoot || !repositoryStore.isActive) {
       return menu;
     }
 
@@ -82,8 +82,8 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
   });
 
   bifrost.menus.registerMenuModifier('std/file-explorer/solution-root', (menu: Menu, metadata: any) => {
-    const repoRoot = gitService.getRepoRootForUri(metadata.uri);
-    if (!repoRoot || !gitService.isActive) {
+    const repoRoot = repositoryStore.getRepoRootForUri(metadata.uri);
+    if (!repoRoot || !repositoryStore.isActive) {
       return menu;
     }
 
@@ -103,12 +103,12 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
   bifrost.menus.registerMenuModifier('std/editor/editor-tab', (menu: Menu, metadata: any) => {
     assertNotNull(metadata.uri, 'uri');
 
-    const repoRoot = gitService.getRepoRootForUri(metadata.uri);
-    if (!repoRoot || !gitService.isActive) {
+    const repoRoot = repositoryStore.getRepoRootForUri(metadata.uri);
+    if (!repoRoot || !repositoryStore.isActive) {
       return menu;
     }
 
-    const fileStatus = gitService.getFileStatus(metadata.uri);
+    const fileStatus = repositoryStore.getFileStatus(metadata.uri);
     const hasChanges = fileStatus != null;
     const isRevertable = hasChanges && fileStatus?.workingTreeStatus !== 'untracked';
 
@@ -218,8 +218,8 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
   );
 
   bifrost.menus.registerMenuModifier('std/file-explorer/project', (menu: Menu, metadata: any) => {
-    const repoRoot = gitService.getRepoRootForUri(metadata.uri);
-    if (!repoRoot || !gitService.isActive) {
+    const repoRoot = repositoryStore.getRepoRootForUri(metadata.uri);
+    if (!repoRoot || !repositoryStore.isActive) {
       return menu;
     }
 
@@ -231,7 +231,7 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
         id: 'git-cruiser/project/connect-to-remote',
         command: 'git.connectFolderToRemote',
         commandArgs: [metadata.uri],
-        visible: gitService.isActive && repoRoot != null,
+        visible: repositoryStore.isActive && repoRoot != null,
       },
     ]);
   });
@@ -243,14 +243,14 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
         label: 'Clone and add Git Repo to Solution',
         id: 'git-cruiser/solution-root/add-git-repo',
         command: 'git.cloneRepository',
-        visible: gitService.isActive,
+        visible: repositoryStore.isActive,
       },
     ]);
   });
 
   bifrost.menus.registerMenuModifier('std/file-explorer/solution-root', (menu: Menu, metadata: any) => {
-    const repoRoot = gitService.getRepoRootForUri(metadata.uri);
-    if (!gitService.isActive || repoRoot != null) {
+    const repoRoot = repositoryStore.getRepoRootForUri(metadata.uri);
+    if (!repositoryStore.isActive || repoRoot != null) {
       return menu;
     }
 
@@ -275,7 +275,7 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
           label: 'Clone and add Git Repo to Solution',
           id: 'file/add-git-repo-to-solution',
           command: 'git.cloneRepository',
-          visible: gitService.isActive && bifrost.solution.hasOpenSolution(),
+          visible: repositoryStore.isActive && bifrost.solution.hasOpenSolution(),
         },
       ]);
     });
@@ -288,8 +288,8 @@ export function initializeMenus(bifrost: Bifrost, gitService: GitService): void 
         return menu;
       }
 
-      const repoRoot = gitService.getRepoRootForUri(editorDocument.uri);
-      if (!repoRoot || !gitService.isActive) {
+      const repoRoot = repositoryStore.getRepoRootForUri(editorDocument.uri);
+      if (!repoRoot || !repositoryStore.isActive) {
         return menu;
       }
 

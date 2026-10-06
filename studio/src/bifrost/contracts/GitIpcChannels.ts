@@ -1,3 +1,9 @@
+import type { SourceControlBranchInfo, SourceControlFileStatusCode } from './SourceControlTypes';
+
+/**
+ * Channels between `SourceControlServiceElectron` (renderer) and `registerGitHandlers` (main). Only those two files
+ * use them; everything else goes through `bifrost.sourceControl`.
+ */
 export const IPC_INVOKE_GIT_IS_AVAILABLE = 'IPC_INVOKE_GIT_IS_AVAILABLE';
 export const IPC_INVOKE_GIT_IS_REPO = 'IPC_INVOKE_GIT_IS_REPO';
 export const IPC_INVOKE_GIT_STATUS = 'IPC_INVOKE_GIT_STATUS';
@@ -16,6 +22,9 @@ export const IPC_INVOKE_GIT_BRANCH_CREATE = 'IPC_INVOKE_GIT_BRANCH_CREATE';
 export const IPC_INVOKE_GIT_FETCH = 'IPC_INVOKE_GIT_FETCH';
 export const IPC_INVOKE_GIT_SHOW = 'IPC_INVOKE_GIT_SHOW';
 export const IPC_INVOKE_GIT_LOG = 'IPC_INVOKE_GIT_LOG';
+export const IPC_INVOKE_GIT_HISTORY = 'IPC_INVOKE_GIT_HISTORY';
+export const IPC_INVOKE_GIT_DIFF_NAME_STATUS = 'IPC_INVOKE_GIT_DIFF_NAME_STATUS';
+export const IPC_INVOKE_GIT_MERGE_BASE = 'IPC_INVOKE_GIT_MERGE_BASE';
 
 export const IPC_INVOKE_GIT_MERGE_STATE = 'IPC_INVOKE_GIT_MERGE_STATE';
 export const IPC_INVOKE_GIT_MERGE_ABORT = 'IPC_INVOKE_GIT_MERGE_ABORT';
@@ -31,3 +40,15 @@ export const IPC_INVOKE_GIT_LS_REMOTE = 'IPC_INVOKE_GIT_LS_REMOTE';
 export const IPC_INVOKE_GIT_CONNECT_TO_REMOTE = 'IPC_INVOKE_GIT_CONNECT_TO_REMOTE';
 
 export const IPC_MESSAGE_GIT_CLONE_PROGRESS = 'IPC_MESSAGE_GIT_CLONE_PROGRESS';
+
+/** Result of `IPC_INVOKE_GIT_STATUS`. */
+export type GitStatusPayload = {
+  readonly branch: SourceControlBranchInfo;
+  readonly files: {
+    readonly path: string;
+    readonly indexStatus: SourceControlFileStatusCode | null;
+    readonly workingTreeStatus: SourceControlFileStatusCode | null;
+    readonly isConflicted: boolean;
+  }[];
+  readonly hasStash: boolean;
+};

@@ -1,3 +1,4 @@
+import type { GitStatusPayload } from '#bifrost/contracts/GitIpcChannels';
 import {
   IPC_INVOKE_GIT_BRANCH_CREATE,
   IPC_INVOKE_GIT_BRANCH_LIST,
@@ -8,12 +9,15 @@ import {
   IPC_INVOKE_GIT_COMMIT,
   IPC_INVOKE_GIT_CONFLICT_BLOBS,
   IPC_INVOKE_GIT_CONNECT_TO_REMOTE,
+  IPC_INVOKE_GIT_DIFF_NAME_STATUS,
   IPC_INVOKE_GIT_FETCH,
+  IPC_INVOKE_GIT_HISTORY,
   IPC_INVOKE_GIT_IS_AVAILABLE,
   IPC_INVOKE_GIT_IS_REPO,
   IPC_INVOKE_GIT_LOG,
   IPC_INVOKE_GIT_LS_REMOTE,
   IPC_INVOKE_GIT_MERGE_ABORT,
+  IPC_INVOKE_GIT_MERGE_BASE,
   IPC_INVOKE_GIT_MERGE_STATE,
   IPC_INVOKE_GIT_PULL,
   IPC_INVOKE_GIT_PUSH,
@@ -30,12 +34,28 @@ import {
   IPC_INVOKE_GIT_UNSTAGE,
   IPC_MESSAGE_GIT_CLONE_PROGRESS,
 } from '#bifrost/contracts/GitIpcChannels';
+import type {
+  SourceControlChangedFile,
+  SourceControlHistoryEntry,
+  SourceControlHistoryRequest,
+} from '#bifrost/contracts/SourceControlTypes';
 import { ipcMain } from 'electron';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import type { BranchSummary, LogResult, SimpleGit, SimpleGitOptions, StatusResult } from 'simple-git';
 import { simpleGit } from 'simple-git';
+
+import {
+  buildHistoryLogArguments,
+  buildMergeBaseArguments,
+  buildNameStatusArguments,
+  buildShowFileArguments,
+  buildUnpushedCommitsArguments,
+  mapStatusCode,
+  parseHistoryOutput,
+  parseNameStatus,
+} from './gitCommandLine';
 
 function createGit(options: Partial<SimpleGitOptions> = {}): SimpleGit {
   return simpleGit({ ...options, allowEnvironment: ['GIT_TERMINAL_PROMPT'] });
@@ -83,7 +103,7 @@ export function registerGitHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_INVOKE_GIT_STATUS, async (_event, cwd: string) => {
+  ipcMain.handle(IPC_INVOKE_GIT_STATUS, async (_event, cwd: string): Promise<GitStatusPayload> => {
     const git = getGit(cwd);
     const status: StatusResult = await git.status();
 
@@ -127,8 +147,8 @@ export function registerGitHandlers(): void {
       branch: { current, tracking, ahead, behind, detached },
       files: status.files.map((file) => ({
         path: file.path,
-        indexStatus: file.index,
-        workingTreeStatus: file.working_dir,
+        indexStatus: mapStatusCode(file.index),
+        workingTreeStatus: mapStatusCode(file.working_dir),
         isConflicted: conflictedPaths.has(file.path),
       })),
       hasStash,
@@ -253,10 +273,11 @@ export function registerGitHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_INVOKE_GIT_SHOW, async (_event, cwd: string, ref: string) => {
-    const git = getGit(cwd);
-    return await git.show([ref]);
-  });
+  ipcMain.handle(
+    IPC_INVOKE_GIT_SHOW,
+    async (_event, cwd: string, revision: string, relativePath: string): Promise<string> =>
+      await getGit(cwd).show(buildShowFileArguments(revision, relativePath)),
+  );
 
   ipcMain.handle(IPC_INVOKE_GIT_LOG, async (_event, cwd: string, options?: { maxCount?: number; file?: string }) => {
     const git = getGit(cwd);
@@ -276,6 +297,55 @@ export function registerGitHandlers(): void {
       author: entry.author_name,
     }));
   });
+
+  ipcMain.handle(
+    IPC_INVOKE_GIT_HISTORY,
+    async (_event, cwd: string, request: SourceControlHistoryRequest): Promise<SourceControlHistoryEntry[]> => {
+      const logArguments = buildHistoryLogArguments(request);
+      const unpushedArguments = request.upstream === null ? null : buildUnpushedCommitsArguments(request.upstream);
+
+      const git = getGit(cwd);
+      try {
+        await git.raw(['rev-parse', '--verify', 'HEAD']);
+      } catch {
+        // no commits yet
+        return [];
+      }
+
+      const logOutput = await git.raw(logArguments);
+
+      let unpushedHashes: string[] = [];
+      if (unpushedArguments !== null) {
+        try {
+          const revList = await git.raw(unpushedArguments);
+          unpushedHashes = revList.split('\n').filter((line) => line.length > 0);
+        } catch {
+          // upstream ref no longer exists — treat as "no unpushed information"
+        }
+      }
+
+      return parseHistoryOutput(logOutput, unpushedHashes, request.upstream);
+    },
+  );
+
+  ipcMain.handle(
+    IPC_INVOKE_GIT_DIFF_NAME_STATUS,
+    async (_event, cwd: string, fromRef: string | null, toRef: string): Promise<SourceControlChangedFile[]> =>
+      parseNameStatus(await getGit(cwd).raw(buildNameStatusArguments(fromRef, toRef))),
+  );
+
+  ipcMain.handle(
+    IPC_INVOKE_GIT_MERGE_BASE,
+    async (_event, cwd: string, firstRef: string, secondRef: string): Promise<string | null> => {
+      const mergeBaseArguments = buildMergeBaseArguments(firstRef, secondRef);
+      try {
+        const mergeBase = await getGit(cwd).raw(mergeBaseArguments);
+        return mergeBase.trim() || null;
+      } catch {
+        return null;
+      }
+    },
+  );
 
   ipcMain.handle(IPC_INVOKE_GIT_MERGE_STATE, async (_event, cwd: string) => {
     const git = getGit(cwd);

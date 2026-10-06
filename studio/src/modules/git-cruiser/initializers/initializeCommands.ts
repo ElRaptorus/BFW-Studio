@@ -1,11 +1,15 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { DialogContentObject, DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type {
+  SourceControlFileStatus,
+  SourceControlLogEntry,
+  SourceControlRepositoryState,
+} from '#bifrost/contracts/SourceControlTypes';
 import { Minimatch } from 'minimatch';
 import * as path from 'path';
 
-import type { GitService } from '../GitService';
-import type { GitFileStatus, GitLogEntry, GitRepoState } from '../GitTypes';
+import type { RepositoryStore } from '../RepositoryStore';
 import { buildChangeSummaryForFiles } from '../commitPreview';
 import { getProtectedDiagramPatterns } from '../config/ProjectConfig';
 import { openCommitDialog } from '../dialogs/commitDialog';
@@ -29,7 +33,7 @@ import { removeResolvedFile, writeResolvedFile } from '../merge/writeResolvedFil
 
 function resolveRepoRoot(
   bifrost: Bifrost,
-  gitService: GitService,
+  repositoryStore: RepositoryStore,
   commandId: string,
   givenRepoRoot?: string,
 ): string | null {
@@ -37,35 +41,35 @@ function resolveRepoRoot(
     return givenRepoRoot;
   }
 
-  const states = gitService.getAllRepoStates();
+  const states = repositoryStore.getAllRepoStates();
   if (states.length === 0) {
     return null;
   }
   if (states.length === 1) {
-    return states[0].repoRoot;
+    return states[0].repositoryRoot;
   }
 
   bifrost.quickJump.show({
     prompt: 'Select Repository...',
     entries: states.map((state) => ({
       type: 'command',
-      label: path.basename(state.repoRoot),
+      label: path.basename(state.repositoryRoot),
       sublabel: state.branch.detached ? `(${state.branch.current})` : state.branch.current,
       icon: 'git-cruiser/branch',
       command: commandId,
-      commandArgs: [state.repoRoot],
+      commandArgs: [state.repositoryRoot],
     })),
   });
   return null;
 }
 
-export function initializeCommands(bifrost: Bifrost, gitService: GitService): void {
-  bifrost.commands.register('git.getGitServiceRef', () => gitService);
+export function initializeCommands(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
+  bifrost.commands.register('git.getRepositoryStoreRef', () => repositoryStore);
 
   bifrost.commands.register(
     'git.refreshStatus',
     async () => {
-      await gitService.refreshAllRepos();
+      await repositoryStore.refreshAllRepos();
     },
     { visibleInSearch: true, description: 'Git: Refresh Status' },
   );
@@ -73,15 +77,15 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.fetch',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.fetch', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.fetch', repoRoot);
       if (!resolved) {
         return;
       }
 
       const progress = bifrost.statusBar.showProgress('Fetching...');
       try {
-        await gitService.fetch(resolved);
-        await gitService.refreshAllRepos();
+        await bifrost.sourceControl.fetch(resolved);
+        await repositoryStore.refreshAllRepos();
         bifrost.notifications.open('Fetch completed.');
       } catch (error: any) {
         showGitError(bifrost, 'Fetch failed', error);
@@ -95,12 +99,12 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.stageAll',
     async () => {
-      for (const state of gitService.getAllRepoStates()) {
+      for (const state of repositoryStore.getAllRepoStates()) {
         const unstaged = state.files
           .filter((gitFile) => gitFile.workingTreeStatus != null)
           .map((gitFile) => gitFile.path);
         if (unstaged.length > 0) {
-          await gitService.stage(state.repoRoot, unstaged);
+          await repositoryStore.stage(state.repositoryRoot, unstaged);
         }
       }
     },
@@ -110,10 +114,10 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.unstageAll',
     async () => {
-      for (const state of gitService.getAllRepoStates()) {
+      for (const state of repositoryStore.getAllRepoStates()) {
         const staged = state.files.filter((gitFile) => gitFile.indexStatus != null).map((gitFile) => gitFile.path);
         if (staged.length > 0) {
-          await gitService.unstage(state.repoRoot, staged);
+          await repositoryStore.unstage(state.repositoryRoot, staged);
         }
       }
     },
@@ -121,11 +125,11 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   );
 
   bifrost.commands.register('git.stage', async (filePath: string, repoRoot: string) => {
-    await gitService.stage(repoRoot, [filePath]);
+    await repositoryStore.stage(repoRoot, [filePath]);
   });
 
   bifrost.commands.register('git.unstage', async (filePath: string, repoRoot: string) => {
-    await gitService.unstage(repoRoot, [filePath]);
+    await repositoryStore.unstage(repoRoot, [filePath]);
   });
 
   bifrost.commands.register('git.revert', async (filePath: string, repoRoot: string) => {
@@ -140,7 +144,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
         return;
       }
 
-      await gitService.revert(repoRoot, [filePath]);
+      await repositoryStore.revert(repoRoot, [filePath]);
 
       const fileUri = `file://${repoRoot}/${filePath}`;
       const openDoc = bifrost.editors.getEditorDocumentByUri(fileUri);
@@ -155,12 +159,12 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.commit',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.commit', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.commit', repoRoot);
       if (!resolved) {
         return;
       }
 
-      const state = gitService.getRepoState(resolved);
+      const state = repositoryStore.getRepoState(resolved);
       if (state) {
         const protectedHits = findProtectedDiagramsInStaged(bifrost, state);
         if (protectedHits.length > 0) {
@@ -185,12 +189,12 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
           (gitFile) => gitFile.indexStatus != null && gitFile.path.endsWith('.bpmn'),
         );
         if (stagedBpmn.length > 0) {
-          bpmnSummary = await buildChangeSummaryForFiles(bifrost, gitService, resolved, stagedBpmn);
+          bpmnSummary = await buildChangeSummaryForFiles(bifrost, resolved, stagedBpmn);
         }
 
         const stagedDmn = state.files.filter((gitFile) => gitFile.indexStatus != null && gitFile.path.endsWith('.dmn'));
         if (stagedDmn.length > 0) {
-          const dmnSummary = await buildChangeSummaryForDmnFiles(bifrost, gitService, resolved, stagedDmn);
+          const dmnSummary = await buildChangeSummaryForDmnFiles(bifrost, repositoryStore, resolved, stagedDmn);
           bpmnSummary = bpmnSummary ? `${bpmnSummary}\n\n${dmnSummary}` : dmnSummary;
         }
       }
@@ -201,7 +205,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
       }
 
       try {
-        await gitService.commit(resolved, options);
+        await repositoryStore.commit(resolved, options);
       } catch (error: any) {
         showCommitError(bifrost, error);
       }
@@ -212,14 +216,14 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.push',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.push', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.push', repoRoot);
       if (!resolved) {
         return;
       }
 
       const progress = bifrost.statusBar.showProgress('Pushing...');
       try {
-        await gitService.push(resolved);
+        await repositoryStore.push(resolved);
         bifrost.notifications.open('Pushed successfully.');
       } catch (error: any) {
         const msg = error?.message ?? String(error);
@@ -245,21 +249,21 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
 
         if (result?.response === 'pull-first') {
           progress.update('Pulling...');
-          const pullResult = await gitService.pull(resolved);
+          const pullResult = await repositoryStore.pull(resolved);
           if (pullResult.success) {
             try {
               progress.update('Pushing...');
-              await gitService.push(resolved);
+              await repositoryStore.push(resolved);
               bifrost.notifications.open('Pull + Push completed successfully.');
             } catch (pushRetry: any) {
               showPushError(bifrost, pushRetry);
             }
           } else {
-            await handlePullResult(bifrost, gitService, resolved, pullResult);
+            await handlePullResult(bifrost, repositoryStore, resolved, pullResult);
           }
         } else if (result?.response === 'set-upstream') {
           try {
-            await gitService.push(resolved, { setUpstream: true });
+            await repositoryStore.push(resolved, { setUpstream: true });
             bifrost.notifications.open('Pushed with upstream set.');
           } catch (upstreamError: any) {
             showPushError(bifrost, upstreamError);
@@ -275,19 +279,19 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.pull',
     async (repoRoot?: string): Promise<boolean> => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.pull', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.pull', repoRoot);
       if (!resolved) {
         return false;
       }
 
       const progress = bifrost.statusBar.showProgress('Pulling...');
       try {
-        const result = await gitService.pull(resolved);
+        const result = await repositoryStore.pull(resolved);
         if (result.success) {
           bifrost.notifications.open('Pulled successfully.');
           return true;
         }
-        return await handlePullResult(bifrost, gitService, resolved, result);
+        return await handlePullResult(bifrost, repositoryStore, resolved, result);
       } catch (error: any) {
         showPullError(bifrost, error);
         return false;
@@ -301,17 +305,17 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.sync',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.sync', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.sync', repoRoot);
       if (!resolved) {
         return;
       }
 
       const progress = bifrost.statusBar.showProgress('Syncing...');
-      gitService.isSyncing = true;
+      repositoryStore.isSyncing = true;
       bifrost.statusBar.updateStatusBarItems();
       try {
         progress.update('Fetching...');
-        await gitService.fetch(resolved);
+        await bifrost.sourceControl.fetch(resolved);
 
         progress.update('Pulling...');
         const pullOK = await bifrost.commands.executeCommand('git.pull', [resolved]);
@@ -320,12 +324,12 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
         }
 
         progress.update('Pushing...');
-        await gitService.push(resolved);
+        await repositoryStore.push(resolved);
         bifrost.notifications.open('Sync completed (Fetch + Pull + Push).');
       } catch (error: any) {
         showPushError(bifrost, error);
       } finally {
-        gitService.isSyncing = false;
+        repositoryStore.isSyncing = false;
         bifrost.statusBar.updateStatusBarItems();
         progress.done();
       }
@@ -336,7 +340,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.stash',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.stash', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.stash', repoRoot);
       if (!resolved) {
         return;
       }
@@ -344,7 +348,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
       const message = await bifrost.dialog.prompt('Stash Message (optional)', 'e.g. WIP: feature work');
 
       try {
-        await gitService.stash(resolved, message?.trim() || undefined);
+        await repositoryStore.stash(resolved, message?.trim() || undefined);
       } catch (error: any) {
         showStashError(bifrost, error);
       }
@@ -355,19 +359,19 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.stashApply',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.stashApply', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.stashApply', repoRoot);
       if (!resolved) {
         return;
       }
 
-      const stashEntries = await gitService.stashList(resolved);
+      const stashEntries = await bifrost.sourceControl.stashList(resolved);
       if (stashEntries.length === 0) {
         bifrost.notifications.open({ type: 'info', content: 'No stash entries found.', source: 'Git Cruiser' });
         return;
       }
 
       try {
-        await gitService.stashApply(resolved);
+        await repositoryStore.stashApply(resolved);
       } catch (error: any) {
         showStashPopError(bifrost, error);
       }
@@ -378,13 +382,13 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.switchBranch',
     async (repoRoot?: string, branchName?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.switchBranch', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.switchBranch', repoRoot);
       if (!resolved) {
         return;
       }
 
       if (!branchName) {
-        const branchData = await gitService.getBranches(resolved);
+        const branchData = await bifrost.sourceControl.getBranches(resolved);
         const localBranches = branchData.branches.filter(
           (branch: any) => !branch.name.startsWith('remotes/') && !branch.name.startsWith('HEAD'),
         );
@@ -426,7 +430,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
       }
 
       try {
-        await gitService.switchBranch(resolved, branchName);
+        await repositoryStore.switchBranch(resolved, branchName);
       } catch (error: any) {
         const msg = error?.message ?? String(error);
         const actions: any[] = [];
@@ -444,9 +448,9 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
 
         if (result?.response === 'stash-switch') {
           try {
-            await gitService.stash(resolved, 'Auto-stash before branch switch');
-            await gitService.switchBranch(resolved, branchName);
-            await gitService.stashApply(resolved, 0);
+            await repositoryStore.stash(resolved, 'Auto-stash before branch switch');
+            await repositoryStore.switchBranch(resolved, branchName);
+            await repositoryStore.stashApply(resolved, 0);
           } catch (stashError: any) {
             showGitError(bifrost, 'Stash & switch failed', stashError);
           }
@@ -459,7 +463,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   bifrost.commands.register(
     'git.createBranch',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.createBranch', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.createBranch', repoRoot);
       if (!resolved) {
         return;
       }
@@ -470,7 +474,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
       }
 
       try {
-        await gitService.createBranch(resolved, branchName.trim(), true);
+        await repositoryStore.createBranch(resolved, branchName.trim(), true);
       } catch (error: any) {
         showBranchCreateError(bifrost, error);
       }
@@ -494,7 +498,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
         return;
       }
 
-      const repoRoot = gitService.getRepoRootForUri(suggestion.uri);
+      const repoRoot = repositoryStore.getRepoRootForUri(suggestion.uri);
       if (!repoRoot) {
         bifrost.notifications.open('File is not in a Git repository.');
         return;
@@ -506,7 +510,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
       }
 
       try {
-        await gitService.createBranch(repoRoot, branchName.trim(), true);
+        await repositoryStore.createBranch(repoRoot, branchName.trim(), true);
       } catch (error: any) {
         showBranchCreateError(bifrost, error);
       }
@@ -516,7 +520,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
 
   bifrost.commands.register(
     'git.showGitDiff',
-    async (uri: string) => await showGitDiffForFile(bifrost, gitService, uri),
+    async (uri: string) => await showGitDiffForFile(bifrost, repositoryStore, uri),
     {
       visibleInSearch: true,
       description: 'Git: Show Changes for This File',
@@ -524,20 +528,20 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
         if (!uri) {
           return false;
         }
-        return gitService.hasModifications(uri);
+        return repositoryStore.hasModifications(uri);
       },
     },
   );
 
   bifrost.commands.register(
     'git.showFileHistory',
-    async (uri: string) => await showFileHistory(bifrost, gitService, uri),
+    async (uri: string) => await showFileHistory(bifrost, repositoryStore, uri),
     {
       enabledWhen: (uri?: string): boolean => {
         if (!uri) {
           return false;
         }
-        return gitService.hasFileHistory(uri);
+        return repositoryStore.hasFileHistory(uri);
       },
     },
   );
@@ -553,7 +557,7 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
   });
 
   bifrost.commands.register('git.getHeadContent', async (uri: string): Promise<string> => {
-    const repoRoot = gitService.getRepoRootForUri(uri);
+    const repoRoot = repositoryStore.getRepoRootForUri(uri);
     if (!repoRoot) {
       throw new Error('File is not in a Git repository.');
     }
@@ -561,11 +565,11 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
     const filePath = uri.startsWith('file://') ? uri.substring('file://'.length) : uri;
     const relativePath = filePath.substring(repoRoot.length + 1);
 
-    return gitService.showFileAtRef(repoRoot, `HEAD:${relativePath}`);
+    return bifrost.sourceControl.getFileContentAtRevision(repoRoot, 'HEAD', relativePath);
   });
 
   bifrost.commands.register('git.getFileAtRef', async (uri: string, ref: string): Promise<string> => {
-    const repoRoot = gitService.getRepoRootForUri(uri);
+    const repoRoot = repositoryStore.getRepoRootForUri(uri);
     if (!repoRoot) {
       throw new Error('File is not in a Git repository.');
     }
@@ -573,11 +577,11 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
     const filePath = uri.startsWith('file://') ? uri.substring('file://'.length) : uri;
     const relativePath = filePath.substring(repoRoot.length + 1);
 
-    return gitService.showFileAtRef(repoRoot, `${ref}:${relativePath}`);
+    return bifrost.sourceControl.getFileContentAtRevision(repoRoot, ref, relativePath);
   });
 
-  bifrost.commands.register('git.getLog', async (uri: string): Promise<GitLogEntry[]> => {
-    const repoRoot = gitService.getRepoRootForUri(uri);
+  bifrost.commands.register('git.getLog', async (uri: string): Promise<SourceControlLogEntry[]> => {
+    const repoRoot = repositoryStore.getRepoRootForUri(uri);
     if (!repoRoot) {
       throw new Error('File is not in a Git repository.');
     }
@@ -585,17 +589,17 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
     const filePath = uri.startsWith('file://') ? uri.substring('file://'.length) : uri;
     const relativePath = filePath.substring(repoRoot.length + 1);
 
-    return gitService.getLog(repoRoot, { file: relativePath });
+    return bifrost.sourceControl.getLog(repoRoot, { file: relativePath });
   });
 
   bifrost.commands.register(
     'git.createBranchInRepoOf',
     async (uri: string, branchName: string, checkout = true): Promise<void> => {
-      const repoRoot = gitService.getRepoRootForUri(uri);
+      const repoRoot = repositoryStore.getRepoRootForUri(uri);
       if (!repoRoot) {
         throw new Error('File is not in a Git repository.');
       }
-      await gitService.createBranch(repoRoot, branchName, checkout);
+      await repositoryStore.createBranch(repoRoot, branchName, checkout);
     },
   );
 
@@ -641,16 +645,16 @@ export function initializeCommands(bifrost: Bifrost, gitService: GitService): vo
     suggestGitignore(bifrost, repoRoot);
   });
 
-  initializeMergeCommands(bifrost, gitService);
-  initializePaneCommitCommands(bifrost, gitService);
-  initializeCloneAndConnectCommands(bifrost, gitService);
+  initializeMergeCommands(bifrost, repositoryStore);
+  initializePaneCommitCommands(bifrost, repositoryStore);
+  initializeCloneAndConnectCommands(bifrost, repositoryStore);
 
   if (process.env.APP_TEST === 'true') {
-    initializeTestCommands(bifrost, gitService);
+    initializeTestCommands(bifrost, repositoryStore);
   }
 }
 
-function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void {
+function initializeMergeCommands(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   // --- Generic dispatch commands (std-style pattern) ---
 
   function getDocType(model: MergeDocumentModel): string | null {
@@ -761,9 +765,11 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
     }
     const repoRoot = model.getRepoRoot();
     if (model.conflictKind === 'ours-deleted') {
-      await removeResolvedFile(gitService, repoRoot, entry.relativePath);
+      await removeResolvedFile(repositoryStore, repoRoot, entry.relativePath);
     } else if (model.blobs?.ours != null) {
-      await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, model.blobs.ours, { stage: true });
+      await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, model.blobs.ours, {
+        stage: true,
+      });
     }
     model.markCurrentResolved();
     model.advanceToNext();
@@ -783,9 +789,11 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
     }
     const repoRoot = model.getRepoRoot();
     if (model.conflictKind === 'theirs-deleted') {
-      await removeResolvedFile(gitService, repoRoot, entry.relativePath);
+      await removeResolvedFile(repositoryStore, repoRoot, entry.relativePath);
     } else if (model.blobs?.theirs != null) {
-      await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, model.blobs.theirs, { stage: true });
+      await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, model.blobs.theirs, {
+        stage: true,
+      });
     }
     model.markCurrentResolved();
     model.advanceToNext();
@@ -809,7 +817,7 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
       resolverApi.acceptAllOurs();
       const xml = await resolverApi.getResultXml?.();
       if (xml != null) {
-        await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, xml, { stage: true });
+        await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, xml, { stage: true });
         model.markCurrentResolved();
         model.advanceToNext();
         return;
@@ -817,9 +825,11 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
     }
 
     if (model.conflictKind === 'ours-deleted') {
-      await removeResolvedFile(gitService, repoRoot, entry.relativePath);
+      await removeResolvedFile(repositoryStore, repoRoot, entry.relativePath);
     } else if (model.blobs?.ours != null) {
-      await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, model.blobs.ours, { stage: true });
+      await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, model.blobs.ours, {
+        stage: true,
+      });
     }
 
     model.markCurrentResolved();
@@ -839,7 +849,7 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
       resolverApi.acceptAllTheirs();
       const xml = await resolverApi.getResultXml?.();
       if (xml != null) {
-        await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, xml, { stage: true });
+        await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, xml, { stage: true });
         model.markCurrentResolved();
         model.advanceToNext();
         return;
@@ -847,9 +857,11 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
     }
 
     if (model.conflictKind === 'theirs-deleted') {
-      await removeResolvedFile(gitService, repoRoot, entry.relativePath);
+      await removeResolvedFile(repositoryStore, repoRoot, entry.relativePath);
     } else if (model.blobs?.theirs != null) {
-      await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, model.blobs.theirs, { stage: true });
+      await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, model.blobs.theirs, {
+        stage: true,
+      });
     }
 
     model.markCurrentResolved();
@@ -865,12 +877,12 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
   );
 
   bifrost.commands.register('git.merge.abort', async () => {
-    const repoRoot = gitService.getSelectedRepo();
+    const repoRoot = repositoryStore.getSelectedRepo();
     if (repoRoot == null) {
       return;
     }
 
-    const state = gitService.getRepoState(repoRoot);
+    const state = repositoryStore.getRepoState(repoRoot);
     if (state == null) {
       return;
     }
@@ -878,13 +890,13 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
     try {
       switch (state.mergeState.kind) {
         case 'merge':
-          await gitService.mergeAbort(repoRoot);
+          await repositoryStore.mergeAbort(repoRoot);
           break;
         case 'rebase':
-          await gitService.rebaseAbort(repoRoot);
+          await repositoryStore.rebaseAbort(repoRoot);
           break;
         case 'cherry-pick':
-          await gitService.cherryPickAbort(repoRoot);
+          await repositoryStore.cherryPickAbort(repoRoot);
           break;
         default:
           break;
@@ -976,7 +988,7 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
       }
 
       if (xml != null) {
-        await writeResolvedFile(bifrost, gitService, repoRoot, entry.relativePath, xml, { stage: true });
+        await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, xml, { stage: true });
         model.markCurrentResolved();
         model.advanceToNext();
       }
@@ -992,30 +1004,30 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
   );
 
   bifrost.commands.register('git.merge.paneAcceptOurs', async (relativePath: string, repoRoot: string) => {
-    const blobs = await gitService.getConflictBlobs(repoRoot, relativePath);
+    const blobs = await bifrost.sourceControl.getConflictBlobs(repoRoot, relativePath);
     if (blobs.ours != null) {
-      await writeResolvedFile(bifrost, gitService, repoRoot, relativePath, blobs.ours, { stage: true });
+      await writeResolvedFile(bifrost, repositoryStore, repoRoot, relativePath, blobs.ours, { stage: true });
     } else {
-      await removeResolvedFile(gitService, repoRoot, relativePath);
+      await removeResolvedFile(repositoryStore, repoRoot, relativePath);
     }
   });
 
   bifrost.commands.register('git.merge.paneAcceptTheirs', async (relativePath: string, repoRoot: string) => {
-    const blobs = await gitService.getConflictBlobs(repoRoot, relativePath);
+    const blobs = await bifrost.sourceControl.getConflictBlobs(repoRoot, relativePath);
     if (blobs.theirs != null) {
-      await writeResolvedFile(bifrost, gitService, repoRoot, relativePath, blobs.theirs, { stage: true });
+      await writeResolvedFile(bifrost, repositoryStore, repoRoot, relativePath, blobs.theirs, { stage: true });
     } else {
-      await removeResolvedFile(gitService, repoRoot, relativePath);
+      await removeResolvedFile(repositoryStore, repoRoot, relativePath);
     }
   });
 
   bifrost.commands.register('git.merge.continue', async () => {
-    const repoRoot = gitService.getSelectedRepo();
+    const repoRoot = repositoryStore.getSelectedRepo();
     if (repoRoot == null) {
       return;
     }
 
-    const state = gitService.getRepoState(repoRoot);
+    const state = repositoryStore.getRepoState(repoRoot);
     if (state == null) {
       return;
     }
@@ -1023,10 +1035,10 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
     try {
       switch (state.mergeState.kind) {
         case 'rebase':
-          await gitService.rebaseContinue(repoRoot);
+          await repositoryStore.rebaseContinue(repoRoot);
           break;
         case 'cherry-pick':
-          await gitService.cherryPickContinue(repoRoot);
+          await repositoryStore.cherryPickContinue(repoRoot);
           break;
         default:
           break;
@@ -1039,13 +1051,13 @@ function initializeMergeCommands(bifrost: Bifrost, gitService: GitService): void
 
 type CommitRef = { current: string };
 
-function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService): void {
+function initializePaneCommitCommands(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   const canPaneCommit = (titleRef?: CommitRef): boolean => {
-    const repoRoot = gitService.getSelectedRepo();
+    const repoRoot = repositoryStore.getSelectedRepo();
     if (!repoRoot || !titleRef?.current?.trim()) {
       return false;
     }
-    const state = gitService.getRepoState(repoRoot);
+    const state = repositoryStore.getRepoState(repoRoot);
     if (!state) {
       return false;
     }
@@ -1065,13 +1077,13 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
   type BranchResolution = { ready: true; isNew: boolean } | { ready: false };
 
   async function resolveNewBranch(repoRoot: string, branchName: string): Promise<BranchResolution> {
-    const { branches, current } = await gitService.getBranches(repoRoot);
+    const { branches, current } = await bifrost.sourceControl.getBranches(repoRoot);
     const localExists = branches.some((branch) => branch.name === branchName);
     const remoteExists = branches.some((branch) => branch.name === `remotes/origin/${branchName}`);
 
     if (!localExists && !remoteExists) {
       try {
-        await gitService.createBranch(repoRoot, branchName, true);
+        await repositoryStore.createBranch(repoRoot, branchName, true);
         return { ready: true, isNew: true };
       } catch (error: any) {
         showBranchCreateError(bifrost, error);
@@ -1119,7 +1131,7 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
     originalBranch: string,
   ): Promise<BranchResolution> {
     try {
-      await gitService.switchBranch(repoRoot, branchName);
+      await repositoryStore.switchBranch(repoRoot, branchName);
       return { ready: true, isNew: false };
     } catch (error: any) {
       const errorMsg = error?.message ?? String(error);
@@ -1133,14 +1145,14 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
     }
 
     try {
-      await gitService.stash(repoRoot, `auto: switch to ${branchName}`);
+      await repositoryStore.stash(repoRoot, `auto: switch to ${branchName}`);
     } catch (error: any) {
       showGitError(bifrost, 'Failed to stash your changes before switching branches', error);
       return { ready: false };
     }
 
     try {
-      await gitService.switchBranch(repoRoot, branchName);
+      await repositoryStore.switchBranch(repoRoot, branchName);
     } catch (error: any) {
       await safeStashPop(repoRoot);
       showGitError(bifrost, `Failed to switch to branch \`${branchName}\` after stashing`, error);
@@ -1148,7 +1160,7 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
     }
 
     try {
-      await gitService.stashApply(repoRoot, undefined, { restoreIndex: true });
+      await repositoryStore.stashApply(repoRoot, undefined, { restoreIndex: true });
       return { ready: true, isNew: false };
     } catch (popError: any) {
       const popMsg = popError?.message ?? String(popError);
@@ -1172,9 +1184,9 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
 
   async function revertFailedStashPop(repoRoot: string, targetBranch: string, originalBranch: string): Promise<void> {
     try {
-      await gitService.unstage(repoRoot, ['.']);
-      await gitService.revert(repoRoot, ['.']);
-      await gitService.switchBranch(repoRoot, originalBranch);
+      await repositoryStore.unstage(repoRoot, ['.']);
+      await repositoryStore.revert(repoRoot, ['.']);
+      await repositoryStore.switchBranch(repoRoot, originalBranch);
       await safeStashPop(repoRoot);
     } catch (revertError: any) {
       console.error(
@@ -1186,7 +1198,7 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
 
   async function safeStashPop(repoRoot: string): Promise<void> {
     try {
-      await gitService.stashApply(repoRoot, undefined, { restoreIndex: true });
+      await repositoryStore.stashApply(repoRoot, undefined, { restoreIndex: true });
     } catch {
       // Last resort — nothing more we can do
     }
@@ -1195,12 +1207,12 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
   bifrost.commands.register(
     'git.pane.commit',
     async (titleRef: CommitRef, bodyRef: CommitRef) => {
-      const repoRoot = gitService.getSelectedRepo();
+      const repoRoot = repositoryStore.getSelectedRepo();
       if (!repoRoot || !titleRef.current.trim()) {
         return;
       }
       try {
-        await gitService.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
+        await repositoryStore.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
         clearRefs(titleRef, bodyRef);
       } catch (error: any) {
         showCommitError(bifrost, error);
@@ -1212,14 +1224,14 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
   bifrost.commands.register(
     'git.pane.commitAndPush',
     async (titleRef: CommitRef, bodyRef: CommitRef) => {
-      const repoRoot = gitService.getSelectedRepo();
+      const repoRoot = repositoryStore.getSelectedRepo();
       if (!repoRoot || !titleRef.current.trim()) {
         return;
       }
       try {
-        await gitService.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
+        await repositoryStore.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
         clearRefs(titleRef, bodyRef);
-        await gitService.push(repoRoot);
+        await repositoryStore.push(repoRoot);
       } catch (error: any) {
         showPushError(bifrost, error);
       }
@@ -1230,25 +1242,25 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
   bifrost.commands.register(
     'git.pane.commitAndSync',
     async (titleRef: CommitRef, bodyRef: CommitRef) => {
-      const repoRoot = gitService.getSelectedRepo();
+      const repoRoot = repositoryStore.getSelectedRepo();
       if (!repoRoot || !titleRef.current.trim()) {
         return;
       }
-      gitService.isSyncing = true;
+      repositoryStore.isSyncing = true;
       bifrost.statusBar.updateStatusBarItems();
       try {
-        await gitService.fetch(repoRoot);
-        await gitService.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
+        await bifrost.sourceControl.fetch(repoRoot);
+        await repositoryStore.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
         clearRefs(titleRef, bodyRef);
         const pullOK = await bifrost.commands.executeCommand('git.pull', [repoRoot]);
         if (!pullOK) {
           return;
         }
-        await gitService.push(repoRoot);
+        await repositoryStore.push(repoRoot);
       } catch (error: any) {
         showPushError(bifrost, error);
       } finally {
-        gitService.isSyncing = false;
+        repositoryStore.isSyncing = false;
         bifrost.statusBar.updateStatusBarItems();
       }
     },
@@ -1258,7 +1270,7 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
   bifrost.commands.register(
     'git.pane.commitToNewBranch',
     async (titleRef: CommitRef, bodyRef: CommitRef) => {
-      const repoRoot = gitService.getSelectedRepo();
+      const repoRoot = repositoryStore.getSelectedRepo();
       if (!repoRoot || !titleRef.current.trim()) {
         return;
       }
@@ -1274,7 +1286,7 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
       }
 
       try {
-        await gitService.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
+        await repositoryStore.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
         clearRefs(titleRef, bodyRef);
       } catch (error: any) {
         showCommitError(bifrost, error);
@@ -1286,7 +1298,7 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
   bifrost.commands.register(
     'git.pane.commitToNewBranchAndSync',
     async (titleRef: CommitRef, bodyRef: CommitRef) => {
-      const repoRoot = gitService.getSelectedRepo();
+      const repoRoot = repositoryStore.getSelectedRepo();
       if (!repoRoot || !titleRef.current.trim()) {
         return;
       }
@@ -1296,31 +1308,31 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
         return;
       }
 
-      gitService.isSyncing = true;
+      repositoryStore.isSyncing = true;
       bifrost.statusBar.updateStatusBarItems();
       try {
-        await gitService.fetch(repoRoot);
+        await bifrost.sourceControl.fetch(repoRoot);
         const resolution = await resolveNewBranch(repoRoot, branchName.trim());
         if (!resolution.ready) {
           return;
         }
 
-        await gitService.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
+        await repositoryStore.commit(repoRoot, buildCommitOptions(titleRef, bodyRef));
         clearRefs(titleRef, bodyRef);
 
         if (resolution.isNew) {
-          await gitService.push(repoRoot, { setUpstream: true });
+          await repositoryStore.push(repoRoot, { setUpstream: true });
         } else {
           const pullOK = await bifrost.commands.executeCommand('git.pull', [repoRoot]);
           if (!pullOK) {
             return;
           }
-          await gitService.push(repoRoot);
+          await repositoryStore.push(repoRoot);
         }
       } catch (error: any) {
         showPushError(bifrost, error);
       } finally {
-        gitService.isSyncing = false;
+        repositoryStore.isSyncing = false;
         bifrost.statusBar.updateStatusBarItems();
       }
     },
@@ -1328,11 +1340,11 @@ function initializePaneCommitCommands(bifrost: Bifrost, gitService: GitService):
   );
 }
 
-function initializeTestCommands(bifrost: Bifrost, gitService: GitService): void {
+function initializeTestCommands(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   bifrost.commands.register(
     'git.test.stageFile',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.test.stageFile', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.test.stageFile', repoRoot);
       if (!resolved) {
         return;
       }
@@ -1340,7 +1352,7 @@ function initializeTestCommands(bifrost: Bifrost, gitService: GitService): void 
       if (!filePath?.trim()) {
         return;
       }
-      await gitService.stage(resolved, [filePath.trim()]);
+      await repositoryStore.stage(resolved, [filePath.trim()]);
     },
     { visibleInSearch: true, description: 'Test: Git Stage File' },
   );
@@ -1348,7 +1360,7 @@ function initializeTestCommands(bifrost: Bifrost, gitService: GitService): void 
   bifrost.commands.register(
     'git.test.unstageFile',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.test.unstageFile', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.test.unstageFile', repoRoot);
       if (!resolved) {
         return;
       }
@@ -1356,7 +1368,7 @@ function initializeTestCommands(bifrost: Bifrost, gitService: GitService): void 
       if (!filePath?.trim()) {
         return;
       }
-      await gitService.unstage(resolved, [filePath.trim()]);
+      await repositoryStore.unstage(resolved, [filePath.trim()]);
     },
     { visibleInSearch: true, description: 'Test: Git Unstage File' },
   );
@@ -1364,7 +1376,7 @@ function initializeTestCommands(bifrost: Bifrost, gitService: GitService): void 
   bifrost.commands.register(
     'git.test.commitAll',
     async (repoRoot?: string) => {
-      const resolved = resolveRepoRoot(bifrost, gitService, 'git.test.commitAll', repoRoot);
+      const resolved = resolveRepoRoot(bifrost, repositoryStore, 'git.test.commitAll', repoRoot);
       if (!resolved) {
         return;
       }
@@ -1372,24 +1384,24 @@ function initializeTestCommands(bifrost: Bifrost, gitService: GitService): void 
       if (!message?.trim()) {
         return;
       }
-      await gitService.commit(resolved, { title: message.trim() });
+      await repositoryStore.commit(resolved, { title: message.trim() });
     },
     { visibleInSearch: true, description: 'Test: Git Commit All Staged' },
   );
 
   bifrost.commands.register('git.test.openMergeResolver', async (repoRoot?: string) => {
     if (repoRoot) {
-      await gitService.refreshRepo(repoRoot);
+      await repositoryStore.refreshRepo(repoRoot);
     }
     bifrost.commands.executeCommand('git.merge.openResolver');
   });
 
   bifrost.commands.register('git.test.getMergeState', (repoRoot?: string): any => {
-    const root = repoRoot ?? gitService.getSelectedRepo();
+    const root = repoRoot ?? repositoryStore.getSelectedRepo();
     if (!root) {
       return null;
     }
-    const state = gitService.getRepoState(root);
+    const state = repositoryStore.getRepoState(root);
     if (!state) {
       return null;
     }
@@ -1521,11 +1533,11 @@ async function showCredentialsDialog(
 }
 
 async function fetchBranchEntries(
-  gitService: GitService,
+  bifrost: Bifrost,
   effectiveUrl: string,
 ): Promise<{ entries: { label: string; value: string }[]; error?: string }> {
   try {
-    const branches = await gitService.listRemoteBranches(effectiveUrl);
+    const branches = await bifrost.sourceControl.listRemoteBranches(effectiveUrl);
     return {
       entries: branches.map((branch) => ({
         label: branch.isHead ? `${branch.name} (default)` : branch.name,
@@ -1546,7 +1558,7 @@ async function fetchBranchEntries(
   }
 }
 
-function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitService): void {
+function initializeCloneAndConnectCommands(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   bifrost.commands.register(
     'git.cloneRepository',
     async () => {
@@ -1578,7 +1590,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
           sticky: true,
         });
 
-        const branchResult = await fetchBranchEntries(gitService, effectiveUrl);
+        const branchResult = await fetchBranchEntries(bifrost, effectiveUrl);
         bifrost.notifications.close(notificationId);
 
         const branchContent: DialogContentObject[] =
@@ -1666,7 +1678,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
           sticky: true,
         });
 
-        const unsubscribe = gitService.onCloneProgress((stage, progress) => {
+        const unsubscribe = bifrost.sourceControl.onCloneProgress((stage, progress) => {
           const percentage = Math.min(Math.floor(progress), 99);
           bifrost.notifications.update(cloneNotificationId, {
             type: 'info',
@@ -1677,7 +1689,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
         });
 
         try {
-          await gitService.clone(effectiveUrl, targetDir, branch);
+          await repositoryStore.clone(effectiveUrl, targetDir, branch);
           unsubscribe();
           bifrost.notifications.close(cloneNotificationId);
           bifrost.notifications.open({
@@ -1695,7 +1707,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
         return;
       }
     },
-    { visibleInSearch: true, description: 'Git: Clone Repository...', enabledWhen: () => gitService.isActive },
+    { visibleInSearch: true, description: 'Git: Clone Repository...', enabledWhen: () => repositoryStore.isActive },
   );
 
   bifrost.commands.register(
@@ -1745,7 +1757,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
           sticky: true,
         });
 
-        const branchResult = await fetchBranchEntries(gitService, effectiveUrl);
+        const branchResult = await fetchBranchEntries(bifrost, effectiveUrl);
         bifrost.notifications.close(notificationId);
 
         const newBranchField: DialogContentObject = {
@@ -1813,7 +1825,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
           sticky: true,
         });
 
-        const unsubscribe = gitService.onCloneProgress((stage, progress) => {
+        const unsubscribe = bifrost.sourceControl.onCloneProgress((stage, progress) => {
           const percentage = Math.min(Math.floor(progress), 99);
           bifrost.notifications.update(connectNotificationId, {
             type: 'info',
@@ -1824,10 +1836,10 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
         });
 
         try {
-          await gitService.connectFolderToRemote(targetFolderPath, effectiveUrl, branch, newBranch);
+          await repositoryStore.connectFolderToRemote(targetFolderPath, effectiveUrl, branch, newBranch);
           unsubscribe();
 
-          await gitService.refreshAllRepos();
+          await repositoryStore.refreshAllRepos();
 
           bifrost.notifications.close(connectNotificationId);
           bifrost.notifications.open({
@@ -1847,7 +1859,7 @@ function initializeCloneAndConnectCommands(bifrost: Bifrost, gitService: GitServ
     {
       visibleInSearch: true,
       description: 'Git: Connect Folder to Remote Repository...',
-      enabledWhen: () => gitService.isActive,
+      enabledWhen: () => repositoryStore.isActive,
     },
   );
 }
@@ -1874,7 +1886,7 @@ async function cleanupPartialInit(bifrost: Bifrost, folderPath: string): Promise
   }
 }
 
-function findProtectedDiagramsInStaged(bifrost: Bifrost, state: GitRepoState): string[] {
+function findProtectedDiagramsInStaged(bifrost: Bifrost, state: SourceControlRepositoryState): string[] {
   const patterns = getProtectedDiagramPatterns(bifrost);
   if (patterns.length === 0) {
     return [];
@@ -1892,9 +1904,9 @@ function findProtectedDiagramsInStaged(bifrost: Bifrost, state: GitRepoState): s
 
 async function buildChangeSummaryForDmnFiles(
   bifrost: Bifrost,
-  gitService: GitService,
+  repositoryStore: RepositoryStore,
   repoRoot: string,
-  stagedFiles: GitFileStatus[],
+  stagedFiles: SourceControlFileStatus[],
 ): Promise<string> {
   const summaryParts: string[] = [];
 
@@ -1904,7 +1916,7 @@ async function buildChangeSummaryForDmnFiles(
     const fileName = relativePath.split('/').pop() ?? relativePath;
 
     try {
-      const headXml = await gitService.showFileAtRef(repoRoot, `HEAD:${relativePath}`);
+      const headXml = await bifrost.sourceControl.getFileContentAtRevision(repoRoot, 'HEAD', relativePath);
       const currentXml = await bifrost.files.load(gitFile.uri);
 
       if (bifrost.commands.isRegistered('dmn.diff.getChangeSummaryMarkdown')) {

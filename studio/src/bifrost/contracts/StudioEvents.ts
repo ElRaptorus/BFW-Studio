@@ -2,7 +2,8 @@ export type StudioEventName =
   | 'ready'
   | 'settingsUpdate'
   | 'solutionChanged'
-  | 'gitStatusChanged'
+  | 'sourceControlStatusChanged'
+  | 'sourceControlSelectedRepositoryChanged'
   | 'pluginOverlayFactoriesChanged'
   | 'pluginDmnOverlayFactoriesChanged'
   | 'unspecifiedGlobalUpdate';

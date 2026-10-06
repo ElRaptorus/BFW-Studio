@@ -1,7 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
-import { removeMultilineIndent } from '#bifrost/common/StringFunctions';
 import type {
   DialogContent,
   DialogOptions,
@@ -613,6 +612,18 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
           The Message will be received by **all** matching Message Catch-, Boundary-, and Start Events that use the same Correlation.`),
       },
     ];
+  }
+
+  function removeMultilineIndent(text: string): string {
+    const lines = text.split('\n');
+    const firstLine = lines[0] === '' ? lines[1] : lines[0];
+    const indent = firstLine.length - firstLine.trimLeft().length;
+    const removeIndentRegex = new RegExp(`^( {${indent}})`);
+
+    return lines
+      .map((line: string) => line.replace(removeIndentRegex, ''))
+      .join('\n')
+      .trim();
   }
 
   bifrost.commands.register(

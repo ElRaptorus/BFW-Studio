@@ -4,7 +4,7 @@
 
 ## Overview
 
-`git-cruiser` is a standalone module providing full Git integration for Bifrost Forge World. It detects Git repositories in opened solutions, visualizes file status throughout the UI (file explorer, open editors, dedicated pane, status bar), and provides core Git operations (stage, commit, push, pull, revert, stash, branch management). All Git CLI interactions run in the Electron main process via `simple-git`, communicating with the renderer through IPC.
+`git-cruiser` is a standalone module providing full Git integration for Bifrost Forge World. It detects Git repositories in opened solutions, visualizes file status throughout the UI (file explorer, open editors, dedicated pane, status bar), and provides core Git operations (stage, commit, push, pull, revert, stash, branch management). Git itself is reached only through the core service `bifrost.sourceControl` ([source-control.md](source-control.md)); git-cruiser holds the repository state and all git UI, and imports neither `electron` nor `fs`.
 
 ---
 
@@ -17,45 +17,41 @@ git-cruiser registers the page `design/source` (`index.ts`) and its left group `
 ## Architecture
 
 ```
-┌───────────────────────────────────────────────────────┐
-│  Renderer (git-cruiser module)                      │
+┌────────────────────────────────────────────────────────┐
+│  git-cruiser module (renderer)                         │
 │                                                        │
-│  ┌────────────┐  ┌────────────┐  ┌─────────────────┐  │
-│  │ GitService  │  │ GitPane    │  │ Initializers     │  │
-│  │ (state +    │  │ (React)    │  │  commands, menus │  │
-│  │  IPC bridge)│  │            │  │  icons, settings │  │
-│  └──────┬──────┘  └────────────┘  │  statusBar,      │  │
-│         │                          │  panes,           │  │
-│         │ ipcRenderer.invoke       │  decorations      │  │
-│         │                          └─────────────────┘  │
-├─────────┼──────────────────────────────────────────────┤
-│  IPC    │  GitIpcChannels.ts constants                  │
-├─────────┼──────────────────────────────────────────────┤
-│         ▼                                               │
-│  ┌──────────────────────────────────┐                   │
-│  │ registerGitHandlers (main proc)  │                   │
-│  │ Uses: simple-git                  │                   │
-│  └──────────────────────────────────┘                   │
-└─────────────────────────────────────────────────────────┘
+│  ┌─────────────────┐  ┌─────────┐  ┌────────────────┐  │
+│  │ RepositoryStore │  │ GitPane │  │ Initializers   │  │
+│  │ (state, refresh │  │ (React) │  │ commands, menus│  │
+│  │  after writes)  │  └─────────┘  │ statusBar, ... │  │
+│  └────────┬────────┘               └───────┬────────┘  │
+│           │ writes                         │ reads     │
+├───────────┼────────────────────────────────┼───────────┤
+│           ▼                                ▼           │
+│  bifrost.sourceControl (SourceControlService)          │
+│  → SourceControlServiceElectron → IPC → main process   │
+└────────────────────────────────────────────────────────┘
 ```
 
 ### Renderer Side
 
-#### GitService
+#### RepositoryStore
 
-**Path:** `studio/src/modules/git-cruiser/GitService.ts`
+**Path:** `studio/src/modules/git-cruiser/RepositoryStore.ts`
 
-Singleton service managing all renderer-side Git state and IPC communication. Key responsibilities:
+Module-level instance created in `index.ts`; documents and panes reach it through the `git.getRepositoryStoreRef` command. It holds the module's view of the solution's repositories. Key responsibilities:
 
-- **Status cache**: `Map<repoRoot, GitRepoState>` maps each detected repo root to its current status
-- **File history cache**: `Map<uri, boolean | 'pending'>`. `hasFileHistory(uri)` returns `true` unless a completed check stored `false` (fewer than two commits). A cache miss starts a background `getLog`; unknown and `'pending'` stay enabled so `executeCommand('git.showFileHistory')` is not rejected on the first call. `emitStatusChanged` clears this map.
-- **Repo detection**: Iterates solution projects, calls `IPC_INVOKE_GIT_IS_REPO` to find `.git` roots
+- **Status cache**: `Map<repositoryRoot, SourceControlRepositoryState>` maps each detected repository root to its current state
+- **File history cache**: `Map<uri, boolean | 'pending'>`. `hasFileHistory(uri)` returns `true` unless a completed check stored `false` (fewer than two commits). A cache miss starts a background `bifrost.sourceControl.getLog`; unknown and `'pending'` stay enabled so `executeCommand('git.showFileHistory')` is not rejected on the first call. `emitStatusChanged` clears this map.
+- **Repo detection**: Iterates solution projects, calls `bifrost.sourceControl.findRepositoryRoot` for each
 - **Debounced refresh**: Uses `lodash.debounce` on `scheduleRefresh()` to coalesce multiple triggers
-- **Operation methods**: `stage`, `unstage`, `commit`, `push`, `pull`, `revert`, `stash`, `stashApply` (with optional `{ restoreIndex }` for `--index`), `switchBranch`, `createBranch`, `fetch`, `showFileAtRef`, `getLog`
+- **Operation methods** (each refreshes the repository afterwards): `stage`, `unstage`, `commit` (joins title and body with a blank line), `push`, `pull`, `revert`, `stash`, `stashApply`, `switchBranch`, `createBranch`, `remove`, `mergeAbort`, `rebaseAbort`, `rebaseContinue`, `cherryPickAbort`, `cherryPickContinue`; `clone` and `connectFolderToRemote` re-detect repositories. `pull` also reports `merge-conflicts` when a successful pull left conflicted files.
+- **Read-only queries** (`getFileContentAtRevision`, `getLog`, `getBranches`, `stashList`, `getConflictBlobs`, `getChangedFilesBetween`, `getMergeBase`, `listRemoteBranches`, `onCloneProgress`, `fetch`) are not wrapped; callers use `bifrost.sourceControl` directly.
+- **History paging**: `getHistory(repositoryRoot, skip, maxCount = 100)` adds the branch's upstream from the cached state and returns a `HistoryPage` (`{ entries, hasMore }`). `commit` takes `CommitOptions` (`{ title, body? }`); both types live in `GitTypes.ts`. `formatCommitAge.ts` formats commit dates for the history ("12 minutes ago").
+- **Selected repository**: `setSelectedRepo` emits `sourceControlSelectedRepositoryChanged` when the value actually changes, so documents that follow the Git pane's repository selector can reload.
 - **Sync state flag**: `isSyncing: boolean` — set `true` during sync/fetch operations; drives the spinning status bar icon
-- **Directory status aggregation**: `getDirectoryStatus(uri)` returns the most severe child file status
 
-Each operation method calls `refreshRepo()` after completing, which emits `gitStatusChanged` and delegates to the `GitDecorationProvider.refresh()` for targeted UI updates (see [Tree Item Decorations](#tree-item-decorations)).
+Each operation method calls `refreshRepo()` after completing, which emits `sourceControlStatusChanged` and delegates to the `GitDecorationProvider.refresh()` for targeted UI updates (see [Tree Item Decorations](#tree-item-decorations)).
 
 #### GitPane
 
@@ -65,50 +61,13 @@ React component registered as a left pane group. Uses SDK pane components extens
 
 - **Repo selector** — `PaneProperty type="select"`, visible only when the solution contains 2+ git repositories. The selected repo is pane-local state. When the user switches, the pane re-renders with the chosen repo's state. Single-repo solutions see no selector.
 - **Branch info bar** — `PaneInfoBar` with `PaneInfoBarItem` for branch name and ahead/behind counts, plus `PaneInfoBarAction` (command-driven) for Stash and Apply Stash actions.
-- **Commit input** — `PaneProperty type="text"` for the title and `PaneProperty type="textarea"` for the optional body. Both use real-time `onChange` with `valueRef` props, which provide bidirectional ref-based state bridging. Command handlers read values directly from these refs (passed as `commandArgs`) and clear them after a successful commit; the `gitStatusChanged` event then syncs the cleared refs back to `useState`.
+- **Commit input** — `PaneProperty type="text"` for the title and `PaneProperty type="textarea"` for the optional body. Both use real-time `onChange` with `valueRef` props, which provide bidirectional ref-based state bridging. Command handlers read values directly from these refs (passed as `commandArgs`) and clear them after a successful commit; the `sourceControlStatusChanged` event then syncs the cleared refs back to `useState`.
 - **Commit actions** — `PaneActionBar` with a `PaneActionSplitButton`. The main button triggers "Commit"; the dropdown caret opens the `git-cruiser/pane-commit-actions` menu with: Commit, Commit & Push, Commit & Sync, a divider, Commit to new Branch, Commit to new Branch & Sync. Each menu item is a `MenuItem_Command` with the title/body refs as `commandArgs`.
 - **File tree** — Staged / Unstaged / Untracked file groups inside a `PaneBody`, using the `Tree` component with per-file hover action icons (stage/unstage via `actionIconOnHover`).
 
-All icons are rendered via the host `Icon` component (`#components/Icon`). Subscribes to `gitStatusChanged` events to refresh its state. When the event fires, the pane re-reads all repo states and resolves the selected repo (falling back to the first repo if the previously selected one no longer exists).
+All icons are rendered via the host `Icon` component (`#components/Icon`). Subscribes to `sourceControlStatusChanged` events to refresh its state. When the event fires, the pane re-reads all repo states and resolves the selected repo (falling back to the first repo if the previously selected one no longer exists).
 
-### Main Process Side
-
-#### registerGitHandlers
-
-**Path:** `studio/src/bifrost/electron-main/registerGitHandlers.ts`
-
-Registers `ipcMain.handle` for all `IPC_INVOKE_GIT_*` channels. Each handler instantiates a `simple-git` instance scoped to the provided `cwd` and delegates to the corresponding `simple-git` method.
-
-### IPC Channels
-
-**Path:** `studio/src/bifrost/contracts/GitIpcChannels.ts` (a contract, because the Electron main process and the renderer both import it)
-
-All channel constants are defined here and re-exported via `IpcEvents.ts`.
-
-| Channel | Purpose |
-|---------|---------|
-| `IPC_INVOKE_GIT_IS_AVAILABLE` | Check if `git` is installed (`git --version`) |
-| `IPC_INVOKE_GIT_IS_REPO` | Check if a path is inside a git repo |
-| `IPC_INVOKE_GIT_STATUS` | Get `git status` for a repo |
-| `IPC_INVOKE_GIT_STAGE` | `git add` files |
-| `IPC_INVOKE_GIT_UNSTAGE` | `git reset HEAD` files |
-| `IPC_INVOKE_GIT_COMMIT` | `git commit` with message |
-| `IPC_INVOKE_GIT_PUSH` | `git push` — auto-detects missing upstream via `branch().tracking` and pushes with `--set-upstream origin <branch>` when needed |
-| `IPC_INVOKE_GIT_PULL` | `git pull` with optional `--rebase` |
-| `IPC_INVOKE_GIT_REVERT` | `git checkout -- <files>` |
-| `IPC_INVOKE_GIT_FETCH` | `git fetch` |
-| `IPC_INVOKE_GIT_STASH` | `git stash push` with optional message |
-| `IPC_INVOKE_GIT_STASH_APPLY` | `git stash pop` with optional index and `{ restoreIndex }` option (`--index`) |
-| `IPC_INVOKE_GIT_STASH_LIST` | `git stash list` |
-| `IPC_INVOKE_GIT_BRANCH_LIST` | List branches |
-| `IPC_INVOKE_GIT_BRANCH_SWITCH` | `git switch` |
-| `IPC_INVOKE_GIT_BRANCH_CREATE` | `git switch -c` |
-| `IPC_INVOKE_GIT_SHOW` | `git show <ref>` (retrieve file at commit) |
-| `IPC_INVOKE_GIT_LOG` | `git log` with optional count and file filter |
-| `IPC_INVOKE_GIT_CLONE` | `git clone` with optional branch and progress streaming |
-| `IPC_INVOKE_GIT_LS_REMOTE` | `git ls-remote --heads --symref` for listing remote branches |
-| `IPC_INVOKE_GIT_CONNECT_TO_REMOTE` | Composite: clone to temp, move `.git` into target, reset index, restore missing files |
-| `IPC_MESSAGE_GIT_CLONE_PROGRESS` | Event (main → renderer): clone progress updates with `{ stage, progress }` |
+The main process side (handlers, argument validation, output parsing, IPC channels) is documented in [source-control.md](source-control.md).
 
 ---
 
@@ -122,13 +81,13 @@ The module operates in one of three states:
 | **Git not found** | Git not in PATH | Status bar "Git not found", pane explains situation |
 | **Disabled** | `enabled = false` | No visible UI at all |
 
-State is determined by `GitService.isActive` (`isGitAvailable && isEnabled`). All visibility predicates and UI components check this flag.
+State is determined by `RepositoryStore.isActive` (`isGitAvailable && isEnabled`). All visibility predicates and UI components check this flag.
 
 ---
 
 ## Repo Detection and Lifecycle
 
-`GitService.detectRepos()` scans `solution.projects` and checks each project's `baseUri` via `IPC_INVOKE_GIT_IS_REPO`. It **rebuilds** the internal project-to-repo mapping from scratch on every call, discarding stale entries for removed projects or disappeared repos. Any `repoStateMap` entries without a corresponding project are also pruned.
+`RepositoryStore.detectRepos()` scans `solution.projects` and checks each project's `baseUri` via `bifrost.sourceControl.findRepositoryRoot`. It **rebuilds** the internal project-to-repo mapping from scratch on every call, discarding stale entries for removed projects or disappeared repos. Any `repoStateMap` entries without a corresponding project are also pruned.
 
 **Triggers:**
 - `solutionChanged` event (folder added/removed, solution opened/closed)
@@ -148,7 +107,7 @@ Uses an **event-driven, per-URI decoration system** (modelled after VSCode's `Fi
 ### Architecture
 
 ```
-GitService.refreshRepo()
+RepositoryStore.refreshRepo()
   → decorationProvider.refresh(allRepoStates)
     → builds new Map<uri, decoration> from file + pre-aggregated directory statuses
     → computes symmetric difference (added/removed/changed URIs)
@@ -169,7 +128,7 @@ Only the 1–2 tree items whose status actually changed re-render, instead of th
 
 `GitDecorationProvider` maintains an internal `Map<string, TreeItemDecoration>` pre-computed for **all files and directories** across all repos. When `refresh()` is called:
 
-1. Builds a new Map from all `GitRepoState.files` (file URIs → decoration) and aggregated directory URIs (worst-status child → decoration)
+1. Builds a new Map from all `SourceControlRepositoryState.files` (file URIs → decoration) and aggregated directory URIs (worst-status child → decoration)
 2. Computes the symmetric difference between old and new caches
 3. Fires `onDidChange` with only the changed URIs
 4. Replaces the cache atomically
@@ -220,7 +179,7 @@ The git-cruiser module has **no BPMN-specific rendering, parsing, or document mo
 ### Delegation Pattern
 
 1. **Git primitives exposed as commands** — `git.getFileAtRef`, `git.getLog`, `git.getHeadContent`, `git.createBranchInRepoOf`, `git.restoreFileContent`. These know nothing about BPMN or DMN; they operate on URIs and refs.
-2. **Dispatch commands** — `git.showGitDiff` and `git.showFileHistory` are dispatchers that still live here because they need synchronous `GitService` enablement checks (`hasModifications`, `hasFileHistory`). Internally they call orchestrator functions (`diffFromGit.ts`, `fileHistory.ts`) that route to the appropriate diff module based on file extension (`.bpmn` → `bpmn-diff`, `.dmn` → `dmn-diff`).
+2. **Dispatch commands** — `git.showGitDiff` and `git.showFileHistory` are dispatchers that still live here because they need synchronous `RepositoryStore` enablement checks (`hasModifications`, `hasFileHistory`). Internally they call orchestrator functions (`diffFromGit.ts`, `fileHistory.ts`) that route to the appropriate diff module based on file extension (`.bpmn` → `bpmn-diff`, `.dmn` → `dmn-diff`).
 3. **Module-side wrapper commands** — Each diff module registers its own command set:
    - **bpmn-diff**: `bpmn.diff.openHistoryPreview`, `bpmn.diff.history.restoreFile`, `bpmn.diff.historyPreview.changeViewMode`, `bpmn.diff.suggestBranchNameForProcess`, `bpmn.diff.getChangeSummaryMarkdown`
    - **dmn-diff**: `dmn.diff.openHistoryPreview`, `dmn.diff.history.restoreFile`, `dmn.diff.historyPreview.changeViewMode`, `dmn.diff.getChangeSummaryMarkdown`
@@ -253,7 +212,7 @@ Button enabled/disabled state is handled entirely by the commands' `enabledPredi
 
 ### Branch-Per-Process
 
-`git.createBranchForProcess` delegates to `bpmn.diff.suggestBranchNameForProcess` (which uses `bpmn-core/bpmnProcessUtils.ts` utilities — `extractProcessName`, `slugify`) to get a branch name suggestion, then performs the Git branch creation itself.
+`git.createBranchForProcess` delegates to `bpmn.diff.suggestBranchNameForProcess` (which reads the process name of the focused BPMN file, or falls back to the file name, and slugifies it into `feature/<slug>`) to get a branch name suggestion, then performs the Git branch creation itself.
 
 ---
 
@@ -286,7 +245,7 @@ Configuration precedence:
 | Solution opened/changed | Immediate |
 | Manual `git.refreshStatus` | Immediate |
 
-After each refresh, `GitService` updates its cache, emits `gitStatusChanged`, then emits `unspecifiedGlobalUpdate` (debounced at 160 ms by the framework) to trigger a Workbench-level re-render — this ensures toolbar buttons whose enabled state depends on git status (e.g. the "Show Diff" button in the BPMN editor) are re-evaluated. Finally it calls `decorationProvider.refresh(allRepoStates)`. The provider computes changed URIs and fires `onDidChange`, which triggers re-renders of only the affected tree items via the `useDecoration` hook.
+After each refresh, `RepositoryStore` updates its cache, emits `sourceControlStatusChanged`, then emits `unspecifiedGlobalUpdate` (debounced at 160 ms by the framework) to trigger a Workbench-level re-render — this ensures toolbar buttons whose enabled state depends on git status (e.g. the "Show Diff" button in the BPMN editor) are re-evaluated. Finally it calls `decorationProvider.refresh(allRepoStates)`. The provider computes changed URIs and fires `onDidChange`, which triggers re-renders of only the affected tree items via the `useDecoration` hook.
 
 ---
 
@@ -300,8 +259,8 @@ Registers three status bar items (left area): `git-cruiser/not-found`, `git-crui
 
 Both `git-cruiser/branch` and `git-cruiser/sync` are always `type: 'button'`. The factory functions resolve the **active repository** through a three-step fallback chain:
 
-1. **Focused editor** — `bifrost.editors.getFocusedEditorDocument()?.uri` → `gitService.getRepoRootForUri()` → `gitService.getRepoState()`
-2. **Git Pane selection** — `gitService.paneSelectedRepoRoot` (written by the pane's repo selector)
+1. **Focused editor** — `bifrost.editors.getFocusedEditorDocument()?.uri` → `repositoryStore.getRepoRootForUri()` → `repositoryStore.getRepoState()`
+2. **Git Pane selection** — `repositoryStore.getSelectedRepo()` (written by the pane's repo selector)
 3. **First repo** — `states[0]` (last resort)
 
 When the user switches to a file in a different repository, the status bar factory is automatically re-evaluated (via `EVENT_EDITOR_AREA_FOCUS_UPDATED` → `EVENT_CONTENT_UPDATE` → `updateStatusBarItems()`). When the user changes the Git Pane selector, the pane explicitly triggers `bifrost.statusBar.updateStatusBarItems()`. In both cases the label, sync counts, and `commandArgs` update to reflect the newly active repo.
@@ -315,7 +274,7 @@ When the user switches to a file in a different repository, the status bar facto
 
 - **Label**: `✓` when in sync, otherwise `↑N ↓M` showing ahead/behind counts for the active repo's tracking branch.
 - **Click**: executes `git.sync` with `commandArgs: [activeRepoRoot]`, syncing the active repo immediately.
-- **Spinning icon**: While a sync or fetch operation is in progress (`gitService.isSyncing === true`), the icon switches from `git-cruiser/sync` to `git-cruiser/sync-spinning` (which adds the `ph-spin` animation class). The flag is set at the start of `git.sync`, `git.pane.commitAndSync`, and `git.pane.commitToNewBranchAndSync`, and reset in the `finally` block. A `statusBar.updateStatusBarItems()` call before and after ensures the icon change is rendered.
+- **Spinning icon**: While a sync or fetch operation is in progress (`repositoryStore.isSyncing === true`), the icon switches from `git-cruiser/sync` to `git-cruiser/sync-spinning` (which adds the `ph-spin` animation class). The flag is set at the start of `git.sync`, `git.pane.commitAndSync`, and `git.pane.commitToNewBranchAndSync`, and reset in the `finally` block. A `statusBar.updateStatusBarItems()` call before and after ensures the icon change is rendered.
 
 ### Tooltips
 
@@ -325,7 +284,7 @@ Both items list **all** repos with their branch and sync status, providing a mul
 
 ## Multi-Repository Command Resolution
 
-Global commands (commit, push, pull, sync, stash, switch branch, create branch) need a `repoRoot` to operate on. The synchronous helper `resolveRepoRoot(bifrost, gitService, commandId, givenRepoRoot?)` in `initializeCommands.ts` handles this:
+Global commands (commit, push, pull, sync, stash, switch branch, create branch) need a `repoRoot` to operate on. The synchronous helper `resolveRepoRoot(bifrost, repositoryStore, commandId, givenRepoRoot?)` in `initializeCommands.ts` handles this:
 
 - **`givenRepoRoot` provided**: returns it directly (no user interaction). This path is used when commands are invoked from the Git Pane (which passes its currently selected repo) or from the `git.sync` command (which forwards its resolved repo to `git.pull`).
 - **0 repos**: returns `null` (command exits early)
@@ -336,7 +295,7 @@ Every command handler accepts an optional `repoRoot?: string` first parameter, c
 
 ### switchBranch QuickJump Flow
 
-`git.switchBranch` accepts `(repoRoot?: string, branchName?: string)`. When `branchName` is omitted, it fetches all branches via `gitService.getBranches(repoRoot)` and presents a QuickJump picker with:
+`git.switchBranch` accepts `(repoRoot?: string, branchName?: string)`. When `branchName` is omitted, it fetches all branches via `bifrost.sourceControl.getBranches(repoRoot)` and presents a QuickJump picker with:
 
 - **"Create new branch..."** (sticky, `ph-light ph-plus` icon) — re-invokes `git.createBranch` with `[repoRoot]`
 - **Local branches** (`git-cruiser/branch` icon) — re-invokes `git.switchBranch` with `[repoRoot, branchName]`
@@ -506,10 +465,11 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | Component | Path |
 |-----------|------|
 | Module entry | `studio/src/modules/git-cruiser/index.ts` |
-| GitService | `studio/src/modules/git-cruiser/GitService.ts` |
-| GitTypes | `studio/src/modules/git-cruiser/GitTypes.ts` |
-| IPC Channels | `studio/src/bifrost/contracts/GitIpcChannels.ts` |
-| Main process handlers | `studio/src/bifrost/electron-main/registerGitHandlers.ts` |
+| Repository store | `studio/src/modules/git-cruiser/RepositoryStore.ts` |
+| UI status maps, merge types, commit options, history page | `studio/src/modules/git-cruiser/GitTypes.ts` |
+| Commit age formatting | `studio/src/modules/git-cruiser/formatCommitAge.ts` |
+| Change digest formatting | `studio/src/modules/git-cruiser/formatModelChangeDigest.ts` |
+| Source control service, types, IPC, main process | [source-control.md](source-control.md) |
 | Commands | `studio/src/modules/git-cruiser/initializers/initializeCommands.ts` |
 | Menus | `studio/src/modules/git-cruiser/initializers/initializeMenus.ts` |
 | Icons | `studio/src/modules/git-cruiser/initializers/initializeIcons.ts` |
@@ -561,9 +521,9 @@ BPMN three-panel visualization, `xmlMergeEngine`, and per-attribute resolution: 
 
 | Type | Location | Purpose |
 |------|----------|---------|
-| `GitMergeStateKind` | `GitTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
-| `GitMergeState` | `GitTypes.ts` | Merge kind + list of conflicted `GitFileStatus` entries |
-| `GitConflictBlobs` | `GitTypes.ts` | `{ base, ours, theirs }` — each `string \| null` |
+| `SourceControlMergeStateKind` | `bifrost/contracts/SourceControlTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
+| `SourceControlMergeState` | `bifrost/contracts/SourceControlTypes.ts` | Merge kind + list of conflicted `SourceControlFileStatus` entries |
+| `SourceControlConflictBlobs` | `bifrost/contracts/SourceControlTypes.ts` | `{ base, ours, theirs }` — each `string \| null` |
 | `MergeConflictKind` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'content' \| 'ours-deleted' \| 'theirs-deleted' \| 'added-by-both'` |
 | `MergeFileType` | `bifrost/contracts/MergeTypes.ts` | `'bpmn' \| 'dmn'` — only diagram files enter the merge resolver |
 | `MergeFileEntry` | `MergeDocumentModel.ts` | Per-file tracking: path, URI, resolved flag, fileType |
@@ -575,18 +535,9 @@ BPMN three-panel visualization, `xmlMergeEngine`, and per-attribute resolution: 
 | `MergeResolverHost` | `studio/src/bifrost/contracts/MergeTypes.ts` | What the BPMN/DMN merge change-overview panes read from `MergeDocumentModel` (`currentFileType`, `resolverRef`, `getResolutionProgress()`), so editors never import `git-cruiser`; `MergeDocumentModel` implements it |
 | `EVENT_MERGE_FILE_CHANGED`, `EVENT_RESOLUTION_CHANGED` | `studio/src/bifrost/contracts/MergeTypes.ts` | Events `MergeDocumentModel` emits for those panes |
 
-### IPC channels
+### Source control calls
 
-| Channel | Direction | Purpose |
-|---------|-----------|---------|
-| `IPC_INVOKE_GIT_MERGE_STATE` | renderer → main | Detect merge/rebase/cherry-pick state |
-| `IPC_INVOKE_GIT_CONFLICT_BLOBS` | renderer → main | Retrieve base/ours/theirs via `git show :N:` |
-| `IPC_INVOKE_GIT_MERGE_ABORT` | renderer → main | Abort merge |
-| `IPC_INVOKE_GIT_REBASE_ABORT` | renderer → main | Abort rebase |
-| `IPC_INVOKE_GIT_REBASE_CONTINUE` | renderer → main | Continue rebase |
-| `IPC_INVOKE_GIT_CHERRY_PICK_ABORT` | renderer → main | Abort cherry-pick |
-| `IPC_INVOKE_GIT_CHERRY_PICK_CONTINUE` | renderer → main | Continue cherry-pick |
-| `IPC_INVOKE_GIT_REMOVE` | renderer → main | `git rm` for delete-conflict resolution |
+Merge state comes with `getRepositoryState`; blobs from `bifrost.sourceControl.getConflictBlobs` (`git show :1:` / `:2:` / `:3:`). Abort, continue and `git rm` for delete conflicts go through the `RepositoryStore` methods so the state refreshes. `writeResolvedFile` writes the result with `bifrost.files.save` and then stages it.
 
 ### Commands
 
@@ -628,8 +579,8 @@ The merge resolution commands receive the `MergeDocumentModel` directly from the
 
 ### Conflict detection flow
 
-1. `GitService.refreshRepo()` now runs `IPC_INVOKE_GIT_MERGE_STATE` in parallel with `IPC_INVOKE_GIT_STATUS`.
-2. `GitRepoState.mergeState` stores the result (kind + conflicted file list).
+1. `RepositoryStore.refreshRepo()` reads `bifrost.sourceControl.getRepositoryState()`, which includes the merge state.
+2. `SourceControlRepositoryState.mergeState` stores the result (kind + conflicted file list).
 3. The Git Pane renders a "Merge Conflicts" section at the top of the tree when conflicts exist.
 4. The status bar branch item shows `MERGING`/`REBASING`/`CHERRY-PICKING` suffix and conflict count.
 5. `handlePullResult()` shows a notification with "Open Merge Resolver" action when pull results in conflicts.
@@ -690,11 +641,11 @@ Three-step sequential dialog chain with protocol auto-detection and optional HTT
 
 **Dialog 2 — HTTPS Credentials** (skipped for SSH): Username + masked token/password fields. Both are optional (public repos skip this step). A "Back" button returns to Dialog 1. Credentials are embedded into the URL in-memory (`https://user:token@host/repo`) for the git operations that follow.
 
-**Between Dialogs 2 and 3 — Branch fetch**: `gitService.listRemoteBranches` is called with the effective URL. A sticky notification shows progress. On success, branches are passed to Dialog 3 as a pre-populated `select`. On failure, Dialog 3 falls back to a `text_input` for manual branch entry with the error shown as a hint.
+**Between Dialogs 2 and 3 — Branch fetch**: `bifrost.sourceControl.listRemoteBranches` is called with the effective URL. A sticky notification shows progress. On success, branches are passed to Dialog 3 as a pre-populated `select`. On failure, Dialog 3 falls back to a `text_input` for manual branch entry with the error shown as a hint.
 
 **Dialog 3 — Branch + Destination**: `path_picker` for the destination folder (plain string, no JSON), plus either a `select` (branches loaded) or `text_input` (fallback). The repository is cloned into a subfolder named after the repo.
 
-**Progress notifications**: Clone progress is streamed from the main process via `IPC_MESSAGE_GIT_CLONE_PROGRESS`. The renderer subscribes via `gitService.onCloneProgress()` and updates a sticky notification with stage + percentage. The notification is closed on completion or error.
+**Progress notifications**: Clone progress is streamed from the main process via `IPC_MESSAGE_GIT_CLONE_PROGRESS`. The renderer subscribes via `bifrost.sourceControl.onCloneProgress()` and updates a sticky notification with stage + percentage. The notification is closed on completion or error.
 
 **Solution integration** (post-clone):
 - **Explicit `.bfwsln` solution open**: `addFolderToSolution` + `saveSolutionFile` — folder is added to the current solution
@@ -714,7 +665,7 @@ Uses the same three-step dialog chain as Clone, except Dialog 3 contains the bra
 - Branch picker (select or text_input fallback)
 - "Optional: Create new branch from selected base branch" text field. If left empty, the selected base branch is used directly. If a name is provided and the branch exists on the remote, git switches to it. If the name does not exist, a new local branch is created from the selected base branch.
 
-**Clone-to-temp strategy** (implemented as a single composite IPC handler `IPC_INVOKE_GIT_CONNECT_TO_REMOTE` in `registerGitHandlers.ts`):
+**Clone-to-temp strategy** (implemented as a single composite IPC handler `IPC_INVOKE_GIT_CONNECT_TO_REMOTE` in `bifrost/electron-main/git/registerGitHandlers.ts`):
 
 1. Clone the repo into a temp directory (`os.tmpdir()/bifrost-forge-world-connect-<timestamp>`) with progress reporting
 2. *(Optional)* If `newBranch` was specified: check `git branch -a` in the temp clone — if `remotes/origin/<newBranch>` exists, `git checkout <newBranch>`; otherwise `git checkout -b <newBranch>` (creates a local branch from the cloned base branch)
@@ -726,7 +677,7 @@ Uses the same three-step dialog chain as Clone, except Dialog 3 contains the bra
 
 After completion, the target folder is a proper git repository on the selected branch (or the newly created branch). Any local files that differ from the branch appear as uncommitted modifications in the Git pane. Files that only exist locally appear as untracked. No conflict dialog is needed — the user resolves differences naturally through the Git pane.
 
-**Progress notifications**: Reuses the existing `IPC_MESSAGE_GIT_CLONE_PROGRESS` mechanism from the clone command. The renderer subscribes via `gitService.onCloneProgress()` and updates a sticky notification.
+**Progress notifications**: Reuses the existing `IPC_MESSAGE_GIT_CLONE_PROGRESS` mechanism from the clone command. The renderer subscribes via `bifrost.sourceControl.onCloneProgress()` and updates a sticky notification.
 
 **Error recovery**: On any failure, `.git/` is cleaned up via `deleteFilesAndDirectories` to restore the folder to its pre-connect state. The temp directory is cleaned up in a `finally` block.
 
@@ -734,7 +685,7 @@ After completion, the target folder is a proper git repository on the selected b
 
 ## HTTPS Credential Handling
 
-`GIT_TERMINAL_PROMPT=0` is set at module level in `registerGitHandlers.ts`, and every `simple-git` instance lists it in `allowEnvironment`. simple-git 4 drops parent variables whose names start with `GIT_` unless they are listed there, so the assignment alone never reaches the git process. With the variable set, git fails immediately instead of opening a terminal prompt. Without it, `git ls-remote` on a private HTTPS repo waits for input in the Electron main process.
+The main process sets `GIT_TERMINAL_PROMPT=0` ([source-control.md](source-control.md) §Electron Main), so git never waits for credentials on a terminal.
 
 When `GIT_TERMINAL_PROMPT=0` is active and credentials are needed, git fails immediately with a catchable authentication error. The three-step dialog chain handles this by:
 1. Detecting HTTPS URLs in Dialog 1

@@ -2,25 +2,43 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import { getUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { ModelChangeDigest } from '#bifrost/contracts/SourceControlTypes';
 
-import { extractProcessName, slugify } from '../bpmn-core/bpmnProcessUtils';
 import {
+  type ChangeSummary,
   type RawDiffResult,
   buildAugmentedChangeSummary,
   buildChangeSummary,
   createBpmnModdleForDiff,
   formatChangeSummaryAsMarkdown,
 } from '../bpmn-core/diff';
+import { buildModelChangeDigestForXmlPair } from '../bpmn-core/diff/modelChangeDigest';
 import BpmnDiffDocumentModel from './BpmnDiffDocumentModel';
 import BpmnDiffDocumentRenderer from './BpmnDiffDocumentRenderer';
 import BpmnHistoryPreviewDocumentModel from './history/BpmnHistoryPreviewDocumentModel';
 import BpmnHistoryPreviewDocumentRenderer from './history/BpmnHistoryPreviewDocumentRenderer';
 
+async function computeBpmnChangeSummary(beforeXml: string, afterXml: string): Promise<ChangeSummary> {
+  const { diff } = await import('bpmn-js-differ');
+
+  const moddle = createBpmnModdleForDiff();
+  const { rootElement: definitionsBefore } = await moddle.fromXML(beforeXml);
+  const { rootElement: definitionsAfter } = await moddle.fromXML(afterXml);
+
+  const rawDiff = JSON.parse(JSON.stringify(diff(definitionsBefore, definitionsAfter))) as RawDiffResult;
+
+  try {
+    return await buildAugmentedChangeSummary(rawDiff, beforeXml, afterXml);
+  } catch {
+    return buildChangeSummary(rawDiff);
+  }
+}
+
 const BPMN_DOCUMENT_TYPE = 'bpmn';
 const BPMN_DIFF_DOCUMENT_TYPE = 'bpmn.diff';
 const HISTORY_PREVIEW_DOCUMENT_TYPE = 'bpmn.history-preview';
 
-export const BPMN_DIFF_HELP_TEXT_ID = 'bpmn-diff/home';
+const BPMN_DIFF_HELP_TEXT_ID = 'bpmn-diff/home';
 
 export function onLoad(bifrost: Bifrost): void {
   bifrost.editors.registerDocumentType(BPMN_DIFF_DOCUMENT_TYPE, {
@@ -210,14 +228,35 @@ export function onLoad(bifrost: Bifrost): void {
     { enabledWhen: () => bifrost.editors.getFocusedEditorDocument()?.documentType === BPMN_DOCUMENT_TYPE },
   );
 
-  bifrost.commands.register('bpmn.diff.openDiffTwoFiles', (beforeUri: string, afterUri: string) => {
-    const uri = buildDiffUri(beforeUri, afterUri, 'original', 'original');
+  // `options.label` replaces the default tab title; `options.sourceFileUri` adds an "Open File" toolbar button
+  // that opens the real file the compared versions belong to.
+  bifrost.commands.register(
+    'bpmn.diff.openDiffTwoFiles',
+    (beforeUri: string, afterUri: string, options: { label?: string; sourceFileUri?: string } = {}) => {
+      const uri = buildDiffUri(beforeUri, afterUri, 'original', 'original', options.sourceFileUri);
 
-    const beforeFilename = bifrost.files.getLocalBasename(beforeUri);
-    const afterFilename = bifrost.files.getLocalBasename(afterUri);
+      const beforeFilename = bifrost.files.getLocalBasename(beforeUri);
+      const afterFilename = bifrost.files.getLocalBasename(afterUri);
 
-    bifrost.editors.focusOrOpenEditorDocument(uri, `Diff: ${beforeFilename} vs ${afterFilename}`);
-  });
+      bifrost.editors.focusOrOpenEditorDocument(uri, options.label ?? `Diff: ${beforeFilename} vs ${afterFilename}`);
+    },
+  );
+
+  // --- Visual | XML view switch ---
+
+  for (const [commandName, viewMode] of [
+    ['bpmn.diff.showVisualView', 'visual'],
+    ['bpmn.diff.showXmlView', 'xml'],
+  ] as const) {
+    bifrost.commands.register(
+      commandName,
+      async (editorDocument: EditorDocument) => {
+        const model = await bifrost.editors.getEditorDocumentModel<BpmnDiffDocumentModel>(editorDocument);
+        model.setViewMode(viewMode);
+      },
+      { enabledWhen: (editorDocument: EditorDocument) => editorDocument.documentType === BPMN_DIFF_DOCUMENT_TYPE },
+    );
+  }
 
   bifrost.commands.register(
     'bpmn.diff.exportBeforeToNewFile',
@@ -304,24 +343,15 @@ export function onLoad(bifrost: Bifrost): void {
   bifrost.commands.register(
     'bpmn.diff.getChangeSummaryMarkdown',
     async (beforeXml: string, afterXml: string, fileName: string): Promise<string> => {
-      const { diff } = await import('bpmn-js-differ');
-
-      const moddle = createBpmnModdleForDiff();
-      const { rootElement: defsBefore } = await moddle.fromXML(beforeXml);
-      const { rootElement: defsAfter } = await moddle.fromXML(afterXml);
-
-      const rawHandler = diff(defsBefore, defsAfter);
-      const rawDiff = JSON.parse(JSON.stringify(rawHandler)) as RawDiffResult;
-
-      let summary;
-      try {
-        summary = await buildAugmentedChangeSummary(rawDiff, beforeXml, afterXml);
-      } catch {
-        summary = buildChangeSummary(rawDiff);
-      }
-
-      return formatChangeSummaryAsMarkdown(summary, fileName);
+      return formatChangeSummaryAsMarkdown(await computeBpmnChangeSummary(beforeXml, afterXml), fileName);
     },
+  );
+
+  // Either side may be null for a file that was added or deleted. Rejects when the XML cannot be parsed.
+  bifrost.commands.register(
+    'bpmn.diff.getChangeDigest',
+    (beforeXml: string | null, afterXml: string | null): Promise<ModelChangeDigest> =>
+      buildModelChangeDigestForXmlPair(beforeXml, afterXml, 'process', computeBpmnChangeSummary),
   );
 
   bifrost.commands.register(
@@ -395,7 +425,7 @@ export function onLoad(bifrost: Bifrost): void {
 
       try {
         const xml = await bifrost.files.load(uri);
-        processName = extractProcessName(xml);
+        processName = xml.match(/<(?:[\w-]+:)?process\b[^>]*\sname="([^"]+)"/)?.[1] ?? null;
       } catch {
         // fall through — will use filename
       }
@@ -413,6 +443,13 @@ export function onLoad(bifrost: Bifrost): void {
   bifrost.helpTexts.registerHelpText(BPMN_DIFF_HELP_TEXT_ID, require('./texts/bpmn-diff.md'));
 }
 
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 type DiffDataType = 'original' | 'current';
 
 function buildDiffUri(
@@ -420,12 +457,14 @@ function buildDiffUri(
   afterUri: string | null = null,
   beforeData: DiffDataType = 'original',
   afterData: DiffDataType = 'current',
+  sourceFileUri?: string,
 ): string {
   const uri = getUrlForOpenInNewTab('bpmn.diff', beforeUri, 'side-by-side', {
     beforeUri: beforeUri,
     beforeData: beforeData,
     afterUri: afterUri || beforeUri,
     afterData: afterData,
+    ...(sourceFileUri != null ? { sourceFileUri } : {}),
   });
 
   return uri;

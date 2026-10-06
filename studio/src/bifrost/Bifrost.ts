@@ -49,6 +49,8 @@ import { SettingsMediator } from './common/SettingsMediator';
 import type { SolutionFileUnreadableError } from './common/SolutionFile';
 import { EVENT_SOLUTION_CHANGED } from './common/SolutionManager';
 import { SolutionMediator } from './common/SolutionMediator';
+import type { SourceControlService } from './common/SourceControlService';
+import { SourceControlServiceDefault } from './common/SourceControlServiceDefault';
 import { StatusBarManager } from './common/StatusBarManager';
 import { SymbolIndexStub } from './common/SymbolIndexStub';
 import { FileExplorerView, GlobalSearchView } from './common/activities';
@@ -74,6 +76,7 @@ const DEFAULT_OPTIONS: BifrostOptionsStrict = {
   dialogServiceConstructor: DialogService,
   fileHandlingConstructor: FileHandlingServiceDefault,
   httpServiceConstructor: HttpService,
+  sourceControlServiceConstructor: SourceControlServiceDefault,
   menuManagerConstructor: MenuManager,
   searchIndexConstructor: SearchIndexStub,
   symbolIndexConstructor: SymbolIndexStub,
@@ -229,6 +232,12 @@ export class Bifrost {
    */
   public readonly http: HttpService;
   /**
+   * Provides version control operations (git in the Electron build).
+   *
+   * Check `SourceControlService` for more information.
+   */
+  public readonly sourceControl: SourceControlService;
+  /**
    * Takes performance measurements.
    *
    * Check `Performance` for more information.
@@ -318,6 +327,7 @@ export class Bifrost {
     this.dialog = new DialogManager(new options.dialogServiceConstructor());
     this.files = new options.fileHandlingConstructor();
     this.http = new options.httpServiceConstructor();
+    this.sourceControl = new options.sourceControlServiceConstructor();
     this.icons = new IconMediator();
     this.notifications = new NotificationManager();
     this.diagnostics = new DiagnosticsMediator(new DiagnosticsManager());
@@ -540,6 +550,8 @@ export class Bifrost {
       dialogServiceConstructor: options.dialogServiceConstructor ?? DEFAULT_OPTIONS.dialogServiceConstructor,
       fileHandlingConstructor: options.fileHandlingConstructor ?? DEFAULT_OPTIONS.fileHandlingConstructor,
       httpServiceConstructor: options.httpServiceConstructor ?? DEFAULT_OPTIONS.httpServiceConstructor,
+      sourceControlServiceConstructor:
+        options.sourceControlServiceConstructor ?? DEFAULT_OPTIONS.sourceControlServiceConstructor,
       menuManagerConstructor: options.menuManagerConstructor ?? DEFAULT_OPTIONS.menuManagerConstructor,
       searchIndexConstructor: options.searchIndexConstructor ?? DEFAULT_OPTIONS.searchIndexConstructor,
       symbolIndexConstructor: options.symbolIndexConstructor ?? DEFAULT_OPTIONS.symbolIndexConstructor,

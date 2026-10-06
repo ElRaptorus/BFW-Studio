@@ -232,9 +232,11 @@ Read-only `NavigatedViewer` (DRD only) with viewbox sync, selection sync, and di
 | Command | Description |
 |---------|-------------|
 | `dmn.diff.openDiffOriginalDataVsCurrentData` | Working copy diff for the focused DMN (command search) |
-| `dmn.diff.openDiffTwoFiles` | Compare two files by URI (called by git-cruiser) |
+| `dmn.diff.openDiffTwoFiles` | Compare two files by URI (called by git-cruiser). Optional third argument `{ label?, sourceFileUri? }` as for `bpmn.diff.openDiffTwoFiles` |
 | `dmn.diff.showChangeSummaryDialog` | Markdown summary dialog from the computed `DmnDiffDocumentModel`. Toolbar passes `editorDocument`; `enabledWhen` and the handler fall back to the focused `dmn.diff` document when invoked with no args. The handler awaits `bifrost.dialog.open` until Close/Copy; integration tests must use `executeCommandWithoutBlocking`, not `executeCommand` |
 | `dmn.diff.getChangeSummaryMarkdown` | Markdown summary for two XMLs (git-cruiser commit preview) |
+| `dmn.diff.getChangeDigest` | `(beforeXml \| null, afterXml \| null)` → `ModelChangeDigest`; built by `buildModelChangeDigestForXmlPair` from `bpmn-core/diff/modelChangeDigest.ts` with root element `definitions`, so the model name is the `name` of the `<definitions>` root. Contract as for `bpmn.diff.getChangeDigest` |
+| `dmn.diff.showVisualView` / `dmn.diff.showXmlView` | Switch a `dmn.diff` document between canvases and XML text diff; same mechanism as in [bpmn-diff.md](bpmn-diff.md) §bpmn.diff |
 
 ---
 

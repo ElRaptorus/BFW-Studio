@@ -3,8 +3,8 @@ import { EVENT_EDITOR_DOCUMENT_DATA_UPDATED } from '#bifrost/contracts/internal/
 
 import React from 'react';
 
-import { GitService } from './GitService';
 import { MERGE_URI } from './GitTypes';
+import { RepositoryStore } from './RepositoryStore';
 import { loadProjectConfig } from './config/ProjectConfig';
 import { cleanupTempFiles } from './diffFromGit';
 import { initializeCommands } from './initializers/initializeCommands';
@@ -19,17 +19,10 @@ import MergeDocumentRenderer from './merge/MergeDocumentRenderer';
 
 type Disposable = { dispose: () => void };
 
-let gitService: GitService;
+let repositoryStore: RepositoryStore;
 const configWatchers: Disposable[] = [];
 
-export const MERGE_DOCUMENT_TYPE = 'merge';
-
-export function getGitService(): GitService {
-  if (!gitService) {
-    throw new Error('[git-cruiser] GitService not initialized. Extension not loaded?');
-  }
-  return gitService;
-}
+const MERGE_DOCUMENT_TYPE = 'merge';
 
 export async function onLoad(bifrost: Bifrost): Promise<void> {
   bifrost.icons.registerIcons({ 'std/page/source': 'ph ph-git-branch' });
@@ -44,14 +37,14 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
   initializeIcons(bifrost);
   initializeSettings(bifrost);
 
-  gitService = new GitService(bifrost);
+  repositoryStore = new RepositoryStore(bifrost);
 
-  initializeCommands(bifrost, gitService);
+  initializeCommands(bifrost, repositoryStore);
   const decorationProvider = initializeDecorations(bifrost);
-  gitService.setDecorationProvider(decorationProvider);
-  initializeMenus(bifrost, gitService);
+  repositoryStore.setDecorationProvider(decorationProvider);
+  initializeMenus(bifrost, repositoryStore);
   initializePanes(bifrost);
-  initializeStatusBar(bifrost, gitService);
+  initializeStatusBar(bifrost, repositoryStore);
 
   await cleanupTempFiles(bifrost);
 
@@ -73,60 +66,60 @@ export async function onLoad(bifrost: Bifrost): Promise<void> {
     bifrost.panes.setVisibilityOfPaneAreaByPaneId('design/source/git', true);
   });
 
-  await gitService.initialize();
+  await repositoryStore.initialize();
 
-  if (gitService.isActive) {
+  if (repositoryStore.isActive) {
     registerUiEntrypoints(bifrost);
-    subscribeToRefreshTriggers(bifrost, gitService);
-    loadProjectConfigForRepos(bifrost, gitService);
+    subscribeToRefreshTriggers(bifrost, repositoryStore);
+    loadProjectConfigForRepos(bifrost, repositoryStore);
 
     bifrost.events.on('ready', () => {
-      suggestGitignoreForRepos(bifrost, gitService);
+      suggestGitignoreForRepos(bifrost, repositoryStore);
     });
   }
 
   bifrost.events.on('settingsUpdate', (key: string) => {
     if (key === 'gitCruiser.general.enabled') {
-      if (gitService.isEnabled && gitService.isGitAvailable) {
-        gitService.detectRepos();
-        subscribeToRefreshTriggers(bifrost, gitService);
+      if (repositoryStore.isEnabled && repositoryStore.isGitAvailable) {
+        repositoryStore.detectRepos();
+        subscribeToRefreshTriggers(bifrost, repositoryStore);
       }
     }
   });
 
   bifrost.events.on('solutionChanged', () => {
-    if (gitService.isActive) {
-      gitService.detectRepos();
-      loadProjectConfigForRepos(bifrost, gitService);
+    if (repositoryStore.isActive) {
+      repositoryStore.detectRepos();
+      loadProjectConfigForRepos(bifrost, repositoryStore);
     }
   });
 }
 
-function subscribeToRefreshTriggers(bifrost: Bifrost, gitService: GitService): void {
+function subscribeToRefreshTriggers(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   const autoRefresh = bifrost.settings.get('gitCruiser.general.autoRefresh') !== false;
   if (!autoRefresh) {
     return;
   }
 
   bifrost.editors.on(EVENT_EDITOR_DOCUMENT_DATA_UPDATED, () => {
-    gitService.scheduleRefresh();
+    repositoryStore.scheduleRefresh();
   });
 }
 
-function loadProjectConfigForRepos(bifrost: Bifrost, gitService: GitService): void {
+function loadProjectConfigForRepos(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   for (const watcher of configWatchers) {
     watcher.dispose();
   }
   configWatchers.length = 0;
 
-  for (const state of gitService.getAllRepoStates()) {
-    loadProjectConfig(bifrost, state.repoRoot);
+  for (const state of repositoryStore.getAllRepoStates()) {
+    loadProjectConfig(bifrost, state.repositoryRoot);
 
-    const configUri = `file://${state.repoRoot}/.bifrostfw/git-cruiser.json`;
+    const configUri = `file://${state.repositoryRoot}/.bifrostfw/git-cruiser.json`;
     try {
       const watcher = bifrost.files.watchFile(configUri, (eventType) => {
         if (eventType === 'change' || eventType === 'add' || eventType === 'unlink') {
-          loadProjectConfig(bifrost, state.repoRoot);
+          loadProjectConfig(bifrost, state.repositoryRoot);
         }
       });
       configWatchers.push(watcher);
@@ -136,9 +129,9 @@ function loadProjectConfigForRepos(bifrost: Bifrost, gitService: GitService): vo
   }
 }
 
-function suggestGitignoreForRepos(bifrost: Bifrost, gitService: GitService): void {
-  for (const state of gitService.getAllRepoStates()) {
-    bifrost.commands.executeCommand('git.suggestGitignore', [state.repoRoot]);
+function suggestGitignoreForRepos(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
+  for (const state of repositoryStore.getAllRepoStates()) {
+    bifrost.commands.executeCommand('git.suggestGitignore', [state.repositoryRoot]);
   }
 }
 

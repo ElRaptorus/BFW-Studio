@@ -2,7 +2,9 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import type { ModelChangeDigest } from '#bifrost/contracts/SourceControlTypes';
 
+import { buildModelChangeDigestForXmlPair } from '../bpmn-core/diff/modelChangeDigest';
 import { DmnDiff, buildDmnChangeSummary, formatDmnChangeSummaryAsMarkdown } from '../dmn-core/diff';
 import DmnDiffDocumentModel from './DmnDiffDocumentModel';
 import DmnDiffDocumentRenderer from './DmnDiffDocumentRenderer';
@@ -13,7 +15,11 @@ const DMN_DOCUMENT_TYPE = 'dmn';
 const DMN_DIFF_DOCUMENT_TYPE = 'dmn.diff';
 const HISTORY_PREVIEW_DOCUMENT_TYPE = 'dmn.history-preview';
 
-export const DMN_DIFF_HELP_TEXT_ID = 'dmn-diff/home';
+const DMN_DIFF_HELP_TEXT_ID = 'dmn-diff/home';
+
+async function computeDmnChangeSummary(beforeXml: string, afterXml: string) {
+  return buildDmnChangeSummary(await new DmnDiff(beforeXml, afterXml).diff());
+}
 
 export function onLoad(bifrost: Bifrost): void {
   bifrost.editors.registerDocumentType(DMN_DIFF_DOCUMENT_TYPE, {
@@ -34,8 +40,6 @@ export function onLoad(bifrost: Bifrost): void {
     'dmn-diff/element/updated': 'ph-duotone ph-pencil',
   });
 
-  // --- History Preview document type ---
-
   bifrost.editors.registerDocumentType(HISTORY_PREVIEW_DOCUMENT_TYPE, {
     page: 'design/source',
     uriMatch: /^fragment\+dmn\.history-preview:/,
@@ -49,8 +53,6 @@ export function onLoad(bifrost: Bifrost): void {
   bifrost.icons.registerIcons({
     'dmn-diff/history-preview': 'ph-duotone ph-clock-counter-clockwise dmn-diff__history-preview--hero-icon',
   });
-
-  // --- History Preview commands ---
 
   bifrost.commands.register(
     'dmn.diff.openHistoryPreview',
@@ -101,8 +103,6 @@ export function onLoad(bifrost: Bifrost): void {
     { enabledWhen: (editorDocument: EditorDocument) => editorDocument.documentType === HISTORY_PREVIEW_DOCUMENT_TYPE },
   );
 
-  // --- Zoom commands for history-preview ---
-
   bifrost.commands.register(
     `std.editor.zoomToActualSize.${HISTORY_PREVIEW_DOCUMENT_TYPE}`,
     async (editorDocument: EditorDocument) => {
@@ -136,8 +136,6 @@ export function onLoad(bifrost: Bifrost): void {
       }
     },
   );
-
-  // --- Zoom commands for diff ---
 
   bifrost.commands.register(
     `std.editor.zoomToActualSize.${DMN_DIFF_DOCUMENT_TYPE}`,
@@ -173,8 +171,6 @@ export function onLoad(bifrost: Bifrost): void {
     },
   );
 
-  // --- Diff commands ---
-
   bifrost.commands.register(
     'dmn.diff.openDiffOriginalDataVsCurrentData',
     (editorDocument: EditorDocument) => {
@@ -199,23 +195,42 @@ export function onLoad(bifrost: Bifrost): void {
     { enabledWhen: () => bifrost.editors.getFocusedEditorDocument()?.documentType === DMN_DOCUMENT_TYPE },
   );
 
-  bifrost.commands.register('dmn.diff.openDiffTwoFiles', (beforeUri: string, afterUri: string) => {
-    const uri = buildDiffUri(beforeUri, afterUri, 'original', 'original');
-    const beforeFilename = bifrost.files.getLocalBasename(beforeUri);
-    const afterFilename = bifrost.files.getLocalBasename(afterUri);
-    bifrost.editors.focusOrOpenEditorDocument(uri, `Diff: ${beforeFilename} vs ${afterFilename}`);
-  });
+  bifrost.commands.register(
+    'dmn.diff.openDiffTwoFiles',
+    (beforeUri: string, afterUri: string, options: { label?: string; sourceFileUri?: string } = {}) => {
+      const uri = buildDiffUri(beforeUri, afterUri, 'original', 'original', options.sourceFileUri);
+      const beforeFilename = bifrost.files.getLocalBasename(beforeUri);
+      const afterFilename = bifrost.files.getLocalBasename(afterUri);
+      bifrost.editors.focusOrOpenEditorDocument(uri, options.label ?? `Diff: ${beforeFilename} vs ${afterFilename}`);
+    },
+  );
 
-  // --- Change summary ---
+  for (const [commandName, viewMode] of [
+    ['dmn.diff.showVisualView', 'visual'],
+    ['dmn.diff.showXmlView', 'xml'],
+  ] as const) {
+    bifrost.commands.register(
+      commandName,
+      async (editorDocument: EditorDocument) => {
+        const model = await bifrost.editors.getEditorDocumentModel<DmnDiffDocumentModel>(editorDocument);
+        model.setViewMode(viewMode);
+      },
+      { enabledWhen: (editorDocument: EditorDocument) => editorDocument.documentType === DMN_DIFF_DOCUMENT_TYPE },
+    );
+  }
 
   bifrost.commands.register(
     'dmn.diff.getChangeSummaryMarkdown',
     async (beforeXml: string, afterXml: string, fileName: string): Promise<string> => {
-      const dmnDiff = new DmnDiff(beforeXml, afterXml);
-      const changes = await dmnDiff.diff();
-      const summary = buildDmnChangeSummary(changes);
-      return formatDmnChangeSummaryAsMarkdown(summary, fileName);
+      return formatDmnChangeSummaryAsMarkdown(await computeDmnChangeSummary(beforeXml, afterXml), fileName);
     },
+  );
+
+  // Either side may be null for a file that was added or deleted. Rejects when the XML cannot be parsed.
+  bifrost.commands.register(
+    'dmn.diff.getChangeDigest',
+    (beforeXml: string | null, afterXml: string | null): Promise<ModelChangeDigest> =>
+      buildModelChangeDigestForXmlPair(beforeXml, afterXml, 'definitions', computeDmnChangeSummary),
   );
 
   bifrost.commands.register(
@@ -262,8 +277,6 @@ export function onLoad(bifrost: Bifrost): void {
     },
   );
 
-  // --- Panes ---
-
   bifrost.panes.prependToPaneGroup('right', 'property', [
     bifrost.panes.getPaneViaPaneProvider(
       'dmn-diff/panes/properties/ChangeOverview',
@@ -277,8 +290,6 @@ export function onLoad(bifrost: Bifrost): void {
     ),
   ]);
 
-  // --- Help text ---
-
   bifrost.helpTexts.registerHelpText(DMN_DIFF_HELP_TEXT_ID, require('./texts/dmn-diff.md'));
 }
 
@@ -289,11 +300,13 @@ function buildDiffUri(
   afterUri: string | null = null,
   beforeData: DiffDataType = 'original',
   afterData: DiffDataType = 'current',
+  sourceFileUri?: string,
 ): string {
   return getUrlForOpenInNewTab('dmn.diff', beforeUri, 'side-by-side', {
     beforeUri: beforeUri,
     beforeData: beforeData,
     afterUri: afterUri || beforeUri,
     afterData: afterData,
+    ...(sourceFileUri != null ? { sourceFileUri } : {}),
   });
 }

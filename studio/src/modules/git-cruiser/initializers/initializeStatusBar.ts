@@ -1,10 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { SourceControlMergeStateKind } from '#bifrost/contracts/SourceControlTypes';
 import * as path from 'path';
 
-import type { GitService } from '../GitService';
-import type { GitMergeStateType } from '../GitTypes';
+import type { RepositoryStore } from '../RepositoryStore';
 
-function getMergeKindLabel(kind: GitMergeStateType): string {
+function getMergeKindLabel(kind: SourceControlMergeStateKind): string {
   switch (kind) {
     case 'merge':
       return 'MERGING';
@@ -17,12 +17,12 @@ function getMergeKindLabel(kind: GitMergeStateType): string {
   }
 }
 
-export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): void {
+export function initializeStatusBar(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
   bifrost.statusBar.registerStatusBarItem(
     'left',
     'git-cruiser/not-found',
     () => {
-      if (!gitService.isEnabled || gitService.isGitAvailable) {
+      if (!repositoryStore.isEnabled || repositoryStore.isGitAvailable) {
         return [];
       }
 
@@ -46,15 +46,15 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
     'left',
     'git-cruiser/branch',
     () => {
-      if (!gitService.isEnabled) {
+      if (!repositoryStore.isEnabled) {
         return [];
       }
 
-      if (!gitService.isGitAvailable) {
+      if (!repositoryStore.isGitAvailable) {
         return [];
       }
 
-      const states = gitService.getAllRepoStates();
+      const states = repositoryStore.getAllRepoStates();
 
       if (states.length === 0) {
         return [
@@ -72,15 +72,15 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
       }
 
       const focusedUri = bifrost.editors.getFocusedEditorDocument()?.uri;
-      const editorRepoRoot = focusedUri ? gitService.getRepoRootForUri(focusedUri) : null;
-      const editorState = editorRepoRoot ? gitService.getRepoState(editorRepoRoot) : null;
-      const paneState = gitService.hasSelectedRepo()
-        ? gitService.getRepoState(gitService.getSelectedRepo() as string)
+      const editorRepoRoot = focusedUri ? repositoryStore.getRepoRootForUri(focusedUri) : null;
+      const editorState = editorRepoRoot ? repositoryStore.getRepoState(editorRepoRoot) : null;
+      const paneState = repositoryStore.hasSelectedRepo()
+        ? repositoryStore.getRepoState(repositoryStore.getSelectedRepo() as string)
         : null;
       const state = editorState ?? paneState ?? states[0];
 
       const branchLabel = state.branch.detached ? `(${state.branch.current})` : state.branch.current;
-      const repoName = path.basename(state.repoRoot);
+      const repoName = path.basename(state.repositoryRoot);
       const hasDirtyFiles = state.files.some(
         (gitFile) => gitFile.indexStatus != null || gitFile.workingTreeStatus != null,
       );
@@ -101,7 +101,7 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
 
       const tooltipLines: string[] = [];
       for (const repoState of states) {
-        const name = path.basename(repoState.repoRoot);
+        const name = path.basename(repoState.repositoryRoot);
         const branch = repoState.branch.detached ? `(${repoState.branch.current})` : repoState.branch.current;
         const dirty = repoState.files.some((file) => file.indexStatus != null || file.workingTreeStatus != null)
           ? '*'
@@ -117,7 +117,7 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
       }
 
       const branchCommand = mergeKind != null ? 'git.merge.openResolver' : 'git.switchBranch';
-      const branchCommandArgs = mergeKind != null ? [] : [state.repoRoot];
+      const branchCommandArgs = mergeKind != null ? [] : [state.repositoryRoot];
 
       return [
         {
@@ -140,11 +140,11 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
     'left',
     'git-cruiser/sync',
     () => {
-      if (!gitService.isActive) {
+      if (!repositoryStore.isActive) {
         return [];
       }
 
-      const states = gitService.getAllRepoStates();
+      const states = repositoryStore.getAllRepoStates();
       if (states.length === 0) {
         return [];
       }
@@ -155,13 +155,13 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
       }
 
       const focusedUri = bifrost.editors.getFocusedEditorDocument()?.uri;
-      const editorRepoRoot = focusedUri ? gitService.getRepoRootForUri(focusedUri) : null;
+      const editorRepoRoot = focusedUri ? repositoryStore.getRepoRootForUri(focusedUri) : null;
       const editorTracking = editorRepoRoot
-        ? trackingStates.find((repoState) => repoState.repoRoot === editorRepoRoot)
+        ? trackingStates.find((repoState) => repoState.repositoryRoot === editorRepoRoot)
         : null;
 
-      const paneTracking = gitService.hasSelectedRepo()
-        ? trackingStates.find((repoState) => repoState.repoRoot === gitService.getSelectedRepo())
+      const paneTracking = repositoryStore.hasSelectedRepo()
+        ? trackingStates.find((repoState) => repoState.repositoryRoot === repositoryStore.getSelectedRepo())
         : null;
 
       const primary = editorTracking ?? paneTracking ?? trackingStates[0];
@@ -184,7 +184,7 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
       }
 
       const syncTooltipLines = trackingStates.map((repoState) => {
-        const name = path.basename(repoState.repoRoot);
+        const name = path.basename(repoState.repositoryRoot);
         return `${name}: ↑${repoState.branch.ahead} ↓${repoState.branch.behind}`;
       });
 
@@ -194,18 +194,18 @@ export function initializeStatusBar(bifrost: Bifrost, gitService: GitService): v
           id: 'git-cruiser/sync',
           tooltip: syncTooltipLines.join('\n'),
           content: [
-            { type: 'icon', icon: gitService.isSyncing ? 'git-cruiser/sync-spinning' : 'git-cruiser/sync' },
+            { type: 'icon', icon: repositoryStore.isSyncing ? 'git-cruiser/sync-spinning' : 'git-cruiser/sync' },
             { type: 'text', label },
           ],
           command: 'git.sync',
-          commandArgs: [primary.repoRoot],
+          commandArgs: [primary.repositoryRoot],
         },
       ];
     },
     80,
   );
 
-  bifrost.events.on('gitStatusChanged', () => {
+  bifrost.events.on('sourceControlStatusChanged', () => {
     bifrost.statusBar.updateStatusBarItems();
   });
 }

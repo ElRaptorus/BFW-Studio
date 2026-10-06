@@ -52,9 +52,9 @@ Multiple concurrent progress handles are supported; only the most recent label i
 const progress = bifrost.statusBar.showProgress('Syncing...');
 try {
   progress.update('Pulling...');
-  await gitService.pull(resolved);
+  await repositoryStore.pull(resolved);
   progress.update('Pushing...');
-  await gitService.push(resolved);
+  await repositoryStore.push(resolved);
 } finally {
   progress.done();
 }

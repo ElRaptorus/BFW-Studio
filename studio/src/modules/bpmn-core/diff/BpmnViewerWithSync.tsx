@@ -141,7 +141,17 @@ export class BpmnViewerWithSync extends AbstractEmitter {
   }
 
   resetZoom(): void {
-    (this.viewer.get('canvas') as Canvas).zoom('fit-viewport', 'auto' as any);
+    const canvas = this.viewer.get('canvas') as Canvas;
+
+    // diagram-js caches the viewbox, including the container size it had when it was last hidden or resized.
+    canvas.resized();
+
+    const size = canvas.getSize();
+    if (size.width === 0 || size.height === 0) {
+      return;
+    }
+
+    canvas.zoom('fit-viewport', 'auto' as any);
   }
 
   /**

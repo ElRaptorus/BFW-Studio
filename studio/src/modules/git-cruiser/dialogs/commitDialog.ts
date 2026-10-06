@@ -1,12 +1,12 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
-import type { GitCommitOptions } from '../GitTypes';
+import type { CommitOptions } from '../GitTypes';
 
 export async function openCommitDialog(
   bifrost: Bifrost,
   defaultTitle?: string,
   summary?: string,
-): Promise<GitCommitOptions | null> {
+): Promise<CommitOptions | null> {
   const contentItems: any[] = [
     {
       type: 'text_input',

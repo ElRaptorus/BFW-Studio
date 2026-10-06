@@ -8,9 +8,10 @@ import {
   type MergeFileType,
   type MergeResolverHost,
 } from '#bifrost/contracts/MergeTypes';
+import type { SourceControlConflictBlobs, SourceControlMergeStateKind } from '#bifrost/contracts/SourceControlTypes';
 
-import type { GitService } from '../GitService';
-import type { GitConflictBlobs, GitMergeStateType, MergeFileEntry, MergeProgress } from '../GitTypes';
+import type { MergeFileEntry, MergeProgress } from '../GitTypes';
+import type { RepositoryStore } from '../RepositoryStore';
 
 function classifyFileType(filePath: string): MergeFileType | null {
   if (filePath.endsWith('.bpmn')) {
@@ -38,7 +39,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
   public currentFileIndex = 0;
   public conflictKind: MergeConflictKind = 'content';
 
-  public blobs: GitConflictBlobs | null = null;
+  public blobs: SourceControlConflictBlobs | null = null;
 
   /**
    * Optional reference set by type-specific resolvers so that commands
@@ -52,7 +53,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
    */
   public resolutionProgress: { totalConflicts: number; resolvedConflicts: number; isComplete: boolean } | null = null;
 
-  protected gitService: GitService;
+  protected repositoryStore: RepositoryStore;
   protected repoRoot: string;
   private gitStatusDisposer: (() => void) | null = null;
 
@@ -63,7 +64,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
     this.bifrost = bifrost;
     this.repoRoot = '';
 
-    this.gitService = bifrost.commands.executeCommand<GitService>('git.getGitServiceRef');
+    this.repositoryStore = bifrost.commands.executeCommand<RepositoryStore>('git.getRepositoryStoreRef');
   }
 
   static async create(
@@ -96,7 +97,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
   }
 
   private subscribeToGitStatusChanges(): void {
-    const subscription = this.bifrost.events.on('gitStatusChanged' as any, () => {
+    const subscription = this.bifrost.events.on('sourceControlStatusChanged' as any, () => {
       this.syncResolvedState();
       this.emitProgressUpdate();
     });
@@ -105,33 +106,33 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
   }
 
   private resolveRepoRoot(): string | null {
-    const explicit = this.gitService.getSelectedRepo();
+    const explicit = this.repositoryStore.getSelectedRepo();
     if (explicit != null) {
       return explicit;
     }
 
     const focusedUri = this.bifrost.editors.getFocusedEditorDocument()?.uri;
     if (focusedUri) {
-      const repoRoot = this.gitService.getRepoRootForUri(focusedUri);
+      const repoRoot = this.repositoryStore.getRepoRootForUri(focusedUri);
       if (repoRoot != null) {
         return repoRoot;
       }
     }
 
-    const allStates = this.gitService.getAllRepoStates();
+    const allStates = this.repositoryStore.getAllRepoStates();
 
     const withConflicts = allStates.find((state) => state.mergeState.conflictedFiles.length > 0);
     if (withConflicts) {
-      return withConflicts.repoRoot;
+      return withConflicts.repositoryRoot;
     }
 
     const merging = allStates.find((state) => state.mergeState?.kind != null);
     if (merging) {
-      return merging.repoRoot;
+      return merging.repositoryRoot;
     }
 
     if (allStates.length === 1) {
-      return allStates[0].repoRoot;
+      return allStates[0].repositoryRoot;
     }
 
     return null;
@@ -143,7 +144,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
   }
 
   private populateConflictedFileList(): void {
-    const state = this.gitService.getRepoState(this.repoRoot);
+    const state = this.repositoryStore.getRepoState(this.repoRoot);
     if (state == null) {
       return;
     }
@@ -164,7 +165,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
   }
 
   private syncResolvedState(): void {
-    const state = this.gitService.getRepoState(this.repoRoot);
+    const state = this.repositoryStore.getRepoState(this.repoRoot);
     if (state == null) {
       return;
     }
@@ -188,7 +189,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
     this.resolutionProgress = null;
     const entry = this.conflictedFiles[index];
 
-    this.blobs = await this.gitService.getConflictBlobs(this.repoRoot, entry.relativePath);
+    this.blobs = await this.bifrost.sourceControl.getConflictBlobs(this.repoRoot, entry.relativePath);
 
     if (this.blobs.ours === null) {
       this.conflictKind = 'ours-deleted';
@@ -320,8 +321,8 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
     return this.resolutionProgress?.isComplete === true;
   }
 
-  public getMergeStateType(): GitMergeStateType {
-    const state = this.gitService.getRepoState(this.repoRoot);
+  public getMergeStateType(): SourceControlMergeStateKind {
+    const state = this.repositoryStore.getRepoState(this.repoRoot);
     return state?.mergeState.kind ?? 'merge';
   }
 

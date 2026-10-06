@@ -49,7 +49,7 @@ The rule is `.cursor/rules/module-boundaries.mdc`. In short:
 | `bpmn-*` | `engine-*`, `git-cruiser`, every `dmn-*` except `dmn-core` |
 | `dmn-*` | `engine-*`, `git-cruiser`, every `bpmn-*` except `bpmn-core` |
 
-The `-core` exception exists because the Business Rule Task couples BPMN to DMN; the types and views both families share live in `bpmn-core` / `dmn-core`. Where an import is forbidden, use a command, a mediator event, or a contract in `bifrost/contracts/` (for example `PluginApiNamespace`, `MergeResolverHost`, `GitIpcChannels`).
+The `-core` exception exists because the Business Rule Task couples BPMN to DMN; the types and views both families share live in `bpmn-core` / `dmn-core`. Where an import is forbidden, use a command, a mediator event, or a contract in `bifrost/contracts/` (for example `PluginApiNamespace`, `MergeResolverHost`, `ModelChangeDigest`). Where generic code goes (`bifrost/common/` versus a module or `-core`, platform services) is the rule's "Where generic code goes" table.
 
 **Enforcement:** `studio/eslint.config.mjs` builds one `no-restricted-imports` block per importer group (`moduleBoundaryZones`). Each block lists all its patterns, because flat config does not merge one rule across overlapping `files` blocks. `forbidModules(prefix)` yields two regexes per forbidden target: `^#modules/<prefix>` and `(^|/)\.\./(\.\./)*<prefix>` for relative sibling imports. A negative lookahead (`dmn-(?!core\b)`) allows the `-core` modules. The neutral block matches `src/modules/**` minus the three families, so a new module is covered without editing the config. `test/unit/bifrost/moduleBoundaryZones.test.ts` lints forbidden and allowed sample imports against the real config.
 

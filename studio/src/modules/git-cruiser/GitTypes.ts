@@ -1,70 +1,7 @@
 import type { MergeFileType } from '#bifrost/contracts/MergeTypes';
+import type { SourceControlFileStatusCode, SourceControlHistoryEntry } from '#bifrost/contracts/SourceControlTypes';
 
-export type GitFileStatusCode =
-  'modified' | 'added' | 'deleted' | 'renamed' | 'copied' | 'untracked' | 'ignored' | 'conflicted';
-
-export type GitFileStatus = {
-  readonly uri: string;
-  readonly path: string;
-  readonly indexStatus: GitFileStatusCode | null;
-  readonly workingTreeStatus: GitFileStatusCode | null;
-};
-
-export type GitBranchInfo = {
-  readonly current: string;
-  readonly tracking: string | null;
-  readonly ahead: number;
-  readonly behind: number;
-  readonly detached: boolean;
-};
-
-export type GitMergeStateType = 'merge' | 'rebase' | 'cherry-pick' | null;
-
-export type GitMergeState = {
-  readonly kind: GitMergeStateType;
-  readonly conflictedFiles: GitFileStatus[];
-};
-
-export type GitConflictBlobs = {
-  readonly base: string | null;
-  readonly ours: string | null;
-  readonly theirs: string | null;
-};
-
-export type GitRepoState = {
-  readonly repoRoot: string;
-  readonly branch: GitBranchInfo;
-  readonly files: GitFileStatus[];
-  readonly hasStash: boolean;
-  readonly mergeState: GitMergeState;
-};
-
-export type GitStashEntry = {
-  readonly index: number;
-  readonly message: string;
-  readonly date: string;
-};
-
-export type GitCommitOptions = {
-  readonly title: string;
-  readonly body?: string;
-};
-
-export type GitLogEntry = {
-  hash: string;
-  date: string;
-  message: string;
-  author: string;
-};
-
-export type GitPullResult = {
-  readonly success: boolean;
-  readonly summary?: string;
-  readonly error?: string;
-  readonly recoverable?: 'rebase' | 'stash-and-retry' | 'merge-conflicts' | null;
-};
-
-export const STATUS_BADGE_MAP: Record<GitFileStatusCode, string | null> = {
+export const STATUS_BADGE_MAP: Record<SourceControlFileStatusCode, string | null> = {
   modified: 'M',
   added: 'A',
   deleted: 'D',
@@ -75,7 +12,7 @@ export const STATUS_BADGE_MAP: Record<GitFileStatusCode, string | null> = {
   ignored: null,
 };
 
-export const STATUS_COLOR_TOKEN_MAP: Record<GitFileStatusCode, string> = {
+export const STATUS_COLOR_TOKEN_MAP: Record<SourceControlFileStatusCode, string> = {
   modified: 'var(--theme-git-modified)',
   added: 'var(--theme-git-added)',
   deleted: 'var(--theme-git-deleted)',
@@ -86,7 +23,7 @@ export const STATUS_COLOR_TOKEN_MAP: Record<GitFileStatusCode, string> = {
   ignored: 'var(--theme-git-ignored)',
 };
 
-export const STATUS_SEVERITY: Record<GitFileStatusCode, number> = {
+export const STATUS_SEVERITY: Record<SourceControlFileStatusCode, number> = {
   ignored: 0,
   untracked: 1,
   added: 2,
@@ -95,11 +32,6 @@ export const STATUS_SEVERITY: Record<GitFileStatusCode, number> = {
   deleted: 3,
   modified: 4,
   conflicted: 5,
-};
-
-export type GitRemoteBranch = {
-  name: string;
-  isHead: boolean;
 };
 
 export type MergeFileEntry = {
@@ -116,3 +48,13 @@ export type MergeProgress = {
 };
 
 export const MERGE_URI = 'merge://resolver';
+
+export type CommitOptions = {
+  readonly title: string;
+  readonly body?: string;
+};
+
+export type HistoryPage = {
+  readonly entries: SourceControlHistoryEntry[];
+  readonly hasMore: boolean;
+};

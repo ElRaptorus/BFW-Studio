@@ -34,11 +34,22 @@ When the direction forbids an import, use one of:
 
 | Kind | Location |
 |---|---|
-| Synchronous pure function | `bifrost/common/*Functions.ts` |
+| Synchronous pure function used by several module families and owned by none | `bifrost/common/*Functions.ts` |
+| Pure function used by one module or one family | that module, or the family's `-core` |
+| Platform capability (file system, HTTP, source control) | abstract service in `bifrost/common/`, one implementation per platform (`electron-renderer/` + `electron-main/`), a `…Default` for the web build, exposed on `bifrost` |
 | React UI piece without module knowledge | `components/` |
 | Async cross-module operation | a command in `std` |
 
+`bifrost/common/` is not a place for code that merely has two callers. If every caller sits in one module or one family, the code lives there.
+
 **One-liner rule:** a one-line expression needed in several places is repeated, not extracted. Extract only when the logic is longer than one line or must stay identical.
+
+## Exports and file splits
+
+- Export only what another file imports today, or what a later phase of an approved plan will import. Everything else stays private to its file.
+- Tests reach private code through the public function that uses it. Do not export for tests.
+- A helper with one caller lives in the caller's file. Do not create a separate file for code with zero or one caller.
+- Split files by purpose, not by size. A file that holds one piece of business logic stays one file, even at 1000 lines.
 
 ## Enforcement
 

@@ -27,6 +27,14 @@
   --theme-cm-invalid: #f44747;
   --theme-cm-matching-bracket-bg: color-mix(in srgb, var(--theme-cm-selection-bg) 70%, transparent);
 
+  // Diff highlights, derived from the validation colours every theme defines.
+  --theme-cm-diff-added: var(--theme-validation-success-fg);
+  --theme-cm-diff-removed: var(--theme-validation-error-fg);
+  --theme-cm-diff-added-line-bg: color-mix(in srgb, var(--theme-cm-diff-added) 12%, transparent);
+  --theme-cm-diff-removed-line-bg: color-mix(in srgb, var(--theme-cm-diff-removed) 12%, transparent);
+  --theme-cm-diff-added-text-bg: color-mix(in srgb, var(--theme-cm-diff-added) 35%, transparent);
+  --theme-cm-diff-removed-text-bg: color-mix(in srgb, var(--theme-cm-diff-removed) 35%, transparent);
+
   // Dark-default rainbow brackets (named dark themes have no `--dark` class).
   --theme-cm-bracket-0: #ffd700;
   --theme-cm-bracket-1: #da70d6;
@@ -153,5 +161,33 @@
 
   .cm-mergeViewEditors {
     height: 100%;
+  }
+}
+
+// `@codemirror/merge` ships fixed light/dark colours in its base theme. These rules replace them with the
+// theme aliases above; the extra `.bifrost` and `.cm-editor` selectors outrank the injected base theme.
+.bifrost [data-code-editor='diff'] .cm-editor {
+  &.cm-merge-a .cm-changedLine {
+    background-color: var(--theme-cm-diff-removed-line-bg);
+  }
+
+  &.cm-merge-b .cm-changedLine {
+    background-color: var(--theme-cm-diff-added-line-bg);
+  }
+
+  &.cm-merge-a .cm-changedText {
+    background: var(--theme-cm-diff-removed-text-bg);
+  }
+
+  &.cm-merge-b .cm-changedText {
+    background: var(--theme-cm-diff-added-text-bg);
+  }
+
+  &.cm-merge-a .cm-changedLineGutter {
+    background: var(--theme-cm-diff-removed);
+  }
+
+  &.cm-merge-b .cm-changedLineGutter {
+    background: var(--theme-cm-diff-added);
   }
 }

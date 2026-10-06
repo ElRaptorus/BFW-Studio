@@ -13,4 +13,8 @@ export default class BpmnDiffingWorkerClient extends AbstractWorkerClient {
 
     return result;
   }
+
+  terminate(): void {
+    this.worker.terminate();
+  }
 }

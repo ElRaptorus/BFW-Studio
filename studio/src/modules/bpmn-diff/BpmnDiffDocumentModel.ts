@@ -31,6 +31,12 @@ export type ElementLike = {
   businessObject?: any;
 } & Record<string, any>;
 
+/**
+ * `visual` shows the two canvases side by side, `xml` shows the two XML sources in a text diff.
+ * Kept in the document metadata, because it is view state.
+ */
+type DiffViewMode = 'visual' | 'xml';
+
 export default class BpmnDiffDocumentModel extends EditorDocumentModel {
   protected bifrost: Bifrost;
   protected fileLoader: ILoadable;
@@ -45,6 +51,8 @@ export default class BpmnDiffDocumentModel extends EditorDocumentModel {
   protected cachedChangeSummary: ChangeSummary | null = null;
 
   private shownXmlAsJson: string;
+  private viewMode: DiffViewMode;
+  private xmlRevision = 0;
   private restoredMetadata: any;
 
   constructor(uri: string, restoredCurrentData: any, restoredMetadata: any, fileLoader: ILoadable, bifrost: Bifrost) {
@@ -57,6 +65,7 @@ export default class BpmnDiffDocumentModel extends EditorDocumentModel {
     this.fileLoader = fileLoader;
     this.bifrost = bifrost;
     this.restoredMetadata = restoredMetadata;
+    this.viewMode = restoredMetadata?.viewMode === 'xml' ? 'xml' : 'visual';
 
     this.bpmnViewerBefore = new BpmnViewerWithSync();
     this.bpmnViewerAfter = new BpmnViewerWithSync();
@@ -156,6 +165,34 @@ export default class BpmnDiffDocumentModel extends EditorDocumentModel {
     const { data } = parseOpenInNewTabUrl(this.uri);
 
     return data.afterUri;
+  }
+
+  getBeforeXml(): string {
+    return this.bpmnDiff?.beforeXml ?? '';
+  }
+
+  getAfterXml(): string {
+    return this.bpmnDiff?.afterXml ?? '';
+  }
+
+  /**
+   * Increases whenever the compared XML changed, so a mounted XML diff can be re-created.
+   */
+  getXmlRevision(): number {
+    return this.xmlRevision;
+  }
+
+  getViewMode(): DiffViewMode {
+    return this.viewMode;
+  }
+
+  setViewMode(viewMode: DiffViewMode): void {
+    if (viewMode === this.viewMode) {
+      return;
+    }
+
+    this.viewMode = viewMode;
+    this.updateMetadata({ viewMode });
   }
 
   getCurrentAndMaxChanges(): CurrentAndMaxChanges {
@@ -260,6 +297,7 @@ export default class BpmnDiffDocumentModel extends EditorDocumentModel {
       return;
     }
     this.shownXmlAsJson = xmlAsJson;
+    this.xmlRevision++;
   }
 
   protected async initialize(): Promise<void> {

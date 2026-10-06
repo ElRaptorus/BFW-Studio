@@ -30,10 +30,22 @@ See [settings.md](architecture/settings.md).
 
 **Options:** Document the direction only; or document it, move the crossing code, and enforce it with ESLint. For the plugin bridges: keep them in the host, or let modules register them through a contract.
 
-**Decision:** `bifrost/` and `components/` import no module. Engine modules may import everything; nothing imports them. bpmn and dmn modules may import only the other family's `-core` module, because the Business Rule Task couples the two. Editors never import `git-cruiser`. Shared pure functions go to `bifrost/common/`, and a one-liner is repeated instead of extracted. Modules register `api.bpmn` / `api.dmn` as `PluginApiNamespace`. ESLint zones enforce the direction.
+**Decision:** `bifrost/` and `components/` import no module. Engine modules may import everything; nothing imports them. bpmn and dmn modules may import only the other family's `-core` module, because the Business Rule Task couples the two. Editors never import `git-cruiser`. Pure functions shared by several families and owned by none go to `bifrost/common/`; code whose callers sit in one module or family stays there. A one-liner is repeated instead of extracted. Modules register `api.bpmn` / `api.dmn` as `PluginApiNamespace`. ESLint zones enforce the direction.
 
 **Rationale:** A rule that is not enforced erodes again, and inverting the plugin bridges is the only way to keep the host free of module code.
 
 See [imports-and-modules.md](architecture/imports-and-modules.md) and [plugin-host.md](architecture/plugin-host.md).
+
+## Source control as a core service
+
+**Context:** git lived in `git-cruiser`, but its IPC channels, history wire format, main-process handlers and digest helpers had leaked into `bifrost/contracts/`, `bifrost/common/` and `bifrost/electron-main/`. The core used git without offering it, and the module imported `electron` directly, which the web build cannot provide.
+
+**Options:** Move everything back into `git-cruiser` and treat git as module-only; make it a core service; or split into a core service plus a module-owned provider registry.
+
+**Decision:** Core service `bifrost.sourceControl` (`SourceControlService`), built like `bifrost.files`: abstract class in `bifrost/common/`, `SourceControlServiceElectron` in the renderer, handlers in `electron-main/git/`, `SourceControlServiceDefault` (unavailable) for the web build. The construct is named "source control", not "git", so a provider registry can replace the single implementation later without new terms. `git-cruiser` keeps state (`RepositoryStore`) and all UI. Change digest builders moved to `bpmn-core`, the formatter to `git-cruiser`.
+
+**Rationale:** Platform capabilities already follow this pattern, and it keeps `electron` out of modules.
+
+See [source-control.md](architecture/source-control.md).
 
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

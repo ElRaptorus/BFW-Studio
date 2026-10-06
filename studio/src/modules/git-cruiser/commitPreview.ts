@@ -1,13 +1,10 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-
-import type { GitService } from './GitService';
-import type { GitFileStatus } from './GitTypes';
+import type { SourceControlFileStatus } from '#bifrost/contracts/SourceControlTypes';
 
 export async function buildChangeSummaryForFiles(
   bifrost: Bifrost,
-  gitService: GitService,
   repoRoot: string,
-  stagedFiles: GitFileStatus[],
+  stagedFiles: SourceControlFileStatus[],
 ): Promise<string | null> {
   if (stagedFiles.length === 0) {
     return null;
@@ -21,7 +18,7 @@ export async function buildChangeSummaryForFiles(
 
     let headXml: string;
     try {
-      headXml = await gitService.showFileAtRef(repoRoot, `HEAD:${relativePath}`);
+      headXml = await bifrost.sourceControl.getFileContentAtRevision(repoRoot, 'HEAD', relativePath);
     } catch {
       summaryParts.push(`- **${relativePath}**: new file (untracked)`);
       continue;

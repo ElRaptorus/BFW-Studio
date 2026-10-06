@@ -1,6 +1,7 @@
 import { parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EditorDocument, EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { EVENT_DATA_UPDATED, EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
+import { DiffEditor } from '#components/DiffEditor';
 import { Icon } from '#components/Icon';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
@@ -97,6 +98,9 @@ export default function DmnDiffDocumentRenderer(props: EditorDocumentRendererPro
             if (metadata?.errorWhileReload != null && metadata.errorWhileReload.trim() !== '') {
               setErrorWhileLoading(metadata.errorWhileReload);
             }
+            if (metadata?.viewMode != null) {
+              forceRender();
+            }
           }),
           loadedModel.on(EVENT_RELOADING, () => {
             setErrorWhileLoading(null);
@@ -145,6 +149,22 @@ export default function DmnDiffDocumentRenderer(props: EditorDocumentRendererPro
       });
     }
   });
+
+  const viewMode = model?.getViewMode() ?? 'visual';
+
+  // The canvases were measured while hidden (or not at all), so fit them again when they become visible.
+  useEffect(() => {
+    if (viewMode === 'visual' && model?.isReadyForInteraction()) {
+      model.zoomToViewport();
+
+      const selectedElements = model.getSelectedElements();
+      if (selectedElements != null && selectedElements.length > 0) {
+        void model.zoomToElements(selectedElements.map((element) => element.id));
+      }
+    }
+    // Only a change of the view mode should re-fit; the model reference is stable once loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
 
   if (errorWhileLoading != null || editorDocument.metadata?.errorWhileReload != null) {
     const errorMessage = errorWhileLoading || editorDocument.metadata?.errorWhileReload;
@@ -228,37 +248,77 @@ export default function DmnDiffDocumentRenderer(props: EditorDocumentRendererPro
           <EditorTitleText studio={bifrost} label={beforeFilename} sublabel={sublabel} />
         </EditorTitleLeft>
         <EditorTitleRight>
-          <span className="editor-title__item">
-            Change {currentChangeNumber || '-'} / {maxChangeNumber}
-          </span>
-          <span className="editor-title__item" onClick={() => model.selectPreviousChange()}>
-            <Icon id="ph-light ph-caret-left" />
-          </span>
-          <span className="editor-title__item" onClick={() => model.selectNextChange()}>
-            <Icon id="ph-light ph-caret-right" />
-          </span>
+          {viewMode === 'visual' && (
+            <>
+              <span className="editor-title__item">
+                Change {currentChangeNumber || '-'} / {maxChangeNumber}
+              </span>
+              <span className="editor-title__item" onClick={() => model.selectPreviousChange()}>
+                <Icon id="ph-light ph-caret-left" />
+              </span>
+              <span className="editor-title__item" onClick={() => model.selectNextChange()}>
+                <Icon id="ph-light ph-caret-right" />
+              </span>
+            </>
+          )}
         </EditorTitleRight>
       </EditorTitle>
 
       <EditorToolbar>
-        <EditorToolbarLeft />
+        <EditorToolbarLeft>
+          {parsedFragmentUri.data.sourceFileUri != null && (
+            <EditorToolbarButton
+              studio={bifrost}
+              icon="ph ph-file-text"
+              label="Open File"
+              tooltip="Open the file these versions belong to"
+              command="std.editor.focusOrOpenDocument"
+              commandArgs={[parsedFragmentUri.data.sourceFileUri]}
+              dataTestId="diff-open-file"
+            />
+          )}
+        </EditorToolbarLeft>
         <EditorToolbarCenter>
-          <EditorToolbarButton
-            studio={bifrost}
-            icon="ph ph-arrows-out"
-            tooltip="Zoom to viewport"
-            command="std.editor.zoomToViewport"
-            commandArgs={[editorDocument]}
-          />
-          <EditorToolbarButton
-            studio={bifrost}
-            icon="ph ph-arrows-in"
-            tooltip="Zoom to actual size"
-            command="std.editor.zoomToActualSize"
-            commandArgs={[editorDocument]}
-          />
+          {viewMode === 'visual' && (
+            <>
+              <EditorToolbarButton
+                studio={bifrost}
+                icon="ph ph-arrows-out"
+                tooltip="Zoom to viewport"
+                command="std.editor.zoomToViewport"
+                commandArgs={[editorDocument]}
+              />
+              <EditorToolbarButton
+                studio={bifrost}
+                icon="ph ph-arrows-in"
+                tooltip="Zoom to actual size"
+                command="std.editor.zoomToActualSize"
+                commandArgs={[editorDocument]}
+              />
+            </>
+          )}
         </EditorToolbarCenter>
         <EditorToolbarRight>
+          <EditorToolbarButton
+            studio={bifrost}
+            className={viewMode === 'visual' ? 'editor-toolbar__button--active' : ''}
+            icon="ph ph-columns"
+            label="Visual"
+            tooltip="Compare the diagrams side by side"
+            command="dmn.diff.showVisualView"
+            commandArgs={[editorDocument]}
+            dataTestId="diff-view-visual"
+          />
+          <EditorToolbarButton
+            studio={bifrost}
+            className={viewMode === 'xml' ? 'editor-toolbar__button--active' : ''}
+            icon="ph ph-code"
+            label="XML"
+            tooltip="Compare the XML sources line by line"
+            command="dmn.diff.showXmlView"
+            commandArgs={[editorDocument]}
+            dataTestId="diff-view-xml"
+          />
           <EditorToolbarButton
             studio={bifrost}
             icon="ph ph-list-checks"
@@ -272,7 +332,7 @@ export default function DmnDiffDocumentRenderer(props: EditorDocumentRendererPro
 
       <EditorContent>
         <SplitterLayout
-          customClassName="splitter-layout--bpmn-diff"
+          customClassName={`splitter-layout--bpmn-diff${viewMode === 'xml' ? ' diff-view--hidden' : ''}`}
           percentage={true}
           secondaryInitialSize={50}
           primaryMinSize={10}
@@ -285,6 +345,18 @@ export default function DmnDiffDocumentRenderer(props: EditorDocumentRendererPro
             <div className="diff-title diff-title--after">After</div>
           </div>
         </SplitterLayout>
+        {viewMode === 'xml' && (
+          <div className="diff-xml-view">
+            <DiffEditor
+              key={model.getXmlRevision()}
+              studio={bifrost}
+              language="xml"
+              readOnly={true}
+              beforeValue={model.getBeforeXml()}
+              afterValue={model.getAfterXml()}
+            />
+          </div>
+        )}
         <div className="editor-loading__backdrop" ref={loadingIndicatorRef}>
           <div className="editor-loading__content ph-3x">
             <Icon id="ph-light ph-gear ph-spin" />

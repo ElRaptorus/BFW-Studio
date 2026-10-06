@@ -47,6 +47,19 @@
     flex: 1;
   }
 
+  // Visual | XML switch: the canvases stay mounted while the XML diff is shown.
+  .splitter-layout--bpmn-diff.diff-view--hidden {
+    display: none;
+  }
+
+  .diff-xml-view {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
   .splitter-layout--bpmn-diff > .layout-splitter,
   .splitter-layout--bpmn-merge > .layout-splitter {
     width: 4px;
