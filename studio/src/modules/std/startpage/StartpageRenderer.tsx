@@ -1,7 +1,6 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { FileHandlingService } from '#bifrost/common/FileHandlingService';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
-import { Checkbox } from '#components/Checkbox';
 import { Icon } from '#components/Icon';
 import ProductNameHeadline from '#components/ProductNameHeadline';
 import { Editor } from '#components/editor/Editor';
@@ -19,11 +18,6 @@ const FLAVOR_BOTTOM = 'Toll the great Bell Thrice! Sing praise to the God of all
 export default function StartpageRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const bifrost = props.studio;
   const cmd = bifrost.commands.getClickHandler();
-
-  const openOnStartupValue = bifrost.settings.get('startpage.general.openOnStartupIfEmpty');
-  const changeOpenOnStartupValue = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    bifrost.settings.set('startpage.general.openOnStartupIfEmpty', event.target.checked);
-  };
 
   const [tip] = useState<React.JSX.Element | null>(
     bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText'),
@@ -161,11 +155,6 @@ export default function StartpageRenderer(props: EditorDocumentRendererProps): R
             </div>
 
             <div className="startpage__footer">
-              <Checkbox
-                checked={openOnStartupValue}
-                onChange={(event) => changeOpenOnStartupValue(event)}
-                label="Show Welcome Page at startup"
-              />
               <p className="startpage__tip">
                 <b>Did you know?</b> {tip}
               </p>

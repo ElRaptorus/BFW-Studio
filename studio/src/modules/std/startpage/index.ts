@@ -74,26 +74,12 @@ export function loadStartPage(bifrost: Bifrost): void {
   });
   bifrost.commands.register('std.startpage.getExtraRenderer', () => startPageExtraRenderer);
 
-  bifrost.settings.register({
-    'startpage.general.openOnStartupIfEmpty': {
-      category: 'Start Page',
-      type: 'boolean',
-      label: 'Open Start Page on Startup',
-      description: 'Show the start page when the Studio opens with no documents.',
-      default: true,
-    },
+  bifrost.events.on('ready', () => {
+    const openEditorDocuments = bifrost.editors.getOpenEditorDocuments();
+    if (openEditorDocuments.length !== 0) {
+      return;
+    }
+
+    bifrost.commands.executeCommand('std.startpage.open');
   });
-
-  const openOnStartup = bifrost.settings.get('startpage.general.openOnStartupIfEmpty');
-
-  if (openOnStartup) {
-    bifrost.events.on('ready', () => {
-      const openEditorDocuments = bifrost.editors.getOpenEditorDocuments();
-      if (openEditorDocuments.length !== 0) {
-        return;
-      }
-
-      bifrost.commands.executeCommand('std.startpage.open');
-    });
-  }
 }
