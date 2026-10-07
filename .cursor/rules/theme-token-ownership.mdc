@@ -43,7 +43,8 @@ Themed CSS overrides for third-party library elements (e.g., bpmn-js `.djs-palet
 
 | Module | Token prefixes | SCSS file |
 |-----------|---------------|-----------|
-| `bpmn-editor` | `--theme-diagram-*`, `--theme-color-picker-*` | `bpmn-editor/styles/bpmn.scss` |
+| Core (`bifrost/styles`) | `--theme-diagram-*`, `--color-bpmn-defaultFillColor`, `--color-bpmn-defaultStrokeColor` | `theme.light.scss`, `theme.dark.scss` |
+| `bpmn-editor` | `--theme-color-picker-*`, `--color-bpmn-editor-icon-primary` | `bpmn-editor/styles/bpmn.scss` |
 | `bpmn-diff` | `--theme-diff-*` | `bpmn-diff/styles/component.bpmn-diff.scss` |
 | `engine-debugger` | `--color-engine__debugger-*`, `--color-flow-node-*` | `engine-debugger/EngineDebugger.scss` |
 | `engine-browser` | `--color-engine__browser-*` | `engine-browser/EngineBrowser.scss` |

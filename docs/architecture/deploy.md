@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `engine-deploy` module owns the Deploy category's page `deploy/plan`. The user picks BPMN and DMN files in a read-only Deploy Explorer; the page `deploy://plan` analyses them against the active Engine and deploys one request per file, DMN first. Engine connectivity and the shared deploy commands: [engine.md](engine.md). The file scan: [modules.md](modules.md) §solution-models. Category and page registry: [workbench-categories.md](workbench-categories.md).
+The `engine-deploy` module owns the Deploy category's page `deploy/plan`. The user picks BPMN and DMN files in a read-only Deploy Explorer; the page `deploy://plan` analyses them against the active Engine and deploys one request per file, DMN first. Engine connectivity and the shared deploy commands: [engine.md](engine.md). The file scan: `engine-deploy/analysis/scanSolutionModels.ts`, which joins `bpmn-core/scanSolutionBpmnModels` and `dmn-core/scanSolutionDmnModels` ([modules.md](modules.md)). Category and page registry: [workbench-categories.md](workbench-categories.md).
 
 ## Module (`studio/src/modules/engine-deploy/`)
 
@@ -36,7 +36,7 @@ The plan table shows icon, file name with the folder as a muted second line (`de
 
 ## Model
 
-`DeployPlanDocumentModel` keeps `planUris`, `includedUris`, `selectedUri`, `entries`, `snapshot`, `analysis` and `results` as private fields behind getters. `refresh()` scans (`solution.models.scan`), fetches the snapshot and recomputes; a sequence counter discards stale runs. `recomputeLocal()` re-analyses without network. Triggers:
+`DeployPlanDocumentModel` keeps `planUris`, `includedUris`, `selectedUri`, `entries`, `snapshot`, `analysis` and `results` as private fields behind getters. `refresh()` scans (`scanSolutionModels`), fetches the snapshot and recomputes; a sequence counter discards stale runs. `recomputeLocal()` re-analyses without network. Triggers:
 
 - `engine:connected`, `engine:disconnected`, `engine:connection-lost`, `engine:reconnected`, `engine:auth-token-changed`, and a settings change touching the active Engine: `refresh()`.
 - `EVENT_EDITOR_DOCUMENT_DATA_UPDATED`, debounced 300 ms, and document focus: `recomputeLocal()` (unsaved changes).

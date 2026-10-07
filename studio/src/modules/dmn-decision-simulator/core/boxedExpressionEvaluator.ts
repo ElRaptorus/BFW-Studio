@@ -10,6 +10,7 @@ import type {
   DmnBoxedList,
   DmnBoxedSome,
   DmnDecisionTable,
+  DmnDefinitions,
   DmnExpressionBody,
   DmnFunctionDefinition,
   DmnLiteralExpression,
@@ -19,7 +20,6 @@ import type {
 import { findBusinessKnowledgeModelByName, invokeBusinessKnowledgeModel } from './bkmInvoker';
 import { evaluateDecisionTable } from './decisionTableEvaluator';
 import { evaluateExpression } from './feel';
-import { iteratorKindOf } from './iteratorKinds';
 import type { EvaluationEnvironment, FeelContext } from './types';
 import { SimulationError } from './types';
 
@@ -178,4 +178,30 @@ function toFeelFunction(
       ),
     parameterNames,
   );
+}
+
+type IteratorKind = 'every' | 'some';
+
+const kindsByDefinitions = new WeakMap<DmnDefinitions, Map<string, IteratorKind>>();
+
+const ITERATOR_ELEMENT = /<(?:[\w.-]+:)?(every|some)\b([^>]*)>/g;
+const IDENTIFIER_ATTRIBUTE = /\bid\s*=\s*["']([^"']+)["']/;
+
+/**
+ * The parsed model represents `<every>` and `<some>` with the same shape (`satisfiesExpression`), so the element
+ * kind is recovered from the raw XML by element id. An iterator without an id defaults to `every`.
+ */
+function iteratorKindOf(definitions: DmnDefinitions, body: DmnBoxedEvery | DmnBoxedSome): IteratorKind {
+  let kinds = kindsByDefinitions.get(definitions);
+  if (kinds == null) {
+    kinds = new Map();
+    for (const match of definitions.rawXml.matchAll(ITERATOR_ELEMENT)) {
+      const identifier = IDENTIFIER_ATTRIBUTE.exec(match[2])?.[1];
+      if (identifier != null) {
+        kinds.set(identifier, match[1] as IteratorKind);
+      }
+    }
+    kindsByDefinitions.set(definitions, kinds);
+  }
+  return (body.id != null ? kinds.get(body.id) : undefined) ?? 'every';
 }

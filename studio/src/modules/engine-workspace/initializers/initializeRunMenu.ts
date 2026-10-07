@@ -69,7 +69,7 @@ interface BpmnDeployResult {
  * version-conflict retry loop. Returns null when the user cancels a dialog
  * or an unrecoverable error occurs.
  */
-export async function deployFocusedBpmnFile(
+async function deployFocusedBpmnFile(
   bifrost: Bifrost,
   connectionManager: EngineConnectionManager,
   options?: { allowRunExistingOnConflict?: boolean },

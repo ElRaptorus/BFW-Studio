@@ -10,6 +10,8 @@ import type {
 import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
+import type { BpmnViewerComponentAdapter } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
+import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
 import type { EngineConnectionManager, RetryContext, RetryResult } from '#modules/engine-core';
 import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
 import * as json5 from 'json5';
@@ -17,11 +19,9 @@ import * as json5 from 'json5';
 import type { FlowNodeInstance, ProcessInstance, StartRequest, StartResult } from '@elraptorus/bfw_engine_sdk';
 import { FlowNodeType, FniNotWaitingError, ProcessInstanceState } from '@elraptorus/bfw_engine_sdk';
 
-import { DataObjectDetailLevel } from '../../bpmn-core/DataObjectDetailsSettings';
 import { DMN_TRACE_DOCUMENT_TYPE, ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import type { DmnTraceFragmentModel } from '../dmn-trace/DmnTraceFragmentModel';
-import { getCustomPropertyFromViewer } from '../libs/BpmnCustomPropertyAccessor';
 import { renderToPng, renderToSvg } from '../libs/BpmnExportFunctions';
 import { getUserTaskFormActions, getUserTaskFormFields } from '../libs/BpmnFlowNodeAccessors';
 import { getFlowNodeById } from '../libs/BpmnProcessHelpers';
@@ -1061,4 +1061,41 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
 
     await bifrost.files.save(localFileName, exportFileContent);
   }
+}
+
+/**
+ * Reads an `bfw:Property` value from the raw moddle business object of a BPMN element in the viewer.
+ * This bypasses the SDK-parsed model, which is the only way to reach studio-internal custom properties
+ * like `studio.examplePayload` that the SDK parser does not expose.
+ */
+function getCustomPropertyFromViewer(
+  adapter: BpmnViewerComponentAdapter | null,
+  elementId: string,
+  propertyName: string,
+): string | null {
+  if (!adapter) {
+    return null;
+  }
+
+  const element = adapter.getElementRegistry().get(elementId);
+  if (!element) {
+    return null;
+  }
+
+  const businessObject = (element as any).businessObject;
+  if (!businessObject?.extensionElements?.values) {
+    return null;
+  }
+
+  for (const extension of businessObject.extensionElements.values) {
+    if (extension.$type === 'bfw:Properties' && Array.isArray(extension.values)) {
+      for (const property of extension.values) {
+        if (property.$type === 'bfw:Property' && property.name === propertyName) {
+          return typeof property.value === 'string' ? property.value : null;
+        }
+      }
+    }
+  }
+
+  return null;
 }

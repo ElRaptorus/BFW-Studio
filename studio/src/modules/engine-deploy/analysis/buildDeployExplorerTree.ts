@@ -1,5 +1,6 @@
 import type { TreeItem } from '#bifrost/contracts/TreeTypes';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
+
+import type { SolutionModelEntry } from './scanSolutionModels';
 
 export type DeployExplorerMode = 'file' | 'project';
 

@@ -20,7 +20,7 @@ import { FIELD_TYPE_DESCRIPTORS } from '../constants';
 const FORM_BUILDER_DOCUMENT_TYPE = 'bpmn.form-builder';
 const HELP_ID = 'bpmn/properties/form_builder_field';
 
-export function withPattern(field: FormFieldDefinition, pattern: string): FormFieldDefinition {
+function withPattern(field: FormFieldDefinition, pattern: string): FormFieldDefinition {
   const remainingRules = (field.validationRules ?? []).filter((entry) => entry.type !== 'pattern');
   const patternRule: FormFieldValidationRule[] = pattern === '' ? [] : [{ type: 'pattern', value: pattern }];
   const validationRules = [...remainingRules, ...patternRule];
@@ -31,7 +31,7 @@ export function withPattern(field: FormFieldDefinition, pattern: string): FormFi
   };
 }
 
-export function patternValue(field: FormFieldDefinition): string {
+function patternValue(field: FormFieldDefinition): string {
   const rule = field.validationRules?.find((entry) => entry.type === 'pattern');
   return typeof rule?.value === 'string' ? rule.value : '';
 }

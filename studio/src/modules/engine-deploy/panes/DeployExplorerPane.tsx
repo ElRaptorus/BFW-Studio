@@ -7,12 +7,13 @@ import { Tree } from '#components/Tree/Tree';
 import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { DeployExplorerMode } from '../analysis/buildDeployExplorerTree';
 import { buildDeployExplorerTree } from '../analysis/buildDeployExplorerTree';
+import type { SolutionModelEntry } from '../analysis/scanSolutionModels';
+import { scanSolutionModels } from '../analysis/scanSolutionModels';
 import { DEPLOY_EXPLORER_VIEW_ID, getPlanModelIfPresent, onExplorerRescanRequested } from '../commands';
 
 export const paneProvider: PaneProvider = {
@@ -70,13 +71,11 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   useEffect(() => {
     let cancelled = false;
-    void bifrost.commands
-      .executeCommand('solution.models.scan', [])
-      .then((scanned: SolutionModelEntry[] | undefined) => {
-        if (!cancelled) {
-          setEntries(scanned ?? []);
-        }
-      });
+    void scanSolutionModels(bifrost).then((scanned) => {
+      if (!cancelled) {
+        setEntries(scanned);
+      }
+    });
     return () => {
       cancelled = true;
     };

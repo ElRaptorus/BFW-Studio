@@ -524,7 +524,7 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | Git Error Notification | `studio/src/modules/git-cruiser/dialogs/gitErrorNotification.ts` |
 | **Merge Document Model** | `studio/src/modules/git-cruiser/merge/MergeDocumentModel.ts` |
 | **Merge Document Renderer** | `studio/src/modules/git-cruiser/merge/MergeDocumentRenderer.tsx` |
-| **Merge Resolution Utility** | `studio/src/modules/git-cruiser/merge/writeResolvedFile.ts` |
+| **Merge Resolution Utility** | `writeResolvedFile` / `removeResolvedFile` in `studio/src/modules/git-cruiser/initializers/initializeCommands.ts` |
 | **Merge Styles (generic)** | `studio/src/modules/git-cruiser/merge/styles/component.merge-editor.scss` |
 | **BPMN Merge Resolver** | `studio/src/modules/bpmn-editor/merge/BpmnMergeResolver.tsx` |
 | **BPMN Merge Change Overview Pane** | `studio/src/modules/bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx` |

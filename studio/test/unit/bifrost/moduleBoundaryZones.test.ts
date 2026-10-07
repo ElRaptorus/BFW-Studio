@@ -23,6 +23,9 @@ describe('module boundary ESLint zones', () => {
     ['src/modules/bpmn-editor/Probe.ts', '#modules/dmn-decision-simulator'],
     ['src/modules/bpmn-editor/Probe.ts', '#modules/git-cruiser/GitTypes'],
     ['src/modules/dmn-core/Probe.ts', '#modules/engine-core'],
+    ['src/bifrost/common/Probe.ts', '../../../test/unit/support/x'],
+    ['src/modules/engine-deploy/Probe.ts', '../../../test/x'],
+    ['src/types/Probe.ts', '../../test/x'],
   ])('%s may not import %s', async (importingFile, importPath) => {
     expect(await boundaryViolations(importingFile, importPath)).toBe(1);
   });

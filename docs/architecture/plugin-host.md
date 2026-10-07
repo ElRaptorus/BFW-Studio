@@ -639,7 +639,6 @@ The Plugin Host Console pane surfaces `stdout`/`stderr` output from the Plugin H
 | `studio/src/bifrost/common/plugin-host/permissions/pluginInstallDestination.ts` | Shared | Safe `package.json` name check and install destination (`plugins/<name>` or `plugins/@scope/<name>`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/PluginPermissionDialog.ts` | Renderer | Permission review dialog on enable/reload |
 | `studio/src/bifrost/common/plugin-host/PluginPermissionStore.ts` | Shared | Local-storage-backed permission trust records (per plugin) |
-| `studio/src/bifrost/common/plugin-host/callbackRegistry.ts` | Worker | Per-worker O(1) callback lookup inside `sandbox-worker.ts` |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframeDocumentRenderer.tsx` | Renderer | Factory creating iframe-backed editor document renderers (`createIframeDocumentRendererConstructor`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/IframePaneProvider.tsx` | Renderer | Factory creating iframe-backed pane providers (`createIframePaneProvider`) |
 | `studio/src/bifrost/electron-renderer/plugin-host/TreeViewPaneProvider.tsx` | Renderer | Factory creating tree-view pane providers (`createTreeViewPaneProvider`) hosting the Studio `Tree` component |

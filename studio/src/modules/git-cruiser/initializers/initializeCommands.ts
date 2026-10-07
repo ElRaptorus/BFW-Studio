@@ -14,7 +14,6 @@ import type { RepositoryStore } from '../RepositoryStore';
 import { buildChangeSummaryForFiles } from '../commitPreview';
 import { getProtectedDiagramPatterns } from '../config/ProjectConfig';
 import { openCommitDialog } from '../dialogs/commitDialog';
-import { confirmRevert } from '../dialogs/confirmRevertDialog';
 import {
   showBranchCreateError,
   showCommitError,
@@ -30,7 +29,6 @@ import { suggestGitignore } from '../dialogs/suggestGitignoreDialog';
 import { openChangeDiff, showGitDiffForFile } from '../diffFromGit';
 import { showFileHistory } from '../fileHistory';
 import type MergeDocumentModel from '../merge/MergeDocumentModel';
-import { removeResolvedFile, writeResolvedFile } from '../merge/writeResolvedFile';
 import { DIGEST_COMMANDS } from '../overview/SourceOverviewDocumentModel';
 
 const MAXIMUM_TITLE_LENGTH = 72;
@@ -2134,4 +2132,63 @@ async function buildChangeSummaryForDmnFiles(
   }
 
   return summaryParts.join('\n\n');
+}
+
+async function confirmRevert(bifrost: Bifrost, filePath: string): Promise<boolean> {
+  const shouldConfirm = bifrost.settings.get('gitCruiser.confirm.revertFile') !== false;
+  if (!shouldConfirm) {
+    return true;
+  }
+
+  const fileName = filePath.split('/').pop() ?? filePath;
+
+  const result = await bifrost.dialog.open({
+    title: 'Revert Changes',
+    content: [
+      {
+        type: 'text',
+        text: `Are you sure you want to revert all changes to \`${fileName}\`?\nThis action cannot be undone.`,
+      },
+      { type: 'divider' },
+      {
+        type: 'checkbox',
+        id: 'doNotAskAgain',
+        label: `Don't ask again`,
+      },
+    ],
+    actions: [
+      { label: 'Cancel', response: 'cancel', cancel: true },
+      { label: 'Revert', response: 'revert', dangerous: true, default: true },
+    ],
+  });
+
+  if (result.formData?.doNotAskAgain === true) {
+    bifrost.settings.set('gitCruiser.confirm.revertFile', false);
+  }
+
+  return result?.response === 'revert';
+}
+
+async function writeResolvedFile(
+  bifrost: Bifrost,
+  repositoryStore: RepositoryStore,
+  repoRoot: string,
+  relativePath: string,
+  content: string,
+  options?: { stage?: boolean },
+): Promise<void> {
+  // save() decodes the URI, so the path is encoded to survive characters like `%`
+  await bifrost.files.save(`file://${encodeURI(path.join(repoRoot, relativePath))}`, content);
+
+  if (options?.stage) {
+    await repositoryStore.stage(repoRoot, [relativePath]);
+  }
+}
+
+async function removeResolvedFile(
+  repositoryStore: RepositoryStore,
+  repoRoot: string,
+  relativePath: string,
+): Promise<void> {
+  await repositoryStore.remove(repoRoot, [relativePath]);
 }

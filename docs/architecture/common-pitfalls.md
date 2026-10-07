@@ -210,7 +210,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 **Why**: `concat` copies indexed properties into bare cells and the bar fills with digits.
 
-**Correct approach**: Run factory output through `normalizeStatusBarItems` before concat. See [`status-bar.md`](status-bar.md).
+**Correct approach**: `StatusBarManager` normalizes each factory result before concat. See [`status-bar.md`](status-bar.md).
 
 ---
 

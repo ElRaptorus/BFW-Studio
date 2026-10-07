@@ -1,6 +1,6 @@
+import { sha256Hex } from '#bifrost/common/HashFunctions';
 import { fetchEngineSnapshot } from '#modules/engine-deploy/analysis/fetchEngineSnapshot';
 import type { SnapshotClient } from '#modules/engine-deploy/analysis/fetchEngineSnapshot';
-import { sha256Hex } from '#modules/solution-models/scanSolutionModels';
 import { describe, expect, it } from 'vitest';
 
 function createClient(overrides: Partial<SnapshotClient> = {}): { client: SnapshotClient; requested: string[] } {

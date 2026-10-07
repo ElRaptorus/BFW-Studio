@@ -3,7 +3,7 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { generateRandomId, getRoot } from './Utils/Utils';
+import { generateRandomId, getRoot } from './ModdleElementFunctions';
 
 const MODDLE_BPMN_ESCALATION_EVENT_DEFINITION_TYPE = 'bpmn:EscalationEventDefinition';
 const MODDLE_BPMN_ESCALATION_TYPE = 'bpmn:Escalation';

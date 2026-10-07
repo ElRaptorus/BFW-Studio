@@ -16,7 +16,7 @@ import { PaneProperty } from '@elraptorus/bfw_studio_sdk';
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { SequenceFlow } from '../../libs';
 import { getAllSequenceFlows } from '../../libs/BpmnProcessHelpers';
-import { getConditionExpressionText } from '../../libs/typeHelpers';
+import { getConditionExpressionText } from '../../libs/conditionExpressionText';
 import { PlainSequenceFlowLink } from '../FlowNodeInstanceLinks';
 import { shouldDisplaySequenceFlowInfoPane } from '../ShouldBeDisplayedConditions';
 

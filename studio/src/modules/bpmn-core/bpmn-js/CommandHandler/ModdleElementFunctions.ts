@@ -1,9 +1,7 @@
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
 const MODDLE_BPMN_EXCLUSIVE_GATEWAY = 'bpmn:ExclusiveGateway';
-
 const MODDLE_BPMN_INCLUSIVE_GATEWAY = 'bpmn:InclusiveGateway';
-
 const MODDLE_BPMN_COMPLEX_GATEWAY = 'bpmn:ComplexGateway';
 
 export function getRoot(businessObject: any): any {
@@ -27,22 +25,10 @@ export function generateRandomId(): string {
   return randomId;
 }
 
-export function isSequenceFlowDefault(element: ElementLike): boolean {
-  return element.businessObject.sourceRef?.default?.id === element.id;
-}
-
 export function isSequenceFlowConditional(element: ElementLike): boolean {
   const flowSourceIsExclusiveGateway = element.businessObject.sourceRef?.$type === MODDLE_BPMN_EXCLUSIVE_GATEWAY;
   const flowSourceIsInclusiveSplitGateway = element.businessObject.sourceRef?.$type === MODDLE_BPMN_INCLUSIVE_GATEWAY;
   const flowSourceIsComplexGateway = element.businessObject.sourceRef?.$type === MODDLE_BPMN_COMPLEX_GATEWAY;
 
   return flowSourceIsExclusiveGateway || flowSourceIsInclusiveSplitGateway || flowSourceIsComplexGateway;
-}
-
-export function isHttpServiceTask(element: ElementLike): boolean {
-  return element.businessObject?.get('implementation') === 'http';
-}
-
-export function isEventSubprocess(element: ElementLike): boolean {
-  return element.businessObject?.get('triggeredByEvent') === true;
 }

@@ -3,7 +3,7 @@ import type { MenuBarItem } from '#bifrost/contracts/MenuBarTypes';
 
 import type { CustomRulesetEntry } from '../types';
 
-export function listLinterProfileEntries(
+function listLinterProfileEntries(
   profileName: string | undefined,
   customRulesets: Record<string, CustomRulesetEntry>,
 ): { entries: { value: string; label: string }[]; activeProfile: string } {
@@ -21,7 +21,7 @@ export function listLinterProfileEntries(
   return { entries, activeProfile };
 }
 
-export function profileOriginSuffix(bifrost: Bifrost): string {
+function profileOriginSuffix(bifrost: Bifrost): string {
   const definedIn = bifrost.settings.inspect('bpmnLinter.profile').definedIn;
   if (definedIn === 'solution') {
     return ' (Solution)';
@@ -36,7 +36,7 @@ export function profileOriginSuffix(bifrost: Bifrost): string {
 }
 
 /** The ruleset icon and select, shown while a BPMN document is focused — whether or not live linting is on. */
-export function buildLinterPageBarItems(bifrost: Bifrost): MenuBarItem[] {
+function buildLinterPageBarItems(bifrost: Bifrost): MenuBarItem[] {
   if (bifrost.editors.getFocusedEditorDocument()?.documentType !== 'bpmn') {
     return [];
   }

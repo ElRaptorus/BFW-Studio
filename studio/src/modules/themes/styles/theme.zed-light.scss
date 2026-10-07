@@ -373,7 +373,7 @@
   // ─── BPMN / Diagram ───────────────────────────────
   --color-bpmn-defaultFillColor: #fafafa;
   --color-bpmn-defaultStrokeColor: #242529;
-  --color-bpmn-editor-icon-primary: #ad6e25;
+  --color-bpmn-editor-icon-primary: var(--theme-icon-green);
   --theme-diagram-bg: #f2f2f3;
   --theme-diagram-fg: #242529;
   --theme-diagram-palette-bg: #ebebec;
@@ -593,7 +593,7 @@
   // ─── DMN / Decision Editor ─────────────────────────
   --color-dmn-defaultFillColor: #fafafa;
   --color-dmn-defaultStrokeColor: #242529;
-  --color-dmn-editor-icon-primary: #ad6e25;
+  --color-dmn-editor-icon-primary: var(--theme-icon-teal);
   --theme-dmn-bg: #fafafa;
   --theme-dmn-fg: #242529;
   --theme-dmn-fg-muted: #6b6f76;

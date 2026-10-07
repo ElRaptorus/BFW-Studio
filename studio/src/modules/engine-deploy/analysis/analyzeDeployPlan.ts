@@ -1,7 +1,8 @@
-import type { SolutionModelEntry, SolutionProcessEntry } from '#modules/solution-models/types';
+import type { SolutionProcessEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 import type { DeployProjectRoot } from './describeDeployItemLocation';
 import { describeDeployItemLocation, formatDeployItemLocation } from './describeDeployItemLocation';
+import type { SolutionModelEntry } from './scanSolutionModels';
 import type {
   DependencyState,
   DeployAnalysis,

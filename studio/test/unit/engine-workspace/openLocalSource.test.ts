@@ -1,50 +1,60 @@
 import initializeCommands from '#modules/engine-workspace/initializers/initializeCommands';
+import { promises as fileSystem } from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { createRecordingBifrost, createRecordingConnectionManager } from '../support/recordingBifrost';
 
-function setup(findResult: string | null, openSolution: object | null = {}) {
-  const { bifrost, calls, handlers, registrationOptions } = createRecordingBifrost();
+const fixtureDirectory = path.resolve(__dirname, '../../fixtures/test-solution-deploy');
+const baseUri = pathToFileURL(fixtureDirectory).href;
+const uriFor = (file: string) => `${baseUri}/${file}`;
+
+function setup(openSolution: object | null = {}) {
+  const { bifrost, calls, registrationOptions } = createRecordingBifrost();
   const opened: string[] = [];
   (bifrost as any).editors = { focusOrOpenEditorDocument: (uri: string) => opened.push(uri) };
-  (bifrost as any).solution = { getSolution: () => openSolution };
-  const lookups: string[] = [];
-  const registerFinder = (name: string) =>
-    handlers.set(name, (id: string) => {
-      lookups.push(`${name}:${id}`);
-      return findResult;
-    });
+  (bifrost as any).solution = {
+    getSolution: () => openSolution,
+    listIncludedFileUris: async (pattern: RegExp) =>
+      fileSystem.readdir(fixtureDirectory).then((fileNames) =>
+        fileNames
+          .filter((file) => pattern.test(file))
+          .sort()
+          .map(uriFor),
+      ),
+  };
+  (bifrost as any).files = {
+    load: async (uri: string) =>
+      fileSystem.readFile(path.join(fixtureDirectory, uri.slice(baseUri.length + 1)), 'utf8'),
+  };
   initializeCommands(bifrost, createRecordingConnectionManager(calls));
-  registerFinder('solution.models.findProcessFile');
-  registerFinder('solution.models.findDecisionFile');
   const notifications = () =>
     calls.filter((call) => call.method === 'notifications.open').map((call) => call.arguments[0]);
   const isEnabled = (commandArguments: unknown[]) =>
     registrationOptions.get('engine.workspace.openLocalSource')?.enabledWhen?.(...commandArguments) ?? true;
-  return { bifrost, opened, lookups, notifications, isEnabled };
+  return { bifrost, opened, notifications, isEnabled };
 }
 
 describe('engine.workspace.openLocalSource', () => {
   it('opens the process file found in the solution', async () => {
-    const { bifrost, opened, lookups } = setup('file:///solution/order.bpmn');
+    const { bifrost, opened } = setup();
 
     await bifrost.commands.executeCommand('engine.workspace.openLocalSource', ['process', 'order-process']);
 
-    expect(lookups).toEqual(['solution.models.findProcessFile:order-process']);
-    expect(opened).toEqual(['file:///solution/order.bpmn']);
+    expect(opened).toEqual([uriFor('order-process.bpmn')]);
   });
 
   it('looks decisions up by definitions id', async () => {
-    const { bifrost, opened, lookups } = setup('file:///solution/rules.dmn');
+    const { bifrost, opened } = setup();
 
     await bifrost.commands.executeCommand('engine.workspace.openLocalSource', ['decision', 'discount-rules']);
 
-    expect(lookups).toEqual(['solution.models.findDecisionFile:discount-rules']);
-    expect(opened).toEqual(['file:///solution/rules.dmn']);
+    expect(opened).toEqual([uriFor('discount-rules.dmn')]);
   });
 
   it('shows an info notification and opens nothing when no file defines the model', async () => {
-    const { bifrost, opened, notifications } = setup(null);
+    const { bifrost, opened, notifications } = setup();
 
     await bifrost.commands.executeCommand('engine.workspace.openLocalSource', ['process', 'ghost']);
 
@@ -55,7 +65,7 @@ describe('engine.workspace.openLocalSource', () => {
   });
 
   it('shows the decision notification when no file defines the decision', async () => {
-    const { bifrost, opened, notifications } = setup(null);
+    const { bifrost, opened, notifications } = setup();
 
     await bifrost.commands.executeCommand('engine.workspace.openLocalSource', ['decision', 'ghost-rules']);
 
@@ -66,8 +76,8 @@ describe('engine.workspace.openLocalSource', () => {
   });
 
   it('is enabled only with an open solution and a non-empty id', () => {
-    expect(setup(null).isEnabled(['process', 'order-process'])).toBe(true);
-    expect(setup(null, null).isEnabled(['process', 'order-process'])).toBe(false);
-    expect(setup(null).isEnabled(['decision', ''])).toBe(false);
+    expect(setup().isEnabled(['process', 'order-process'])).toBe(true);
+    expect(setup(null).isEnabled(['process', 'order-process'])).toBe(false);
+    expect(setup().isEnabled(['decision', ''])).toBe(false);
   });
 });

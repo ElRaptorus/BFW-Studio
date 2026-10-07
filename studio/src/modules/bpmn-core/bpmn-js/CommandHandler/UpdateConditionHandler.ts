@@ -3,7 +3,7 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 
 import { CmdHelper } from './Helper/CommmandHelper';
-import { isSequenceFlowConditional } from './Utils/Utils';
+import { isSequenceFlowConditional } from './ModdleElementFunctions';
 
 const MODDLE_BPMN_CONDITION_SELECTOR = 'conditionExpression';
 const MODDLE_BPMN_FORMAL_EXPRESSION_TYPE = 'bpmn:FormalExpression';

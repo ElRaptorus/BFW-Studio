@@ -202,3 +202,47 @@
     fill: var(--theme-diagram-connect-ok-fill) !important;
   }
 }
+
+.bifrost.bifrost-theme--light {
+  --color-bpmn-editor-icon-primary: var(--theme-icon-green);
+  --theme-color-picker-bg: #ecf2f9;
+  --theme-color-picker-border: #b4c8dc;
+  --theme-color-picker-option-border: rgba(180, 200, 220, 0.3);
+  --theme-color-picker-option-hover-shadow: rgba(15, 40, 80, 0.3);
+  --theme-color-picker-shadow: rgba(15, 40, 80, 0.2);
+}
+
+.bifrost.bifrost-theme--dark {
+  --color-bpmn-editor-icon-primary: var(--theme-icon-green);
+  --theme-color-picker-bg: #101828;
+  --theme-color-picker-border: #a0bcd8;
+  --theme-color-picker-option-border: rgba(80, 100, 130, 0.5);
+  --theme-color-picker-option-hover-shadow: rgba(200, 220, 240, 0.4);
+  --theme-color-picker-shadow: rgba(0, 0, 0, 0.5);
+}
+
+.editor__content {
+  .color-picker-panel {
+    position: absolute;
+    display: grid;
+    grid-template-columns: repeat(3, 20px);
+    gap: 4px;
+    padding: 6px;
+    background: var(--theme-color-picker-bg);
+    border: 1px solid var(--theme-color-picker-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 6px var(--theme-color-picker-shadow);
+    z-index: 9999;
+  }
+
+  .color-picker-panel .color-option {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1.2px solid;
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+}

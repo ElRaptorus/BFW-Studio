@@ -216,6 +216,7 @@ Orchestration layer around SolutionManager. Adds:
 | `isSolutionDirty()` | Whether the solution has unsaved changes |
 | `closeSolution()` | Disposes all watchers, clears solution state |
 | `containsEditorDocumentWithUri(uri)` | Checks whether a URI belongs to the open Solution |
+| `listIncludedFileUris(pattern)` | Included files of the open solution whose URI matches `pattern`, sorted by URI; `[]` when no solution is open |
 | `onRefresh()` | Forces a reload by re-emitting `EVENT_SOLUTION_CHANGED` |
 | `onElementAdded/Removed/Renamed/Moved(uri)` | Notifications for file changes |
 | `toggleHiddenFiles()` | Delegates to SolutionManager |

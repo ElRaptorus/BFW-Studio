@@ -52,4 +52,3 @@ export * from './BpmnExportFunctions';
 export * from './CsvExportHelper';
 export * from './EngineAdapter';
 export * from './SelectableElement';
-export * from './assertionFunctions';

@@ -6,7 +6,8 @@ import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { dmnModelerModuleRegistry } from '#modules/dmn-core/DmnModelerModuleRegistry';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
+import type { SolutionDmnModelEntry } from '#modules/dmn-core/scanSolutionDmnModels';
+import { scanSolutionDmnModels } from '#modules/dmn-core/scanSolutionDmnModels';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 
@@ -18,11 +19,11 @@ import DmnModelerComponentAdapter, {
   EVENT_DMN_ADAPTER_VIEW_CHANGED,
   EVENT_DMN_ADAPTER_XML_CHANGED,
 } from '../dmn-core/DmnModelerComponentAdapter';
+import type { DmnImportIndex, DmnImportedElementType } from '../dmn-core/validation/DmnValidator';
 import DmnDocumentElementAccess, { EVENT_DMN_ELEMENT_PROPERTY_UPDATED } from './DmnDocumentElementAccess';
 import DmnDocumentSelection, { EVENT_DMN_SELECTION_ELEMENTS_UPDATED } from './DmnDocumentSelection';
 import type { DmnPluginOverlayManager } from './DmnPluginOverlayManager';
 import DmnValidationOverlayManager from './DmnValidationOverlayManager';
-import { buildDmnImportIndex } from './buildDmnImportIndex';
 import { PLUGIN_DMN_OVERLAY_MANAGER_KEY } from './plugin-api/DmnApiBridge';
 
 const MERGE_CONFLICT_MARKER_REGEX = /^<{7}\s/m;
@@ -223,10 +224,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
   /** Rebuilds the solution import index (namespace → element ids) for the import validation rules. */
   async refreshImportIndex(): Promise<void> {
     try {
-      const entries =
-        this.studio.solution.getSolution() == null
-          ? undefined
-          : await this.studio.commands.executeCommand<Promise<SolutionModelEntry[]>>('solution.models.scan', []);
+      const entries = this.studio.solution.getSolution() == null ? undefined : await scanSolutionDmnModels(this.studio);
       // The document may have been closed while the scan ran.
       this.validationManager?.setImportIndex(entries == null ? undefined : buildDmnImportIndex(entries));
     } catch (error) {
@@ -487,4 +485,28 @@ export default class DmnDocumentModel extends EditorDocumentModel {
       },
     );
   }
+}
+
+/**
+ * `namespace` → element id → type of the first solution DMN file with that namespace (URI order; the first wins).
+ * Only the types the Engine resolves through an import are indexed; decision services are not.
+ */
+function buildDmnImportIndex(entries: SolutionDmnModelEntry[]): DmnImportIndex {
+  const index: DmnImportIndex = new Map();
+  for (const entry of entries) {
+    if (entry.kind !== 'dmn' || entry.namespace == null || index.has(entry.namespace)) {
+      continue;
+    }
+    const { decisions, businessKnowledgeModels, inputData } = entry.elements;
+    const typed: [DmnImportedElementType, { id: string }[]][] = [
+      ['decision', decisions],
+      ['inputData', inputData],
+      ['businessKnowledgeModel', businessKnowledgeModels],
+    ];
+    index.set(
+      entry.namespace,
+      new Map(typed.flatMap(([type, items]) => items.map((item): [string, DmnImportedElementType] => [item.id, type]))),
+    );
+  }
+  return index;
 }

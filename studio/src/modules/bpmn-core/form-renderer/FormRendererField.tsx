@@ -35,7 +35,11 @@ export function FormRendererField(props: FormRendererFieldProps): React.JSX.Elem
           {field.hint}
         </span>
       )}
-      {error != null && <span className="form-renderer-field__error-message">{error}</span>}
+      {error != null && (
+        <span className="form-renderer-field__error-message" data-test--form-renderer-field-error>
+          {error}
+        </span>
+      )}
     </div>
   );
 }
@@ -50,6 +54,7 @@ function renderInput(
     name: field.id,
     disabled: readOnly,
     'aria-describedby': field.hint ? `${field.id}-hint` : undefined,
+    'data-test--form-renderer-input': field.id,
   };
 
   switch (field.type) {

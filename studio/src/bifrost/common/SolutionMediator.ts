@@ -14,6 +14,7 @@ import {
   repairSolutionFile,
   writeSolutionFolders,
 } from './SolutionFile';
+import { isUriIncludedInSolution } from './SolutionFunctions';
 import { EVENT_SOLUTION_CHANGED, SolutionManager } from './SolutionManager';
 import type { FileExplorerView } from './activities';
 import { EVENT_FILE_EXPLORER_OPENED_SOLUTION } from './activities';
@@ -128,6 +129,32 @@ export class SolutionMediator extends AbstractEmitter {
    */
   hasOpenSolution(): boolean {
     return this.solutionManager.hasOpenSolution();
+  }
+
+  /**
+   * Files of the open solution whose URI matches `pattern` and pass the solution include/exclude rules, sorted by URI.
+   */
+  async listIncludedFileUris(pattern: RegExp): Promise<string[]> {
+    const solution = this.getSolution();
+    if (solution == null) {
+      return [];
+    }
+
+    const uris = new Set<string>();
+    for (const project of solution.projects) {
+      await this.fileHandling.traverseProject(project, async (fileOrDirectory) => {
+        if (
+          fileOrDirectory.type === 'file' &&
+          pattern.test(fileOrDirectory.uri) &&
+          isUriIncludedInSolution(solution, fileOrDirectory.uri)
+        ) {
+          uris.add(fileOrDirectory.uri);
+        }
+        return fileOrDirectory;
+      });
+    }
+
+    return [...uris].sort((first, second) => first.localeCompare(second));
   }
 
   /**

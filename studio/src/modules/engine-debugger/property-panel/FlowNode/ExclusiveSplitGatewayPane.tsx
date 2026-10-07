@@ -13,7 +13,7 @@ import type { FlowNode as BpmnFlowNode, SequenceFlow } from '@elraptorus/bfw_eng
 import type EngineBpmnDebuggerEditorDocumentModel from '../../EngineBpmnDebuggerEditorDocumentModel';
 import type { FlowNode } from '../../libs';
 import { getAllFlowNodes, getAllSequenceFlows } from '../../libs/BpmnProcessHelpers';
-import { getConditionExpressionText } from '../../libs/typeHelpers';
+import { getConditionExpressionText } from '../../libs/conditionExpressionText';
 import { ConditionalSequenceFlowLink, DefaultSequenceFlowLink } from '../FlowNodeInstanceLinks';
 import { ShouldDisplayOutgoingFlowsAndConditionsPane } from '../ShouldBeDisplayedConditions';
 

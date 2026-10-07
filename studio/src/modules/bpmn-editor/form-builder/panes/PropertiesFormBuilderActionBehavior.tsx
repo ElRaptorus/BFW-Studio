@@ -20,7 +20,7 @@ const EFFECT_OPTIONS: readonly { effect: FormActionEffect; label: string }[] = [
 const FORM_BUILDER_DOCUMENT_TYPE = 'bpmn.form-builder';
 const HELP_ID = 'bpmn/properties/form_builder_action';
 
-export function withEffect(action: FormAction, effect: FormActionEffect): FormAction {
+function withEffect(action: FormAction, effect: FormActionEffect): FormAction {
   if (effect === 'submit') {
     return { ...action, effect };
   }

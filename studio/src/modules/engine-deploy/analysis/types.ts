@@ -1,5 +1,5 @@
+import type { StoredLinterScore } from '#modules/bpmn-core/scanSolutionBpmnModels';
 import type { DeployRulesetFailure } from '#modules/engine-core';
-import type { StoredLinterScore } from '#modules/solution-models/types';
 
 export type ProcessDeployStatus =
   | 'new'

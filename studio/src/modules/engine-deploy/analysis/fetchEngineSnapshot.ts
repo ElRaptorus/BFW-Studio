@@ -1,4 +1,4 @@
-import { sha256Hex } from '#modules/solution-models/scanSolutionModels';
+import { sha256Hex } from '#bifrost/common/HashFunctions';
 
 import type { EngineSnapshot } from './types';
 

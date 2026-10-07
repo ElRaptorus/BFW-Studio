@@ -12,7 +12,7 @@ Imports between `studio/src/bifrost/`, `studio/src/components/`, and `studio/src
 | Importer | May import | Must not import |
 |---|---|---|
 | `bifrost/`, `components/` | `bifrost/`, `components/` | any module |
-| neutral modules (every module outside the engine, bpmn and dmn families: `solution-models`, `std`, `themes`, `git-cruiser`, `plugins`, `machine-sanctum`) | `bifrost/`, `components/`, any non-engine module | `engine-*` |
+| neutral modules (every module outside the engine, bpmn and dmn families: `std`, `themes`, `git-cruiser`, `plugins`, `machine-sanctum`) | `bifrost/`, `components/`, any non-engine module | `engine-*` |
 | bpmn modules (`bpmn-*`) | `bifrost/`, `components/`, neutral modules except `git-cruiser`, own family, **`dmn-core` only** from the dmn family | `engine-*`, `git-cruiser`, `dmn-*` other than `dmn-core` |
 | dmn modules (`dmn-*`) | `bifrost/`, `components/`, neutral modules except `git-cruiser`, own family, **`bpmn-core` only** from the bpmn family | `engine-*`, `git-cruiser`, `bpmn-*` other than `bpmn-core` |
 | engine modules (`engine-*`) | everything | — |
@@ -34,11 +34,13 @@ When the direction forbids an import, use one of:
 
 | Kind | Location |
 |---|---|
-| Synchronous pure function used by several module families and owned by none | `bifrost/common/*Functions.ts` |
+| Pure function used by several module families and owned by none | `bifrost/common/*Functions.ts` |
 | Pure function used by one module or one family | that module, or the family's `-core` |
 | Platform capability (file system, HTTP, source control) | abstract service in `bifrost/common/`, one implementation per platform (`electron-renderer/` + `electron-main/`), a `…Default` for the web build, exposed on `bifrost` |
 | React UI piece without module knowledge | `components/` |
 | Async cross-module operation | a command in `std` |
+
+Place code in `bifrost/common/` only after confirming that callers in at least two families need it unchanged and no single module or family owns it.
 
 `bifrost/common/` is not a place for code that merely has two callers. If every caller sits in one module or one family, the code lives there.
 

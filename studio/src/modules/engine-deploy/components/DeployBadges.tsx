@@ -1,4 +1,4 @@
-import type { StoredLinterScore } from '#modules/solution-models/types';
+import type { StoredLinterScore } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 import React from 'react';
 

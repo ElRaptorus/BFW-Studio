@@ -3,8 +3,8 @@ import type CommandStack from 'diagram-js/lib/command/CommandStack';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 
 import { CmdHelper } from './Helper/CommmandHelper';
+import { generateRandomId, getRoot } from './ModdleElementFunctions';
 import { setBfwBodyExtension } from './Utils/BfwExtensionHelper';
-import { generateRandomId, getRoot } from './Utils/Utils';
 
 const MODDLE_BPMN_ERROR_TYPE = 'bpmn:Error';
 const MODDLE_BPMN_ERROR_EVENT_DEFINITION_TYPE = 'bpmn:ErrorEventDefinition';

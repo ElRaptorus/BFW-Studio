@@ -48,6 +48,35 @@ export class StudioAgentBpmnExtension extends StudioAgent {
     return fields as Record<string, unknown>[];
   }
 
+  async getUserTaskFormActions(fileName: string, elementId: string): Promise<Record<string, unknown>[]> {
+    const actions = await this.executeInRenderer(
+      `const editors = window.bifrost.editors;
+       const editorDocument = editors.getOpenEditorDocuments().find((doc) => doc.uri.endsWith(${JSON.stringify(fileName)}));
+       const model = editorDocument == null ? null : editors.getEditorDocumentModelIfPresent(editorDocument);
+       return model == null ? null : model.elements.getFormActions(${JSON.stringify(elementId)});`,
+    );
+    assert.ok(Array.isArray(actions), `No open BPMN document model found for ${fileName}`);
+    return actions as Record<string, unknown>[];
+  }
+
+  async setUserTaskFormFieldDefinitions(
+    fileName: string,
+    elementId: string,
+    fields: Record<string, unknown>[],
+  ): Promise<void> {
+    const stored = await this.executeInRenderer(
+      `const editors = window.bifrost.editors;
+       const editorDocument = editors.getOpenEditorDocuments().find((doc) => doc.uri.endsWith(${JSON.stringify(fileName)}));
+       const model = editorDocument == null ? null : editors.getEditorDocumentModelIfPresent(editorDocument);
+       if (model == null) {
+         return false;
+       }
+       model.elements.setFormFieldDefinitions(${JSON.stringify(elementId)}, ${JSON.stringify(fields)});
+       return true;`,
+    );
+    assert.equal(stored, true, `No open BPMN document model found for ${fileName}`);
+  }
+
   /**
    * Blur the focused pane editor and wait for CodeMirror FEEL tooltips to
    * unmount before a canvas pointer action. Escape on OneLineFeelEditor only

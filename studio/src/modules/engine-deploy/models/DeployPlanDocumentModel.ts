@@ -3,7 +3,6 @@ import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import { EVENT_EDITOR_DOCUMENT_DATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
 import type { EngineConnectionManager } from '#modules/engine-core';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -13,6 +12,8 @@ import { toFilePath } from '../analysis/deployPackages';
 import type { DeployPlanFile } from '../analysis/executeDeployPlan';
 import { executeDeployPlan, toFailedResult } from '../analysis/executeDeployPlan';
 import { fetchEngineSnapshot } from '../analysis/fetchEngineSnapshot';
+import type { SolutionModelEntry } from '../analysis/scanSolutionModels';
+import { scanSolutionModels } from '../analysis/scanSolutionModels';
 import type {
   DeployAnalysis,
   DeployConnection,
@@ -399,7 +400,7 @@ export default class DeployPlanDocumentModel extends EditorDocumentModel {
   }
 
   private async scanSolution(): Promise<SolutionModelEntry[]> {
-    return (await this.bifrost.commands.executeCommand('solution.models.scan', [])) ?? [];
+    return scanSolutionModels(this.bifrost);
   }
 
   private getClient(engineId: string): Parameters<typeof fetchEngineSnapshot>[0] | null {

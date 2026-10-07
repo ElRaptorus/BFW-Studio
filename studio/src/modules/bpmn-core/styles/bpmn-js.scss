@@ -52,30 +52,6 @@
     font-size: 24px !important;
   }
 
-  .color-picker-panel {
-    position: absolute;
-    display: grid;
-    grid-template-columns: repeat(3, 20px);
-    gap: 4px;
-    padding: 6px;
-    background: var(--theme-color-picker-bg);
-    border: 1px solid var(--theme-color-picker-border);
-    border-radius: 4px;
-    box-shadow: 0 2px 6px var(--theme-color-picker-shadow);
-    z-index: 9999;
-  }
-
-  .color-picker-panel .color-option {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    border: 1.2px solid;
-    transition:
-      box-shadow 0.2s ease,
-      border-color 0.2s ease;
-  }
-
   .djs-container.djs-palette-shown.djs-palette-open {
     width: calc(100% - 36px) !important;
     left: 36px;

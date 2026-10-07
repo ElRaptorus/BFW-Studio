@@ -339,7 +339,6 @@
   // ─── BPMN / Diagram ───────────────────────────────
   --color-bpmn-defaultFillColor: #e8eff7;
   --color-bpmn-defaultStrokeColor: #283850;
-  --color-bpmn-editor-icon-primary: #685040;
   --theme-diagram-bg: #e8eff7;
   --theme-diagram-fg: #283850;
   --theme-diagram-palette-bg: #dce6f2;
@@ -364,17 +363,10 @@
   --theme-diagram-segment-dragger-stroke: rgba(64, 136, 196, 0.3);
   --theme-diagram-connect-ok-fill: #2a9a40;
 
-  // ─── Color Picker Panel ────────────────────────────
-  --theme-color-picker-bg: #ecf2f9;
-  --theme-color-picker-border: #b4c8dc;
-  --theme-color-picker-option-border: rgba(180, 200, 220, 0.3);
-  --theme-color-picker-option-hover-shadow: rgba(15, 40, 80, 0.3);
-  --theme-color-picker-shadow: rgba(15, 40, 80, 0.2);
-
   // ─── DMN / Decision Editor ─────────────────────────
   --color-dmn-defaultFillColor: #e8eff7;
   --color-dmn-defaultStrokeColor: #283850;
-  --color-dmn-editor-icon-primary: #685040;
+  --color-dmn-editor-icon-primary: var(--theme-icon-teal);
   --theme-dmn-bg: #ffffff;
   --theme-dmn-fg: #1a2838;
   --theme-dmn-fg-muted: #506880;

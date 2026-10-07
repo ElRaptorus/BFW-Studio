@@ -21,6 +21,15 @@ function forbidModules(prefix) {
 
 const noEngineModules = forbidModules('engine-');
 const noGitCruiser = forbidModules('git-cruiser(/|$)');
+// ponytail: "export only what is used" is a manual audit. This config does not detect unused exports.
+// The upgrade path is knip, once that dependency is accepted.
+const noTestImports = [
+  {
+    regex: '(^|/)\\.\\./(\\.\\./)*test(/|$)',
+    message:
+      'Production code must not import from test. See module-boundaries §Tests never shape production code.',
+  },
+];
 
 // Flat config does not merge one rule across `files` blocks, so each block lists every pattern for its files.
 const moduleBoundaryZones = [
@@ -29,21 +38,22 @@ const moduleBoundaryZones = [
     patterns: [
       { regex: '^#modules/', message: boundaryMessage },
       { regex: '(^|/)modules/', message: boundaryMessage },
+      ...noTestImports,
     ],
   },
   {
     // Neutral modules: every module outside the engine, bpmn and dmn families.
     files: ['src/modules/**/*.{ts,tsx}'],
     ignores: ['src/modules/engine-*/**', 'src/modules/bpmn-*/**', 'src/modules/dmn-*/**'],
-    patterns: noEngineModules,
+    patterns: [...noEngineModules, ...noTestImports],
   },
   {
     files: ['src/modules/bpmn-*/**/*.{ts,tsx}'],
-    patterns: [...noEngineModules, ...noGitCruiser, ...forbidModules('dmn-(?!core\\b)')],
+    patterns: [...noEngineModules, ...noGitCruiser, ...forbidModules('dmn-(?!core\\b)'), ...noTestImports],
   },
   {
     files: ['src/modules/dmn-*/**/*.{ts,tsx}'],
-    patterns: [...noEngineModules, ...noGitCruiser, ...forbidModules('bpmn-(?!core\\b)')],
+    patterns: [...noEngineModules, ...noGitCruiser, ...forbidModules('bpmn-(?!core\\b)'), ...noTestImports],
   },
 ].map(({ files, ignores = [], patterns }) => ({
   files,
@@ -79,4 +89,9 @@ export default defineConfig(
     },
   },
   ...moduleBoundaryZones,
+  {
+    // Not `src/**`: a later no-restricted-imports block replaces the module-boundary patterns on the same files.
+    files: ['src/*.{ts,tsx}', 'src/*.d.ts', 'src/types/**/*.{ts,tsx,d.ts}', 'src/modules/engine-*/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': ['error', { patterns: noTestImports }] },
+  },
 );

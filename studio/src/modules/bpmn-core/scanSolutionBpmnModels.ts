@@ -1,19 +1,41 @@
-import type { FileHandlingService } from '#bifrost/common/FileHandlingService';
-import { isUriIncludedInSolution } from '#bifrost/common/SolutionFunctions';
-import type { Solution } from '#bifrost/contracts/SolutionTypes';
+import type { Bifrost } from '#bifrost/Bifrost';
+import { sha256Hex } from '#bifrost/common/HashFunctions';
 
 import type { BpmnProcess, FlowNode } from '@elraptorus/bfw_engine_sdk';
-import { parseBpmn, parseDmn } from '@elraptorus/bfw_engine_sdk';
+import { parseBpmn } from '@elraptorus/bfw_engine_sdk';
 
-import type {
-  SolutionCallActivityEntry,
-  SolutionDmnElement,
-  SolutionModelEntry,
-  SolutionProcessEntry,
-  StoredLinterScore,
-} from './types';
+import type { BfwLinterRulesetScorePayload } from './bpmn-js/CommandHandler/UpdateBfwLinterRulesetScoreHandler';
 
-const MODEL_FILE_PATTERN = /\.(bpmn|dmn)$/i;
+/** A `bfw:linterRulesetScore` as stored in the file; every value is the attribute text. */
+export type StoredLinterScore = BfwLinterRulesetScorePayload;
+
+export type SolutionCallActivityEntry = {
+  id: string;
+  calledElement: string | null;
+  calledProcessVersion: string | null;
+};
+
+export type SolutionProcessEntry = {
+  id: string;
+  name: string | null;
+  version: string | null;
+  isExecutable: boolean;
+  /** Includes call activities nested in subprocesses. */
+  callActivities: SolutionCallActivityEntry[];
+  /** `bfw:decisionRef` of every Business Rule Task, including nested ones. */
+  decisionRefs: string[];
+};
+
+export type SolutionBpmnModelEntry =
+  | {
+      kind: 'bpmn';
+      uri: string;
+      sha256: string;
+      processes: SolutionProcessEntry[];
+      storedLinterScores: StoredLinterScore[];
+    }
+  | { kind: 'invalid'; uri: string; error: string };
+
 const SCORE_ELEMENT_PATTERN = /<(?:[\w-]+:)?linterRulesetScore\b([^>]*?)\/?>/g;
 const ATTRIBUTE_PATTERN = /([\w:-]+)="([^"]*)"/g;
 /**
@@ -23,11 +45,6 @@ const ATTRIBUTE_PATTERN = /([\w:-]+)="([^"]*)"/g;
  */
 const DEFINITIONS_ROOT_PATTERN = /<(?:[\w-]+:)?definitions[\s>][\s\S]*<\/(?:[\w-]+:)?definitions\s*>\s*$/;
 
-export async function sha256Hex(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
 /**
  * Reads the definitions-level `bfw:linterRulesetScore` elements the Studio writes.
  *
@@ -35,7 +52,7 @@ export async function sha256Hex(text: string): Promise<string> {
  * fine for what the Studio's serializer writes (double quotes; numbers, ids, ISO timestamps). The upgrade path is a
  * real XML parser once one is a declared dependency; `DOMParser` is not available in the Node unit tests.
  */
-export function readStoredLinterScores(xml: string): StoredLinterScore[] {
+function readStoredLinterScores(xml: string): StoredLinterScore[] {
   const scores: StoredLinterScore[] = [];
   for (const elementMatch of xml.matchAll(SCORE_ELEMENT_PATTERN)) {
     const attributes: Record<string, string> = {};
@@ -97,66 +114,29 @@ function toProcessEntry(process: BpmnProcess): SolutionProcessEntry {
   };
 }
 
-async function toEntry(uri: string, text: string): Promise<SolutionModelEntry> {
-  if (!DEFINITIONS_ROOT_PATTERN.test(text)) {
-    return { kind: 'invalid', uri, error: 'The file has no complete <definitions> root element.' };
-  }
-  const sha256 = await sha256Hex(text);
-  if (uri.toLowerCase().endsWith('.dmn')) {
-    const definitions = parseDmn(text);
-    const toElements = (items: { id: string; name: string | null }[]): SolutionDmnElement[] =>
-      items.map((item) => ({ id: item.id, name: item.name }));
-    return {
-      kind: 'dmn',
-      uri,
-      sha256,
-      definitionsId: definitions.id,
-      namespace: definitions.namespace,
-      elements: {
-        decisions: toElements(definitions.decisions),
-        businessKnowledgeModels: toElements(definitions.businessKnowledgeModels),
-        inputData: toElements(definitions.inputData),
-      },
-    };
-  }
-  return {
-    kind: 'bpmn',
-    uri,
-    sha256,
-    processes: parseBpmn(text).processes.map(toProcessEntry),
-    storedLinterScores: readStoredLinterScores(text),
-  };
-}
-
 /**
- * Reads and parses every `.bpmn` and `.dmn` file of the solution, sorted by URI. A file that cannot be read or parsed
- * becomes an `invalid` entry and does not stop the scan.
+ * Reads and parses every included `.bpmn` file of the open solution, sorted by URI. A file that cannot be read or
+ * parsed becomes an `invalid` entry and does not stop the scan.
  *
  * ponytail: no cache, so every call re-reads every file and the cost grows with the file count. The upgrade path is a
  * cache invalidated on save and on solution change.
  */
-export async function scanSolutionModels(
-  solution: Solution,
-  files: FileHandlingService,
-): Promise<SolutionModelEntry[]> {
-  const uris = new Set<string>();
-  for (const project of solution.projects) {
-    await files.traverseProject(project, async (fileOrDirectory) => {
-      if (
-        fileOrDirectory.type === 'file' &&
-        MODEL_FILE_PATTERN.test(fileOrDirectory.uri) &&
-        isUriIncludedInSolution(solution, fileOrDirectory.uri)
-      ) {
-        uris.add(fileOrDirectory.uri);
-      }
-      return fileOrDirectory;
-    });
-  }
-
+export async function scanSolutionBpmnModels(bifrost: Bifrost): Promise<SolutionBpmnModelEntry[]> {
+  const uris = await bifrost.solution.listIncludedFileUris(/\.bpmn$/i);
   const entries = await Promise.all(
-    [...uris].map(async (uri): Promise<SolutionModelEntry> => {
+    uris.map(async (uri): Promise<SolutionBpmnModelEntry> => {
       try {
-        return await toEntry(uri, await files.load(uri));
+        const text = await bifrost.files.load(uri);
+        if (!DEFINITIONS_ROOT_PATTERN.test(text)) {
+          return { kind: 'invalid', uri, error: 'The file has no complete <definitions> root element.' };
+        }
+        return {
+          kind: 'bpmn',
+          uri,
+          sha256: await sha256Hex(text),
+          processes: parseBpmn(text).processes.map(toProcessEntry),
+          storedLinterScores: readStoredLinterScores(text),
+        };
       } catch (error) {
         return { kind: 'invalid', uri, error: error instanceof Error ? error.message : String(error) };
       }

@@ -290,12 +290,12 @@ These commands are registered by `engine-debugger`, not `engine-core`, but inter
 
 Each event type has its own dedicated confirmation dialog, split from the former shared `getMessageSignalEventDialogContent`:
 
-- **Message**: `askMessageTriggerConfirmation` → `getMessageEventDialogContent`. Shows a JSON payload field pre-filled with `studio.examplePayload` (read from the moddle via `BpmnCustomPropertyAccessor`). Always scoped to the current process instance.
+- **Message**: `askMessageTriggerConfirmation` → `getMessageEventDialogContent`. Shows a JSON payload field pre-filled with `studio.examplePayload` (read from the moddle via `getCustomPropertyFromViewer` in `engine-debugger/initializers/initializeCommands.ts`). Always scoped to the current process instance.
 - **Signal**: `askSignalTriggerConfirmation`. Simple confirmation with a caution note. No payload field — the engine's signal API is broadcast-only with no payload.
 - **Escalation**: `askEscalationTriggerConfirmation`. Simple confirmation that the inject is engine-wide (waiting boundaries and Event Subprocess starts), not a modeled throw. No payload field. OverlayFactory resolves the path code from `processDefinition.escalations` via `escalationRef` (`resolveEscalationCode`); catch-all boundaries (no ref / blank code) send the non-blank sentinel `__catchall__`.
 - **Timer**: `askTimerTriggerConfirmation`. Simple confirmation stating the timer will be skipped.
 
-**File:** `studio/src/modules/engine-debugger/libs/BpmnCustomPropertyAccessor.ts` — reads `bfw:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.
+`getCustomPropertyFromViewer` in `studio/src/modules/engine-debugger/initializers/initializeCommands.ts` reads `bfw:Property` values from the raw moddle `businessObject.extensionElements`, bypassing the SDK-parsed model.
 
 ### Engine-Workspace Operation Commands
 
@@ -321,7 +321,7 @@ Instance Search follows the same split with engine-core commands as the canonica
 
 #### Open in Design
 
-`engine.workspace.openLocalSource(kind: 'process' | 'decision', id)` (in `engine-workspace/initializers/initializeCommands.ts`) resolves the id to a file of the open solution through `solution.models.findProcessFile` / `solution.models.findDecisionFile` and opens it with `focusOrOpenEditorDocument`; routing rule R1 then activates the Design page. A decision id is the DMN `<definitions id>`, which is what the Engine stores as `decision_definition_id`. With no match it shows an info notification (source `Engine`). `enabledWhen` requires an open solution and a non-empty id, so the button is disabled while a viewer has no id yet. The model viewer, decision viewer and debugger toolbars carry an "Open in Design" button (`ph-pencil-simple`) after Download that runs it.
+`engine.workspace.openLocalSource(kind: 'process' | 'decision', id)` (in `engine-workspace/initializers/initializeCommands.ts`) resolves the id to a file of the open solution through `scanSolutionBpmnModels` (a process whose `processes` contain the id) or `scanSolutionDmnModels` (`definitionsId`) and opens it with `focusOrOpenEditorDocument`; routing rule R1 then activates the Design page. A decision id is the DMN `<definitions id>`, which is what the Engine stores as `decision_definition_id`. With no match it shows an info notification (source `Engine`). `enabledWhen` requires an open solution and a non-empty id, so the button is disabled while a viewer has no id yet. The model viewer, decision viewer and debugger toolbars carry an "Open in Design" button (`ph-pencil-simple`) after Download that runs it.
 
 ### Engine-Workspace Commands (Run Menu & Header)
 

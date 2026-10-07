@@ -161,7 +161,7 @@ Plugin iframe: acquireStudioApi().postMessage(data)
   → entry.messageHandler(data)
   → PH_CALLBACK_INVOCATION { callbackId, args: [data] }
   → (Node IPC: renderer → child)
-  → callbackRegistry: getGlobalCallback(callbackId)(data)
+  → sandbox-worker localCallbacks.get(callbackId)(data)
   → plugin's onMessage callback fires
 ```
 

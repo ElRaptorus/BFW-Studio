@@ -5,7 +5,7 @@ import {
   EVENT_DMN_ADAPTER_XML_CHANGED,
   EVENT_DMN_ADAPTER_XML_LOADED,
 } from '#modules/dmn-core/DmnModelerComponentAdapter';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
+import { scanSolutionDmnModels } from '#modules/dmn-core/scanSolutionDmnModels';
 import ReactDOM from 'react-dom/client';
 
 import React from 'react';
@@ -241,10 +241,7 @@ export class DmnSimulatorController {
     const { bifrost } = this.host;
     return {
       listDecisionModels: async () => {
-        const entries = await bifrost.commands.executeCommand<Promise<SolutionModelEntry[]>>(
-          'solution.models.scan',
-          [],
-        );
+        const entries = await scanSolutionDmnModels(bifrost);
         return entries.flatMap((entry) =>
           entry.kind === 'dmn' && entry.uri !== this.host.uri ? [{ uri: entry.uri, namespace: entry.namespace }] : [],
         );

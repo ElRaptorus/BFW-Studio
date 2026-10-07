@@ -17,7 +17,7 @@ const HELP_ID = 'bpmn/properties/form_builder_action';
 const MAXIMUM_ACTION_ID_LENGTH = 255;
 
 /** The Engine rejects a blank or over-long `actionId` on finish; duplicates make `token.actionId` ambiguous. */
-export function isValidActionId(nextId: string, currentId: string, actions: readonly FormAction[]): boolean {
+function isValidActionId(nextId: string, currentId: string, actions: readonly FormAction[]): boolean {
   if (nextId.trim() === '' || nextId.length > MAXIMUM_ACTION_ID_LENGTH) {
     return false;
   }
@@ -120,6 +120,7 @@ function ActionPropertiesForm(props: ActionPropertiesFormProps): React.JSX.Eleme
       <div className="form-group">
         <label className="d-block">ID</label>
         <input
+          data-test--action-inspector-id-input
           className="form-control form-control-sm"
           type="text"
           value={invalidIdDraft ?? action.id}

@@ -124,7 +124,8 @@ Themed CSS overrides for third-party library elements (e.g., bpmn-js `.djs-palet
 
 | Module | Token prefixes | SCSS file |
 |-----------|---------------|-----------|
-| `bpmn-editor` | `--theme-diagram-*`, `--theme-color-picker-*`, `--color-bpmn-*` | `modules/bpmn-editor/styles/bpmn.scss` |
+| Core (`bifrost/styles`) | `--theme-diagram-*`, `--color-bpmn-defaultFillColor`, `--color-bpmn-defaultStrokeColor` | `bifrost/styles/theme.light.scss`, `theme.dark.scss` |
+| `bpmn-editor` | `--theme-color-picker-*`, `--color-bpmn-editor-icon-primary` | `modules/bpmn-editor/styles/bpmn.scss` |
 | `bpmn-core` (diff) | `--theme-diff-*` | `modules/bpmn-core/diff/styles/component.bpmn-diff-infrastructure.scss` |
 | `bpmn-core` (overlays) | `--color-element-*`, `--color-process-*`, `--backcolor-element-*` | `modules/bpmn-core/overlays/BpmnElementOverlays.scss` |
 | `bpmn-diff` | `--color-bpmn-diff-*`, `--backcolor-bpmn-diff__*` | `modules/bpmn-diff/styles/component.bpmn-diff.scss` |

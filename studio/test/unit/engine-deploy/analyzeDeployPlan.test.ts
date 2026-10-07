@@ -1,37 +1,20 @@
-import type { FileHandlingService } from '#bifrost/common/FileHandlingService';
-import type { Solution } from '#bifrost/contracts/SolutionTypes';
 import {
   NO_LINTER_SCORE_INFO,
   analyzeDeployPlan,
   collectReferencedIds,
   getDeployBlockedReason,
 } from '#modules/engine-deploy/analysis/analyzeDeployPlan';
+import type { SolutionModelEntry } from '#modules/engine-deploy/analysis/scanSolutionModels';
 import type { DeployConnection, EngineSnapshot } from '#modules/engine-deploy/analysis/types';
-import { scanSolutionModels } from '#modules/solution-models/scanSolutionModels';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
-import { promises as fileSystem } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { scanDeployFixture } from './support/fixtureEntries';
+
 const fixtureDirectory = path.resolve(__dirname, '../../fixtures/test-solution-deploy');
 const baseUri = pathToFileURL(fixtureDirectory).href;
 const uriOf = (file: string): string => `${baseUri}/${file}`;
-
-const solution = {
-  name: 'fixture',
-  baseUri,
-  showHiddenFiles: false,
-  projects: [{ type: 'project', id: 'p', name: 'fixture', baseUri, files: { included: ['**/*'], excluded: [] } }],
-} as unknown as Solution;
-
-const files = {
-  traverseProject: async (_project: unknown, callback: (item: unknown) => Promise<unknown>) =>
-    Promise.all(
-      (await fileSystem.readdir(fixtureDirectory)).map((file) => callback({ file, uri: uriOf(file), type: 'file' })),
-    ),
-  load: async (uri: string) => fileSystem.readFile(path.join(fixtureDirectory, uri.slice(baseUri.length + 1)), 'utf8'),
-} as unknown as FileHandlingService;
 
 const online: DeployConnection = { engineId: 'e1', connected: true, canDeployBpmn: true, canDeployDmn: true };
 const healthy = { ok: true, message: null };
@@ -55,7 +38,7 @@ const itemOf = (analysis: ReturnType<typeof analyze>, file: string) =>
   analysis.items.find((item) => item.uri === uriOf(file)) as ReturnType<typeof analyze>['items'][number];
 
 beforeAll(async () => {
-  entries = await scanSolutionModels(solution, files);
+  entries = await scanDeployFixture();
 });
 
 describe('analyzeDeployPlan statuses', () => {

@@ -1,5 +1,5 @@
 import { buildDeployExplorerTree } from '#modules/engine-deploy/analysis/buildDeployExplorerTree';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
+import type { SolutionModelEntry } from '#modules/engine-deploy/analysis/scanSolutionModels';
 import { describe, expect, it } from 'vitest';
 
 const root = 'file:///work/solution';

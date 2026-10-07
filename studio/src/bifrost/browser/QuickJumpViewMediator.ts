@@ -3,7 +3,6 @@ import type { Command, CommandContext } from '#bifrost/contracts/CommandTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 import type { Bifrost } from '../Bifrost';
-import { orderedUnify } from '../common/ArrayFunctions';
 import {
   EVENT_QUICK_JUMP_ENTRIES_CHANGED,
   EVENT_QUICK_JUMP_HIDE,
@@ -368,4 +367,11 @@ export class QuickJumpViewMediator extends AbstractEmitter {
 
     throw new Error(`This QuickJumpItem has an unrecognized type:\n\n${JSON.stringify(item, null, 2)}`);
   }
+}
+
+function orderedUnify(contentArray: any[], orderArray: any[]): any[] {
+  const orderedHead = orderArray.filter((orderItem: any) => contentArray.indexOf(orderItem) !== -1);
+  const contentTail = contentArray.filter((contentItem: any) => orderArray.indexOf(contentItem) === -1);
+
+  return [...orderedHead].concat([...contentTail]);
 }

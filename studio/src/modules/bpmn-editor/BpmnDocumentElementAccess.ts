@@ -17,19 +17,14 @@ import type {
 } from '#modules/bpmn-editor/BpmnElementTypes';
 import { BpmnElementType, BpmnTimerType, LoopCharacteristics } from '#modules/bpmn-editor/BpmnElementTypes';
 import { getFillColor, getStrokeColor } from 'bpmn-js/lib/draw/BpmnRenderUtil';
+import type { ElementLike } from 'diagram-js/lib/model/Types';
 
+import { getRoot, isSequenceFlowConditional } from '../bpmn-core/bpmn-js/CommandHandler/ModdleElementFunctions';
 import {
   findAllBfwExtensions,
   getBfwBodyValue,
   setBfwBodyExtension,
 } from '../bpmn-core/bpmn-js/CommandHandler/Utils/BfwExtensionHelper';
-import {
-  getRoot,
-  isEventSubprocess,
-  isHttpServiceTask,
-  isSequenceFlowConditional,
-  isSequenceFlowDefault,
-} from '../bpmn-core/bpmn-js/CommandHandler/Utils/Utils';
 import {
   assertBpmnElementIsBusinessRuleTask,
   assertBpmnElementIsCallActivity,
@@ -104,7 +99,6 @@ const MODDLE_BPMN_COMPENSATION_EVENT_DEFINITION_TYPE = 'bpmn:CompensateEventDefi
 const MODDLE_BPMN_CANCEL_EVENT_DEFINITION_TYPE = 'bpmn:CancelEventDefinition';
 const MODDLE_BPMN_TERMINATE_EVENT_DEFINITION_TYPE = 'bpmn:TerminateEventDefinition';
 
-export const EVENT_BPMN_ELEMENT_PROPERTY_UPDATED = 'EVENT_BPMN_ELEMENT_PROPERTY_UPDATED';
 export const EVENT_BPMN_ELEMENT_ID_UPDATED = 'EVENT_BPMN_ELEMENT_ID_UPDATED';
 
 // Types with the 'Modeler' prefix are coming from the Bpmn.io modeler component.
@@ -953,8 +947,6 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
     const setHandler: any = setHandlers[nameKey] || setHandlers['*'];
 
     setHandler(selectedElement, propertyName, newPropertyValue);
-
-    this.emit(EVENT_BPMN_ELEMENT_PROPERTY_UPDATED, [propertyName, newPropertyValue, oldPropertyValue]);
 
     if (propertyName === 'id') {
       const newElementId = newPropertyValue;
@@ -2414,4 +2406,16 @@ export default class BpmnDocumentElementAccess extends AbstractEmitter {
 
     return definition;
   }
+}
+
+function isSequenceFlowDefault(element: ElementLike): boolean {
+  return element.businessObject.sourceRef?.default?.id === element.id;
+}
+
+function isHttpServiceTask(element: ElementLike): boolean {
+  return element.businessObject?.get('implementation') === 'http';
+}
+
+function isEventSubprocess(element: ElementLike): boolean {
+  return element.businessObject?.get('triggeredByEvent') === true;
 }

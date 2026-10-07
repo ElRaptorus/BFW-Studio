@@ -1,6 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { DialogContent } from '#bifrost/contracts/DialogTypes';
 import { StandardDialogResponse } from '#bifrost/contracts/DialogTypes';
+import { scanSolutionBpmnModels } from '#modules/bpmn-core/scanSolutionBpmnModels';
+import { scanSolutionDmnModels } from '#modules/dmn-core/scanSolutionDmnModels';
 import type { EngineConnectionManager, RetryContext } from '#modules/engine-core';
 import { ENGINE_COMMANDS, formatDeployErrorMessage } from '#modules/engine-core';
 import * as fs from 'fs/promises';
@@ -55,6 +57,18 @@ function hasDeployDmnCapability(connectionManager: EngineConnectionManager, engi
     return false;
   }
   return connectionManager.identity.hasCapability(connection.url, 'deploy_dmn');
+}
+
+async function findLocalSourceUri(bifrost: Bifrost, kind: 'process' | 'decision', id: string): Promise<string | null> {
+  if (kind === 'process') {
+    const entries = await scanSolutionBpmnModels(bifrost);
+    return (
+      entries.find((entry) => entry.kind === 'bpmn' && entry.processes.some((process) => process.id === id))?.uri ??
+      null
+    );
+  }
+  const entries = await scanSolutionDmnModels(bifrost);
+  return entries.find((entry) => entry.kind === 'dmn' && entry.definitionsId === id)?.uri ?? null;
 }
 
 async function deployFileFromPicker(
@@ -217,10 +231,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'engine.workspace.openLocalSource',
     async (kind: 'process' | 'decision', id: string) => {
-      const uri = (await bifrost.commands.executeCommand(
-        kind === 'process' ? 'solution.models.findProcessFile' : 'solution.models.findDecisionFile',
-        [id],
-      )) as string | null;
+      const uri = await findLocalSourceUri(bifrost, kind, id);
       if (uri == null) {
         bifrost.notifications.open({
           type: 'info',

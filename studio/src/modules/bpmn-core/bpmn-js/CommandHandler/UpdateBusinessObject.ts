@@ -2,7 +2,7 @@ import { is } from 'bpmn-js/lib/util/ModelUtil';
 import type ElementRegistry from 'diagram-js/lib/core/ElementRegistry';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
-import { getRoot } from './Utils/Utils';
+import { getRoot } from './ModdleElementFunctions';
 
 function getProperties(businessObject: any, propertyNames: string[]): Record<string, unknown> {
   const result: Record<string, unknown> = {};

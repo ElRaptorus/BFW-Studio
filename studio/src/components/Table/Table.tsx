@@ -163,7 +163,7 @@ export function Table<TData extends RowData>(props: TableProps<TData>): React.JS
     onPaginationChange,
     onGlobalFilterChange,
     manualPagination: resolvedManualPagination,
-    pageCount: pageCount ?? -1,
+    ...(pageCount != null && { pageCount }),
 
     ...(initialPageSize != null && { initialState: { pagination: { pageIndex: 0, pageSize: initialPageSize } } }),
 

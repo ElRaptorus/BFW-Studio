@@ -110,7 +110,7 @@ Both commands are registered in the command search for command palette access.
 
 ### Breadcrumb Navigation Toolbar
 
-The native bpmn-js breadcrumbs (`.bjs-breadcrumbs`) are hidden via `display: none` in `extend.bpmnio.scss`. They are replaced by a Studio-built breadcrumb bar that sits between `EditorToolbar` and `EditorContent` in the BPMN editor layout, following the same structural pattern as the DMN editor's `.dmn-view-switcher`.
+The native bpmn-js breadcrumbs (`.bjs-breadcrumbs`) are hidden via `display: none` in `modules/bpmn-core/styles/bpmn-js.scss`. They are replaced by a Studio-built breadcrumb bar that sits between `EditorToolbar` and `EditorContent` in the BPMN editor layout, following the same structural pattern as the DMN editor's `.dmn-view-switcher`.
 
 #### Rendering
 
@@ -136,7 +136,7 @@ Styles are in `studio/src/modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss`. 
 
 #### Drill-Down Overlay Theming
 
-The bpmn-js drill-down overlay button is styled in `extend.bpmnio.scss` using CSS custom properties mapped to Studio theme tokens:
+The bpmn-js drill-down overlay button is styled in `modules/bpmn-core/styles/bpmn-js.scss` using CSS custom properties mapped to Studio theme tokens:
 
 | bpmn-js Variable | Studio Token |
 |------------------|--------------|
@@ -320,4 +320,4 @@ The document model uses `whitelistedProcessInstanceIds` to control which FNIs ar
 | initializeBpmnCommands | `studio/src/modules/bpmn-editor/initializers/initializeBpmnCommands.ts` |
 | initializeModelViewerCommands | `studio/src/modules/engine-model-viewer/initializers/initializeCommands.ts` |
 | Breadcrumb bar styles | `studio/src/modules/bpmn-editor/styles/bpmn-breadcrumb-bar.scss` |
-| bpmn-js style overrides | `studio/src/bifrost/styles/extend.bpmnio.scss` |
+| bpmn-js style overrides | `studio/src/modules/bpmn-core/styles/bpmn-js.scss` |

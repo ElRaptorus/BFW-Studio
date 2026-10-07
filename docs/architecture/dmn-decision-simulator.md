@@ -53,7 +53,7 @@ Colours: every `--dmn-sim-*` variable is defined once on `.bifrost` from `--them
 ## Semantics
 
 - Inputs are FEEL texts per input data variable name. An applied empty value is `null`; an input never set is absent and fails with `missing_required_input` (Engine semantics). Unresolved names are hard errors (`feel_evaluation_error`).
-- Imports: `loadSimulationModels` reads the transitive closure from the solution (`solution.models.scan`), keyed by namespace. Imported models are read from disk, not from unsaved tabs. Recursion depth is limited (default 10).
+- Imports: `loadSimulationModels` reads the transitive closure from the solution (`scanSolutionDmnModels`), keyed by namespace. Imported models are read from disk, not from unsaved tabs. Recursion depth is limited (default 10).
 - Qualified references split on the first `#` (Engine, validator and simulator agree; the single implementation is `dmn-core/qualifiedReference.ts`).
 - Errors are `SimulationError` codes (`missing_required_input`, `import_not_found`, `drg_cycle`, `bkm_cycle`, `input_value_violation`, `missing_service_input`, ...). A failure that occurs before the target recorded a step still records an error step on the target (`recordTargetErrorStep`).
 - Every step records `rules` for decision tables, which drive row highlighting. BKM steps carry the namespace of the model that owns the BKM, also for chains inside imported models (`EvaluationEnvironment.namespace`).

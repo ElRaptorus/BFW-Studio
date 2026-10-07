@@ -10,7 +10,7 @@ import BpmnDocumentModel from '../BpmnDocumentModel';
 import { FormBuilderEditorMediator } from './FormBuilderEditorMediator';
 import type { FormBuilderSelection } from './FormBuilderEditorMediator';
 
-export function fieldsForStorage(fields: FormFieldDefinition[]): FormFieldDefinition[] {
+function fieldsForStorage(fields: FormFieldDefinition[]): FormFieldDefinition[] {
   return fields.map((field) => ({
     ...field,
     required: typeof field.required === 'boolean' ? field.required : false,

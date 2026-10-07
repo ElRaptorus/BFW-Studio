@@ -83,7 +83,7 @@ Producers: BPMN linter (`bpmn-linter`), BPMN sanitizer (`bpmn-sanitizer`), DMN s
 
 `StatusBarManager.buildStatusBarItems` runs every factory result through `normalizeStatusBarItems` before `Array.concat`, then normalizes the combined list again (cross-factory id dedupe).
 
-`normalizeStatusBarItems` (`studio/src/bifrost/common/normalizeStatusBarItems.ts`):
+`normalizeStatusBarItems` (private, in `StatusBarManager.ts`):
 
 - Treats non-arrays as a **single** candidate. Array-like objects (`{ 0: …, length }`) are not iterated — `Array.concat` would otherwise flatten them into bare `0`/`1` cells.
 - Keeps only `button` / `divider` / `menu` items with a non-empty string `id`.
@@ -148,7 +148,6 @@ The status bar is primarily an information tool. Items may trigger lightweight, 
 | Component | Path |
 |-----------|------|
 | StatusBarManager | `studio/src/bifrost/common/StatusBarManager.ts` |
-| normalizeStatusBarItems | `studio/src/bifrost/common/normalizeStatusBarItems.ts` |
 | StatusBarMediator | `studio/src/bifrost/browser/StatusBarMediator.ts` |
 | StatusBar (React) | `studio/src/components/status_bar/StatusBar.tsx` |
 | StatusBarButton | `studio/src/components/status_bar/StatusBarButton.tsx` |

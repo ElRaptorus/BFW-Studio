@@ -1,13 +1,9 @@
 import DeployPlanDocumentModel from '#modules/engine-deploy/models/DeployPlanDocumentModel';
-import type { SolutionModelEntry } from '#modules/solution-models/types';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { promises as fileSystem } from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
-import { fixtureUri, scanDeployFixture } from './support/fixtureEntries';
-
-let entries: SolutionModelEntry[];
-beforeAll(async () => {
-  entries = await scanDeployFixture();
-});
+import { fixtureBaseUri, fixtureDirectory, fixtureUri } from './support/fixtureEntries';
 
 type SetupOptions = {
   connected?: boolean;
@@ -26,6 +22,7 @@ async function setup(options: SetupOptions = {}) {
     noClient = false,
   } = options;
   const deployed: string[] = [];
+  const fileNames = await fileSystem.readdir(fixtureDirectory);
   const connectionManager = {
     getActiveEngineId: () => 'e1',
     getConnection: () => ({ url: 'http://engine', displayName: 'Local' }),
@@ -43,7 +40,18 @@ async function setup(options: SetupOptions = {}) {
   };
   const bifrost = {
     getSharedRessource: () => connectionManager,
-    solution: { getSolution: () => ({ projects: [] }) },
+    solution: {
+      getSolution: () => ({ projects: [] }),
+      listIncludedFileUris: async (pattern: RegExp) =>
+        fileNames
+          .filter((file) => pattern.test(file))
+          .sort()
+          .map(fixtureUri),
+    },
+    files: {
+      load: async (uri: string) =>
+        fileSystem.readFile(path.join(fixtureDirectory, uri.slice(fixtureBaseUri.length + 1)), 'utf8'),
+    },
     settings: { on: () => ({ dispose: () => undefined }) },
     editors: {
       on: () => ({ dispose: () => undefined }),
@@ -51,9 +59,6 @@ async function setup(options: SetupOptions = {}) {
     },
     commands: {
       executeCommand: async (name: string, commandArguments: any[]) => {
-        if (name === 'solution.models.scan') {
-          return entries;
-        }
         if (name === 'engine.workspace.deployBpmnFile') {
           const file = String(commandArguments[1]).split('/').pop() as string;
           deployed.push(file);

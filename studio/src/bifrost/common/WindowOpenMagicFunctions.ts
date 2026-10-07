@@ -55,11 +55,11 @@ export function getWindowOpenMagicCommandUrl(command: string, commandArgs?: any[
   });
 }
 
-export function getWindowOpenMagicUrl(options: WindowOpenMagicLinkOptions): string {
+function getWindowOpenMagicUrl(options: WindowOpenMagicLinkOptions): string {
   return WINDOW_OPEN_MAGIC_LINK_PREFIX + encodeURIComponent(JSON.stringify(options));
 }
 
-export function getWindowOpenMagicOptions(url: string): WindowOpenMagicLinkOptions | null {
+function getWindowOpenMagicOptions(url: string): WindowOpenMagicLinkOptions | null {
   if (!url.startsWith(WINDOW_OPEN_MAGIC_LINK_PREFIX)) {
     return null;
   }
