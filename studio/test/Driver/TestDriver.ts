@@ -79,7 +79,7 @@ export default class TestDriver {
   private addCommands() {
     this.webdriver!.addCommand('waitUntilTextExists', (selector, text, timeout) => {
       return this.webdriver!.waitUntil(async () => {
-        const elem = await this.webdriver!.$(selector);
+        const elem = await this.webdriver!.$(selector, { strict: false });
         const exists = await elem.isExisting();
         if (!exists) {
           return false;

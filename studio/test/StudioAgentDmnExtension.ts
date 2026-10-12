@@ -40,7 +40,9 @@ export async function createAndStartStudioAgentDmnExtension(
 
 export class StudioAgentDmnExtension extends StudioAgent {
   async waitForInteractiveDmnDocument(timeout: number = ASSERT_VISIBLE_TIMEOUT): Promise<true> {
-    const element = await this.testDriver.client!.$('[data-test--dmn-document-is-interactive="true"]');
+    const element = await this.testDriver.client!.$('[data-test--dmn-document-is-interactive="true"]', {
+      strict: false,
+    });
     return element.waitForExist({ timeout: timeout });
   }
 

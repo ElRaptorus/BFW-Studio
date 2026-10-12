@@ -157,7 +157,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
     const selector = `[data-element-id=${elementId}]`;
     await this.prepareCanvasPointer();
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
-    const element = await this.testDriver.client!.$(selector);
+    const element = await this.testDriver.client!.$(selector, { strict: false });
     const elementLocation = await element.getLocation();
     await this.testDriver.client!.performActions([
       {
@@ -186,7 +186,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
     const selector = `[data-element-id=${elementId}]`;
     await this.prepareCanvasPointer();
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
-    const element = await this.testDriver.client!.$(selector);
+    const element = await this.testDriver.client!.$(selector, { strict: false });
     const elementLocation = await element.getLocation();
     await this.testDriver.client!.performActions([
       {
@@ -215,7 +215,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
     const selector = `[data-element-id=${elementId}]`;
     await this.prepareCanvasPointer();
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
-    const element = await this.testDriver.client!.$(selector);
+    const element = await this.testDriver.client!.$(selector, { strict: false });
     const elementLocation = await element.getLocation();
     await this.testDriver.client!.performActions([
       {
@@ -244,7 +244,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
     await this.prepareCanvasPointer();
     for (const elementId of elementIds) {
       await this.assertVisible(`[data-element-id=${elementId}]`, ASSERT_VISIBLE_TIMEOUT);
-      const element = await this.testDriver.client!.$(`[data-element-id=${elementId}]`);
+      const element = await this.testDriver.client!.$(`[data-element-id=${elementId}]`, { strict: false });
       const elementLocation = await element.getLocation();
       await this.testDriver.client!.performActions([
         {
@@ -294,7 +294,9 @@ export class StudioAgentBpmnExtension extends StudioAgent {
   }
 
   async waitForInteractiveBpmnDocument(timeout: number = ASSERT_VISIBLE_TIMEOUT): Promise<true> {
-    const element = await this.testDriver.client!.$('[data-test--bpmn-document-is-interactive="true"]');
+    const element = await this.testDriver.client!.$('[data-test--bpmn-document-is-interactive="true"]', {
+      strict: false,
+    });
     return element.waitForExist({ timeout: timeout });
   }
 
@@ -318,7 +320,7 @@ export class StudioAgentBpmnExtension extends StudioAgent {
   }
 
   async assertBreadcrumbsVisible(timeout: number = ASSERT_VISIBLE_TIMEOUT): Promise<void> {
-    const element = await this.testDriver.client!.$('[data-test--bpmn-breadcrumb-bar]');
+    const element = await this.testDriver.client!.$('[data-test--bpmn-breadcrumb-bar]', { strict: false });
     await element.waitForExist({ timeout });
   }
 

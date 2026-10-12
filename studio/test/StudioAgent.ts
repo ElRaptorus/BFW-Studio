@@ -341,7 +341,7 @@ export class StudioAgent {
   async awaitReadyness(): Promise<void> {
     await this.testDriver.waitForReady();
     await (this.testDriver.client! as any).waitUntilWindowLoaded();
-    const element = await this.testDriver.client!.$('.bifrost');
+    const element = await this.testDriver.client!.$('.bifrost', { strict: false });
     await element.waitForDisplayed({ timeout: ASSERT_VISIBLE_TIMEOUT });
   }
 
@@ -666,7 +666,8 @@ export class StudioAgent {
 
   async getSolutionFileUri(): Promise<string | null> {
     return (await this.testDriver.client!.execute(`return bifrost.solution.getSolution()?.solutionFileUri ?? null`)) as
-      string | null;
+      | string
+      | null;
   }
 
   async addFolderToSolutionViaApi(directoryUri: string): Promise<void> {
@@ -934,7 +935,7 @@ export class StudioAgent {
   async waitForText(selector: string, timeout: number = ASSERT_VISIBLE_TIMEOUT): Promise<void> {
     await this.testDriver.client!.waitUntil(
       async () => {
-        const element = await this.testDriver.client!.$(selector);
+        const element = await this.testDriver.client!.$(selector, { strict: false });
         const text = await element.getText();
 
         return text.trim() !== '';
@@ -975,7 +976,7 @@ export class StudioAgent {
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
 
     await this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.doubleClick());
   }
@@ -990,14 +991,14 @@ export class StudioAgent {
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
 
     await this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.moveTo());
   }
 
   async getAttribute(selector: string, attributeName: string): Promise<any> {
     return this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.getAttribute(attributeName));
   }
@@ -1010,21 +1011,21 @@ export class StudioAgent {
 
   async getHtml(selector: string): Promise<any> {
     return this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.getHTML());
   }
 
   async getText(selector: string): Promise<any> {
     return this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.getText());
   }
 
   async getValue(selector: string): Promise<any> {
     return this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.getValue());
   }
@@ -1036,7 +1037,7 @@ export class StudioAgent {
     // If the selector is a MultiLineCodeEditor we need to get the text instead of the value.
     const stringToUse = value ?? text;
     await this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.click());
     const backspaceArray = stringToUse.split('').map(() => Key.Backspace);
@@ -1071,7 +1072,7 @@ export class StudioAgent {
   async assertVisible(selector: string, timeout?: number): Promise<boolean> {
     await this.scrollIntoViewIfNeeded(selector);
 
-    return (await this.testDriver.client!.$(selector)).waitForDisplayed({ timeout: timeout });
+    return (await this.testDriver.client!.$(selector, { strict: false })).waitForDisplayed({ timeout: timeout });
   }
 
   /**
@@ -1385,7 +1386,7 @@ export class StudioAgent {
     await this.assertVisible(selector, ASSERT_VISIBLE_TIMEOUT);
 
     await this.testDriver
-      .client!.$(selector)
+      .client!.$(selector, { strict: false })
       .getElement()
       .then((element) => element.click({ button: mouseButton }));
   }
