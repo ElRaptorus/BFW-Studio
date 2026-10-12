@@ -14,8 +14,8 @@ declare module 'bpmn-js-differ' {
   }
 
   export class Differ {
-    diff(a: unknown, b: unknown, handler?: ChangeHandler): ChangeHandler;
+    diff(previous: unknown, next: unknown, handler?: ChangeHandler): ChangeHandler;
   }
 
-  export function diff(a: unknown, b: unknown, handler?: ChangeHandler): ChangeHandler;
+  export function diff(previous: unknown, next: unknown, handler?: ChangeHandler): ChangeHandler;
 }

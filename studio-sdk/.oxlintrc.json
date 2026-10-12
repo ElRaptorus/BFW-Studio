@@ -1,0 +1,12 @@
+{
+  "extends": [
+    "../oxlintrc.base.json"
+  ],
+  "ignorePatterns": [
+    "out/",
+    "node_modules/",
+    "*.js",
+    "*.mjs",
+    "*.cjs"
+  ]
+}

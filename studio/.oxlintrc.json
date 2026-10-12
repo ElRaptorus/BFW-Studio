@@ -1,0 +1,175 @@
+{
+  "extends": [
+    "../oxlintrc.base.json"
+  ],
+  "ignorePatterns": [
+    "out/",
+    "dist/",
+    "test/fixtures/",
+    "node_modules/",
+    "build/",
+    "*.js",
+    "*.mjs",
+    "*.cjs"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "src/bifrost/**/*.{ts,tsx}",
+        "src/components/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^#modules/",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)modules/",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*test(/|$)",
+                "message": "Production code must not import from test. See module-boundaries §Tests never shape production code."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/modules/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^#modules/engine-",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*engine-",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*test(/|$)",
+                "message": "Production code must not import from test. See module-boundaries §Tests never shape production code."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/modules/bpmn-*/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^#modules/engine-",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*engine-",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "^#modules/git-cruiser(/|$)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*git-cruiser(/|$)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "^#modules/dmn-(?:[^c]|c[^o]|co[^r]|cor[^e]|core\\w)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*dmn-(?:[^c]|c[^o]|co[^r]|cor[^e]|core\\w)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*test(/|$)",
+                "message": "Production code must not import from test. See module-boundaries §Tests never shape production code."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/modules/dmn-*/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^#modules/engine-",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*engine-",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "^#modules/git-cruiser(/|$)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*git-cruiser(/|$)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "^#modules/bpmn-(?:[^c]|c[^o]|co[^r]|cor[^e]|core\\w)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*bpmn-(?:[^c]|c[^o]|co[^r]|cor[^e]|core\\w)",
+                "message": "Module boundary violation, see .cursor/rules/module-boundaries.mdc."
+              },
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*test(/|$)",
+                "message": "Production code must not import from test. See module-boundaries §Tests never shape production code."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/*.{ts,tsx}",
+        "src/*.d.ts",
+        "src/types/**/*.{ts,tsx,d.ts}",
+        "src/modules/engine-*/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "(^|/)\\.\\./(\\.\\./)*test(/|$)",
+                "message": "Production code must not import from test. See module-boundaries §Tests never shape production code."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

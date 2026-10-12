@@ -24,7 +24,6 @@ node_modules
 .project
 .settings/
 .github
-.prettierrc.json
 tmp
 src
 test

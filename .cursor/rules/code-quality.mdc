@@ -1,12 +1,12 @@
 ---
-description: ESLint and Prettier code quality standards
+description: Oxlint and Oxfmt code quality standards
 globs: "**/*.{ts,tsx}"
 alwaysApply: false
 ---
 
-# Code Quality: ESLint and Prettier
+# Code Quality: Oxlint and Oxfmt
 
-All code in `studio/` and `studio-sdk/` must pass the project's ESLint rules and Prettier formatting. Both packages share rules defined in `eslint.config.base.mjs` at the repository root.
+All code in `studio/` and `studio-sdk/` must pass the project's Oxlint rules and Oxfmt formatting. Both packages share rules defined in `oxlintrc.base.json` at the repository root.
 
 ## Writing code
 
@@ -15,22 +15,23 @@ When writing or modifying code, adhere to these active rules:
 - **`curly: ['error', 'all']`** — Always use braces for `if`, `else`, `for`, `while`, etc. No single-line braceless bodies.
 - **`no-nested-ternary`** — Do not nest ternary expressions.
 - **`prefer-const`** / **`no-var`** — Use `const` by default; use `let` only when reassignment is needed; never use `var`.
-- **`id-length: min 2`** — Variable names must be at least 2 characters (exceptions: `_`, `i`, `j`, `k`, `x`, `y`, `e`).
-- **`@typescript-eslint/array-type: 'array'`** — Use `T[]` syntax, not `Array<T>`.
-- **`@typescript-eslint/no-unsafe-function-type`** — Do not use `Function` as a type. Use specific signatures like `() => void` or `(...args: any[]) => any`.
-- **`@typescript-eslint/consistent-type-imports`** — Do not use inline `import('...').Type` in type annotations. Always place imports at the top of the file. Use `import type { T }` for type-only imports.
+- **`id-length: min 2`** — Names must be at least 2 characters (exceptions: `_`, `i`, `j`, `k`, `x`, `y`, `e`; single-letter generic type parameters such as `T` are allowed). This includes parameter names in type signatures and `.d.ts` files.
+- **`typescript/array-type: 'array'`** — Use `T[]` syntax, not `Array<T>`.
+- **`typescript/no-unsafe-function-type`** — Do not use `Function` as a type. Use specific signatures like `() => void` or `(...args: any[]) => any`.
+- **`typescript/consistent-type-imports`** — Do not use inline `import('...').Type` in type annotations. Always place imports at the top of the file. Use `import type { T }` for type-only imports.
 
 ### React and React Compiler rules
 
-The project uses `eslint-plugin-react-hooks` with **React Compiler** rules enabled. These are stricter than the standard hooks rules:
+Oxlint's `react` plugin runs the **React Compiler** rules (the `react-hooks` v7 set). These are stricter than the standard hooks rules:
 
-- **`react-hooks/exhaustive-deps`** — All reactive values must be in dependency arrays. Destructure props before `useCallback`/`useMemo` to reference individual values.
-- **`react-hooks/set-state-in-effect`** — Do not call `setState` synchronously inside an effect. Use lazy `useState` initializers or adjust-state-during-render instead.
-- **`react-hooks/refs`** — Do not read or write `ref.current` during render. Move ref assignments to `useEffect`. Accept `ref` as a prop (React 19); do not use `forwardRef` or a custom `htmlRef` prop.
-- **`react-hooks/rules-of-hooks`** — Hooks must be called unconditionally and in the same order every render. Never call hooks inside `if`/`else` blocks.
-- **`react-hooks/static-components`** — Components used in JSX must be stable references (module-level or memoized).
-- **`react-hooks/immutability`** — Do not mutate props, state, or values derived from them. Clone before modifying.
-- **`react-hooks/purity`** — Render functions must be pure. No `Date.now()`, `Math.random()`, or side effects during render.
+- **`react/exhaustive-deps`** — All reactive values must be in dependency arrays. Destructure props before `useCallback`/`useMemo` to reference individual values.
+- **`react/set-state-in-effect`** — Do not call `setState` synchronously inside an effect. Use lazy `useState` initializers or adjust-state-during-render instead.
+- **`react/refs`** — Do not read or write `ref.current` during render. Move ref assignments to `useEffect`. Accept `ref` as a prop (React 19); do not use `forwardRef` or a custom `htmlRef` prop.
+- **`react/rules-of-hooks`** — Hooks must be called unconditionally and in the same order every render. Never call hooks inside `if`/`else` blocks.
+- **`react/static-components`** — Components used in JSX must be stable references (module-level or memoized).
+- **`react/immutability`** — Do not mutate props, state, or values derived from them. Clone before modifying.
+- **`react/hook-use-state`** — Destructure `useState` as `[thing, setThing]`. A value that never changes (an id, a lazily created object, a one-time snapshot) belongs in `useId` or `useMemo`, not in `useState`. When the first value is a deliberate snapshot of a prop, suppress the rule with the reason.
+- **`react/purity`** — Render functions must be pure. No `Date.now()`, `Math.random()`, or side effects during render.
 
 ### Key patterns
 
@@ -42,19 +43,19 @@ The project uses `eslint-plugin-react-hooks` with **React Compiler** rules enabl
 
 When a lint rule must be suppressed, always:
 
-1. Use `// eslint-disable-next-line <rule-name>` (never blanket `eslint-disable`).
+1. Use `// eslint-disable-next-line <rule-name>` (never blanket `eslint-disable`). Oxlint honours the `eslint-disable` prefix; rules that had an `@eslint-react/` name before are `react/<rule>` now.
 2. Add a `--` comment explaining **why** the suppression is necessary.
-3. Place the comment on the line immediately before the flagged statement.
+3. Place the comment on the line immediately before the flagged line. Unused disable comments are reported (`--report-unused-disable-directives`), so remove a comment once it no longer suppresses anything.
 
 ## Formatting
 
-Prettier is configured in `/.prettierrc.json` (repository root). Key settings:
+Oxfmt is configured in `/.oxfmtrc.json` (repository root). Key settings:
 
 - Single quotes, 120 character print width, trailing commas everywhere, `arrowParens: 'always'`.
-- Import sorting via `@trivago/prettier-plugin-sort-imports`.
+- Import sorting through `sortImports` (react first, then `@elraptorus/**`, then relative imports).
 
-Do not override Prettier settings in individual files.
+Do not override Oxfmt settings in individual files.
 
-## ESLint config structure
+## Oxlint config structure
 
-Both packages use ESLint flat config with `defineConfig()` from `eslint/config`. Shared rules are in `eslint.config.base.mjs` (repo root). Important ordering: `eslint-config-prettier` is applied **before** the custom rules block so that `curly` and other intentional rules are re-enabled after Prettier's blanket disable.
+Both packages extend `oxlintrc.base.json` (repo root) from their own `.oxlintrc.json`. Rules are listed explicitly (`categories.correctness` is `off`). The module-boundary zones are `overrides` in `studio/.oxlintrc.json`; a later override replaces the options of an earlier one. The `@eslint-react` rules without an Oxlint equivalent are not enforced, so review effects for leaked resources (listeners, intervals, timeouts, observers). See `docs/architecture/code-quality.md`.

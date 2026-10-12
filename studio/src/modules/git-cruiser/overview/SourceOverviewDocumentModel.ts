@@ -66,7 +66,8 @@ type ComparisonState = {
 };
 
 export type ExpandedCommit =
-  'loading' | { readonly files: readonly OverviewFile[]; readonly previewablePaths: ReadonlySet<string> };
+  | 'loading'
+  | { readonly files: readonly OverviewFile[]; readonly previewablePaths: ReadonlySet<string> };
 
 export function isModelFile(relativePath: string): boolean {
   return DIGEST_COMMANDS[path.extname(relativePath).toLowerCase()] != null;

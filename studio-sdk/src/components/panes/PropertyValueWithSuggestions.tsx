@@ -11,7 +11,8 @@ function assertNotNull<T>(value: T, nameForErrorMessage: string): asserts value 
 }
 
 export type Suggestion =
-  string | { label: string | React.JSX.Element; sublabel?: string | React.JSX.Element; value: string };
+  | string
+  | { label: string | React.JSX.Element; sublabel?: string | React.JSX.Element; value: string };
 
 type ReactSelectOption = {
   label: string | React.JSX.Element;
@@ -45,6 +46,7 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
   // with the selected option — that puts the text in the search box, hides
   // `.react-select__single-value`, and filters the menu so other options never
   // appear (e.g. a newly created message name on a second Send Task).
+  // eslint-disable-next-line react/hook-use-state -- react-select reads defaultValue only on mount
   const [defaultValue] = useState(defaultValueFromProps);
 
   const isClearable = isClearableProp ?? false;
@@ -144,7 +146,6 @@ export function PropertyValueWithSuggestions(props: PropertyValueWithSuggestions
 
   const InputComponent = useMemo(() => {
     // react-select requires a component type for Input; latest handlers live in refs.
-    // eslint-disable-next-line @eslint-react/no-nested-component-definitions -- react-select Input override
     return function Input(inputProps: any) {
       return (
         <components.Input

@@ -29,7 +29,9 @@ export type LintOnDiskOptions = {
 };
 
 export type LintOnDiskResult =
-  { status: 'skipped-foreign' } | { status: 'unchanged'; xml: string } | { status: 'updated'; xml: string };
+  | { status: 'skipped-foreign' }
+  | { status: 'unchanged'; xml: string }
+  | { status: 'updated'; xml: string };
 
 type ModdleLike = {
   create: (type: string, properties?: Record<string, unknown>) => any;
@@ -91,7 +93,8 @@ export function readExistingScore(definitions: ModdleDefinitions, rulesetId: str
     return null;
   }
   const bfwProps = values.find((val: unknown) => (val as { $type?: string }).$type === BFW_PROPERTIES_TYPE) as
-    { linterRulesetScores?: unknown[] } | undefined;
+    | { linterRulesetScores?: unknown[] }
+    | undefined;
   const scores = bfwProps?.linterRulesetScores;
   if (!Array.isArray(scores)) {
     return null;

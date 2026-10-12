@@ -76,9 +76,10 @@ async function generateCanvasWithOverlays(model: EngineBpmnDebuggerEditorDocumen
   const { svgHeight, svgWidth } = getSvgSize(svg);
 
   const pseudoInvisibleDiv = createPseudoInvisibleDiv(svgWidth, svgHeight);
-  const debuggerBjsContainer = (
-    model.bpmnViewerComponentAdapter?.getModeler() as unknown as { _container: HTMLElement }
-  )._container;
+  const { bpmnViewerComponentAdapter } = model;
+  assertNotNull(bpmnViewerComponentAdapter, 'model.bpmnViewerComponentAdapter');
+  const debuggerBjsContainer = (bpmnViewerComponentAdapter.getModeler() as unknown as { _container: HTMLElement })
+    ._container;
   (debuggerBjsContainer.parentElement as HTMLElement).appendChild(pseudoInvisibleDiv);
 
   const viewer = new BpmnViewer({ container: pseudoInvisibleDiv }) as any;

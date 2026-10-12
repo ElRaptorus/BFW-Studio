@@ -135,7 +135,8 @@ function readExistingScore(definitions: ModdleDefinitions, rulesetId: string): R
     return null;
   }
   const bfwProps = values.find((val: unknown) => (val as { $type?: string }).$type === 'bfw:Properties') as
-    { linterRulesetScores?: unknown[] } | undefined;
+    | { linterRulesetScores?: unknown[] }
+    | undefined;
   const scores = bfwProps?.linterRulesetScores;
   if (!Array.isArray(scores)) {
     return null;
@@ -210,7 +211,8 @@ export function LintBridge(
       (this.settings.get('bpmnLinter.profile', this.documentUri()) as string | undefined) ?? 'bpmn-development';
     const customRulesets =
       (this.settings.get('bpmnLinter.customRulesets', this.documentUri()) as
-        Record<string, CustomRulesetEntry> | undefined) ?? {};
+        | Record<string, CustomRulesetEntry>
+        | undefined) ?? {};
     this._resolvedScorePolicy = resolveScorePolicy(profileName, customRulesets);
     const customRuleset = customRulesets[profileName];
 
@@ -247,7 +249,8 @@ export function LintBridge(
     ];
     const customRulesets =
       (this.settings.get('bpmnLinter.customRulesets', this.documentUri()) as
-        Record<string, CustomRulesetEntry> | undefined) ?? {};
+        | Record<string, CustomRulesetEntry>
+        | undefined) ?? {};
     const custom = Object.keys(customRulesets).map((name) => ({
       id: name,
       label: name,

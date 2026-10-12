@@ -130,7 +130,7 @@ function PluginIframe({
     <iframe
       ref={iframeRef}
       src={iframeSrc}
-      // eslint-disable-next-line @eslint-react/dom-no-unsafe-iframe-sandbox -- unique custom-protocol origin per plugin; both flags required for script + origin-isolated storage
+      // eslint-disable-next-line react/iframe-missing-sandbox -- unique custom-protocol origin per plugin; both flags required for script + origin-isolated storage
       sandbox="allow-scripts allow-same-origin"
       style={{ border: 'none', width: '100%', height: '100%' }}
       className={className}

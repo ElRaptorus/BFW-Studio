@@ -129,7 +129,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       <BpmnElementColorPicker
         customColors={
           props.studio.settings.get('bpmn.editor.customColors', props.editorDocument.uri) as
-            BpmnElementColor[] | undefined
+            | BpmnElementColor[]
+            | undefined
         }
         initialColor={initialColor}
         onElementColorChange={onElementColorChange}

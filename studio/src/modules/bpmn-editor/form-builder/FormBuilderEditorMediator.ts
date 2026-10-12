@@ -1,7 +1,9 @@
 import type { FormAction, FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
 
 export type FormBuilderSelection =
-  { type: 'field'; fieldId: string } | { type: 'action'; actionId: string } | { type: 'none' };
+  | { type: 'field'; fieldId: string }
+  | { type: 'action'; actionId: string }
+  | { type: 'none' };
 
 export type FormBuilderEditorSnapshot = {
   fields: FormFieldDefinition[];

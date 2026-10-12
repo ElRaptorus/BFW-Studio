@@ -103,7 +103,13 @@ export type SequenceFlow = {
 };
 
 export type SelectableElement =
-  GenericElement | DataObject | DataInputAssociation | DataOutputAssociation | FlowNode | Participant | SequenceFlow;
+  | GenericElement
+  | DataObject
+  | DataInputAssociation
+  | DataOutputAssociation
+  | FlowNode
+  | Participant
+  | SequenceFlow;
 
 const mapGenericElement = (shape: BpmnDiagramShape): GenericElement => {
   return {
@@ -141,7 +147,8 @@ const mapDataInputAssociation = (shape: BpmnDiagramShape, processModel: BpmnProc
   let source = processModel.dataObjectReferences.find((dataObject) => dataObject.id === association?.sourceRef);
   if (!source) {
     source = processModel.dataStoreReferences.find((dataStore) => dataStore.id === association?.sourceRef) as
-      DataObjectReference | undefined;
+      | DataObjectReference
+      | undefined;
   }
 
   return {
@@ -164,7 +171,8 @@ const mapDataOutputAssociation = (shape: BpmnDiagramShape, processModel: BpmnPro
   let target = processModel.dataObjectReferences.find((dataObject) => dataObject.id === association?.targetRef);
   if (!target) {
     target = processModel.dataStoreReferences.find((dataStore) => dataStore.id === association?.targetRef) as
-      DataObjectReference | undefined;
+      | DataObjectReference
+      | undefined;
   }
 
   return {

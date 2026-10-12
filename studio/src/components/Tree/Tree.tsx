@@ -92,6 +92,7 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
     setSelectedItems((prev) => prev.filter((id) => allIds.has(id)));
   }
 
+  // eslint-disable-next-line react/hook-use-state -- the mediator is looked up or registered once per mount
   const [mediator] = useState<TreeViewMediator>(() => {
     const existing = studio.views.isRegistered(viewMediatorId);
     if (existing) {

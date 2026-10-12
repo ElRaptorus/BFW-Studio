@@ -198,7 +198,7 @@ Use this table to determine **which file to update** based on what you changed o
 | Plugin DMN DRD enrichment | `plugin-dmn-enrichment.md` |
 | How to author/install a plugin (not method tables) | `docs/plugin-development-guide.md` |
 | Import aliases, tsconfig, module resolution | `imports-and-modules.md` |
-| ESLint/Prettier config, React Compiler rules | `code-quality.md` |
+| Oxlint/Oxfmt config, React Compiler rules | `code-quality.md` |
 | Recurring constraint (gate: would someone hit this again?) | `common-pitfalls.md` |
 | Significant A-vs-B design choice | `docs/decisions.md` |
 | Integration-test / StudioAgent harness gotcha | `docs/testing.md` — **not** pitfalls |

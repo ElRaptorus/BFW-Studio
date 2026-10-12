@@ -10,4 +10,6 @@ export type StudioEventName =
 
 export type StudioSolutionChangedEvent = 'solutionChanged';
 export type StudioEmittableEventName =
-  'unspecifiedGlobalUpdate' | 'pluginOverlayFactoriesChanged' | 'pluginDmnOverlayFactoriesChanged';
+  | 'unspecifiedGlobalUpdate'
+  | 'pluginOverlayFactoriesChanged'
+  | 'pluginDmnOverlayFactoriesChanged';

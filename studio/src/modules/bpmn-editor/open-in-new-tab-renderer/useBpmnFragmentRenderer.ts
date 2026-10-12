@@ -34,13 +34,13 @@ type BpmnFragmentRendererState = {
 };
 
 type GetFragmentValueFn = (model: BpmnDocumentModel, fragmentId: string) => string;
-type SetFragmentValueFn = (model: BpmnDocumentModel, fragmentId: string, value: string) => void;
+type WriteFragmentValueFn = (model: BpmnDocumentModel, fragmentId: string, value: string) => void;
 
 export function useBpmnFragmentRenderer(
   props: EditorDocumentRendererProps,
   config: BpmnFragmentRendererConfig,
   getFragmentValue: GetFragmentValueFn,
-  setFragmentValue: SetFragmentValueFn,
+  writeFragmentValue: WriteFragmentValueFn,
 ): BpmnFragmentRendererState & {
   bifrost: Bifrost;
   handleChange: (value: string) => void;
@@ -59,23 +59,23 @@ export function useBpmnFragmentRenderer(
 
   const [loading, setLoading] = useState(true);
   const [fragmentName, setFragmentName] = useState<string | null>(null);
-  const [fragmentValue, setFragmentValue_] = useState<string | null>(null);
+  const [fragmentValue, setFragmentValue] = useState<string | null>(null);
   const [feelVariables, setFeelVariables] = useState<FeelEditorVariable[] | null>(null);
   const [bpmnDocumentModel, setBpmnDocumentModel] = useState<BpmnDocumentModel | null>(null);
 
   const getFragmentValueRef = useRef(getFragmentValue);
-  const setFragmentValueRef = useRef(setFragmentValue);
+  const writeFragmentValueRef = useRef(writeFragmentValue);
   const latestValueRef = useRef<string | null>(null);
   useEffect(() => {
     getFragmentValueRef.current = getFragmentValue;
-    setFragmentValueRef.current = setFragmentValue;
+    writeFragmentValueRef.current = writeFragmentValue;
   });
 
   function handleChange(value: string): void {
     latestValueRef.current = value;
     const model = bpmnDocumentModelRef.current;
     assertNotNull(model, 'bpmnDocumentModel');
-    setFragmentValueRef.current(model, fragmentId, value);
+    writeFragmentValueRef.current(model, fragmentId, value);
     model.selection.updateSelectionIfIsCurrentlySelected(fragmentId, fragmentId);
   }
 
@@ -94,7 +94,7 @@ export function useBpmnFragmentRenderer(
         return;
       }
       setLoading(false);
-      setFragmentValue_(getFragmentValueRef.current(model, fragmentId));
+      setFragmentValue(getFragmentValueRef.current(model, fragmentId));
     }
 
     async function onDocumentModelPresentAndMounted(model: BpmnDocumentModel): Promise<void> {
@@ -139,7 +139,7 @@ export function useBpmnFragmentRenderer(
       }
 
       if (latestValueRef.current != null && bpmnDocumentModelRef.current != null) {
-        setFragmentValueRef.current(bpmnDocumentModelRef.current, fragmentId, latestValueRef.current);
+        writeFragmentValueRef.current(bpmnDocumentModelRef.current, fragmentId, latestValueRef.current);
       }
     };
   }, [bifrost.commands, bifrost.editors, config, fragmentId, isFeelEditor, parentEditorDocument]);

@@ -2,7 +2,7 @@ import { BpmnModdle } from 'bpmn-moddle';
 
 import bfwPlatformModdleDescriptor from '../../bpmn-core/bpmn-js/moddle/bfw-platform.json';
 
-/* eslint-disable @typescript-eslint/no-unused-vars, no-var, no-useless-assignment */
+/* eslint-disable @typescript-eslint/no-unused-vars, no-var */
 const window: any = self;
 const global: any = self;
 var Buffer: any = Buffer || [];
@@ -10,7 +10,7 @@ var process: any = process || {
   env: { DEBUG: undefined },
   version: [],
 };
-/* eslint-enable @typescript-eslint/no-unused-vars, no-var, no-useless-assignment */
+/* eslint-enable @typescript-eslint/no-unused-vars, no-var */
 
 const moddle = new BpmnModdle({ bfw: bfwPlatformModdleDescriptor });
 

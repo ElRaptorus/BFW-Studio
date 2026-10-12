@@ -20,7 +20,8 @@ export interface PluginCommandOptions {
  * Error objects are converted to plain objects with `message` and optional `stack`.
  */
 export type SerializedCommandResult<T = unknown> =
-  { success: true; returnValue: T } | { success: false; error: { message: string; stack?: string } };
+  | { success: true; returnValue: T }
+  | { success: false; error: { message: string; stack?: string } };
 
 /**
  * Serializable subset of a registered command, stripped of non-transferable
@@ -404,7 +405,9 @@ export type PluginTreeItemType = 'directory' | 'file' | 'section' | 'property';
 
 /** A badge displayed alongside a tree item label. */
 export type PluginTreeBadge =
-  { type: 'character'; character: string } | { type: 'icon'; icon: string } | { type: 'number'; number: number };
+  | { type: 'character'; character: string }
+  | { type: 'icon'; icon: string }
+  | { type: 'number'; number: number };
 
 /**
  * A serializable tree item pushed from the plugin to the bridge.

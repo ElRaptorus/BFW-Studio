@@ -34,7 +34,7 @@ export class PropertyPanelExampleRenderer extends AbstractExampleRenderer<Proper
           </div>
           <div
             className="machine-sanctum-example col mx-4"
-            // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- machine-sanctum live HTML playground
+            // eslint-disable-next-line react/no-danger -- machine-sanctum live HTML playground
             dangerouslySetInnerHTML={{ __html: htmlAsString }}
           ></div>
         </div>

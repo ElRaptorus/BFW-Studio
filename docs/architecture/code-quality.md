@@ -1,10 +1,10 @@
-# Code Quality: ESLint and Prettier
+# Code Quality: Oxlint and Oxfmt
 
 ---
 
 ## Overview
 
-The Studio enforces code quality through ESLint (static analysis) and Prettier (formatting). Both `studio/` and `studio-sdk/` share a common set of custom rules defined in `eslint.config.base.mjs` at the repository root. Each package has its own `eslint.config.mjs` that imports the shared rules and composes them with package-specific file patterns and ignores. Prettier uses a shared root config with import sorting.
+The Studio enforces code quality through Oxlint (static analysis) and Oxfmt (formatting), both from the Oxc toolchain. `studio/` and `studio-sdk/` share one rule set in `oxlintrc.base.json` at the repository root; each package extends it from its own `.oxlintrc.json`. Oxfmt uses one shared root config, `.oxfmtrc.json`. Both tools are pinned to exact versions in each `package.json` because Oxfmt is pre-1.0 and its output can change between minor versions.
 
 ---
 
@@ -12,52 +12,30 @@ The Studio enforces code quality through ESLint (static analysis) and Prettier (
 
 ### Shared Base Config
 
-**Path:** `eslint.config.base.mjs` (repository root)
+**Path:** `oxlintrc.base.json` (repository root)
 
-Exports plain JS objects (no npm imports) consumed by both packages:
+Plain JSON, consumed through `extends` by both packages. It enables rules explicitly (`categories.correctness` is `off`, so only listed rules run):
 
-| Export | Content |
-|--------|---------|
-| `customRules` | All custom rule overrides (curly, id-length, TypeScript, React, etc.) |
-| `reactSettings` | `{ 'react-x': { version: '19.2.8', importSource: 'react' } }` |
-| `sharedGlobals` | `{ process: 'readonly' }` |
+| Section | Content |
+|---------|---------|
+| `plugins` | `typescript`, `react` (the `react` plugin also provides the React Compiler rules) |
+| `env` | `builtin`, `browser`, `node` |
+| `settings.react.version` | `19.2.8` |
+| `rules` | ESLint core and typescript-eslint recommended equivalents, the project's custom rules, the React Compiler rules, and the mapped React rules (see §Rules) |
+| `overrides` | Turns off the core rules that TypeScript itself covers for `*.ts`/`*.tsx` |
 
 ### Per-Package Configs
 
-Each package has its own `eslint.config.mjs` that imports the shared exports and composes them with package-local npm packages (`eslint` 10, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier`, `@eslint-react/eslint-plugin`, `eslint-plugin-react-hooks`, `globals`) and file patterns.
+| Package | Config path | Ignores | Module-boundary zones |
+|---------|-------------|---------|-----------------------|
+| `studio` | `studio/.oxlintrc.json` | `out/`, `dist/`, `test/fixtures/`, `node_modules/`, `build/`, `*.js`, `*.mjs`, `*.cjs` | Yes (see [imports-and-modules.md](imports-and-modules.md) §Module Dependency Direction) |
+| `studio-sdk` | `studio-sdk/.oxlintrc.json` | `out/`, `node_modules/`, `*.js`, `*.mjs`, `*.cjs` | No |
 
-| Package | Config path | Files pattern |
-|---------|------------|---------------|
-| `studio` | `studio/eslint.config.mjs` | `src/**/*.{ts,tsx}`, `test/**/*.{ts,tsx}` |
-| `studio-sdk` | `studio-sdk/eslint.config.mjs` | `src/**/*.{ts,tsx}` |
+A later entry in `overrides` replaces the `no-restricted-imports` option of an earlier matching entry; it does not merge. The studio config relies on this: the neutral-module zone (`src/modules/**`) is listed before the engine, bpmn and dmn zones, so those folders get their own pattern lists, and an `ignores` list per zone is not needed (Oxlint overrides have none).
 
-Flat config using `defineConfig()` from `eslint/config`. Config objects are applied in this order:
+### Oxfmt Configuration
 
-```
-┌──────────────────────────────────────────┐
-│  1. Ignores (out/, dist/, …)             │
-├──────────────────────────────────────────┤
-│  2. js.configs.recommended               │
-├──────────────────────────────────────────┤
-│  3. tseslint.configs.recommended         │
-├──────────────────────────────────────────┤
-│  4. eslint-config-prettier               │  ← disables formatting rules
-├──────────────────────────────────────────┤
-│  5. @eslint-react recommended-typescript │
-│     + disable-rsc                        │  ← Electron, not Next.js RSC
-├──────────────────────────────────────────┤
-│  6. eslint-plugin-react-hooks            │  ← compiler / Rules of React
-│     + customRules                        │  ← re-enables curly; array-index-key error
-└──────────────────────────────────────────┘
-```
-
-The ordering is critical: `eslint-config-prettier` must come **before** the custom rules block. Prettier disables all formatting-conflicting rules (including `curly`). The custom rules block then re-enables the ones the project wants enforced. If `prettier` comes last, it silently overrides custom rules back to `off`.
-
-`@eslint-react/eslint-plugin` replaces jsx-eslint `eslint-plugin-react` (that plugin does not support ESLint 10). Meta's `eslint-plugin-react-hooks` stays as the source of truth for compiler / Rules-of-React coverage. The `@eslint-react` compiler twins (`rules-of-hooks`, `exhaustive-deps`, `purity`, `set-state-in-effect`, `set-state-in-render`, `static-components`, `unsupported-syntax`, `use-memo`, `error-boundaries`) are turned **off** in `customRules` so existing `eslint-disable-next-line react-hooks/…` comments remain valid. Do **not** enable `disable-conflict-eslint-plugin-react-hooks` — that preset turns **off** `react-hooks/*`.
-
-### Prettier Configuration
-
-**Path:** `.prettierrc.json` (repository root, shared across all packages)
+**Path:** `.oxfmtrc.json` (repository root, shared across all packages)
 
 | Setting | Value |
 |---------|-------|
@@ -65,9 +43,11 @@ The ordering is critical: `eslint-config-prettier` must come **before** the cust
 | `printWidth` | `120` |
 | `trailingComma` | `all` |
 | `arrowParens` | `always` |
-| Import sorting | `@trivago/prettier-plugin-sort-imports` |
+| `sortPackageJson` | `false` |
+| `ignorePatterns` | `studio/src/bifrost/common/EditorAreaManager.ts` (relative to the config file) |
+| `sortImports` | `ignoreCase: false`; groups in order: `builtin`/`external`/`internal`/`subpath`/`unknown`, `react`, `@elraptorus/**`, `parent`/`sibling`/`index` |
 
-The `format` script passes `--config ../.prettierrc.json` to reference the root config from within `studio/`.
+The `format` script passes `-c ../.oxfmtrc.json` to reference the root config from within a package. `ignoreCase: false` reproduces the case-sensitive ordering of the former `@trivago/prettier-plugin-sort-imports`. Oxfmt lays out a union type that does not fit on one line with one member per line and a leading `|`.
 
 ---
 
@@ -80,28 +60,34 @@ The `format` script passes `--config ../.prettierrc.json` to reference the root 
 | `curly: ['error', 'all']` | error | Always require braces on control flow |
 | `no-nested-ternary` | error | Prevent hard-to-read nested ternaries |
 | `no-unneeded-ternary` | error | Simplify `x ? true : false` patterns |
-| `id-length: min 2` | warn | Enforce descriptive names (exceptions: `_`, loop vars) |
+| `id-length: min 2, checkGeneric: false` | warn | Enforce descriptive names (exceptions: `_`, loop vars; single-letter generic type parameters such as `T` are allowed) |
 | `no-var` | error | Use `const`/`let` only |
 | `prefer-const` | error | Use `const` when never reassigned |
-| `@typescript-eslint/array-type: 'array'` | warn | Use `T[]` not `Array<T>` |
-| `@typescript-eslint/no-unsafe-function-type` | error | Use specific signatures instead of `Function` |
-| `@typescript-eslint/consistent-type-imports` | error | Ban inline `import('...').Type` annotations; enforce `import type` for type-only imports |
-| `@eslint-react/no-missing-key` | warn | Same policy as the former `react/jsx-key` |
-| `@eslint-react/no-array-index-key` | error | Ban using a `.map` index as a React `key` (recommended preset is warn) |
+| `typescript/array-type: 'array'` | warn | Use `T[]` not `Array<T>` |
+| `typescript/no-unsafe-function-type` | error | Use specific signatures instead of `Function` |
+| `typescript/consistent-type-imports` | error | Ban inline `import('...').Type` annotations; enforce `import type` for type-only imports |
+| `react/jsx-key` | error | Missing `key`, key after a spread, fragment shorthand with key |
+| `react/no-array-index-key` | error | Ban using a `.map` index as a React `key` |
+| `react/no-unstable-nested-components` (`allowAsProps`) | error | No component definitions inside render; render props such as table column cells are allowed |
+| `react/hook-use-state` | warn | `useState` must be destructured into value and setter named `[thing, setThing]` |
+
+### Other React rules
+
+The `react` plugin also enables these equivalents of the former `@eslint-react` recommended set: `no-danger`, `no-danger-with-children`, `no-find-dom-node`, `no-render-return-value`, `jsx-no-script-url`, `iframe-missing-sandbox`, `void-dom-elements-no-children`, `no-children-prop`, `jsx-no-comment-textnodes`, `no-namespace`, `no-react-children`, `no-clone-element`, `no-unsafe` (with `checkAliases`), `no-direct-mutation-state`, `no-will-update-set-state`.
 
 ### React Compiler rules
 
-The project enables the full `react-hooks` recommended ruleset, which includes React Compiler rules:
+The project enables the React Compiler rules of the `react-hooks` v7 recommended ruleset, implemented natively by Oxlint's `react` plugin (`rules-of-hooks`, `exhaustive-deps`, `static-components`, `use-memo`, `preserve-manual-memoization`, `incompatible-library`, `immutability`, `globals`, `refs`, `set-state-in-effect`, `error-boundaries`, `purity`, `set-state-in-render`, `unsupported-syntax`). Existing `react-hooks/<rule>` names in disable comments are still honoured:
 
 | Rule | What it enforces |
 |------|-----------------|
-| `react-hooks/rules-of-hooks` | Hooks called unconditionally, same order every render |
-| `react-hooks/exhaustive-deps` | All reactive values in dependency arrays |
-| `react-hooks/set-state-in-effect` | No synchronous `setState` inside effects |
-| `react-hooks/refs` | No `ref.current` access during render |
-| `react-hooks/static-components` | JSX components must be stable references |
-| `react-hooks/purity` | Render functions must be pure |
-| `react-hooks/immutability` | No mutation of props, state, or values derived from them |
+| `react/rules-of-hooks` | Hooks called unconditionally, same order every render |
+| `react/exhaustive-deps` | All reactive values in dependency arrays |
+| `react/set-state-in-effect` | No synchronous `setState` inside effects |
+| `react/refs` | No `ref.current` access during render |
+| `react/static-components` | JSX components must be stable references |
+| `react/purity` | Render functions must be pure |
+| `react/immutability` | No mutation of props, state, or values derived from them |
 
 ### bpmn.io typing conventions
 
@@ -139,13 +125,41 @@ The bpmn.io libraries (diagram-js, bpmn-js) now ship full TypeScript declaration
 
 | Rule | Reason |
 |------|--------|
-| `@typescript-eslint/no-explicit-any` | Gradual typing; strict `any` ban not practical yet |
-| `@typescript-eslint/ban-ts-comment` | `@ts-ignore` sometimes needed for SDK interop |
-| `@typescript-eslint/no-require-imports` | Electron main process uses `require` |
+| `typescript/no-explicit-any` | Gradual typing; strict `any` ban not practical yet |
+| `typescript/ban-ts-comment` | `@ts-ignore` sometimes needed for SDK interop |
+| `typescript/no-require-imports` | Electron main process uses `require` |
 | `no-async-promise-executor` | Used in legacy patterns |
-| `@eslint-react/rules-of-hooks` (and other compiler twins) | Official `react-hooks/*` owns compiler / Rules-of-React coverage |
-| `@eslint-react/no-unused-class-component-members` | Class editor methods (`focus` / `getCurrentValue` / `resetValue`) are called via refs, which this rule cannot see |
 | `no-console` | Electron app logs to stdout |
+| `react/no-did-mount-set-state`, `react/no-did-update-set-state` | Flag guarded `setState` calls in class components (resetting state when `resetKeys` change, storing a load error in a `catch`) that are valid React |
+
+### Rules not covered
+
+The move from ESLint dropped the `@eslint-react` plugin. Oxlint has no built-in equivalent for these rules, so they are not enforced:
+
+| Group | Rules |
+|-------|-------|
+| Removed or deprecated React DOM APIs | `dom-no-flush-sync`, `dom-no-hydrate`, `dom-no-render`, `dom-no-use-form-state` |
+| Leaked JSX text | `jsx-no-leaked-dollar`, `jsx-no-leaked-semicolon` |
+| Naming | `naming-convention-context-name`, `naming-convention-id-name`, `naming-convention-ref-name` |
+| Lazy `useState` initialization | `use-state` with `enforceLazyInitialization` (reported `useState(compute())`; `react/hook-use-state` checks naming only) |
+| Legacy patterns | `no-access-state-in-setstate`, `no-context-provider`, `no-create-ref`, `no-forward-ref`, `no-nested-lazy-component-declarations`, `no-unnecessary-use-prefix`, `no-use-context` |
+| Leaked browser resources | `web-api-no-leaked-event-listener`, `-fetch`, `-intersection-observer`, `-interval`, `-resize-observer`, `-timeout` |
+
+Also not available: `no-dupe-args` and `no-octal` (strict-mode TypeScript rejects both), `no-undef` (off for TypeScript anyway), `no-useless-assignment` (experimental in Oxlint), and the React Compiler `config`/`gating` rules (unused).
+
+Review leaked-resource patterns (listeners, intervals, timeouts, observers, fetch) manually: effects must clean up what they start.
+
+### Differences from the ESLint behaviour
+
+Some mapped rules check more or less than their `@eslint-react` counterparts:
+
+| Rule | Difference |
+|------|------------|
+| `react/jsx-key` | Error for a missing `key`; `no-missing-key` was a warning (`jsx-no-key-after-spread` was already an error) |
+| `react/no-children-prop` | Error for every `children` prop; `jsx-no-children-prop` was a warning when no JSX children were present |
+| `react/no-unsafe` | Error for `UNSAFE_componentWill*`; `no-unsafe-component-will-*` were warnings |
+| `react/no-unstable-nested-components` | Does not report a component function created inside `useMemo` |
+| `no-unused-vars` | Does not report an unused type parameter of an interface inside `declare module` |
 
 ---
 
@@ -184,11 +198,11 @@ useEffect(() => {
 });
 ```
 
-Assigning `ref.current = value` during render triggers `react-hooks/refs`. The `useEffect` approach keeps the ref in sync after each render without violating the rule.
+Assigning `ref.current = value` during render triggers `react/refs`. The `useEffect` approach keeps the ref in sync after each render without violating the rule.
 
 ### Ref as a prop (React 19)
 
-SDK and Studio components that accept a ref from consumers declare `ref` on the props type and destructure it in the function signature. Do not use `React.forwardRef` (`@eslint-react/no-forward-ref`). Do not use a custom `htmlRef` prop (`react-hooks/refs`).
+SDK and Studio components that accept a ref from consumers declare `ref` on the props type and destructure it in the function signature. Do not use `React.forwardRef` (no longer lint-enforced). Do not use a custom `htmlRef` prop (`react/refs`).
 
 ```typescript
 type MyProps = React.PropsWithChildren<{
@@ -200,7 +214,7 @@ export function MyComponent({ ref, children }: MyProps): React.JSX.Element {
 }
 ```
 
-Destructure `ref` out of the props object (`{ ref, ...props }` or `{ ref: forwardedRef, ... }`). Reading `props.ref` during render trips `react-hooks/refs`.
+Destructure `ref` out of the props object (`{ ref, ...props }` or `{ ref: forwardedRef, ... }`). Reading `props.ref` during render trips `react/refs`.
 
 Components on this pattern: `EditorContent`, `PaneBody`, `MarkdownEditor`, `FeelSimulatorEditor`, `BpmnFragmentRendererView`, `PluginIframe`.
 
@@ -221,11 +235,13 @@ const [{ isDragging }, drag] = useDrag(() => ({
 When suppression is unavoidable:
 
 ```typescript
-// eslint-disable-next-line react-hooks/set-state-in-effect -- useLayoutEffect DOM measurement; runs before paint
+// eslint-disable-next-line react/set-state-in-effect -- useLayoutEffect DOM measurement; runs before paint
 setPosition({ x: finalX, y: finalY });
 ```
 
-Always: (1) use `eslint-disable-next-line`, not block disables; (2) specify the exact rule; (3) add a `--` justification.
+Always: (1) use `eslint-disable-next-line`, not block disables; (2) specify the exact rule; (3) add a `--` justification. Oxlint honours `eslint-disable` comments, so the prefix stays. Use `react/<rule>` names for rules that had an `@eslint-react/` name before. The lint scripts pass `--report-unused-disable-directives`, so a comment that no longer suppresses anything is reported.
+
+The comment must sit on the line directly above the reported line, which inside a multi-line expression is not always the first line of the statement.
 
 ---
 
@@ -235,9 +251,9 @@ Both packages provide identical script names:
 
 | Script | studio command | studio-sdk command |
 |--------|---------------|-------------------|
-| `npm run lint` | `eslint src/ test/` | `eslint src/ types/` |
-| `npm run lint:fix` | `eslint --fix src/ test/` | `eslint --fix src/ types/` |
-| `npm run format` | `prettier --write ... ./src ./test` | `prettier --write ... ./src ./types` |
+| `npm run lint` | `oxlint --report-unused-disable-directives src test` | `oxlint --report-unused-disable-directives src` |
+| `npm run lint:fix` | `oxlint --fix --report-unused-disable-directives src test` | `oxlint --fix --report-unused-disable-directives src` |
+| `npm run format` | `oxfmt -c ../.oxfmtrc.json src test` | `oxfmt -c ../.oxfmtrc.json src` |
 
 Standard verification sequence after changes:
 
@@ -254,9 +270,9 @@ npm run format
 
 | Component | Path |
 |-----------|------|
-| Shared base config | `eslint.config.base.mjs` (repo root) |
-| Studio ESLint config | `studio/eslint.config.mjs` |
-| SDK ESLint config | `studio-sdk/eslint.config.mjs` |
-| Prettier config | `.prettierrc.json` (repo root) |
+| Shared base config | `oxlintrc.base.json` (repo root) |
+| Studio Oxlint config | `studio/.oxlintrc.json` |
+| SDK Oxlint config | `studio-sdk/.oxlintrc.json` |
+| Oxfmt config | `.oxfmtrc.json` (repo root) |
 | Studio scripts | `studio/package.json` → `scripts.lint`, `scripts.lint:fix`, `scripts.format` |
 | SDK scripts | `studio-sdk/package.json` → `scripts.lint`, `scripts.lint:fix`, `scripts.format` |

@@ -750,12 +750,14 @@ export class TokenSimulationController {
           : undefined;
         const triggerEvents = eventSubProcessStart ? [eventSubProcessStart] : this.getBoundaryEvents(child);
         for (const triggerEvent of triggerEvents) {
-          if (!(
-            isTimerEvent(triggerEvent) ||
-            isMessageEvent(triggerEvent) ||
-            isSignalEvent(triggerEvent) ||
-            isConditionalEvent(triggerEvent)
-          )) {
+          if (
+            !(
+              isTimerEvent(triggerEvent) ||
+              isMessageEvent(triggerEvent) ||
+              isSignalEvent(triggerEvent) ||
+              isConditionalEvent(triggerEvent)
+            )
+          ) {
             continue;
           }
           this.engine.setBoundaryAutoFire(triggerEvent.id, this.boundaryPreferences.get(triggerEvent.id) === true);

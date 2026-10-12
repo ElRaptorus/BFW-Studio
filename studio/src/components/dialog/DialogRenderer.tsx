@@ -441,7 +441,7 @@ function DialogContentMarkdown(props: DialogContentObject_Markdown): React.JSX.E
   const html = marked(props.text, { async: false }) as string;
 
   return (
-    // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- marked() renders trusted dialog markdown to HTML
+    // eslint-disable-next-line react/no-danger -- marked() renders trusted dialog markdown to HTML
     <div className="dialog-markdown" dangerouslySetInnerHTML={{ __html: html }} />
   );
 }

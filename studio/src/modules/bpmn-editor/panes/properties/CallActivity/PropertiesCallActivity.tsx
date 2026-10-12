@@ -22,7 +22,9 @@ import {
 import { JumpToSymbolInSolutionLink } from '../../components/JumpToSymbolInSolutionLink';
 
 type CallActivityToUpdate =
-  CallActivityToUpdate_ProcessModelId | CallActivityToUpdate_StartEventId | CallActivityToUpdate_CalledProcessVersion;
+  | CallActivityToUpdate_ProcessModelId
+  | CallActivityToUpdate_StartEventId
+  | CallActivityToUpdate_CalledProcessVersion;
 
 type CallActivityToUpdate_ProcessModelId = {
   processModelId: string;

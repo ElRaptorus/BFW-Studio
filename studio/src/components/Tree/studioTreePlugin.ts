@@ -8,7 +8,6 @@ export type StudioTreeCallbacks = {
 };
 
 declare module '@headless-tree/core' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TreeConfig<T> {
     studioCallbacks?: StudioTreeCallbacks;
   }

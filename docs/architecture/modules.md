@@ -313,7 +313,7 @@ plugins ← std (cmd: std.settings.openUserSettingsAtCategory)│
 
 ## Known Architectural Notes
 
-- Import direction between modules (engine → bpmn/dmn/neutral, never back; bpmn ↔ dmn only through the `-core` modules; no module imports from `bifrost/` or `components/`) is enforced by ESLint, see [imports-and-modules.md](imports-and-modules.md) §Module Dependency Direction.
+- Import direction between modules (engine → bpmn/dmn/neutral, never back; bpmn ↔ dmn only through the `-core` modules; no module imports from `bifrost/` or `components/`) is enforced by Oxlint, see [imports-and-modules.md](imports-and-modules.md) §Module Dependency Direction.
 - Generic helpers live in Bifrost core, e.g. `getHumanizedDuration` in `bifrost/common/DurationFunctions.ts` (used by the engine modules and `EvaluationResultView`).
 
 ## File Path Reference

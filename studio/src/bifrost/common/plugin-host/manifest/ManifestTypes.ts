@@ -162,7 +162,12 @@ export interface ManifestTheme {
 }
 
 export type ActivationEvent =
-  `onCommand:${string}` | `onDocumentType:${string}` | `onUri:${string}` | `onSetting:${string}` | 'onStartup' | '*';
+  | `onCommand:${string}`
+  | `onDocumentType:${string}`
+  | `onUri:${string}`
+  | `onSetting:${string}`
+  | 'onStartup'
+  | '*';
 
 export interface ManifestReadResult {
   manifest: BifrostStudioManifest | null;

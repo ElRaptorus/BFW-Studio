@@ -1,5 +1,12 @@
 export type SourceControlFileStatusCode =
-  'modified' | 'added' | 'deleted' | 'renamed' | 'copied' | 'untracked' | 'ignored' | 'conflicted';
+  | 'modified'
+  | 'added'
+  | 'deleted'
+  | 'renamed'
+  | 'copied'
+  | 'untracked'
+  | 'ignored'
+  | 'conflicted';
 
 export type SourceControlFileStatus = {
   readonly uri: string;

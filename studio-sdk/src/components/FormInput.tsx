@@ -36,6 +36,7 @@ export function FormInput(props: FormInputProps): React.JSX.Element {
   const { valueRef } = props;
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // eslint-disable-next-line react/hook-use-state -- Escape restores the first value; it must not follow later prop changes
   const [originalValue] = useState(valueFromProps);
   const [currentValue, setCurrentValue] = useState(valueFromProps);
   const lastSyncedToRef = useRef(valueFromProps);

@@ -1,5 +1,5 @@
 import type { ChangeEventHandler, Ref } from 'react';
-import React, { useState } from 'react';
+import React, { useId } from 'react';
 
 type CheckboxProps = {
   htmlId?: string;
@@ -13,7 +13,7 @@ type CheckboxProps = {
 };
 
 /**
- * Uncontrolled id is generated once per mount: `checkbox-${crypto.randomUUID()}`.
+ * Uncontrolled id is generated once per mount: `checkbox-${useId()}`.
  * Pass `htmlId` when a stable, testable id is required.
  */
 export function Checkbox({
@@ -26,7 +26,7 @@ export function Checkbox({
   ref,
   onChange,
 }: CheckboxProps): React.JSX.Element {
-  const [generatedId] = useState(() => `checkbox-${crypto.randomUUID()}`);
+  const generatedId = `checkbox-${useId()}`;
   const id = htmlId ?? generatedId;
   const inputClassName = label == null ? 'form-check-input position-static mr-0' : 'form-check-input';
   const divClassName = label == null ? 'form-check form-check-inline mr-0' : 'form-check form-check-inline';

@@ -23,7 +23,9 @@ import {
 } from '../../PropertiesPaneFunctions';
 
 type ConditionalEventToUpdate =
-  ConditionalEventToUpdate_Condition | ConditionalEventToUpdate_VariableName | ConditionalEventToUpdate_VariableEvent;
+  | ConditionalEventToUpdate_Condition
+  | ConditionalEventToUpdate_VariableName
+  | ConditionalEventToUpdate_VariableEvent;
 
 type ConditionalEventToUpdate_Condition = {
   condition: string;

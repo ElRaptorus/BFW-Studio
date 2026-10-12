@@ -99,7 +99,12 @@ export interface BpmnDiagramOrigin {
 export type LintSeverity = 'error' | 'warning' | 'info';
 
 export type LintCategory =
-  'structure' | 'bpmn-spec' | 'execution-readiness' | 'logic-patterns' | 'naming-quality' | 'pda-compliance';
+  | 'structure'
+  | 'bpmn-spec'
+  | 'execution-readiness'
+  | 'logic-patterns'
+  | 'naming-quality'
+  | 'pda-compliance';
 
 export type LintFinding = {
   ruleId: string;

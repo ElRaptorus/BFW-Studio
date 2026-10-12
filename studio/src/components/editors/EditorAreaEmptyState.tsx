@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useMemo } from 'react';
 
 import { useBifrost } from '../../bifrostContext';
 
@@ -10,8 +10,9 @@ export function EditorAreaEmptyState(): React.JSX.Element {
     ? bifrost.commands.executeCommand<React.JSX.Element[]>('std.editorEmptyState.getExtraActions')
     : undefined;
 
-  const [tip] = useState<React.JSX.Element | null>(
-    bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText'),
+  const tip = useMemo(
+    () => bifrost.commands.executeCommand<React.JSX.Element | null>('std.help.getDidYouKnowText'),
+    [bifrost],
   );
 
   return (

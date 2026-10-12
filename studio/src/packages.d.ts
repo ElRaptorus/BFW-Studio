@@ -119,5 +119,5 @@ declare module '*.txt' {
 declare const __non_webpack_require__: NodeRequire;
 
 declare module 'jaro-winkler' {
-  export default function distance(a: string, b: string): number;
+  export default function distance(first: string, second: string): number;
 }

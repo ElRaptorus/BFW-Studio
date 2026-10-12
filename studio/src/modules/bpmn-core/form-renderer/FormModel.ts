@@ -6,7 +6,16 @@
  */
 
 export type FormFieldType =
-  'text' | 'number' | 'date' | 'checkbox' | 'dropdown' | 'radio' | 'textarea' | 'file' | 'toggle' | 'section_header';
+  | 'text'
+  | 'number'
+  | 'date'
+  | 'checkbox'
+  | 'dropdown'
+  | 'radio'
+  | 'textarea'
+  | 'file'
+  | 'toggle'
+  | 'section_header';
 
 export type FormFieldOption = {
   readonly value: string;

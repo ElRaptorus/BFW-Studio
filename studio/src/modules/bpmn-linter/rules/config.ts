@@ -24,7 +24,6 @@ import type {
 } from '../types';
 import type { ProcessModelAnalyzer } from './ProcessModelAnalyzer';
 // --- Custom: BPMN Spec ---
-
 import {
   adhocSubprocessActivities,
   adhocSubprocessEventScope,
@@ -51,7 +50,6 @@ import topLevelStartEventType from './bpmn-spec/top-level-start-event-type';
 import transactionCancelNoBoundary from './bpmn-spec/transaction-cancel-no-boundary';
 import transactionCancelNoCompensable from './bpmn-spec/transaction-cancel-no-compensable';
 // --- Custom: Execution Readiness ---
-
 import {
   adhocSubprocessCompletion,
   adhocSubprocessDefaultOrdering,
@@ -81,7 +79,6 @@ import userTaskAssignment from './execution-readiness/user-task-assignment';
 import validProcessId from './execution-readiness/valid-process-id';
 import xorGatewayConditions from './execution-readiness/xor-gateway-conditions';
 // --- Custom: Logic Patterns (post-processing) ---
-
 import checkAsyncWaitState from './logic-patterns/async-wait-state';
 import checkGatewayComplexity from './logic-patterns/gateway-complexity';
 import checkGodProcess from './logic-patterns/god-process';
@@ -100,7 +97,6 @@ import checkTimeoutEscalation from './logic-patterns/timeout-escalation';
 import checkTransactionWithoutCompensation from './logic-patterns/transaction-without-compensation';
 import checkUserTaskWithoutTimer from './logic-patterns/user-task-without-timer';
 // --- Custom: Naming Quality ---
-
 import endEventGenericLabel from './naming-quality/end-event-generic-label';
 import flowLabelRequired from './naming-quality/flow-label-required';
 import gatewayQuestionFormat from './naming-quality/gateway-question-format';
@@ -108,7 +104,6 @@ import inconsistentFlowLabels from './naming-quality/inconsistent-flow-labels';
 import mixedLanguage from './naming-quality/mixed-language';
 import taskNameVerbPattern from './naming-quality/task-name-verb-pattern';
 // --- Custom: PDA Compliance (post-processing) ---
-
 import checkCanonicalDataFlow from './pda-compliance/canonical-data-flow';
 import checkCanonicalDataNaming from './pda-compliance/canonical-data-naming';
 import checkDmnExternalization from './pda-compliance/dmn-externalization';
@@ -116,7 +111,6 @@ import checkLayerSeparation from './pda-compliance/layer-separation';
 import checkSystemIndependentNaming from './pda-compliance/system-independent-naming';
 import checkTechnicalConditions from './pda-compliance/technical-conditions';
 // --- Custom: Structure ---
-
 import conditionalFlowsNoGateway from './structure/conditional-flows-no-gateway';
 import gatewayTypeMismatch from './structure/gateway-type-mismatch';
 import multipleEventDefinitions from './structure/multiple-event-definitions';

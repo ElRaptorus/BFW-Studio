@@ -85,7 +85,10 @@ export interface PluginBpmnOverlayStatus {
 }
 
 export type PluginBpmnOverlay =
-  PluginBpmnOverlayBadge | PluginBpmnOverlayIcon | PluginBpmnOverlayAction | PluginBpmnOverlayStatus;
+  | PluginBpmnOverlayBadge
+  | PluginBpmnOverlayIcon
+  | PluginBpmnOverlayAction
+  | PluginBpmnOverlayStatus;
 
 /**
  * Studio-semantic BPMN element types returned by `api.bpmn.getElement` /

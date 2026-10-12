@@ -105,7 +105,7 @@ const WORKER_REQUEST_TIMEOUT_MS = 30_000;
 
 const pendingRequests = new Map<
   string,
-  { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }
+  { resolve: (value: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }
 >();
 let requestCounter = 0;
 
@@ -431,7 +431,7 @@ function createPluginApi(): Record<string, unknown> {
     panes: createNamespaceProxy('panes'),
     statusBar: new Proxy(
       {
-        async showProgress(label: string): Promise<{ update: (l: string) => void; done: () => void }> {
+        async showProgress(label: string): Promise<{ update: (newLabel: string) => void; done: () => void }> {
           const handleId = (await sendApiRequest('statusBar', 'showProgress', [label])) as string;
           return {
             update(newLabel: string) {

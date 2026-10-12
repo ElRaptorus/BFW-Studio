@@ -47,6 +47,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   }
 
   const durationMs =
+    // eslint-disable-next-line react/purity -- running instances show the duration up to the latest render; the build does not use the React Compiler
     instance.startedAt != null ? dayjs(instance.finishedAt ?? new Date()).diff(dayjs(instance.startedAt)) : null;
   const duration = durationMs != null ? getHumanizedDuration(durationMs) : '—';
 

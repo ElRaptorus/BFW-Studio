@@ -31,9 +31,11 @@ import { valueMatchesSearchQuery } from '@elraptorus/bfw_studio_sdk';
  */
 export function buildSimplePropertyPaneProvider(
   documentTypeOrPredicateFn:
-    string | ((editorDocument: EditorDocument, editorDocumentModel: any, studio: Bifrost) => boolean),
+    | string
+    | ((editorDocument: EditorDocument, editorDocumentModel: any, studio: Bifrost) => boolean),
   titleOrTitleFn:
-    string | ((editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Bifrost) => string),
+    | string
+    | ((editorDocument: EditorDocument, editorDocumentModel: EditorDocumentModel, studio: Bifrost) => string),
   PaneContentComponent: any,
   PaneTabOptionsComponent?: any,
 ): PaneProvider {

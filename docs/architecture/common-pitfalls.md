@@ -164,7 +164,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 **Why**: Hides dependencies and breaks import sorting.
 
-**Correct approach**: Top-level `import type`. Enforced by `@typescript-eslint/consistent-type-imports`.
+**Correct approach**: Top-level `import type`. Enforced by `typescript/consistent-type-imports`.
 
 ---
 
@@ -605,3 +605,13 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 **Why**: `@codemirror/merge` renders both editors with `height: auto` inside `.cm-mergeView`, which is the only scrollable element. `.cm-mergeViewEditor` clips its overflow, so an editor limited to the viewport height can neither scroll by wheel nor stay in step with the other side.
 
 **Correct approach**: Size only `.cm-mergeView` (`height: 100%; overflow: auto`) and let the editors grow to their content. See `component.code-editor.scss`.
+
+---
+
+## Oxlint `regex` patterns have no lookahead and fail silently
+
+**Mistake**: Writing a `no-restricted-imports` `regex` with a lookahead such as `dmn-(?!core\b)`.
+
+**Why**: Oxlint compiles the pattern with the Rust regex engine. A pattern it cannot compile is dropped without an error, so the zone stops enforcing the rule and `npm run lint` still passes.
+
+**Correct approach**: Use a lookahead-free form (`dmn-(?:[^c]|c[^o]|co[^r]|cor[^e]|core\w)` for "anything but `core`") and keep a probe case in `test/unit/bifrost/moduleBoundaryZones.test.ts` that proves the zone fires.

@@ -446,6 +446,7 @@ Architecture constraints that tests also hit live in [`architecture/common-pitfa
 - **Canvas clicks after FEEL.** `prepareCanvasPointer` (used by BPMN select helpers) blurs `document.activeElement` and waits until `.cm-tooltip` is gone, then fits the viewport. After typing a one-line FEEL value, still send `['Escape', 'enter']` first — Escape alone does not blur `OneLineFeelEditor`.
 - **Custom Properties fixtures.** Keep only rows tests assert (or Custom Attributes indexes, Timer Start `enabled`, merge-diff payload). Do not leave ProcessEngine leftovers (`module` / `method` / `params` / `role`, Task-level `enabled`, `payload` on `##external`) in fixture XML.
 - **`client.execute` return shape.** A renderer execute callback must not return a top-level `error` property — WebDriverIO treats that as a protocol failure. Rename the field.
+- **Strict `$()` in WebDriverIO 10.** `$()` is strict by default and throws `StrictSelectorError` when the selector matches more than one element. `startWdioSession` does not forward `strictSelectors`, so the helpers in `TestDriver` / `StudioAgent*` pass `{ strict: false }` per call to keep first-match semantics. Use `$$()` when a test needs all matches.
 - **Named Escape.** `sendKeyboardInput(['Escape'])` or `['escape']` both send the Escape key. A lowercase `'escape'` used to be typed as the letters e-s-c-a-p-e; do not invent other spellings.
 
 ## Adding New Tests

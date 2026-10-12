@@ -28,9 +28,9 @@ See [settings.md](architecture/settings.md).
 
 **Context:** Imports crossed the module families in both directions: bpmn and dmn editors reached into engine and `git-cruiser` code, `components/` into `bpmn-core`, and the plugin host hard-wired the BPMN and DMN API bridges.
 
-**Options:** Document the direction only; or document it, move the crossing code, and enforce it with ESLint. For the plugin bridges: keep them in the host, or let modules register them through a contract.
+**Options:** Document the direction only; or document it, move the crossing code, and enforce it with the linter. For the plugin bridges: keep them in the host, or let modules register them through a contract.
 
-**Decision:** `bifrost/` and `components/` import no module. Engine modules may import everything; nothing imports them. bpmn and dmn modules may import only the other family's `-core` module, because the Business Rule Task couples the two. Editors never import `git-cruiser`. Pure functions shared by several families and owned by none go to `bifrost/common/`; code whose callers sit in one module or family stays there. A one-liner is repeated instead of extracted. Modules register `api.bpmn` / `api.dmn` as `PluginApiNamespace`. ESLint zones enforce the direction.
+**Decision:** `bifrost/` and `components/` import no module. Engine modules may import everything; nothing imports them. bpmn and dmn modules may import only the other family's `-core` module, because the Business Rule Task couples the two. Editors never import `git-cruiser`. Pure functions shared by several families and owned by none go to `bifrost/common/`; code whose callers sit in one module or family stays there. A one-liner is repeated instead of extracted. Modules register `api.bpmn` / `api.dmn` as `PluginApiNamespace`. Oxlint zones enforce the direction.
 
 **Rationale:** A rule that is not enforced erodes again, and inverting the plugin bridges is the only way to keep the host free of module code.
 
@@ -59,5 +59,17 @@ See [source-control.md](architecture/source-control.md).
 **Rationale:** A document keeps view state (tab, base branch) like any editor, reuses the existing diff documents and routing, and needs no new page mechanism.
 
 See [git-cruiser.md](architecture/git-cruiser.md).
+
+## Oxlint and Oxfmt instead of ESLint and Prettier
+
+**Context:** ESLint and Prettier had become slow on the roughly 1,700 files of `studio/`. The rule set had to carry over unchanged, including the module-boundary zones.
+
+**Options:** Keep ESLint and Prettier; move the linter only (Oxlint) and keep Prettier; or move both (Oxlint and Oxfmt). For the 22 `@eslint-react` rules Oxlint cannot express: drop them, or keep ESLint next to Oxlint for those.
+
+**Decision:** Oxlint lints and Oxfmt formats, both pinned to exact versions, with a shared root config for `studio/` and `studio-sdk/`. The `@eslint-react` rules without a built-in equivalent are dropped rather than keeping a second linter. The one-time reformat by Oxfmt was accepted. `react/no-did-mount-set-state` and `react/no-did-update-set-state` stay off because they flag valid guarded `setState` calls.
+
+**Rationale:** One native toolchain removes the ESLint plugin stack; the dropped rules guarded mostly leaked resources and legacy APIs, which review covers.
+
+See [code-quality.md](architecture/code-quality.md).
 
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

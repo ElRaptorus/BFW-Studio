@@ -23,7 +23,11 @@ export type TreeItemTransformer = {
 };
 
 export type TreeItem =
-  TreeItem_Directory | TreeItem_Section | TreeItem_File | TreeItem_SearchResult | TreeItem_PropertyString;
+  | TreeItem_Directory
+  | TreeItem_Section
+  | TreeItem_File
+  | TreeItem_SearchResult
+  | TreeItem_PropertyString;
 
 type TreeItemBase = {
   readonly subtype?: string;
@@ -65,7 +69,17 @@ export type TreeItemStyles = {
 };
 
 export type TreeItemColor =
-  'black' | 'gray' | 'white' | 'blue' | 'yellow' | 'gold' | 'red' | 'purple' | 'orange' | 'green' | string;
+  | 'black'
+  | 'gray'
+  | 'white'
+  | 'blue'
+  | 'yellow'
+  | 'gold'
+  | 'red'
+  | 'purple'
+  | 'orange'
+  | 'green'
+  | string;
 
 type TreeItem_Directory = TreeItemBase & {
   type: 'directory';

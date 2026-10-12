@@ -16,16 +16,16 @@ This is especially important for very large or complex refactorings, say more th
 After making changes to `studio/`, run the following commands **in this order**:
 
 1. `npm run build` — Compile the SDK and Rspack bundles. Catches TypeScript errors.
-2. `npm run lint:fix` — Run ESLint with auto-fix. Catches rule violations and applies mechanical fixes.
-3. `npm run format` — Run Prettier. Ensures consistent formatting.
+2. `npm run lint:fix` — Run Oxlint with auto-fix. Catches rule violations and applies mechanical fixes.
+3. `npm run format` — Run Oxfmt. Ensures consistent formatting.
 
 ## SDK (`studio-sdk/`)
 
 After making changes to `studio-sdk/`, run:
 
 1. `npm run build` — Compile TypeScript. Catches type errors.
-2. `npm run lint:fix` — Run ESLint with auto-fix.
-3. `npm run format` — Run Prettier.
+2. `npm run lint:fix` — Run Oxlint with auto-fix.
+3. `npm run format` — Run Oxfmt.
 
 Then also rebuild `studio/` since it depends on the SDK:
 

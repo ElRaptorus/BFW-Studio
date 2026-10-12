@@ -72,7 +72,7 @@ function StepList(props: {
       <ol className="dmn-sim-panel__steps">
         {props.steps.map((step, index) => (
           <li
-            // eslint-disable-next-line @eslint-react/no-array-index-key -- the step list is append-only; its position is its identity
+            // eslint-disable-next-line react/no-array-index-key -- the step list is append-only; its position is its identity
             key={`${step.namespace ?? ''}|${step.elementId}|${index}`}
             className={[
               'dmn-sim-panel__step',

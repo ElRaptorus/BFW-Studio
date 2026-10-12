@@ -6,7 +6,7 @@ import ProductNameHeadline from '#components/ProductNameHeadline';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import type { StartpageCardDescriptor } from '.';
 
@@ -19,8 +19,9 @@ export default function StartpageRenderer(props: EditorDocumentRendererProps): R
   const bifrost = props.studio;
   const cmd = bifrost.commands.getClickHandler();
 
-  const [tip] = useState<React.JSX.Element | null>(
-    bifrost.commands.executeCommand<React.JSX.Element>('std.help.getDidYouKnowText'),
+  const tip = useMemo(
+    () => bifrost.commands.executeCommand<React.JSX.Element | null>('std.help.getDidYouKnowText'),
+    [bifrost],
   );
 
   const heroCards = bifrost.commands.executeCommand<StartpageCardDescriptor[]>('std.startpage.getHeroCards');

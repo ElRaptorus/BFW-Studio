@@ -26,7 +26,7 @@ import {
   EVENT_WORKBENCH_PAGE_ACTIVATED,
 } from '#bifrost/contracts/internal/WorkbenchEvents';
 
-import React, { useCallback, useDeferredValue, useEffect, useReducer, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 import { useBifrost } from '../bifrostContext';
 import { ErrorBoundaryWithMessage } from './ErrorBoundaryWithMessage';
@@ -53,7 +53,7 @@ export default function Workbench(): React.JSX.Element {
 
   const [_, forceUpdate] = useReducer((x) => x + 1, 0);
 
-  const [splitterLayoutMediator] = useState(() => new SplitterLayoutMediator());
+  const splitterLayoutMediator = useMemo(() => new SplitterLayoutMediator(), []);
 
   const ref = useRef<HTMLDivElement>(null);
 

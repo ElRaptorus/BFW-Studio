@@ -5,7 +5,8 @@ import type { SolutionModelEntry } from './scanSolutionModels';
 export type DeployExplorerMode = 'file' | 'project';
 
 export type DeployExplorerMetadata =
-  { kind: 'folder'; uri: string; modelUris: string[] } | { kind: 'file'; uri: string; modelUris: string[] };
+  | { kind: 'folder'; uri: string; modelUris: string[] }
+  | { kind: 'file'; uri: string; modelUris: string[] };
 
 export type DeployExplorerRoot = { name: string; uri: string };
 

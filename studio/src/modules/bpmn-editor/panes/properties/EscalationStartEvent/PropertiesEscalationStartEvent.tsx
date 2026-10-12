@@ -20,7 +20,9 @@ import {
 } from '../../PropertiesPaneFunctions';
 
 type EscalationEventToUpdate =
-  EscalationEventToUpdate_Name | EscalationEventToUpdate_EscalationCode | EscalationEventToUpdate_Variable;
+  | EscalationEventToUpdate_Name
+  | EscalationEventToUpdate_EscalationCode
+  | EscalationEventToUpdate_Variable;
 
 type EscalationEventToUpdate_Name = {
   name: string;

@@ -85,7 +85,10 @@ export interface PluginDmnOverlayStatus {
 }
 
 export type PluginDmnOverlay =
-  PluginDmnOverlayBadge | PluginDmnOverlayIcon | PluginDmnOverlayAction | PluginDmnOverlayStatus;
+  | PluginDmnOverlayBadge
+  | PluginDmnOverlayIcon
+  | PluginDmnOverlayAction
+  | PluginDmnOverlayStatus;
 
 /**
  * Studio-semantic DMN DRD element types returned by `api.dmn.getElement` /
@@ -165,7 +168,10 @@ export interface DmnElementDetailSnapshot extends DmnElementSnapshot {
  * so this union only carries plugin-contributed overlay subtypes.
  */
 export type DmnOverlayDescriptor =
-  PluginDmnOverlayBadge | PluginDmnOverlayIcon | PluginDmnOverlayAction | PluginDmnOverlayStatus;
+  | PluginDmnOverlayBadge
+  | PluginDmnOverlayIcon
+  | PluginDmnOverlayAction
+  | PluginDmnOverlayStatus;
 
 // --- Overlay Factory types ---
 

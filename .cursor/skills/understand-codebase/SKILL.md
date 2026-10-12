@@ -48,7 +48,7 @@ Based on your task, read the specific architecture doc:
 | PaneProvider / property panes | `docs/architecture/panes.md` |
 | Import aliases and tsconfig | `docs/architecture/imports-and-modules.md` |
 | Which module may import which | `.cursor/rules/module-boundaries.mdc` |
-| Code quality / ESLint / Prettier | `docs/architecture/code-quality.md` |
+| Code quality / Oxlint / Oxfmt | `docs/architecture/code-quality.md` |
 | Known gotchas | `docs/architecture/common-pitfalls.md` |
 
 ## Step 3: Key Modules by Layer
