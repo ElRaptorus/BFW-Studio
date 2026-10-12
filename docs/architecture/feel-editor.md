@@ -126,7 +126,7 @@ Registered in `studio/src/modules/bpmn-editor/initializers/initializeFeelContext
 The command is universally callable. It accepts an optional `EditorDocument` parameter:
 
 - **With a BPMN document**: Returns static engine variables plus diagram-derived data object variables
-- **Without arguments**: Returns only the static engine variables (used by Machine Sanctum and any non-BPMN context)
+- **Without arguments**: Returns only the static engine variables (used by any non-BPMN context)
 
 This makes the command safe to call from any module without requiring an active BPMN editor.
 
@@ -147,13 +147,13 @@ The variable names use FEEL-side camelCase conventions, matching the engine's `E
 
 ## FEEL Simulator Component
 
-`studio/src/components/feel-simulator/` combines FEEL editing with live `@bpmn-io/feelin` evaluation in a Web Worker (5 s timeout). Consumers: BPMN “Open in New Tab” fragment renderers, the Machine Sanctum playground (`about:machine-sanctum/feel_editor`, `layout="Both"`), and the Engine Debugger Expression Runner (`initialContext` from runtime FNI bindings — see [engine.md](engine.md)).
+`studio/src/components/feel-simulator/` combines FEEL editing with live `@bpmn-io/feelin` evaluation in a Web Worker (5 s timeout). Consumers: BPMN “Open in New Tab” fragment renderers and the Engine Debugger Expression Runner (`initialContext` from runtime FNI bindings — see [engine.md](engine.md)).
 
 | `layout` | Editor | Typical consumer |
 |----------|--------|------------------|
 | `'MultiLine'` | `FeelEditor` | Fragment renderers |
 | `'SingleLine'` | `OneLineFeelEditor` | Inline fragments |
-| `'Both'` | stacked | Machine Sanctum |
+| `'Both'` | stacked | — |
 
 Files: `FeelSimulatorEditor.tsx`, `FeelEvaluator.ts`, `feel-eval-worker.ts`, `ResultRenderer.tsx`. Props and ref: `FeelSimulatorProps` / `FeelSimulatorEditorRef` in `types.ts`.
 

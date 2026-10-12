@@ -203,7 +203,6 @@ bpmn.editor.getAllStartEventsForProcessId
 engine.workspace.openProcessExplorer
 engine.deploy
 git.commit
-dev.machineSanctum.open
 ```
 
 The **first dotted segment** is the **permission group** and determines which `commands.{group}` plugin permission controls access. The seven groups are:

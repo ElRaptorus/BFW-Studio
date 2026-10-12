@@ -74,7 +74,7 @@ studio/test/
     │   ├── git-dmn-diff.test.ts
     │   └── git-merge-resolver.test.ts
     ├── plugins/                # Plugin host tests
-    └── studio-core/            # Core smoke, solutions, machine sanctum
+    └── studio-core/            # Core smoke, solutions
         ├── studio-smoke.test.ts
         ├── workbench-panes.test.ts
         ├── solutions-smoke.test.ts

@@ -8,7 +8,7 @@ import type { Extension } from '@codemirror/state';
  * Language ids the host wrappers actually pass.
  * Unknown ids and plaintext return an empty extension (no throw).
  *
- * `html` is HTML (Machine Sanctum playground). XML inspectors must pass `xml`.
+ * `html` is HTML (git text diff of `.html` files). XML inspectors must pass `xml`.
  */
 const LANGUAGE_SUPPORT: Record<string, () => Extension> = {
   json: () => json(),

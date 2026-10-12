@@ -43,9 +43,6 @@ import { Checkbox } from '../Checkbox';
 type DialogRendererProps = {
   options: DialogOptionsStrict;
 
-  // used in docs/machine-sanctum, prevents focussing the `default` action
-  noFocus?: boolean;
-
   responseCallback?: DialogResponseCallbackFn;
   validationResult?: DialogValidationResult;
   iconComponent: IconComponent;
@@ -264,7 +261,6 @@ export default function DialogRenderer(props: DialogRendererProps): React.JSX.El
               <DialogContent
                 content={content}
                 iconComponent={props.iconComponent}
-                noFocus={props.noFocus}
                 responseCallback={preliminaryResponseCallback}
                 validationResult={props.validationResult}
                 onSelectChange={onDialogContentSelectChange}
@@ -278,7 +274,7 @@ export default function DialogRenderer(props: DialogRendererProps): React.JSX.El
             <div className="modal-footer">
               {props.options.actions.map((actionProps: DialogActionObject) => (
                 <DialogAction
-                  noFocus={props.noFocus || (Array.isArray(content) && content.some((item: any) => item.focus))}
+                  noFocus={Array.isArray(content) && content.some((item: any) => item.focus)}
                   key={actionProps.response}
                   responseCallback={preliminaryResponseCallback}
                   {...actionProps}

@@ -1,11 +1,5 @@
 # Bifrost Forge World Studio
 
-> Toll the great Bell once! Pull the lever forward, to engage the Piston and Pump!\
-> Toll the great Bell twice! With the push of the Button, fire the Engine and spark the Turbine into life!\
-> Toll the great Bell Thrice! Sing praise to the God of all Machines!
->
-> Ave Deus Mechanicus
-
 ## What is this?
 
 A BPMN 2.0 modeling Environment, built with ReactJS and Electron and the holy greases, cogs and oils sanctioned by the [Cult Mechanicus](https://wh40k.lexicanum.com/wiki/Cult_Mechanicus). Used to model BPMN and DMN diagrams, which can be run with [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine).
@@ -20,6 +14,7 @@ A BPMN 2.0 modeling Environment, built with ReactJS and Electron and the holy gr
 - Visual Merge Conflict Resolver for BPMN and DMN
 - Guided BPMN Version Management, in conjunction with the Engine
 - Integrated Engine Workspace, tailored to the [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine)
+- Deployment Editor for creating reusable BPMN/DMN packages that can be deployed to the Engine in one operation
 - Extensive Plugin Capabilities
 
 See [here](./CHANGELOG.md) to get a better picture of what's in store for v1.
@@ -28,7 +23,7 @@ See [here](./CHANGELOG.md) to get a better picture of what's in store for v1.
 
 - Node `>= 24.20.0`
 - NPM `>= 12.0.0`
-- Binary Cant
+- Binaric Cant
 - A Noospheric Connection
 
 ## Installation

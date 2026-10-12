@@ -12,7 +12,7 @@ Imports between `studio/src/bifrost/`, `studio/src/components/`, and `studio/src
 | Importer | May import | Must not import |
 |---|---|---|
 | `bifrost/`, `components/` | `bifrost/`, `components/` | any module |
-| neutral modules (every module outside the engine, bpmn and dmn families: `std`, `themes`, `git-cruiser`, `plugins`, `machine-sanctum`) | `bifrost/`, `components/`, any non-engine module | `engine-*` |
+| neutral modules (every module outside the engine, bpmn and dmn families: `std`, `themes`, `git-cruiser`, `plugins`) | `bifrost/`, `components/`, any non-engine module | `engine-*` |
 | bpmn modules (`bpmn-*`) | `bifrost/`, `components/`, neutral modules except `git-cruiser`, own family, **`dmn-core` only** from the dmn family | `engine-*`, `git-cruiser`, `dmn-*` other than `dmn-core` |
 | dmn modules (`dmn-*`) | `bifrost/`, `components/`, neutral modules except `git-cruiser`, own family, **`bpmn-core` only** from the bpmn family | `engine-*`, `git-cruiser`, `bpmn-*` other than `bpmn-core` |
 | engine modules (`engine-*`) | everything | — |

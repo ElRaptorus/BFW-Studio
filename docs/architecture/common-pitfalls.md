@@ -340,7 +340,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## Command IDs: first segment is a known group
 
-**Mistake**: Registering `machineSanctum.*`, `gitCruiser.*`, `bpmnDiff.*`, or any camelCase compound prefix.
+**Mistake**: Registering `tokenSimulator.*`, `gitCruiser.*`, `bpmnDiff.*`, or any camelCase compound prefix.
 
 **Correct approach**: First dotted segment is one of `std`, `bpmn`, `dmn`, `engine`, `git`, `plugins`, `dev`. Plugin user commands are `plugin.<name>.*` (singular). `plugins.*` (plural) is reserved for the Studio.
 

@@ -79,7 +79,6 @@ export function initializeIcons(bifrost: Bifrost): void {
     'std/editor-tab/controls/splitview': 'ph ph-columns',
     'std/status-bar/inspectdocument': 'ph-fill ph-file-magnifying-glass',
     'std/status-bar/notifications': 'ph-fill ph-bell',
-    'std/status-bar/machine-sanctum': 'ph-duotone ph-copyright statusbar__icon-machine-sanctum',
     'std/status-bar/theme-dark': 'ph-fill ph-moon',
     'std/status-bar/theme-light': 'ph-fill ph-sun',
     'std/status-bar/problems-error': 'ph ph-x-circle',

@@ -3255,13 +3255,31 @@ describe('plugin-host/integration', () => {
     });
 
     it('plugin enters quarantined status after repeated crashes', async () => {
-      for (let i = 0; i < 3; i++) {
+      const countCrashNotifications = async (): Promise<number> =>
+        (await studioAgent
+          .getTestDriver()
+          .client!.execute(
+            () =>
+              (window as any).bifrost.notifications
+                .getAllNotifications()
+                .filter((notification: any) =>
+                  String(notification.options.content).includes('crashed. It will restart automatically.'),
+                ).length,
+          )) as number;
+
+      for (let crashNumber = 1; crashNumber <= 3; crashNumber++) {
         try {
           await studioAgent.executeCommand('plugin.sandbox-crash.crash');
         } catch {
           // crash expected
         }
-        if (i < 2) {
+        if (crashNumber < 3) {
+          // The crash fires after the command has returned. Wait until the renderer has handled it (and
+          // unregistered the command) before waiting for the restart, or the next crash hits a dying sandbox.
+          await studioAgent.waitUntil(async () => (await countCrashNotifications()) >= crashNumber, {
+            timeout: PLUGIN_HOST_WAIT_TIMEOUT_MS,
+            timeoutMsg: `Crash #${crashNumber} of 'sandbox-crash' was not reported in time`,
+          });
           await studioAgent.pluginHost.waitUntilCommandRegistered('plugin.sandbox-crash.crash');
         }
       }

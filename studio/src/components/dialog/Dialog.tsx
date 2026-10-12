@@ -12,9 +12,6 @@ import DialogRenderer from './DialogRenderer';
 type DialogProps = {
   options: DialogOptionsStrict;
 
-  // used in docs/machine-sanctum, prevents focussing the `default` action
-  noFocus?: boolean;
-
   responseCallback?: DialogResponseCallbackFn;
   validationResult?: DialogValidationResult;
   iconComponent: IconComponent;

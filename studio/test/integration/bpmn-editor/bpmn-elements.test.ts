@@ -1210,6 +1210,54 @@ describe('bpmn/elements', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
+  async function executeExpressionInSequenceFlowConditionTab(expression: string): Promise<void> {
+    await studioAgent.jumpToFileInSolution('condition-test.bpmn');
+    await studioAgent.waitForInteractiveBpmnDocument();
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement('ConditionalFlow2');
+    await studioAgent.switchToPaneGroup('property');
+
+    await studioAgent.selectBpmnElementByIdAndWaitForElement(
+      'ConditionalFlow1',
+      CONDITIONAL_FLOW_PANE,
+      ASSERT_VISIBLE_TIMEOUT,
+    );
+    await studioAgent.clickOn('[data-test--open-sequence-flow-condition-in-new-tab]');
+
+    await studioAgent.assertVisible('#bpmn-sequence-flow-condition-fragment-editor', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.clickOnCodeEditor('#bpmn-sequence-flow-condition-fragment-editor');
+    await studioAgent.clearCodeEditor('#bpmn-sequence-flow-condition-fragment-editor');
+    await studioAgent.sendKeyboardInput([...expression.split('')]);
+
+    await studioAgent.clickOn('[data-test--feel-execute="multi"]');
+  }
+
+  it('bpmn/elements/feel-simulator: should show the result of a valid FEEL expression', async () => {
+    await executeExpressionInSequenceFlowConditionTab('if 2000 > 1000 then "high" else "standard"');
+
+    await studioAgent.assertVisible('[data-test--feel-result="success"]', ASSERT_VISIBLE_TIMEOUT);
+    const result = await studioAgent.getText('[data-test--feel-result-value]');
+    assert.ok(result.includes('"high"'), `Expected result to contain "high", got: ${result}`);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/feel-simulator: should show an error for an invalid FEEL expression', async () => {
+    await executeExpressionInSequenceFlowConditionTab('if then');
+
+    await studioAgent.assertVisible('[data-test--feel-result="error"]', ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/elements/feel-simulator: should time out on a long-running FEEL expression', async () => {
+    await executeExpressionInSequenceFlowConditionTab('for a in [1..99999] return for b in [1..99999] return a * b');
+
+    await studioAgent.assertVisible('[data-test--feel-result="timeout"]', 10_000);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
   it('bpmn/elements/property-panel/DateTimerBoundaryEvent: should change a timer boundary event type', async () => {
     const dateTimerBoundaryEvent = 'DateTimerBoundaryEvent_1';
     const timerStartEvent = 'TimerStartEvent_1';

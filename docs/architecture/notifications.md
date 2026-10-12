@@ -269,4 +269,3 @@ bifrost.notifications.close(id);
 ## Testing
 
 - **`StudioAgent.assertNoErrorOrWarningNotificationsVisible`** — Checks for the `data--test--unexpected-notifications` attribute on the notification container. If present, the test fails, indicating an unexpected warning or error notification appeared during the test run.
-- **Machine Sanctum** — `NotificationExamples.tsx` and `NotificationExampleRenderer.tsx` provide interactive previews for testing notification payloads.

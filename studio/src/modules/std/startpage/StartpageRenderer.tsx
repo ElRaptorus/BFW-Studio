@@ -96,14 +96,6 @@ export default function StartpageRenderer(props: EditorDocumentRendererProps): R
       description: '',
       testId: 'startpage-action-search-commands',
     },
-    {
-      key: 'machine-sanctum',
-      icon: 'ph ph-flask',
-      title: 'Visit Machine Sanctum',
-      command: 'dev.machineSanctum.open',
-      description: '',
-      testId: 'startpage-action-machine-sanctum',
-    },
   ];
 
   const allHeroCards = [...builtInHeroCards, ...heroCards];

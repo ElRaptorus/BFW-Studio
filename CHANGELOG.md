@@ -50,7 +50,6 @@ A sandbox environment for authoring and testing FEEL expressions with instant fe
 
 - Available inside all multi-line script editors (open in a separate tab for a full editing experience)
 - Backed by Codemirror 6
-- Also available as a standalone sandbox tool in the Machine Sanctum
 - The Studio is designed exclusively around FEEL — no JavaScript scripting
 
 **Planned:** Single-line editor support, visual variable builder (instead of raw JSON input).

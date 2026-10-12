@@ -36,11 +36,6 @@ type MultiLineCodeEditorProps = {
    * strict JSON parse lint. Used by Settings JSON (JSONC comments).
    */
   jsonSchema?: object;
-  /**
-   * When true, `onChange` fires on every document change instead of on blur.
-   * Used by Machine Sanctum live playgrounds.
-   */
-  liveUpdate?: boolean;
 };
 
 type MultiLineCodeEditorInnerProps = MultiLineCodeEditorProps & {
@@ -148,9 +143,6 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
   }, []);
 
   const handleBlur = useCallback(() => {
-    if (latestPropsRef.current.liveUpdate === true) {
-      return;
-    }
     const value = currentValueRef.current;
     const current = latestPropsRef.current;
     const valueIsAlreadySet = value === current.initialValue;
@@ -182,9 +174,6 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
               return;
             }
             currentValueRef.current = value;
-            if (latestPropsRef.current.liveUpdate === true) {
-              latestPropsRef.current.onChange?.(currentValueRef.current);
-            }
           }),
           EditorView.domEventHandlers({
             keydown: (event) => {

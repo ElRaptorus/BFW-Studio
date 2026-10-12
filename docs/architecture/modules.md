@@ -33,14 +33,13 @@ The load order is explicit and defined in `studio/src/createAndInitializeBifrost
 10. dmn-diff
 11. dmn-decision-simulator (DRD module registered via dmn.modeler.registerModule)
 12. git-cruiser
-13. machine-sanctum
-14. engine-core            (registers EngineConnectionManager shared resource)
-15. engine-workspace       (sidebar, catalogs, menubar/run controls)
-16. engine-deploy          (Deploy category: plan page and explorer)
-17. engine-model-viewer    (read-only deployed BPMN viewer)
-18. engine-decision-viewer (read-only deployed DMN viewer)
-19. engine-debugger        (live PI debugger)
-20. plugins
+13. engine-core            (registers EngineConnectionManager shared resource)
+14. engine-workspace       (sidebar, catalogs, menubar/run controls)
+15. engine-deploy          (Deploy category: plan page and explorer)
+16. engine-model-viewer    (read-only deployed BPMN viewer)
+17. engine-decision-viewer (read-only deployed DMN viewer)
+18. engine-debugger        (live PI debugger)
+19. plugins
 ```
 
 This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then engine modules (`engine-core` first as foundation, then workspace/viewers/debugger), then plugin management (`plugins`) last.
@@ -256,15 +255,6 @@ Management UI for the Plugin Host. Provides the Plugins pane (left sidebar), plu
 - **Dependencies (imports):** None (communicates via `bifrost.plugins` subsystem)
 - **Architecture doc:** [plugin-host.md](plugin-host.md)
 
-### Utilities
-
-#### machine-sanctum
-
-Playground for plugin developers. Provides a visual interface for trying out Studio features (notifications, dialogs, etc.) with JSON-based configurations and live preview.
-
-- **Entry:** `studio/src/modules/machine-sanctum/index.tsx`
-- **Dependencies (commands):** `std`
-
 ## Dependency Graph
 
 ```
@@ -290,8 +280,6 @@ dmn-editor ← dmn-core, bpmn-core (import)               │
 dmn-diff ← dmn-core/diff (import)                       │
                                                         │
 git-cruiser ← std (cmd), bpmn-diff, dmn-diff (cmd)      │
-                                                        │
-machine-sanctum ← std (cmd)                             │
                                                         │
 engine-core ← std (Bifrost APIs), bpmn-core (cmd + import) │
   registers: engineConnectionManager,                   │
@@ -326,4 +314,4 @@ plugins ← std (cmd: std.settings.openUserSettingsAtCategory)│
 
 ## Workbench pages and categories
 
-`std` registers the categories first (`initializeWorkbenchCategories.ts`); other modules register their page in `onLoad` (`design/workspace` in bpmn-editor, `design/source` in git-cruiser, `debug/engines` in engine-core, `control/plugins` in plugins, `control/machine-sanctum` in machine-sanctum). Document types need `page`, left pane groups need `pages`. See [workbench-categories.md](workbench-categories.md).
+`std` registers the categories first (`initializeWorkbenchCategories.ts`); other modules register their page in `onLoad` (`design/workspace` in bpmn-editor, `design/source` in git-cruiser, `debug/engines` in engine-core, `control/plugins` in plugins). Document types need `page`, left pane groups need `pages`. See [workbench-categories.md](workbench-categories.md).

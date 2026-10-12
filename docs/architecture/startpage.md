@@ -9,7 +9,7 @@ The start page uses a vertically stacked, single-column layout (max-width 900px,
 1. **Header** — Product name + release channel via `ProductNameHeadline`
 2. **Hero card grid** — Large cards for primary actions (BPMN, DMN, Solution) + injected hero cards
 3. **Recent section** — Recently opened solutions and files
-4. **Action card grid** — Smaller cards for secondary actions (Open File, Open Folder, Pick a Theme, Search Files, Search Commands, Visit Machine Sanctum) + injected action cards + legacy extra renderers
+4. **Action card grid** — Smaller cards for secondary actions (Open File, Open Folder, Pick a Theme, Search Files, Search Commands) + injected action cards + legacy extra renderers
 5. **Footer** — "Show Welcome Page at startup" checkbox + "Did you know?" tip
 6. **Flavor text** — Three hardcoded lore strings placed between sections
 

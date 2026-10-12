@@ -306,9 +306,6 @@ bifrost.icons.registerIcons({
 
   // Custom class for BPMN tab styling
   'bpmn/editor-tab/bpmn': 'ph-fill ph-git-branch ph-rotate-90 bpmn__editor--tab-icon',
-
-  // Custom class for status bar appearance
-  'std/status-bar/machine-sanctum': 'ph-duotone ph-copyright statusbar__icon-machine-sanctum',
 });
 ```
 

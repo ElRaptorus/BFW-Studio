@@ -30,7 +30,6 @@ Each factory has a `priority: number` (default `0`). Within an area, factories a
 
 | Item | Area | Priority |
 |------|------|----------|
-| `std/machine-sanctum` | left | 200 |
 | `git-cruiser/not-found` | left | 100 |
 | `git-cruiser/branch` | left | 100 |
 | `git-cruiser/sync` | left | 80 |

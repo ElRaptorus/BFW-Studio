@@ -4,7 +4,7 @@
 
 ## Overview
 
-Host multi-line source editing uses CodeMirror 6. Two React wrappers — `MultiLineCodeEditor` and `DiffEditor` — keep the class + inner-function pattern, blur-to-commit `onChange` (except Machine Sanctum live playgrounds), and the existing import paths. A small kit under `studio/src/components/code-editor/` supplies theme, language map, default extensions, rainbow brackets, and JSON parse lint.
+Host multi-line source editing uses CodeMirror 6. Two React wrappers — `MultiLineCodeEditor` and `DiffEditor` — keep the class + inner-function pattern, blur-to-commit `onChange`, and the existing import paths. A small kit under `studio/src/components/code-editor/` supplies theme, language map, default extensions, rainbow brackets, and JSON parse lint.
 
 These wrappers are **host-only**. They are never exported from `@elraptorus/bfw_studio_sdk`. FEEL editing stays a separate SDK widget (`FeelEditor` / `OneLineFeelEditor` wrapping `@bpmn-io/feel-editor`). Markdown documentation stays on `@mdxeditor/editor` (Lexical WYSIWYG). Plugin `text-file-editors` owns its own CodeMirror instance inside a webview.
 
@@ -35,7 +35,6 @@ Public host API for JSON, JavaScript, XML, HTML, and plaintext. Mounts an `Edito
 | `language` | Mapped by `getLanguageSupport`. `html` is HTML; XML inspectors pass `xml`. |
 | `jsonSchema` | When set, uses `createJson5SchemaExtensions` (JSON5 + schema lint/hover/complete). Settings JSON only. Unknown top-level keys are warnings (`Unknown setting.`), not errors. |
 | `minimap` | No-op. Kept so existing callsites compile. |
-| `liveUpdate` | When true, `onChange` fires on every document change (Machine Sanctum). Default is blur-to-commit. |
 | `modelPath` | Removed. Replaced by `jsonSchema`. |
 
 The host div carries `data-code-editor="multiline"`. Tests click `.cm-content` inside that wrapper.
