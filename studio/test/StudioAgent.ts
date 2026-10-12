@@ -926,12 +926,7 @@ export class StudioAgent {
   }
 
   async getUriForSelector(uri: string): Promise<string> {
-    const result = (await this.testDriver.client!.executeAsync(
-      ((uri: string, done: (arg: string) => void) => {
-        done(CSS.escape(uri));
-      }) as any,
-      uri,
-    )) as string;
+    const result = await this.testDriver.client!.execute(async (uri: string) => CSS.escape(uri), uri);
 
     return result;
   }
@@ -1396,20 +1391,16 @@ export class StudioAgent {
   }
 
   private async scrollIntoViewIfNeeded(selector: string): Promise<void> {
-    await this.testDriver.client!.executeAsync(
-      ((elementSelector: string, done: () => void) => {
-        try {
-          const domElement = document.querySelector<any>(elementSelector);
-          if (domElement != null) {
-            domElement.scrollIntoViewIfNeeded();
-          }
-        } catch {
-          // do nothing
+    await this.testDriver.client!.execute(async () => {
+      try {
+        const domElement = document.querySelector<HTMLElement>(selector);
+        if (domElement != null) {
+          domElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         }
-        done();
-      }) as any,
-      selector,
-    );
+      } catch {
+        // do nothing
+      }
+    }, selector);
   }
 
   async assertGitPaneVisible(): Promise<void> {
