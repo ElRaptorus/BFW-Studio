@@ -41,6 +41,8 @@ describe('git-cruiser/bpmn-diff', () => {
       state: task.result?.state === 'fail' ? 'failed' : 'passed',
     });
     await studioAgent.recordErrors();
+    // Discard uncommitted edits so a failed attempt cannot leak a modified file into the retry or the next test.
+    execSync('git checkout -- .', { cwd: repoDir });
     await studioAgent.closeOpenEditors('bpmn');
     await studioAgent.closeOpenEditors('bpmn.diff');
     await studioAgent.closeOpenEditors('bpmn.history-preview');
