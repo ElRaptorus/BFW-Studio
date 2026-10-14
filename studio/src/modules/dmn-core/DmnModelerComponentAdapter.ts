@@ -316,7 +316,11 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
 
   async restoreViewboxAfterNavigation(partialMetadata: Record<string, any> | null): Promise<void> {
     const viewbox = partialMetadata?.viewbox;
-    if (viewbox == null || !this.isDrdActive()) {
+    // Viewboxes saved from a hidden canvas have width/height 0 and make diagram-js compute a non-finite scale.
+    if (
+      !(viewbox?.width > 0 && viewbox?.height > 0 && Number.isFinite(viewbox.width + viewbox.height)) ||
+      !this.isDrdActive()
+    ) {
       return;
     }
     this.getDrdCanvas().viewbox(viewbox as Rect);
@@ -671,6 +675,9 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
         return;
       }
       const viewbox = this.getDrdCanvas().viewbox(false as any) as CanvasViewbox;
+      if (!(viewbox.width > 0 && viewbox.height > 0 && Number.isFinite(viewbox.width + viewbox.height))) {
+        return;
+      }
       this.emit(EVENT_DMN_ADAPTER_LOCATION_CHANGED, [{ viewbox: structuredClone(viewbox), zoom: this.getZoom() }]);
     };
 

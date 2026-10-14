@@ -441,6 +441,11 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
 
     this.log('onLocationChange', 'viewbox:', viewboxCopy);
 
+    // A hidden canvas (e.g. the editor behind the Home view) has no size; persisting that viewbox would break the restore.
+    if (!(viewbox.width > 0 && viewbox.height > 0 && Number.isFinite(viewbox.width + viewbox.height))) {
+      return;
+    }
+
     this.log('onLocationChange.emitEvents');
 
     this.emit(EVENT_BPMN_MODELER_ADAPTER_LOCATION_CHANGED, [{ viewbox: viewboxCopy, zoom: this.getZoom() }]);
@@ -506,7 +511,8 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
     }
 
     const viewbox = partialMetadata?.viewbox;
-    if (viewbox == null) {
+    // Viewboxes saved from a hidden canvas have width/height 0 and make diagram-js compute a non-finite scale.
+    if (!(viewbox?.width > 0 && viewbox?.height > 0 && Number.isFinite(viewbox.width + viewbox.height))) {
       return;
     }
 
