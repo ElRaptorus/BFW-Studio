@@ -120,7 +120,6 @@ function makeProcess(): BpmnProcess {
     dataStoreReferences: [],
     associations: [],
     extensions: [],
-    linterScores: [],
   };
 }
 

@@ -58,6 +58,7 @@ export function convertGraphqlProcessModel(raw: unknown, bpmnXml = ''): GraphqlP
     signals: convertSignals(raw.signals),
     errors: convertErrors(raw.errors),
     escalations: convertEscalations(raw.escalations),
+    linterScores: asRecordArray(raw.linterScores).map(convertLinterScore),
     rawXml: bpmnXml,
   };
 
@@ -82,7 +83,6 @@ function convertProcess(raw: Record<string, unknown>): BpmnProcess {
     dataStoreReferences: asRecordArray(raw.dataStoreReferences).map(convertDataStoreReference),
     associations: asRecordArray(raw.associations).map(convertAssociation),
     extensions: asRecordArray(raw.extensions).map(convertExtension),
-    linterScores: asRecordArray(raw.linterScores).map(convertLinterScore),
   };
 }
 
@@ -397,19 +397,16 @@ function convertExtension(raw: Record<string, unknown>): Extension {
 }
 
 function convertLinterScore(raw: Record<string, unknown>): LinterRulesetScore {
-  const scorePercent = asNumber(raw.scorePercent);
   return {
     rulesetId: String(raw.rulesetId ?? ''),
-    score: scorePercent ?? asNumber(raw.score) ?? 0,
-    checks: {
-      complianceStatus: raw.complianceStatus ?? null,
-      computedAtIso: raw.computedAtIso ?? null,
-      schemaVersion: raw.schemaVersion ?? null,
-      maxPoints: raw.maxPoints ?? null,
-      penaltyPoints: raw.penaltyPoints ?? null,
-      rawErrorFindings: raw.rawErrorFindings ?? null,
-      rawWarningFindings: raw.rawWarningFindings ?? null,
-    },
+    scorePercent: asNumber(raw.scorePercent),
+    complianceStatus: asString(raw.complianceStatus),
+    computedAtIso: asString(raw.computedAtIso),
+    schemaVersion: asString(raw.schemaVersion),
+    maxPoints: asNumber(raw.maxPoints),
+    penaltyPoints: asNumber(raw.penaltyPoints),
+    rawErrorFindings: asNumber(raw.rawErrorFindings),
+    rawWarningFindings: asNumber(raw.rawWarningFindings),
   };
 }
 

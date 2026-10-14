@@ -115,8 +115,12 @@ describe('convertGraphqlProcessModel', () => {
     ]);
     expect(definitions.rawXml).toBe('<xml/>');
     expect(definitions.messages).toEqual([{ id: 'Message_payment', name: 'payment-received' }]);
-    expect(process.linterScores[0]?.rulesetId).toBe('bfw-default');
-    expect(process.linterScores[0]?.score).toBe(92.5);
+    expect(definitions.linterScores[0]).toMatchObject({
+      rulesetId: 'bfw-default',
+      scorePercent: 92.5,
+      complianceStatus: 'compliant',
+      maxPoints: null,
+    });
 
     const start = process.flowNodes.find((node) => node.id === 'Start_1');
     expect(start?.typeData.type).toBe('start_event');
