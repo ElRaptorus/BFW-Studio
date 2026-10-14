@@ -19,7 +19,6 @@ function flowNode(type: FlowNodeType, typeData: FlowNode['typeData']): FlowNode 
     incoming: [],
     outgoing: [],
     boundaryEventRefs: [],
-    dataContracts: [],
     dataInputAssociations: [],
     dataOutputAssociations: [],
     multiInstance: null,

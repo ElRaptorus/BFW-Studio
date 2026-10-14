@@ -147,26 +147,6 @@
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]
     },
     {
-      "name": "DataContract",
-      "superClass": ["Element"],
-      "meta": {
-        "allowedIn": [
-          "bpmn:Task",
-          "bpmn:UserTask",
-          "bpmn:ServiceTask",
-          "bpmn:ScriptTask",
-          "bpmn:BusinessRuleTask",
-          "bpmn:ManualTask",
-          "bpmn:SendTask",
-          "bpmn:ReceiveTask",
-          "bpmn:CallActivity",
-          "bpmn:SubProcess"
-        ]
-      },
-      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
-    },
-
-    {
       "name": "HttpUrl",
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:ServiceTask"] },
@@ -270,12 +250,6 @@
 
     {
       "name": "DecisionRef",
-      "superClass": ["Element"],
-      "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
-      "properties": [{ "name": "body", "isBody": true, "type": "String" }]
-    },
-    {
-      "name": "RuleRef",
       "superClass": ["Element"],
       "meta": { "allowedIn": ["bpmn:BusinessRuleTask"] },
       "properties": [{ "name": "body", "isBody": true, "type": "String" }]

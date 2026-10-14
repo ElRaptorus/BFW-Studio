@@ -3,7 +3,6 @@ import type {
   BpmnDefinitions,
   BpmnProcess,
   DataAssociation,
-  DataContract,
   DataObject,
   DataObjectReference,
   DataStoreReference,
@@ -96,7 +95,6 @@ function convertFlowNode(raw: Record<string, unknown>): FlowNode {
     incoming: asStringArray(raw.incoming),
     outgoing: asStringArray(raw.outgoing),
     boundaryEventRefs: asStringArray(raw.boundaryEventRefs),
-    dataContracts: asRecordArray(raw.dataContracts).map(convertDataContract),
     dataInputAssociations: asRecordArray(raw.dataInputAssociations).map(convertDataAssociation),
     dataOutputAssociations: asRecordArray(raw.dataOutputAssociations).map(convertDataAssociation),
     multiInstance: isRecord(raw.multiInstance) ? convertMultiInstance(raw.multiInstance) : null,
@@ -199,7 +197,6 @@ function convertTypeData(flowNodeType: FlowNodeType, raw: Record<string, unknown
         ...contracts,
         implementation: asString(raw.implementation),
         script: asString(raw.script),
-        ruleRef: asString(raw.ruleRef),
         decisionRef: asString(raw.decisionRef),
         decisionElementId: asString(raw.decisionElementId),
         resultVariable: asString(raw.resultVariable),
@@ -407,15 +404,6 @@ function convertLinterScore(raw: Record<string, unknown>): LinterRulesetScore {
     penaltyPoints: asNumber(raw.penaltyPoints),
     rawErrorFindings: asNumber(raw.rawErrorFindings),
     rawWarningFindings: asNumber(raw.rawWarningFindings),
-  };
-}
-
-function convertDataContract(raw: Record<string, unknown>): DataContract {
-  const direction = normalizeEnum(raw.direction) === 'output' ? 'output' : 'input';
-  return {
-    direction,
-    jsonSchema: asObjectOrNull(raw.jsonSchema) ?? {},
-    compiledSchema: null,
   };
 }
 

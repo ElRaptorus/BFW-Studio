@@ -9,7 +9,6 @@ const TYPE_ORDER: Record<string, number> = {
   'bfw:OutputMapping': 11,
   'bfw:PayloadContract': 12,
   'bfw:ResultContract': 13,
-  'bfw:DataContract': 14,
 };
 
 const DEFAULT_ORDER = 50;
