@@ -206,6 +206,7 @@ function convertTypeData(flowNodeType: FlowNodeType, raw: Record<string, unknown
       return {
         type: 'send_task',
         ...mappings,
+        correlationRetrievalExpression: asString(raw.correlationRetrievalExpression),
         messageRef: asString(raw.messageRef),
         payloadContract: contracts.payloadContract,
       };
