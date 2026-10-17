@@ -5,6 +5,7 @@ import type { TreeItemData } from './TreeDataAdapter';
 export type StudioTreeCallbacks = {
   onClickItem?: (metadata: any, event?: MouseEvent) => void;
   onDoubleClickItem?: (metadata: any, event?: MouseEvent) => void;
+  forwardModifierClicks?: boolean;
 };
 
 declare module '@headless-tree/core' {
@@ -22,6 +23,9 @@ declare module '@headless-tree/core' {
  * - Double click: fire onDoubleClickItem callback
  * - Ctrl+click: toggle item selection
  * - Shift+click: range-select from anchor to clicked item
+ *
+ * Ctrl+click and Shift+click fire onClickItem only when `forwardModifierClicks`
+ * is set, for trees whose click handler reads the modifier keys.
  *
  * Callbacks are read from `tree.getConfig().studioCallbacks` so each tree
  * instance carries its own callbacks (no shared mutable state).
@@ -62,6 +66,10 @@ export const studioTreePlugin: FeatureImplementation<TreeItemData> = {
           item.setFocused();
 
           const callbacks = tree.getConfig().studioCallbacks;
+          if ((isShift || isCtrlOrMeta) && callbacks?.forwardModifierClicks !== true) {
+            return;
+          }
+
           const data = item.getItemData();
           if (data?.metadata && callbacks?.onClickItem) {
             callbacks.onClickItem(data.metadata, e);

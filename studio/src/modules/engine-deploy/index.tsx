@@ -126,6 +126,25 @@ export function onLoad(bifrost: Bifrost): void {
   bifrost.menus.registerMenu(DEPLOY_PACKAGES_MENU_ID, () => buildPackagesMenu(bifrost));
   bifrost.menus.registerMenu('engine/deploy-explorer/item', () => ADD_TO_PLAN_MENU);
   bifrost.menus.registerMenu('engine/deploy-explorer/multi-selection', () => ADD_TO_PLAN_MENU);
+  bifrost.menus.registerMenuModifier('std/file-explorer/multi-selection', (menu: Menu, selectedMetadata: any[]) => {
+    const uris: string[] = selectedMetadata
+      .filter((metadata: any) => (metadata?.type === 'file' || metadata?.type === 'directory') && metadata.uri != null)
+      .map((metadata: any) => metadata.uri);
+    if (uris.length === 0) {
+      return menu;
+    }
+    return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/multi-selection/divider-before-delete', [
+      { type: 'divider' },
+      {
+        type: 'command',
+        label: `Add ${uris.length} ${uris.length === 1 ? 'item' : 'items'} to Deploy Plan`,
+        id: 'engine-deploy/multi-selection/add-to-plan',
+        icon: 'ph ph-paper-plane-tilt',
+        command: 'engine.deploy.addUrisToPlan',
+        commandArgs: [uris],
+      },
+    ]);
+  });
 
   bifrost.keybindings.registerKeyBindings({
     client: '*',

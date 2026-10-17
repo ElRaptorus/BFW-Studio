@@ -193,6 +193,26 @@ export function registerDeployPlanCommands(bifrost: Bifrost): void {
     await bifrost.commands.executeCommand('engine.deploy.addToPlan', [uris]);
   });
 
+  bifrost.commands.register('engine.deploy.addUrisToPlan', async (uris: string[]) => {
+    const fileUris: string[] = [];
+    for (const uri of uris) {
+      fileUris.push(
+        ...((await bifrost.files.isDirectory(uri)) ? await bifrost.files.getAllFileUrisInDirectoryTree(uri) : [uri]),
+      );
+    }
+    const modelUris = [...new Set(fileUris.filter((uri) => /\.(bpmn|dmn)$/i.test(uri)))];
+    if (modelUris.length === 0) {
+      bifrost.notifications.open({
+        type: 'info',
+        content: 'The selection contains no BPMN or DMN files.',
+        source: 'Deploy',
+      });
+      return;
+    }
+    await bifrost.commands.executeCommand('engine.deploy.addToPlan', [modelUris]);
+    bifrost.categories.activatePage('deploy/plan');
+  });
+
   bifrost.commands.register('engine.deploy.removeFromPlan', async (uri: string) => {
     await getPlanModelIfPresent(bifrost)?.removeItem(uri);
   });

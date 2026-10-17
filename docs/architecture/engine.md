@@ -371,7 +371,8 @@ The header rebuilds on `engine:list-changed`, `engine:state-changed`, `engine:di
 | `std/file-explorer/directory` | `engine-workspace/directory/deploy` | Deploy folder to Engine | after `divider-before-rename`, own group |
 | `std/file-explorer/project` | `engine-workspace/project/deploy` | Deploy project to Engine | after `divider-before-rename-project`, own group |
 | `std/file-explorer/solution-root` | `engine-workspace/solution-root/deploy` | Deploy folder to Engine | after `divider-before-rename`, own group |
-| `std/file-explorer/multi-selection` | `engine-workspace/multi-selection/deploy` | Deploy N files to Engine | after `divider-before-delete`, own group |
+
+The multi-selection menu has no direct deploy; it offers "Add N items to Deploy Plan" from `engine-deploy` (see [deploy.md](deploy.md)).
 
 File-menu order when both linter and deploy apply: New File group → **Deploy to Engine** → **Lint File** + Compare to → copy/rename/delete.
 

@@ -168,7 +168,11 @@ A custom `FeatureImplementation<TreeItemData>` that overwrites the default `sele
 | Shift+click | Range select (`selectUpTo`) |
 | Double-click | Fire `onDoubleClickItem` |
 
+Modifier clicks fire `onClickItem` only when `studioCallbacks.forwardModifierClicks` is true. `Tree` sets it when no `multiSelectionMenuId` is given. Multi-selection trees (File Explorer, Deploy Explorer) therefore only select on a modifier click: in the File Explorer `onClickItem` opens the document, and the "Cursor Follows Tabs" reveal after opening would replace the selection with the opened file. Other trees still get the event, for example the engine sidebar opens a page to the side on Shift+click.
+
 Callbacks are read from `tree.getConfig().studioCallbacks`, so each tree instance carries its own callbacks without shared mutable state.
+
+`Tree.handleContextMenu`: right-clicking an item outside the selection narrows the selection to that item and shows its own menu (`menuId`). Right-clicking inside a selection of two or more items shows `multiSelectionMenuId` with `[selectedMetadata, clickedMetadata, studio]`.
 
 ---
 

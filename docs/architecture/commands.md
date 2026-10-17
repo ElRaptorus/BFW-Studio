@@ -260,8 +260,8 @@ Example: `engine-core` emits `engine:event` on `EngineConnectionManager` after a
 | `std.solution.addDirectory` | Creates a new directory within the Solution |
 | `std.solution.newFile` | Creates a new file |
 | `std.solution.duplicateFile` | Duplicates a file |
-| `std.solution.renameFileOrDirectory` | Renames a file/directory |
-| `std.solution.deleteSelectedElementsInFileExplorer` | Deletes selected elements |
+| `std.solution.renameFileOrDirectory` | Renames a file/directory (selection: exactly one file or directory) |
+| `std.solution.deleteSelectedElementsInFileExplorer` | Deletes selected files and directories; project and solution roots are skipped |
 | `std.solution.toggleHiddenFiles` | Toggles hidden file display |
 
 ## Solution File Commands (Multi-Root)

@@ -529,12 +529,9 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
   commands.register(
     'std.solution.deleteSelectedElementsInFileExplorer',
     async (givenUrisToDelete?: string[]) => {
-      let selectedElementUris;
-      if (givenUrisToDelete == null) {
-        const treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
-        selectedElementUris = treeViewMediator.getSelectedMetadata().map((metadata) => metadata.uri);
-      } else {
-        selectedElementUris = givenUrisToDelete;
+      const selectedElementUris = givenUrisToDelete ?? getSelectedFileAndDirectoryUris(bifrost);
+      if (selectedElementUris.length === 0) {
+        return;
       }
 
       const selectedElementNames = selectedElementUris.map((uri) => bifrost.files.getLocalBasename(uri));
@@ -593,21 +590,8 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
           return false;
         }
 
-        let selectedElementUris: string[];
-        if (givenUrisToDelete == null) {
-          if (!bifrost.views.isRegistered('std/file-explorer/open-solution')) {
-            return false;
-          }
-          const treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
-          selectedElementUris = treeViewMediator.getSelectedMetadata();
-        } else {
-          selectedElementUris = givenUrisToDelete;
-        }
-
-        if (selectedElementUris.length) {
-          return true;
-        }
-        return false;
+        const selectedElementUris = givenUrisToDelete ?? getSelectedFileAndDirectoryUris(bifrost);
+        return selectedElementUris.length > 0;
       },
     },
   );
@@ -809,17 +793,16 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       let treeViewMediator;
       let currentUri;
       if (givenUriToRename == null) {
+        const selectedUris = getSelectedFileAndDirectoryUris(bifrost);
+        if (selectedUris.length !== 1 || getSelectedMetadataCount(bifrost) !== 1) {
+          return;
+        }
         treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
-        const seletedElements = treeViewMediator.getSelectedMetadata();
-        currentUri = seletedElements[0]?.uri;
+        currentUri = selectedUris[0];
       } else {
         currentUri = givenUriToRename;
       }
 
-      if (currentUri == null) {
-        // TODO: This should throw an error once the solution default selection mechanism is in place
-        return;
-      }
       const elementType = (await bifrost.files.isDirectory(currentUri)) ? 'directory' : 'file';
       const currentName = bifrost.files.getLocalBasename(currentUri);
       const currentPathWithoutExtension = bifrost.files.getLocalBasename(currentUri, true);
@@ -926,7 +909,17 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
         }
       }
     },
-    { enabledWhen: () => bifrost.solution.hasOpenSolution() },
+    {
+      enabledWhen: (givenUriToRename?: string): boolean => {
+        if (!bifrost.solution.hasOpenSolution()) {
+          return false;
+        }
+        if (givenUriToRename != null) {
+          return true;
+        }
+        return getSelectedFileAndDirectoryUris(bifrost).length === 1 && getSelectedMetadataCount(bifrost) === 1;
+      },
+    },
   );
 
   commands.register('std.solution.openDirectory', async (uri: string) => {
@@ -970,6 +963,25 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
     visibleInSearch: true,
     enabledWhen: () => bifrost.solution.hasOpenSolution(),
   });
+}
+
+/** Project and solution roots are left out: their URI is the root directory on disk. */
+function getSelectedFileAndDirectoryUris(bifrost: Bifrost): string[] {
+  if (!bifrost.views.isRegistered('std/file-explorer/open-solution')) {
+    return [];
+  }
+  return bifrost.views
+    .getById<TreeViewMediator>('std/file-explorer/open-solution')
+    .getSelectedMetadata()
+    .filter((metadata) => metadata?.type === 'file' || metadata?.type === 'directory')
+    .map((metadata) => metadata.uri);
+}
+
+function getSelectedMetadataCount(bifrost: Bifrost): number {
+  if (!bifrost.views.isRegistered('std/file-explorer/open-solution')) {
+    return 0;
+  }
+  return bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution').getSelectedMetadata().length;
 }
 
 /** Opening a solution from the Welcome page would otherwise look like nothing happened. Other pages stay put. */

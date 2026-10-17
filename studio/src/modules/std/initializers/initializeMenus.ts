@@ -1179,12 +1179,14 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         {
           type: 'divider',
           id: 'std/file-explorer/multi-selection/divider-before-delete',
+          visible: uris.length > 0,
         },
         {
           type: 'command',
           label: `Delete ${uris.length} Items`,
           id: 'std/file-explorer/multi-selection/delete',
           command: 'std.solution.deleteSelectedElementsInFileExplorer',
+          visible: uris.length > 0,
         },
         {
           type: 'divider',

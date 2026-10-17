@@ -344,29 +344,6 @@ export default function initializeMenus(bifrost: Bifrost, connectionManager: Eng
     });
   });
 
-  bifrost.menus.registerMenuModifier('std/file-explorer/multi-selection', (menu: Menu, selectedMetadata: any[]) => {
-    if (!canDeploy(connectionManager)) {
-      return menu;
-    }
-
-    const deployableUris: string[] = (selectedMetadata ?? [])
-      .filter((meta: any) => meta?.type === 'file' && meta?.uri && isDeployableUri(meta.uri))
-      .map((meta: any) => meta.uri);
-
-    if (deployableUris.length === 0) {
-      return menu;
-    }
-
-    return insertDeployGroupAfterDivider(bifrost, menu, 'std/file-explorer/multi-selection/divider-before-delete', {
-      type: 'command',
-      label: `Deploy ${deployableUris.length} file${deployableUris.length > 1 ? 's' : ''} to Engine`,
-      id: 'engine-workspace/multi-selection/deploy',
-      icon: 'ph ph-upload',
-      command: 'engine.workspace.deploySelectedFiles',
-      commandArgs: [deployableUris],
-    });
-  });
-
   for (const option of INTERVAL_OPTIONS) {
     bifrost.commands.register(`engine.workspace.setRefreshInterval.${option.value}`, () => {
       bifrost.settings.set(SETTINGS_KEYS.dashboardAutoRefresh, option.value);

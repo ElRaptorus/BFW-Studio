@@ -103,12 +103,14 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
     return med;
   });
 
+  const forwardModifierClicks = props.multiSelectionMenuId == null;
   const studioCallbacks: StudioTreeCallbacks = useMemo(
     () => ({
       onClickItem: (metadata: any, event?: MouseEvent) => onClickRef.current(metadata, event),
       onDoubleClickItem: (metadata: any, event?: MouseEvent) => onDoubleClickRef.current?.(metadata, event),
+      forwardModifierClicks,
     }),
-    [],
+    [forwardModifierClicks],
   );
 
   const stableOnActionIconClick = useCallback(
@@ -163,9 +165,7 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
       }
 
       const selectedMeta = mediator.getSelectedMetadata();
-      const isItemSelected = selectedMeta.some(
-        (meta: any) => meta === itemData.metadata || meta?.uri === itemData.metadata?.uri,
-      );
+      const isItemSelected = tree.getItemInstance(itemData.htId)?.isSelected() === true;
 
       if (!isItemSelected) {
         tree.setSelectedItems([itemData.htId]);
@@ -173,7 +173,7 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
         itemInstance?.setFocused();
       }
 
-      if (props.multiSelectionMenuId && selectedMeta.length > 1) {
+      if (props.multiSelectionMenuId && isItemSelected && selectedMeta.length > 1) {
         showContextMenu(event, props.multiSelectionMenuId, [selectedMeta, itemData.metadata, studio]);
       } else {
         showContextMenu(event, itemData.menuId, [itemData.metadata, studio]);

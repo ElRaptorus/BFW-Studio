@@ -333,6 +333,12 @@ The `TreeViewMediator` exposes:
 - `getViewData()` — snapshot of the visible tree for testing/debugging
 - `notifyEntriesChanged()` — emits `EVENT_TREEVIEW_ENTRIES_CHANGED` so external listeners can react to data changes
 
+### Delete and Rename on the selection
+
+Without arguments, `std.solution.deleteSelectedElementsInFileExplorer` (Delete / Backspace, context menus) uses only selected items whose metadata `type` is `file` or `directory`. Project and solution roots carry their root directory as URI, so they are skipped and never deleted from disk; with only roots selected the command is disabled. Roots leave a solution only through "Remove from Solution". The multi-selection menu hides "Delete N Items" when no file or directory is selected.
+
+Without arguments, `std.solution.renameFileOrDirectory` (F2 / Enter, context menus) is enabled only when exactly one item is selected and it is a file or directory. The keybinding mediator ignores disabled commands, so F2 / Enter do nothing for several items or a root.
+
 ### Drag & Drop (Internal)
 
 - Uses `react-dnd` with item type `tree_item`

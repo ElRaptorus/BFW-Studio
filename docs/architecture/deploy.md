@@ -49,6 +49,7 @@ The plan table shows icon, file name with the folder as a muted second line (`de
 |---|---|
 | `engine.deploy.addToPlan(uris)` | Open the plan page and add files |
 | `engine.deploy.addSelectedToPlan` | Add every model below the Explorer selection (`collectSelectedModelUris`) |
+| `engine.deploy.addUrisToPlan(uris)` | Expand directories, keep unique `.bpmn` / `.dmn`, run `addToPlan` and activate `deploy/plan`; an info notification when no model is left. File Explorer multi-selection entry "Add N items to Deploy Plan" (`engine-deploy/multi-selection/add-to-plan`, before `divider-before-delete`, counts selected files and directories) |
 | `engine.deploy.removeFromPlan(uri)` | Remove a file |
 | `engine.deploy.addMissingDependencies` | Add the `localNotInPlan` dependencies |
 | `engine.deploy.refreshPlan` | Rescan and re-fetch |

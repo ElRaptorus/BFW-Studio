@@ -129,7 +129,7 @@ export function initializeMenus(bifrost: Bifrost): void {
     return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/multi-selection/delete', [
       {
         type: 'command',
-        label: `Lint ${lintableUris.length} items`,
+        label: `Lint ${lintableUris.length} ${lintableUris.length === 1 ? 'item' : 'items'}`,
         id: 'bpmn-linter/multi-selection/lint',
         icon: 'ph ph-fill ph-highlighter',
         command: 'bpmn.linter.lintUris',

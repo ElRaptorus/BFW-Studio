@@ -17,10 +17,20 @@ function setup(selected: object[] = [], model: object | null = null) {
     getEditorDocumentModelIfPresent: () => model,
   };
   (recording.bifrost as any).views = { getById: () => ({ getSelectedMetadata: () => selected }) };
+  const activatedPages: string[] = [];
+  (recording.bifrost as any).categories = { activatePage: (pageId: string) => void activatedPages.push(pageId) };
+  const directories: Record<string, string[]> = {
+    'file:///project/models': ['file:///project/models/a.bpmn', 'file:///project/models/notes.txt'],
+    'file:///project/empty': ['file:///project/empty/readme.md'],
+  };
+  (recording.bifrost as any).files = {
+    isDirectory: async (uri: string) => uri in directories,
+    getAllFileUrisInDirectoryTree: async (uri: string) => directories[uri],
+  };
   registerDeployPlanCommands(recording.bifrost);
   const notifications = () =>
     recording.calls.filter((call) => call.method === 'notifications.open').map((call) => call.arguments[0]);
-  return { ...recording, opened, notifications };
+  return { ...recording, opened, notifications, activatedPages };
 }
 
 describe('collectSelectedModelUris', () => {
@@ -63,6 +73,32 @@ describe('deploy plan commands', () => {
     await bifrost.commands.executeCommand('engine.deploy.addSelectedToPlan', []);
 
     expect(opened).toEqual([]);
+    expect(notifications()).toEqual([
+      { type: 'info', content: 'The selection contains no BPMN or DMN files.', source: 'Deploy' },
+    ]);
+  });
+
+  it('addUrisToPlan expands folders, keeps unique models and goes to the plan page', async () => {
+    const added: string[][] = [];
+    const { bifrost, activatedPages } = setup([], { addItems: async (uris: string[]) => void added.push(uris) });
+
+    await bifrost.commands.executeCommand('engine.deploy.addUrisToPlan', [
+      ['file:///project/models', 'file:///project/models/a.bpmn', 'file:///project/b.dmn', 'file:///project/c.txt'],
+    ]);
+
+    expect(added).toEqual([['file:///project/models/a.bpmn', 'file:///project/b.dmn']]);
+    expect(activatedPages).toEqual(['deploy/plan']);
+  });
+
+  it('addUrisToPlan tells the user when the selection holds no models and stays put', async () => {
+    const { bifrost, opened, notifications, activatedPages } = setup();
+
+    await bifrost.commands.executeCommand('engine.deploy.addUrisToPlan', [
+      ['file:///project/empty', 'file:///project/c.txt'],
+    ]);
+
+    expect(opened).toEqual([]);
+    expect(activatedPages).toEqual([]);
     expect(notifications()).toEqual([
       { type: 'info', content: 'The selection contains no BPMN or DMN files.', source: 'Deploy' },
     ]);

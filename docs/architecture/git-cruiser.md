@@ -342,6 +342,7 @@ The current branch is marked with a `current` text badge. When `branchName` is p
 | `git.stageAll` | Git: Stage All Changes | Command search |
 | `git.unstageAll` | Git: Unstage All Changes | Command search |
 | `git.revert` | — | Context menus, Git pane |
+| `git.revertMultiple` | — | `(uris)`: File Explorer multi-selection "Revert Changes in N Files" (`git-cruiser/multi-selection/revert`, before `divider-before-delete`, only for selected files with changes that are not untracked). Skips untracked and unknown files, asks once (`gitCruiser.confirm.revertFile`), calls `repositoryStore.revert` once per repository, saves open documents |
 | `git.commit` | Git: Commit | Command search, Git pane |
 | `git.push` | Git: Push | Command search |
 | `git.pull` | Git: Pull | Command search |

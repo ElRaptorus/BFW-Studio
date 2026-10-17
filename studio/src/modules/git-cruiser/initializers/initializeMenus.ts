@@ -41,6 +41,35 @@ export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositorySto
     ]);
   });
 
+  bifrost.menus.registerMenuModifier('std/file-explorer/multi-selection', (menu: Menu, selectedMetadata: any[]) => {
+    if (!repositoryStore.isActive) {
+      return menu;
+    }
+
+    const revertableUris: string[] = selectedMetadata
+      .filter((metadata: any) => metadata?.type === 'file' && metadata.uri != null)
+      .map((metadata: any) => metadata.uri)
+      .filter((uri: string) => {
+        const fileStatus = repositoryStore.getFileStatus(uri);
+        return fileStatus != null && fileStatus.workingTreeStatus !== 'untracked';
+      });
+    if (revertableUris.length === 0) {
+      return menu;
+    }
+
+    return bifrost.menus.insertBeforeMenuItem(menu, 'std/file-explorer/multi-selection/divider-before-delete', [
+      { type: 'divider' },
+      {
+        type: 'command',
+        label: `Revert Changes in ${revertableUris.length} ${revertableUris.length === 1 ? 'File' : 'Files'}`,
+        id: 'git-cruiser/multi-selection/revert',
+        icon: 'git-cruiser/revert',
+        command: 'git.revertMultiple',
+        commandArgs: [revertableUris],
+      },
+    ]);
+  });
+
   bifrost.menus.registerMenuModifier('std/file-explorer/directory', (menu: Menu, metadata: any) => {
     assertNotNull(metadata.uri, 'metadata.uri');
 

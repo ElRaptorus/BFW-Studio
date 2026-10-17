@@ -209,7 +209,7 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
     }
 
     try {
-      const revertConfirmed = await confirmRevert(bifrost, filePath);
+      const revertConfirmed = await confirmRevert(bifrost, [filePath]);
       if (!revertConfirmed) {
         return;
       }
@@ -220,6 +220,46 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
       const openDoc = bifrost.editors.getEditorDocumentByUri(fileUri);
       if (openDoc) {
         await bifrost.editors.saveEditorDocument(openDoc, false);
+      }
+    } catch (error: any) {
+      showRevertError(bifrost, error);
+    }
+  });
+
+  bifrost.commands.register('git.revertMultiple', async (uris: string[]) => {
+    const pathsByRepositoryRoot = new Map<string, string[]>();
+    const revertedUris: string[] = [];
+    for (const uri of uris) {
+      const repositoryRoot = repositoryStore.getRepoRootForUri(uri);
+      const fileStatus = repositoryStore.getFileStatus(uri);
+      if (repositoryRoot == null || fileStatus == null || fileStatus.workingTreeStatus === 'untracked') {
+        continue;
+      }
+      pathsByRepositoryRoot.set(repositoryRoot, [
+        ...(pathsByRepositoryRoot.get(repositoryRoot) ?? []),
+        fileStatus.path,
+      ]);
+      revertedUris.push(uri);
+    }
+    if (revertedUris.length === 0) {
+      return;
+    }
+
+    try {
+      const revertConfirmed = await confirmRevert(bifrost, [...pathsByRepositoryRoot.values()].flat());
+      if (!revertConfirmed) {
+        return;
+      }
+
+      for (const [repositoryRoot, paths] of pathsByRepositoryRoot) {
+        await repositoryStore.revert(repositoryRoot, paths);
+      }
+
+      for (const uri of revertedUris) {
+        const openDocument = bifrost.editors.getEditorDocumentByUri(uri);
+        if (openDocument) {
+          await bifrost.editors.saveEditorDocument(openDocument, false);
+        }
       }
     } catch (error: any) {
       showRevertError(bifrost, error);
@@ -2134,20 +2174,24 @@ async function buildChangeSummaryForDmnFiles(
   return summaryParts.join('\n\n');
 }
 
-async function confirmRevert(bifrost: Bifrost, filePath: string): Promise<boolean> {
+async function confirmRevert(bifrost: Bifrost, filePaths: readonly string[]): Promise<boolean> {
   const shouldConfirm = bifrost.settings.get('gitCruiser.confirm.revertFile') !== false;
   if (!shouldConfirm) {
     return true;
   }
 
-  const fileName = filePath.split('/').pop() ?? filePath;
+  const fileNames = filePaths.map((filePath) => filePath.split('/').pop() ?? filePath);
+  const question =
+    fileNames.length === 1
+      ? `Are you sure you want to revert all changes to \`${fileNames[0]}\`?`
+      : `Are you sure you want to revert all changes to these ${fileNames.length} files?\n${fileNames.map((fileName) => `\`${fileName}\``).join('\n')}`;
 
   const result = await bifrost.dialog.open({
     title: 'Revert Changes',
     content: [
       {
         type: 'text',
-        text: `Are you sure you want to revert all changes to \`${fileName}\`?\nThis action cannot be undone.`,
+        text: `${question}\nThis action cannot be undone.`,
       },
       { type: 'divider' },
       {
