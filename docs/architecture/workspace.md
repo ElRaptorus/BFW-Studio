@@ -341,14 +341,14 @@ Without arguments, `std.solution.renameFileOrDirectory` (F2 / Enter, context men
 
 ### Drag & Drop (Internal)
 
-- Uses `react-dnd` with item type `tree_item`
+- Uses `useDragSource` / `useDropTarget` from `components/DragAndDrop.ts` with item type `tree_item`. A tree item that cannot take the drop (itself, or a folder's own subfolder) refuses it; the drop does not fall through to the root zone
 - Root drop zone for the project root directory
 - On multi-selection, all selected URIs are used as sources
 - Executes `std.fileExplorer.dropItems` with source URIs and target URI
 
 ### Drag & Drop (External Files from OS)
 
-External files and folders can be dragged from the OS file manager into the Studio. Uses `react-dnd`'s `NativeTypes.FILE` (constant `NATIVE_FILE_TYPE = '__NATIVE_FILE__'`, exported from `TreeItemRenderer`).
+External files and folders can be dragged from the OS file manager into the Studio. Drop targets list `DRAG_TYPE_FILES` (`'files'`, exported from `components/DragAndDrop.ts`) in `accept`; it matches `dataTransfer.types` containing `Files`.
 
 **Path extraction:** Browser `File` objects don't expose filesystem paths. Electron's `webUtils.getPathForFile(file)` provides local paths via the command `std.internal.getPathsFromFiles`. All drop handlers check `bifrost.commands.isRegistered()` for this command before proceeding (graceful degradation in non-Electron environments).
 

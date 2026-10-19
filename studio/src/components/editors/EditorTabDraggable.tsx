@@ -1,8 +1,8 @@
 import { isUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import { showContextMenu } from '#components/ContextMenuFunctions';
+import { useDragSource, useDropTarget } from '#components/DragAndDrop';
 import { useDecoration } from '#components/Tree/DecorationContext';
-import { useDrag, useDrop } from 'react-dnd';
 
 import React, { useCallback } from 'react';
 
@@ -109,26 +109,15 @@ export default function EditorTabDraggable(props: EditorTabProps): React.JSX.Ele
     }
   }, []);
 
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const { isDragging, dragSourceProps } = useDragSource({
     type: 'editor_tab',
-    item: {
-      editorId,
-      index,
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  }));
+    getItem: () => ({ editorId, index }),
+  });
 
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'editor_tab',
-    drop: (draggedItem: any) => {
-      moveEditorDocument(draggedItem.editorId, draggedItem.index, editorId, index);
-    },
-    collect: (monitor: any) => ({
-      isOver: monitor.isOver(),
-    }),
-  }));
+  const { isOver, dropTargetProps } = useDropTarget({
+    accept: ['editor_tab'],
+    onDrop: ({ item }) => moveEditorDocument(item.editorId, item.index, editorId, index),
+  });
 
   let activeOrFocused = '';
   if (isFocusedEditor && active) {
@@ -164,7 +153,7 @@ export default function EditorTabDraggable(props: EditorTabProps): React.JSX.Ele
   ];
 
   return (
-    <div ref={drop as any}>
+    <div {...dropTargetProps}>
       <div
         className={classNames.join(' ')}
         onAuxClick={onAuxClick}
@@ -175,7 +164,7 @@ export default function EditorTabDraggable(props: EditorTabProps): React.JSX.Ele
         data-bs-title={tooltipText}
         data-bs-toggle="tooltip"
         data-test--editor-tab-label={editorDocument.label}
-        ref={drag as any}
+        {...dragSourceProps}
       >
         <div className="editor-tab__inner">
           <span className="editor-tab__icon">{icon}</span>

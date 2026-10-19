@@ -15,7 +15,9 @@ export const paneProvider: PaneProvider = {
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
   return (
     <Pane>
-      <div className="pane-header">{props.connectDragSource(<span>Editor Document Inspector</span>)}</div>
+      <div className="pane-header">
+        <span>Editor Document Inspector</span>
+      </div>
       {props.collapsed !== true && <PaneContent {...props} />}
     </Pane>
   );

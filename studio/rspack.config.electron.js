@@ -86,9 +86,7 @@ const configElectronRenderer = {
     alias: {
       react: path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-      'react-dnd': path.resolve(__dirname, 'node_modules/react-dnd'),
       'react-select': path.resolve(__dirname, 'node_modules/react-select'),
-      'dnd-core': path.resolve(__dirname, 'node_modules/dnd-core'),
       '@bpmn-io/feel-editor': path.resolve(__dirname, 'node_modules/@bpmn-io/feel-editor'),
       '@codemirror/state': path.resolve(__dirname, 'node_modules/@codemirror/state'),
       '@codemirror/view': path.resolve(__dirname, 'node_modules/@codemirror/view'),

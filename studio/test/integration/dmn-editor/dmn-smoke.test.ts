@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import assert from 'node:assert';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';

@@ -1,7 +1,7 @@
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import { AutoScrollContainer } from '#components/AutoScrollContainer';
-import { useDrop } from 'react-dnd';
+import { useDropTarget } from '#components/DragAndDrop';
 
 import React from 'react';
 
@@ -23,23 +23,16 @@ type EditorTabListProps = {
 };
 
 export default function EditorTabList(props: EditorTabListProps): React.JSX.Element {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'editor_tab',
-    drop: (draggedItem: any, monitor: any) => {
-      if (!monitor.isOver({ shallow: true })) {
-        return;
-      }
-
+  const { isOver, dropTargetProps } = useDropTarget({
+    accept: ['editor_tab'],
+    onDrop: ({ item }) => {
       const maxExistingIndex = props.editorDocuments.length - 1;
-      const sameEditor = draggedItem.editorId === props.editorId;
+      const sameEditor = item.editorId === props.editorId;
       const destIndex = sameEditor ? maxExistingIndex : maxExistingIndex + 1;
 
-      props.moveEditorDocument(draggedItem.editorId, draggedItem.index, props.editorId, destIndex);
+      props.moveEditorDocument(item.editorId, item.index, props.editorId, destIndex);
     },
-    collect: (monitor: any) => ({
-      isOver: monitor.isOver({ shallow: true }),
-    }),
-  }));
+  });
 
   const classNames = [
     'tabs',
@@ -51,7 +44,7 @@ export default function EditorTabList(props: EditorTabListProps): React.JSX.Elem
   const Icon = props.iconComponent;
 
   return (
-    <div className={classNames.join(' ')} ref={drop as any}>
+    <div className={classNames.join(' ')} {...dropTargetProps}>
       <AutoScrollContainer className="tabs__inner" elementClassName={autoScrollElementClassName}>
         {props.editorDocuments.map((editorDocument: EditorDocument, index: number) => {
           const active = props.activeEditorDocument === editorDocument;

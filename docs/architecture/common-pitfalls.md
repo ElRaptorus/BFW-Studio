@@ -330,11 +330,21 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ## SDK peer dependencies must be aliased in Rspack
 
-**Mistake**: SDK and Studio resolving separate copies of React-context libraries (`react-dnd`, `react-select`, `@mdxeditor/editor`).
+**Mistake**: SDK and Studio resolving separate copies of React-context libraries (`react-select`, `@mdxeditor/editor`).
 
-**Why**: Providers in Studio are invisible to SDK hooks (`Expected drag drop context`).
+**Why**: Providers in Studio are invisible to SDK hooks.
 
 **Correct approach**: `resolve.alias` in `rspack.config.electron.js` to `studio/node_modules`. Exact-match `$` on `@mdxeditor/editor$` so CSS subpaths still resolve.
+
+---
+
+## A native drop target must `preventDefault` on `dragover`
+
+**Mistake**: Writing an `onDrop` handler without handling `dragover`.
+
+**Why**: The browser only fires `drop` on elements whose `dragover` was default-prevented. `DataTransfer` data is also unreadable during `dragover`, and `dragenter` / `dragleave` fire again for every child element.
+
+**Correct approach**: Use `useDragSource` / `useDropTarget` from `components/DragAndDrop.ts`; they handle all of this and let the innermost accepting target win. Outside Electron, an OS file dropped on no target opens in the tab, because the `will-navigate` guard in `BifrostWindow` exists only there.
 
 ---
 

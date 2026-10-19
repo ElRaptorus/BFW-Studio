@@ -1,5 +1,5 @@
+import { useDragSource, useDropTarget } from '#components/DragAndDrop';
 import type { FormAction } from '#modules/bpmn-editor/BpmnElementTypes';
-import { useDrag, useDrop } from 'react-dnd';
 
 import React, { useCallback, useRef } from 'react';
 
@@ -7,11 +7,6 @@ import './ActionsEditor.scss';
 import type { FormBuilderState } from './useBpmnFormBuilderState';
 
 const DRAG_TYPE_ACTION = 'FORM_ACTION';
-
-type ActionDragItem = {
-  index: number;
-  id: string;
-};
 
 type ActionsEditorProps = {
   state: FormBuilderState;
@@ -79,21 +74,20 @@ type DraggableActionItemProps = {
 function DraggableActionItem(props: DraggableActionItemProps): React.JSX.Element {
   const { action, index, isSelected, onSelect, onRemove, onMove } = props;
 
-  const [{ isDragging }, drag] = useDrag({
+  const { isDragging, dragSourceProps } = useDragSource({
     type: DRAG_TYPE_ACTION,
-    item: (): ActionDragItem => ({ id: action.id, index }),
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
+    getItem: () => ({ id: action.id, index }),
   });
 
-  const [, drop] = useDrop<ActionDragItem>({
-    accept: DRAG_TYPE_ACTION,
-    hover(item, monitor) {
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  const { dropTargetProps } = useDropTarget({
+    accept: [DRAG_TYPE_ACTION],
+    onHover: (subject, event) => {
       if (elementRef.current == null) {
         return;
       }
-      const dragIndex = item.index;
+      const dragIndex = subject.item.index;
       const hoverIndex = index;
 
       if (dragIndex === hoverIndex) {
@@ -102,11 +96,7 @@ function DraggableActionItem(props: DraggableActionItemProps): React.JSX.Element
 
       const hoverBoundingRect = elementRef.current.getBoundingClientRect();
       const hoverMiddleX = (hoverBoundingRect.right - hoverBoundingRect.left) / 2;
-      const clientOffset = monitor.getClientOffset();
-      if (clientOffset == null) {
-        return;
-      }
-      const hoverClientX = clientOffset.x - hoverBoundingRect.left;
+      const hoverClientX = event.clientX - hoverBoundingRect.left;
 
       if (dragIndex < hoverIndex && hoverClientX < hoverMiddleX) {
         return;
@@ -116,18 +106,16 @@ function DraggableActionItem(props: DraggableActionItemProps): React.JSX.Element
       }
 
       onMove(dragIndex, hoverIndex);
-      item.index = hoverIndex;
+      subject.item.index = hoverIndex;
     },
+    onDrop: () => {},
   });
-
-  const elementRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
-      ref={(node) => {
-        drag(drop(node));
-        (elementRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }}
+      ref={elementRef}
+      {...dragSourceProps}
+      {...dropTargetProps}
       className={`actions-editor__item${isSelected ? ' actions-editor__item--selected' : ''}`}
       data-test--actions-editor-item
       style={{ opacity: isDragging ? 0.4 : 1, cursor: 'grab' }}

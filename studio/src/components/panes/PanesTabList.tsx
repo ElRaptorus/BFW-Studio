@@ -2,7 +2,7 @@ import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneAreaName, PaneObject } from '#bifrost/contracts/PaneTypes';
 import { AutoScrollContainer } from '#components/AutoScrollContainer';
-import { useDrop } from 'react-dnd';
+import { useDropTarget } from '#components/DragAndDrop';
 
 import React from 'react';
 
@@ -35,30 +35,16 @@ export default function PanesTabList(props: PanesTabListProps): React.JSX.Elemen
   const bifrost = useBifrost();
   const { movePane } = props;
 
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'pane',
-    drop: (draggedItem: any, monitor: any) => {
-      if (!monitor.isOver({ shallow: true })) {
-        return;
-      }
-
+  const { isOver, dropTargetProps } = useDropTarget({
+    accept: ['pane'],
+    onDrop: ({ item }) => {
       const maxExistingIndex = props.panes.length - 1;
-      const samePaneArea = draggedItem.paneArea === props.paneArea;
+      const samePaneArea = item.paneArea === props.paneArea;
       const destIndex = samePaneArea ? maxExistingIndex : maxExistingIndex + 1;
 
-      props.movePane(
-        draggedItem.paneArea,
-        draggedItem.paneAreaIndex,
-        draggedItem.index,
-        props.paneArea,
-        props.paneAreaIndex,
-        destIndex,
-      );
+      props.movePane(item.paneArea, item.paneAreaIndex, item.index, props.paneArea, props.paneAreaIndex, destIndex);
     },
-    collect: (monitor: any) => ({
-      isOver: monitor.isOver(),
-    }),
-  }));
+  });
 
   const classNames = [
     'tabs',
@@ -82,7 +68,7 @@ export default function PanesTabList(props: PanesTabListProps): React.JSX.Elemen
   };
 
   return (
-    <div ref={drop as any} className={classNames.join(' ')}>
+    <div {...dropTargetProps} className={classNames.join(' ')}>
       <AutoScrollContainer className="tabs__inner" elementClassName="pane-tab--active">
         {props.panes.map((pane: PaneObject, index: number) => {
           const displayTab = shouldDisplayTabForPane(pane);

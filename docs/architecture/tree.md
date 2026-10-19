@@ -190,8 +190,8 @@ A `React.memo` component that renders a single tree row. Responsibilities:
 - Badges (character, number, or icon variants)
 - Action icons (permanent and hover-only)
 - Context menu via right-click
-- Internal drag-and-drop via `react-dnd` (`tree_item` type)
-- External file drop via `react-dnd` (`__NATIVE_FILE__` type)
+- Internal drag-and-drop through `components/DragAndDrop.ts` (`tree_item` type)
+- External file drop through the same module (`DRAG_TYPE_FILES`)
 - Test attributes: `data-test--tree-entry-type`, `data-test--tree-entry-uri`
 
 ---

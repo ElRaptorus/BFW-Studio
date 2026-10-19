@@ -1,16 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { IconComponent } from '#bifrost/contracts/IconTypes';
 import type { TreeBadge, TreeItemDropCallbackFn, TreeItemStyles } from '#bifrost/contracts/TreeTypes';
+import { DRAG_TYPE_FILES, useDragSource, useDropTarget } from '#components/DragAndDrop';
 import type { ItemInstance } from '@headless-tree/core';
-import { useDrag, useDrop } from 'react-dnd';
 
 import type { CSSProperties } from 'react';
 import React from 'react';
 
 import { useDecoration } from './DecorationContext';
 import type { TreeItemData } from './TreeDataAdapter';
-
-export const NATIVE_FILE_TYPE = '__NATIVE_FILE__';
 
 export type ExternalFileDropCallbackFn = (files: File[], targetItem: any) => void;
 
@@ -143,56 +141,42 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
 
   const isDraggable = enableDragAndDrop && (data.type === 'file' || data.type === 'directory');
 
-  const acceptTypes = props.onExternalFileDrop ? ['tree_item', NATIVE_FILE_TYPE] : ['tree_item'];
+  const { isDragging, dragSourceProps } = useDragSource({
+    type: 'tree_item',
+    getItem: () => ({ ...data, selected: isSelected }),
+    canDrag: isDraggable,
+  });
 
-  const [{ isDragging }, drag] = useDrag(
-    () => ({
-      type: 'tree_item',
-      item: { ...data, selected: isSelected },
-      canDrag: isDraggable,
-      collect: (monitor: any) => ({
-        isDragging: !!monitor.isDragging(),
-      }),
-    }),
-    [data.metadata?.uri, data.type, isSelected, isDraggable],
-  );
-
-  const [{ isOver }, drop] = useDrop(
-    () => ({
-      accept: acceptTypes,
-      canDrop: (draggedItem: any, monitor: any) => {
-        if (!enableDragAndDrop) {
-          return false;
-        }
-        if (monitor.getItemType() === NATIVE_FILE_TYPE) {
-          return true;
-        }
-        const sourceUri = draggedItem.metadata?.uri;
-        const targetUri = data.metadata?.uri;
-        if (!sourceUri || !targetUri) {
-          return false;
-        }
-        if (sourceUri === targetUri) {
-          return false;
-        }
-        if (draggedItem.type === 'directory' && targetUri.startsWith(sourceUri + '/')) {
-          return false;
-        }
+  const { isOver, dropTargetProps } = useDropTarget({
+    accept: props.onExternalFileDrop ? ['tree_item', DRAG_TYPE_FILES] : ['tree_item'],
+    canDrop: (subject) => {
+      if (!enableDragAndDrop) {
+        return false;
+      }
+      if (subject.type === DRAG_TYPE_FILES) {
         return true;
-      },
-      drop: (draggedItem: any, monitor: any) => {
-        if (monitor.getItemType() === NATIVE_FILE_TYPE) {
-          props.onExternalFileDrop?.(draggedItem.files, data);
-        } else {
-          props.onDragAndDropItem?.(draggedItem, data);
-        }
-      },
-      collect: (monitor: any) => ({
-        isOver: monitor.isOver() && monitor.canDrop(),
-      }),
-    }),
-    [data.metadata?.uri, data.type, props.onExternalFileDrop, enableDragAndDrop],
-  );
+      }
+      const sourceUri = subject.item.metadata?.uri;
+      const targetUri = data.metadata?.uri;
+      if (!sourceUri || !targetUri) {
+        return false;
+      }
+      if (sourceUri === targetUri) {
+        return false;
+      }
+      if (subject.item.type === 'directory' && targetUri.startsWith(sourceUri + '/')) {
+        return false;
+      }
+      return true;
+    },
+    onDrop: (subject) => {
+      if (subject.type === DRAG_TYPE_FILES) {
+        props.onExternalFileDrop?.(subject.files, data);
+      } else {
+        props.onDragAndDropItem?.(subject.item, data);
+      }
+    },
+  });
 
   if (enableDragAndDrop) {
     classNames.push(isOver ? 'treeview__entry--over' : '', isDragging ? 'treeview__entry--dragging' : '');
@@ -223,20 +207,12 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
       </div>
     );
   } else {
-    const innerRef = (node: HTMLElement | null) => {
-      if (isDraggable) {
-        (drag as any)(node);
-      }
-      if (typeof htRef === 'function') {
-        htRef(node);
-      }
-    };
-
     entry = (
-      <div ref={drop as any}>
+      <div {...dropTargetProps}>
         <div
-          ref={innerRef}
+          ref={htRef}
           {...htPropsWithoutRef}
+          {...dragSourceProps}
           className={classNames.join(' ')}
           style={indentStyle}
           onContextMenu={handleContextMenu}

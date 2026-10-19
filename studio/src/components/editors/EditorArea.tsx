@@ -5,8 +5,7 @@ import type {
   EditorAreaLayout_Editor,
   EditorAreaLayout_Row,
 } from '#bifrost/contracts/EditorTypes';
-import { NATIVE_FILE_TYPE } from '#components/Tree/HeadlessTreeItem';
-import { useDrop } from 'react-dnd';
+import { DRAG_TYPE_FILES, useDropTarget } from '#components/DragAndDrop';
 
 import React, { useCallback, useEffect } from 'react';
 
@@ -49,30 +48,27 @@ export default function EditorArea(props: EditorAreaRequiredProps): React.JSX.El
     <EditorAreaEmptyState />
   );
 
-  const [, editorAreaDrop] = useDrop(
-    () => ({
-      accept: NATIVE_FILE_TYPE,
-      drop: (item: any) => {
-        if (!bifrost.commands.isRegistered(GET_PATHS_COMMAND)) {
-          return;
-        }
-        (async () => {
-          const paths: string[] = bifrost.commands.executeCommand(GET_PATHS_COMMAND, [Array.from(item.files)]);
-          for (const filePath of paths) {
-            if (!filePath.endsWith('.bpmn')) {
-              continue;
-            }
-            const uri = bifrost.files.getUriForFilename(filePath);
-            bifrost.commands.executeCommand('std.editor.focusOrOpenDocument', [uri]);
+  const { dropTargetProps } = useDropTarget({
+    accept: [DRAG_TYPE_FILES],
+    onDrop: ({ files }) => {
+      if (!bifrost.commands.isRegistered(GET_PATHS_COMMAND)) {
+        return;
+      }
+      (async () => {
+        const paths: string[] = bifrost.commands.executeCommand(GET_PATHS_COMMAND, [files]);
+        for (const filePath of paths) {
+          if (!filePath.endsWith('.bpmn')) {
+            continue;
           }
-        })().catch((error) => console.warn('External editor area drop failed:', error));
-      },
-    }),
-    [bifrost],
-  );
+          const uri = bifrost.files.getUriForFilename(filePath);
+          bifrost.commands.executeCommand('std.editor.focusOrOpenDocument', [uri]);
+        }
+      })().catch((error) => console.warn('External editor area drop failed:', error));
+    },
+  });
 
   return (
-    <div ref={editorAreaDrop as any} className="editor-area" data-editor-area>
+    <div {...dropTargetProps} className="editor-area" data-editor-area>
       {editorArea}
     </div>
   );

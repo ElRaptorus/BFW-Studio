@@ -1,7 +1,7 @@
 import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneAreaName, PaneObject } from '#bifrost/contracts/PaneTypes';
-import { useDrag, useDrop } from 'react-dnd';
+import { useDragSource, useDropTarget } from '#components/DragAndDrop';
 
 import React from 'react';
 
@@ -38,34 +38,21 @@ export default function PaneTabDraggable(props: PanesTabProps): React.JSX.Elemen
     (paneProvider.getPaneTitle && paneProvider.getPaneTitle(editorDocument, editorDocumentModel, bifrost)) ||
     paneObject.id;
 
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const { isDragging, dragSourceProps } = useDragSource({
     type: 'pane',
-    item: {
+    getItem: () => ({
       paneArea: props.paneArea,
       paneAreaIndex: props.paneAreaIndex,
       index: props.index,
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
     }),
-  }));
+  });
 
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'pane',
-    drop: (draggedItem: any) => {
-      props.movePane(
-        draggedItem.paneArea,
-        draggedItem.paneAreaIndex,
-        draggedItem.index,
-        props.paneArea,
-        props.paneAreaIndex,
-        props.index,
-      );
+  const { isOver, dropTargetProps } = useDropTarget({
+    accept: ['pane'],
+    onDrop: ({ item }) => {
+      props.movePane(item.paneArea, item.paneAreaIndex, item.index, props.paneArea, props.paneAreaIndex, props.index);
     },
-    collect: (monitor: any) => ({
-      isOver: monitor.isOver(),
-    }),
-  }));
+  });
 
   const classNames = [
     'pane-tab',
@@ -75,13 +62,8 @@ export default function PaneTabDraggable(props: PanesTabProps): React.JSX.Elemen
   ];
 
   return (
-    <span ref={drop as any}>
-      <span
-        ref={drag as any}
-        className={classNames.join(' ')}
-        onClick={() => props.activatePaneTab(props.index)}
-        key={paneObject.id}
-      >
+    <span {...dropTargetProps}>
+      <span {...dragSourceProps} className={classNames.join(' ')} onClick={() => props.activatePaneTab(props.index)}>
         <span>{title}</span>
       </span>
     </span>

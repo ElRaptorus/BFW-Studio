@@ -449,6 +449,15 @@ Architecture constraints that tests also hit live in [`architecture/common-pitfa
 - **Strict `$()` in WebDriverIO 10.** `$()` is strict by default and throws `StrictSelectorError` when the selector matches more than one element. `startWdioSession` does not forward `strictSelectors`, so the helpers in `TestDriver` / `StudioAgent*` pass `{ strict: false }` per call to keep first-match semantics. Use `$$()` when a test needs all matches.
 - **Named Escape.** `sendKeyboardInput(['Escape'])` or `['escape']` both send the Escape key. A lowercase `'escape'` used to be typed as the letters e-s-c-a-p-e; do not invent other spellings.
 
+## Drag and drop
+
+WebDriver pointer actions do not start native drags in Chromium, so real drag behaviour cannot be tested through the StudioAgent. `StudioAgent.dragAndDrop` only dispatches `dragstart` / `dragover` / `drop` / `dragend` inside the page; it checks that the handlers move tabs and reorder form-builder items, not that the browser accepts the drag (drop effect, Ctrl/Cmd copy, OS files, drag image). Check these by hand after changing `components/DragAndDrop.ts`:
+
+1. Reorder editor tabs, within a group and across editor groups.
+2. Move an Explorer file onto a folder with and without Ctrl/Cmd (move versus copy), and as a multi-selection; a folder must refuse a drop into itself.
+3. Drop an OS file on the Explorer, its empty state and the editor area.
+4. Reorder form-builder fields and actions.
+
 ## Adding New Tests
 
 When adding new functionality:

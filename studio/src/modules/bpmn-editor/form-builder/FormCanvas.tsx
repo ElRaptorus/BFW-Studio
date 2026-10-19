@@ -1,5 +1,5 @@
+import { useDragSource, useDropTarget } from '#components/DragAndDrop';
 import type { FormFieldDefinition } from '#modules/bpmn-core/form-renderer/FormModel';
-import { useDrag, useDrop } from 'react-dnd';
 
 import React, { useCallback, useRef } from 'react';
 
@@ -8,11 +8,6 @@ import { FormCanvasItem } from './FormCanvasItem';
 import type { FormBuilderState } from './useBpmnFormBuilderState';
 
 const DRAG_TYPE = 'FORM_FIELD';
-
-type DragItem = {
-  index: number;
-  id: string;
-};
 
 type FormCanvasProps = {
   state: FormBuilderState;
@@ -78,21 +73,20 @@ type DraggableFieldItemProps = {
 function DraggableFieldItem(props: DraggableFieldItemProps): React.JSX.Element {
   const { field, index, isSelected, onSelect, onRemove, onMove } = props;
 
-  const [{ isDragging }, drag] = useDrag({
+  const { isDragging, dragSourceProps } = useDragSource({
     type: DRAG_TYPE,
-    item: (): DragItem => ({ id: field.id, index }),
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
+    getItem: () => ({ id: field.id, index }),
   });
 
-  const [, drop] = useDrop<DragItem>({
-    accept: DRAG_TYPE,
-    hover(item, monitor) {
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  const { dropTargetProps } = useDropTarget({
+    accept: [DRAG_TYPE],
+    onHover: (subject, event) => {
       if (elementRef.current == null) {
         return;
       }
-      const dragIndex = item.index;
+      const dragIndex = subject.item.index;
       const hoverIndex = index;
 
       if (dragIndex === hoverIndex) {
@@ -101,11 +95,7 @@ function DraggableFieldItem(props: DraggableFieldItemProps): React.JSX.Element {
 
       const hoverBoundingRect = elementRef.current.getBoundingClientRect();
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-      const clientOffset = monitor.getClientOffset();
-      if (clientOffset == null) {
-        return;
-      }
-      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+      const hoverClientY = event.clientY - hoverBoundingRect.top;
 
       if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
         return;
@@ -115,18 +105,16 @@ function DraggableFieldItem(props: DraggableFieldItemProps): React.JSX.Element {
       }
 
       onMove(dragIndex, hoverIndex);
-      item.index = hoverIndex;
+      subject.item.index = hoverIndex;
     },
+    onDrop: () => {},
   });
-
-  const elementRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
-      ref={(node) => {
-        drag(drop(node));
-        (elementRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }}
+      ref={elementRef}
+      {...dragSourceProps}
+      {...dropTargetProps}
       data-test--form-canvas-item
       style={{ opacity: isDragging ? 0.4 : 1 }}
     >

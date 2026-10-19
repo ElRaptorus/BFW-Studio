@@ -3,13 +3,12 @@ import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
 import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
+import { DRAG_TYPE_FILES, useDropTarget } from '#components/DragAndDrop';
 import { useScrollPositionManager } from '#components/ScrollPositionManager';
-import { NATIVE_FILE_TYPE } from '#components/Tree/HeadlessTreeItem';
 import { Tree } from '#components/Tree/Tree';
 import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
-import { useDrop } from 'react-dnd';
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
@@ -238,47 +237,38 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     [bifrost],
   );
 
-  const [{ isOver: isOverRoot }, rootDrop] = useDrop(
-    () => ({
-      accept: ['tree_item', NATIVE_FILE_TYPE],
-      drop: (draggedItem: any, monitor: any) => {
-        if (monitor.didDrop()) {
-          return;
-        }
-        if (projectRootUri == null) {
-          return;
-        }
+  const { isOver: isOverRoot, dropTargetProps: rootDropProps } = useDropTarget({
+    accept: ['tree_item', DRAG_TYPE_FILES],
+    canDrop: () => projectRootUri != null,
+    onDrop: (subject) => {
+      if (projectRootUri == null) {
+        return;
+      }
 
-        if (monitor.getItemType() === NATIVE_FILE_TYPE) {
-          if (!bifrost.commands.isRegistered(GET_PATHS_COMMAND)) {
+      if (subject.type === DRAG_TYPE_FILES) {
+        if (!bifrost.commands.isRegistered(GET_PATHS_COMMAND)) {
+          return;
+        }
+        (async () => {
+          const paths: string[] = bifrost.commands.executeCommand(GET_PATHS_COMMAND, [subject.files]);
+          if (paths.length === 0) {
             return;
           }
-          (async () => {
-            const paths: string[] = bifrost.commands.executeCommand(GET_PATHS_COMMAND, [Array.from(draggedItem.files)]);
-            if (paths.length === 0) {
-              return;
-            }
-            await bifrost.commands.executeCommand('std.fileExplorer.handleExternalDropIntoSolution', [
-              paths,
-              projectRootUri,
-            ]);
-          })().catch((error) => console.warn('External root drop failed:', error));
-          return;
-        }
+          await bifrost.commands.executeCommand('std.fileExplorer.handleExternalDropIntoSolution', [
+            paths,
+            projectRootUri,
+          ]);
+        })().catch((error) => console.warn('External root drop failed:', error));
+        return;
+      }
 
-        const sourceUris = resolveSourceUris(draggedItem);
-        if (sourceUris.length === 0) {
-          return;
-        }
-        executeDropCommand(sourceUris, projectRootUri);
-      },
-      canDrop: (_item: any, monitor: any) => !monitor.didDrop() && projectRootUri != null,
-      collect: (monitor) => ({
-        isOver: monitor.isOver({ shallow: true }) && monitor.canDrop(),
-      }),
-    }),
-    [projectRootUri, resolveSourceUris, executeDropCommand, bifrost],
-  );
+      const sourceUris = resolveSourceUris(subject.item);
+      if (sourceUris.length === 0) {
+        return;
+      }
+      executeDropCommand(sourceUris, projectRootUri);
+    },
+  });
 
   const connectScrollTarget = useScrollPositionManager('solutions-scroll', { precise: true });
 
@@ -288,10 +278,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
         <SolutionExplorerEmptyState bifrost={props.studio} />
       ) : (
         <div
-          ref={(node) => {
-            rootDrop(node);
-            connectScrollTarget(node!);
-          }}
+          {...rootDropProps}
+          ref={connectScrollTarget}
           className={`pane__content pane__content--treeview pane__content--scroll-vertically${isOverRoot ? ' pane__content--drop-target' : ''}`}
         >
           <Tree
@@ -317,31 +305,25 @@ function SolutionExplorerEmptyState(props: any): React.JSX.Element {
   const bifrost: Bifrost = props.bifrost;
   const clickHandler = bifrost.commands.getClickHandler();
 
-  const [{ isOver }, emptyDrop] = useDrop(
-    () => ({
-      accept: NATIVE_FILE_TYPE,
-      drop: (item: any) => {
-        if (!bifrost.commands.isRegistered(GET_PATHS_COMMAND)) {
+  const { isOver, dropTargetProps } = useDropTarget({
+    accept: [DRAG_TYPE_FILES],
+    onDrop: ({ files }) => {
+      if (!bifrost.commands.isRegistered(GET_PATHS_COMMAND)) {
+        return;
+      }
+      (async () => {
+        const paths: string[] = bifrost.commands.executeCommand(GET_PATHS_COMMAND, [files]);
+        if (paths.length === 0) {
           return;
         }
-        (async () => {
-          const paths: string[] = bifrost.commands.executeCommand(GET_PATHS_COMMAND, [Array.from(item.files)]);
-          if (paths.length === 0) {
-            return;
-          }
-          await bifrost.commands.executeCommand('std.fileExplorer.handleExternalDrop', [paths]);
-        })().catch((error) => console.warn('External drop on empty state failed:', error));
-      },
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-      }),
-    }),
-    [bifrost],
-  );
+        await bifrost.commands.executeCommand('std.fileExplorer.handleExternalDrop', [paths]);
+      })().catch((error) => console.warn('External drop on empty state failed:', error));
+    },
+  });
 
   return (
     <div
-      ref={emptyDrop as any}
+      {...dropTargetProps}
       className={`pane__content text-center py-4${isOver ? ' pane__content--drop-target' : ''}`}
     >
       <p>Open a folder as a solution:</p>

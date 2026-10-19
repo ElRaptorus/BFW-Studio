@@ -2,8 +2,6 @@ import '#bifrost/browser/BootstrapInitializer';
 import { EVENT_THEME_CHANGED } from '#bifrost/contracts/internal/ThemeEvents';
 import { ContextMenuPortal } from '#components/ContextMenuPortal';
 import Workbench from '#components/Workbench';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -56,9 +54,5 @@ function BifrostApp() {
 }
 
 export default function App(): React.JSX.Element {
-  return (
-    <DndProvider backend={HTML5Backend}>
-      <BifrostApp />
-    </DndProvider>
-  );
+  return <BifrostApp />;
 }

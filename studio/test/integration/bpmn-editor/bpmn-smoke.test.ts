@@ -2,12 +2,9 @@ import * as fs from 'fs';
 import assert from 'node:assert';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
-import { OsSpecificKeystroke } from '../../OsSpecificKeystroke';
 import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';
 import type { StudioAgentBpmnExtension } from '../../StudioAgentBpmnExtension';
 import { createAndStartStudioAgentBpmnExtension } from '../../StudioAgentBpmnExtension';
-
-const CREATE_NEW_DOCUMENT = OsSpecificKeystroke('cmd-n', 'ctrl-n');
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 

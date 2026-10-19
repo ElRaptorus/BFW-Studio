@@ -89,11 +89,6 @@ export type PaneComponentProps = {
   readonly collapsed: boolean;
 
   /**
-   * Internal: used by react-dnd to provide drag-n-drop capabilitie
-   */
-  readonly connectDragSource: any;
-
-  /**
    * Internal: used to communicate input state between pane tab options and pane content
    */
   readonly dataFromPaneTabOptions?: any;
