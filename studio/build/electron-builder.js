@@ -6,7 +6,7 @@ const ICON_PATH_MAC = `${ICON_PATH}.icns`;
 const ICON_PATH_WIN = `${ICON_PATH}.ico`;
 const ICON_PATH_LINUX = `${ICON_PATH}.png`;
 
-const appId = `de.bifrost.forge.world.${BuildInfo.packageName}`;
+const appId = `de.bifrost.forge.world`;
 
 /**
  * @type {import('electron-builder').Configuration}
@@ -23,17 +23,20 @@ const buildConfiguration = {
   directories: {
     output: 'dist/electron',
   },
-  // NOTE: electron-builder adds `package.json` and `node_modules` (among others)
-  files: ['out/**/*', 'vendor/**/*', 'electron-renderer.html', 'migration.html'],
-  extraResources: [
-    {
-      from: 'assets/',
-      to: 'assets/',
-      filter: ['**/*'],
-    },
-  ],
+  fileOptions: {
+    // NOTE: electron-builder adds `package.json` and `node_modules` (among others)
+    files: ['out/**/*', 'vendor/**/*', 'electron-renderer.html', 'migration.html'],
+    extraResources: [
+      {
+        from: 'assets/',
+        to: 'assets/',
+        filter: ['**/*'],
+      },
+    ],
+
+  },
   extraMetadata: {
-    desktopName: appId,
+    desktopName: `bfw-studio-${BuildInfo.version}`,
   },
   nsis: {
     perMachine: false,
