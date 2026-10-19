@@ -5,7 +5,6 @@ import type {
   DialogOptionsStrict_MessageBox,
   DialogResult,
 } from '#bifrost/contracts/DialogTypes';
-import { fork } from 'child_process';
 import type { MessageBoxOptions } from 'electron';
 import { BrowserWindow, Menu, app, dialog, ipcMain, net, protocol, shell } from 'electron';
 import log from 'electron-log';
@@ -13,8 +12,8 @@ import fs from 'fs';
 import fsPromises from 'fs/promises';
 import { Minimatch } from 'minimatch';
 import { parseArgs } from 'node:util';
+import os from 'os';
 import * as path from 'path';
-import type sysinfo from 'systeminformation';
 
 import * as BuildInfo from '../../generatedBuildAndProductInfo';
 import { ReleaseChannelName } from '../common/Environment';
@@ -418,39 +417,12 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
     Menu.setApplicationMenu(electronMenu);
   });
 
-  ipcMain.handle(IPC_INVOKE_GET_SYSTEMINFORMATION, async (event) => {
-    const [osInfo, cpuInfo, diskInfo, memInfo, graphicsInfo] = await new Promise<
-      [
-        sysinfo.Systeminformation.OsData,
-        sysinfo.Systeminformation.CpuData,
-        sysinfo.Systeminformation.DisksIoData,
-        sysinfo.Systeminformation.MemData,
-        sysinfo.Systeminformation.GraphicsData,
-      ]
-    >((resolve, reject) => {
-      const filename = path.resolve(__dirname, 'Systeminformation.js');
-      const forkedProcess = fork(filename, {});
-
-      forkedProcess.on('message', (message) => {
-        resolve(message as any);
-        forkedProcess.kill();
-      });
-      forkedProcess.on('error', (error) => {
-        reject(error);
-        forkedProcess.kill();
-      });
-    });
-
-    const newHostSystem = {
-      os: `${osInfo.distro} (${osInfo.release})`,
-      cpu: `${cpuInfo.brand} (${cpuInfo.physicalCores} x ${cpuInfo.speed} GHz)`,
-      storage: `${Math.round(diskInfo[0].size / 1024 / 1024 / 1024)} GB`,
-      memory: `${Math.round(memInfo.total / 1024 / 1024 / 1024)} GB`,
-      graphics: graphicsInfo.controllers[graphicsInfo.controllers.length - 1]?.model ?? 'NA',
-    };
-
-    return newHostSystem;
-  });
+  ipcMain.handle(IPC_INVOKE_GET_SYSTEMINFORMATION, async () => ({
+    os: readOperatingSystemName(),
+    cpu: `${os.cpus()[0]?.model.trim() ?? 'NA'} (${os.availableParallelism()} threads)`,
+    memory: `${Math.round(os.totalmem() / 1024 ** 3)} GB`,
+    storage: readHomeVolumeStorage(),
+  }));
 
   ipcMain.handle(
     IPC_INVOKE_READ_FILE,
@@ -701,6 +673,42 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
  *
  * Accepts both raw names (`@scope/name`) and hostname-flattened forms (`scope--name`).
  */
+function readOperatingSystemName(): string {
+  const release = os.release();
+  switch (process.platform) {
+    case 'linux': {
+      try {
+        const prettyName = fs.readFileSync('/etc/os-release', 'utf8').match(/^PRETTY_NAME="?([^"\n]*)"?$/m)?.[1];
+        return `${prettyName || 'Linux'} (${release})`;
+      } catch {
+        return `Linux (${release})`;
+      }
+    }
+    case 'darwin':
+      return `macOS ${process.getSystemVersion()}`;
+    case 'win32': {
+      // The registry product name still says "Windows 10" on Windows 11; build 22000 is the first Windows 11 build
+      const build = Number(release.split('.')[2]);
+      const name = build >= 22000 ? os.version().replace('Windows 10', 'Windows 11') : os.version();
+      return `${name} (${release})`;
+    }
+    default:
+      return `${os.type()} (${release})`;
+  }
+}
+
+function readHomeVolumeStorage(): string {
+  try {
+    const volume = fs.statfsSync(os.homedir());
+    const gigabyte = 1024 ** 3;
+    const free = Math.round((volume.bavail * volume.bsize) / gigabyte);
+    const total = Math.round((volume.blocks * volume.bsize) / gigabyte);
+    return `${free} GB free of ${total} GB`;
+  } catch {
+    return 'NA';
+  }
+}
+
 function isValidPluginName(name: string): boolean {
   if (name.length === 0 || name === '.' || name === '..') {
     return false;

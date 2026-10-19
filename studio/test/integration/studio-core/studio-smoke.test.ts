@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OsSpecificKeystroke } from '../../OsSpecificKeystroke';
 import type { TestContext } from '../../StudioAgent';
@@ -44,6 +44,18 @@ describe('studio/smoke', () => {
     await studioAgent.openViaCommandSearch('about');
     await studioAgent.assertNoErrorsPresentAndIdle();
     await studioAgent.assertVisible('[data-test--editors--focused-document-type=aboutpage]', ASSERT_VISIBLE_TIMEOUT);
+
+    const hostSystem = await studioAgent.executeCommand<Record<string, string>>('std.aboutpage.getSysteminformation');
+    expect(Object.keys(hostSystem).sort()).toEqual(['cpu', 'memory', 'os', 'storage']);
+    expect(hostSystem.os).not.toBe('');
+    expect(hostSystem.cpu).toMatch(/ \(\d+ threads\)$/);
+    expect(hostSystem.memory).toMatch(/^\d+ GB$/);
+    expect(hostSystem.storage).toMatch(/^\d+ GB free of \d+ GB$/);
+
+    await studioAgent.waitUntil(async () => !(await studioAgent.getText('.about-page')).includes('Loading ...'), {
+      timeout: ASSERT_VISIBLE_TIMEOUT,
+      timeoutMsg: 'The About page still shows "Loading ..." in the This Computer section',
+    });
   });
 
   it('smoke/pane-content: should switch between the Explorer and Search tabs of the left tab strip', async () => {

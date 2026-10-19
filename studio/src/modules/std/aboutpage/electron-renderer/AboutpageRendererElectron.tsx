@@ -16,7 +16,6 @@ type HostSystemInformation = {
   cpu: string;
   storage: string;
   memory: string;
-  graphics: string;
 };
 
 const loadingStateInfo = 'Loading ...';
@@ -26,13 +25,36 @@ const initialHostSystem: HostSystemInformation = {
   cpu: loadingStateInfo,
   storage: loadingStateInfo,
   memory: loadingStateInfo,
-  graphics: loadingStateInfo,
 };
+
+function readGraphicsModel(): string {
+  try {
+    const context = document.createElement('canvas').getContext('webgl');
+    const debugInfo = context?.getExtension('WEBGL_debug_renderer_info');
+    if (!context || !debugInfo) {
+      return 'NA';
+    }
+    const renderer = String(context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+    context.getExtension('WEBGL_lose_context')?.loseContext();
+
+    // e.g. "ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 4060 Ti/PCIe/SSE2, OpenGL 4.5.0)"
+    const model = (renderer.match(/^ANGLE \([^,]+, (.+), [^,]+\)$/)?.[1] ?? renderer)
+      .replace(/^ANGLE Metal Renderer: /, '')
+      .split(' (')[0]
+      .split('/')[0]
+      .trim();
+    return model || renderer;
+  } catch {
+    return 'NA';
+  }
+}
 
 export default function AboutpageRendererElectron(props: EditorDocumentRendererProps): React.JSX.Element {
   const bifrost = Bifrost.cast(props.studio);
 
   const [hostSystem, setHostSystem] = useState(initialHostSystem);
+  // eslint-disable-next-line react/hook-use-state -- the WebGL context is created and released once per mount
+  const [graphics] = useState(readGraphicsModel);
   const [plugins, setPlugins] = useState<PluginInfo[]>(() =>
     bifrost.plugins.getPluginList().filter((plugin) => plugin.enabled),
   );
@@ -84,7 +106,7 @@ export default function AboutpageRendererElectron(props: EditorDocumentRendererP
               { label: 'CPU', value: hostSystem.cpu },
               { label: 'Memory', value: hostSystem.memory },
               { label: 'Storage', value: hostSystem.storage },
-              { label: 'Graphics', value: hostSystem.graphics },
+              { label: 'Graphics', value: graphics },
             ]}
             editorFacts={[
               { label: 'bpmn-js', value: BuildInfo.bpmnJsVersion },

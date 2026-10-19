@@ -17,7 +17,7 @@ The Studio uses **Rspack** (a Rust-based, webpack 5-compatible bundler) for all 
 | File | Purpose |
 |------|---------|
 | `rspack.config.electron.js` | Main Electron build: composes all sub-configs into a multi-compiler array |
-| `rspack.config.electron-main.js` | Electron main process, systeminformation worker, and webview bridge script |
+| `rspack.config.electron-main.js` | Electron main process and webview bridge script |
 | `rspack.config.css.js` | CSS bundle (SCSS → extracted CSS via glob) |
 
 ### Build-time Helpers
@@ -28,13 +28,12 @@ The Studio uses **Rspack** (a Rust-based, webpack 5-compatible bundler) for all 
 
 ## Build Targets
 
-The Electron build (`rspack.config.electron.js`) produces 7 bundles via multi-compiler:
+The Electron build (`rspack.config.electron.js`) produces 6 bundles via multi-compiler:
 
 | Config | Entry | Output | Target |
 |--------|-------|--------|--------|
 | CSS | `./src/**/*.scss` (glob) | `out/bifrost-styles.css` | `web` |
 | Electron Main | `entrypoint-electron-main.ts` | `out/bundle-electron-main.js` | `electron-main` |
-| Systeminformation | `Systeminformation.ts` | `out/Systeminformation.js` | `node` |
 | Bridge Script | `bridge-script.ts` | `out/studio-bridge.js` | `web` |
 | Plugin Host | `plugin-host-main.ts` | `out/plugin-host.js` | `node` |
 | Sandbox Worker | `sandbox-worker.ts` | `out/sandbox-worker.js` | `node` |

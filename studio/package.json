@@ -126,7 +126,6 @@
     "sass-loader": "^17.0.1",
     "ses": "^2.3.0",
     "simple-git": "^4.0.2",
-    "systeminformation": "^5.33.15",
     "ts-checker-rspack-plugin": "^1.7.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",
