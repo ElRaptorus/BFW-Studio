@@ -133,10 +133,6 @@ const configElectronRenderer = {
         use: 'markdown-image-loader',
       },
       {
-        test: /.node$/,
-        loader: 'node-loader',
-      },
-      {
         test: [/\.scss$/, /\.(d|test)\.tsx?$/],
         use: 'null-loader',
       },

@@ -17,7 +17,6 @@ type HostSystemInformation = {
   storage: string;
   memory: string;
   graphics: string;
-  docker: string;
 };
 
 const loadingStateInfo = 'Loading ...';
@@ -28,7 +27,6 @@ const initialHostSystem: HostSystemInformation = {
   storage: loadingStateInfo,
   memory: loadingStateInfo,
   graphics: loadingStateInfo,
-  docker: loadingStateInfo,
 };
 
 export default function AboutpageRendererElectron(props: EditorDocumentRendererProps): React.JSX.Element {
@@ -87,7 +85,6 @@ export default function AboutpageRendererElectron(props: EditorDocumentRendererP
               { label: 'Memory', value: hostSystem.memory },
               { label: 'Storage', value: hostSystem.storage },
               { label: 'Graphics', value: hostSystem.graphics },
-              { label: 'Docker', value: hostSystem.docker },
             ]}
             editorFacts={[
               { label: 'bpmn-js', value: BuildInfo.bpmnJsVersion },

@@ -1,5 +1,5 @@
+import { calculateSelectorSpecificity } from '#bifrost/browser/SelectorSpecificityFunctions';
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
-import { calculateSpecificity } from 'clear-cut';
 
 import type { BifrostClient, BifrostOperatingSystem } from '../contracts/BifrostTypes';
 
@@ -286,8 +286,8 @@ export class KeybindingsManager extends AbstractEmitter {
 
       for (const keystroke of Object.keys(commandMap)) {
         const command = commandMap[keystroke];
-        // TODO: validate selector using clear-cut's `isSelectorValid`
-        const specificity = calculateSpecificity(selector);
+        // TODO: validate the selector
+        const specificity = calculateSelectorSpecificity(selector);
         const keybinding: KeybindingObject = { selector, command, specificity, ignoreForFormInput };
         this.keybindingsByKeystroke[keystroke] = this.keybindingsByKeystroke[keystroke] || [];
         this.keybindingsByKeystroke[keystroke].push(keybinding);

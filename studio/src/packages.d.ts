@@ -71,8 +71,6 @@ declare module 'bpmnlint/rules/*' {
   export default factory;
 }
 
-declare module 'clear-cut';
-
 declare module '*.bpmn' {
   const content: any;
   export default content;
@@ -117,7 +115,3 @@ declare module '*.txt' {
 }
 
 declare const __non_webpack_require__: NodeRequire;
-
-declare module 'jaro-winkler' {
-  export default function distance(first: string, second: string): number;
-}

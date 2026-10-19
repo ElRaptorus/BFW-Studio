@@ -49,6 +49,5 @@ export {
   resolveEventDefinitionName,
 } from './BpmnFlowNodeAccessors';
 export * from './BpmnExportFunctions';
-export * from './CsvExportHelper';
 export * from './EngineAdapter';
 export * from './SelectableElement';

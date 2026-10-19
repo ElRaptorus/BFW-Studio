@@ -55,7 +55,7 @@
     "build:plugin-fixtures": "node test/fixtures/plugins/build-ts-fixtures.mjs",
     "test:integration:plugins": "npm run build:plugin-fixtures && cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/plugins/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:smoke": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/studio-core/studio-smoke.test.ts --bail 1 --retry 1 --no-file-parallelism",
-    "test-prod:electron": "cross-env BIFROST_TEST_TYPING_PAUSE=70 tsx test/RunTestOnElectronProdBuild.ts"
+    "test-prod:electron": "cross-env BIFROST_TEST_TYPING_PAUSE=70 node test/RunTestOnElectronProdBuild.ts"
   },
   "devDependencies": {
     "@bpmn-io/add-exporter": "^0.2.0",
@@ -78,10 +78,8 @@
     "@elraptorus/bfw_studio_sdk": "file:../studio-sdk",
     "@headless-tree/core": "^1.8.0",
     "@headless-tree/react": "^1.8.0",
-    "@json2csv/node": "7.0.8",
     "@lezer/highlight": "^1.2.5",
     "@mdxeditor/editor": "^4.3.3",
-    "@phosphor-icons/web": "^2.1.2",
     "@rspack/cli": "^2.2.9",
     "@rspack/core": "^2.2.9",
     "@tanstack/react-table": "^9.3.1",
@@ -96,7 +94,6 @@
     "bpmnlint": "^11.15.0",
     "bpmnlint-utils": "^1.1.1",
     "chokidar": "^5.0.0",
-    "clear-cut": "^2.0.2",
     "codemirror-json-schema": "^0.8.1",
     "codemirror-json5": "^1.0.3",
     "comment-json": "^5.0.0",
@@ -112,13 +109,11 @@
     "electron-log": "5.4.4",
     "fuse.js": "^7.5.0",
     "html2canvas": "^1.4.1",
-    "jaro-winkler": "^0.2.8",
     "json5": "^2.2.3",
     "lodash.debounce": "^4.0.8",
     "markdown-image-loader": "^3.0.1",
     "marked": "^18.1.1",
     "minimatch": "^10.2.6",
-    "node-loader": "^2.1.0",
     "null-loader": "^4.0.1",
     "oxfmt": "0.73.0",
     "oxlint": "1.88.0",
@@ -133,13 +128,14 @@
     "simple-git": "^4.0.2",
     "systeminformation": "^5.33.15",
     "ts-checker-rspack-plugin": "^1.7.1",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",
     "webdriverio": "^10.1.0"
   },
   "overrides": {
-    "cheerio": { "encoding-sniffer": "^1.x" },
+    "cheerio": {
+      "encoding-sniffer": "^1.x"
+    },
     "@wdio/electron-service": {
       "webdriverio": "^10.1.0"
     }

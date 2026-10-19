@@ -1,5 +1,5 @@
+import { calculateSelectorSpecificity } from '#bifrost/browser/SelectorSpecificityFunctions';
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
-import { calculateSpecificity } from 'clear-cut';
 
 import type { BifrostClient, BifrostOperatingSystem } from '../contracts/BifrostTypes';
 
@@ -136,8 +136,8 @@ export class ClickModifierKeysManager extends AbstractEmitter {
       for (const keystroke of Object.keys(clickModifierMap)) {
         const clickModifier = clickModifierMap[keystroke];
 
-        // TODO: validate selector using clear-cut's `isSelectorValid`
-        const specificity = calculateSpecificity(selector);
+        // TODO: validate the selector
+        const specificity = calculateSelectorSpecificity(selector);
         const clickModifierKeys: ClickModifierKeyObject = { selector, clickModifier, specificity };
 
         this.clickModifiersByKeystroke[keystroke] = this.clickModifiersByKeystroke[keystroke] || [];

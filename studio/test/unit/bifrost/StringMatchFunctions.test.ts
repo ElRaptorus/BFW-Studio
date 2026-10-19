@@ -10,4 +10,21 @@ describe('StringMatchFunctions', () => {
 
     assert.deepStrictEqual(suggestion, 'subtract');
   });
+
+  it('returns null for an empty list', () => {
+    assert.strictEqual(getClosestMatch('open', []), null);
+  });
+
+  it('prefers the candidate sharing a prefix with the search string', () => {
+    const suggestion = getClosestMatch('std.editor.openDocumnt', [
+      'std.editor.closeDocument',
+      'std.editor.openDocument',
+    ]);
+
+    assert.strictEqual(suggestion, 'std.editor.openDocument');
+  });
+
+  it('compares case-sensitively', () => {
+    assert.strictEqual(getClosestMatch('SAVE', ['save', 'SAVX']), 'SAVX');
+  });
 });

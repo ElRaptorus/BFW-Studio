@@ -6,7 +6,6 @@ async function getSysteminformation() {
   const diskInfoPromise = sysinfo.diskLayout();
   const memInfoPromise = sysinfo.mem();
   const graphicsInfoPromise = sysinfo.graphics();
-  const dockerInfoPromise = sysinfo.dockerInfo();
 
   const result = await Promise.all([
     osInfoPromise,
@@ -14,7 +13,6 @@ async function getSysteminformation() {
     diskInfoPromise,
     memInfoPromise,
     graphicsInfoPromise,
-    dockerInfoPromise,
   ]);
 
   if (process.send) {

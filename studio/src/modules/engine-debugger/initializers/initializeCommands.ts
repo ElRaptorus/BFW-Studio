@@ -25,7 +25,6 @@ import type { DmnTraceFragmentModel } from '../dmn-trace/DmnTraceFragmentModel';
 import { renderToPng, renderToSvg } from '../libs/BpmnExportFunctions';
 import { getUserTaskFormActions, getUserTaskFormFields } from '../libs/BpmnFlowNodeAccessors';
 import { getFlowNodeById } from '../libs/BpmnProcessHelpers';
-import { createCsvExportString } from '../libs/CsvExportHelper';
 import type { FlowNode } from '../libs/SelectableElement';
 import { resolveFlowNodeIconForDebugger } from '../libs/flowNodeDisplay';
 
@@ -863,13 +862,6 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
           },
           {
             type: 'response_link',
-            label: 'CSV',
-            sublabel: 'For use with Excel',
-            icon: 'ph-duotone ph-file-csv icon-spreadsheet',
-            response: 'csv',
-          },
-          {
-            type: 'response_link',
             label: 'JSON',
             sublabel: 'Raw JSON data',
             icon: 'ph-duotone ph-brackets-curly',
@@ -890,8 +882,6 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
           return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsSvg', [model]);
         case 'png':
           return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsPng', [model]);
-        case 'csv':
-          return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsCsv', [model]);
         case 'json':
           return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsJson', [model]);
         default:
@@ -977,24 +967,6 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   );
 
   bifrost.commands.register(
-    'engine.debugger.workbench.exportAsCsv',
-    async (model: EngineBpmnDebuggerEditorDocumentModel) => {
-      assertNotNull(model.processInstance, 'model.processInstance');
-
-      const filePath = await bifrost.dialog.showSaveFile({
-        defaultPath: `ProcessInstance_${model.processInstance.id}.csv`,
-        filters: [{ name: 'Excel Files (*.csv)', extensions: ['csv'] }],
-      });
-
-      if (!filePath || filePath.trim().length === 0) {
-        return;
-      }
-
-      await exportDebuggerContent(model, filePath, 'csv');
-    },
-  );
-
-  bifrost.commands.register(
     'engine.debugger.workbench.exportAsJson',
     async (model: EngineBpmnDebuggerEditorDocumentModel) => {
       assertNotNull(model.processInstance, 'model.processInstance');
@@ -1045,7 +1017,6 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       svg: async () => renderToSvg(model),
       png: async () => renderToPng(model, bifrost.dialog),
       bpmn: () => model.processInstance?.xml,
-      csv: async () => createCsvExportString(model),
       json: () =>
         JSON.stringify(
           {
@@ -1056,6 +1027,12 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
           2,
         ),
     };
+
+    if (!Object.hasOwn(formatters, format)) {
+      throw new Error(
+        `The export format '${format}' is no longer supported. Export the process instance again to choose a format.`,
+      );
+    }
 
     const exportFileContent = await formatters[format]();
 

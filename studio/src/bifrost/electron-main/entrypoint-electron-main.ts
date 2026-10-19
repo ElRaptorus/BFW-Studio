@@ -419,14 +419,13 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
   });
 
   ipcMain.handle(IPC_INVOKE_GET_SYSTEMINFORMATION, async (event) => {
-    const [osInfo, cpuInfo, diskInfo, memInfo, graphicsInfo, dockerInfo] = await new Promise<
+    const [osInfo, cpuInfo, diskInfo, memInfo, graphicsInfo] = await new Promise<
       [
         sysinfo.Systeminformation.OsData,
         sysinfo.Systeminformation.CpuData,
         sysinfo.Systeminformation.DisksIoData,
         sysinfo.Systeminformation.MemData,
         sysinfo.Systeminformation.GraphicsData,
-        sysinfo.Systeminformation.DockerInfoData,
       ]
     >((resolve, reject) => {
       const filename = path.resolve(__dirname, 'Systeminformation.js');
@@ -448,7 +447,6 @@ export function startMain(startArgs: Record<string, any>, shellStartTime: number
       storage: `${Math.round(diskInfo[0].size / 1024 / 1024 / 1024)} GB`,
       memory: `${Math.round(memInfo.total / 1024 / 1024 / 1024)} GB`,
       graphics: graphicsInfo.controllers[graphicsInfo.controllers.length - 1]?.model ?? 'NA',
-      docker: dockerInfo.serverVersion ?? 'NA',
     };
 
     return newHostSystem;
