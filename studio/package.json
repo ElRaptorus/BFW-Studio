@@ -107,7 +107,7 @@
     "diagram-js-minimap": "^5.6.0",
     "dmn-js": "^17.12.3",
     "dompurify": "^3.4.17",
-    "electron": "44.8.0",
+    "electron": "44.9.0",
     "electron-builder": "27.0.0-alpha.10",
     "electron-log": "5.4.4",
     "fuse.js": "^7.5.0",
@@ -136,11 +136,11 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",
-    "webdriverio": "^10.0.2"
+    "webdriverio": "^10.1.0"
   },
   "overrides": {
     "@wdio/electron-service": {
-      "webdriverio": "^10.0.2"
+      "webdriverio": "^10.1.0"
     }
   }
 }
