@@ -1,7 +1,13 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { CommandContext } from '#bifrost/contracts/CommandTypes';
-import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import {
+  getImageFormatForFilename,
+  IMAGE_SAVE_DIALOG_FILTERS,
+  renderSvgToRasterImage,
+  runWithExportHint,
+  SUPPORTED_IMAGE_EXTENSIONS_TEXT,
+} from '#modules/bpmn-core/ImageExportFunctions';
 import type { EngineConnectionManager } from '#modules/engine-core';
 import { ENGINE_COMMANDS } from '#modules/engine-core';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
@@ -27,32 +33,40 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     model.zoomToActualSize();
   });
 
-  bifrost.commands.register(MODEL_VIEWER_COMMANDS.exportPng, async (editorDocument: EditorDocument) => {
-    const model = await bifrost.editors.getEditorDocumentModel<ModelViewerDocumentModel>(editorDocument);
-    const blob = await model.exportPng(2);
-    if (blob.size === 0) {
-      bifrost.notifications.open({
-        type: 'warning',
-        content: 'Could not export PNG — canvas not ready.',
-        source: 'Engine',
-      });
-      return;
-    }
-    downloadBlob(blob, `${model.getProcessModelId()}.png`);
-  });
-
-  bifrost.commands.register(MODEL_VIEWER_COMMANDS.exportSvg, async (editorDocument: EditorDocument) => {
+  bifrost.commands.register(MODEL_VIEWER_COMMANDS.exportImage, async (editorDocument: EditorDocument) => {
     const model = await bifrost.editors.getEditorDocumentModel<ModelViewerDocumentModel>(editorDocument);
     const svg = await model.exportSvg();
     if (!svg) {
       bifrost.notifications.open({
         type: 'warning',
-        content: 'Could not export SVG — canvas not ready.',
+        content: 'Could not export the image — canvas not ready.',
         source: 'Engine',
       });
       return;
     }
-    downloadTextFile(svg, `${model.getProcessModelId()}.svg`, 'image/svg+xml');
+
+    const filename = await bifrost.dialog.showSaveFile({
+      title: 'Export as image',
+      defaultPath: `${model.getProcessModelId()}.png`,
+      filters: IMAGE_SAVE_DIALOG_FILTERS,
+    });
+    if (filename == null || filename.trim() === '') {
+      return;
+    }
+
+    const format = getImageFormatForFilename(filename);
+    if (format == null) {
+      bifrost.notifications.open({
+        type: 'error',
+        content: `Cannot export to '${filename}'. Choose a file name ending in ${SUPPORTED_IMAGE_EXTENSIONS_TEXT}.`,
+        source: 'Engine',
+      });
+      return;
+    }
+
+    const fileContent =
+      format === 'svg' ? svg : await runWithExportHint(bifrost.dialog, async () => renderSvgToRasterImage(svg, format));
+    await bifrost.files.save(bifrost.files.getUriForFilename(filename), fileContent);
   });
 
   bifrost.commands.register(MODEL_VIEWER_COMMANDS.downloadXml, async (editorDocument: EditorDocument) => {
@@ -187,40 +201,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
   bifrost.commands.register(
     'std.editor.showExportDialog.engine-model-viewer',
     async (editorDocument: EditorDocument) => {
-      const dialogOptions: DialogOptions = {
-        title: 'Export BPMN as ...',
-        content: [
-          {
-            type: 'response_link',
-            label: 'SVG',
-            sublabel: 'Higher quality',
-            icon: 'ph-light ph-selection icon-export-as-svg',
-            response: 'svg',
-          },
-          {
-            type: 'response_link',
-            label: 'PNG',
-            sublabel: 'Easier to share',
-            icon: 'ph-duotone ph-palette icon-export-as-png',
-            response: 'png',
-          },
-        ],
-        actions: [],
-      };
-
-      const dialogResult = await bifrost.dialog.open(dialogOptions);
-      if (dialogResult.wasCancelled || dialogResult.response == null) {
-        return;
-      }
-
-      const format = dialogResult.response as 'png' | 'svg';
-      if (format === 'png') {
-        await bifrost.commands.executeCommand(MODEL_VIEWER_COMMANDS.exportPng, [editorDocument]);
-        return;
-      }
-      if (format === 'svg') {
-        await bifrost.commands.executeCommand(MODEL_VIEWER_COMMANDS.exportSvg, [editorDocument]);
-      }
+      await bifrost.commands.executeCommand(MODEL_VIEWER_COMMANDS.exportImage, [editorDocument]);
     },
   );
 }

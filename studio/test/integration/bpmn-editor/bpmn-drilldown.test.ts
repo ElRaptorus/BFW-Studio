@@ -1,4 +1,5 @@
 import * as assert from 'node:assert';
+import * as fs from 'node:fs';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import type { StudioAgentBpmnExtension } from '../../StudioAgentBpmnExtension';
@@ -89,6 +90,32 @@ describe('bpmn/drilldown', () => {
     await studioAgent.drillUpFromSubprocess();
 
     await studioAgent.assertVisible(DEFINITION_PANE, ASSERT_VISIBLE_TIMEOUT);
+
+    await studioAgent.assertNoErrorsPresentAndIdle();
+  });
+
+  it('bpmn/drilldown/export: should export the drilled-down subprocess instead of the main diagram', async () => {
+    const filename = 'tmp/test-export-bpmn-drilldown.svg';
+    fs.rmSync(filename, { force: true });
+
+    await studioAgent.drillDownIntoSubprocess('SubProcess_Collapsed');
+
+    await studioAgent.openViaCommandSearch('Test: Export document as');
+    await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.sendKeyboardInput([...'svg'.split(''), 'enter']);
+    await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.sendKeyboardInput([...filename.split(''), 'enter']);
+
+    await studioAgent.waitUntil(
+      async () => fs.existsSync(filename) && fs.readFileSync(filename, 'utf8').includes('</svg>'),
+      {
+        timeout: ASSERT_VISIBLE_TIMEOUT,
+        timeoutMsg: `${filename} was not written`,
+      },
+    );
+    const svg = fs.readFileSync(filename, 'utf8');
+    assert.ok(svg.includes('data-element-id="Task_Inside"'), 'The export should contain the subprocess content');
+    assert.ok(!svg.includes('data-element-id="StartEvent_1"'), 'The export should not contain the main diagram');
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

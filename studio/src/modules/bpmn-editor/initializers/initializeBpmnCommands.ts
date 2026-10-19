@@ -4,9 +4,15 @@ import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
 import type { DialogOptions, DialogValidationCallbackFn } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { FileOrDirectory } from '#bifrost/contracts/FileSystemTypes';
-import { renderBpmnToPng, renderBpmnToSvg } from '#modules/bpmn-core/BpmnExportFunctions';
 import type { ProjectProcess } from '#modules/bpmn-core/BpmnSpecificSolutionAndProjectTypes';
 import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
+import {
+  getImageFormatForFilename,
+  IMAGE_SAVE_DIALOG_FILTERS,
+  renderBpmnToImage,
+  runWithExportHint,
+  SUPPORTED_IMAGE_EXTENSIONS_TEXT,
+} from '#modules/bpmn-core/ImageExportFunctions';
 import bfwPlatformModdleDescriptor from '#modules/bpmn-core/bpmn-js/moddle/bfw-platform.json';
 import { BPMN_COMMANDS } from '#modules/bpmn-core/commands/registerVersionCommands';
 import { BpmnElementType } from '#modules/bpmn-editor/BpmnElementTypes';
@@ -508,17 +514,10 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
       content: [
         {
           type: 'response_link',
-          label: 'SVG',
-          sublabel: 'Higher quality',
-          icon: 'ph-light ph-selection icon-export-as-svg',
-          response: 'svg',
-        },
-        {
-          type: 'response_link',
-          label: 'PNG',
-          sublabel: 'Easier to share',
-          icon: 'ph-duotone ph-palette icon-export-as-png',
-          response: 'png',
+          label: 'Image',
+          sublabel: 'PNG, JPEG, WebP or SVG',
+          icon: 'ph-duotone ph-palette icon-export-as-image',
+          response: 'image',
         },
         {
           type: 'response_link',
@@ -554,19 +553,24 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
       return `${editorDocument.label}${imageFileExtension}`;
     };
 
-    const extensionMap = {
-      svg: { name: 'SVG', extensions: ['svg'] },
-      png: { name: 'PNG', extensions: ['png'] },
-      bpmn: { name: 'BPMN', extensions: ['bpmn'] },
-    };
-    const format = dialogResult.response;
-    const extension = extensionMap[format];
+    const isImageExport = dialogResult.response === 'image';
 
     const targetFilename = await bifrost.dialog.showSaveFile({
-      defaultPath: getDefaultPath(editorDocument.uri, `.${format}`),
-      filters: [extension],
+      title: isImageExport ? 'Export as image' : 'Export as BPMN',
+      defaultPath: getDefaultPath(editorDocument.uri, isImageExport ? '.png' : '.bpmn'),
+      filters: isImageExport ? IMAGE_SAVE_DIALOG_FILTERS : [{ name: 'BPMN', extensions: ['bpmn'] }],
     });
     if (targetFilename == null || targetFilename.trim() === '') {
+      return;
+    }
+
+    const format = isImageExport ? getImageFormatForFilename(targetFilename) : 'bpmn';
+    if (format == null) {
+      bifrost.notifications.open({
+        type: 'error',
+        content: `Cannot export to '${targetFilename}'. Choose a file name ending in ${SUPPORTED_IMAGE_EXTENSIONS_TEXT}.`,
+        source: 'BPMN',
+      });
       return;
     }
 
@@ -645,9 +649,13 @@ export function initializeBpmnCommands(bifrost: Bifrost): void {
   bifrost.commands.register(
     'std.editor.exportDocumentAs.bpmn',
     async (editorDocument: EditorDocument, format: string, filename: string) => {
+      const xml = editorDocument.data.current;
+      const rootElementId: string | null = editorDocument.metadata?.currentRootId ?? null;
       const extensionHandlerMap = {
-        svg: async () => renderBpmnToSvg(editorDocument.data.current),
-        png: async () => renderBpmnToPng(editorDocument.data.current),
+        svg: async () => renderBpmnToImage(xml, 'svg', rootElementId),
+        png: async () => runWithExportHint(bifrost.dialog, async () => renderBpmnToImage(xml, 'png', rootElementId)),
+        jpeg: async () => runWithExportHint(bifrost.dialog, async () => renderBpmnToImage(xml, 'jpeg', rootElementId)),
+        webp: async () => runWithExportHint(bifrost.dialog, async () => renderBpmnToImage(xml, 'webp', rootElementId)),
         bpmn: async () =>
           bifrost.commands.executeCommand('bpmn.diagram.resetRelevantIds', [editorDocument.data.current]),
       };

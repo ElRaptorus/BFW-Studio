@@ -12,6 +12,11 @@ import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { QuickJumpItem } from '#bifrost/contracts/QuickJumpTypes';
 import type { BpmnViewerComponentAdapter } from '#modules/bpmn-core/BpmnViewerComponentAdapter';
 import { DataObjectDetailLevel } from '#modules/bpmn-core/DataObjectDetailsSettings';
+import {
+  getImageFormatForFilename,
+  IMAGE_SAVE_DIALOG_FILTERS,
+  SUPPORTED_IMAGE_EXTENSIONS_TEXT,
+} from '#modules/bpmn-core/ImageExportFunctions';
 import type { EngineConnectionManager, RetryContext, RetryResult } from '#modules/engine-core';
 import { ENGINE_COMMANDS, getHumanizedDateTime, getShortId } from '#modules/engine-core';
 import * as json5 from 'json5';
@@ -22,7 +27,7 @@ import { FlowNodeType, FniNotWaitingError, ProcessInstanceState } from '@elrapto
 import { DMN_TRACE_DOCUMENT_TYPE, ENGINE_DEBUGGER_DOCUMENT_TYPE } from '../Constants';
 import type EngineBpmnDebuggerEditorDocumentModel from '../EngineBpmnDebuggerEditorDocumentModel';
 import type { DmnTraceFragmentModel } from '../dmn-trace/DmnTraceFragmentModel';
-import { renderToPng, renderToSvg } from '../libs/BpmnExportFunctions';
+import { renderToImage } from '../libs/BpmnExportFunctions';
 import { getUserTaskFormActions, getUserTaskFormFields } from '../libs/BpmnFlowNodeAccessors';
 import { getFlowNodeById } from '../libs/BpmnProcessHelpers';
 import type { FlowNode } from '../libs/SelectableElement';
@@ -824,6 +829,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     assertNotNull(model.processInstance.xml, 'model.processInstance.xml');
 
     const filePath = await bifrost.dialog.showSaveFile({
+      title: 'Export as BPMN',
       defaultPath: `ProcessInstance_${model.processInstance.id}.bpmn`,
       filters: [{ name: 'BPMN', extensions: ['bpmn'] }],
     });
@@ -850,15 +856,10 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
         content: [
           {
             type: 'response_link',
-            label: 'PNG',
-            sublabel: 'Take a Picture of the Process Instance',
-            icon: 'ph-duotone ph-palette icon-export-as-png',
-            response: 'png',
-          },
-          {
-            type: 'response_link',
-            label: 'SVG',
-            response: 'svg',
+            label: 'Image',
+            sublabel: 'PNG, JPEG, WebP or SVG of the Process Instance',
+            icon: 'ph-duotone ph-palette icon-export-as-image',
+            response: 'image',
           },
           {
             type: 'response_link',
@@ -878,10 +879,8 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       assertNotNull(dialogResult.response, 'dialog.response');
 
       switch (dialogResult.response) {
-        case 'svg':
-          return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsSvg', [model]);
-        case 'png':
-          return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsPng', [model]);
+        case 'image':
+          return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsImage', [model]);
         case 'json':
           return bifrost.commands.executeCommand('engine.debugger.workbench.exportAsJson', [model]);
         default:
@@ -927,42 +926,33 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     },
   );
 
-  // TODO - Not included with the export dialog, because overlays are not yet included with this type of export.
   bifrost.commands.register(
-    'engine.debugger.workbench.exportAsSvg',
+    'engine.debugger.workbench.exportAsImage',
     async (model: EngineBpmnDebuggerEditorDocumentModel) => {
       assertNotNull(model.processInstance, 'model.processInstance');
       assertNotNull(model.processInstance.xml, 'model.processInstance.xml');
 
       const filePath = await bifrost.dialog.showSaveFile({
-        defaultPath: `ProcessInstance_${model.processInstance.id}.svg`,
-        filters: [{ name: 'SVG', extensions: ['svg'] }],
-      });
-
-      if (!filePath || filePath.trim().length === 0) {
-        return;
-      }
-
-      await exportDebuggerContent(model, filePath, 'svg');
-    },
-  );
-
-  bifrost.commands.register(
-    'engine.debugger.workbench.exportAsPng',
-    async (model: EngineBpmnDebuggerEditorDocumentModel) => {
-      assertNotNull(model.processInstance, 'model.processInstance');
-      assertNotNull(model.processInstance.xml, 'model.processInstance.xml');
-
-      const filePath = await bifrost.dialog.showSaveFile({
+        title: 'Export as image',
         defaultPath: `ProcessInstance_${model.processInstance.id}.png`,
-        filters: [{ name: 'PNG', extensions: ['png'] }],
+        filters: IMAGE_SAVE_DIALOG_FILTERS,
       });
 
       if (!filePath || filePath.trim().length === 0) {
         return;
       }
 
-      exportDebuggerContent(model, filePath, 'png');
+      const format = getImageFormatForFilename(filePath);
+      if (format == null) {
+        bifrost.notifications.open({
+          type: 'error',
+          content: `Cannot export to '${filePath}'. Choose a file name ending in ${SUPPORTED_IMAGE_EXTENSIONS_TEXT}.`,
+          source: 'Engine',
+        });
+        return;
+      }
+
+      await exportDebuggerContent(model, filePath, format);
     },
   );
 
@@ -972,6 +962,7 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
       assertNotNull(model.processInstance, 'model.processInstance');
 
       const filePath = await bifrost.dialog.showSaveFile({
+        title: 'Export as JSON',
         defaultPath: `ProcessInstance_${model.processInstance.id}.json`,
         filters: [{ name: 'JSON Files (*.json)', extensions: ['json'] }],
       });
@@ -1014,8 +1005,10 @@ export default function initializeCommands(bifrost: Bifrost, connectionManager: 
     format: string,
   ): Promise<void> {
     const formatters = {
-      svg: async () => renderToSvg(model),
-      png: async () => renderToPng(model, bifrost.dialog),
+      png: async () => renderToImage(model, 'png', bifrost.dialog),
+      jpeg: async () => renderToImage(model, 'jpeg', bifrost.dialog),
+      webp: async () => renderToImage(model, 'webp', bifrost.dialog),
+      svg: async () => renderToImage(model, 'svg', bifrost.dialog),
       bpmn: () => model.processInstance?.xml,
       json: () =>
         JSON.stringify(

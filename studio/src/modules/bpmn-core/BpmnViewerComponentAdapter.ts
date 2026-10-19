@@ -20,6 +20,7 @@ import MoveCanvasModule from 'diagram-js/lib/navigation/movecanvas';
 import ZoomScrollModule from 'diagram-js/lib/navigation/zoomscroll';
 import type { Rect } from 'diagram-js/lib/util/Types';
 
+import { replaceThemeColorsInSvg } from './ImageExportFunctions';
 import bfwPlatformModdleDescriptor from './bpmn-js/moddle/bfw-platform.json';
 
 export const EVENT_BPMN_VIEWER_ADAPTER_ATTACHED_TO_HTML = 'EVENT_BPMN_VIEWER_ADAPTER_ATTACHED_TO_HTML';
@@ -217,7 +218,7 @@ export class BpmnViewerComponentAdapter extends AbstractEmitter {
 
   async getSvg(): Promise<string> {
     const result = await this.viewer.saveSVG();
-    return result.svg;
+    return replaceThemeColorsInSvg(result.svg);
   }
 
   getViewerComponentByName<T>(name: string): T {

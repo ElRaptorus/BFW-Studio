@@ -18,6 +18,16 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## Exporting a live viewer's `saveSVG()` output as is
+
+**Mistake**: Writing the SVG of an in-app bpmn-js or dmn-js viewer to a file without post-processing.
+
+**Why**: The Studio passes `var(--color-bpmn-…)` / `var(--color-dmn-…)` as renderer default colours, and the libraries copy them literally into `fill` / `stroke`. Outside the Studio the variables are undefined, so shapes and labels render black.
+
+**Correct approach**: Pass the SVG through `replaceThemeColorsInSvg` (`bpmn-core/ImageExportFunctions.ts`), as the `getSvg()` methods of the viewer and modeler adapters do.
+
+---
+
 ## Non-standard attributes need a moddle `extends` entry
 
 **Mistake**: Setting an engine-only attribute on a standard BPMN business object without a matching `extends` block in `bfw-platform.json`.

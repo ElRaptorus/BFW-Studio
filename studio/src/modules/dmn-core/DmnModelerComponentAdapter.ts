@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { AbstractEmitter } from '#bifrost/common/AbstractEmitter';
+import { replaceThemeColorsInSvg } from '#modules/bpmn-core/ImageExportFunctions';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
 import gridModule from 'diagram-js-grid';
@@ -336,7 +337,7 @@ export default class DmnModelerComponentAdapter extends AbstractEmitter {
       throw new Error('No DRD viewer available for SVG export');
     }
     const { svg } = await drdViewer.saveSVG();
-    return svg;
+    return replaceThemeColorsInSvg(svg);
   }
 
   //#endregion Export

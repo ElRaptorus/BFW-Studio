@@ -210,6 +210,7 @@ export default class DmnDocumentRenderer extends React.Component<
               studio={this.props.studio}
               label="Export as..."
               icon="ph-duotone ph-export"
+              tooltip={isDrd ? undefined : 'Export is only available in the DRD view'}
               command={`std.editor.showExportDialog.${DMN_DOCUMENT_TYPE}`}
               commandArgs={[this.dmnDocumentModel]}
             />

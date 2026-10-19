@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import assert from 'node:assert';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import { ASSERT_VISIBLE_TIMEOUT } from '../../StudioAgent';
@@ -45,36 +46,28 @@ describe('dmn/smoke', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('dmn/smoke/export: should export the current document as SVG image', async () => {
-    await studioAgent.jumpToFileInSolution('simple-decision.dmn', 'dmn');
+  it('dmn/smoke/export: should export the DRD as PNG image', async () => {
+    const filename = 'tmp/test-export-dmn.png';
+    const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    fs.rmSync(filename, { force: true });
+
+    await studioAgent.jumpToFileInSolution('kitchen-sink.dmn', 'dmn');
     await studioAgent.waitForInteractiveDmnDocument();
 
     await studioAgent.openViaCommandSearch('Test: Export document as');
     await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.sendKeyboardInput([...'svg'.split(''), 'enter']);
+    await studioAgent.sendKeyboardInput([...'png'.split(''), 'enter']);
     await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
+    await studioAgent.sendKeyboardInput([...filename.split(''), 'enter']);
 
-    await studioAgent.sendKeyboardInput([...'tmp/test-export-dmn.svg'.split(''), 'enter']);
-
-    await studioAgent.assertFileWasCreatedAndIsNotEmpty('tmp/test-export-dmn.svg');
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
-  it('dmn/smoke/export: should export the current document as DMN document copy', async () => {
-    await studioAgent.jumpToFileInSolution('simple-decision.dmn', 'dmn');
-    await studioAgent.waitForInteractiveDmnDocument();
-
-    await studioAgent.openViaCommandSearch('Test: Export document as');
-    await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.sendKeyboardInput([...'dmn'.split(''), 'enter']);
-    await studioAgent.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
-
-    await studioAgent.sendKeyboardInput([...'tmp/test-export-dmn.dmn'.split(''), 'enter']);
-
-    await studioAgent.assertFileWasCreatedAndIsNotEmpty('tmp/test-export-dmn.dmn');
+    await studioAgent.waitUntil(
+      async () => fs.existsSync(filename) && fs.readFileSync(filename).subarray(0, 8).equals(pngSignature),
+      { timeout: ASSERT_VISIBLE_TIMEOUT, timeoutMsg: `${filename} is not a PNG image` },
+    );
+    await studioAgent.waitUntil(async () => (await studioAgent.$$('[data-test--dialog]').length) === 0, {
+      timeout: ASSERT_VISIBLE_TIMEOUT,
+      timeoutMsg: 'The export hint dialog did not close after the export',
+    });
 
     await studioAgent.assertNoErrorsPresentAndIdle();
   });

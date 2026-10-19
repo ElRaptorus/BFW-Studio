@@ -421,14 +421,6 @@ export class ModelViewerDocumentModel extends EditorDocumentModel {
     return (await this.viewerAdapter?.getSvg()) ?? '';
   }
 
-  async exportPng(scale?: number): Promise<Blob> {
-    if (!this.viewerAdapter) {
-      return new Blob();
-    }
-    const svgString = await this.viewerAdapter.getSvg();
-    return svgToPngBlob(svgString, scale);
-  }
-
   zoomToViewport(): void {
     this.viewerAdapter?.zoomToViewport();
   }
@@ -511,26 +503,4 @@ function parseModelUri(uri: string): { engineId: string; processModelId: string 
     engineId: match?.[1] ?? '',
     processModelId: match?.[2] ?? '',
   };
-}
-
-function svgToPngBlob(svg: string, scale = 2): Promise<Blob> {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) {
-      resolve(new Blob());
-      return;
-    }
-
-    const image = new Image();
-    image.onload = () => {
-      canvas.width = image.width * scale;
-      canvas.height = image.height * scale;
-      context.scale(scale, scale);
-      context.drawImage(image, 0, 0);
-      canvas.toBlob((blob) => resolve(blob ?? new Blob()), 'image/png');
-    };
-    image.onerror = () => resolve(new Blob());
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  });
 }

@@ -3,6 +3,13 @@ import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { FileOrDirectory } from '#bifrost/contracts/FileSystemTypes';
+import {
+  getImageFormatForFilename,
+  IMAGE_SAVE_DIALOG_FILTERS,
+  renderSvgToRasterImage,
+  runWithExportHint,
+  SUPPORTED_IMAGE_EXTENSIONS_TEXT,
+} from '#modules/bpmn-core/ImageExportFunctions';
 import type { ProjectDmnDecision, ProjectDmnModel } from '#modules/dmn-core';
 import * as path from 'path';
 
@@ -58,79 +65,106 @@ export function initializeDmnCommands(bifrost: Bifrost): void {
     },
   );
 
-  bifrost.commands.register('std.editor.showExportDialog.dmn', async () => {
+  const getFocusedDmnDocumentModel = (): DmnDocumentModel | null => {
     const editorDocument = bifrost.editors.getFocusedEditorDocument();
-    assertNotNull(editorDocument, 'editorDocument');
-
-    const dialogOptions: DialogOptions = {
-      title: 'Export DMN as ...',
-      content: [
-        {
-          type: 'response_link',
-          label: 'SVG',
-          sublabel: 'DRD as vector image',
-          icon: 'ph-light ph-selection icon-export-as-svg',
-          response: 'svg',
-        },
-        {
-          type: 'response_link',
-          label: 'DMN',
-          sublabel: 'Export as copy',
-          icon: 'ph-duotone ph-copy icon-export-as-dmn',
-          response: 'dmn',
-        },
-      ],
-      actions: [],
-    };
-
-    const dialogResult = await bifrost.dialog.open(dialogOptions);
-    if (dialogResult.wasCancelled) {
-      return;
+    if (editorDocument?.documentType !== 'dmn') {
+      return null;
     }
-    assertNotNull(dialogResult.response, 'dialog.response');
+    return bifrost.editors.getEditorDocumentModelIfPresent<DmnDocumentModel>(editorDocument);
+  };
 
-    const format = dialogResult.response;
-    const getDefaultPath = (uri: string, imageFileExtension: string): string => {
-      const isLocalFilename = bifrost.files.isLocalFilename(uri);
-      if (isLocalFilename) {
-        const dmnFilename = bifrost.files.getLocalFilenameForUri(uri);
-        const dmnFileExtension = bifrost.files.getFileExtension(uri);
-        const regex = new RegExp(`${dmnFileExtension}$`, 'gi');
-        const defaultPath =
-          dmnFileExtension === ''
-            ? `${dmnFilename}${imageFileExtension}`
-            : dmnFilename.replace(regex, imageFileExtension);
+  bifrost.commands.register(
+    'std.editor.showExportDialog.dmn',
+    async () => {
+      const editorDocument = bifrost.editors.getFocusedEditorDocument();
+      assertNotNull(editorDocument, 'editorDocument');
 
-        return defaultPath;
+      const dialogOptions: DialogOptions = {
+        title: 'Export DMN as ...',
+        content: [
+          {
+            type: 'response_link',
+            label: 'Image',
+            sublabel: 'DRD as PNG, JPEG, WebP or SVG',
+            icon: 'ph-duotone ph-palette icon-export-as-image',
+            response: 'image',
+          },
+          {
+            type: 'response_link',
+            label: 'DMN',
+            sublabel: 'Export as copy',
+            icon: 'ph-duotone ph-copy icon-export-as-dmn',
+            response: 'dmn',
+          },
+        ],
+        actions: [],
+      };
+
+      const dialogResult = await bifrost.dialog.open(dialogOptions);
+      if (dialogResult.wasCancelled) {
+        return;
+      }
+      assertNotNull(dialogResult.response, 'dialog.response');
+
+      const isImageExport = dialogResult.response === 'image';
+      const getDefaultPath = (uri: string, imageFileExtension: string): string => {
+        const isLocalFilename = bifrost.files.isLocalFilename(uri);
+        if (isLocalFilename) {
+          const dmnFilename = bifrost.files.getLocalFilenameForUri(uri);
+          const dmnFileExtension = bifrost.files.getFileExtension(uri);
+          const regex = new RegExp(`${dmnFileExtension}$`, 'gi');
+          const defaultPath =
+            dmnFileExtension === ''
+              ? `${dmnFilename}${imageFileExtension}`
+              : dmnFilename.replace(regex, imageFileExtension);
+
+          return defaultPath;
+        }
+
+        return `${editorDocument.label}${imageFileExtension}`;
+      };
+
+      const targetFilename = await bifrost.dialog.showSaveFile({
+        title: isImageExport ? 'Export as image' : 'Export as DMN',
+        defaultPath: getDefaultPath(editorDocument.uri, isImageExport ? '.png' : '.dmn'),
+        filters: isImageExport ? IMAGE_SAVE_DIALOG_FILTERS : [{ name: 'DMN', extensions: ['dmn'] }],
+      });
+      if (targetFilename == null || targetFilename.trim() === '') {
+        return;
       }
 
-      return `${editorDocument.label}${imageFileExtension}`;
-    };
+      const format = isImageExport ? getImageFormatForFilename(targetFilename) : 'dmn';
+      if (format == null) {
+        bifrost.notifications.open({
+          type: 'error',
+          content: `Cannot export to '${targetFilename}'. Choose a file name ending in ${SUPPORTED_IMAGE_EXTENSIONS_TEXT}.`,
+          source: 'DMN',
+        });
+        return;
+      }
 
-    const extensionMap: Record<string, { name: string; extensions: string[] }> = {
-      svg: { name: 'SVG', extensions: ['svg'] },
-      dmn: { name: 'DMN', extensions: ['dmn'] },
-    };
-    const extension = extensionMap[format];
-
-    const targetFilename = await bifrost.dialog.showSaveFile({
-      defaultPath: getDefaultPath(editorDocument.uri, `.${format}`),
-      filters: [extension],
-    });
-    if (targetFilename == null || targetFilename.trim() === '') {
-      return;
-    }
-
-    bifrost.commands.executeCommand('std.editor.exportDocumentAs', [editorDocument, format, targetFilename]);
-  });
+      bifrost.commands.executeCommand('std.editor.exportDocumentAs', [editorDocument, format, targetFilename]);
+    },
+    {
+      enabledWhen: (model?: DmnDocumentModel) => (model ?? getFocusedDmnDocumentModel())?.getActiveViewType() === 'drd',
+    },
+  );
 
   bifrost.commands.register(
     'std.editor.exportDocumentAs.dmn',
     async (editorDocument: EditorDocument, format: string, filename: string) => {
       const model = await bifrost.editors.getEditorDocumentModel<DmnDocumentModel>(editorDocument);
 
-      const extensionHandlerMap: Record<string, () => Promise<string>> = {
+      const renderRasterImage = async (rasterFormat: 'png' | 'jpeg' | 'webp'): Promise<Buffer> =>
+        runWithExportHint(bifrost.dialog, async () =>
+          renderSvgToRasterImage(await model.modelerAdapter.getSvg(), rasterFormat),
+        );
+
+      const extensionHandlerMap: Record<string, () => Promise<string | Buffer>> = {
         svg: () => model.modelerAdapter.getSvg(),
+        png: () => renderRasterImage('png'),
+        jpeg: () => renderRasterImage('jpeg'),
+        webp: () => renderRasterImage('webp'),
         dmn: async () => model.currentXml,
       };
 
@@ -249,14 +283,6 @@ export function initializeDmnCommands(bifrost: Bifrost): void {
   bifrost.commands.register('git.merge.acceptAllTheirs.dmn', (model: any) => {
     getMergeResolverApi(model)?.acceptAllTheirs();
   });
-
-  const getFocusedDmnDocumentModel = (): DmnDocumentModel | null => {
-    const editorDocument = bifrost.editors.getFocusedEditorDocument();
-    if (editorDocument?.documentType !== 'dmn') {
-      return null;
-    }
-    return bifrost.editors.getEditorDocumentModelIfPresent<DmnDocumentModel>(editorDocument);
-  };
 
   const isDmnDrdFocusedAndReady = (): boolean => {
     const model = getFocusedDmnDocumentModel();
