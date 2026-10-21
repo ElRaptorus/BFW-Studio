@@ -330,7 +330,7 @@ export class EngineAdapter {
         typeof record.triggererFlowNodeInstanceId === 'string' ? record.triggererFlowNodeInstanceId : null,
       startedAt: typeof record.startedAt === 'string' ? record.startedAt : '',
       finishedAt: typeof record.finishedAt === 'string' ? record.finishedAt : null,
-      startedBy: isRecord(record.startedBy) ? record.startedBy : null,
+      startedBy: typeof record.startedBy === 'string' ? record.startedBy : null,
       startedWithContext: isRecord(record.startedWithContext) ? record.startedWithContext : null,
       finalTokens: Array.isArray(record.finalTokens)
         ? (record.finalTokens as DebuggerProcessInstance['finalTokens'])

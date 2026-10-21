@@ -88,7 +88,7 @@ export interface ProcessInstanceSnapshot {
   triggererFlowNodeInstanceId: string | null;
   startedAt: string;
   finishedAt: string | null;
-  startedBy: Record<string, unknown> | null;
+  startedBy: string | null;
   startedWithContext: Record<string, unknown> | null;
   finalTokens: FinalToken[] | null;
   errorInfo: ErrorInfo | null;

@@ -34,40 +34,15 @@ function PaneFull(props: ProcessInstanceUserPaneProps): React.JSX.Element {
   );
 }
 
-function formatIdentityField(startedBy: Record<string, unknown> | null, field: string): string {
-  const value = startedBy?.[field];
-  if (value == null) {
-    return '';
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  return JSON.stringify(value);
-}
-
 function ProcessInstanceUserPane(props: ProcessInstanceUserPaneProps): React.JSX.Element | null {
   const model = props.editorDocumentModel as EngineBpmnDebuggerEditorDocumentModel;
   if (!model.processInstance) {
     return null;
   }
 
-  const startedBy = model.processInstance.startedBy;
-
   return (
     <PaneBody>
-      <PaneProperty type="text" label="Started by (ID)" disabled={true} value={formatIdentityField(startedBy, 'id')} />
-      <PaneProperty
-        type="text"
-        label="Started by (Roles)"
-        disabled={true}
-        value={formatIdentityField(startedBy, 'roles')}
-      />
-      <PaneProperty
-        type="text"
-        label="Started by (Groups)"
-        disabled={true}
-        value={formatIdentityField(startedBy, 'groups')}
-      />
+      <PaneProperty type="text" label="Started by" disabled={true} value={model.processInstance.startedBy ?? ''} />
     </PaneBody>
   );
 }

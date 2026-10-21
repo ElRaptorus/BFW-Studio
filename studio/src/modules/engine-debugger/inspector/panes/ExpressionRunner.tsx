@@ -68,7 +68,7 @@ function buildFeelContext(
       startedBy: processInstance.startedBy ?? null,
       parentId: processInstance.parentProcessInstanceId ?? null,
     },
-    identity: processInstance.startedBy ?? {},
+    identity: processInstance.startedBy === null ? {} : { id: processInstance.startedBy },
     dataObjects: model.getDataObjectValuesAvailableToFlowNodeInstance(selectedFlowNodeInstance),
     loop: null,
   };

@@ -51,10 +51,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
     instance.startedAt != null ? dayjs(instance.finishedAt ?? new Date()).diff(dayjs(instance.startedAt)) : null;
   const duration = durationMs != null ? getHumanizedDuration(durationMs) : '—';
 
-  const startedBy =
-    instance.startedBy && typeof instance.startedBy === 'object' && 'sub' in instance.startedBy
-      ? String(instance.startedBy.sub)
-      : '—';
+  const startedBy = typeof instance.startedBy === 'string' ? instance.startedBy : '—';
 
   return (
     <PaneBody>
