@@ -5,6 +5,9 @@ import { EventDrivenRefresh, SETTINGS_KEYS } from '#modules/engine-core';
 
 import type { BfwEngineClient } from '@elraptorus/bfw_engine_client';
 import type { EngineInfoResponse, StatsResponse } from '@elraptorus/bfw_engine_sdk';
+import { ServiceUnavailableError } from '@elraptorus/bfw_engine_sdk';
+
+export type StatisticsProblem = { kind: 'unavailable' | 'failed'; message: string };
 
 const CONNECTION_GRACE_PERIOD_MS = 60_000;
 
@@ -23,6 +26,7 @@ export class DashboardDocumentModel extends EditorDocumentModel {
   private healthy: boolean | null = null;
   private loading = true;
   private error: string | null = null;
+  private statisticsProblem: StatisticsProblem | null = null;
   private lastUpdated: Date | null = null;
   private engineIsOnline = true;
   private connectionGracePeriodExpired = false;
@@ -135,6 +139,10 @@ export class DashboardDocumentModel extends EditorDocumentModel {
     return this.error;
   }
 
+  getStatisticsProblem(): StatisticsProblem | null {
+    return this.statisticsProblem;
+  }
+
   getLastUpdated(): Date | null {
     return this.lastUpdated;
   }
@@ -227,7 +235,14 @@ export class DashboardDocumentModel extends EditorDocumentModel {
     this.publishDataRevision();
 
     try {
-      const [info, stats] = await Promise.all([this.client.engine.info(), this.client.engine.stats()]);
+      const [infoResult, statsResult] = await Promise.allSettled([
+        this.client.engine.info(),
+        this.client.engine.stats(),
+      ]);
+
+      if (infoResult.status === 'rejected') {
+        throw infoResult.reason;
+      }
 
       let healthy: boolean;
       try {
@@ -238,8 +253,17 @@ export class DashboardDocumentModel extends EditorDocumentModel {
         healthy = false;
       }
 
-      this.info = info;
-      this.stats = stats;
+      this.info = infoResult.value;
+      if (statsResult.status === 'fulfilled') {
+        this.stats = statsResult.value;
+        this.statisticsProblem = null;
+      } else {
+        this.stats = null;
+        this.statisticsProblem = {
+          kind: statsResult.reason instanceof ServiceUnavailableError ? 'unavailable' : 'failed',
+          message: statsResult.reason instanceof Error ? statsResult.reason.message : 'Unknown error',
+        };
+      }
       this.healthy = healthy;
       this.loading = false;
       this.error = null;

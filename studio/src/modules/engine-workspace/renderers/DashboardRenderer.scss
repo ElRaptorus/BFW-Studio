@@ -16,6 +16,26 @@
   color: var(--theme-validation-error-fg);
 }
 
+.engine-dashboard__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: var(--theme-validation-warning-bg);
+  border: 1px solid var(--theme-validation-warning-border);
+  border-radius: 4px;
+  color: var(--theme-validation-warning-fg);
+}
+
+.engine-dashboard__warning-title {
+  font-weight: 600;
+}
+
+.engine-dashboard__retry {
+  margin-top: 8px;
+}
+
 .engine-dashboard__loading {
   padding: 24px;
   text-align: center;

@@ -51,6 +51,7 @@ export default function DashboardRenderer(props: EditorDocumentRendererProps): R
     healthy: model?.isHealthy() ?? null,
     loading: model?.isLoading() ?? true,
     error: model?.getError() ?? null,
+    statisticsProblem: model?.getStatisticsProblem() ?? null,
     lastUpdated: model?.getLastUpdated() ?? null,
     engineIsOnline: model?.isEngineOnline() ?? true,
     connectionGracePeriodExpired: model?.isConnectionGracePeriodExpired() ?? false,
@@ -131,6 +132,28 @@ export default function DashboardRenderer(props: EditorDocumentRendererProps): R
             <div className="engine-dashboard__error">
               <Icon id="ph ph-warning-circle" />
               <span>{dashboard.error}</span>
+            </div>
+          )}
+
+          {dashboard.statisticsProblem && (
+            <div className="engine-dashboard__warning">
+              <Icon id="ph ph-database" />
+              <div>
+                <div className="engine-dashboard__warning-title">
+                  {dashboard.statisticsProblem.kind === 'unavailable'
+                    ? 'Statistics are temporarily unavailable'
+                    : 'Statistics could not be loaded'}
+                </div>
+                <div>
+                  {dashboard.statisticsProblem.kind === 'unavailable'
+                    ? 'The engine is running, but it cannot read its database right now, so instance, task and timer counts cannot be shown. The dashboard tries again automatically.'
+                    : 'The engine answered the statistics request with an error. The dashboard tries again automatically.'}
+                </div>
+                <div className="engine-dashboard__muted">{dashboard.statisticsProblem.message}</div>
+                <button type="button" className="engine-dashboard__retry" onClick={() => void model?.refresh()}>
+                  Try again
+                </button>
+              </div>
             </div>
           )}
 
