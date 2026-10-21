@@ -2,13 +2,12 @@ import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { WatcherDisposable } from '#bifrost/common/FileHandlingService';
 import type { Project } from '#bifrost/contracts/SolutionTypes';
 import * as chokidar from 'chokidar';
-import type { EventName } from 'chokidar/handler.js';
 import { ipcRenderer } from 'electron';
 import type * as fs from 'fs';
 import { Minimatch } from 'minimatch';
 import * as path from 'path';
 
-import { FileHandlingService } from '../common/FileHandlingService';
+import { FileHandlingService, type FileEventType } from '../common/FileHandlingService';
 import { FilePatternMatcher, computeRelativeUri } from '../common/FilePatternMatcher';
 import type { FileOrDirectory } from '../contracts/FileSystemTypes';
 import {
@@ -214,7 +213,7 @@ export default class FileHandlingServiceElectron extends FileHandlingService {
 
   watchDirectory(
     directoryUri: string,
-    callbackFn: (eventType: EventName, filePath: string, stats?: fs.Stats) => void | Promise<void>,
+    callbackFn: (eventType: FileEventType, filePath: string, stats?: fs.Stats) => void | Promise<void>,
     ignoredPatterns?: string[],
   ): WatcherDisposable {
     const directory = this.getLocalFilenameForUri(directoryUri);
@@ -222,7 +221,9 @@ export default class FileHandlingServiceElectron extends FileHandlingService {
 
     const watcher = chokidar
       .watch(directory, { ignoreInitial: true, ignored } as chokidar.ChokidarOptions)
-      .on('all', (eventType: EventName, filePath: string, stats?: fs.Stats) => callbackFn(eventType, filePath, stats))
+      .on('all', (eventType: FileEventType, filePath: string, stats?: fs.Stats) =>
+        callbackFn(eventType, filePath, stats),
+      )
       .on('error', (error) => console.warn('File watcher error:', error));
 
     const watcherDisposable = {
@@ -234,14 +235,16 @@ export default class FileHandlingServiceElectron extends FileHandlingService {
 
   watchFile(
     fileUri: string,
-    callbackFn: (eventType: EventName, filePath: string, stats?: fs.Stats) => void | Promise<void>,
+    callbackFn: (eventType: FileEventType, filePath: string, stats?: fs.Stats) => void | Promise<void>,
     options?: { depth?: number },
   ): WatcherDisposable {
     const filename = this.getLocalFilenameForUri(fileUri);
 
     const watcher = chokidar
       .watch(filename, { ignoreInitial: true, depth: options?.depth } as chokidar.ChokidarOptions)
-      .on('all', (eventType: EventName, filePath: string, stats?: fs.Stats) => callbackFn(eventType, filePath, stats));
+      .on('all', (eventType: FileEventType, filePath: string, stats?: fs.Stats) =>
+        callbackFn(eventType, filePath, stats),
+      );
 
     const watcherDisposable = {
       dispose: () => watcher.close(),
