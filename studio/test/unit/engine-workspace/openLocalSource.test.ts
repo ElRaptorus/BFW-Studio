@@ -4,7 +4,10 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+import { installInlineBpmnModelScanWorker } from '../support/inlineBpmnModelScanWorker';
 import { createRecordingBifrost, createRecordingConnectionManager } from '../support/recordingBifrost';
+
+installInlineBpmnModelScanWorker();
 
 const fixtureDirectory = path.resolve(__dirname, '../../fixtures/test-solution-deploy');
 const baseUri = pathToFileURL(fixtureDirectory).href;

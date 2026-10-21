@@ -10,7 +10,10 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { installInlineBpmnModelScanWorker } from '../support/inlineBpmnModelScanWorker';
 import { scanDeployFixture } from './support/fixtureEntries';
+
+installInlineBpmnModelScanWorker();
 
 const fixtureDirectory = path.resolve(__dirname, '../../fixtures/test-solution-deploy');
 const baseUri = pathToFileURL(fixtureDirectory).href;

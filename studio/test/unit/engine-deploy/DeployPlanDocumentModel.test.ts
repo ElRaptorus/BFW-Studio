@@ -3,7 +3,10 @@ import { promises as fileSystem } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { installInlineBpmnModelScanWorker } from '../support/inlineBpmnModelScanWorker';
 import { fixtureBaseUri, fixtureDirectory, fixtureUri } from './support/fixtureEntries';
+
+installInlineBpmnModelScanWorker();
 
 type SetupOptions = {
   connected?: boolean;
