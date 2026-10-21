@@ -91,7 +91,7 @@
     "bootstrap": "^5.3.8",
     "bpmn-js": "18.31.0",
     "bpmn-js-differ": "^3.2.0",
-    "bpmnlint": "^11.15.0",
+    "bpmnlint": "^12.0.0",
     "bpmnlint-utils": "^1.1.1",
     "chokidar": "^6.0.0",
     "codemirror-json-schema": "^0.8.1",
