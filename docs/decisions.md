@@ -72,4 +72,40 @@ See [git-cruiser.md](architecture/git-cruiser.md).
 
 See [code-quality.md](architecture/code-quality.md).
 
+## diagram-js as the landscape map canvas
+
+**Context:** Process landscape maps need a canvas with shapes, nesting, resize, connectors, lasso, copy-paste, undo, keyboard moves and image export, styled like the BPMN editor.
+
+**Options:** React Flow (a new package with its own interaction model and styling); a hand-written SVG canvas; plain diagram-js, which bpmn-js already brings.
+
+**Decision:** A plain diagram-js `Diagram` with landscape-specific renderer, rules, layouter, label editing, palette and context pad. `diagram-js` is declared in `package.json`; no new package.
+
+**Rationale:** The interactions and the export path already exist and work like the BPMN editor, and no package is added.
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md).
+
+## Landscape map membership by process id
+
+**Context:** A map has to say which processes it shows. Processes move between files, and the solution scan already knows every process and its relations.
+
+**Options:** Store BPMN file paths on the map; store process ids with the file as a hint; keep no list and derive the map from folders.
+
+**Decision:** A `.bfwmap` stores each process once by `processId`, with `fileHint` (relative to the map) to tell processes with the same id apart. Names and relations are never stored; they come from the scan when the map is drawn.
+
+**Rationale:** The Engine deploys by process id, so the id is the stable key; a moved file only changes a hint, and derived data cannot go stale in the file.
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md).
+
+## Landscape map files as XML through moddle
+
+**Context:** `.bfwmap` started as JSON. BPMN and DMN files in a solution are XML with a namespace, read and written through moddle.
+
+**Options:** Keep JSON; XML read with `DOMParser` and written by hand; XML through `moddle` / `moddle-xml` with a package descriptor.
+
+**Decision:** XML in the namespace `https://bifrostforge.world/schema/landscape`, version 1, with no JSON fallback. Containment is element nesting, labels are attributes, note text is the element body. `moddle` and `moddle-xml`, already present through bpmn-js, are declared in `package.json`; foreign root content is kept in `extensions`.
+
+**Rationale:** All solution files share one format family and one parsing toolkit, the descriptor replaces hand-written element mapping, and the reader reports unknown elements and attributes with positions.
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md).
+
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

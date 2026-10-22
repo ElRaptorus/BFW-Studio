@@ -1,0 +1,200 @@
+import Diagram from 'diagram-js';
+import DirectEditingModule from 'diagram-js-direct-editing';
+import GridModule from 'diagram-js-grid';
+import MinimapModule from 'diagram-js-minimap';
+import type EventBus from 'diagram-js/lib/core/EventBus';
+import AlignElementsModule from 'diagram-js/lib/features/align-elements';
+import AutoResizeModule from 'diagram-js/lib/features/auto-resize';
+import BendpointsModule from 'diagram-js/lib/features/bendpoints';
+import ConnectModule from 'diagram-js/lib/features/connect';
+import ContextPadModule from 'diagram-js/lib/features/context-pad';
+import CopyPasteModule from 'diagram-js/lib/features/copy-paste';
+import CreateModule from 'diagram-js/lib/features/create';
+import DistributeElementsModule from 'diagram-js/lib/features/distribute-elements';
+import EditorActionsModule from 'diagram-js/lib/features/editor-actions';
+import GridSnappingModule from 'diagram-js/lib/features/grid-snapping';
+import HandToolModule from 'diagram-js/lib/features/hand-tool';
+import KeyboardModule from 'diagram-js/lib/features/keyboard';
+import KeyboardMoveSelectionModule from 'diagram-js/lib/features/keyboard-move-selection';
+import LassoToolModule from 'diagram-js/lib/features/lasso-tool';
+import ModelingModule from 'diagram-js/lib/features/modeling';
+import MoveModule from 'diagram-js/lib/features/move';
+import OverlaysModule from 'diagram-js/lib/features/overlays';
+import PaletteModule from 'diagram-js/lib/features/palette';
+import ResizeModule from 'diagram-js/lib/features/resize';
+import RootElementsModule from 'diagram-js/lib/features/root-elements';
+import SelectionModule from 'diagram-js/lib/features/selection';
+import CroppingConnectionDocking from 'diagram-js/lib/layout/CroppingConnectionDocking';
+import MoveCanvasModule from 'diagram-js/lib/navigation/movecanvas';
+import ZoomScrollModule from 'diagram-js/lib/navigation/zoomscroll';
+
+import type { LandscapeMap, LandscapeProcessElement } from '../LandscapeMapFile';
+import LandscapeContextPadProvider from './LandscapeContextPadProvider';
+import LandscapeGroupMembership from './LandscapeGroupMembership';
+import LandscapeLabelEditing from './LandscapeLabelEditing';
+import LandscapeLayouter from './LandscapeLayouter';
+import LandscapeOrdering from './LandscapeOrdering';
+import LandscapePaletteProvider from './LandscapePaletteProvider';
+import type { LandscapeRendererConfig } from './LandscapeRenderer';
+import LandscapeRenderer from './LandscapeRenderer';
+import LandscapeRules from './LandscapeRules';
+import { canvasToMap, mapToCanvasDescriptors, shapeAttributesOf } from './landscapeCanvasMapping';
+
+/** Copies keep the file element, so a pasted shape is drawn and exported like its original, under a new id. */
+class LandscapeCopyPaste {
+  static $inject = ['eventBus'];
+
+  constructor(eventBus: EventBus) {
+    eventBus.on('copyPaste.copyElement', ({ descriptor, element }: any) => {
+      descriptor.type = element.type;
+      descriptor.businessObject = structuredClone(element.businessObject);
+    });
+    eventBus.on('copyPaste.pasteElement', ({ descriptor }: any) => {
+      descriptor.businessObject = { ...structuredClone(descriptor.businessObject), id: crypto.randomUUID() };
+    });
+  }
+}
+
+const LANDSCAPE_MODULE = {
+  __init__: [
+    'landscapeRenderer',
+    'landscapeRules',
+    'landscapeLabelEditing',
+    'landscapeCopyPaste',
+    'orderingProvider',
+    'landscapeGroupMembership',
+    'paletteProvider',
+    'contextPadProvider',
+  ],
+  landscapeRenderer: ['type', LandscapeRenderer],
+  landscapeRules: ['type', LandscapeRules],
+  landscapeLabelEditing: ['type', LandscapeLabelEditing],
+  landscapeCopyPaste: ['type', LandscapeCopyPaste],
+  orderingProvider: ['type', LandscapeOrdering],
+  landscapeGroupMembership: ['type', LandscapeGroupMembership],
+  paletteProvider: ['type', LandscapePaletteProvider],
+  contextPadProvider: ['type', LandscapeContextPadProvider],
+  connectionDocking: ['type', CroppingConnectionDocking],
+  layouter: ['type', LandscapeLayouter],
+};
+
+const isContainer = (element: any): boolean => element.type === 'group' || element.type === 'band';
+
+/** The diagram-js canvas of one landscape map. It draws into a detached container that the renderer attaches. */
+export default class LandscapeModeler {
+  readonly container: HTMLDivElement;
+  private readonly diagram: Diagram;
+
+  constructor(config: LandscapeRendererConfig) {
+    this.container = document.createElement('div');
+    this.container.className = 'landscape-map__canvas';
+    this.diagram = new Diagram({
+      canvas: { container: this.container },
+      keyboard: { bind: false },
+      landscape: config,
+      modules: [
+        SelectionModule,
+        MoveModule,
+        ResizeModule,
+        AutoResizeModule,
+        ModelingModule,
+        CreateModule,
+        ConnectModule,
+        BendpointsModule,
+        LassoToolModule,
+        HandToolModule,
+        AlignElementsModule,
+        DistributeElementsModule,
+        CopyPasteModule,
+        KeyboardModule,
+        KeyboardMoveSelectionModule,
+        EditorActionsModule,
+        GridSnappingModule,
+        RootElementsModule,
+        OverlaysModule,
+        ContextPadModule,
+        PaletteModule,
+        ZoomScrollModule,
+        MoveCanvasModule,
+        GridModule,
+        MinimapModule,
+        DirectEditingModule,
+        LANDSCAPE_MODULE,
+      ],
+    });
+  }
+
+  get<T = any>(serviceName: string): T {
+    return this.diagram.get<T>(serviceName);
+  }
+
+  /** Replaces the canvas content with `map`; the import is not undoable. */
+  importMap(map: LandscapeMap): void {
+    this.diagram.clear();
+    const canvas = this.get('canvas');
+    const elementFactory = this.get('elementFactory');
+    const root = canvas.getRootElement();
+    const shapesById = new Map<string, any>();
+    const { shapes, connections } = mapToCanvasDescriptors(map);
+    for (const element of shapes) {
+      const shape = elementFactory.createShape(shapeAttributesOf(structuredClone(element)));
+      canvas.addShape(shape, element.parentId == null ? root : shapesById.get(element.parentId));
+      shapesById.set(element.id, shape);
+    }
+    for (const connector of connections) {
+      const connection = elementFactory.createConnection({
+        id: connector.id,
+        source: shapesById.get(connector.sourceId),
+        target: shapesById.get(connector.targetId),
+        waypoints: connector.waypoints.map((point) => ({ ...point })),
+        businessObject: structuredClone(connector),
+      });
+      if (connection.waypoints.length < 2) {
+        connection.waypoints = this.get('layouter').layoutConnection(connection);
+      }
+      canvas.addConnection(connection, root);
+    }
+    this.get('commandStack').clear();
+  }
+
+  exportMap(previousMap: LandscapeMap): LandscapeMap {
+    return canvasToMap(this.get('canvas').getRootElement(), previousMap);
+  }
+
+  /** Adds a process shape centred on the point, inside the smallest group or band that contains the point. */
+  addProcessShape(element: LandscapeProcessElement, center: { x: number; y: number }): any {
+    const containers = this.get('elementRegistry')
+      .filter(
+        (candidate: any) =>
+          isContainer(candidate) &&
+          center.x >= candidate.x &&
+          center.x <= candidate.x + candidate.width &&
+          center.y >= candidate.y &&
+          center.y <= candidate.y + candidate.height,
+      )
+      .sort((first: any, second: any) => first.width * first.height - second.width * second.height);
+    const shape = this.get('elementFactory').createShape(shapeAttributesOf(element));
+    return this.get('modeling').createShape(shape, center, containers[0] ?? this.get('canvas').getRootElement());
+  }
+
+  findProcessShape(processId: string): any {
+    return this.get('elementRegistry').find(
+      (element: any) => element.type === 'process' && element.businessObject.processId === processId,
+    );
+  }
+
+  /** Converts a mouse position on screen into diagram coordinates. */
+  toCanvasPoint(clientX: number, clientY: number): { x: number; y: number } {
+    const viewbox = this.get('canvas').viewbox();
+    const bounds = this.container.getBoundingClientRect();
+    return {
+      x: Math.round(viewbox.x + (clientX - bounds.left) / viewbox.scale),
+      y: Math.round(viewbox.y + (clientY - bounds.top) / viewbox.scale),
+    };
+  }
+
+  destroy(): void {
+    this.get('contextPad').close();
+    this.diagram.destroy();
+  }
+}

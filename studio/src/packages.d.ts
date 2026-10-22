@@ -44,6 +44,25 @@ declare module '@bpmn-io/feel-editor' {
 
 declare module 'bpmn-moddle';
 
+declare module 'moddle-xml' {
+  import type { Moddle, ModdleElement } from 'moddle';
+
+  export type ParseWarning = { message: string };
+  export type ParseResult = { rootElement: ModdleElement; warnings: ParseWarning[] };
+  /** Rejects with `warnings` attached when no root element could be read. */
+  export type ParseError = Error & { warnings?: ParseWarning[] };
+
+  export class Reader {
+    constructor(options: { model: Moddle; lax?: boolean });
+    fromXML(xml: string, rootHandler: string): Promise<ParseResult>;
+  }
+
+  export class Writer {
+    constructor(options?: { format?: boolean; preamble?: boolean });
+    toXML(element: ModdleElement): string;
+  }
+}
+
 declare module 'bpmnlint-utils' {
   export function is(node: unknown, type: string): boolean;
   export function isAny(node: unknown, types: readonly string[]): boolean;

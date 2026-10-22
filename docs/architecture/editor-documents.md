@@ -96,6 +96,7 @@ Document types that manage state (undo/redo, event subscriptions, data manipulat
 | **bpmn-editor** | `bpmn` | `/\.bpmn$/` | yes | yes |
 | **bpmn-editor** | `bpmn.script`, `bpmn.text`, `bpmn.data-output-association.transformation`, ... | `/^fragment\+bpmn\.…/` | no | no |
 | **bpmn-diff** | `bpmn.diff` | `/^fragment\+bpmn.diff\:/` | yes | no |
+| **bpmn-landscape** | `bpmn-landscape-map` (page `discover/landscapes`) | `/\.bfwmap$/` | yes | no |
 | **engine-workspace** | `engine-dashboard`, `engine-process-explorer`, etc. | `/^engine:\/\//`, `/^engine-task-inbox:\/\//` | yes | no |
 | **engine-model-viewer** | `engine-model-viewer` | `/^engine-model:\/\//` | yes | yes |
 | **engine-decision-viewer** | `engine-decision-viewer` | `/^engine-decision:\/\//` | yes | yes |
@@ -110,7 +111,7 @@ Documents are identified by URIs. The scheme determines which document type hand
 
 | Scheme | Pattern | Used by |
 |--------|---------|---------|
-| file path | `/path/to/file.[ext]` | bpmn-editor (matched by file extension; `dmn-editor` also matches by extension) |
+| file path | `/path/to/file.[ext]` | bpmn-editor (matched by file extension; `dmn-editor` and `bpmn-landscape` also match by extension) |
 | `about:` | `about:settings`, `about:start` | std/settings, std/startpage, std/aboutpage |
 | `help://` | `help://home` | std/help |
 | `engine://` | `engine://dashboard/{engineId}` | engine-workspace |

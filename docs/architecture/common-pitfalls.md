@@ -254,6 +254,16 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## Editor keybindings swallow keys in contenteditable text boxes
+
+**Mistake**: Binding Backspace, the arrow keys or Cmd/Ctrl+C/V on `.kbm-editor[…]` and guarding the command with `enabledWhen` while an in-canvas text box (diagram-js direct editing) is open.
+
+**Why**: `KeybindingsMediator` calls `preventDefault` before the command runs, enabled or not. `KeybindingsManager` spares only `INPUT`, `TEXTAREA` and `SELECT` targets, not a contenteditable `div`.
+
+**Correct approach**: Stop `keydown` propagation on the text box element, as `bpmn-landscape/modeler/LandscapeLabelEditing.ts` does with `directEditing._textbox.content`.
+
+---
+
 ## BPMN properties: spec-compliant moddle, not custom properties
 
 **Mistake**: Storing loop / assignee / service-task config as `camunda:Property` strings (`engine.*`).

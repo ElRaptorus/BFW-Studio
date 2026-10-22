@@ -14,6 +14,7 @@ Tests run via npm scripts defined in `studio/package.json`:
 | `test:integration` | Integration | Runs all integration tests (alias for `test:integration:all`) |
 | `test:integration:all` | Integration | Full integration suite across all test directories |
 | `test:integration:bpmn-editor` | Integration | BPMN editor tests only (`test/integration/bpmn-editor/`) |
+| `test:integration:bpmn-landscape` | Integration | Landscapes page and map editor (`test/integration/bpmn-landscape/`) |
 | `test:integration:dmn-editor` | Integration | DMN editor tests only (`test/integration/dmn-editor/`) |
 | `test:integration:core` | Integration | Studio core tests (`test/integration/studio-core/`) |
 | `test:integration:git-cruiser` | Integration | Git integration tests (`test/integration/git-cruiser/`) |
@@ -65,6 +66,9 @@ studio/test/
     │   ├── bpmn-elements.test.ts
     │   ├── bpmn-drilldown.test.ts
     │   └── form-builder.test.ts  # Form Builder fragment editor tests
+    ├── bpmn-landscape/         # Landscapes page, map editing, unreadable maps
+    │   ├── landscape-page.test.ts
+    │   └── landscape-editing.test.ts  # fresh temporary copy of test-solution-deploy per test
     ├── dmn-editor/             # DMN editor tests
     │   ├── dmn-smoke.test.ts
     │   └── dmn-elements.test.ts
@@ -381,7 +385,7 @@ Hide/show of the pane areas uses layout toggle **buttons** in the header (`build
 
 - **Property Panel**: `[data-test--menubar--button-for-command="std.workbench.togglePropertyPanel"]` (id `header-layout-toggle-right`). Prefer `clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel')`. The button stays in the header after the area hides. Assert the area with `.app-layout__panes-right`.
 - **Sidebar**: `[data-test--menubar--button-for-command="std.workbench.toggleSidebar"]` (id `header-layout-toggle-left`). Assert the area with `.app-layout__panes-left`. The bottom area uses `std.workbench.toggleInspectorPanel`.
-- Left panes are reached through the page bar and the left tab strip: `studioAgent.navigation.showLeftPane('design/workspace/explorer')` and `assertLeftPaneIsActive(...)`. `navigation` is `StudioAgent/WorkbenchNavigation.ts` (`activateCategory`, `activatePage`, `assertActivePage`, `assertActiveCategory` (a category reopens its last page, so use this when the page does not matter), `showLeftPane`, `assertLeftPaneIsActive`, `assertLeftPaneIsNotActive`). It maps explorer and search to `design/workspace` (tab strip), git to `design/source`, engines to `debug/engines` and plugins to `control/plugins`. The active tab carries `data-test--active`.
+- Left panes are reached through the page bar and the left tab strip: `studioAgent.navigation.showLeftPane('design/workspace/explorer')` and `assertLeftPaneIsActive(...)`. `navigation` is `StudioAgent/WorkbenchNavigation.ts` (`activateCategory`, `activatePage`, `assertActivePage`, `assertActiveCategory` (a category reopens its last page, so use this when the page does not matter), `showLeftPane`, `assertLeftPaneIsActive`, `assertLeftPaneIsNotActive`). It maps explorer and search to `design/workspace` (tab strip), git to `design/source`, landscapes to `discover/landscapes`, engines to `debug/engines` and plugins to `control/plugins`. The active tab carries `data-test--active`.
 - Category shortcuts (`alt-1…6` on Windows and Linux, `cmd-alt-1…6` on macOS) are testable through `executeCommand('std.workbench.goTo<Category>')`. The binding table itself is covered by the unit test `test/unit/std/categoryKeyBindings.test.ts`.
 - Reset both areas with `executeCommand('std.workbench.showPanels')` at the start of a test when the shared agent may have left a pane hidden.
 - Ctrl/Cmd+B is still `std.workbench.togglePanels` (both sides). View → Appearance remains the menu path.
@@ -448,21 +452,23 @@ Architecture constraints that tests also hit live in [`architecture/common-pitfa
 - **`client.execute` return shape.** A renderer execute callback must not return a top-level `error` property — WebDriverIO treats that as a protocol failure. Rename the field.
 - **Strict `$()` in WebDriverIO 10.** `$()` is strict by default and throws `StrictSelectorError` when the selector matches more than one element. `startWdioSession` does not forward `strictSelectors`, so the helpers in `TestDriver` / `StudioAgent*` pass `{ strict: false }` per call to keep first-match semantics. Use `$$()` when a test needs all matches.
 - **Named Escape.** `sendKeyboardInput(['Escape'])` or `['escape']` both send the Escape key. A lowercase `'escape'` used to be typed as the letters e-s-c-a-p-e; do not invent other spellings.
+- **Letter shortcuts follow the host keyboard layout.** On a QWERTZ machine `sendKeyboardInput(['cmd-z'])` arrives as `cmd-y` (redo), so undo silently does nothing. Run undo and redo through `std.editor.undoInFocusedEditorDocument` / `std.editor.redoInFocusedEditorDocument`. Shortcuts whose letter is in the same place on both layouts (Cmd/Ctrl+S, C, V) are safe.
 
 ## Drag and drop
 
-WebDriver pointer actions do not start native drags in Chromium, so real drag behaviour cannot be tested through the StudioAgent. `StudioAgent.dragAndDrop` only dispatches `dragstart` / `dragover` / `drop` / `dragend` inside the page; it checks that the handlers move tabs and reorder form-builder items, not that the browser accepts the drag (drop effect, Ctrl/Cmd copy, OS files, drag image). Check these by hand after changing `components/DragAndDrop.ts`:
+WebDriver pointer actions do not start native drags in Chromium, so real drag behaviour cannot be tested through the StudioAgent. Tests call the command a drop handler runs instead (for example `bpmn.landscape.addProcessToMap`). Check these by hand after changing `components/DragAndDrop.ts` or a drop target:
 
 1. Reorder editor tabs, within a group and across editor groups.
 2. Move an Explorer file onto a folder with and without Ctrl/Cmd (move versus copy), and as a multi-selection; a folder must refuse a drop into itself.
 3. Drop an OS file on the Explorer, its empty state and the editor area.
 4. Reorder form-builder fields and actions.
+5. Drag a process from the Landscapes Processes pane onto a map; a second drag of the same process selects the existing shape.
 
 ## Adding New Tests
 
 When adding new functionality:
 
-1. Place tests in the appropriate feature directory (`bpmn-editor/`, `dmn-editor/`, `git-cruiser/`, `studio-core/`, `plugins/`)
+1. Place tests in the appropriate feature directory (`bpmn-editor/`, `bpmn-landscape/`, `dmn-editor/`, `git-cruiser/`, `studio-core/`, `plugins/`)
 2. Add `data-test--` attributes to new UI elements that need to be tested
 3. If new fixtures are needed, place them in `studio/test/fixtures/`
 4. For `.bfwsln`-based tests, generate the file in `beforeEach` and clean up in `afterEach`
@@ -481,6 +487,7 @@ When adding new functionality:
 | TestDriver (WebDriverIO) | `studio/test/Driver/TestDriver.ts` |
 | Input simulation | `studio/test/StudioAgent/InputSimulator.ts` |
 | BPMN editor tests | `studio/test/integration/bpmn-editor/` |
+| Landscape map tests | `studio/test/integration/bpmn-landscape/` |
 | DMN editor tests | `studio/test/integration/dmn-editor/` |
 | Git cruiser tests | `studio/test/integration/git-cruiser/` |
 | Plugin host tests | `studio/test/integration/plugins/` |

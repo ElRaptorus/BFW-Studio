@@ -25,31 +25,31 @@ todos:
     status: completed
   - id: m2-module-skeleton
     content: "M2 Draw, save, reopen: module bpmn-landscape with page, document type, included files, icons, help text"
-    status: pending
+    status: completed
   - id: m2-document-model
     content: "M2: LandscapeMapDocumentModel with dirty tracking, undo, redo, selection revision"
-    status: pending
+    status: completed
   - id: m2-modeler
     content: "M2: diagram-js modeler with renderer (process, group, placeholder, note), rules, importer, exporter, layouter, palette"
-    status: pending
+    status: completed
   - id: m2-renderer-component
     content: "M2: React renderer with theme tokens, viewbox in metadata, read-only error state for unreadable files"
-    status: pending
+    status: completed
   - id: m2-processes-pane
     content: "M2: Processes pane grouped by file with filter, on-map marker, drag onto canvas"
-    status: pending
+    status: completed
   - id: m2-new-map-keybindings
     content: "M2: New Map command and editor keybindings"
-    status: pending
+    status: completed
   - id: m2-docs
     content: "M2: workbench categories, modules, editor documents, bpmn-landscape.md, decisions"
-    status: pending
+    status: completed
   - id: m2-integration-suite
     content: "M2: landscape integration suite with npm script and testing rule entry (create, drag, save, reopen)"
-    status: pending
+    status: completed
   - id: m2-gate-review
     content: "M2: Studio gate, ask before running the landscape suite, stop for review"
-    status: pending
+    status: completed
   - id: m3-relation-layer
     content: "M3 Relations and properties: derived relation connections refreshed on solution change"
     status: pending
@@ -159,29 +159,25 @@ A new module `bpmn-landscape` (bpmn family) owns everything except the solution 
 
 **Relations.** `buildProcessRelations(entries)` returns call relations (call activity `calledElement` equals a process id), message relations (process A throws a name that process B catches; direction A → B) and signal relations (thrower → each catcher), each with the element ids and names involved. A message relation means "can send"; correlation is not known at design time.
 
-**File format** (`.bfwmap`, JSON, two-space indent, keys in fixed order, trailing newline, top-level unknown keys preserved):
+**File format** (`.bfwmap`, XML in the namespace `https://bifrostforge.world/schema/landscape`, read and written through `moddle` / `moddle-xml`; nesting is containment, labels are attributes, note text is the body, foreign root content preserved; full reference in `docs/architecture/bpmn-landscape.md` §Map File Format):
 
-```json
-{
-  "format": "bfw-landscape-map",
-  "version": 1,
-  "name": "Order to Cash",
-  "levels": [{ "id": "…", "name": "Domain" }, { "id": "…", "name": "Process group" }],
-  "relationLayers": { "callActivity": true, "message": true, "signal": true },
-  "elements": [
-    { "id": "…", "type": "band", "parentId": null, "label": "Core processes", "x": 0, "y": 0, "width": 1200, "height": 300 },
-    { "id": "…", "type": "group", "parentId": "…", "label": "Sales", "collapsed": false, "x": 20, "y": 40, "width": 400, "height": 200 },
-    { "id": "…", "type": "process", "parentId": "…", "processId": "order-process", "fileHint": "processes/order.bpmn", "shape": "box", "x": 40, "y": 80, "width": 160, "height": 60 },
-    { "id": "…", "type": "placeholder", "parentId": null, "label": "Returns (not modelled)" },
-    { "id": "…", "type": "mapLink", "parentId": null, "label": "Finance", "mapPath": "finance.bfwmap" },
-    { "id": "…", "type": "note", "parentId": null, "text": "…" }
-  ],
-  "connectors": [{ "id": "…", "sourceId": "…", "targetId": "…", "label": "Invoice", "waypoints": [] }],
-  "hiddenRelations": ["message:order-process:billing-process:InvoiceRequested"]
-}
+```xml
+<landscape:map xmlns:landscape="https://bifrostforge.world/schema/landscape" version="1" name="Order to Cash">
+  <landscape:level id="…" name="Domain" />
+  <landscape:band id="…" x="0" y="0" width="1200" height="300" label="Core processes">
+    <landscape:group id="…" x="20" y="40" width="400" height="200" label="Sales">
+      <landscape:process id="…" x="40" y="80" width="160" height="60" processId="order-process" fileHint="processes/order.bpmn" />
+    </landscape:group>
+  </landscape:band>
+  <landscape:placeholder id="…" x="0" y="400" width="140" height="60" label="Returns (not modelled)" />
+  <landscape:mapLink id="…" x="200" y="400" width="140" height="60" label="Finance" mapPath="finance.bfwmap" />
+  <landscape:note id="…" x="400" y="400" width="160" height="80">…</landscape:note>
+  <landscape:connector id="…" sourceId="…" targetId="…" label="Invoice" />
+  <landscape:hiddenRelation key="message:order-process:billing-process:InvoiceRequested" />
+</landscape:map>
 ```
 
-Every element may carry `style` (`fill`, `stroke`). Paths are relative to the map file. A process id appears at most once per map. A group's level is its nesting depth, named by `levels[depth]`; levels are edited per map.
+Every element may carry `fill` and `stroke`. Paths are relative to the map file. A process id appears at most once per map. A group's level is its nesting depth, named by `levels[depth]`; levels are edited per map.
 
 **Editor.** `LandscapeMapDocumentModel` holds the parsed file and a diagram-js instance built from: core, selection, move, resize, auto-resize, modeling, create, connect, bendpoints, lasso, align and distribute, copy-paste, keyboard, keyboard-move-selection, grid-snapping, root-elements, overlays, context pad, palette, zoom and move canvas, `diagram-js-minimap`, `diagram-js-grid`. Custom parts: `LandscapeRenderer` (box, chevron, group, band, placeholder, map link, note, greyed and disabled state), `LandscapeRules` (a process at most once; bands only at top level; connectors only between map elements), importer and exporter between file and canvas, and a layouter on `ManhattanLayout`. Every command-stack change serialises the file into `data.current`; undo and redo delegate to the command stack. Default colours use `--color-bpmn-defaultFillColor` / `StrokeColor`, so the existing export colour replacement applies and no theme file changes.
 

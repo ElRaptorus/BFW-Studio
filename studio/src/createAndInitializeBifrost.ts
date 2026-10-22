@@ -26,6 +26,7 @@ export async function createAndInitializeBifrost(
     await bifrost.modules.requirePackagedModule('bpmn-token-simulator');
     await bifrost.modules.requirePackagedModule('bpmn-linter');
     await bifrost.modules.requirePackagedModule('bpmn-diff');
+    await bifrost.modules.requirePackagedModule('bpmn-landscape');
 
     await bifrost.modules.requirePackagedModule('dmn-core');
     await bifrost.modules.requirePackagedModule('dmn-editor');

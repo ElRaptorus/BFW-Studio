@@ -28,18 +28,19 @@ The load order is explicit and defined in `studio/src/createAndInitializeBifrost
  5. bpmn-token-simulator
  6. bpmn-linter
  7. bpmn-diff
- 8. dmn-core
- 9. dmn-editor
-10. dmn-diff
-11. dmn-decision-simulator (DRD module registered via dmn.modeler.registerModule)
-12. git-cruiser
-13. engine-core            (registers EngineConnectionManager shared resource)
-14. engine-workspace       (sidebar, catalogs, menubar/run controls)
-15. engine-deploy          (Deploy category: plan page and explorer)
-16. engine-model-viewer    (read-only deployed BPMN viewer)
-17. engine-decision-viewer (read-only deployed DMN viewer)
-18. engine-debugger        (live PI debugger)
-19. plugins
+ 8. bpmn-landscape         (Discover category: Landscapes page, .bfwmap editor)
+ 9. dmn-core
+10. dmn-editor
+11. dmn-diff
+12. dmn-decision-simulator (DRD module registered via dmn.modeler.registerModule)
+13. git-cruiser
+14. engine-core            (registers EngineConnectionManager shared resource)
+15. engine-workspace       (sidebar, catalogs, menubar/run controls)
+16. engine-deploy          (Deploy category: plan page and explorer)
+17. engine-model-viewer    (read-only deployed BPMN viewer)
+18. engine-decision-viewer (read-only deployed DMN viewer)
+19. engine-debugger        (live PI debugger)
+20. plugins
 ```
 
 This order respects the dependency graph: `std` first (it bundles all foundational UI — settings, help, about page, start page), `themes` second (registers extra themes after `std` has registered the defaults), then BPMN infrastructure (`bpmn-core` before `bpmn-editor`), then DMN infrastructure (`dmn-core` before `dmn-editor`), then `git-cruiser` (so it can detect registered diff commands), then engine modules (`engine-core` first as foundation, then workspace/viewers/debugger), then plugin management (`plugins`) last.
@@ -100,6 +101,15 @@ Diff view for comparing two BPMN process models side by side.
 
 - **Entry:** `studio/src/modules/bpmn-diff/index.ts`
 - **Dependencies (commands):** `bpmn-editor` (via `bpmn.diagram.resetRelevantIds`)
+
+#### bpmn-landscape
+
+Process landscape maps: the `.bfwmap` document type on the page Discover › Landscapes, a diagram-js modeler, the Processes pane and the `bpmn.landscape.*` commands. Details: [bpmn-landscape.md](bpmn-landscape.md).
+
+- **Entry:** `studio/src/modules/bpmn-landscape/index.tsx`
+- **Dependencies (imports):** `bpmn-core` (`scanSolutionBpmnModels`)
+- **Document types registered:** `bpmn-landscape-map` (`.bfwmap` files)
+- **Depended on by:** None
 
 ### DMN Editing
 
@@ -275,6 +285,7 @@ bpmn-linter ← bpmn-core (import),                       |
 bpmn-token-simulator ← bpmn-core (import)               |
                      - std, bpmn-editor (cmd)           │
 bpmn-diff ← bpmn-editor (cmd)                           │
+bpmn-landscape ← bpmn-core (scanner)                    │
                                                         │
 dmn-core ───────────────────────────────────────────────┤ (no module deps)
 dmn-editor ← dmn-core, bpmn-core (import)               │

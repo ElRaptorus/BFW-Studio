@@ -25,6 +25,7 @@ When asking, name the script and the suites it covers, and say roughly how long 
 | `npm run test:integration` | All integration suites (alias of `test:integration:all`) |
 | `npm run test:integration:core` | `test/integration/studio-core/` |
 | `npm run test:integration:bpmn-editor` | `test/integration/bpmn-editor/` |
+| `npm run test:integration:bpmn-landscape` | `test/integration/bpmn-landscape/` |
 | `npm run test:integration:dmn-editor` | `test/integration/dmn-editor/` |
 | `npm run test:integration:git-cruiser` | `test/integration/git-cruiser/` |
 | `npm run test:integration:deploy` | `test/integration/deploy/` |
