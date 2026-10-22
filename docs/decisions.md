@@ -108,4 +108,16 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
+## Derived landscape relations as attached connections reconciled outside the command stack
+
+**Context:** A landscape map draws the call, message and signal relations between its processes. They come from the solution scan, change with the catalog and the placed processes, and are never saved. They must follow a dragged shape and be selectable for Hide.
+
+**Options:** A separate SVG layer redrawn from the shape positions; diagram-js connections created through commands; diagram-js connections of type `relation` added and removed with `canvas.addConnection` / `removeConnection`, outside the command stack.
+
+**Decision:** Connections of type `relation`, attached to their shapes and reconciled by id after every import, command, undo, redo and catalog refresh. Rules keep them from being moved alone, copied, reconnected or deleted; the exporter skips them.
+
+**Rationale:** Attached connections follow a drag, get selection, hover and the context pad for free, and keep undo free of derived state. Reconciling by id keeps the object a command may still hold, such as a line removed with its process and restored by undo.
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md).
+
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

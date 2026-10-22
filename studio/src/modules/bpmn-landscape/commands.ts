@@ -97,6 +97,12 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     enabledWhen: () => getFocusedMapForKeys(bifrost)?.hasClipboardContent() === true,
   });
 
+  bifrost.commands.register('bpmn.landscape.toggleFocusMode', () => getFocusedMapForKeys(bifrost)?.toggleFocusMode(), {
+    visibleInSearch: true,
+    description: ['Landscapes: Toggle Focus Mode', 'Dim everything that is not related to the selection'],
+    enabledWhen: () => getFocusedMapForKeys(bifrost)?.getMapProperties() != null,
+  });
+
   for (const direction of DIRECTIONS) {
     const name = `${direction[0].toUpperCase()}${direction.slice(1)}`;
     for (const accelerated of [false, true]) {

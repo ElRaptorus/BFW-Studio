@@ -52,22 +52,22 @@ todos:
     status: completed
   - id: m3-relation-layer
     content: "M3 Relations and properties: derived relation connections refreshed on solution change"
-    status: pending
+    status: completed
   - id: m3-relation-controls
     content: "M3: relation type toggles, hidden single relations, manual connectors"
-    status: pending
+    status: completed
   - id: m3-properties-pane
     content: "M3: properties pane for map and element, chevron shape, decision badge and list"
-    status: pending
+    status: completed
   - id: m3-designer-focus
     content: "M3: open process in the Designer, focus mode"
-    status: pending
+    status: completed
   - id: m3-tests-docs
     content: "M3: unit tests, docs, integration tests for relations"
-    status: pending
+    status: completed
   - id: m3-gate-review
     content: "M3: Studio gate, ask before running the landscape suite, stop for review"
-    status: pending
+    status: completed
   - id: m4-maps-pane
     content: "M4 Solution integration: Maps pane and on-N-maps badge in the Processes pane"
     status: pending
@@ -280,7 +280,7 @@ Docs grow with each milestone instead of in one batch at the end, so they always
 
 23. Maps pane (list, open, new, missing-process badge); "on N maps" badge in the Processes pane.
 24. Missing and ambiguous processes: greyed-out drawing, notification with "Review", Replace, Drop and Keep.
-25. Map-link nodes; double-click opens the target; a missing target is greyed out.
+25. Map-link nodes, created by dragging a map from the Maps pane onto the canvas; double-click opens the target (the label is edited in the properties pane); a missing target is greyed out.
 26. Explorer directory menu entry "New Landscape Map…".
 27. Image export as PNG, JPG, WebP and SVG.
 28. Unit tests (missing detection, replace candidates, SVG serialisation), `bpmn-landscape.md`, integration tests (missing-process flow, export).

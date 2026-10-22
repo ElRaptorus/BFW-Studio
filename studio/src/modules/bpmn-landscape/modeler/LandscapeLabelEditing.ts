@@ -1,45 +1,29 @@
 import type Canvas from 'diagram-js/lib/core/Canvas';
 import type EventBus from 'diagram-js/lib/core/EventBus';
 
-import type { LandscapeElement } from '../LandscapeMapFile';
+import { connectorLabelPoint } from './LandscapeRenderer';
+import { UPDATE_ELEMENT_COMMAND } from './LandscapeUpdates';
 
-const UPDATE_LABEL_COMMAND = 'landscape.updateLabel';
 const CONTAINER_TITLE_HEIGHT = 30;
+const CONNECTOR_LABEL_BOX = { width: 140, height: 40 };
 
-function textOf(element: LandscapeElement): string | null {
+/** The edited property of a canvas element; a process takes its label from the properties pane. */
+function textPropertyOf(element: any): 'label' | 'text' | null {
   switch (element.type) {
     case 'note':
-      return element.text;
-    case 'process':
-      return null;
+      return 'text';
+    case 'group':
+    case 'band':
+    case 'placeholder':
+    case 'mapLink':
+    case 'connector':
+      return 'label';
     default:
-      return element.label;
+      return null;
   }
 }
 
-function setTextOf(element: LandscapeElement, text: string): void {
-  if (element.type === 'note') {
-    element.text = text;
-  } else if (element.type !== 'process') {
-    element.label = text;
-  }
-}
-
-/** Makes label edits undoable; returning the shape lets the command stack redraw it. */
-class UpdateLabelHandler {
-  execute(context: any): any[] {
-    context.oldText = textOf(context.element.businessObject);
-    setTextOf(context.element.businessObject, context.newText);
-    return [context.element];
-  }
-
-  revert(context: any): any[] {
-    setTextOf(context.element.businessObject, context.oldText);
-    return [context.element];
-  }
-}
-
-/** Double-click edits the label of a group, band, placeholder or map link and the text of a note. */
+/** Double-click edits the label of a group, band, placeholder, map link or connector and the text of a note. */
 export default class LandscapeLabelEditing {
   static $inject = ['eventBus', 'canvas', 'directEditing', 'commandStack'];
 
@@ -50,7 +34,6 @@ export default class LandscapeLabelEditing {
     this.canvas = canvas;
     this.commandStack = commandStack;
     directEditing.registerProvider(this);
-    commandStack.registerHandler(UPDATE_LABEL_COMMAND, UpdateLabelHandler);
 
     // Studio keybindings call preventDefault even for disabled commands and only spare INPUT and TEXTAREA,
     // so Backspace, arrows and Cmd/Ctrl+C/V would never reach the contenteditable text box.
@@ -58,7 +41,7 @@ export default class LandscapeLabelEditing {
 
     // Double-click on a process is reserved for opening it in the Designer.
     eventBus.on('element.dblclick', ({ element }: any) => {
-      if (element.businessObject != null && textOf(element.businessObject) != null) {
+      if (textPropertyOf(element) != null) {
         directEditing.activate(element);
       }
     });
@@ -69,26 +52,45 @@ export default class LandscapeLabelEditing {
     });
   }
 
-  activate(shape: any): any {
-    const element: LandscapeElement | undefined = shape.businessObject;
-    const text = element == null ? null : textOf(element);
-    if (element == null || text == null) {
+  activate(element: any): any {
+    const property = textPropertyOf(element);
+    if (property == null) {
       return null;
     }
     const zoom = this.canvas.zoom();
-    const bounds = this.canvas.getAbsoluteBBox(shape);
+    const style = { fontSize: `${12 * zoom}px`, lineHeight: 1.2, fontFamily: 'Arial, sans-serif', textAlign: 'center' };
+    const text = element.businessObject[property];
+    if (element.type === 'connector') {
+      const point = connectorLabelPoint(element.waypoints);
+      const viewbox = this.canvas.viewbox();
+      const width = CONNECTOR_LABEL_BOX.width * zoom;
+      const height = CONNECTOR_LABEL_BOX.height * zoom;
+      return {
+        bounds: {
+          x: (point.x - viewbox.x) * zoom - width / 2,
+          y: (point.y - viewbox.y) * zoom - height / 2,
+          width,
+          height,
+        },
+        text,
+        style,
+        options: { centerVertically: true },
+      };
+    }
+    const bounds = this.canvas.getAbsoluteBBox(element);
     const isContainer = element.type === 'group' || element.type === 'band';
     return {
       bounds: isContainer ? { ...bounds, height: CONTAINER_TITLE_HEIGHT * zoom } : bounds,
       text,
-      style: { fontSize: `${12 * zoom}px`, lineHeight: 1.2, fontFamily: 'Arial, sans-serif', textAlign: 'center' },
+      style,
       options: { centerVertically: !isContainer },
     };
   }
 
-  update(shape: any, newText: string, previousText: string): void {
-    if (newText !== previousText) {
-      this.commandStack.execute(UPDATE_LABEL_COMMAND, { element: shape, newText });
+  update(element: any, newText: string, previousText: string): void {
+    const property = textPropertyOf(element);
+    if (property != null && newText !== previousText) {
+      this.commandStack.execute(UPDATE_ELEMENT_COMMAND, { element, properties: { [property]: newText } });
     }
   }
 }

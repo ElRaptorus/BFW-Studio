@@ -75,6 +75,8 @@ returns process</landscape:note>
 
 Every element has `id`, `x`, `y`, `width` and `height` (both greater than 0), and optional `fill` and `stroke` (read as `style { fill, stroke }`, `null` when neither is set). Containment is XML nesting: `parentId` is the enclosing band or group, `null` at the top level. When writing, an element whose `parentId` is not a band or group on the map goes to the top level.
 
+New ids come from `createElementId(type, isTaken)` in `LandscapeMapFile.ts`, in the pattern bpmn-js uses: the type in PascalCase, an underscore and seven random base-36 characters (`Process_0k3x9vb`, `Group_…`, `Band_…`, `Placeholder_…`, `MapLink_…`, `Note_…`, `Connector_…`). An id the diagram already uses is drawn again. The reader accepts any non-empty id, so older maps with UUIDs stay valid. The canvas element always has the id of its file element.
+
 | Element | Attributes and content |
 |---|---|
 | `band` | `label`; always top level; contains elements |
@@ -95,7 +97,7 @@ The reader runs with `lax: true` and turns every moddle warning into an error, s
 | Unknown element or attribute of the landscape namespace | `Line n, column n: unknown type <landscape:X>.` / `Unknown attribute <x> on <landscape:tag> 'id'.` |
 | Foreign element below the root | `Line n, column n: unrecognized element <foo:bar>.` |
 
-Validation also rejects: a missing or empty required attribute; a band inside a group or band; an id used twice across elements and connectors; a process id shown twice; a connector to a missing element or to its own source; a waypoint without numeric `x` and `y`; `fileHint` or `mapPath` that is absolute, a drive path or a URI.
+Validation also rejects: a missing or empty required attribute; a band inside a group or band; an id used twice across elements and connectors; a process id shown twice; a connector to a missing element, to a band or to its own source; a waypoint without numeric `x` and `y`; `fileHint` or `mapPath` that is absolute, a drive path or a URI.
 
 `relativeFileHint(mapUri, fileUri)` builds `fileHint`: the path of `fileUri` relative to the map's folder, with `/` separators and `..` segments.
 
@@ -109,10 +111,11 @@ Validation also rejects: a missing or empty required attribute; a band inside a 
 
 | Registration | Value |
 |---|---|
-| Page | `discover/landscapes` ("Landscapes", `paneAreas: ['left']`, editor tabs visible, `order: 0`) |
+| Page | `discover/landscapes` ("Landscapes", `paneAreas: ['left', 'right']`, editor tabs visible, `order: 0`) |
 | Document type | `bpmn-landscape-map`: `uriMatch /\.bfwmap$/`, `page: 'discover/landscapes'`, model `LandscapeMapDocumentModel`, renderer `LandscapeMapRenderer` |
 | Included files | `**/*.bfwmap` |
 | Left pane group | `landscapes` with the pane `discover/landscapes/landscapes` (Processes) |
+| Right pane | `discover/landscapes/properties` (Properties), prepended to the `property` group |
 | Icons | `bpmn-landscape/page/landscapes`, `bpmn-landscape/document-type/map` |
 | Help text | `discover/landscapes` (`texts/landscapes.md`) |
 
@@ -125,14 +128,19 @@ Validation also rejects: a missing or empty required attribute; a band inside a 
 | Create | `static create` reads an empty file as `createEmptyLandscapeMap(<basename>)`. The document opens clean; the first edit makes it dirty and saving writes the whole map. |
 | Load | `create` and the watcher's reload await `parseLandscapeMap`; `applyParseResult(result)` shows the map and returns the parse errors. A modeler exists only after the first successful parse; metadata `readable` tells the renderer which view to show. |
 | Save gate | `saveEditorDocument` returns `null` (default save) when a modeler exists; otherwise it shows a warning and returns `false`, so an unreadable file is never written. |
-| Dirty tracking | `commandStack.changed` (not trigger `clear`) exports the canvas with `canvasToMap(root, previousMap)`, serializes it and calls `updateCurrentData`. A Studio-written file returns to clean after undo. |
+| Dirty tracking | `commandStack.changed` (not trigger `clear`) exports the canvas with `exportMap(previousMap)`, serializes it and calls `updateCurrentData`, then redraws the relation lines and bumps `selectionRevision`. A Studio-written file returns to clean after undo. |
 | Undo / redo | `commandStack.undo()` / `redo()` |
 | Watcher | DMN pattern. A readable external change reloads; text equal to the current data only clears the flags and keeps undo history and selection; an unreadable change while a modeler exists keeps the last good map and sets `errorOnReloadingFile`; `unlink` / `add` set `removedFromFileSystem`. |
-| Metadata | `readable`, `viewbox`, `hasSelection`, `selectionRevision`, the watcher flags. Nothing else is persisted. |
-| Catalog | `scanSolutionBpmnModels` on create, focus and `solutionChanged`; afterwards `elements.changed` redraws the process shapes. |
-| Process label | The element label, else the name of the catalog process whose file matches `fileHint`, else the first catalog match, else `processId`. |
+| Metadata | `readable`, `viewbox`, `hasSelection`, `selectionRevision`, `focusMode`, the watcher flags. Nothing else is persisted. |
+| Catalog | `scanSolutionBpmnModels` on create, focus and `solutionChanged`; only the newest of overlapping scans is applied (`latestCatalogScan`); afterwards `relations = buildProcessRelations(catalog)`, `elements.changed` redraws the process shapes, and the relation lines are redrawn. |
+| Process resolution | `resolveProcess(element)`: the catalog process whose file matches `fileHint`, else the first catalog process with that id, else `null`. Used for the label, the decision badge, the relation placement, the properties pane and opening the process. |
+| Process label | `getProcessLabel(element)`: the element label, else the resolved process name, else `processId`. |
+| Relation lines | `showRelations()` after every import, command (including undo and redo) and catalog refresh: `buildRelationLines({ relations, placedProcesses, relationLayers, hiddenRelations })`, then `modeler.showRelationLines(lines)` and `updateFocus`. |
+| Open in the Designer | `element.dblclick` on a process runs `std.editor.gotoSymbolInDocument(uri, processId)` for a resolved process, else an info notification. |
 
-Public methods used by the renderer, pane and commands: `getParseErrors`, `attachTo(element)` / `detach()` (append the canvas, `canvas.resized()`, restore the viewbox or `fit-viewport` on first attach), `toCanvasPoint(clientX, clientY)`, `getProcessIdsOnMap`, `addProcess({ processId, fileUri, x, y })` (selects the existing shape when the process is on the map), `isDirectEditingActive`, `hasClipboardContent`, `deleteSelection`, `copySelection`, `paste`, `moveSelection(direction, accelerated)`.
+Public methods used by the renderer, pane and commands: `getParseErrors`, `attachTo(element)` / `detach()` (append the canvas, `canvas.resized()`, restore the viewbox or `fit-viewport` on first attach), `toCanvasPoint(clientX, clientY)`, `getProcessIdsOnMap`, `addProcess({ processId, fileUri, x, y })` (selects the existing shape when the process is on the map), `isDirectEditingActive`, `hasClipboardContent`, `deleteSelection`, `copySelection`, `paste`, `moveSelection(direction, accelerated)`, `toggleFocusMode`.
+
+Properties pane methods: `getProcessLabel`, `getMapProperties` (`null` while unreadable), `getSelectedElements`, `getProcessDetails(element)` (relative file, the scan entry, and each relation of the process as `ProcessRelationEntry { relation, direction, otherProcessLabel, otherOnMap, hidden }`; `null` when unresolved), `getHiddenRelationCount` (hidden relations between placed processes), `updateSelectedElement(properties)` (one non-relation selection), `updateMap(properties)`, `setRelationLayer(kind, visible)`, `setRelationsHidden(keys, hidden)`, `showAllRelations`. Every change is one command, so it is undoable.
 
 ### LandscapeModeler
 
@@ -141,36 +149,74 @@ Public methods used by the renderer, pane and commands: `getParseErrors`, `attac
 `new Diagram({ canvas: { container }, keyboard: { bind: false }, landscape: config })`. The diagram-js keyboard is unbound; Studio keybindings drive the editor actions.
 
 - **diagram-js modules:** selection, move, resize, auto-resize, modeling, create, connect, bendpoints, lasso, hand tool, align, distribute, copy-paste, keyboard, keyboard-move-selection, editor-actions, grid-snapping, root-elements, overlays, context-pad, palette, zoomscroll, movecanvas, plus `diagram-js-grid`, `diagram-js-minimap` and `diagram-js-direct-editing`.
-- **`importMap(map)`** clears the canvas, adds `mapToCanvasDescriptors(map)` shapes parent-first, bands and groups before their other siblings, and connections (laid out when they have fewer than two waypoints), then clears the command stack. **`exportMap(previousMap)`** walks the root depth-first.
+- **`importMap(map)`** clears the canvas, adds `mapToCanvasDescriptors(map)` shapes parent-first, bands and groups before their other siblings, and connectors as connections of type `connector` (laid out when they have fewer than two waypoints), sets the map properties on `landscapeUpdates`, then clears the command stack. **`exportMap(previousMap)`** walks the root depth-first, skips connections of type `relation`, and takes `name`, `relationLayers` and `hiddenRelations` from `landscapeUpdates`.
+- **`showRelationLines(lines)`** delegates to `landscapeRelationLayer`. **`updateFocus(enabled)`** clears the `landscape-focused` markers; with focus on and a selection it puts the class `landscape-map--focus` on the container and marks the selected elements, their descendants, every connection touching them and the elements at the other end.
 - **`addProcessShape(element, center)`** creates the shape inside the smallest group or band under the point, else on the root.
 
 Every shape's `businessObject` is the file element (`landscapeCanvasMapping.ts`); geometry comes from the shape, everything else from the business object.
 
 | Service | Path | Role |
 |---|---|---|
-| `landscapeRenderer` | `modeler/LandscapeRenderer.ts` | Priority 1500. Rounded boxes for process and placeholder (placeholder dashed), boxes for group and band with the title at the top, a folded-corner note; `mapLink` and band use the box as fallback, `chevron` is drawn as a box. Fill and stroke from `style`, else the theme variables `--color-bpmn-defaultFillColor/StrokeColor`. |
-| `landscapeRules` | `modeler/LandscapeRules.ts` | A process at most once (`shape.create`, `elements.create`); the root holds anything, a group or band holds anything except a band; groups alone may be created or moved with the cursor on an element that holds nothing, the element's parent is checked instead; no connector creation or reconnection; processes are not copied. |
+| `landscapeRenderer` | `modeler/LandscapeRenderer.ts` | Priority 1500. Rounded boxes for process and placeholder (placeholder dashed), boxes for group and band with the title at the top, a folded-corner note, a chevron path (with matching `getShapePath`) for `shape: 'chevron'`; `mapLink` and band use the box as fallback. Fill and stroke from `style`, else the theme variables `--color-bpmn-defaultFillColor/StrokeColor`. A process with decisions gets the badge `g.landscape-decision-badge` (top right, count, tooltip) from `config.getDecisionCount`. Lines: see the table below; arrow markers live in `<defs>` with ids unique per diagram. A relation line has a `<title>` tooltip and the label of its visible names, a connector its `label` at `connectorLabelPoint(waypoints)` (middle of the longest segment). |
+| `landscapeRules` | `modeler/LandscapeRules.ts` | A process at most once (`shape.create`, `elements.create`); the root holds anything, a group or band holds anything except a band; groups alone may be created or moved with the cursor on an element that holds nothing, the element's parent is checked instead. `connection.create` / `connection.reconnect` between two different shapes that are not bands, returning `{ type: 'connector', id: createElementId('connector', …) }`. Relation lines: no solo move, no copy, no reconnect, no waypoint update (segment moves do not ask that rule, so `connectionSegment.move.init` returns `false` for them); `elements.delete` returns the selection without them. Processes are not copied. |
+| `landscapeConnectors` | `modeler/LandscapeModeler.ts` | `connection.create` preExecute: a new connector gets the business object `{ id, sourceId, targetId, label: '', waypoints: [] }` |
+| `landscapeRelationLayer` | `modeler/LandscapeRelationLayer.ts` | Shows the derived lines outside the command stack (see Relation Lines) |
+| `landscapeUpdates` | `modeler/LandscapeUpdates.ts` | Command handlers `landscape.updateElement` (`{ element, properties }`, `Object.assign` on the business object, changed element redrawn) and `landscape.updateMap` (`{ properties }` on the held map properties); both keep the old values for undo. `getMapProperties()`, `setMapProperties()` (import only, not undoable). |
 | `orderingProvider` | `modeler/LandscapeOrdering.ts` | `OrderingProvider` on `shape.create` / `shape.move`. A parent that holds nothing is replaced by its nearest group, band or the root. Index by level: bands and groups first, other shapes next, connections last, so a group is drawn behind the elements beside it. |
 | `landscapeGroupMembership` | `modeler/LandscapeGroupMembership.ts` | `CommandInterceptor`, `postExecuted` of `shape.create` and `shape.resize` of a group and `elements.move` for every moved group, including auto-resize. A child the group no longer fully encloses moves to the smallest group or band outside the group that encloses it, else the root; then every non-band sibling the group fully encloses moves in. Moves use `moveElements` with delta 0 and `autoResize: false` inside the triggering command, so one undo reverts the whole action. |
 | `layouter` | `modeler/LandscapeLayouter.ts` | `repairConnection` with `h:h`, cropped by `CroppingConnectionDocking` |
-| `landscapeLabelEditing` | `modeler/LandscapeLabelEditing.ts` | Direct editing on double-click for group, band, placeholder, map link and note; command `landscape.updateLabel`. Processes are left out. |
-| `landscapeCopyPaste` | `modeler/LandscapeModeler.ts` | Copies a structured clone of the business object; paste gives it a new id. The clipboard lives in the diagram instance, so it is per map. |
+| `landscapeLabelEditing` | `modeler/LandscapeLabelEditing.ts` | Direct editing on double-click for group, band, placeholder, map link, connector (`label`) and note (`text`); a connector edits in a 140×40 box at its label point. Commits through `landscape.updateElement`. Processes are left out, because their double-click opens the Designer. |
+| `landscapeCopyPaste` | `modeler/LandscapeModeler.ts` | Copies a structured clone of the business object; paste gives it a new id from `createElementId`. Copy-paste creates elements without an id, so a `shape.create` / `connection.create` preExecute sets the element id to its business object's id. The clipboard lives in the diagram instance, so it is per map. |
 | `paletteProvider` | `modeler/LandscapePaletteProvider.ts` | Hand, lasso, group (400×240), placeholder (140×60), note (160×80) |
-| `contextPadProvider` | `modeler/LandscapeContextPadProvider.ts` | Delete |
+| `contextPadProvider` | `modeler/LandscapeContextPadProvider.ts` | A relation line: Hide (`landscape.updateMap` adds its visible keys to `hiddenRelations`). Other elements: Delete; shapes other than bands also Connect (`connect.start` on click and drag start). |
+
+| Line | Width | Dash | Arrow |
+|---|---|---|---|
+| `callActivity` | 2 | none | filled |
+| `message` | 1.5 | `8 4` | open |
+| `signal` | 1.5 | `2 4` | open |
+| connector | 1.5 | none | filled |
+
+### Relation Lines
+
+**Path:** `studio/src/modules/bpmn-landscape/buildRelationLines.ts`, `modeler/LandscapeRelationLayer.ts`
+
+`buildRelationLines({ relations, placedProcesses, relationLayers, hiddenRelations })` keeps relations whose two processes are on the map (`PlacedProcess { elementId, reference }`) and whose layer is on, and groups them by kind and the two element ids into `RelationLine { id: 'relation:<kind>:<source element>:<target element>', kind, sourceElementId, targetElementId, relations, hiddenKeys }`. Relations are sorted by key; a line whose relations are all hidden is dropped; the lines are sorted by id. Both directions between one pair are two lines.
+
+`LandscapeRelationLayer.show(lines)` reconciles the canvas with the lines, without commands:
+
+1. A connection of type `relation` whose id is no longer wanted, or whose source or target is no longer registered, is removed with `canvas.removeConnection` and its `source` / `target` set to `null`. A kept one gets the new line as `businessObject`.
+2. A missing line is added with `elementFactory.createConnection({ id, type: 'relation', source, target, businessObject: line })` and `canvas.addConnection(connection, root)`; it is attached to its shapes, so it follows a drag.
+3. Every line is laid out again; lines between the same pair are spread 12 px apart. Then `elements.changed` fires.
+
+Commands may still hold a relation connection (deleting a process takes its lines along, and undo restores the same object), so lines are kept by id rather than rebuilt. Relation connections are never saved.
 
 ### Renderer, Pane and Commands
 
-- **`LandscapeMapRenderer.tsx`:** shows `EditorLoadingError` while the map is unreadable, otherwise the watcher title warnings and the canvas host (`data-test--landscape-canvas`). The host is a `useDropTarget` for `tree_item` subjects with `metadata.processId`; a drop calls `bpmn.landscape.addProcessToMap` with `toCanvasPoint(event)`. Styles: `styles/landscape.scss`.
-- **Processes pane (`panes/ProcessesPane.tsx`):** one collapsed row per BPMN file (sorted by name, `!` badge for an invalid file), process rows with `metadata.processId` and `fileUri` and a map-pin badge when the process is on the focused map. The filter matches file name, process name and id and expands matching files. The header has a "New Map" icon for `bpmn.landscape.newMap`. Rows carry no `uri`, so nothing can be dropped inside the tree.
+- **`LandscapeMapRenderer.tsx`:** shows `EditorLoadingError` while the map is unreadable, otherwise the watcher title warnings, an `EditorToolbar` with the Focus button (`bpmn.landscape.toggleFocusMode`, active class from metadata `focusMode`, `data-test--landscape-focus-mode`) and the canvas host (`data-test--landscape-canvas`). The host is a `useDropTarget` for `tree_item` subjects with `metadata.processId`; a drop calls `bpmn.landscape.addProcessToMap` with `toCanvasPoint(event)`. Styles: `styles/landscape.scss`; focus mode dims `.landscape-map--focus .djs-element:not(.landscape-focused) > .djs-visual`, so the children of a dimmed group keep their own look.
+- **Properties pane (`panes/LandscapePropertiesPane.tsx`):** shown for a readable `bpmn-landscape-map`. It reads the model through its getters and re-renders on `selectionRevision`.
+
+  | Selection | View |
+  |---|---|
+  | None | Map name, a switch per relation layer, "Show N hidden relations" |
+  | Process | Label (empty shows the process name), shape Box / Chevron, colour (`BpmnElementColorPicker` mapped to `style { fill, stroke }`), file, process id, version, executable flag, relations by kind with direction and the other process (a Show switch when the other process is on the map), decisions with Open (`bpmn.businessRuleTask.openTargetDecision`); "Not found in the solution" when unresolved |
+  | Placeholder | Label, shape, colour |
+  | Group, band, map link, note | Label (note: text), colour |
+  | Relation line | Kind, from, to, a switch per relation, Hide |
+  | Connector | Label |
+  | Several | "N elements selected" |
+
+- **Processes pane (`panes/ProcessesPane.tsx`):** one collapsed row per BPMN file (sorted by name, `!` badge for an invalid file), process rows with `metadata.processId` and `fileUri` and a map-pin badge when the process is on the focused map. The filter matches file name, process name and id and expands matching files. The header has a "New Map" icon for `bpmn.landscape.newMap`. The pane scans on mount and on every `solutionChanged` (the solution object stays the same when files change); only the newest scan is shown. Rows carry no `uri`, so nothing can be dropped inside the tree.
 
 | Command | Behaviour |
 |---|---|
 | `bpmn.landscape.newMap` | Needs an open solution. Creates `<first project>/landscapes/` if missing, asks for a path with the native save dialog, appends `.bfwmap` when missing (and stops with a warning when that file exists, because the dialog only checked the name without the extension), writes an empty map via `editors.createNewEditorDocument` and calls `solution.onElementAdded`. Cancel, or a path outside the folder, removes the folder only if this command created it. |
 | `bpmn.landscape.addProcessToMap` | `{ processId, fileUri, x, y }` in canvas coordinates, on the focused map |
-| `bpmn.landscape.deleteSelection`, `copySelection`, `paste` | Editor actions on the focused map; enabled with a selection (paste: clipboard not empty) |
+| `bpmn.landscape.deleteSelection`, `copySelection`, `paste` | Editor actions on the focused map; enabled with a selection (paste: the clipboard tree has elements; copying only processes or relation lines stores an empty tree) |
 | `bpmn.landscape.moveSelection{Left,Right,Up,Down}[Accelerated]` | `keyboardMoveSelection.moveSelection` |
+| `bpmn.landscape.toggleFocusMode` | In the command search ("Landscapes: Toggle Focus Mode"); enabled for a focused readable map |
 
-The selection commands do nothing while direct editing is active, so the keys reach the text box. Keybindings are scoped to `.kbm-editor[data-editor-document-type=bpmn-landscape-map]`: Backspace (macOS) / Delete, Cmd/Ctrl+C, Cmd/Ctrl+V, the arrow keys and Shift+arrow keys. Undo, redo and save use the global `std.editor.*` bindings.
+The selection commands do nothing while direct editing is active, so the keys reach the text box. Keybindings are scoped to `.kbm-editor[data-editor-document-type=bpmn-landscape-map]`: Backspace (macOS) / Delete, Cmd/Ctrl+C, Cmd/Ctrl+V, F (focus mode), the arrow keys and Shift+arrow keys. `KeybindingsManager` ignores single-character keys in inputs, so F still types in the properties pane. Undo, redo and save use the global `std.editor.*` bindings.
 
 ---
 
@@ -181,7 +227,8 @@ The selection commands do nothing while direct editing is active, so the keys re
 | Module entry, commands | `studio/src/modules/bpmn-landscape/index.tsx`, `commands.ts` |
 | Document model, renderer | `studio/src/modules/bpmn-landscape/LandscapeMapDocumentModel.ts`, `LandscapeMapRenderer.tsx` |
 | Modeler and services | `studio/src/modules/bpmn-landscape/modeler/` |
-| Processes pane | `studio/src/modules/bpmn-landscape/panes/ProcessesPane.tsx` |
+| Processes pane, properties pane | `studio/src/modules/bpmn-landscape/panes/ProcessesPane.tsx`, `LandscapePropertiesPane.tsx` |
+| Relation lines | `studio/src/modules/bpmn-landscape/buildRelationLines.ts`, `modeler/LandscapeRelationLayer.ts` |
 | Styles, help text | `studio/src/modules/bpmn-landscape/styles/landscape.scss`, `texts/landscapes.md` |
 | Relation derivation | `studio/src/modules/bpmn-landscape/buildProcessRelations.ts` |
 | Map file format | `studio/src/modules/bpmn-landscape/LandscapeMapFile.ts` |

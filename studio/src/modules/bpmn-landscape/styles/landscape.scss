@@ -28,4 +28,55 @@
     pointer-events: none;
     user-select: none;
   }
+
+  .landscape-line-label {
+    stroke: var(--theme-diagram-bg);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+  }
+
+  .landscape-map--focus .djs-element:not(.landscape-focused) > .djs-visual {
+    opacity: 0.2;
+  }
+
+  .landscape-properties__heading {
+    margin: 1rem 0 0.5rem;
+  }
+
+  .landscape-properties__info {
+    color: var(--theme-fg-muted);
+    font-style: italic;
+  }
+
+  .landscape-properties__switch {
+    margin-bottom: 0.25rem;
+  }
+
+  .landscape-properties__button {
+    margin-top: 0.5rem;
+  }
+
+  .landscape-properties__group-title {
+    font-weight: 600;
+    margin: 0.5rem 0 0.25rem;
+  }
+
+  .landscape-properties__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .landscape-properties__row--muted {
+    opacity: 0.6;
+  }
+
+  .landscape-properties__row-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

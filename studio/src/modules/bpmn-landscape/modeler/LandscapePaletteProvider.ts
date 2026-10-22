@@ -1,4 +1,5 @@
 import type { LandscapeElement } from '../LandscapeMapFile';
+import { createElementId } from '../LandscapeMapFile';
 import { shapeAttributesOf } from './landscapeCanvasMapping';
 
 type NewElementFields =
@@ -7,16 +8,18 @@ type NewElementFields =
   | { type: 'note'; text: string };
 
 export default class LandscapePaletteProvider {
-  static $inject = ['palette', 'create', 'elementFactory', 'handTool', 'lassoTool'];
+  static $inject = ['palette', 'create', 'elementFactory', 'elementRegistry', 'handTool', 'lassoTool'];
 
   private create: any;
   private elementFactory: any;
+  private elementRegistry: any;
   private handTool: any;
   private lassoTool: any;
 
-  constructor(palette: any, create: any, elementFactory: any, handTool: any, lassoTool: any) {
+  constructor(palette: any, create: any, elementFactory: any, elementRegistry: any, handTool: any, lassoTool: any) {
     this.create = create;
     this.elementFactory = elementFactory;
+    this.elementRegistry = elementRegistry;
     this.handTool = handTool;
     this.lassoTool = lassoTool;
     palette.registerProvider(this);
@@ -25,7 +28,7 @@ export default class LandscapePaletteProvider {
   getPaletteEntries(): Record<string, unknown> {
     const startCreate = (fields: NewElementFields, width: number, height: number) => (event: Event) => {
       const element = {
-        id: crypto.randomUUID(),
+        id: createElementId(fields.type, (id) => this.elementRegistry.get(id) != null),
         parentId: null,
         x: 0,
         y: 0,

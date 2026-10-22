@@ -3,10 +3,12 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
 import LandscapeMapRenderer from './LandscapeMapRenderer';
 import { registerLandscapeCommands } from './commands';
+import * as LandscapePropertiesPane from './panes/LandscapePropertiesPane';
 import * as ProcessesPane from './panes/ProcessesPane';
 
 const LANDSCAPES_PAGE_ID = 'discover/landscapes';
 const EDITOR_SELECTOR = '.kbm-editor[data-editor-document-type=bpmn-landscape-map]';
+const FOCUS_MODE_KEY = 'f';
 
 const SELECTION_KEYS = {
   left: 'bpmn.landscape.moveSelectionLeft',
@@ -33,7 +35,7 @@ export function onLoad(bifrost: Bifrost): void {
     label: 'Landscapes',
     icon: 'bpmn-landscape/page/landscapes',
     order: 0,
-    paneAreas: ['left'],
+    paneAreas: ['left', 'right'],
     editorTabsVisible: true,
   });
 
@@ -62,6 +64,14 @@ export function onLoad(bifrost: Bifrost): void {
     { label: 'Landscapes', pages: [LANDSCAPES_PAGE_ID] },
   );
 
+  bifrost.panes.prependToPaneGroup('right', 'property', [
+    bifrost.panes.getPaneViaPaneProvider(
+      'discover/landscapes/properties',
+      'bpmn-landscape/pane-providers/LandscapePropertiesPane',
+      LandscapePropertiesPane,
+    ),
+  ]);
+
   registerLandscapeCommands(bifrost);
 
   bifrost.keybindings.registerKeyBindings({
@@ -72,6 +82,7 @@ export function onLoad(bifrost: Bifrost): void {
         backspace: 'bpmn.landscape.deleteSelection',
         'cmd-c': 'bpmn.landscape.copySelection',
         'cmd-v': 'bpmn.landscape.paste',
+        [FOCUS_MODE_KEY]: 'bpmn.landscape.toggleFocusMode',
         ...SELECTION_KEYS,
       },
     },
@@ -86,6 +97,7 @@ export function onLoad(bifrost: Bifrost): void {
           delete: 'bpmn.landscape.deleteSelection',
           'ctrl-c': 'bpmn.landscape.copySelection',
           'ctrl-v': 'bpmn.landscape.paste',
+          [FOCUS_MODE_KEY]: 'bpmn.landscape.toggleFocusMode',
           ...SELECTION_KEYS,
         },
       },

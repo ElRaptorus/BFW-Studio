@@ -6,6 +6,9 @@ import { EditorContent } from '#components/editor/EditorContent';
 import { EditorLoadingError } from '#components/editor/EditorLoadingError';
 import { EditorTitle } from '#components/editor/EditorTitle';
 import { EditorTitleText } from '#components/editor/EditorTitleText';
+import { EditorToolbar } from '#components/editor/EditorToolbar';
+import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
 import 'diagram-js/assets/diagram-js.css';
 import 'diagram-js-minimap/assets/diagram-js-minimap.css';
 
@@ -106,6 +109,19 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
           />
         )}
       </EditorTitle>
+      <EditorToolbar>
+        <EditorToolbarLeft>
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-crosshair"
+            label="Focus"
+            tooltip="Dim everything that is not related to the selection (F)"
+            className={metadata.focusMode === true ? 'editor-toolbar__button--active' : ''}
+            command="bpmn.landscape.toggleFocusMode"
+            dataTestId="landscape-focus-mode"
+          />
+        </EditorToolbarLeft>
+      </EditorToolbar>
       <EditorContent>
         <div
           {...dropTargetProps}

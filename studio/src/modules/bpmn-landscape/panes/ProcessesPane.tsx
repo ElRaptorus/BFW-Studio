@@ -112,15 +112,22 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const model = props.editorDocumentModel instanceof LandscapeMapDocumentModel ? props.editorDocumentModel : null;
   const processIdsOnMap = model?.getProcessIdsOnMap().join('\n') ?? '';
 
+  // The solution object stays the same when its files change, so the scan follows `solutionChanged`.
   useEffect(() => {
-    let cancelled = false;
-    void scanSolutionBpmnModels(bifrost).then((scanned) => {
-      if (!cancelled) {
-        setEntries(scanned);
-      }
-    });
+    let latestScan = 0;
+    const scan = (): void => {
+      const scanNumber = ++latestScan;
+      void scanSolutionBpmnModels(bifrost).then((scanned) => {
+        if (scanNumber === latestScan) {
+          setEntries(scanned);
+        }
+      });
+    };
+    scan();
+    const subscription = bifrost.events.on('solutionChanged', scan);
     return () => {
-      cancelled = true;
+      latestScan = -1;
+      subscription.dispose();
     };
   }, [bifrost, solution]);
 

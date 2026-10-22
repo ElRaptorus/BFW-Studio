@@ -11,6 +11,8 @@ export type CanvasShapeLike = {
 };
 
 export type CanvasConnectionLike = {
+  /** `connector` for a saved connector; `relation` for a derived relation line, which is never saved. */
+  type?: string;
   waypoints: LandscapePoint[];
   businessObject: LandscapeConnector;
   source: { businessObject: LandscapeElement };
@@ -62,6 +64,9 @@ export function canvasToMap(root: { children: CanvasNodeLike[] }, previousMap: L
   const visit = (nodes: CanvasNodeLike[], parentId: string | null): void => {
     for (const node of nodes) {
       if ('waypoints' in node) {
+        if (node.type === 'relation') {
+          continue;
+        }
         connectors.push({
           ...node.businessObject,
           sourceId: node.source.businessObject.id,

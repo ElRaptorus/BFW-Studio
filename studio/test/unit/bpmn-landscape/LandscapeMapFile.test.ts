@@ -1,11 +1,30 @@
 import type { LandscapeMap } from '#modules/bpmn-landscape/LandscapeMapFile';
 import {
+  createElementId,
   createEmptyLandscapeMap,
   parseLandscapeMap,
   relativeFileHint,
   serializeLandscapeMap,
 } from '#modules/bpmn-landscape/LandscapeMapFile';
 import { describe, expect, it } from 'vitest';
+
+describe('createElementId', () => {
+  it('names the type and adds seven random base-36 characters', () => {
+    expect(createElementId('mapLink', () => false)).toMatch(/^MapLink_[0-9a-z]{7}$/);
+    expect(createElementId('connector', () => false)).toMatch(/^Connector_[0-9a-z]{7}$/);
+  });
+
+  it('draws again while the id is taken', () => {
+    const offered: string[] = [];
+    const id = createElementId('group', (candidate) => {
+      offered.push(candidate);
+      return offered.length < 3;
+    });
+
+    expect(offered).toHaveLength(3);
+    expect(id).toBe(offered[2]);
+  });
+});
 
 const NAMESPACE = 'https://bifrostforge.world/schema/landscape';
 const geometry = { x: 10, y: 20.5, width: 160, height: 60 };
@@ -206,6 +225,19 @@ describe('LandscapeMapFile', () => {
       `Element 'c' has "mapPath" "/etc/away.bfwmap", which is not a path relative to the map file.`,
       `Element 'd' has "fileHint" "C:\\order.bpmn", which is not a path relative to the map file.`,
     ]);
+  });
+
+  it('rejects a connector that ends at a band', async () => {
+    const box = 'x="0" y="0" width="10" height="10"';
+    const errors = await errorsOf(
+      mapText(
+        `<landscape:band id="band" ${box} />` +
+          `<landscape:note id="note" ${box} />` +
+          '<landscape:connector id="link" sourceId="note" targetId="band" />',
+      ),
+    );
+
+    expect(errors).toEqual([`Connector 'link' ends at the band 'band'; bands cannot be connected.`]);
   });
 
   it('rejects duplicate ids, a process shown twice, a nested band and dangling connectors', async () => {

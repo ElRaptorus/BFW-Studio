@@ -645,3 +645,23 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 **Why**: Oxlint compiles the pattern with the Rust regex engine. A pattern it cannot compile is dropped without an error, so the zone stops enforcing the rule and `npm run lint` still passes.
 
 **Correct approach**: Use a lookahead-free form (`dmn-(?:[^c]|c[^o]|co[^r]|cor[^e]|core\w)` for "anything but `core`") and keep a probe case in `test/unit/bifrost/moduleBoundaryZones.test.ts` that proves the zone fires.
+
+---
+
+## `getSolution()` keeps its identity when solution files change
+
+**Mistake**: Rescanning solution files in a pane with `useEffect(..., [solution])`.
+
+**Why**: File changes, additions, renames and moves emit `solutionChanged` with the same `Solution` object. The pane re-renders, but the effect does not run again, so the scan stays stale until the solution is reopened.
+
+**Correct approach**: Subscribe to `bifrost.events.on('solutionChanged', …)` inside the effect, dispose the subscription in the cleanup, and drop results of an older scan that finishes late. See `bpmn-landscape/panes/ProcessesPane.tsx`.
+
+---
+
+## diagram-js segment moves ignore `connection.updateWaypoints`
+
+**Mistake**: Forbidding waypoint changes of a connection only with the `connection.updateWaypoints` rule.
+
+**Why**: `BendpointMove` asks that rule, but `ConnectionSegmentMove` (dragging the middle of an orthogonal segment) does not, and calls `modeling.updateWaypoints` anyway.
+
+**Correct approach**: Also return `false` from a `connectionSegment.move.init` listener for those connections; `Dragging` cancels the drag. See `bpmn-landscape/modeler/LandscapeRules.ts`.

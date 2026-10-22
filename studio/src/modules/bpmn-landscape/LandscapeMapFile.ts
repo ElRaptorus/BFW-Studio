@@ -184,6 +184,31 @@ const tagOf = (node: ModdleElement): string => {
   return `<${prefix}:${name.charAt(0).toLowerCase()}${name.slice(1)}>`;
 };
 
+const ID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
+const ID_RANDOM_LENGTH = 7;
+const ID_PREFIX_BY_TYPE: Record<LandscapeElementType | 'connector', string> = {
+  band: 'Band',
+  group: 'Group',
+  process: 'Process',
+  placeholder: 'Placeholder',
+  mapLink: 'MapLink',
+  note: 'Note',
+  connector: 'Connector',
+};
+
+/**
+ * A new id in the pattern bpmn-js uses: type, underscore, seven random base-36 characters (`Group_0k3x9vb`).
+ * A taken id is drawn again, because the reader rejects a map that uses an id twice.
+ */
+export function createElementId(type: LandscapeElementType | 'connector', isTaken: (id: string) => boolean): string {
+  let id: string;
+  do {
+    const randomValues = crypto.getRandomValues(new Uint8Array(ID_RANDOM_LENGTH));
+    id = `${ID_PREFIX_BY_TYPE[type]}_${Array.from(randomValues, (value) => ID_ALPHABET[value % ID_ALPHABET.length]).join('')}`;
+  } while (isTaken(id));
+  return id;
+}
+
 export function createEmptyLandscapeMap(name: string): LandscapeMap {
   return {
     name,
@@ -411,11 +436,13 @@ function checkIdentifiers(reader: LandscapeMapReader, map: LandscapeMap): void {
 }
 
 function checkConnectors(reader: LandscapeMapReader, map: LandscapeMap): void {
-  const elementIds = new Set(map.elements.map((element) => element.id));
+  const typeById = new Map(map.elements.map((element) => [element.id, element.type]));
   for (const connector of map.connectors) {
     for (const endpoint of [connector.sourceId, connector.targetId]) {
-      if (endpoint !== '' && !elementIds.has(endpoint)) {
+      if (endpoint !== '' && !typeById.has(endpoint)) {
         reader.errors.push(`Connector '${connector.id}' points to '${endpoint}', which is not on the map.`);
+      } else if (typeById.get(endpoint) === 'band') {
+        reader.errors.push(`Connector '${connector.id}' ends at the band '${endpoint}'; bands cannot be connected.`);
       }
     }
     if (connector.sourceId !== '' && connector.sourceId === connector.targetId) {

@@ -151,4 +151,19 @@ describe('landscapeCanvasMapping', () => {
       { x: 9, y: 9 },
     ]);
   });
+
+  it('does not save the derived relation lines', () => {
+    const map = fullMap();
+    const canvas = buildCanvas(map);
+    const link = canvas.children.find((node) => node.businessObject.id === 'link');
+    canvas.children.push({
+      type: 'relation',
+      waypoints: [{ x: 0, y: 0 }],
+      businessObject: { id: 'relation:message:order:finance', kind: 'message', relations: [], hiddenKeys: [] },
+      source: link.source,
+      target: link.target,
+    });
+
+    expect(canvasToMap(canvas, map).connectors.map((connector) => connector.id)).toEqual(['link']);
+  });
 });
