@@ -56,7 +56,7 @@ Every variant extends `TreeItemBase`:
 | `menuId` | `string?` | Context menu ID |
 | `expanded` | `boolean?` | Initial expanded state |
 | `selected` | `boolean?` | Initial selected state |
-| `badges` | `TreeBadge[]?` | Badge indicators (character, number, or icon) |
+| `badges` | `TreeBadge[]?` | Badge indicators (character, number, or icon), each with an optional `tooltip` rendered as the badge's `title` |
 | `styles` | `TreeItemStyles?` | Label/sublabel/badge color overrides |
 
 ### TreeItemData (internal)
@@ -120,6 +120,7 @@ The main React component. Accepts `TreeProps` and renders the complete tree.
 | `onClick` | `TreeItemClickCallbackFn` | Single-click handler (receives item metadata) |
 | `onDoubleClick` | `TreeItemClickCallbackFn?` | Double-click handler |
 | `onDragAndDropItem` | `TreeItemDropCallbackFn?` | Internal drag-and-drop handler |
+| `draggable` | `boolean?` | Rows can be dragged out of the tree although `onDragAndDropItem` is not set; dropping on the tree stays disabled (`canDrop` needs `onDragAndDropItem`) |
 | `onExternalFileDrop` | `ExternalFileDropCallbackFn?` | OS file drop handler |
 | `viewMediatorId` | `string` | Registration key for `ViewMediatorManager` |
 | `multiSelectionMenuId` | `string?` | Context menu ID when multiple items are selected |

@@ -237,6 +237,19 @@ export function relativeFileHint(mapUri: string, fileUri: string): string {
   return [...upwards, ...fileSegments.slice(sharedCount)].join('/');
 }
 
+/** The URI that `relativePath` (as `relativeFileHint` writes it) names, seen from the folder of the map at `mapUri`. */
+export function resolveRelativeUri(mapUri: string, relativePath: string): string {
+  const segments = mapUri.split('/').slice(0, -1);
+  for (const segment of relativePath.split('/')) {
+    if (segment === '..') {
+      segments.pop();
+    } else if (segment !== '' && segment !== '.') {
+      segments.push(segment);
+    }
+  }
+  return segments.join('/');
+}
+
 /** Turns a moddle-xml warning into a diagnostic sentence with a 1-based position. */
 function describeParseProblem(warning: ParseWarning & { element?: ModdleElement }): string {
   const unparsable = UNPARSABLE_CONTENT_PATTERN.exec(warning.message);

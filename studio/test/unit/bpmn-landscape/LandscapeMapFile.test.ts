@@ -4,6 +4,7 @@ import {
   createEmptyLandscapeMap,
   parseLandscapeMap,
   relativeFileHint,
+  resolveRelativeUri,
   serializeLandscapeMap,
 } from '#modules/bpmn-landscape/LandscapeMapFile';
 import { describe, expect, it } from 'vitest';
@@ -290,5 +291,19 @@ describe('LandscapeMapFile', () => {
     expect(relativeFileHint(map, 'file:///work/solution/sales/order.bpmn')).toBe('../order.bpmn');
     expect(relativeFileHint(map, 'file:///work/solution/finance/billing.bpmn')).toBe('../../finance/billing.bpmn');
     expect(relativeFileHint(map, 'file:///work/solution/sales/landscapes/sub/order.bpmn')).toBe('sub/order.bpmn');
+  });
+
+  it('resolves a relative path back to the URI it was written from', () => {
+    const map = 'file:///work/solution/sales/landscapes/overview.bfwmap';
+    const targets = [
+      'file:///work/solution/sales/landscapes/other.bfwmap',
+      'file:///work/solution/sales/landscapes/sub/other.bfwmap',
+      'file:///work/solution/sales/other.bfwmap',
+      'file:///work/solution/finance/other.bfwmap',
+    ];
+
+    for (const target of targets) {
+      expect(resolveRelativeUri(map, relativeFileHint(map, target))).toBe(target);
+    }
   });
 });

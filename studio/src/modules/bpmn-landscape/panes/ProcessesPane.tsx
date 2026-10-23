@@ -1,6 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
-import type { TreeItem } from '#bifrost/contracts/TreeTypes';
+import type { TreeBadge, TreeItem } from '#bifrost/contracts/TreeTypes';
 import { Icon } from '#components/Icon';
 import { Tree } from '#components/Tree/Tree';
 import { Pane } from '#components/panes/Pane';
@@ -12,6 +12,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import LandscapeMapDocumentModel from '../LandscapeMapDocumentModel';
 import { getLandscapeGate } from '../landscapeFolder';
+import { resolveProcessReference } from '../resolveProcessReference';
+import type { LandscapeMapEntry } from '../scanSolutionLandscapeMaps';
+import { scanSolutionLandscapeMaps } from '../scanSolutionLandscapeMaps';
 
 const BPMN_ICON = 'bpmn/editor-tab/bpmn';
 const PROCESS_ICON = 'ph ph-flow-arrow';
@@ -41,6 +44,7 @@ function buildProcessTree(
   entries: SolutionBpmnModelEntry[],
   filterText: string,
   processIdsOnMap: Set<string>,
+  mapCountByProcessKey: Map<string, number>,
 ): TreeItem[] {
   const filter = filterText.trim().toLowerCase();
   return [...entries]
@@ -83,24 +87,57 @@ function buildProcessTree(
           labelTooltip: entry.uri.replace(/^file:\/\//, ''),
           metadata: { fileUri: entry.uri },
           expanded: filter !== '',
-          entries: processes.map(({ process, label }): TreeItem => ({
-            type: 'file',
-            pathId: `${entry.uri}#${process.id}`,
-            label,
-            labelIcon: PROCESS_ICON,
-            labelTooltip: `${process.id} — drag onto the map`,
-            metadata: { processId: process.id, fileUri: entry.uri },
-            badges: processIdsOnMap.has(process.id) ? [{ type: 'icon', icon: 'ph ph-map-pin' }] : undefined,
-          })),
+          entries: processes.map(({ process, label }): TreeItem => {
+            const mapCount = mapCountByProcessKey.get(`${entry.uri}#${process.id}`) ?? 0;
+            const onMaps = mapCount === 0 ? '' : ` · on ${mapCount} ${mapCount === 1 ? 'map' : 'maps'}`;
+            return {
+              type: 'file',
+              pathId: `${entry.uri}#${process.id}`,
+              label,
+              labelIcon: PROCESS_ICON,
+              labelTooltip: `${process.id}${onMaps} — drag onto the map`,
+              metadata: { processId: process.id, fileUri: entry.uri },
+              badges: processBadges(mapCount, processIdsOnMap.has(process.id)),
+            };
+          }),
         },
       ];
     });
+}
+
+/** The number is how many maps of the solution show the process; the pin marks a process the open map shows. */
+function processBadges(mapCount: number, isOnOpenMap: boolean): TreeBadge[] | undefined {
+  const badges: TreeBadge[] = [];
+  if (mapCount > 0) {
+    badges.push({ type: 'number', number: mapCount });
+  }
+  if (isOnOpenMap) {
+    badges.push({ type: 'icon', icon: 'ph ph-map-pin' });
+  }
+  return badges.length === 0 ? undefined : badges;
+}
+
+/** Saved maps per `<file uri>#<process id>`; a reference counts only where it resolves. */
+function countMapsPerProcess(catalog: SolutionBpmnModelEntry[], maps: LandscapeMapEntry[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const map of maps) {
+    const shownKeys = new Set<string>();
+    for (const reference of map.processReferences) {
+      const resolution = resolveProcessReference(catalog, map.uri, reference);
+      if (resolution.status === 'resolved') {
+        shownKeys.add(`${resolution.uri}#${resolution.process.id}`);
+      }
+    }
+    shownKeys.forEach((key) => counts.set(key, (counts.get(key) ?? 0) + 1));
+  }
+  return counts;
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost: Bifrost = props.studio;
   const solution = bifrost.solution.getSolution();
   const [entries, setEntries] = useState<SolutionBpmnModelEntry[]>([]);
+  const [mapCountByProcessKey, setMapCountByProcessKey] = useState<Map<string, number>>(new Map());
   const [filterText, setFilterText] = useState('');
   const model = props.editorDocumentModel instanceof LandscapeMapDocumentModel ? props.editorDocumentModel : null;
   const processIdsOnMap = model?.getProcessIdsOnMap().join('\n') ?? '';
@@ -110,11 +147,15 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     let latestScan = 0;
     const scan = (): void => {
       const scanNumber = ++latestScan;
-      void scanSolutionBpmnModels(bifrost).then((scanned) => {
-        if (scanNumber === latestScan) {
+      void Promise.all([scanSolutionBpmnModels(bifrost), scanSolutionLandscapeMaps(bifrost)]).then(
+        ([scanned, maps]) => {
+          if (scanNumber !== latestScan) {
+            return;
+          }
           setEntries(scanned);
-        }
-      });
+          setMapCountByProcessKey(countMapsPerProcess(scanned, maps));
+        },
+      );
     };
     scan();
     const subscription = bifrost.events.on('solutionChanged', scan);
@@ -125,13 +166,11 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   }, [bifrost, solution]);
 
   const treeEntries = useMemo(
-    () => buildProcessTree(entries, filterText, new Set(processIdsOnMap.split('\n'))),
-    [entries, filterText, processIdsOnMap],
+    () => buildProcessTree(entries, filterText, new Set(processIdsOnMap.split('\n')), mapCountByProcessKey),
+    [entries, filterText, processIdsOnMap, mapCountByProcessKey],
   );
 
   const onClick = useCallback((): void => undefined, []);
-  // The Tree makes rows draggable only when a drop handler is set; rows carry no `uri`, so nothing drops inside it.
-  const onDragAndDropItem = useCallback((): void => undefined, []);
 
   return (
     <>
@@ -154,7 +193,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           entries={treeEntries}
           iconComponent={Icon}
           onClick={onClick}
-          onDragAndDropItem={onDragAndDropItem}
+          draggable
         />
       </div>
     </>

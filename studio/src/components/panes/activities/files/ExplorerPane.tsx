@@ -309,6 +309,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
         onClick={onClick}
         onDoubleClick={onDoubleClick}
         onDragAndDropItem={structural ? onDragAndDropItem : undefined}
+        draggable
         onExternalFileDrop={structural ? onExternalFileDrop : undefined}
         iconComponent={Icon}
         className="kbm-file-explorer"

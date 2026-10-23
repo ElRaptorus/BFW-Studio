@@ -1,8 +1,9 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
-import type { AddProcessRequest } from './LandscapeMapDocumentModel';
+import type { AddMapLinkRequest, AddProcessRequest } from './LandscapeMapDocumentModel';
 import LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
 import { createEmptyLandscapeMap, serializeLandscapeMap } from './LandscapeMapFile';
+import { registerLandscapeExportCommands } from './exportCommands';
 import {
   describeLandscapeFolder,
   getLandscapeGate,
@@ -172,6 +173,12 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     { enabledWhen: () => getFocusedMap(bifrost) != null },
   );
 
+  bifrost.commands.register(
+    'bpmn.landscape.addMapLinkToMap',
+    (request: AddMapLinkRequest) => getFocusedMap(bifrost)?.addMapLink(request),
+    { enabledWhen: () => getFocusedMap(bifrost) != null },
+  );
+
   bifrost.commands.register('bpmn.landscape.deleteSelection', () => getFocusedMapForKeys(bifrost)?.deleteSelection(), {
     enabledWhen: () => hasSelection(bifrost),
   });
@@ -189,6 +196,8 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     description: ['Landscapes: Toggle Focus Mode', 'Dim everything that is not related to the selection'],
     enabledWhen: () => getFocusedMapForKeys(bifrost)?.getMapProperties() != null,
   });
+
+  registerLandscapeExportCommands(bifrost);
 
   for (const direction of DIRECTIONS) {
     const name = `${direction[0].toUpperCase()}${direction.slice(1)}`;

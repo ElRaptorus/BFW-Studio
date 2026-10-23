@@ -6,6 +6,7 @@ import LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
 import LandscapeMapRenderer from './LandscapeMapRenderer';
 import { registerLandscapeCommands } from './commands';
 import { getMapOpenRefusal, LANDSCAPES_PAGE_ID, LANDSCAPES_VIEW_ID } from './landscapeFolder';
+import { MapsDecorationProvider } from './mapsExplorerDecorations';
 import { LandscapeFolderHint } from './panes/LandscapeFolderHint';
 import * as LandscapePropertiesPane from './panes/LandscapePropertiesPane';
 import * as ProcessesPane from './panes/ProcessesPane';
@@ -59,7 +60,24 @@ export function onLoad(bifrost: Bifrost): void {
   });
 
   bifrost.solution.registerDefaultIncludedFiles(['**/*.bfwmap']);
+  const mapsDecorationProvider = new MapsDecorationProvider();
+  bifrost.explorers.registerDecorationProvider(mapsDecorationProvider, [MAPS_EXPLORER_ID]);
+  bifrost.events.on('solutionChanged', () => void mapsDecorationProvider.refresh(bifrost));
+  void mapsDecorationProvider.refresh(bifrost);
   bifrost.events.on('solutionChanged', () => void closeMapsOutsideLandscapeFolder(bifrost));
+  // Restoring the last session bypasses `canOpen`; without a stored solution no `solutionChanged` follows.
+  bifrost.events.on('ready', () => {
+    if (bifrost.solution.getSolution() == null) {
+      void closeMapsOutsideLandscapeFolder(bifrost);
+    }
+  });
+  // Restored documents skip `canOpen`. With a stored solution, opening it fires `solutionChanged`; without one nothing
+  // else would close a restored map.
+  bifrost.events.on('ready', () => {
+    if (bifrost.solution.getSolution() == null) {
+      void closeMapsOutsideLandscapeFolder(bifrost);
+    }
+  });
 
   bifrost.panes.registerPaneGroup(
     'left',
@@ -152,24 +170,40 @@ export function onLoad(bifrost: Bifrost): void {
 }
 
 let closingMaps = false;
+/** Maps with unsaved changes whose save prompt the user cancelled; they stay open until another solution opens. */
+let keptOpenMapUris = new Set<string>();
+let keptOpenSolutionKey: string | null = null;
 
 /** Closes the open maps the current solution would refuse to open; unsaved changes are asked about as usual. */
 async function closeMapsOutsideLandscapeFolder(bifrost: Bifrost): Promise<void> {
   if (closingMaps) {
     return;
   }
+  const solution = bifrost.solution.getSolution();
+  const solutionKey = solution == null ? null : (solution.solutionFileUri ?? solution.baseUri);
+  if (solutionKey !== keptOpenSolutionKey) {
+    keptOpenMapUris = new Set();
+    keptOpenSolutionKey = solutionKey;
+  }
   const refusedMaps = bifrost.editors
     .getOpenEditorDocuments()
     .filter(
       (editorDocument) =>
-        MAP_URI_PATTERN.test(editorDocument.uri) && getMapOpenRefusal(bifrost, editorDocument.uri) != null,
+        MAP_URI_PATTERN.test(editorDocument.uri) &&
+        !keptOpenMapUris.has(editorDocument.uri) &&
+        getMapOpenRefusal(bifrost, editorDocument.uri) != null,
     );
   if (refusedMaps.length === 0) {
     return;
   }
   closingMaps = true;
   try {
-    await bifrost.editors.closeEditorDocumentsUntilUserCancels(refusedMaps);
+    if (!(await bifrost.editors.closeEditorDocumentsUntilUserCancels(refusedMaps))) {
+      const openUris = new Set(bifrost.editors.getOpenEditorDocuments().map((editorDocument) => editorDocument.uri));
+      refusedMaps
+        .filter((editorDocument) => editorDocument.hasUnsavedChanges && openUris.has(editorDocument.uri))
+        .forEach((editorDocument) => keptOpenMapUris.add(editorDocument.uri));
+    }
   } finally {
     closingMaps = false;
   }

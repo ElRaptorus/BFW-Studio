@@ -3,13 +3,16 @@ import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { FileEventType, WatcherDisposable } from '#bifrost/common/FileHandlingService';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
+import { replaceThemeColorsInSvg } from '#modules/bpmn-core/ImageExportFunctions';
 import type { SolutionBpmnModelEntry, SolutionProcessEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
 import { scanSolutionBpmnModels } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 import type {
   LandscapeElement,
   LandscapeMap,
+  LandscapeMapLinkElement,
   LandscapeMapParseResult,
+  LandscapePlaceholderElement,
   LandscapeProcessElement,
 } from './LandscapeMapFile';
 import {
@@ -17,6 +20,7 @@ import {
   createEmptyLandscapeMap,
   parseLandscapeMap,
   relativeFileHint,
+  resolveRelativeUri,
   serializeLandscapeMap,
 } from './LandscapeMapFile';
 import type { LandscapeProcessReference, ProcessRelation, ProcessRelationKind } from './buildProcessRelations';
@@ -27,10 +31,24 @@ import LandscapeModeler from './modeler/LandscapeModeler';
 import type { LandscapeMapProperties } from './modeler/LandscapeUpdates';
 import type LandscapeUpdates from './modeler/LandscapeUpdates';
 import { UPDATE_ELEMENT_COMMAND, UPDATE_MAP_COMMAND } from './modeler/LandscapeUpdates';
+import type { ProcessCandidate, ReferenceStatus } from './resolveProcessReference';
+import { replaceCandidates, resolveProcessReference } from './resolveProcessReference';
+import type { LandscapeMapEntry } from './scanSolutionLandscapeMaps';
+import { scanSolutionLandscapeMaps } from './scanSolutionLandscapeMaps';
 
 export type AddProcessRequest = { processId: string; fileUri: string; x: number; y: number };
 
-type ResolvedProcess = { uri: string; process: SolutionProcessEntry };
+export type AddMapLinkRequest = { mapUri: string; x: number; y: number };
+
+type ResolvedProcess = ProcessCandidate;
+
+/** What the properties pane offers for a process shape whose reference does not resolve. */
+export type ProcessReplacementOptions = {
+  status: Exclude<ReferenceStatus, 'resolved'>;
+  /** The files that define an ambiguous id, or the solution processes that are not on the map yet. */
+  candidates: ProcessCandidate[];
+  isKept: boolean;
+};
 
 /** A relation of one process as the properties pane lists it. */
 export type ProcessRelationEntry = {
@@ -71,7 +89,13 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   private parseErrors: string[] = [];
   private modeler: LandscapeModeler | null = null;
   private catalog: SolutionBpmnModelEntry[] = [];
+  /** `null` until the first scan finished; until then no reference counts as broken. */
+  private maps: LandscapeMapEntry[] | null = null;
   private latestCatalogScan = 0;
+  /** Shapes the user chose to keep broken for this session; Review skips them. */
+  private keptElementIds = new Set<string>();
+  private notifiedBrokenIds = new Set<string>();
+  private brokenNotificationId: string | null = null;
   private relations: ProcessRelation[] = [];
   private selectionRevision = 0;
   private focusMode: boolean;
@@ -175,6 +199,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.subscriptions = [];
     this.eventEmitter.removeAllListeners();
     this.watcherDisposable?.dispose();
+    this.closeBrokenNotification();
     this.modeler?.destroy();
     this.modeler = null;
   }
@@ -268,7 +293,12 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       label: null,
       shape: 'box',
     };
-    modeler.get('selection').select(modeler.addProcessShape(element, { x: request.x, y: request.y }));
+    modeler.get('selection').select(modeler.addElementShape(element, { x: request.x, y: request.y }));
+  }
+
+  /** The map as an SVG with plain colours, or `null` when the map cannot be read and has no canvas. */
+  exportSvg(): string | null {
+    return this.modeler == null ? null : replaceThemeColorsInSvg(this.modeler.exportSvg());
   }
 
   isDirectEditingActive(): boolean {
@@ -303,6 +333,232 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   }
 
   //#endregion Canvas
+
+  //#region References
+
+  /** A file of the solution as the map file names it: relative to this map. */
+  getRelativePath(fileUri: string): string {
+    return relativeFileHint(this.uri, fileUri);
+  }
+
+  getProcessStatus(element: LandscapeProcessElement): ReferenceStatus {
+    if (this.maps == null) {
+      return 'resolved';
+    }
+    return resolveProcessReference(this.catalog, this.uri, element).status;
+  }
+
+  /** `missing` when the map the link names is not among the solution's maps. */
+  getMapLinkStatus(element: LandscapeMapLinkElement): Exclude<ReferenceStatus, 'ambiguous'> {
+    if (this.maps == null) {
+      return 'resolved';
+    }
+    const targetUri = resolveRelativeUri(this.uri, element.mapPath);
+    return this.maps.some((entry) => entry.uri === targetUri) ? 'resolved' : 'missing';
+  }
+
+  /** The other maps of the solution, for the "Target map" select. */
+  getOtherMaps(): LandscapeMapEntry[] {
+    return (this.maps ?? []).filter((entry) => entry.uri !== this.uri);
+  }
+
+  getReplacementOptions(element: LandscapeProcessElement): ProcessReplacementOptions | null {
+    const resolution = resolveProcessReference(this.catalog, this.uri, element);
+    if (this.maps == null || resolution.status === 'resolved') {
+      return null;
+    }
+    return {
+      status: resolution.status,
+      candidates:
+        resolution.status === 'ambiguous'
+          ? resolution.candidates
+          : replaceCandidates(this.catalog, this.getProcessIdsOnMap()),
+      isKept: this.keptElementIds.has(element.id),
+    };
+  }
+
+  /** Points the selected process shape at another process; the shape keeps its place and its own label. */
+  replaceSelectedProcess(candidate: ProcessCandidate): void {
+    this.updateSelectedElement({
+      processId: candidate.process.id,
+      fileHint: relativeFileHint(this.uri, candidate.uri),
+    });
+  }
+
+  /** Turns the selected process shape into a placeholder with the same bounds; its connectors stay. */
+  dropSelectedProcessReference(): void {
+    const modeler = this.modeler;
+    const selected = this.getSelectedElements();
+    if (modeler == null || selected.length !== 1 || selected[0].type !== 'process') {
+      return;
+    }
+    const shape = selected[0];
+    const reference: LandscapeProcessElement = shape.businessObject;
+    const placeholder: LandscapePlaceholderElement = {
+      id: createElementId('placeholder', (id) => modeler.get('elementRegistry').get(id) != null),
+      type: 'placeholder',
+      parentId: reference.parentId,
+      x: shape.x,
+      y: shape.y,
+      width: shape.width,
+      height: shape.height,
+      style: reference.style,
+      label: reference.label ?? reference.processId,
+      shape: reference.shape,
+    };
+    const replacement = modeler.replaceWithElement(shape, placeholder);
+    modeler.get('selection').select(replacement);
+  }
+
+  keepSelectedReference(): void {
+    const selected = this.getSelectedElements();
+    if (selected.length !== 1 || selected[0].type !== 'process') {
+      return;
+    }
+    this.keptElementIds.add(selected[0].id);
+    this.bumpSelectionRevision();
+  }
+
+  /** Selects the first broken process shape the user has not kept; returns whether there was one. */
+  reviewBrokenProcesses(): boolean {
+    const modeler = this.modeler;
+    const first = this.getBrokenProcessShapes()[0];
+    if (modeler == null || first == null) {
+      return false;
+    }
+    modeler.get('selection').select(first);
+    modeler.get('canvas').scrollToElement(first);
+    return true;
+  }
+
+  /** Adds a link to another map of the landscape folder; its label is the name of that map. */
+  addMapLink(request: AddMapLinkRequest): void {
+    const modeler = this.modeler;
+    if (modeler == null) {
+      return;
+    }
+    if (request.mapUri === this.uri) {
+      this.studio.notifications.open({
+        type: 'info',
+        content: 'A map cannot link to itself.',
+        source: 'Landscapes',
+      });
+      return;
+    }
+    const target = this.maps?.find((entry) => entry.uri === request.mapUri);
+    if (this.maps != null && target == null) {
+      this.studio.notifications.open({
+        type: 'info',
+        content: 'Only maps in the landscape folder can be linked.',
+        source: 'Landscapes',
+      });
+      return;
+    }
+    const label = target?.name ?? this.studio.files.getLocalBasename(request.mapUri, true);
+    const mapPath = relativeFileHint(this.uri, request.mapUri);
+    const element: LandscapeMapLinkElement = {
+      id: createElementId('mapLink', (id) => modeler.get('elementRegistry').get(id) != null),
+      type: 'mapLink',
+      parentId: null,
+      x: request.x - PROCESS_WIDTH / 2,
+      y: request.y - PROCESS_HEIGHT / 2,
+      width: PROCESS_WIDTH,
+      height: PROCESS_HEIGHT,
+      style: null,
+      label,
+      mapPath,
+    };
+    modeler.get('selection').select(modeler.addElementShape(element, { x: request.x, y: request.y }));
+  }
+
+  /**
+   * Points the selected map link at another map. The label follows while it still shows the old target's name or file
+   * name; a label the user wrote stays.
+   */
+  retargetSelectedMapLink(mapUri: string): void {
+    const selected = this.getSelectedElements();
+    const target = this.maps?.find((entry) => entry.uri === mapUri);
+    if (selected.length !== 1 || selected[0].type !== 'mapLink' || target == null) {
+      return;
+    }
+    const link: LandscapeMapLinkElement = selected[0].businessObject;
+    const previousUri = resolveRelativeUri(this.uri, link.mapPath);
+    const previousNames = [
+      this.maps?.find((entry) => entry.uri === previousUri)?.name,
+      this.studio.files.getLocalBasename(previousUri, true),
+    ];
+    const mapPath = relativeFileHint(this.uri, mapUri);
+    this.updateSelectedElement(previousNames.includes(link.label) ? { mapPath, label: target.name } : { mapPath });
+  }
+
+  /** Opens the map a link names; tells the user when the solution has no such map. */
+  private openMapLink(element: LandscapeMapLinkElement): void {
+    if (this.getMapLinkStatus(element) === 'missing') {
+      this.studio.notifications.open({
+        type: 'info',
+        content: `The map "${element.mapPath}" is not found in the landscape folder, so it cannot be opened.`,
+        source: 'Landscapes',
+      });
+      return;
+    }
+    void this.studio.commands.executeCommand('std.editor.focusOrOpenDocument', [
+      resolveRelativeUri(this.uri, element.mapPath),
+    ]);
+  }
+
+  private getBrokenProcessShapes(): any[] {
+    return (this.modeler?.get('elementRegistry').filter((element: any) => element.type === 'process') ?? []).filter(
+      (shape: any) => this.getProcessStatus(shape.businessObject) !== 'resolved' && !this.keptElementIds.has(shape.id),
+    );
+  }
+
+  /**
+   * Warns once per newly broken reference, and only while this map is the one the user looks at. The warning replaces
+   * the previous one and goes away once nothing is broken.
+   */
+  private notifyBrokenProcesses(): void {
+    const broken = new Set<string>(this.getBrokenProcessShapes().map((shape: any) => shape.id));
+    if (broken.size === 0) {
+      this.closeBrokenNotification();
+    }
+    if (this.studio.editors.getFocusedEditorDocument()?.uri !== this.uri) {
+      return;
+    }
+    for (const id of this.notifiedBrokenIds) {
+      if (!broken.has(id)) {
+        this.notifiedBrokenIds.delete(id);
+      }
+    }
+    const hasNewlyBroken = [...broken].some((id) => !this.notifiedBrokenIds.has(id));
+    broken.forEach((id) => this.notifiedBrokenIds.add(id));
+    if (!hasNewlyBroken) {
+      return;
+    }
+    const count = broken.size;
+    this.closeBrokenNotification();
+    this.brokenNotificationId = this.studio.notifications.open(
+      {
+        type: 'warning',
+        content: `${count} ${count === 1 ? 'process on this map is' : 'processes on this map are'} not found in the solution or defined in several files.`,
+        source: 'Landscapes',
+        actions: [{ action: 'review', label: 'Review', default: true }],
+      },
+      (response) => {
+        if (response.action === 'review') {
+          this.reviewBrokenProcesses();
+        }
+      },
+    );
+  }
+
+  private closeBrokenNotification(): void {
+    if (this.brokenNotificationId != null) {
+      this.studio.notifications.close(this.brokenNotificationId);
+      this.brokenNotificationId = null;
+    }
+  }
+
+  //#endregion References
 
   //#region Properties
 
@@ -426,6 +682,8 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     const modeler = new LandscapeModeler({
       getProcessLabel: (element) => this.getProcessLabel(element),
       getDecisionCount: (element) => this.resolveProcess(element)?.process.decisionRefs.length ?? 0,
+      getProcessStatus: (element) => this.getProcessStatus(element),
+      getMapLinkStatus: (element) => this.getMapLinkStatus(element),
     });
     const eventBus = modeler.get('eventBus');
     eventBus.on('commandStack.changed', ({ trigger }: { trigger: string }) => {
@@ -437,6 +695,9 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       this.updateCurrentData(this.currentText);
       this.showRelations();
       this.bumpSelectionRevision();
+      if (this.getBrokenProcessShapes().length === 0) {
+        this.closeBrokenNotification();
+      }
     });
     eventBus.on('selection.changed', ({ newSelection }: { newSelection: unknown[] }) => {
       this.updateMetadata({ hasSelection: newSelection.length > 0 });
@@ -446,6 +707,8 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     eventBus.on('element.dblclick', ({ element }: any) => {
       if (element.type === 'process') {
         this.openProcess(element.businessObject);
+      } else if (element.type === 'mapLink') {
+        this.openMapLink(element.businessObject);
       }
     });
     eventBus.on('canvas.viewbox.changed', ({ viewbox }: { viewbox: Viewbox }) => {
@@ -472,20 +735,10 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.updateMetadata({ selectionRevision: this.selectionRevision });
   }
 
-  /** The solution process a shape stands for: the one in the file the hint points to, else the first with its id. */
+  /** The solution process a shape stands for; `null` when the reference is missing or ambiguous. */
   private resolveProcess(element: LandscapeProcessElement): ResolvedProcess | null {
-    const candidates = this.catalog.flatMap((entry): ResolvedProcess[] =>
-      entry.kind === 'bpmn'
-        ? entry.processes
-            .filter((process) => process.id === element.processId)
-            .map((process) => ({ uri: entry.uri, process }))
-        : [],
-    );
-    return (
-      candidates.find((candidate) => relativeFileHint(this.uri, candidate.uri) === element.fileHint) ??
-      candidates[0] ??
-      null
-    );
+    const resolution = resolveProcessReference(this.catalog, this.uri, element);
+    return resolution.status === 'resolved' ? { uri: resolution.uri, process: resolution.process } : null;
   }
 
   private processName(reference: LandscapeProcessReference): string {
@@ -525,9 +778,13 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   private openProcess(element: LandscapeProcessElement): void {
     const resolved = this.resolveProcess(element);
     if (resolved == null) {
+      const reason =
+        this.getProcessStatus(element) === 'ambiguous'
+          ? `is defined in several files; choose the file in the properties pane`
+          : `is not found in the solution`;
       this.studio.notifications.open({
         type: 'info',
-        content: `The process "${element.processId}" is not found in the solution, so it cannot be opened.`,
+        content: `The process "${element.processId}" ${reason}, so it cannot be opened.`,
         source: 'Landscapes',
       });
       return;
@@ -541,8 +798,12 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     }
     const scanNumber = ++this.latestCatalogScan;
     let catalog: SolutionBpmnModelEntry[];
+    let maps: LandscapeMapEntry[];
     try {
-      catalog = await scanSolutionBpmnModels(this.studio);
+      [catalog, maps] = await Promise.all([
+        scanSolutionBpmnModels(this.studio),
+        scanSolutionLandscapeMaps(this.studio),
+      ]);
     } catch (error) {
       console.warn('[LandscapeMapDocumentModel] The solution scan failed; process names stay as they are:', error);
       return;
@@ -552,16 +813,20 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       return;
     }
     this.catalog = catalog;
+    this.maps = maps;
     // The document may have been closed while the scan ran.
     const modeler = this.modeler;
     if (modeler == null) {
       return;
     }
     this.relations = buildProcessRelations(this.catalog);
-    const processShapes = modeler.get('elementRegistry').filter((element: any) => element.type === 'process');
-    modeler.get('eventBus').fire('elements.changed', { elements: processShapes });
+    const referenceShapes = modeler
+      .get('elementRegistry')
+      .filter((element: any) => element.type === 'process' || element.type === 'mapLink');
+    modeler.get('eventBus').fire('elements.changed', { elements: referenceShapes });
     this.showRelations();
     this.bumpSelectionRevision();
+    this.notifyBrokenProcesses();
   }
 
   private startFileWatcher(): void {

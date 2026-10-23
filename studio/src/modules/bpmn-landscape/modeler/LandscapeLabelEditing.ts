@@ -7,7 +7,7 @@ import { UPDATE_ELEMENT_COMMAND } from './LandscapeUpdates';
 const CONTAINER_TITLE_HEIGHT = 30;
 const CONNECTOR_LABEL_BOX = { width: 140, height: 40 };
 
-/** The edited property of a canvas element; a process takes its label from the properties pane. */
+/** The edited property of a canvas element; a process and a map link take their label from the properties pane. */
 function textPropertyOf(element: any): 'label' | 'text' | null {
   switch (element.type) {
     case 'note':
@@ -15,7 +15,6 @@ function textPropertyOf(element: any): 'label' | 'text' | null {
     case 'group':
     case 'band':
     case 'placeholder':
-    case 'mapLink':
     case 'connector':
       return 'label';
     default:
@@ -23,7 +22,7 @@ function textPropertyOf(element: any): 'label' | 'text' | null {
   }
 }
 
-/** Double-click edits the label of a group, band, placeholder, map link or connector and the text of a note. */
+/** Double-click edits the label of a group, band, placeholder or connector and the text of a note. */
 export default class LandscapeLabelEditing {
   static $inject = ['eventBus', 'canvas', 'directEditing', 'commandStack'];
 
@@ -39,7 +38,7 @@ export default class LandscapeLabelEditing {
     // so Backspace, arrows and Cmd/Ctrl+C/V would never reach the contenteditable text box.
     directEditing._textbox.content.addEventListener('keydown', (event: KeyboardEvent) => event.stopPropagation());
 
-    // Double-click on a process is reserved for opening it in the Designer.
+    // Double-click on a process or a map link is reserved for opening it.
     eventBus.on('element.dblclick', ({ element }: any) => {
       if (textPropertyOf(element) != null) {
         directEditing.activate(element);

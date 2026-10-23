@@ -107,19 +107,24 @@ type TreeItem_PropertyString = TreeItemBase & {
 
 export type TreeBadge = TreeBadge_Character | TreeBadge_Icon | TreeBadge_Number;
 
-type TreeBadge_Character = {
+type TreeBadgeBase = {
+  /** Shown when the pointer rests on the badge. */
+  readonly tooltip?: string;
+};
+
+type TreeBadge_Character = TreeBadgeBase & {
   type: 'character';
 
   readonly character: string;
 };
 
-type TreeBadge_Icon = {
+type TreeBadge_Icon = TreeBadgeBase & {
   type: 'icon';
 
   readonly icon: string;
 };
 
-type TreeBadge_Number = {
+type TreeBadge_Number = TreeBadgeBase & {
   type: 'number';
 
   readonly number: number;

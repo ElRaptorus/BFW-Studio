@@ -6,17 +6,41 @@ import Text from 'diagram-js/lib/util/Text';
 import type {
   LandscapeConnector,
   LandscapeElement,
+  LandscapeMapLinkElement,
   LandscapePoint,
   LandscapeProcessElement,
 } from '../LandscapeMapFile';
 import type { RelationLine } from '../buildRelationLines';
+import type { ReferenceStatus } from '../resolveProcessReference';
 
 export type LandscapeRendererConfig = {
   /** The text shown on a process shape: its own label, the process name from the solution, or the process id. */
   getProcessLabel(element: LandscapeProcessElement): string;
   /** The number of decisions the process references; a badge shows it when it is above zero. */
   getDecisionCount(element: LandscapeProcessElement): number;
+  /** `missing` and `ambiguous` shapes are drawn greyed with a warning. */
+  getProcessStatus(element: LandscapeProcessElement): ReferenceStatus;
+  /** `missing` when the map the link names does not exist. */
+  getMapLinkStatus(element: LandscapeMapLinkElement): Exclude<ReferenceStatus, 'ambiguous'>;
 };
+
+const BROKEN_OPACITY = 0.45;
+const PROCESS_WARNING_TITLES: Record<Exclude<ReferenceStatus, 'resolved'>, string> = {
+  missing: 'This process is not found in the solution.',
+  ambiguous: 'This process is defined in several files. Choose one in the properties pane.',
+};
+const MAP_LINK_WARNING_TITLE = 'This map is not found in the landscape folder.';
+
+function statusOf(element: LandscapeElement, config: LandscapeRendererConfig): ReferenceStatus {
+  switch (element.type) {
+    case 'process':
+      return config.getProcessStatus(element);
+    case 'mapLink':
+      return config.getMapLinkStatus(element);
+    default:
+      return 'resolved';
+  }
+}
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 const DEFAULT_FILL = 'var(--color-bpmn-defaultFillColor)';
@@ -104,7 +128,9 @@ export default class LandscapeRenderer extends BaseRenderer {
     const fill = element.style?.fill ?? DEFAULT_FILL;
     const stroke = element.style?.stroke ?? DEFAULT_STROKE;
     const style = `fill: ${fill}; stroke: ${stroke}; stroke-width: 2px;`;
-    const dashedStyle = element.type === 'placeholder' ? `${style} stroke-dasharray: 6 4;` : style;
+    const status = statusOf(element, this.config);
+    const isBroken = status !== 'resolved';
+    const dashedStyle = element.type === 'placeholder' || isBroken ? `${style} stroke-dasharray: 6 4;` : style;
     let visual: SVGElement;
     if (element.type === 'note') {
       visual = createSvgElement('path', { ['d']: this.notePath(shape.width, shape.height), style });
@@ -114,12 +140,15 @@ export default class LandscapeRenderer extends BaseRenderer {
       visual = createSvgElement('rect', {
         width: shape.width,
         height: shape.height,
-        rx: element.type === 'process' || element.type === 'placeholder' ? 10 : 4,
+        rx: element.type === 'process' || element.type === 'placeholder' || element.type === 'mapLink' ? 10 : 4,
         style: dashedStyle,
       });
     }
     visual.classList.add(`landscape-${element.type}`);
     parentGraphics.appendChild(visual);
+    if (element.type === 'mapLink') {
+      this.drawMapLinkDecoration(parentGraphics, shape.width, shape.height, stroke, isBroken);
+    }
 
     const isContainer = element.type === 'group' || element.type === 'band';
     let padding: number | { left: number; right: number; top: number; bottom: number } = isContainer ? 8 : 6;
@@ -134,6 +163,15 @@ export default class LandscapeRenderer extends BaseRenderer {
     text.classList.add('landscape-label');
     text.setAttribute('style', `fill: ${stroke};`);
     parentGraphics.appendChild(text);
+
+    if (status !== 'resolved') {
+      visual.setAttribute('opacity', String(BROKEN_OPACITY));
+      text.setAttribute('opacity', String(BROKEN_OPACITY));
+      this.drawWarning(
+        parentGraphics,
+        element.type === 'process' ? PROCESS_WARNING_TITLES[status] : MAP_LINK_WARNING_TITLE,
+      );
+    }
 
     if (element.type === 'process') {
       this.drawDecisionBadge(parentGraphics, shape.width, this.config.getDecisionCount(element), stroke);
@@ -209,6 +247,56 @@ export default class LandscapeRenderer extends BaseRenderer {
     text.classList.add('landscape-label', 'landscape-line-label');
     text.setAttribute('transform', `translate(${point.x - LINE_LABEL_WIDTH / 2}, ${point.y})`);
     parentGraphics.appendChild(text);
+  }
+
+  /** A second border inside the rounded rectangle and a folded-map glyph mark a link to another map. */
+  private drawMapLinkDecoration(
+    parentGraphics: SVGElement,
+    width: number,
+    height: number,
+    stroke: string,
+    isBroken: boolean,
+  ): void {
+    const lineStyle = `fill: none; stroke: ${stroke}; stroke-width: 1px;`;
+    const opacity = isBroken ? String(BROKEN_OPACITY) : '1';
+    const inner = createSvgElement('rect', {
+      x: 4,
+      y: 4,
+      width: width - 8,
+      height: height - 8,
+      rx: 7,
+      style: lineStyle,
+    });
+    const glyph = createSvgElement('path', {
+      ['d']: 'M0,2L4,0L8,2L12,0V8L8,10L4,8L0,10ZM4,0V8M8,2V10',
+      transform: `translate(${width - 22}, 7)`,
+      style: lineStyle,
+    });
+    for (const decoration of [inner, glyph]) {
+      decoration.setAttribute('opacity', opacity);
+      parentGraphics.appendChild(decoration);
+    }
+  }
+
+  private drawWarning(parentGraphics: SVGElement, title: string): void {
+    const warning = createSvgElement('g', { transform: 'translate(7, 6)' });
+    warning.classList.add('landscape-reference-warning');
+    warning.appendChild(
+      createSvgElement('path', {
+        ['d']: 'M7,0L14,13H0Z',
+        style: 'fill: #f59e0b; stroke: #92400e; stroke-width: 1px; stroke-linejoin: round;',
+      }),
+    );
+    warning.appendChild(
+      createSvgElement('path', {
+        ['d']: 'M7,4.5V8.5M7,10.2V11',
+        style: 'fill: none; stroke: #451a03; stroke-width: 1.5px;',
+      }),
+    );
+    const warningTitle = createSvgElement('title', {});
+    warningTitle.textContent = title;
+    warning.appendChild(warningTitle);
+    parentGraphics.appendChild(warning);
   }
 
   private drawDecisionBadge(parentGraphics: SVGElement, width: number, count: number, stroke: string): void {

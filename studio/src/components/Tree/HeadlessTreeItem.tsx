@@ -23,6 +23,8 @@ type HeadlessTreeItemProps = {
   onContextMenu: (itemData: TreeItemData, event: MouseEvent) => void;
   onActionIconClick?: (data: TreeItemData & Record<string, any>, event: any) => void;
   onDragAndDropItem?: TreeItemDropCallbackFn;
+  /** Rows can be dragged out of the tree even without drop handlers. */
+  draggable?: boolean;
   onExternalFileDrop?: ExternalFileDropCallbackFn;
 };
 
@@ -128,6 +130,8 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
   ];
 
   const enableDragAndDrop = !!props.onDragAndDropItem;
+  // A tree without drop handlers can still be the source of a drag, for example onto an editor.
+  const enableDrag = enableDragAndDrop || props.draggable === true;
 
   const dataTestAttrs: Record<string, string> = {
     'data-test--tree-entry-type': data.type,
@@ -139,7 +143,7 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
   const { ref: htRef, ...htPropsWithoutRef } = item.getProps();
   const indentStyle = { paddingLeft: `${depth * 16}px` };
 
-  const isDraggable = enableDragAndDrop && (data.type === 'file' || data.type === 'directory');
+  const isDraggable = enableDrag && (data.type === 'file' || data.type === 'directory');
 
   const { isDragging, dragSourceProps } = useDragSource({
     type: 'tree_item',
@@ -178,13 +182,13 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
     },
   });
 
-  if (enableDragAndDrop) {
+  if (enableDrag) {
     classNames.push(isOver ? 'treeview__entry--over' : '', isDragging ? 'treeview__entry--dragging' : '');
   }
 
   let entry: React.JSX.Element;
 
-  if (!enableDragAndDrop) {
+  if (!enableDrag) {
     entry = (
       <div
         ref={htRef}
@@ -301,14 +305,14 @@ function renderBadges(badges: TreeBadge[], iconComponent: IconComponent): React.
     switch (badge.type) {
       case 'character':
         return (
-          <span className="treeview__badge" key={`character:${badge.character}`}>
+          <span className="treeview__badge" key={`character:${badge.character}`} title={badge.tooltip}>
             {badge.character}
             {suffix}
           </span>
         );
       case 'number':
         return (
-          <span className="treeview__badge" key={`number:${badge.number}`}>
+          <span className="treeview__badge" key={`number:${badge.number}`} title={badge.tooltip}>
             {badge.number}
             {suffix}
           </span>
@@ -316,7 +320,7 @@ function renderBadges(badges: TreeBadge[], iconComponent: IconComponent): React.
       case 'icon': {
         const Icon = iconComponent;
         return (
-          <span className="treeview__badge" key={`icon:${badge.icon}`}>
+          <span className="treeview__badge" key={`icon:${badge.icon}`} title={badge.tooltip}>
             <Icon id={badge.icon} />
             {suffix}
           </span>

@@ -28,6 +28,11 @@ function TitleWarning(props: { studio: EditorDocumentRendererProps['studio']; la
   );
 }
 
+/** A map file row of the Maps explorer. */
+function isMapRow(item: any): boolean {
+  return item?.type === 'file' && /\.bfwmap$/i.test(item.metadata?.uri ?? '');
+}
+
 export default function LandscapeMapRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
   const { studio, editorDocument } = props;
   const [model, setModel] = useState<LandscapeMapDocumentModel | null>(null);
@@ -59,10 +64,16 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
 
   const { isOver, dropTargetProps } = useDropTarget({
     accept: ['tree_item'],
-    canDrop: (subject) => subject.item?.metadata?.processId != null,
+    canDrop: (subject) => subject.item?.metadata?.processId != null || isMapRow(subject.item),
     onDrop: (subject, event) => {
       const point = model?.toCanvasPoint(event.clientX, event.clientY);
       if (point == null) {
+        return;
+      }
+      if (isMapRow(subject.item)) {
+        void studio.commands.executeCommand('bpmn.landscape.addMapLinkToMap', [
+          { mapUri: subject.item.metadata.uri, ...point },
+        ]);
         return;
       }
       const { processId, fileUri } = subject.item.metadata;
@@ -119,6 +130,14 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             className={metadata.focusMode === true ? 'editor-toolbar__button--active' : ''}
             command="bpmn.landscape.toggleFocusMode"
             dataTestId="landscape-focus-mode"
+          />
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-export"
+            label="Export"
+            tooltip="Export the map as an image"
+            command="std.editor.showExportDialog.bpmn-landscape-map"
+            dataTestId="landscape-export"
           />
         </EditorToolbarLeft>
       </EditorToolbar>

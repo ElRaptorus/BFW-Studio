@@ -17,6 +17,7 @@ import LandscapeMapDocumentModel from '../LandscapeMapDocumentModel';
 import type { LandscapeElement, LandscapeShape } from '../LandscapeMapFile';
 import type { ProcessRelationKind } from '../buildProcessRelations';
 import type { RelationLine } from '../buildRelationLines';
+import type { ProcessCandidate } from '../resolveProcessReference';
 
 const KIND_LABELS: Record<ProcessRelationKind, string> = {
   callActivity: 'Call activities',
@@ -216,6 +217,7 @@ function ShapeProperties(props: {
         />
       </div>
       {element.type === 'process' && <ProcessDetailsView studio={studio} model={model} element={element} />}
+      {element.type === 'mapLink' && <MapLinkDetails model={model} element={element} />}
     </PaneBody>
   );
 }
@@ -266,7 +268,7 @@ function ProcessDetailsView(props: {
   const { studio, model, element } = props;
   const details = model.getProcessDetails(element);
   if (details == null) {
-    return <p className="landscape-properties__info">Not found in the solution.</p>;
+    return <BrokenProcessDetails model={model} element={element} />;
   }
   const { process } = details;
   return (
@@ -304,6 +306,107 @@ function ProcessDetailsView(props: {
           </button>
         </div>
       ))}
+    </>
+  );
+}
+
+function candidateOption(model: LandscapeMapDocumentModel, candidate: ProcessCandidate): SelectOption {
+  const file = model.getRelativePath(candidate.uri);
+  const value = `${candidate.uri}#${candidate.process.id}`;
+  return {
+    label: candidate.process.name ? `${candidate.process.name} (${file})` : `${candidate.process.id} (${file})`,
+    value: candidate,
+    dataTestOptionValue: value,
+  };
+}
+
+/** A process shape whose reference does not resolve: say why, and offer the three ways out. */
+function BrokenProcessDetails(props: {
+  model: LandscapeMapDocumentModel;
+  element: Extract<LandscapeElement, { type: 'process' }>;
+}): React.JSX.Element {
+  const { model, element } = props;
+  const options = model.getReplacementOptions(element);
+  if (options == null) {
+    return <p className="landscape-properties__info">Looking for this process in the solution ...</p>;
+  }
+  const isAmbiguous = options.status === 'ambiguous';
+  return (
+    <div data-test--landscape-broken-process={options.status}>
+      <p className="landscape-properties__info">
+        {isAmbiguous
+          ? `The process "${element.processId}" is defined in several files. Choose the file this shape stands for.`
+          : `The process "${element.processId}" is not found in the solution.`}
+      </p>
+      {options.candidates.length === 0 ? (
+        <PaneProperty
+          type="text"
+          label="Replace with"
+          value="Every process of the solution is already on this map"
+          disabled
+        />
+      ) : (
+        <PaneProperty
+          type="select"
+          label={isAmbiguous ? 'File' : 'Replace with'}
+          placeholder={isAmbiguous ? 'Choose a file ...' : 'Choose a process ...'}
+          options={options.candidates.map((candidate) => candidateOption(model, candidate))}
+          onChange={(option: SelectOption) => model.replaceSelectedProcess(option.value)}
+          htmlId="landscape-replace-process"
+        />
+      )}
+      <button
+        type="button"
+        className="btn btn-sm btn-secondary landscape-properties__button"
+        onClick={() => model.dropSelectedProcessReference()}
+        data-test--landscape-drop-reference
+      >
+        Drop reference
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-secondary landscape-properties__button"
+        disabled={options.isKept}
+        onClick={() => model.keepSelectedReference()}
+        data-test--landscape-keep-reference
+      >
+        {options.isKept ? 'Kept until the map is closed' : 'Keep'}
+      </button>
+    </div>
+  );
+}
+
+function MapLinkDetails(props: {
+  model: LandscapeMapDocumentModel;
+  element: Extract<LandscapeElement, { type: 'mapLink' }>;
+}): React.JSX.Element {
+  const { model, element } = props;
+  const status = model.getMapLinkStatus(element);
+  const targets = model.getOtherMaps();
+  const options: SelectOption[] = targets.map((entry) => ({
+    label: entry.name,
+    value: entry.uri,
+    dataTestOptionValue: model.getRelativePath(entry.uri),
+  }));
+  return (
+    <>
+      <PaneProperty type="text" label="Target" value={element.mapPath} disabled />
+      {status === 'missing' && (
+        <p className="landscape-properties__info" data-test--landscape-broken-map-link>
+          The map "{element.mapPath}" is not found in the landscape folder.
+        </p>
+      )}
+      <PaneProperty
+        // The select only reads its value on mount; undo and redo change `mapPath` underneath it.
+        key={element.mapPath}
+        type="select"
+        label="Target map"
+        placeholder="Choose a map ..."
+        options={options}
+        value={options.find((option) => model.getRelativePath(option.value) === element.mapPath)}
+        onChange={(option: SelectOption) => model.retargetSelectedMapLink(option.value)}
+        htmlId="landscape-map-link-target"
+      />
     </>
   );
 }

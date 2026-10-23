@@ -44,7 +44,29 @@ The map draws the relations between the processes on it, read from the saved BPM
 
 The Properties pane on the right edits the selected element: label, shape (box or chevron), colour. For a process it shows the file, version, relations and decisions; _Open_ opens a decision. With nothing selected it edits the map name and the relation types.
 
-Double-click a process to open it in the Designer.
+Double-click a process to open it in the Designer. The Processes pane shows on how many maps each process appears.
+
+&nbsp;
+
+## When processes change
+
+A map stores the process id and the file of every process on it. If a BPMN file is renamed, moved or edited, the map follows as long as the process id is still defined in exactly one file of the solution. When it is not, the process is drawn faded with a warning mark, and the Maps explorer shows a yellow number on the map.
+
+- **Not found:** the id exists in no file. Select the shape and choose _Replace with_ to point it at another process, _Drop reference_ to turn it into a placeholder with the same label and connectors, or _Keep_ to leave it as it is until the map is closed.
+- **In several files:** the id is defined more than once. Choose the file in _Replace with_.
+- **Review:** when a map with such processes opens, a notice offers _Review_, which selects the first of them.
+
+&nbsp;
+
+## Linking maps
+
+Drag a map from the Maps explorer onto another map to add a link to it. Double-click the link to open the target; its label is edited in the Properties pane. If the target map is renamed or deleted, the link is faded and can be pointed at another map in the Properties pane.
+
+&nbsp;
+
+## Export
+
+The _Export_ button in the toolbar saves the whole map as SVG, PNG, JPEG or WebP, depending on the file extension you choose.
 
 &nbsp;
 

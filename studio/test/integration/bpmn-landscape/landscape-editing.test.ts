@@ -120,7 +120,7 @@ describe('bpmn-landscape/landscape-editing', () => {
   beforeEach(async ({ task }) => {
     landscapeWorkspace = createLandscapeWorkspace('bfw-landscape-');
     workspace = landscapeWorkspace.workspace;
-    if (task.name.includes('Explorer')) {
+    if (task.name.includes('empty map')) {
       writeMap('Empty.bfwmap', '');
     }
     writeMap('Test.bfwmap', {
@@ -162,8 +162,11 @@ describe('bpmn-landscape/landscape-editing', () => {
     fs.rmSync(workspace, { recursive: true, force: true });
   });
 
-  it('opening an empty map from the Explorer activates the Landscapes page', async () => {
-    await studioAgent.jumpToFileInSolution('Empty.bfwmap', DOCUMENT_TYPE);
+  it('opening an empty map from the Maps explorer activates the Landscapes page', async () => {
+    await studioAgent.navigation.showLeftPane('discover/landscapes/maps');
+    await studioAgent.clickOn(
+      `[data-test--tree="std/file-explorer/landscapes"] [data-test--tree-entry-uri$="/landscapes/Empty.bfwmap"]`,
+    );
 
     await studioAgent.navigation.assertActivePage('discover/landscapes');
     await studioAgent.assertVisible(CANVAS, TIMEOUT);

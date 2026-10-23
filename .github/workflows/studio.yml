@@ -74,6 +74,7 @@ jobs:
       matrix:
         suite:
           - bpmn-editor
+          - bpmn-landscape
           - core
           - dmn-editor
           - git-cruiser

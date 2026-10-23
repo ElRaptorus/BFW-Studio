@@ -70,28 +70,28 @@ todos:
     status: completed
   - id: m4-resolution
     content: "M4 Solution integration: resolveProcessReference (resolved, missing, ambiguous, replace candidates) against the saved solution and scanSolutionLandscapeMaps over the landscape folder; the document model uses the resolver; unit tests"
-    status: pending
+    status: completed
   - id: m4-maps-pane
     content: "M4: missing-process badges through a scoped decoration provider, and dragging maps from the Maps explorer onto the canvas; on-N-maps badge in the Processes pane"
-    status: pending
+    status: completed
   - id: m4-missing-processes
     content: "M4: missing and ambiguous processes - greyed drawing, Review notification, Replace, Drop to placeholder, session Keep"
-    status: pending
+    status: completed
   - id: m4-map-links
     content: "M4: map links - drop from the Maps explorer, own look, greyed when the target is missing, double-click opens, Target map picker"
-    status: pending
+    status: completed
   - id: m4-explorer-menu
     content: "M4: New Landscape Map... in the Maps explorer (done by the explorer perspectives plan)"
     status: completed
   - id: m4-image-export
     content: "M4: image export as PNG, JPG, WebP and SVG through the std export commands and a toolbar button"
-    status: pending
+    status: completed
   - id: m4-tests-docs
     content: "M4: docs and integration tests (missing-process flow, map link, export)"
-    status: pending
+    status: completed
   - id: m4-gate-review
     content: "M4: Studio gate, copy this plan to docs/, ask before running the landscape suite, stop for review"
-    status: pending
+    status: in_progress
   - id: m5-levels-bands
     content: "M5 Hierarchy: levels editor, bands, nested groups with auto-resize"
     status: pending
@@ -112,6 +112,9 @@ todos:
     status: pending
   - id: m6-wizard
     content: "M6: auto-create wizard and Create Map from Selection"
+    status: pending
+  - id: m6-scan-cost
+    content: "M6: one shared map and catalog scan per solution change instead of one per consumer (decorations, Processes pane, each open map)"
     status: pending
   - id: m6-tests-docs
     content: "M6: docs, decisions, help text, integration tests for the wizard"
@@ -464,8 +467,9 @@ The properties pane, for a broken process, shows the status sentence and three a
 
 36. `layoutLandscape`; tests for determinism, no overlaps, cycles and grouping.
 37. Auto-create wizard; "Create Map from Selection" in the Processes pane opens it.
-38. `bpmn-landscape.md` (layout), `docs/decisions.md` (own layout, elkjs in reserve), final help text, integration tests (wizard creates the expected map).
-39. Studio gate. Ask before running the full integration run (`npm run test:integration`). **Final review**; whether elkjs is needed is your decision at this point.
+38. Scan cost (open item from the Milestone 4 review): every solution change scans all maps and the BPMN catalog once for the Maps explorer badges, once for the Processes pane and once per open map. Share one scan per solution change between these consumers (or cache map parses by text hash like the BPMN scan) and remove the `ponytail:` note in `scanSolutionLandscapeMaps.ts`.
+39. `bpmn-landscape.md` (layout), `docs/decisions.md` (own layout, elkjs in reserve), final help text, integration tests (wizard creates the expected map).
+40. Studio gate. Ask before running the full integration run (`npm run test:integration`). **Final review**; whether elkjs is needed is your decision at this point.
 
 Plan-Gate: bestanden.
 

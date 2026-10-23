@@ -36,6 +36,8 @@ export type TreeProps = {
   onDoubleClick?: TreeItemClickCallbackFn;
   onActionIconClick?: (...args: any[]) => any;
   onDragAndDropItem?: TreeItemDropCallbackFn;
+  /** Rows can be dragged out of the tree even without drop handlers. */
+  draggable?: boolean;
   onExternalFileDrop?: ExternalFileDropCallbackFn;
   viewMediatorId: string;
   multiSelectionMenuId?: string;
@@ -51,6 +53,7 @@ function areHeadlessTreePropsEqual(prev: TreeProps, next: TreeProps): boolean {
     prev.className === next.className &&
     prev.multiSelectionMenuId === next.multiSelectionMenuId &&
     prev.onDragAndDropItem === next.onDragAndDropItem &&
+    prev.draggable === next.draggable &&
     prev.onExternalFileDrop === next.onExternalFileDrop &&
     prev.decorationSource === next.decorationSource
   );
@@ -211,6 +214,7 @@ export const Tree = React.memo(function Tree(props: TreeProps): React.JSX.Elemen
             onContextMenu={handleContextMenu}
             onActionIconClick={props.onActionIconClick != null ? stableOnActionIconClick : undefined}
             onDragAndDropItem={props.onDragAndDropItem}
+            draggable={props.draggable}
             onExternalFileDrop={props.onExternalFileDrop}
           />
         ))}
