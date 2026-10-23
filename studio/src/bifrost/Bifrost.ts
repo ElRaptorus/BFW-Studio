@@ -31,6 +31,7 @@ import { DiagnosticsManager } from './common/DiagnosticsManager';
 import { DialogManager } from './common/DialogManager';
 import { DialogService } from './common/DialogService';
 import { Environment } from './common/Environment';
+import { ExplorerMediator } from './common/ExplorerMediator';
 import type { FileHandlingService } from './common/FileHandlingService';
 import { FileHandlingServiceDefault } from './common/FileHandlingServiceDefault';
 import { HelpTextManager } from './common/HelpTextManager';
@@ -53,11 +54,12 @@ import type { SourceControlService } from './common/SourceControlService';
 import { SourceControlServiceDefault } from './common/SourceControlServiceDefault';
 import { StatusBarManager } from './common/StatusBarManager';
 import { SymbolIndexStub } from './common/SymbolIndexStub';
-import { FileExplorerView, GlobalSearchView } from './common/activities';
+import { GlobalSearchView } from './common/activities';
 import { NullPluginHost } from './common/plugin-host/NullPluginHost';
 import { PluginService } from './common/plugin-host/PluginService';
 import type { BifrostLocalStorage, BifrostOptions, BifrostOptionsStrict } from './contracts/BifrostTypes';
 import { BifrostLocalStorageScope } from './contracts/BifrostTypes';
+import { DESIGNER_EXPLORER_ID } from './contracts/ExplorerTypes';
 import { EVENT_RECENTLY_CLOSED_CHANGED, EVENT_RECENTLY_OPENED_CHANGED } from './contracts/RecentTypes';
 import type { ISymbolIndex } from './contracts/SymbolTypes';
 
@@ -199,9 +201,9 @@ export class Bifrost {
   public readonly views: ViewMediatorManager;
 
   /**
-   * View for the File Explorer in the Left Pane Area
+   * The file explorers: the built-in Designer explorer and the explorers other pages register
    */
-  public readonly fileExplorerView: FileExplorerView;
+  public readonly explorers: ExplorerMediator;
   /**
    * View for the Search in the Left Pane Area
    */
@@ -423,7 +425,7 @@ export class Bifrost {
     const panesStorage = this.getLocalStorage('Pane', BifrostLocalStorageScope.Instance);
     this.panes = new PaneMediator(panesStorage);
 
-    this.fileExplorerView = new FileExplorerView(this, this.files);
+    this.explorers = new ExplorerMediator(this, this.files);
 
     const solutionStorage = this.getLocalStorage('Solution', BifrostLocalStorageScope.Instance);
     const offerSolutionFileRepair = async (error: SolutionFileUnreadableError): Promise<boolean> => {
@@ -438,7 +440,7 @@ export class Bifrost {
       this.performance,
       this.recentlyOpened,
       this.settings,
-      this.fileExplorerView,
+      this.explorers.getView(DESIGNER_EXPLORER_ID),
       solutionStorage,
       offerSolutionFileRepair,
     );
@@ -452,11 +454,7 @@ export class Bifrost {
       offerSolutionFileRepair,
     });
     this.solution.on(EVENT_SOLUTION_CHANGED, async (solution) => {
-      if (solution != null) {
-        await this.fileExplorerView.setSolution(solution);
-      } else {
-        this.fileExplorerView.clearSolution();
-      }
+      await this.explorers.setSolution(solution);
       this.events.emitInternalBifrostEvent('solutionChanged', [solution]);
     });
 

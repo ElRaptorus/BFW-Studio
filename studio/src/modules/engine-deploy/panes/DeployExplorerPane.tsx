@@ -28,7 +28,7 @@ function getPaneTitle(
   _editorDocumentModel: EditorDocumentModel,
   studio: Bifrost,
 ): string {
-  return Bifrost.cast(studio).fileExplorerView.getViewData().solution?.label ?? 'Deploy Explorer';
+  return Bifrost.cast(studio).solution.getSolution()?.name ?? 'Deploy Explorer';
 }
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {

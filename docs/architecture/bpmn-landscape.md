@@ -4,7 +4,7 @@
 
 ## Overview
 
-`studio/src/modules/bpmn-landscape/` holds process landscape maps: `.bfwmap` files in the solution that place processes, groups and notes on a canvas and show how the processes relate. A map stores which processes it shows and where; relations between processes are derived from the solution scan and never stored. The process catalog is `scanSolutionBpmnModels` in `bpmn-core` ([modules.md](modules.md) §bpmn-core). The editor is a plain diagram-js `Diagram` with landscape-specific services, opened on the page Discover › Landscapes ([workbench-categories.md](workbench-categories.md)).
+`studio/src/modules/bpmn-landscape/` holds process landscape maps: `.bfwmap` files in the landscape folder of a saved solution that place processes, groups and notes on a canvas and show how the processes relate. A map stores which processes it shows and where; relations between processes are derived from the solution scan and never stored. The process catalog is `scanSolutionBpmnModels` in `bpmn-core` ([modules.md](modules.md) §bpmn-core). The editor is a plain diagram-js `Diagram` with landscape-specific services, opened on the page Discover › Landscapes ([workbench-categories.md](workbench-categories.md)).
 
 ---
 
@@ -112,12 +112,37 @@ Validation also rejects: a missing or empty required attribute; a band inside a 
 | Registration | Value |
 |---|---|
 | Page | `discover/landscapes` ("Landscapes", `paneAreas: ['left', 'right']`, editor tabs visible, `order: 0`) |
-| Document type | `bpmn-landscape-map`: `uriMatch /\.bfwmap$/`, `page: 'discover/landscapes'`, model `LandscapeMapDocumentModel`, renderer `LandscapeMapRenderer` |
+| Document type | `bpmn-landscape-map`: `uriMatch /\.bfwmap$/`, `page: 'discover/landscapes'`, model `LandscapeMapDocumentModel`, renderer `LandscapeMapRenderer`, `canOpen` = the landscape folder gate |
 | Included files | `**/*.bfwmap` |
-| Left pane group | `landscapes` with the pane `discover/landscapes/landscapes` (Processes) |
+| Left pane group | `landscapes`: the Maps explorer (`discover/landscapes/maps`) above the Processes pane (`discover/landscapes/landscapes`) |
+| Menu modifiers | `std/file-explorer/directory` and `std/file-explorer/project`: "New Landscape Map..." (`bpmn.landscape.newMap` with the row's URI), only on rows of the Maps explorer |
 | Right pane | `discover/landscapes/properties` (Properties), prepended to the `property` group |
 | Icons | `bpmn-landscape/page/landscapes`, `bpmn-landscape/document-type/map` |
 | Help text | `discover/landscapes` (`texts/landscapes.md`) |
+
+### Landscape Folder
+
+**Path:** `studio/src/modules/bpmn-landscape/landscapeFolder.ts`
+
+Maps resolve their processes against the whole solution, so they need a saved solution with a declared landscape folder: `views.landscapes` in the `.bfwsln` ([workspace.md](workspace.md) §`.bfwsln` Solution File Format). `getLandscapeGate(bifrost)` returns the first missing step:
+
+| State | Condition | Hint (`panes/LandscapeFolderHint.tsx`) |
+|---|---|---|
+| `no-solution` | No solution open | "Landscape maps live in a solution." — Open Solution… |
+| `unsaved` | Folder solution, or explicit solution without a `.bfwsln` | "Save it as a solution to use landscape maps." — Convert to Solution… (folder) or Save Solution As… |
+| `no-folder` | Saved solution without `views.landscapes` | Set Up Landscape Folder, Choose Folder… |
+| `ready`, folder missing on disk | `doesFileOrDirectoryExist` is false | "The landscape folder <path> does not exist." — Create Folder, Choose Another Folder… |
+| `ready`, no maps | The Maps explorer has no files | "No landscape maps yet." — New Landscape Map |
+
+The hint is the Maps explorer's `emptyState`; the Processes pane is hidden (`shouldBeDisplayed`) while the state is not `ready`. It re-checks the folder on `EVENT_EXPLORER_VIEW_UPDATED`. `describeLandscapeFolder` names the folder relative to the `.bfwsln` when below it, else by its local path.
+
+`getMapOpenRefusal(bifrost, uri)` backs `canOpen`: a map opens only when the gate is `ready` and the map lies in the landscape folder (at any depth). Outside it, the refusal reads "Landscape maps open only from the landscape folder of the open solution (<path>). Move this map there or open its solution."
+
+On every `solutionChanged` the module closes the open maps that `getMapOpenRefusal` would now refuse (closing or switching the solution, moving the landscape folder), asking about unsaved changes as usual. Editor restore at startup does not check `canOpen`, so a map restored without a solution stays open until the next solution change.
+
+### Maps Explorer
+
+Registered with `bifrost.explorers.register` ([workspace.md](workspace.md) §Explorers): id `landscapes`, label "Maps", page `discover/landscapes`, source `{ kind: 'view', viewId: 'landscapes', includedFiles: ['**/*.bfwmap'] }`, empty directories hidden, no structural operations, header action New Landscape Map (`data-test--landscape-new-map`). Single maps can be renamed, duplicated and deleted here; folders are shaped in the Designer, where the landscape folder shows greyed and read-only.
 
 ### LandscapeMapDocumentModel
 
@@ -206,11 +231,13 @@ Commands may still hold a relation connection (deleting a process takes its line
   | Connector | Label |
   | Several | "N elements selected" |
 
-- **Processes pane (`panes/ProcessesPane.tsx`):** one collapsed row per BPMN file (sorted by name, `!` badge for an invalid file), process rows with `metadata.processId` and `fileUri` and a map-pin badge when the process is on the focused map. The filter matches file name, process name and id and expands matching files. The header has a "New Map" icon for `bpmn.landscape.newMap`. The pane scans on mount and on every `solutionChanged` (the solution object stays the same when files change); only the newest scan is shown. Rows carry no `uri`, so nothing can be dropped inside the tree.
+- **Processes pane (`panes/ProcessesPane.tsx`):** one collapsed row per BPMN file (sorted by name, `!` badge for an invalid file), process rows with `metadata.processId` and `fileUri` and a map-pin badge when the process is on the focused map. The filter matches file name, process name and id and expands matching files. The pane is shown only while the landscape gate is `ready`; it carries `app-layout__solution-pane`, so it takes the remaining height and scrolls itself, while `landscape.scss` keeps the Maps pane above it from shrinking (at most 40% of the column). The pane scans on mount and on every `solutionChanged` (the solution object stays the same when files change); only the newest scan is shown. Rows carry no `uri`, so nothing can be dropped inside the tree.
 
 | Command | Behaviour |
 |---|---|
-| `bpmn.landscape.newMap` | Needs an open solution. Creates `<first project>/landscapes/` if missing, asks for a path with the native save dialog, appends `.bfwmap` when missing (and stops with a warning when that file exists, because the dialog only checked the name without the extension), writes an empty map via `editors.createNewEditorDocument` and calls `solution.onElementAdded`. Cancel, or a path outside the folder, removes the folder only if this command created it. |
+| `bpmn.landscape.newMap(directoryUri?)` | With the gate closed, activates the Landscapes page and shows an info notice instead. Otherwise creates the landscape folder if missing, asks for a path with the native save dialog (starting in `directoryUri` when it lies in the landscape folder, else in the folder itself; the dialog can create subfolders), appends `.bfwmap` when missing (and stops with a warning when that file exists, because the dialog only checked the name without the extension), writes an empty map via `editors.createNewEditorDocument` and calls `solution.onElementAdded`. A path outside the landscape folder is refused with a warning. |
+| `bpmn.landscape.setUpLandscapeFolder` | In the command search. Creates the declared landscape folder, or `landscapes/` next to the `.bfwsln` when none is declared, and writes it with `solution.setViewFolder('landscapes', …)`. Also the "Create Folder" action for a missing folder. Enabled with a saved solution |
+| `bpmn.landscape.chooseLandscapeFolder` | In the command search. Native directory dialog, then `setViewFolder`. A folder at or above a root folder of the solution is refused with a warning, since it would turn that root read-only in the Designer. Maps in the previous folder stay where they are. Enabled with a saved solution |
 | `bpmn.landscape.addProcessToMap` | `{ processId, fileUri, x, y }` in canvas coordinates, on the focused map |
 | `bpmn.landscape.deleteSelection`, `copySelection`, `paste` | Editor actions on the focused map; enabled with a selection (paste: the clipboard tree has elements; copying only processes or relation lines stores an empty tree) |
 | `bpmn.landscape.moveSelection{Left,Right,Up,Down}[Accelerated]` | `keyboardMoveSelection.moveSelection` |
@@ -227,6 +254,7 @@ The selection commands do nothing while direct editing is active, so the keys re
 | Module entry, commands | `studio/src/modules/bpmn-landscape/index.tsx`, `commands.ts` |
 | Document model, renderer | `studio/src/modules/bpmn-landscape/LandscapeMapDocumentModel.ts`, `LandscapeMapRenderer.tsx` |
 | Modeler and services | `studio/src/modules/bpmn-landscape/modeler/` |
+| Landscape folder gate, hint | `studio/src/modules/bpmn-landscape/landscapeFolder.ts`, `panes/LandscapeFolderHint.tsx` |
 | Processes pane, properties pane | `studio/src/modules/bpmn-landscape/panes/ProcessesPane.tsx`, `LandscapePropertiesPane.tsx` |
 | Relation lines | `studio/src/modules/bpmn-landscape/buildRelationLines.ts`, `modeler/LandscapeRelationLayer.ts` |
 | Styles, help text | `studio/src/modules/bpmn-landscape/styles/landscape.scss`, `texts/landscapes.md` |

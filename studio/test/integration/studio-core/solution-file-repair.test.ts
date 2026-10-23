@@ -42,9 +42,9 @@ describe('solution file repair', () => {
     await studioAgent.openViaCommandSearch('Test: Open URI as solution');
     await studioAgent.assertVisible('[data-test--dialog]');
     await studioAgent.sendKeyboardInput([...`file://${solutionPath}`.split(''), 'enter'], false);
-    await studioAgent.assertVisible('[data-test--tree="std/file-explorer/open-solution"]');
+    await studioAgent.assertVisible('[data-test--tree="std/file-explorer/design"]');
     await studioAgent.waitForNotVisible(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--loading-indicator',
+      '[data-test--tree="std/file-explorer/design"] .treeview__entry--loading-indicator',
     );
   });
 

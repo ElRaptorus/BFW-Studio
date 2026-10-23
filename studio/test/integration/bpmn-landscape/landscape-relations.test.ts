@@ -5,7 +5,6 @@ import {
   serializeLandscapeMap,
 } from '#modules/bpmn-landscape/LandscapeMapFile';
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Key } from 'webdriverio';
@@ -13,6 +12,8 @@ import { Key } from 'webdriverio';
 import { OsSpecificKeystroke } from '../../OsSpecificKeystroke';
 import type { StudioAgent } from '../../StudioAgent';
 import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioAgent';
+import type { LandscapeWorkspace } from './landscapeWorkspace';
+import { createLandscapeWorkspace } from './landscapeWorkspace';
 
 const TIMEOUT = ASSERT_VISIBLE_TIMEOUT;
 const DOCUMENT_TYPE = 'bpmn-landscape-map';
@@ -37,7 +38,7 @@ const processShape = (id: string, processId: string, x: number, y: number): Land
   ...box(id, x, y),
   type: 'process',
   processId,
-  fileHint: `${processId}.bpmn`,
+  fileHint: `../${processId}.bpmn`,
   label: null,
   shape: 'box',
 });
@@ -45,8 +46,9 @@ const processShape = (id: string, processId: string, x: number, y: number): Land
 describe('bpmn-landscape/landscape-relations', () => {
   let studioAgent: StudioAgent;
   let workspace: string;
+  let landscapeWorkspace: LandscapeWorkspace;
 
-  const mapPath = (fileName: string): string => path.join(workspace, fileName);
+  const mapPath = (fileName: string): string => path.join(landscapeWorkspace.landscapeFolder, fileName);
   const mapUri = (): string => `file://${mapPath('Relations.bfwmap')}`;
   const readMap = async (): Promise<LandscapeMap> => {
     const result = await parseLandscapeMap(fs.readFileSync(mapPath('Relations.bfwmap'), 'utf8'));
@@ -126,17 +128,17 @@ describe('bpmn-landscape/landscape-relations', () => {
   };
 
   beforeEach(async ({ task }) => {
-    workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'bfw-landscape-relations-')));
-    fs.cpSync(path.join(__dirname, '..', '..', 'fixtures', 'test-solution-deploy'), workspace, { recursive: true });
+    landscapeWorkspace = createLandscapeWorkspace('bfw-landscape-relations-');
+    workspace = landscapeWorkspace.workspace;
     fs.writeFileSync(
-      mapPath('shipping-sender.bpmn'),
+      path.join(workspace, 'shipping-sender.bpmn'),
       messageBpmn(
         'shipping-sender',
         '<bpmn:intermediateThrowEvent id="Throw_shipped"><bpmn:messageEventDefinition messageRef="Message_shipped" /></bpmn:intermediateThrowEvent>',
       ),
     );
     fs.writeFileSync(
-      mapPath('shipping-receiver.bpmn'),
+      path.join(workspace, 'shipping-receiver.bpmn'),
       messageBpmn(
         'shipping-receiver',
         '<bpmn:intermediateCatchEvent id="Catch_shipped"><bpmn:messageEventDefinition messageRef="Message_shipped" /></bpmn:intermediateCatchEvent>',
@@ -158,7 +160,7 @@ describe('bpmn-landscape/landscape-relations', () => {
     );
 
     studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
-    await studioAgent.openDirectoryAsSolution(workspace);
+    await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
   });
 
   afterEach(async ({ task }) => {

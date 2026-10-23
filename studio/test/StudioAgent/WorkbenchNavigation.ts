@@ -10,6 +10,7 @@ const LEFT_PANE_LOCATIONS: Record<string, { pageId: string; groupId: string; has
   'design/source/git': { pageId: 'design/source', groupId: 'git', hasTabStrip: false },
   'debug/engines/engines': { pageId: 'debug/engines', groupId: 'engines', hasTabStrip: false },
   'control/plugins/plugins': { pageId: 'control/plugins', groupId: 'plugins', hasTabStrip: false },
+  'discover/landscapes/maps': { pageId: 'discover/landscapes', groupId: 'landscapes', hasTabStrip: false },
   'discover/landscapes/landscapes': { pageId: 'discover/landscapes', groupId: 'landscapes', hasTabStrip: false },
 };
 

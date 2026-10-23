@@ -5,7 +5,6 @@ import {
   serializeLandscapeMap,
 } from '#modules/bpmn-landscape/LandscapeMapFile';
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Key } from 'webdriverio';
@@ -13,6 +12,8 @@ import { Key } from 'webdriverio';
 import { OsSpecificKeystroke } from '../../OsSpecificKeystroke';
 import type { StudioAgent } from '../../StudioAgent';
 import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioAgent';
+import type { LandscapeWorkspace } from './landscapeWorkspace';
+import { createLandscapeWorkspace } from './landscapeWorkspace';
 
 const TIMEOUT = ASSERT_VISIBLE_TIMEOUT;
 const DOCUMENT_TYPE = 'bpmn-landscape-map';
@@ -23,8 +24,9 @@ const DELETE = process.platform === 'darwin' ? Key.Backspace : Key.Delete;
 describe('bpmn-landscape/landscape-editing', () => {
   let studioAgent: StudioAgent;
   let workspace: string;
+  let landscapeWorkspace: LandscapeWorkspace;
 
-  const mapPath = (fileName: string): string => path.join(workspace, fileName);
+  const mapPath = (fileName: string): string => path.join(landscapeWorkspace.landscapeFolder, fileName);
   const writeMap = (fileName: string, content: LandscapeMap | string): void =>
     fs.writeFileSync(mapPath(fileName), typeof content === 'string' ? content : serializeLandscapeMap(content));
   const readMap = async (fileName: string): Promise<LandscapeMap> => {
@@ -116,8 +118,8 @@ describe('bpmn-landscape/landscape-editing', () => {
   };
 
   beforeEach(async ({ task }) => {
-    workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'bfw-landscape-')));
-    fs.cpSync(path.join(__dirname, '..', '..', 'fixtures', 'test-solution-deploy'), workspace, { recursive: true });
+    landscapeWorkspace = createLandscapeWorkspace('bfw-landscape-');
+    workspace = landscapeWorkspace.workspace;
     if (task.name.includes('Explorer')) {
       writeMap('Empty.bfwmap', '');
     }
@@ -147,7 +149,7 @@ describe('bpmn-landscape/landscape-editing', () => {
     );
 
     studioAgent = await createAndStartStudioAgent({ testName: task.name, testFile: __filename });
-    await studioAgent.openDirectoryAsSolution(workspace);
+    await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
   });
 
   afterEach(async ({ task }) => {
@@ -276,7 +278,7 @@ describe('bpmn-landscape/landscape-editing', () => {
 
     const saved = await waitForFile('Test.bfwmap', (map) => map.elements.length === 3);
     const process = saved.elements.find((element) => element.type === 'process');
-    expect(process?.type === 'process' ? process.fileHint : null).toBe('order-process.bpmn');
+    expect(process?.type === 'process' ? process.fileHint : null).toBe('../order-process.bpmn');
     expect(saved.elements.filter((element) => element.type === 'group')).toHaveLength(1);
 
     await studioAgent.closeOpenEditors(DOCUMENT_TYPE);

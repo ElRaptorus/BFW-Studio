@@ -8,14 +8,14 @@ File handling in the Studio consists of three layers:
 
 1. **FileHandlingService** — Abstraction for file system access (read, write, traverse, watch)
 2. **Solution/Project Model** — Data structure representing an open working directory
-3. **FileExplorerView + SolutionPane** — UI layer rendering the file tree in the File Explorer
+3. **Explorers** — `bifrost.explorers` (`ExplorerMediator`) holds one `FileExplorerView` per registered explorer; `ExplorerPane` renders each one
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  SolutionPane (React component)                              │
+│  ExplorerPane (React component, one pane per explorer)       │
 │    └─ Tree (`studio/src/components/Tree/`)                   │
 ├──────────────────────────────────────────────────────────────┤
-│  FileExplorerView (view data for the file tree)              │
+│  ExplorerMediator → FileExplorerView per explorer            │
 ├──────────────────────────────────────────────────────────────┤
 │  SolutionMediator (persistence, watchers, events)            │
 │    └─ SolutionManager (state management, serialization)      │
@@ -106,6 +106,7 @@ type Solution = {
   projects: Project[];     // One or more projects
   solutionFileUri?: string; // URI of the .bfwsln file (undefined for single-folder solutions)
   isExplicitSolution?: boolean; // true when opened from .bfwsln or promoted via "Add Folder"
+  views?: Record<string, { uri: string }>; // view folders declared in the saved .bfwsln (e.g. `landscapes`)
 };
 
 type Project = {
@@ -149,12 +150,14 @@ The `.bfwsln` ("Bifrost Forge World Solution") file is a JSONC file (JSON with c
     { "path": "/absolute/path/to/folder-a" },
     { "path": "/absolute/path/to/folder-b", "name": "Custom Name" }
   ],
-  "settings": {}
+  "settings": {},
+  "views": { "landscapes": { "path": "landscapes" } }
 }
 ```
 
 - `folders[].path`: Absolute filesystem path. `name` is optional (defaults to the directory name).
 - `settings`: Solution-scoped settings (see [settings.md](settings.md) §Scopes).
+- `views`: one folder per analysis view (today only `landscapes`). `path` is relative to the `.bfwsln` (absolute paths are kept as written) and resolved to `Solution.views[viewId].uri` on read. The folder may lie inside a project or outside every project, and may not exist yet. Entries with a blank `path` are ignored. `writeSolutionView(solutionFileUri, fileHandling, viewId, folderUri | null)` writes or removes one entry read-modify-write; repair and Save As keep the block. Only a saved solution file has views; folder solutions and unsaved explicit solutions have none.
 - `readSolutionFile()` parses with `comment-json`. Opening an unreadable file throws `SolutionFileUnreadableError` (`The solution file "<name>" could not be read: <reason>`) and offers no repair, because nothing has been written yet.
 - Folder writes (`writeSolutionFolders`) and Solution settings writes (`updateSolutionSettings`) are read-modify-write. Only the touched part changes, so comments and unknown keys survive. A missing file is created by a folder write (Save As) and rejected by a settings write.
 - A file that exists but cannot be read or parsed is never overwritten. The write throws `SolutionFileUnreadableError`. `std.solution.offerSolutionFileRepair` then opens a dialog. Repair copies the broken text to `<file>.broken` (or `.broken.1` … `.broken.99`, never overwriting an existing backup) and rewrites the file from the open solution with empty Solution settings. If an existing file cannot be read for the backup, the repair aborts and nothing is written. Declining leaves the file untouched and the solution dirty; `std.solution.closeSolution` then stays open instead of discarding the changes.
@@ -177,6 +180,7 @@ Pure state management without I/O. Holds the current `Solution` and provides mut
 | `renameProject(projectId, newName)` | Renames a project label |
 | `reorderFolders(projectIds)` | Reorders projects by ID array |
 | `setSolutionFileUri(solutionFileUri, solutionName)` | Updates the solution file association, clears dirty flag |
+| `setView(viewId, folderUri \| null)` | Sets or removes one entry of `views` |
 | `isSolutionDirty()` | Whether the solution has unsaved changes |
 | `closeSolution()` | Clears the solution and dirty state |
 | `hasOpenSolution()` | Whether a Solution is open |
@@ -200,7 +204,8 @@ Orchestration layer around SolutionManager. Adds:
 2. **File watching:** Creates per-project `chokidar` watchers (one per project root directory, stored in a `Map<string, WatcherDisposable>`)
 3. **Recently Opened:** Records opened Solutions in `RecentlyOpenedMediator`
 4. **Settings integration:** Reacts to changes in `std.fileExplorer.exclude` and reloads the Solution
-5. **Solution entry URI cache:** Maintains a `Set<string>` of all file URIs in the Solution (via `FileExplorerView.traverse`)
+5. **Solution entry URI cache:** Maintains a `Set<string>` of all file URIs in the Solution (via `traverse` on the Designer explorer's `FileExplorerView`)
+6. **View folder watchers:** `syncViewFolderWatchers()` watches every declared view folder that lies outside all projects; folders inside a project are covered by the project watcher
 
 **Default exclude patterns:** `['.*', '**/.*', 'node_modules', '**/node_modules']`
 
@@ -217,6 +222,8 @@ Orchestration layer around SolutionManager. Adds:
 | `closeSolution()` | Disposes all watchers, clears solution state |
 | `containsEditorDocumentWithUri(uri)` | Checks whether a URI belongs to the open Solution |
 | `listIncludedFileUris(pattern)` | Included files of the open solution whose URI matches `pattern`, sorted by URI; `[]` when no solution is open |
+| `getViewFolderUri(viewId)` | Folder declared for `viewId`, or `null` without a saved solution file or entry |
+| `setViewFolder(viewId, folderUri \| null)` | Writes the entry to the `.bfwsln` (relative path), updates the solution and the watchers. Throws without a saved solution file; returns `false` when the file is unreadable (the repair dialog is offered) |
 | `onRefresh()` | Forces a reload by re-emitting `EVENT_SOLUTION_CHANGED` |
 | `onElementAdded/Removed/Renamed/Moved(uri)` | Notifications for file changes |
 | `toggleHiddenFiles()` | Delegates to SolutionManager |
@@ -242,7 +249,7 @@ SolutionMediator
     │
     ▼
 Bifrost
-    ├─ FileExplorerView.setSolution(solution)
+    ├─ explorers.setSolution(solution) → every FileExplorerView reloads
     ├─ events.emit('solutionChanged', [solution])
     ├─ updateWindowTitleIfElectron()
     │
@@ -255,23 +262,53 @@ Subscribers
 
 ---
 
-## FileExplorerView
+## Explorers
 
-**Path:** `studio/src/bifrost/common/activities/FileExplorerView.ts`
+**Paths:** `studio/src/bifrost/contracts/ExplorerTypes.ts`, `studio/src/bifrost/common/ExplorerMediator.ts`, `studio/src/bifrost/common/activities/FileExplorerView.ts`
 
-Transforms a `Solution` into view data for the file tree.
+An explorer is a perspective on the open solution: a file tree on one or more workbench pages. Every explorer has its own `FileExplorerView`, tree mediator and pane, but they all read the same `Solution`. The built-in Designer explorer (`DESIGNER_EXPLORER_ID = 'design'`, pane `design/workspace/explorer`) shows every project and is the only one that may reshape the solution. Other modules register further explorers, for example the Maps explorer of [bpmn-landscape.md](bpmn-landscape.md).
 
-### Data Types
+### `ExplorerDefinition`
+
+| Field | Meaning |
+|-------|---------|
+| `id` | Explorer id; tree mediator `getExplorerTreeId(id)` = `std/file-explorer/<id>` |
+| `paneId`, `pages` | Pane the explorer renders in, and the pages it belongs to |
+| `source` | `{ kind: 'solution' }` (all projects) or `{ kind: 'view', viewId, includedFiles }` (the folder declared as `views.<viewId>` in the `.bfwsln`, filtered by `includedFiles`) |
+| `label` | Pane title and root label; without it, the solution name |
+| `emptyDirectories` | `'hide'` (default) prunes directories without visible files; the Designer uses `'show'` |
+| `structuralOperations` | `true` only for the Designer: moving and dropping, new file and new directory, folder rename and delete, adding and removing solution folders, hiding directories, "Show Hidden Files" |
+| `headerActions` | Extra `PaneHeaderIcon`s (`icon`, `tooltip`, `command`, `commandArgs?`, `dataTestId?`) |
+| `emptyState` | Component shown instead of the tree while the explorer has no files |
+
+### `bifrost.explorers` (`ExplorerMediator`)
+
+| Method | Purpose |
+|--------|---------|
+| `register(definition)` | Adds an explorer and returns its `PaneObject` for a pane group. Throws on a duplicate id or pane |
+| `getPane(id)` | `PaneObject` that renders the explorer through the shared provider `EXPLORER_PANE_PROVIDER_ID` |
+| `get(id)`, `getView(id)` | Definition and `FileExplorerView`; throw for an unknown id |
+| `getAll()`, `getByPaneId(paneId)`, `getViewExplorer(viewId)`, `getExplorersOfPage(pageId)` | Lookups |
+| `getActiveExplorer()` | Explorer whose tree has focus or was focused last, restricted to the active page; else the page's first explorer; else the Designer |
+| `getRevealTargets(uri)` | Explorers that show the file and belong to the document's page; else every explorer that shows it |
+| `setSolution(solution \| null)` | Called by `Bifrost` on `EVENT_SOLUTION_CHANGED`; reloads every view |
+| `registerDecorationProvider(provider, explorerIds?)` / `getDecorationSource(explorerId?)` | Decorations for all explorers or only the listed ones; sources merge styles and badges |
+
+`EVENT_EXPLORER_VIEW_UPDATED` (`[explorerId]`) fires whenever a view finishes loading; `Workbench` re-renders on it. The std module registers the pane provider once (`ExplorerPane`) and places `getPane(DESIGNER_EXPLORER_ID)` in the explorer group.
+
+### FileExplorerView
+
+Transforms the `Solution` into view data for one explorer. Every node's metadata carries `explorerId`, which commands and menus use to find the explorer the user acted in.
 
 ```typescript
 type SolutionViewData = {
   type: string;         // 'section'
   subtype: string;
-  label: string;        // Solution name
-  labelTooltip: string; // Local directory path
-  menuId: string;       // 'std/file-explorer/solution'
+  label: string;        // Explorer label or solution name
+  labelTooltip: string; // Local path of the .bfwsln or the directory
+  menuId?: string;      // 'std/file-explorer/solution' for solution-source explorers
   expanded: boolean;
-  showHiddenFiles: boolean;
+  showHiddenFiles: boolean; // only in structural explorers
   pathId: string;       // baseUri
   entries: ProjectViewData[];
   badges: TreeBadge[];  // e.g. loading spinner
@@ -289,32 +326,27 @@ type ProjectViewData = {
 };
 ```
 
-### Loading Process
+**Loading:** `setSolution(solution)` shows a loading badge and emits `EVENT_FILE_EXPLORER_OPENED_SOLUTION`; after 30 ms it builds the root entries, then emits the event again. A solution source builds one root per project (`traverseProject` with include/exclude). A view source builds one root for the declared folder as a synthetic project (`includedFiles`, the exclude setting plus the default excludes); without a saved solution, without the entry, or when the folder does not exist, it yields no roots and the pane shows `emptyState`.
 
-1. `setSolution(solution)` is called
-2. Immediately: Shows loading badge, emits `EVENT_FILE_EXPLORER_OPENED_SOLUTION`
-3. After 30ms timeout: Asynchronously loads all project entries via `getProjectViewData()`
-4. For each project: `getEntriesForFileList()` calls either `traverseProject` (with include/exclude) or `traverseDirectory` (all files)
-5. Builds tree nodes via `buildTreeNode()`: directories and files with appropriate icon, menu ID, and metadata
-6. Emits `EVENT_FILE_EXPLORER_OPENED_SOLUTION` again
+**Tree nodes:** directories use `menuId: 'std/file-explorer/directory'`, files `'std/file-explorer/file'`; metadata holds `uri`, `type`, `openUriOnClick` and `explorerId`. File type icons come from `bifrost.editors.getDocumentTypeDefinitionByUri(uri)`.
 
-### Tree Nodes
+**Protected view folders:** in solution-source explorers, every declared view folder and everything below it is marked `metadata.protected = true` and `metadata.protectedViewId`, drawn with a gray label. The folder itself gets the tooltip suffix "(<viewId> folder of this solution; read-only here, managed in the <label> explorer)". In the explorer that shows the view, the same files are not protected.
 
-- **Directories:** `menuId: 'std/file-explorer/directory'`, `metadata: { openUriOnClick: false, uri }`
-- **Files:** `menuId: 'std/file-explorer/file'`, `metadata: { openUriOnClick: true, uri }`
-
-File type icons are resolved via `bifrost.editors.getDocumentTypeDefinitionByUri(uri)`.
+**Other members:** `containsFile(uri)`, `hasFiles()`, `getViewData()`, `traverse(callback)`, `clearSolution()`.
 
 ---
 
-## SolutionPane (UI)
+## ExplorerPane (UI)
 
-**Path:** `studio/src/components/panes/activities/files/SolutionPane.tsx`
+**Path:** `studio/src/components/panes/activities/files/ExplorerPane.tsx`
+
+One provider renders every explorer; it looks up the definition with `bifrost.explorers.getByPaneId(props.paneId)` (falling back to the Designer). The header shows new file, new directory and add folder or convert only for structural explorers, then refresh and Collapse All (with the explorer id), then `headerActions`. Drag and drop, the root drop target and external drops are wired only for structural explorers. The scroll position key is `explorer-scroll-<id>`.
 
 ### Display Logic
 
 The `PaneContent` component decides how the file tree is rendered:
 
+- **`emptyState` set and no files:** Shows the explorer's empty state
 - **No Solution:** Shows "Open Folder" button
 - **One project (non-explicit):** Flattens the hierarchy — shows the project's files directly as root entries (without the project as an intermediate level). Entries are sorted: directories first, then alphabetically.
 - **Explicit solution (even with one project) or multiple projects:** Shows each project as a top-level section with a distinct folder-tree icon (`std/tree/project-{closed:open}`). Projects retain their order from the `.bfwsln` file. Entries within each project are sorted independently.
@@ -323,7 +355,7 @@ Drag-and-drop `projectRootUri` is set to `null` in multi-root mode (no root-leve
 
 ### TreeView Mediator
 
-The `Tree` React component registers a `TreeViewMediator` instance under the ID `std/file-explorer/open-solution` with the `ViewMediatorManager`. The mediator acts as an imperative bridge between the React render cycle and command/keybinding code that runs outside it. Selection state, expand/collapse state, and data reconciliation are handled internally by the `Tree` component (via `@headless-tree/core`).
+The `Tree` React component registers a `TreeViewMediator` instance under the ID `std/file-explorer/<explorerId>` (the Designer: `std/file-explorer/design`) with the `ViewMediatorManager`. The mediator acts as an imperative bridge between the React render cycle and command/keybinding code that runs outside it. Selection state, expand/collapse state, and data reconciliation are handled internally by the `Tree` component (via `@headless-tree/core`).
 
 The `TreeViewMediator` exposes:
 
@@ -332,6 +364,21 @@ The `TreeViewMediator` exposes:
 - `waitForAndSelectEntriesByMetadataFilter()` — waits for matching entries to appear, expands their parents, and selects them
 - `getViewData()` — snapshot of the visible tree for testing/debugging
 - `notifyEntriesChanged()` — emits `EVENT_TREEVIEW_ENTRIES_CHANGED` so external listeners can react to data changes
+
+### Commands and explorers
+
+Explorer commands take an optional trailing `explorerId`; context menus pass it from the node metadata, keybindings fall back to `getActiveExplorer()`. Shared guards live in `studio/src/modules/std/initializers/commands/explorerGuards.ts`:
+
+| Guard | Effect |
+|-------|--------|
+| `refuseOutsideStructuralExplorer` | Structural operations outside the Designer stop with "<Operation> only in the Designer explorer." |
+| `refuseDirectoriesOutsideStructuralExplorer` | Folder rename and delete outside the Designer stop; single-file rename, delete and duplicate stay allowed |
+| `refuseProtected` | In solution-source explorers, changing a protected node stops with a notice naming the view folder and the explorer that manages it |
+| `confirmViewFolderChange` | Deleting, moving or renaming a folder that contains a view folder opens a danger dialog listing each view folder with its file count. Cancel is the default; the confirm button is dangerous |
+| `updateOpenEditorDocuments` | After a move or rename, open documents at or below the old URI move to the new one. Runs before `followMovedViewFolders`, because the solution change that follows lets pages close documents their folder no longer covers |
+| `followMovedViewFolders` | After a confirmed move or rename, `setViewFolder` points the entry at the new place. After a delete the entry stays, and the view reports the folder as missing |
+
+Menus hide structural entries outside the Designer and changing entries on protected rows (dividers carry `visible` too).
 
 ### Delete and Rename on the selection
 
@@ -470,8 +517,11 @@ File Explorer settings below stay application-wide. Solution and project overrid
 | FileHandlingService (abstract) | `studio/src/bifrost/common/FileHandlingService.ts` |
 | FileHandlingServiceElectron | `studio/src/bifrost/electron-renderer/FileHandlingServiceElectron.ts` |
 | FilePatternMatcher | `studio/src/bifrost/common/FilePatternMatcher.ts` |
+| Explorer contract | `studio/src/bifrost/contracts/ExplorerTypes.ts` |
+| ExplorerMediator (`bifrost.explorers`) | `studio/src/bifrost/common/ExplorerMediator.ts` |
 | FileExplorerView | `studio/src/bifrost/common/activities/FileExplorerView.ts` |
-| SolutionPane | `studio/src/components/panes/activities/files/SolutionPane.tsx` |
+| ExplorerPane | `studio/src/components/panes/activities/files/ExplorerPane.tsx` |
+| Explorer command guards | `studio/src/modules/std/initializers/commands/explorerGuards.ts` |
 | OpenEditorsPane | `studio/src/components/panes/activities/files/OpenEditorsPane.tsx` |
 | TreeViewMediator | `studio/src/bifrost/browser/TreeViewMediator.ts` |
 | Tree (React) | `studio/src/components/Tree/Tree.tsx` |

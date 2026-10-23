@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, it } from 'vitest';
 import type { StudioAgent } from '../../StudioAgent';
 import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioAgent';
 
-const TREE_SELECTOR = '[data-test--tree="std/file-explorer/open-solution"]';
+const TREE_SELECTOR = '[data-test--tree="std/file-explorer/design"]';
 const TREE_ENTRY_SELECTOR = `${TREE_SELECTOR} .treeview__entry`;
 const PROJECT_ENTRY_SELECTOR = `${TREE_SELECTOR} [data-test--tree-entry-type="project"]`;
 

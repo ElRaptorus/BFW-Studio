@@ -120,4 +120,28 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
+## Explorer perspectives over one solution
+
+**Context:** The Landscapes page needed its own file tree of maps. The Studio had one `FileExplorerView` and one Solution pane, and every file command assumed that tree.
+
+**Options:** A landscape-specific tree in the module; a second solution model per page; several explorers as perspectives on the same solution, registered through a core contract.
+
+**Decision:** `bifrost.explorers` registers explorers (`ExplorerDefinition`: pane, pages, source, empty-directory policy, header actions, empty state). Each has its own `FileExplorerView` and tree mediator `std/file-explorer/<id>`; one `ExplorerPane` provider renders them all. The Designer is the catch-all explorer and the only one with structural operations; other explorers allow single-file rename, delete and duplicate. Commands take the explorer id from the node metadata or fall back to the last focused explorer.
+
+**Rationale:** One file model keeps watchers, decorations, Quick Jump and reveal consistent, while restricting structure to one place avoids two trees reshaping the same folders differently.
+
+See [workspace.md](architecture/workspace.md) §Explorers.
+
+## Analysis views require a saved solution and a declared view folder
+
+**Context:** Landscape maps resolve processes against the whole solution. A map opened from a folder solution, or from a folder outside its solution, would show missing processes that exist elsewhere.
+
+**Options:** Allow maps anywhere and resolve against whatever is open; require a saved solution and store the map folder in user settings; require a saved solution and declare the folder in the `.bfwsln`.
+
+**Decision:** The `.bfwsln` gets a `views` block (`"views": { "landscapes": { "path": "landscapes" } }`, relative to the solution file, default next to it). Maps open only from that folder of the open saved solution. The Designer shows the folder greyed and read-only; deleting, moving or renaming a parent asks in a danger dialog, a move or rename updates the path, a delete keeps the entry.
+
+**Rationale:** The folder belongs to the solution and is shared through source control with it, so every user resolves a map against the same set of processes.
+
+See [workspace.md](architecture/workspace.md) §`.bfwsln` Solution File Format and [bpmn-landscape.md](architecture/bpmn-landscape.md) §Landscape Folder.
+
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

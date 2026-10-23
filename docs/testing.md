@@ -66,9 +66,12 @@ studio/test/
     │   ├── bpmn-elements.test.ts
     │   ├── bpmn-drilldown.test.ts
     │   └── form-builder.test.ts  # Form Builder fragment editor tests
-    ├── bpmn-landscape/         # Landscapes page, map editing, unreadable maps
+    ├── bpmn-landscape/         # Landscapes page, landscape folder gate, map editing, relations
+    │   ├── landscapeWorkspace.ts      # createLandscapeWorkspace(): temporary copy of test-solution-deploy saved as Landscapes.bfwsln with views.landscapes = landscapes/
     │   ├── landscape-page.test.ts
-    │   └── landscape-editing.test.ts  # fresh temporary copy of test-solution-deploy per test
+    │   ├── landscape-folder.test.ts   # gate states, setup, choose and create folder, refused maps, maps closed with the solution, Maps explorer menus
+    │   ├── landscape-editing.test.ts
+    │   └── landscape-relations.test.ts
     ├── dmn-editor/             # DMN editor tests
     │   ├── dmn-smoke.test.ts
     │   └── dmn-elements.test.ts
@@ -170,6 +173,7 @@ Do not wait for plugin load inside `it()`. Waits that observe an action the test
 | `openFixturesDirectoryAsSolution(name)` | Opens a fixture directory as single-root solution |
 | `openSolutionFileFromFixtures(filename)` | Opens a `.bfwsln` file from fixtures as multi-root solution |
 | `openDirectoryAsSolution(directory)` | Opens an arbitrary directory as solution |
+| `openSolutionFile(solutionFilePath)` | Opens a `.bfwsln` file at an absolute path (for example one written into a temporary directory) |
 | `openViaQuickJump(query)` | Opens a file via the Quick Jump dialog |
 | `openViaCommandSearch(command)` | Executes a command via the command search |
 | `clickOn(selector)` | Left-clicks on an element |
@@ -237,7 +241,7 @@ Test commands that accept parameters use `bifrost.dialog.prompt()`. StudioAgent 
 Prefer `data-test--` attributes over CSS classes for element identification. These are stable across design changes.
 
 ```typescript
-await studioAgent.assertVisible('[data-test--tree="std/file-explorer/open-solution"]');
+await studioAgent.assertVisible('[data-test--tree="std/file-explorer/design"]');
 await studioAgent.assertVisible('[data-test--editors--focused-document-type="bpmn"]');
 await studioAgent.assertVisible('[data-test--pane="activities/search"]');
 ```
@@ -353,6 +357,7 @@ it('should add folder to solution', async () => {
 - **Single-root backwards compatibility**: open directory, file flattening, quick jump
 - **Multi-root via `.bfwsln`**: open file, project entries, cross-project search
 - **Custom project names**, add/remove folders, context menus, `.bfwsln` file persistence
+- **Explorer view folders** (`explorer-view-folders.test.ts`): the landscape folder is read-only in the Designer, the danger dialog on deleting a parent, the declared path follows a parent rename
 - **Workbench pane toggles** (`workbench-panes.test.ts`): hide/show Property Panel and Sidebar; parked left icons restore the sidebar; property-panel control is a button, not a Layout context menu
 
 ### BPMN Editor (`bpmn-editor/`)
@@ -385,7 +390,7 @@ Hide/show of the pane areas uses layout toggle **buttons** in the header (`build
 
 - **Property Panel**: `[data-test--menubar--button-for-command="std.workbench.togglePropertyPanel"]` (id `header-layout-toggle-right`). Prefer `clickOnMenubarButtonForCommand('std.workbench.togglePropertyPanel')`. The button stays in the header after the area hides. Assert the area with `.app-layout__panes-right`.
 - **Sidebar**: `[data-test--menubar--button-for-command="std.workbench.toggleSidebar"]` (id `header-layout-toggle-left`). Assert the area with `.app-layout__panes-left`. The bottom area uses `std.workbench.toggleInspectorPanel`.
-- Left panes are reached through the page bar and the left tab strip: `studioAgent.navigation.showLeftPane('design/workspace/explorer')` and `assertLeftPaneIsActive(...)`. `navigation` is `StudioAgent/WorkbenchNavigation.ts` (`activateCategory`, `activatePage`, `assertActivePage`, `assertActiveCategory` (a category reopens its last page, so use this when the page does not matter), `showLeftPane`, `assertLeftPaneIsActive`, `assertLeftPaneIsNotActive`). It maps explorer and search to `design/workspace` (tab strip), git to `design/source`, landscapes to `discover/landscapes`, engines to `debug/engines` and plugins to `control/plugins`. The active tab carries `data-test--active`.
+- Left panes are reached through the page bar and the left tab strip: `studioAgent.navigation.showLeftPane('design/workspace/explorer')` and `assertLeftPaneIsActive(...)`. `navigation` is `StudioAgent/WorkbenchNavigation.ts` (`activateCategory`, `activatePage`, `assertActivePage`, `assertActiveCategory` (a category reopens its last page, so use this when the page does not matter), `showLeftPane`, `assertLeftPaneIsActive`, `assertLeftPaneIsNotActive`). It maps explorer and search to `design/workspace` (tab strip), git to `design/source`, landscapes and the Maps explorer (`discover/landscapes/maps`) to `discover/landscapes`, engines to `debug/engines` and plugins to `control/plugins`. The active tab carries `data-test--active`.
 - Category shortcuts (`alt-1…6` on Windows and Linux, `cmd-alt-1…6` on macOS) are testable through `executeCommand('std.workbench.goTo<Category>')`. The binding table itself is covered by the unit test `test/unit/std/categoryKeyBindings.test.ts`.
 - Reset both areas with `executeCommand('std.workbench.showPanels')` at the start of a test when the shared agent may have left a pane hidden.
 - Ctrl/Cmd+B is still `std.workbench.togglePanels` (both sides). View → Appearance remains the menu path.

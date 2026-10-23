@@ -33,6 +33,7 @@ export class SolutionManager extends AbstractEmitter implements ISerializable {
     solutionName: string,
     folders: { path: string; name?: string }[],
     defaultExcludedFiles: string[],
+    views: Record<string, string> = {},
   ): void {
     const solution: Solution = {
       type: 'solution',
@@ -43,6 +44,7 @@ export class SolutionManager extends AbstractEmitter implements ISerializable {
       showHiddenFiles: false,
       solutionFileUri,
       isExplicitSolution: true,
+      views: Object.fromEntries(Object.entries(views).map(([viewId, uri]) => [viewId, { uri }])),
     };
 
     let result = solution;
@@ -151,6 +153,21 @@ export class SolutionManager extends AbstractEmitter implements ISerializable {
       baseUri: solutionFileUri,
     };
     this.dirty = false;
+
+    this.emit(EVENT_SOLUTION_CHANGED, [this.solution]);
+  }
+
+  /** Sets or removes the folder of one view. The caller has already written it to the solution file. */
+  setView(viewId: string, folderUri: string | null): void {
+    assertNotNull(this.solution, 'this.solution');
+
+    const views = { ...this.solution.views };
+    if (folderUri == null) {
+      delete views[viewId];
+    } else {
+      views[viewId] = { uri: folderUri };
+    }
+    this.solution = { ...this.solution, views };
 
     this.emit(EVENT_SOLUTION_CHANGED, [this.solution]);
   }

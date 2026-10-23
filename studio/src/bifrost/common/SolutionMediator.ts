@@ -13,6 +13,7 @@ import {
   readSolutionFile,
   repairSolutionFile,
   writeSolutionFolders,
+  writeSolutionView,
 } from './SolutionFile';
 import { isUriIncludedInSolution } from './SolutionFunctions';
 import { EVENT_SOLUTION_CHANGED, SolutionManager } from './SolutionManager';
@@ -32,6 +33,7 @@ export class SolutionMediator extends AbstractEmitter {
   private solutionStorage: LocalStorageItem;
   private watchers: Map<string, WatcherDisposable> = new Map();
   private watchSolutionTimeoutId: number | null = null;
+  private viewFolderWatcherUris: Set<string> = new Set();
 
   private solutionEntryUris: Set<string> = new Set();
   private offerSolutionFileRepair: (error: SolutionFileUnreadableError) => Promise<boolean>;
@@ -188,7 +190,13 @@ export class SolutionMediator extends AbstractEmitter {
       path: this.fileHandling.getUriForFilename(folder.path),
     }));
 
-    this.solutionManager.openSolutionFromFile(solutionFileUri, solutionFileName, foldersWithUris, excludedFiles);
+    this.solutionManager.openSolutionFromFile(
+      solutionFileUri,
+      solutionFileName,
+      foldersWithUris,
+      excludedFiles,
+      solutionFileContent.views,
+    );
 
     this.recentlyOpened.addRecentlyOpenedSolutionItem({ uri: solutionFileUri });
 
@@ -196,6 +204,42 @@ export class SolutionMediator extends AbstractEmitter {
     for (const folder of foldersWithUris) {
       this.setupWatcherForDirectory(folder.path);
     }
+    this.syncViewFolderWatchers();
+  }
+
+  /**
+   * The folder the saved solution file declares for `viewId` (`views.<viewId>` in the `.bfwsln`),
+   * or `null` without a saved solution file or without that entry. The folder may not exist on disk.
+   */
+  getViewFolderUri(viewId: string): string | null {
+    const solution = this.getSolution();
+    if (solution?.solutionFileUri == null) {
+      return null;
+    }
+    return solution.views?.[viewId]?.uri ?? null;
+  }
+
+  /**
+   * Declares `folderUri` as the folder of `viewId` in the saved solution file (written relative to it),
+   * or removes the entry when `folderUri` is `null`. Returns `false` when the solution file could not be written.
+   */
+  async setViewFolder(viewId: string, folderUri: string | null): Promise<boolean> {
+    const solutionFileUri = this.getSolution()?.solutionFileUri;
+    if (solutionFileUri == null) {
+      throw new Error(`Save the solution as a .bfwsln file before setting the "${viewId}" folder.`);
+    }
+    try {
+      await writeSolutionView(solutionFileUri, this.fileHandling, viewId, folderUri);
+    } catch (error) {
+      if (!(error instanceof SolutionFileUnreadableError)) {
+        throw error;
+      }
+      await this.offerSolutionFileRepair(error);
+      return false;
+    }
+    this.solutionManager.setView(viewId, folderUri);
+    this.syncViewFolderWatchers();
+    return true;
   }
 
   /**
@@ -233,6 +277,7 @@ export class SolutionMediator extends AbstractEmitter {
     const excludedFiles = this.settings.get('std.fileExplorer.exclude');
     this.solutionManager.addFolder(directoryUri, excludedFiles);
     this.setupWatcherForDirectory(directoryUri);
+    this.syncViewFolderWatchers();
   }
 
   async renameProjectInSolution(projectId: string, newName: string): Promise<void> {
@@ -255,6 +300,7 @@ export class SolutionMediator extends AbstractEmitter {
     }
 
     this.solutionManager.removeFolder(projectId);
+    this.syncViewFolderWatchers();
 
     if (solution?.solutionFileUri != null && (await this.persistSolutionFolders(solution.solutionFileUri))) {
       this.solutionManager.clearDirty();
@@ -382,6 +428,31 @@ export class SolutionMediator extends AbstractEmitter {
     }
   }
 
+  /** View folders outside every project get their own watcher, so their explorers refresh like a project. */
+  private syncViewFolderWatchers(): void {
+    const solution = this.getSolution();
+    const wanted = new Set(
+      Object.values(solution?.views ?? {})
+        .map((view) => view.uri)
+        .filter(
+          (uri) =>
+            !solution?.projects.some((project) => uri === project.baseUri || uri.startsWith(`${project.baseUri}/`)),
+        ),
+    );
+    for (const uri of this.viewFolderWatcherUris) {
+      if (!wanted.has(uri)) {
+        this.disposeWatcherForDirectory(uri);
+        this.viewFolderWatcherUris.delete(uri);
+      }
+    }
+    for (const uri of wanted) {
+      if (!this.viewFolderWatcherUris.has(uri) && !this.watchers.has(uri)) {
+        this.setupWatcherForDirectory(uri);
+        this.viewFolderWatcherUris.add(uri);
+      }
+    }
+  }
+
   private disposeWatcherForDirectory(directoryUri: string): void {
     const watcher = this.watchers.get(directoryUri);
     if (watcher != null) {
@@ -395,5 +466,6 @@ export class SolutionMediator extends AbstractEmitter {
       watcher.dispose();
     }
     this.watchers.clear();
+    this.viewFolderWatcherUris.clear();
   }
 }

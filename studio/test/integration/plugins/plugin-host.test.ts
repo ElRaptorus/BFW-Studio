@@ -381,14 +381,6 @@ describe('plugin-host/integration', () => {
       }
     });
 
-    // Regression test for a bug where onStartup (and permission-gated eager) plugins
-    // discovered by a *later* discoverAndLoadPlugins() call — e.g. via the "Reload
-    // Plugins" command, which drives bifrost.plugins.refreshFromHost() — would never
-    // activate. discoverAndLoadPlugins() deferred activation until the app's 'ready'
-    // event, but 'ready' is emitted exactly once during the window's initial
-    // Bifrost.initialize() call. Any onStartup plugin added to the plugins directory
-    // after that point (without a full app restart) would wait forever for an event
-    // that had already fired, leaving it stuck in 'pending' status indefinitely.
     it('onStartup plugin added after boot activates once discovered via refresh', async () => {
       const pluginDir = path.join(tempPluginsDir, 'late-onstartup-plugin');
       await fs.mkdir(pluginDir, { recursive: true });
@@ -467,21 +459,11 @@ describe('plugin-host/integration', () => {
       assert.ok(errors[1].includes("'design/workspace'"), errors[1]);
     });
 
-    it('disabling the plugin while its only Discover page is active falls back to Design › Workspace', async () => {
-      await studioAgent.executeCommand('std.workbench.activatePage', ['discover/insights']);
-      await studioAgent.assertVisible(activePage('discover/insights'), ASSERT_VISIBLE_TIMEOUT);
-
-      await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'disabled');
-      await studioAgent.assertNotVisible(category('discover'));
-      await studioAgent.assertVisible(activePage('design/workspace'), ASSERT_VISIBLE_TIMEOUT);
-    });
-
     it('disabling the plugin removes its pages and enabling brings them back', async () => {
       await studioAgent.executeCommand('std.workbench.activatePage', ['design/demo-board']);
       await studioAgent.assertVisible(activePage('design/demo-board'), ASSERT_VISIBLE_TIMEOUT);
 
       await studioAgent.pluginHost.toggleAndWaitUntilStatus('page-contribution-demo', 'disabled');
-      await studioAgent.assertNotVisible(category('discover'));
       await studioAgent.assertNotVisible(pageButton('design/demo-board'));
       await studioAgent.assertNotVisible(activePage('design/demo-board'));
       await studioAgent.assertVisible(`.workbench-header-container[data-category-id="design"]`, ASSERT_VISIBLE_TIMEOUT);

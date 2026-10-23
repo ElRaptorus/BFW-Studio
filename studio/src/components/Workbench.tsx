@@ -1,10 +1,10 @@
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
+import { EVENT_EXPLORER_VIEW_UPDATED } from '#bifrost/common/ExplorerMediator';
 import { EVENT_MENU_BAR_UPDATED } from '#bifrost/common/MenuBarManager';
 import { EVENT_CLOSE_NOTIFICATION, EVENT_OPEN_NOTIFICATION } from '#bifrost/common/NotificationManager';
 import { EVENT_QUICK_JUMP_ENTRIES_CHANGED } from '#bifrost/common/QuickJumpView';
 import { EVENT_STATUS_BAR_UPDATED } from '#bifrost/common/StatusBarManager';
-import { EVENT_FILE_EXPLORER_OPENED_SOLUTION } from '#bifrost/common/activities';
 import type { Dialog, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
 import { EVENT_RECENTLY_OPENED_CHANGED } from '#bifrost/contracts/RecentTypes';
 import {
@@ -105,7 +105,7 @@ export default function Workbench(): React.JSX.Element {
       bifrost.editors.on(EVENT_EDITOR_DOCUMENT_DATA_UPDATED, () => forceUpdate()),
       bifrost.editors.on(EVENT_EDITOR_DOCUMENT_METADATA_UPDATED, () => forceUpdate()),
       bifrost.editors.on(EVENT_EDITOR_DOCUMENT_URI_UPDATED, () => forceUpdate()),
-      bifrost.fileExplorerView.on(EVENT_FILE_EXPLORER_OPENED_SOLUTION, () => forceUpdate()),
+      bifrost.explorers.on(EVENT_EXPLORER_VIEW_UPDATED, () => forceUpdate()),
       bifrost.recentlyOpened.on(EVENT_RECENTLY_OPENED_CHANGED, () => forceUpdate()),
       bifrost.settings.on(EVENT_SETTINGS_CHANGED, () => forceUpdate()),
       bifrost.events.on('unspecifiedGlobalUpdate', () => forceUpdate()),

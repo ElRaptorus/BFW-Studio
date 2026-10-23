@@ -1,4 +1,10 @@
 .bifrost {
+  // Must not shrink: the Processes pane below takes the remaining height and scrolls itself.
+  .pane[data-pane-id='discover/landscapes/maps'] {
+    flex-shrink: 0;
+    max-height: 40%;
+  }
+
   .landscape-map {
     width: 100%;
     height: 100%;

@@ -1,12 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import { DESIGNER_EXPLORER_ID, EXPLORER_PANE_PROVIDER_ID } from '#bifrost/contracts/ExplorerTypes';
+import * as ExplorerPane from '#components/panes/activities/files/ExplorerPane';
 import * as OpenEditorsPane from '#components/panes/activities/files/OpenEditorsPane';
-import * as SolutionPane from '#components/panes/activities/files/SolutionPane';
 import * as GlobalSearchPane from '#components/panes/activities/search/GlobalSearchPane';
 import * as EditorDocumentInspector from '#components/panes/inspectors/EditorDocumentInspector';
 import * as NotificationInspector from '#components/panes/inspectors/NotificationInspector';
 import * as PerformanceInspector from '#components/panes/inspectors/PerformanceInspector';
 
 export function initializePanes(bifrost: Bifrost): void {
+  bifrost.panes.registerPaneProvider(EXPLORER_PANE_PROVIDER_ID, ExplorerPane);
   bifrost.panes.registerPaneGroup(
     'left',
     'explorer',
@@ -16,11 +18,7 @@ export function initializePanes(bifrost: Bifrost): void {
         'std/pane-providers/activities/explorer/OpenEditorsPane',
         OpenEditorsPane,
       ),
-      bifrost.panes.getPaneViaPaneProvider(
-        'design/workspace/explorer',
-        'std/pane-providers/activities/explorer/SolutionPane',
-        SolutionPane,
-      ),
+      bifrost.explorers.getPane(DESIGNER_EXPLORER_ID),
     ],
     { label: 'Explorer', pages: ['design/workspace'] },
   );

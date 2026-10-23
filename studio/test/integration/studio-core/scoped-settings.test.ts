@@ -10,8 +10,7 @@ const FIXTURES_DIR = path.join(__dirname, '..', '..', 'fixtures');
 const PROJECT_A = path.join(FIXTURES_DIR, 'test-solution-scoped-settings-a');
 const PROJECT_B = path.join(FIXTURES_DIR, 'test-solution-scoped-settings-b');
 const SOLUTION_FILE = path.join(FIXTURES_DIR, 'test-solution-scoped-settings.bfwsln');
-const PROJECT_ENTRY_SELECTOR =
-  '[data-test--tree="std/file-explorer/open-solution"] [data-test--tree-entry-type="project"]';
+const PROJECT_ENTRY_SELECTOR = '[data-test--tree="std/file-explorer/design"] [data-test--tree-entry-type="project"]';
 
 function writeSolutionFile(): void {
   fs.writeFileSync(

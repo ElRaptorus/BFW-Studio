@@ -17,18 +17,19 @@ import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 
 import type React from 'react';
 
+import { getExplorerTree, refuseOutsideStructuralExplorer, refuseProtected, resolveExplorer } from './explorerGuards';
+
 export function initializeEditorCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;
 
   commands.register(
     'std.solution.newFile',
-    async (givenTargetDirectoryUri?: string) => {
-      const viewMediatorId = 'std/file-explorer/open-solution';
-      let treeViewMediator: TreeViewMediator | null = null;
-
-      if (bifrost.views.isRegistered(viewMediatorId)) {
-        treeViewMediator = bifrost.views.getById<TreeViewMediator>(viewMediatorId);
+    async (givenTargetDirectoryUri?: string, explorerId?: string) => {
+      const explorer = resolveExplorer(bifrost, explorerId);
+      if (refuseOutsideStructuralExplorer(bifrost, explorer, 'Files of any type are created')) {
+        return;
       }
+      const treeViewMediator = getExplorerTree(bifrost, explorer.id);
 
       let uri;
       let targetPath;
@@ -40,6 +41,9 @@ export function initializeEditorCommands(bifrost: Bifrost): void {
         uri = givenTargetDirectoryUri;
       }
       const targetDirectoryPath = await bifrost.files.getLocalDirectory(uri);
+      if (refuseProtected(bifrost, explorer, [bifrost.files.getUriForFilename(targetDirectoryPath)])) {
+        return;
+      }
 
       const dialogContent: DialogContentObject[] = [
         {

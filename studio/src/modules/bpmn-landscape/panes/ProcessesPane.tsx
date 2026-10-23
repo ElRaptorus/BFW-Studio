@@ -5,13 +5,13 @@ import { Icon } from '#components/Icon';
 import { Tree } from '#components/Tree/Tree';
 import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
-import { PaneHeaderIcon } from '#components/panes/PaneHeaderIcon';
 import type { SolutionBpmnModelEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
 import { scanSolutionBpmnModels } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import LandscapeMapDocumentModel from '../LandscapeMapDocumentModel';
+import { getLandscapeGate } from '../landscapeFolder';
 
 const BPMN_ICON = 'bpmn/editor-tab/bpmn';
 const PROCESS_ICON = 'ph ph-flow-arrow';
@@ -20,22 +20,15 @@ export const paneProvider: PaneProvider = {
   getPaneTitle: () => 'Processes',
   Pane: PaneFull,
   PaneContent: PaneContent,
+  classNames: 'app-layout__solution-pane',
+  // Until the gate is ready the Maps explorer explains what is missing; this pane would only repeat it.
+  shouldBeDisplayed: (_editorDocument, _editorDocumentModel, studio) => getLandscapeGate(studio).state === 'ready',
 };
 
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
   return (
     <Pane classNames="app-layout__full-height-pane">
-      <PaneHeader studio={props.studio} title="Processes" paneId={props.paneId} collapsed={props.collapsed}>
-        {props.collapsed !== true && (
-          <PaneHeaderIcon
-            studio={props.studio}
-            icon="ph ph-file-plus"
-            tooltip="New Map..."
-            command="bpmn.landscape.newMap"
-            dataTestId="landscape-new-map"
-          />
-        )}
-      </PaneHeader>
+      <PaneHeader studio={props.studio} title="Processes" paneId={props.paneId} collapsed={props.collapsed} />
       {props.collapsed !== true && <PaneContent {...props} />}
     </Pane>
   );
@@ -139,10 +132,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const onClick = useCallback((): void => undefined, []);
   // The Tree makes rows draggable only when a drop handler is set; rows carry no `uri`, so nothing drops inside it.
   const onDragAndDropItem = useCallback((): void => undefined, []);
-
-  if (solution == null) {
-    return <p className="pane__content text-center py-4">Open a solution to see its processes.</p>;
-  }
 
   return (
     <>

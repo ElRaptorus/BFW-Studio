@@ -8,7 +8,7 @@ The Studio's tree view is a reusable, accessible component backed by the `@headl
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│  Consumer Pane (e.g. SolutionPane)                             │
+│  Consumer Pane (e.g. ExplorerPane)                             │
 │    provides: entries (TreeItem[]), callbacks, viewMediatorId    │
 ├────────────────────────────────────────────────────────────────┤
 │  Tree (React component)                                        │
@@ -200,7 +200,7 @@ A `React.memo` component that renders a single tree row. Responsibilities:
 
 **Path:** `studio/src/bifrost/browser/TreeViewMediator.ts`
 
-Imperative bridge between the `Tree` React component and command/keybinding code that runs outside the React render cycle. Registered with `ViewMediatorManager` under a consumer-specified ID (e.g. `std/file-explorer/open-solution`).
+Imperative bridge between the `Tree` React component and command/keybinding code that runs outside the React render cycle. Registered with `ViewMediatorManager` under a consumer-specified ID (e.g. `std/file-explorer/design` for the Designer explorer; every explorer uses `std/file-explorer/<explorerId>`).
 
 ### API
 

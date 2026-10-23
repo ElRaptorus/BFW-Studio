@@ -4,13 +4,25 @@ title: Landscapes
 
 # Landscapes
 
-A landscape map shows how the processes of your solution belong together. A map is a `.bfwmap` file in your solution; the BPMN files are never changed.
+A landscape map shows how the processes of your solution belong together. A map is a `.bfwmap` file in the landscape folder of your solution; the BPMN files are never changed.
+
+&nbsp;
+
+## The landscape folder
+
+Landscape maps need a saved solution (a `.bfwsln` file), because a map looks up its processes in the whole solution. The solution names one folder for its maps, the landscape folder. By default it is `landscapes` next to the solution file.
+
+- **Set it up:** open the Landscapes page and press _Set Up Landscape Folder_ in the Maps explorer, or choose another folder with _Choose Folder…_. Both are also in the command search.
+- **Change it later:** _Landscapes: Choose Landscape Folder_. Maps in the old folder stay where they are; move them yourself.
+- **Shape it in the Designer:** the Maps explorer only shows maps. Create, rename or move its subfolders in the Designer explorer, where the landscape folder appears greyed. Renaming or moving a folder that contains it updates the solution file; deleting it asks first.
+
+Maps outside the landscape folder do not open.
 
 ---
 
 ## Step by step
 
-1. **Create a map.** Press the _New Map_ button in the Processes pane. The map is saved in the `landscapes` folder of the first project unless you choose another place.
+1. **Create a map.** Press the _New Landscape Map_ button in the Maps explorer, or right-click a folder there and choose _New Landscape Map…_. The map is saved in the landscape folder or one of its subfolders.
 2. **Add processes.** Drag a process from the Processes pane onto the map. A process appears at most once on a map; dragging it again selects it.
 3. **Structure the map.** Use the palette on the left of the map for groups, placeholders for processes that are not modelled yet, and notes. Drop elements into a group to nest them. A group holds every element it fully encloses: draw, resize or move it around elements and they become part of it; an element it only partly covers stays outside and in front of it.
 4. **Label elements.** Double-click a group, placeholder, note or connector to edit its text.

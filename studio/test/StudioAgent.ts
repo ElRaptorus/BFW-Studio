@@ -631,9 +631,7 @@ export class StudioAgent {
       await this.typeSolutionUriIntoOpenDialog(`file://${directory}`);
     }
 
-    await this.waitForNotVisible(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--loading-indicator',
-    );
+    await this.waitForNotVisible('[data-test--tree="std/file-explorer/design"] .treeview__entry--loading-indicator');
   }
 
   private async typeSolutionUriIntoOpenDialog(uri: string): Promise<void> {
@@ -642,20 +640,22 @@ export class StudioAgent {
 
     await this.sendKeyboardInput([...uri.split(''), 'enter'], false);
 
-    await this.assertVisible('[data-test--tree="std/file-explorer/open-solution"]', ASSERT_VISIBLE_TIMEOUT);
+    await this.assertVisible('[data-test--tree="std/file-explorer/design"]', ASSERT_VISIBLE_TIMEOUT);
   }
 
   async openSolutionFileFromFixtures(solutionFilename: string): Promise<void> {
-    const solutionFileUri = 'file://' + path.join(__dirname, 'fixtures', solutionFilename);
+    await this.openSolutionFile(path.join(__dirname, 'fixtures', solutionFilename));
+  }
+
+  async openSolutionFile(solutionFilePath: string): Promise<void> {
+    const solutionFileUri = `file://${solutionFilePath}`;
     await this.openViaCommandSearch('Test: Open URI as solution');
     await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
 
     await this.sendKeyboardInput([...solutionFileUri.split(''), 'enter'], false);
 
-    await this.assertVisible('[data-test--tree="std/file-explorer/open-solution"]', ASSERT_VISIBLE_TIMEOUT);
-    await this.waitForNotVisible(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--loading-indicator',
-    );
+    await this.assertVisible('[data-test--tree="std/file-explorer/design"]', ASSERT_VISIBLE_TIMEOUT);
+    await this.waitForNotVisible('[data-test--tree="std/file-explorer/design"] .treeview__entry--loading-indicator');
   }
 
   async getSolutionProjectCount(): Promise<number> {
@@ -675,9 +675,7 @@ export class StudioAgent {
     await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
     await this.sendKeyboardInput([...directoryUri.split(''), 'enter'], false);
     await this.pause(500);
-    await this.waitForNotVisible(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--loading-indicator',
-    );
+    await this.waitForNotVisible('[data-test--tree="std/file-explorer/design"] .treeview__entry--loading-indicator');
   }
 
   async removeFolderFromSolutionViaApi(projectId: string): Promise<void> {
@@ -685,9 +683,7 @@ export class StudioAgent {
     await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
     await this.sendKeyboardInput([...projectId.split(''), 'enter'], false);
     await this.pause(500);
-    await this.waitForNotVisible(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--loading-indicator',
-    );
+    await this.waitForNotVisible('[data-test--tree="std/file-explorer/design"] .treeview__entry--loading-indicator');
   }
 
   async getSolutionProjectIds(): Promise<string[]> {
@@ -697,9 +693,7 @@ export class StudioAgent {
   }
 
   async getProjectEntryCount(): Promise<number> {
-    return this.getElementCount(
-      '[data-test--tree="std/file-explorer/open-solution"] [data-test--tree-entry-type="project"]',
-    );
+    return this.getElementCount('[data-test--tree="std/file-explorer/design"] [data-test--tree-entry-type="project"]');
   }
 
   /**
@@ -746,9 +740,7 @@ export class StudioAgent {
     await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);
     await this.sendKeyboardInput([...newName.split(''), 'enter'], false);
     await this.pause(500);
-    await this.waitForNotVisible(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--loading-indicator',
-    );
+    await this.waitForNotVisible('[data-test--tree="std/file-explorer/design"] .treeview__entry--loading-indicator');
   }
 
   async closeSolutionViaApi(): Promise<void> {
@@ -1180,7 +1172,7 @@ export class StudioAgent {
   async waitForSolutionEntryCountChanged(previousCount: number): Promise<void> {
     await this.poll(
       async () => {
-        const result = await this.$$('[data-test--tree="std/file-explorer/open-solution"] .treeview__entry');
+        const result = await this.$$('[data-test--tree="std/file-explorer/design"] .treeview__entry');
         return result.length;
       },
       (count: number) => {

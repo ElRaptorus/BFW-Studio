@@ -143,17 +143,16 @@ Only the 1–2 tree items whose status actually changed re-render, instead of th
 - **`HeadlessTreeItem`**: Calls `useDecoration(data.metadata?.uri)`, merges returned decoration with base `data.styles`/`data.badges`
 - **`EditorTabDraggable`**: Calls `useDecoration(editorDocument.uri)` and applies `labelColor` as an inline style on the tab label. The `DecorationContext` is set up by `EditorTabsAndOptions` in `EditorWrapper.tsx`, using the same decoration source as the tree views.
 
-### FileExplorerDecorationSource
+### Explorer decoration sources
 
-**Path:** `studio/src/bifrost/common/activities/FileExplorerView.ts`
+**Path:** `studio/src/bifrost/common/ExplorerMediator.ts`
 
-Implements `TreeDecorationSource` within `FileExplorerView`:
-- Holds registered `TreeDecorationProvider[]`
-- `getDecoration(uri)`: iterates providers, merges results — O(providers) per call (typically 1)
-- `subscribe(listener)`: listeners receive `Set<string>` of changed URIs
-- Forwards each provider's `onDidChange` events to all subscribers
+`bifrost.explorers` implements `TreeDecorationSource` for the explorers:
+- `registerDecorationProvider(provider, explorerIds?)`: a provider applies to every explorer, or only to the listed explorer ids. git-cruiser registers without ids, so its status colors show in every explorer
+- `getDecorationSource(explorerId?)`: one cached source per explorer id (without an id: providers registered for all explorers). `getDecoration(uri)` merges styles and badges of the matching providers — O(providers) per call
+- `subscribe(listener)`: listeners receive `Set<string>` of changed URIs, forwarded from each provider's `onDidChange`
 
-Exposed via `bifrost.fileExplorerView.getDecorationSource()`, passed to the `Tree` in `SolutionPane.tsx` and `OpenEditorsPane.tsx`, and to the editor tab bar via `DecorationContext` in `EditorWrapper.tsx`.
+`ExplorerPane` passes `getDecorationSource(explorerId)` to its `Tree`; `OpenEditorsPane.tsx` and the editor tab bar (`DecorationContext` in `EditorWrapper.tsx`) use `getDecorationSource()`.
 
 ### Status Colors
 

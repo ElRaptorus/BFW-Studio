@@ -4,6 +4,8 @@ import * as jsonComment from 'comment-json';
 
 export type SolutionFileContent = {
   folders: SolutionFileFolder[];
+  /** Folder URI per view id, resolved against the folder of the solution file. */
+  views: Record<string, string>;
   settings: Record<string, any>;
 };
 
@@ -154,6 +156,94 @@ function foldersForSolution(solution: Solution, fileHandling: FileHandlingServic
   });
 }
 
+function isAbsolutePath(path: string): boolean {
+  return path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path);
+}
+
+/** Resolves a view path (relative to the folder of the solution file, or absolute) to a folder URI. */
+function resolveViewUri(solutionFileUri: string, path: string, fileHandling: FileHandlingService): string {
+  if (isAbsolutePath(path)) {
+    return fileHandling.getUriForFilename(path.replace(/\\/g, '/').replace(/\/+$/, ''));
+  }
+  const segments = solutionFileUri.split('/').slice(0, -1);
+  for (const segment of path.replace(/\\/g, '/').split('/')) {
+    if (segment === '..') {
+      segments.pop();
+    } else if (segment !== '' && segment !== '.') {
+      segments.push(segment);
+    }
+  }
+  return segments.join('/');
+}
+
+/**
+ * The path of `folderUri` relative to the folder of the solution file, with `/` separators.
+ * A folder on another Windows drive has no relative path and is written absolute.
+ */
+function relativeViewPath(solutionFileUri: string, folderUri: string, fileHandling: FileHandlingService): string {
+  const solutionFolderSegments = solutionFileUri.split('/').slice(0, -1);
+  const folderSegments = folderUri.replace(/\/+$/, '').split('/');
+  const driveIndex = 3;
+  if (
+    /^[A-Za-z]:$/.test(folderSegments[driveIndex] ?? '') &&
+    folderSegments[driveIndex]?.toLowerCase() !== solutionFolderSegments[driveIndex]?.toLowerCase()
+  ) {
+    return fileHandling.getLocalFilenameForUri(folderUri).replace(/\\/g, '/');
+  }
+  let sharedCount = 0;
+  while (
+    sharedCount < solutionFolderSegments.length &&
+    sharedCount < folderSegments.length &&
+    solutionFolderSegments[sharedCount] === folderSegments[sharedCount]
+  ) {
+    sharedCount++;
+  }
+  const upwards = solutionFolderSegments.slice(sharedCount).map(() => '..');
+  return [...upwards, ...folderSegments.slice(sharedCount)].join('/') || '.';
+}
+
+function viewsOfDocument(
+  solutionFileUri: string,
+  document: SolutionDocument,
+  fileHandling: FileHandlingService,
+): Record<string, string> {
+  const views: Record<string, string> = {};
+  if (!isDocument(document.views)) {
+    return views;
+  }
+  for (const [viewId, view] of Object.entries(document.views)) {
+    if (isDocument(view) && typeof view.path === 'string' && view.path.trim() !== '') {
+      views[viewId] = resolveViewUri(solutionFileUri, view.path.trim(), fileHandling);
+    }
+  }
+  return views;
+}
+
+function setViewPath(
+  document: SolutionDocument,
+  solutionFileUri: string,
+  viewId: string,
+  folderUri: string,
+  fileHandling: FileHandlingService,
+): void {
+  if (!isDocument(document.views)) {
+    document.views = {};
+  }
+  const existing = isDocument(document.views[viewId]) ? document.views[viewId] : {};
+  document.views[viewId] = { ...existing, path: relativeViewPath(solutionFileUri, folderUri, fileHandling) };
+}
+
+function writeViewsOfSolution(
+  solutionFileUri: string,
+  solution: Solution,
+  document: SolutionDocument,
+  fileHandling: FileHandlingService,
+): void {
+  for (const [viewId, view] of Object.entries(solution.views ?? {})) {
+    setViewPath(document, solutionFileUri, viewId, view.uri, fileHandling);
+  }
+}
+
 export async function readSolutionFile(
   solutionFileUri: string,
   fileHandling: FileHandlingService,
@@ -167,10 +257,12 @@ export async function readSolutionFile(
       path: folder.path,
       name: folder.name || undefined,
     })),
+    views: viewsOfDocument(solutionFileUri, document, fileHandling),
     settings: isDocument(document.settings) ? document.settings : {},
   };
 }
 
+/** Writes the folders, and the views of `solution` relative to `solutionFileUri` (so Save As keeps them). */
 export async function writeSolutionFolders(
   solutionFileUri: string,
   solution: Solution,
@@ -178,9 +270,31 @@ export async function writeSolutionFolders(
 ): Promise<void> {
   await mutateSolutionDocument(solutionFileUri, fileHandling, true, (document) => {
     document.folders = foldersForSolution(solution, fileHandling);
+    writeViewsOfSolution(solutionFileUri, solution, document, fileHandling);
     if (!isDocument(document.settings)) {
       document.settings = {};
     }
+  });
+}
+
+/** Sets the folder of one view, as a path relative to the solution file, or removes it when `folderUri` is `null`. */
+export async function writeSolutionView(
+  solutionFileUri: string,
+  fileHandling: FileHandlingService,
+  viewId: string,
+  folderUri: string | null,
+): Promise<void> {
+  await mutateSolutionDocument(solutionFileUri, fileHandling, false, (document) => {
+    if (folderUri == null) {
+      if (isDocument(document.views)) {
+        delete document.views[viewId];
+        if (Object.keys(document.views).length === 0) {
+          delete document.views;
+        }
+      }
+      return;
+    }
+    setViewPath(document, solutionFileUri, viewId, folderUri, fileHandling);
   });
 }
 
@@ -255,6 +369,7 @@ export async function repairSolutionFile(
 
     const repaired = emptyDocument();
     repaired.folders = foldersForSolution(solution, fileHandling);
+    writeViewsOfSolution(solutionFileUri, solution, repaired, fileHandling);
     await saveOrThrow(
       solutionFileUri,
       `${jsonComment.stringify(repaired, null, 2)}\n`,

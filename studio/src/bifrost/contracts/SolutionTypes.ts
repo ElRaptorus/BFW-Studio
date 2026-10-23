@@ -30,6 +30,19 @@ export type Solution = {
    * root entries in the tree, even when only one project remains.
    */
   isExplicitSolution?: boolean;
+
+  /**
+   * Folder per view id (for example `landscapes`), declared in the `views` block of the `.bfwsln`.
+   * Only a saved solution file has views.
+   */
+  views?: Record<string, SolutionView>;
+};
+
+export type SolutionView = {
+  /**
+   * URI of the view folder; it may lie outside every project and may not exist on disk
+   */
+  uri: string;
 };
 
 export type Project = {

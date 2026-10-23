@@ -148,6 +148,6 @@ function decorationsEqual(left: TreeItemDecoration, right: TreeItemDecoration): 
 
 export function initializeDecorations(bifrost: Bifrost): GitDecorationProvider {
   const provider = new GitDecorationProvider();
-  bifrost.fileExplorerView.registerDecorationProvider(provider);
+  bifrost.explorers.registerDecorationProvider(provider);
   return provider;
 }

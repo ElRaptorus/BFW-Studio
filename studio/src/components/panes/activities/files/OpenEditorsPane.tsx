@@ -75,21 +75,8 @@ export function PaneTabOptions(props: PaneComponentProps): React.JSX.Element | n
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost: Bifrost = Bifrost.cast(props.studio);
 
-  const fileExplorerView = bifrost.fileExplorerView;
-  const fileExplorerViewData = fileExplorerView.getViewData();
-
-  const solutionEntry = JSON.parse(JSON.stringify(fileExplorerViewData.solution));
-
   const editors = getEditorsOfActivePage(bifrost);
   const openEditorEntries = getOpenEditorEntries(bifrost, editors);
-
-  if (solutionEntry != null) {
-    const solutionHasOneProject = solutionEntry.entries.length === 1 && solutionEntry.entries[0].type === 'project';
-    if (solutionHasOneProject) {
-      const projectEntry = solutionEntry.entries[0];
-      solutionEntry.entries = projectEntry.entries;
-    }
-  }
 
   const onClick = (metadata: any): void => {
     if (metadata && metadata.openUriOnClick === true) {
@@ -135,7 +122,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           onActionIconClick={onActionIconClick}
           onDragAndDropItem={dragAndDropHandler}
           iconComponent={Icon}
-          decorationSource={bifrost.fileExplorerView.getDecorationSource()}
+          decorationSource={bifrost.explorers.getDecorationSource()}
         />
       </div>
     </>

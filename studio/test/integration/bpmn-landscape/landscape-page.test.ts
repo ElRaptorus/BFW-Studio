@@ -1,8 +1,10 @@
-import path from 'node:path';
+import * as fs from 'node:fs';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { StudioAgent, TestContext } from '../../StudioAgent';
 import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioAgent';
+import type { LandscapeWorkspace } from './landscapeWorkspace';
+import { createLandscapeWorkspace } from './landscapeWorkspace';
 
 const TIMEOUT = ASSERT_VISIBLE_TIMEOUT;
 const PANE_ID = 'discover/landscapes/landscapes';
@@ -12,6 +14,7 @@ const FILTER = '[data-test--landscape-process-filter]';
 describe('bpmn-landscape/landscape-page', () => {
   let studioAgent: StudioAgent;
   let currentContext: TestContext;
+  let landscapeWorkspace: LandscapeWorkspace;
 
   const treeLabels = async (): Promise<string[]> =>
     (await studioAgent.executeInRenderer(
@@ -28,7 +31,8 @@ describe('bpmn-landscape/landscape-page', () => {
   beforeAll(async () => {
     currentContext = { testName: 'setup', testFile: __filename };
     studioAgent = await createAndStartStudioAgent(currentContext);
-    await studioAgent.openDirectoryAsSolution(path.join(__dirname, '..', '..', 'fixtures', 'test-solution-deploy'));
+    landscapeWorkspace = createLandscapeWorkspace('bfw-landscape-page-');
+    await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
   });
 
   beforeEach(({ task }) => {
@@ -43,13 +47,17 @@ describe('bpmn-landscape/landscape-page', () => {
 
   afterAll(async () => {
     await studioAgent?.stop();
+    if (landscapeWorkspace != null) {
+      fs.rmSync(landscapeWorkspace.workspace, { recursive: true, force: true });
+    }
   });
 
-  it('shows the Discover category with the Landscapes page and its Processes pane', async () => {
+  it('shows the Discover category with the Landscapes page, its Maps explorer and its Processes pane', async () => {
     await studioAgent.assertVisible('.workbench-header__category[data-category-id="discover"]', TIMEOUT);
     await studioAgent.navigation.showLeftPane(PANE_ID);
     await studioAgent.navigation.assertLeftPaneIsActive(PANE_ID);
     await studioAgent.assertVisible('[data-test--landscape-new-map]', TIMEOUT);
+    await studioAgent.assertVisible('[data-test--tree="bpmn-landscape/processes"]', TIMEOUT);
   });
 
   it('lists the BPMN files collapsed; expanding a file shows its processes', async () => {

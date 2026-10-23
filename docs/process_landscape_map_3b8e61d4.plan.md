@@ -68,26 +68,29 @@ todos:
   - id: m3-gate-review
     content: "M3: Studio gate, ask before running the landscape suite, stop for review"
     status: completed
+  - id: m4-resolution
+    content: "M4 Solution integration: resolveProcessReference (resolved, missing, ambiguous, replace candidates) against the saved solution and scanSolutionLandscapeMaps over the landscape folder; the document model uses the resolver; unit tests"
+    status: pending
   - id: m4-maps-pane
-    content: "M4 Solution integration: Maps pane and on-N-maps badge in the Processes pane"
+    content: "M4: missing-process badges through a scoped decoration provider, and dragging maps from the Maps explorer onto the canvas; on-N-maps badge in the Processes pane"
     status: pending
   - id: m4-missing-processes
-    content: "M4: missing and ambiguous processes - greyed out, notification, replace, drop, keep"
+    content: "M4: missing and ambiguous processes - greyed drawing, Review notification, Replace, Drop to placeholder, session Keep"
     status: pending
   - id: m4-map-links
-    content: "M4: map-link nodes"
+    content: "M4: map links - drop from the Maps explorer, own look, greyed when the target is missing, double-click opens, Target map picker"
     status: pending
   - id: m4-explorer-menu
-    content: "M4: Explorer directory menu entry New Landscape Map"
-    status: pending
+    content: "M4: New Landscape Map... in the Maps explorer (done by the explorer perspectives plan)"
+    status: completed
   - id: m4-image-export
-    content: "M4: image export as PNG, JPG, WebP and SVG"
+    content: "M4: image export as PNG, JPG, WebP and SVG through the std export commands and a toolbar button"
     status: pending
   - id: m4-tests-docs
-    content: "M4: unit tests, docs, integration tests for missing processes and export"
+    content: "M4: docs and integration tests (missing-process flow, map link, export)"
     status: pending
   - id: m4-gate-review
-    content: "M4: Studio gate, ask before running the landscape suite, stop for review"
+    content: "M4: Studio gate, copy this plan to docs/, ask before running the landscape suite, stop for review"
     status: pending
   - id: m5-levels-bands
     content: "M5 Hierarchy: levels editor, bands, nested groups with auto-resize"
@@ -134,6 +137,9 @@ isProject: false
 | 5 | Own layout code; elkjs stays the reserve if dense message networks stay tangled. |
 | 6 | Nested groups with collapse and drill-down, plus map-link nodes between maps. |
 | 7 | No DMN nodes; a process shows a decision badge and lists its decisions in the properties pane. |
+| 8 | (M4) "Drop reference" turns the broken process shape into a placeholder in the same place; it keeps its label (defaulting to the old process id) and its connectors. Undoable. |
+| 9 | (M4) "Keep" lasts for the session only: the shape stays greyed, Review skips it, and the next opening lists it again. The file format does not change. |
+| 10 | (M4) A map link's target is changed with a "Target map" picker in the properties pane. |
 
 ## Eingaben-Nachweis
 
@@ -187,7 +193,7 @@ Every element may carry `fill` and `stroke`. Paths are relative to the map file.
 
 **Panes.** Left group `landscapes` on `discover/landscapes`: **Maps** (every `.bfwmap` of the solution, open on click, "New Map", a badge with the number of missing processes) and **Processes** (the shared `Tree` component, grouped by file and collapsed by default, filter box, marker for processes on the open map, "on N maps" badge from a reverse index over all map files, native drag onto the canvas, multi-selection menu "Create Map from Selection"). Right: properties of the map (name, levels, relation toggles) or the selected element (label, shape, colours, computed level; for processes file, version, executable flag, relations and the decision list with "Open").
 
-**Missing and ambiguous processes.** A process reference without a matching process id is missing; an id defined in several files is resolved by `fileHint`, otherwise ambiguous. Both are drawn greyed out and cannot be opened. Opening a map with such references shows one notification with "Review", which selects the first one. The properties pane offers Replace (a picker of solution processes not on the map; disabled with a hint when there are none; for ambiguous ids it lists the candidates), Drop reference, and Keep (dismisses; the greyed drawing stays). Replace and Drop are undoable.
+**Missing and ambiguous processes.** A process reference without a matching process id is missing; an id defined in several files is resolved by `fileHint`, otherwise ambiguous. Both are drawn greyed out and cannot be opened. Opening a map with such references shows one notification with "Review", which selects the first one. The properties pane offers Replace (a picker of solution processes not on the map; disabled with a hint when there are none; for ambiguous ids it lists the candidates), Drop reference (turns the shape into a placeholder, decision 8), and Keep (session only, decision 9). Replace and Drop are undoable.
 
 **Commands** (`bpmn.landscape.*`): new map (save dialog defaulting to `<first project>/landscapes/<name>.bfwmap`, creates the folder, writes an empty map, opens it), Explorer directory menu "New Landscape Map…", open process in the Designer (double-click), open map link, export as image (serialise the canvas SVG, replace theme colours, `renderSvgToRasterImage` under `runWithExportHint`, same filters and errors as BPMN), focus mode (dim everything except the selection and its direct relations), relation toggles, keybindings for delete, copy, paste and arrow moves scoped to the landscape editor.
 
@@ -276,29 +282,190 @@ Docs grow with each milestone instead of in one batch at the end, so they always
 21. Unit tests (relation rebuild, hidden relation round trip), `bpmn-landscape.md`, integration tests (relation drawn between two fixture processes).
 22. Studio gate. Ask before running the landscape suite. **Stop for review.**
 
+### Review of Milestones 2 and 3
+
+Checked against the code at `896a7f2` (steps 8–22). Unit tests pass (114 files, 917 tests) and `npm run lint` reports no findings. Integration suites were not run in this review.
+
+- **Done as planned:** module, page, document type, included files, help text; document model with dirty tracking, undo, redo, selection revision, viewbox, unreadable-file gate and watcher; modeler with renderer, rules, layouter, palette, context pad, label editing, copy and paste; Processes pane; New Map and keybindings; relation lines outside the command stack; relation toggles and hidden relations; connectors; properties pane; Designer jump; focus mode; docs, decisions and integration suite.
+- **Deliberate deviation, recorded in `docs/decisions.md`:** `.bfwmap` is XML read and written through `moddle` / `moddle-xml` (already in the lock file through bpmn-js), not JSON. The Approach section above is updated.
+- **Gaps Milestone 4 closes:**
+  - `resolveProcess` falls back to the first candidate when an id is defined in several files without a matching hint, so ambiguous ids are silently resolved.
+  - A map link is drawn as a plain box and has no open behaviour.
+  - The "New Map" icon sits in the Processes pane header because the Maps pane does not exist yet. Done by the explorer perspectives plan: the icon is a header action of the Maps explorer.
+- **Plan copy:** the other agent kept the plan status in `docs/process_landscape_map_3b8e61d4.plan.md`. Both copies were brought in step when the explorer perspectives plan revised Milestone 4; step 30 copies this file there again.
+
 ### Milestone 4 — Solution integration and robustness
 
-23. Maps pane (list, open, new, missing-process badge); "on N maps" badge in the Processes pane.
-24. Missing and ambiguous processes: greyed-out drawing, notification with "Review", Replace, Drop and Keep.
-25. Map-link nodes, created by dragging a map from the Maps pane onto the canvas; double-click opens the target (the label is edited in the properties pane); a missing target is greyed out.
-26. Explorer directory menu entry "New Landscape Map…".
-27. Image export as PNG, JPG, WebP and SVG.
-28. Unit tests (missing detection, replace candidates, SVG serialisation), `bpmn-landscape.md`, integration tests (missing-process flow, export).
-29. Studio gate. Ask before running the landscape suite. **Stop for review.**
+**Ziel (M4):** Landscape maps become part of the solution: badges on the Maps explorer, process references that survive renames and deletions visibly and fixably, links between maps, and image export.
+
+#### Eingaben-Nachweis (M4)
+
+- **Decisions 1, 3 and 8–10, and step 25 as reworded by the other agent.**
+  - A missing process is greyed out and cannot be opened. Replace offers only processes not yet on the map, Drop turns the shape into a placeholder, and Keep lasts for the session.
+  - The left group holds Maps and Processes stacked (the Maps explorer and the Processes pane, since the explorer perspectives plan).
+  - A map link is created by dragging a map from the Maps explorer. Double-click opens it, its label is edited in the properties pane, and its target is changed with a picker.
+- **Explorer perspectives plan (`explorer_perspectives_c71d9a42.plan.md`, landed before this milestone).**
+  - The `.bfwsln` declares the landscape folder in `views.landscapes.path`. `landscapeFolder.ts` exports `getLandscapeGate` (`no-solution`, `unsaved`, `no-folder`, `ready` with `folderUri`), `isInLandscapeFolder` and `getMapOpenRefusal`; `canOpen` refuses maps outside the folder of a saved solution.
+  - The Maps explorer (`bifrost.explorers`, id `landscapes`, pane `discover/landscapes/maps`, view source `landscapes`, `**/*.bfwmap`) sits first in the `landscapes` group with the New Map header action, "New Landscape Map..." in its folder menus and `LandscapeFolderHint` as empty state.
+  - `bifrost.explorers.registerDecorationProvider(provider, explorerIds?)` scopes a decoration provider to explorers.
+  - Tree rows drag only where `onDragAndDropItem` is set (`HeadlessTreeItem` `enableDragAndDrop`), and `ExplorerPane` sets it only for the Designer, so Maps explorer rows do not drag yet.
+- **`LandscapeMapDocumentModel.ts` (616 lines).** `resolveProcess` filters the catalog by process id and returns the candidate whose `relativeFileHint` matches, else `candidates[0]`, else `null`. It feeds `getProcessLabel`, `getProcessDetails`, `placedProcesses` (relation lines) and `openProcess`, which shows an info notification for an unresolved process. `refreshCatalog` runs on create, on focus and on `solutionChanged`, keeps only the newest scan, then fires `elements.changed` for all process shapes. Double-click handling only covers `type === 'process'`.
+- **`modeler/LandscapeRenderer.ts`.**
+  - All shapes are drawn from `businessObject` with inline styles, using `var(--color-bpmn-default…)` for default colours. The config passes in `getProcessLabel` and `getDecisionCount`.
+  - Placeholders are dashed. A map link falls through to the generic rounded `rect`.
+  - Arrow markers live in a `defs` element appended to `canvas._svg`.
+- **`modeler/LandscapeModeler.ts`.** It builds a diagram-js `Diagram` with `ModelingModule`, so `modeling.replaceShape` is available, and `GridModule`, which draws on its own layer outside the active layer. It also provides `addProcessShape` (smallest containing group or band) and `findProcessShape(processId)`. There is no SVG export yet.
+- **`panes/ProcessesPane.tsx`.**
+  - Builds one tree row per BPMN file and lets the shared `Tree` drag process rows with `metadata {processId, fileUri}`.
+  - Badges processes on the open map with `ph-map-pin`. Invalid files get a `'!'` character badge. The header has no icon; `LandscapeFolderHint` replaces the list while the gate is not `ready`.
+  - It rescans on `solutionChanged` and drops results from an older scan (common pitfall "`getSolution()` keeps its identity").
+  - `TreeBadge` supports `character`, `icon` and `number`.
+- **`LandscapeMapRenderer.tsx`.** `useDropTarget` accepts `tree_item` only when `metadata.processId` is set and calls `bpmn.landscape.addProcessToMap` at the canvas point. The toolbar has only the Focus button.
+- **`panes/LandscapePropertiesPane.tsx`.** For one selected shape it shows `ShapeProperties`, with `LabelProperty` (process label placeholder) and `ProcessDetailsView`. That view shows only "Not found in the solution." when `getProcessDetails` returns `null`. Map links get only the generic Label field.
+- **`commands.ts`.** `newMap(bifrost, directoryUri?)` saves inside the landscape folder only (creating it when missing), appends `.bfwmap`, refuses an existing name, then calls `createNewEditorDocument` and `solution.onElementAdded`. `setUpLandscapeFolder` and `chooseLandscapeFolder` write `views.landscapes`.
+- **Export plumbing.**
+  - `std.editor.showExportDialog` and `std.editor.exportDocumentAs` forward to `….${documentType}` (common pitfall "Document-type export uses a suffixed command").
+  - `engine-model-viewer` implements an image-only export:
+    1. save dialog with `IMAGE_SAVE_DIALOG_FILTERS`;
+    2. `getImageFormatForFilename`, with the `SUPPORTED_IMAGE_EXTENSIONS_TEXT` error;
+    3. `renderSvgToRasterImage` under `runWithExportHint`;
+    4. `files.save`.
+  - `replaceThemeColorsInSvg` maps the two default colour variables to white and black. `getSvgSize` reads integer `width` / `height` from the root tag.
+- **bpmn-js `BaseViewer.saveSVG`.** It serialises `canvas.getActiveLayer()` plus `:scope > defs` of `canvas._svg`. It measures `getBBox()` while the container carries `djs-outline-hidden`, pads the box and writes `width`, `height` and `viewBox`.
+- **`NotificationManager.open(options, responseCallbackFn)`.** `actions: [{ action, label }]` call back with the chosen action.
+- **`SolutionMediator.listIncludedFileUris(pattern)`.** Lists included files, for example `/\.bpmn$/i` in the scans.
+- **Unit tests** run in Node without a DOM (`vitest.config.mts` sets no environment), so `getBBox` and SVG serialisation can only be tested in the integration suite.
+
+#### Approach (M4)
+
+**Resolution.** A new pure module `resolveProcessReference.ts` serves the document model, the Maps explorer badges and the Processes pane. It exports:
+- `resolveProcessReference(catalog, mapUri, { processId, fileHint })`, which returns one of:
+  - `{ status: 'resolved', uri, process }` when exactly one candidate matches the hint, or when the id exists in only one file (a stale hint after a rename or move resolves; the hint is not rewritten, so the map does not turn dirty);
+  - `{ status: 'ambiguous', candidates }` when there are several candidates and none matches the hint;
+  - `{ status: 'missing' }` when there is no candidate.
+- `replaceCandidates(catalog, processIdsOnMap)`, which returns every solution process whose id is not on the map.
+
+`LandscapeMapDocumentModel.resolveProcess` delegates to the resolver, so ambiguous ids no longer resolve to the first file. Resolution runs against the saved solution only: the catalog is the open `.bfwsln`'s, and a map opens only from its landscape folder, so there is no folder-solution or foreign-solution case. Processes outside the solution count as missing.
+
+**Map scan.** A new module `scanSolutionLandscapeMaps.ts` returns nothing unless `getLandscapeGate` is `ready`, lists `/\.bfwmap$/i` and keeps the files `isInLandscapeFolder`, loads and parses each file with `parseLandscapeMap`, and returns `{ uri, name, readable, processReferences: { processId, fileHint }[] }` per map, with `name` falling back to the file's base name. It reads saved files only, like the BPMN catalog. There is no cache; maps are small and parsing runs on the main thread. `ponytail:` note: cache by text hash like the BPMN scan if solutions grow to hundreds of maps.
+
+**Maps explorer badges** (`mapsExplorerDecorations.ts`, registered in `index.tsx` with `bifrost.explorers.registerDecorationProvider(provider, ['landscapes'])`, so git, Open Editors and the Designer are unaffected):
+- **Badges:** a `number` badge on a map file counts references that are missing or ambiguous; an unreadable map gets a `'!'` badge with the parse error as tooltip. Both scans re-run on `solutionChanged`, late results are dropped, and the provider fires its change event after each scan.
+- **Drag:** Maps explorer rows become drag sources (`tree_item` with `metadata.uri`) while dropping to move stays Designer-only. `Tree` / `HeadlessTreeItem` get a drag-source switch separate from `onDragAndDropItem`, and `ExplorerPane` turns it on for every explorer. Opening and the New Map action already exist.
+
+The Processes pane additionally shows a `number` badge "on N maps", counting saved maps whose reference resolves to that file and process. The pin for the open map stays.
+
+**Broken processes on the canvas.** The renderer config gains `getProcessStatus(element)`, which returns `resolved`, `missing` or `ambiguous`.
+- **Drawing:** a missing or ambiguous process is drawn with an inline `opacity: 0.45` and a dashed stroke, plus a small warning glyph (a `<title>` says "Not found in the solution" or "Defined in several files"). Inline styles keep the greyed state in exported images.
+- **Opening:** double-click keeps the existing info notification, worded per status.
+- **Review notification:** after the first catalog scan of a newly opened map, and again whenever the set of broken references grows during the session, one notification says "N processes on this map are not found or are defined in several files". Its action "Review" selects the first broken shape not kept this session and scrolls to it.
+
+The properties pane, for a broken process, shows the status sentence and three actions:
+- **Replace:** a select of `replaceCandidates`, or for an ambiguous id its candidate files. It is disabled with the hint "Every process of the solution is already on this map" when the list is empty. One `UPDATE_ELEMENT_COMMAND` sets `processId` and `fileHint`.
+- **Drop reference:** one `modeling.replaceShape` to a placeholder with a new id, the same bounds, the label `element.label ?? processId`, the same style and shape, and the connectors reconnected. `LandscapeRules` must allow `connection.reconnect` for connectors.
+- **Keep:** adds the element id to a session set in the model; Review then moves on to the next broken shape.
+
+**Map links.**
+- **Creating:** the canvas drop target also accepts a `tree_item` whose `metadata.uri` ends in `.bfwmap` and calls a new command, `bpmn.landscape.addMapLinkToMap({ mapUri, x, y })`. The command refuses a link to the map itself with an info notification. It creates a `mapLink` element with `mapPath = relativeFileHint(this.uri, mapUri)` and the target map's name as label, in the smallest containing group or band (the existing `addProcessShape` placement, generalised to any element).
+- **Opening:** the target URI is `new URL(mapPath, this.uri).href`. Double-click opens it with `std.editor.focusOrOpenDocument`, or shows an info notification when the target is not among the solution's maps.
+- **Drawing:** a map link is a rounded rect with a double border and a map glyph in the top-right corner. It is greyed like a broken process when its target is missing; the model keeps the URIs from the map scan for this.
+- **Properties:** a disabled "Target" field shows `mapPath`, and a "Target map" select lists the other maps of the landscape folder. Choosing one runs `UPDATE_ELEMENT_COMMAND` on `mapPath`.
+
+**Explorer.** Done by the explorer perspectives plan: `newMap(bifrost, directoryUri?)`, the New Map header action and "New Landscape Map..." in the Maps explorer's folder menus. The Designer gets no landscape entry.
+
+**Image export.**
+- **SVG:** `LandscapeModeler.exportSvg()` follows bpmn-js `saveSVG`: active layer plus `defs`, `getBBox()` measured under `djs-outline-hidden`, 10 px padding, and `width` / `height` rounded up to integers for `getSvgSize`. It returns the result through `replaceThemeColorsInSvg`. Grid, minimap, selection outlines and focus dimming are not part of the result.
+- **Commands:**
+  - `std.editor.showExportDialog.bpmn-landscape-map` opens the save dialog directly (images only), defaulting to `<map file name>.png` next to the map, with the same filters and error as BPMN.
+  - `std.editor.exportDocumentAs.bpmn-landscape-map(editorDocument, format, filename)` renders `svg`, `png`, `jpeg` or `webp`, rasters under `runWithExportHint`, and saves with `files.save`.
+- **UI:** a toolbar button "Export" calls the dialog command; File › Export works through `std`.
+
+#### Pre-conditions (M4)
+
+- Studio at the commit that lands the explorer perspectives plan, on top of `896a7f2` (check `git log` before starting). The only uncommitted change, `studio/test/integration/plugins/plugin-host.test.ts`, is the user's and stays untouched.
+- Unit tests and lint are green, and the core, landscape, git-cruiser and deploy suites passed at the end of the explorer perspectives plan.
+
+#### Scope (M4)
+
+- **New:**
+  - `studio/src/modules/bpmn-landscape/resolveProcessReference.ts`, `scanSolutionLandscapeMaps.ts`, `mapsExplorerDecorations.ts`;
+  - unit tests `test/unit/bpmn-landscape/resolveProcessReference.test.ts` and `scanSolutionLandscapeMaps.test.ts`;
+  - integration test `test/integration/bpmn-landscape/landscape-solution.test.ts`.
+- **Changed:**
+  - `studio/src/components/Tree/` and `components/panes/activities/files/ExplorerPane.tsx` (drag source without drop);
+  - in `bpmn-landscape`: `index.tsx` (decoration provider), `commands.ts`, `LandscapeMapDocumentModel.ts`, `LandscapeMapRenderer.tsx` (drop, toolbar), `modeler/LandscapeModeler.ts`, `modeler/LandscapeRenderer.ts`, `modeler/LandscapeRules.ts` (reconnect), `panes/ProcessesPane.tsx`, `panes/LandscapePropertiesPane.tsx`, `styles/landscape.scss`, `texts/landscapes.md`;
+  - fixtures under `test/integration/bpmn-landscape/`;
+  - `docs/architecture/bpmn-landscape.md`;
+  - `docs/process_landscape_map_3b8e61d4.plan.md` (copy of this file).
+- **Not touched:** the `.bfwmap` format, the `views` block, `bpmn-core`, other modules' menus, the SDK, the Engine and Lite.
+
+#### Assumptions (M4)
+
+- Renaming a BPMN file without changing process ids keeps every reference resolved: the id is unique, so the stale hint does no harm. Only ids defined in several files need the hint.
+- A renamed or deleted `.bfwmap` breaks links to it; the Target map picker fixes them. The Studio does not rewrite other maps on rename.
+- The badges and the "on N maps" count reflect saved files, like the BPMN catalog.
+
+#### Risks (M4)
+
+- **`replaceShape` and connectors:** a reconnect the rules forbid drops the connector. Allowing `connection.reconnect` for connectors only (never relation lines) and an integration check after Drop cover this.
+- **Notification noise:** scans run on focus and on every solution change. The notification therefore fires only on the first scan of an open and when the broken set grows; covered by a test.
+- **Export measurement:** `getBBox` needs the canvas in the DOM. The export commands run on the focused, attached map, and a detached model returns `null` with a warning notification, as the model viewer does.
+- **Extra scan cost:** the decoration provider and the Processes pane add a map scan per solution change; this is bounded by the `ponytail:` note above.
+- **Dragging out of view explorers:** a drag source without a drop target must not let a row be dropped onto another explorer row; the drop side keeps its `structural` check, covered by a test.
+
+#### Definition of Done (M4)
+
+- The Maps explorer badges broken and unreadable maps, and its rows create map links by drag. The Processes pane shows "on N maps".
+- Broken processes are greyed, reported once with Review, and can be replaced, dropped to a placeholder or kept for the session, with undo.
+- Map links open their target, are greyed when the target is missing, and can be retargeted.
+- Export writes PNG, JPG, WebP and SVG with theme colours replaced.
+- The Studio gate is green, the landscape suite has been run after your approval, `bpmn-landscape.md` and the help text are updated, and the plan copy in `docs/` is current.
+
+#### Checklist (M4)
+
+23. `resolveProcessReference` and `replaceCandidates`; `scanSolutionLandscapeMaps`. `LandscapeMapDocumentModel.resolveProcess` delegates to the resolver (ambiguous no longer falls back to the first file). Unit tests:
+    - resolved by hint, resolved with a stale but unique hint, ambiguous, missing;
+    - candidates exclude ids on the map;
+    - map scan with an unreadable file and the name fallback.
+24. Missing-process badges through a scoped decoration provider, and dragging maps from the Maps explorer onto the canvas:
+    - `mapsExplorerDecorations.ts` registered for `['landscapes']`: missing badge (`number`) and unreadable badge (`'!'` with tooltip);
+    - drag source switch in `Tree` / `HeadlessTreeItem`, on in every explorer; dropping to move stays Designer-only.
+
+    The Processes pane gets the "on N maps" `number` badge.
+25. Broken processes:
+    - **Drawing:** `getProcessStatus` in the renderer config; greyed inline style and warning glyph with title.
+    - **Notification:** the Review notification fires on the first scan of an open and when the broken set grows.
+    - **Properties pane:** Replace select (disabled with a hint when empty; candidate files for ambiguous ids); Drop reference through `modeling.replaceShape` to a placeholder (decision 8; `LandscapeRules` allows `connection.reconnect` for connectors); Keep as a session set skipped by Review (decision 9).
+26. Map links:
+    - `bpmn.landscape.addMapLinkToMap` and canvas drop of a Maps explorer row (`metadata.uri` ending in `.bfwmap`); a self-link is refused; the label defaults to the target map's name; placement in the smallest containing group or band.
+    - Renderer look (double border, map glyph) and greyed state for a missing target.
+    - Double-click opens via `std.editor.focusOrOpenDocument`.
+    - Properties: disabled Target field and "Target map" select (decision 10).
+27. Done by the explorer perspectives plan (`newMap(bifrost, directoryUri?)`, New Map header action, "New Landscape Map..." in the Maps explorer menus).
+28. `LandscapeModeler.exportSvg()` (bpmn-js `saveSVG` pattern, `djs-outline-hidden`, padding, integer size, `replaceThemeColorsInSvg`). Commands `std.editor.showExportDialog.bpmn-landscape-map` and `std.editor.exportDocumentAs.bpmn-landscape-map`; Export toolbar button.
+29. Docs: `bpmn-landscape.md` (resolution rule, map scan, Maps explorer badges and drag, broken-process handling, map links, export, file paths), `tree.md` (drag source) and `texts/landscapes.md`. Integration tests in `landscape-solution.test.ts`:
+    - a fixture map with a missing process is greyed, Review selects it, and Replace fixes it;
+    - Drop yields a placeholder that keeps its connector;
+    - a map link dragged from the Maps explorer opens its target;
+    - a Maps explorer row dropped on another row does not move it;
+    - SVG export writes a file with the process label and no `var(--`;
+    - PNG export writes a non-empty file.
+30. Studio gate (`npm run build`, `npm run lint:fix`, `npm run format`, `npm run test:unit`). Copy this plan file to `docs/process_landscape_map_3b8e61d4.plan.md`. Ask before running `npm run test:integration:bpmn-landscape`. **Stop for review** (focus: the rename and delete walk-through, export quality).
 
 ### Milestone 5 — Hierarchy
 
-30. Levels editor in the map properties, computed level in the element properties; bands at top level; nested groups with auto-resize.
-31. Collapse, expand and drill-down via planes with breadcrumbs.
-32. Relations aggregated onto collapsed groups with a count.
-33. Unit tests (collapse, expand and save keep ids and relations), `bpmn-landscape.md`, integration tests (collapse, drill down, save, reopen).
-34. Studio gate. Ask before running the landscape suite. **Stop for review.**
+31. Levels editor in the map properties, computed level in the element properties; bands at top level; nested groups with auto-resize.
+32. Collapse, expand and drill-down via planes with breadcrumbs.
+33. Relations aggregated onto collapsed groups with a count.
+34. Unit tests (collapse, expand and save keep ids and relations), `bpmn-landscape.md`, integration tests (collapse, drill down, save, reopen).
+35. Studio gate. Ask before running the landscape suite. **Stop for review.**
 
 ### Milestone 6 — Assistance
 
-35. `layoutLandscape`; tests for determinism, no overlaps, cycles and grouping.
-36. Auto-create wizard; "Create Map from Selection" in the Processes pane opens it.
-37. `bpmn-landscape.md` (layout), `docs/decisions.md` (own layout, elkjs in reserve), final help text, integration tests (wizard creates the expected map).
-38. Studio gate. Ask before running the full integration run (`npm run test:integration`). **Final review**; whether elkjs is needed is your decision at this point.
+36. `layoutLandscape`; tests for determinism, no overlaps, cycles and grouping.
+37. Auto-create wizard; "Create Map from Selection" in the Processes pane opens it.
+38. `bpmn-landscape.md` (layout), `docs/decisions.md` (own layout, elkjs in reserve), final help text, integration tests (wizard creates the expected map).
+39. Studio gate. Ask before running the full integration run (`npm run test:integration`). **Final review**; whether elkjs is needed is your decision at this point.
 
 Plan-Gate: bestanden.
+

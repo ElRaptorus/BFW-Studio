@@ -1,8 +1,18 @@
 import type { Bifrost } from '#bifrost/Bifrost';
-import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
 import { computeRelativeUri } from '#bifrost/common/FilePatternMatcher';
 import type { CommandContext } from '#bifrost/contracts/CommandTypes';
 import type { DialogOptions } from '#bifrost/contracts/DialogTypes';
+import { DESIGNER_EXPLORER_ID } from '#bifrost/contracts/ExplorerTypes';
+
+import {
+  confirmViewFolderChange,
+  followMovedViewFolders,
+  getExplorerTree,
+  refuseOutsideStructuralExplorer,
+  refuseProtected,
+  resolveExplorer,
+  updateOpenEditorDocuments,
+} from './explorerGuards';
 
 const SETTING_FILE_EXPLORER_EXCLUDE = 'std.fileExplorer.exclude';
 
@@ -11,7 +21,10 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
 
   commands.register(
     'std.fileExplorer.hideDirByName',
-    (uri: string) => {
+    (uri: string, explorerId?: string) => {
+      if (refuseOutsideStructuralExplorer(bifrost, resolveExplorer(bifrost, explorerId), 'Folders are hidden')) {
+        return;
+      }
       const directoryName = bifrost.files.getFilename(uri);
       const pattern = `**/${directoryName}`;
 
@@ -27,7 +40,10 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
 
   commands.register(
     'std.fileExplorer.hideDirByPath',
-    (uri: string) => {
+    (uri: string, explorerId?: string) => {
+      if (refuseOutsideStructuralExplorer(bifrost, resolveExplorer(bifrost, explorerId), 'Folders are hidden')) {
+        return;
+      }
       const matchingProject = bifrost.solution
         .getSolution()
         ?.projects.find((project) => uri.startsWith(project.baseUri));
@@ -53,6 +69,15 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
       const isCopy =
         context?.type === 'generic' && (context.event?.ctrlKey === true || context.event?.metaKey === true);
 
+      const designer = bifrost.explorers.get(DESIGNER_EXPLORER_ID);
+      if (refuseProtected(bifrost, designer, [...sourceUris, targetUri])) {
+        return;
+      }
+      const affectedViewFolders = isCopy ? [] : await confirmViewFolderChange(bifrost, sourceUris, 'move');
+      if (affectedViewFolders == null) {
+        return;
+      }
+
       const targetLocalDirectory = await resolveTargetDirectory(bifrost, targetUri);
       if (targetLocalDirectory == null) {
         return;
@@ -76,6 +101,7 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
           } else {
             await bifrost.files.renameFileOrDirectory(item.sourceUri, item.newUri);
             await updateOpenEditorDocuments(bifrost, item.sourceUri, item.newUri);
+            await followMovedViewFolders(bifrost, affectedViewFolders, item.sourceUri, item.newUri);
           }
           lastUri = item.newUri;
         } catch (error) {
@@ -245,6 +271,9 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
   commands.register(
     'std.fileExplorer.handleExternalDropIntoSolution',
     async (localPaths: string[], targetUri: string) => {
+      if (refuseProtected(bifrost, bifrost.explorers.get(DESIGNER_EXPLORER_ID), [targetUri])) {
+        return;
+      }
       const isExplicitSolution = bifrost.solution.getSolution()?.isExplicitSolution === true;
 
       if (!isExplicitSolution) {
@@ -338,19 +367,23 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
     { enabledWhen: () => bifrost.solution.hasOpenSolution() },
   );
 
-  commands.register('std.fileExplorer.revealUri', async (uri: string) => {
-    if (!bifrost.views.isRegistered('std/file-explorer/open-solution')) {
-      return;
-    }
+  commands.register('std.fileExplorer.revealUri', async (uri: string, explorerId?: string) => {
+    const explorerIds = explorerId != null ? [explorerId] : bifrost.explorers.getRevealTargets(uri);
+    for (const targetExplorerId of explorerIds) {
+      const treeViewMediator = getExplorerTree(bifrost, targetExplorerId);
+      if (treeViewMediator == null) {
+        continue;
+      }
+      try {
+        await treeViewMediator.waitForAndSelectEntriesByMetadataFilter((metadata) => metadata.uri === uri);
 
-    const treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
-    try {
-      await treeViewMediator.waitForAndSelectEntriesByMetadataFilter((metadata) => metadata.uri === uri);
-
-      const selectedEntry = document.querySelector(treeViewMediator.domSelector + ' .treeview__entry--selected') as any;
-      selectedEntry?.scrollIntoViewIfNeeded();
-    } catch {
-      // Entry may not exist in the tree
+        const selectedEntry = document.querySelector(
+          treeViewMediator.domSelector + ' .treeview__entry--selected',
+        ) as any;
+        selectedEntry?.scrollIntoViewIfNeeded();
+      } catch {
+        // Entry may not exist in the tree
+      }
     }
   });
 
@@ -363,16 +396,12 @@ export function initializeFileExplorerCommands(bifrost: Bifrost): void {
     { visibleInSearch: true, description: 'File Explorer: Toggle Cursor Follows Tabs' },
   );
 
-  commands.register('std.fileExplorer.collapseAll', () => {
-    if (bifrost.views.isRegistered('std/file-explorer/open-solution')) {
-      bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution').collapseAll();
-    }
+  commands.register('std.fileExplorer.collapseAll', (explorerId?: string) => {
+    getExplorerTree(bifrost, resolveExplorer(bifrost, explorerId).id)?.collapseAll();
   });
 
-  commands.register('std.fileExplorer.expandAll', () => {
-    if (bifrost.views.isRegistered('std/file-explorer/open-solution')) {
-      bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution').expandAll();
-    }
+  commands.register('std.fileExplorer.expandAll', (explorerId?: string) => {
+    getExplorerTree(bifrost, resolveExplorer(bifrost, explorerId).id)?.expandAll();
   });
 }
 
@@ -487,25 +516,4 @@ async function resolveConflicts(bifrost: Bifrost, movePlan: MovePlan): Promise<M
   }
 
   return itemsToMove;
-}
-
-async function updateOpenEditorDocuments(bifrost: Bifrost, sourceUri: string, newUri: string): Promise<void> {
-  const directMatch = bifrost.editors.getEditorDocumentByUri(sourceUri);
-  if (directMatch != null) {
-    const model = await bifrost.editors.getEditorDocumentModel(directMatch);
-    model.resetUriAndData(newUri, directMatch.data.original, directMatch.data.current);
-    return;
-  }
-
-  const sourcePrefix = sourceUri.endsWith('/') ? sourceUri : sourceUri + '/';
-  const newPrefix = newUri.endsWith('/') ? newUri : newUri + '/';
-
-  const openDocuments = bifrost.editors.getOpenEditorDocuments();
-  for (const openDocument of openDocuments) {
-    if (openDocument.uri.startsWith(sourcePrefix)) {
-      const updatedUri = newPrefix + openDocument.uri.slice(sourcePrefix.length);
-      const model = await bifrost.editors.getEditorDocumentModel(openDocument);
-      model.resetUriAndData(updatedUri, openDocument.data.original, openDocument.data.current);
-    }
-  }
 }

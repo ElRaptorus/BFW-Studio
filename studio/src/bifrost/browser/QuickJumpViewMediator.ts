@@ -140,11 +140,13 @@ export class QuickJumpViewMediator extends AbstractEmitter {
     const openEditorDocumentsUris = openEditorDocuments.map((editorDocument: EditorDocument) => editorDocument.uri);
 
     const solutionEntryUris: string[] = [];
-    this.bifrost.fileExplorerView.traverse((entry: any) => {
-      if (entry.type === 'file' && entry.metadata?.uri) {
-        solutionEntryUris.push(entry.metadata.uri);
-      }
-    });
+    for (const explorer of this.bifrost.explorers.getAll()) {
+      this.bifrost.explorers.getView(explorer.id).traverse((entry: any) => {
+        if (entry.type === 'file' && entry.metadata?.uri) {
+          solutionEntryUris.push(entry.metadata.uri);
+        }
+      });
+    }
 
     const allRelevantUris = openEditorDocumentsUris.concat(recentEditorDocumentsUris).concat(...solutionEntryUris);
     const uniqRelevantUris = allRelevantUris.filter(

@@ -67,7 +67,7 @@ async function revealInSolutionExplorer(bifrost: Bifrost, originalUri: string): 
       return;
     }
 
-    if (!bifrost.solution.containsEditorDocumentWithUri(resolvedUri)) {
+    if (bifrost.explorers.getRevealTargets(resolvedUri).length === 0) {
       return;
     }
 

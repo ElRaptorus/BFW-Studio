@@ -4,6 +4,17 @@ import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { DialogOptions, DialogResult, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
 import { IPC_MESSAGE_CLEAR_WINDOW_SOLUTION } from '#bifrost/contracts/IpcEvents';
 
+import {
+  confirmViewFolderChange,
+  followMovedViewFolders,
+  getExplorerTree,
+  refuseDirectoriesOutsideStructuralExplorer,
+  refuseOutsideStructuralExplorer,
+  refuseProtected,
+  resolveExplorer,
+  updateOpenEditorDocuments,
+} from './explorerGuards';
+
 export function initializeSolutionCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;
 
@@ -152,9 +163,12 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
   commands.register(
     'std.solution.addFolder',
-    async () => {
+    async (explorerId?: string) => {
       const solution = bifrost.solution.getSolution();
       if (solution == null) {
+        return;
+      }
+      if (refuseOutsideStructuralExplorer(bifrost, resolveExplorer(bifrost, explorerId), 'Folders are added')) {
         return;
       }
 
@@ -432,14 +446,18 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
   commands.register(
     'std.solution.addDirectory',
-    async (givenTargetDirectoryUri?: string) => {
+    async (givenTargetDirectoryUri?: string, explorerId?: string) => {
+      const explorer = resolveExplorer(bifrost, explorerId);
+      if (refuseOutsideStructuralExplorer(bifrost, explorer, 'New directories are created')) {
+        return;
+      }
       let treeViewMediator: TreeViewMediator | null = null;
       let targetDirectory;
       let targetUri;
 
       if (givenTargetDirectoryUri == null) {
-        treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
-        const seletedElements = treeViewMediator.getSelectedMetadata();
+        treeViewMediator = getExplorerTree(bifrost, explorer.id);
+        const seletedElements = treeViewMediator?.getSelectedMetadata() ?? [];
         const selectedElementUri = seletedElements[0]?.uri ?? bifrost.solution.getSolution()?.projects[0].baseUri;
         if (await bifrost.files.isDirectory(selectedElementUri)) {
           targetDirectory = bifrost.files.getLocalFilenameForUri(selectedElementUri);
@@ -451,6 +469,9 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       }
 
       if (targetDirectory == null) {
+        return;
+      }
+      if (refuseProtected(bifrost, explorer, [bifrost.files.getUriForFilename(targetDirectory)])) {
         return;
       }
 
@@ -528,34 +549,24 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
   commands.register(
     'std.solution.deleteSelectedElementsInFileExplorer',
-    async (givenUrisToDelete?: string[]) => {
-      const selectedElementUris = givenUrisToDelete ?? getSelectedFileAndDirectoryUris(bifrost);
+    async (givenUrisToDelete?: string[], explorerId?: string) => {
+      const explorer = resolveExplorer(bifrost, explorerId);
+      const selectedElementUris = givenUrisToDelete ?? getSelectedFileAndDirectoryUris(bifrost, explorer.id);
       if (selectedElementUris.length === 0) {
         return;
       }
+      if (
+        refuseProtected(bifrost, explorer, selectedElementUris) ||
+        (await refuseDirectoriesOutsideStructuralExplorer(bifrost, explorer, selectedElementUris, 'deleted'))
+      ) {
+        return;
+      }
 
-      const selectedElementNames = selectedElementUris.map((uri) => bifrost.files.getLocalBasename(uri));
-
-      const dialogOptions: DialogOptions = {
-        title: 'Confirmation',
-        content: `Do you want to delete:\n${selectedElementNames.join('\n')}`,
-        actions: [
-          {
-            label: 'No',
-            response: 'no',
-            cancel: true,
-          },
-          {
-            label: 'Yes',
-            response: 'yes',
-            default: true,
-          },
-        ],
-      };
-
-      const dialogResult = await bifrost.dialog.open(dialogOptions);
-
-      if (dialogResult.wasCancelled || dialogResult.response === 'no') {
+      const affectedViewFolders = await confirmViewFolderChange(bifrost, selectedElementUris, 'delete');
+      if (affectedViewFolders == null) {
+        return;
+      }
+      if (affectedViewFolders.length === 0 && !(await confirmDeletion(bifrost, selectedElementUris))) {
         return;
       }
 
@@ -585,12 +596,13 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
     },
     {
       visibleInSearch: true,
-      enabledWhen: (givenUrisToDelete?: string[]): boolean => {
+      enabledWhen: (givenUrisToDelete?: string[], explorerId?: string): boolean => {
         if (!bifrost.solution.hasOpenSolution()) {
           return false;
         }
 
-        const selectedElementUris = givenUrisToDelete ?? getSelectedFileAndDirectoryUris(bifrost);
+        const selectedElementUris =
+          givenUrisToDelete ?? getSelectedFileAndDirectoryUris(bifrost, resolveExplorer(bifrost, explorerId).id);
         return selectedElementUris.length > 0;
       },
     },
@@ -630,13 +642,14 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
   commands.register(
     'std.solution.duplicateFile',
-    async (givenUriToRename?: string) => {
-      let treeViewMediator;
+    async (givenUriToRename?: string, explorerId?: string) => {
       let currentUri;
       if (givenUriToRename == null) {
-        treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
-        const selectedElements = treeViewMediator.getSelectedMetadata();
-        currentUri = selectedElements[0]?.uri;
+        const selectedElements = getExplorerTree(
+          bifrost,
+          resolveExplorer(bifrost, explorerId).id,
+        )?.getSelectedMetadata();
+        currentUri = selectedElements?.[0]?.uri;
       } else {
         currentUri = givenUriToRename;
       }
@@ -657,6 +670,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       bifrost.commands.executeCommand(`std.solution.duplicateFileAndTransformContent`, [
         currentUri,
         (content) => content,
+        explorerId,
       ]);
     },
     { enabledWhen: () => bifrost.solution.hasOpenSolution() },
@@ -667,18 +681,23 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
     async (
       givenUriToRename: string,
       contentTransformFn: (content: string, newUri: string, previousUri: string) => Promise<string>,
+      explorerId?: string,
     ) => {
+      const explorer = resolveExplorer(bifrost, explorerId);
       let treeViewMediator;
       let currentUri;
       if (givenUriToRename == null) {
-        treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
-        const selectedElements = treeViewMediator.getSelectedMetadata();
-        currentUri = selectedElements[0]?.uri;
+        treeViewMediator = getExplorerTree(bifrost, explorer.id);
+        const selectedElements = treeViewMediator?.getSelectedMetadata();
+        currentUri = selectedElements?.[0]?.uri;
       } else {
         currentUri = givenUriToRename;
       }
 
       assertNotNull(currentUri, 'currentUri');
+      if (refuseProtected(bifrost, explorer, [currentUri])) {
+        return;
+      }
 
       const currentName = bifrost.files.getLocalBasename(currentUri);
       const currentPathWithoutExtension = bifrost.files.getLocalBasename(currentUri, true);
@@ -789,18 +808,25 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
   commands.register(
     'std.solution.renameFileOrDirectory',
-    async (givenUriToRename?: string) => {
+    async (givenUriToRename?: string, explorerId?: string) => {
+      const explorer = resolveExplorer(bifrost, explorerId);
       let treeViewMediator;
       let currentUri;
       if (givenUriToRename == null) {
-        const selectedUris = getSelectedFileAndDirectoryUris(bifrost);
-        if (selectedUris.length !== 1 || getSelectedMetadataCount(bifrost) !== 1) {
+        const selectedUris = getSelectedFileAndDirectoryUris(bifrost, explorer.id);
+        if (selectedUris.length !== 1 || getSelectedMetadataCount(bifrost, explorer.id) !== 1) {
           return;
         }
-        treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
+        treeViewMediator = getExplorerTree(bifrost, explorer.id);
         currentUri = selectedUris[0];
       } else {
         currentUri = givenUriToRename;
+      }
+      if (
+        refuseProtected(bifrost, explorer, [currentUri]) ||
+        (await refuseDirectoriesOutsideStructuralExplorer(bifrost, explorer, [currentUri], 'renamed'))
+      ) {
+        return;
       }
 
       const elementType = (await bifrost.files.isDirectory(currentUri)) ? 'directory' : 'file';
@@ -890,15 +916,17 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       const newPath = bifrost.files.joinPaths(bifrost.files.getContainingDirectory(currentUri), newNameWithExtension);
       const newUri = bifrost.files.getUriForFilename(newPath);
 
+      const affectedViewFolders = await confirmViewFolderChange(bifrost, [currentUri], 'rename');
+      if (affectedViewFolders == null) {
+        return;
+      }
+
       const success = await bifrost.files.renameFileOrDirectory(currentUri, newUri);
       if (!success) {
         throw new Error(`Could not rename ${elementType} at URI: ${currentUri}`);
       }
-
-      if (editorDocument != null) {
-        const editorDocumentModel = await bifrost.editors.getEditorDocumentModel(editorDocument);
-        editorDocumentModel.resetUriAndData(newUri, editorDocument.data.original, editorDocument.data.current);
-      }
+      await updateOpenEditorDocuments(bifrost, currentUri, newUri);
+      await followMovedViewFolders(bifrost, affectedViewFolders, currentUri, newUri);
 
       await bifrost.solution.onElementRenamed(newUri);
       if (treeViewMediator != null) {
@@ -910,14 +938,18 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       }
     },
     {
-      enabledWhen: (givenUriToRename?: string): boolean => {
+      enabledWhen: (givenUriToRename?: string, explorerId?: string): boolean => {
         if (!bifrost.solution.hasOpenSolution()) {
           return false;
         }
         if (givenUriToRename != null) {
           return true;
         }
-        return getSelectedFileAndDirectoryUris(bifrost).length === 1 && getSelectedMetadataCount(bifrost) === 1;
+        const explorer = resolveExplorer(bifrost, explorerId);
+        return (
+          getSelectedFileAndDirectoryUris(bifrost, explorer.id).length === 1 &&
+          getSelectedMetadataCount(bifrost, explorer.id) === 1
+        );
       },
     },
   );
@@ -959,29 +991,42 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
     leaveWelcomePageForWorkspace(bifrost);
   });
 
-  commands.register('std.solution.toggleHiddenFiles', () => bifrost.solution.toggleHiddenFiles(), {
-    visibleInSearch: true,
-    enabledWhen: () => bifrost.solution.hasOpenSolution(),
+  commands.register(
+    'std.solution.toggleHiddenFiles',
+    (explorerId?: string) => {
+      if (!refuseOutsideStructuralExplorer(bifrost, resolveExplorer(bifrost, explorerId), 'Hidden files are shown')) {
+        bifrost.solution.toggleHiddenFiles();
+      }
+    },
+    {
+      visibleInSearch: true,
+      enabledWhen: () => bifrost.solution.hasOpenSolution(),
+    },
+  );
+}
+
+async function confirmDeletion(bifrost: Bifrost, uris: string[]): Promise<boolean> {
+  const names = uris.map((uri) => bifrost.files.getLocalBasename(uri));
+  const dialogResult = await bifrost.dialog.open({
+    title: 'Confirmation',
+    content: `Do you want to delete:\n${names.join('\n')}`,
+    actions: [
+      { label: 'No', response: 'no', cancel: true },
+      { label: 'Yes', response: 'yes', default: true },
+    ],
   });
+  return !dialogResult.wasCancelled && dialogResult.response !== 'no';
 }
 
 /** Project and solution roots are left out: their URI is the root directory on disk. */
-function getSelectedFileAndDirectoryUris(bifrost: Bifrost): string[] {
-  if (!bifrost.views.isRegistered('std/file-explorer/open-solution')) {
-    return [];
-  }
-  return bifrost.views
-    .getById<TreeViewMediator>('std/file-explorer/open-solution')
-    .getSelectedMetadata()
+function getSelectedFileAndDirectoryUris(bifrost: Bifrost, explorerId: string): string[] {
+  return (getExplorerTree(bifrost, explorerId)?.getSelectedMetadata() ?? [])
     .filter((metadata) => metadata?.type === 'file' || metadata?.type === 'directory')
     .map((metadata) => metadata.uri);
 }
 
-function getSelectedMetadataCount(bifrost: Bifrost): number {
-  if (!bifrost.views.isRegistered('std/file-explorer/open-solution')) {
-    return 0;
-  }
-  return bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution').getSelectedMetadata().length;
+function getSelectedMetadataCount(bifrost: Bifrost, explorerId: string): number {
+  return getExplorerTree(bifrost, explorerId)?.getSelectedMetadata().length ?? 0;
 }
 
 /** Opening a solution from the Welcome page would otherwise look like nothing happened. Other pages stay put. */

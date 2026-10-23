@@ -181,7 +181,7 @@ function EditorTabsAndOptions(props: EditorTabsAndOptionsProps): React.JSX.Eleme
     [bifrost.editors],
   );
 
-  const decorationSource = bifrost.fileExplorerView.getDecorationSource();
+  const decorationSource = bifrost.explorers.getDecorationSource();
 
   return (
     <div className="editor__tabs clearfix">

@@ -30,7 +30,7 @@ describe('solution', () => {
     await studioAgent.openFixturesDirectoryAsSolution('test-solution-simple');
 
     const itemCountBefore = await studioAgent.getElementCount(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry',
+      '[data-test--tree="std/file-explorer/design"] .treeview__entry',
     );
 
     await studioAgent.openViaCommandSearch('toggle hidden files');
@@ -38,7 +38,7 @@ describe('solution', () => {
     await studioAgent.waitForSolutionEntryCountChanged(itemCountBefore);
 
     const itemCountAfter = await studioAgent.getElementCount(
-      '[data-test--tree="std/file-explorer/open-solution"] .treeview__entry',
+      '[data-test--tree="std/file-explorer/design"] .treeview__entry',
     );
 
     assert.ok(itemCountAfter > itemCountBefore);
@@ -49,7 +49,7 @@ describe('solution', () => {
   it('solution/explorer: should open first document via click', async () => {
     await studioAgent.openFixturesDirectoryAsSolution('test-solution-simple');
 
-    await studioAgent.clickOn('[data-test--tree="std/file-explorer/open-solution"] .treeview__entry--depth-0');
+    await studioAgent.clickOn('[data-test--tree="std/file-explorer/design"] .treeview__entry--depth-0');
     await studioAgent.assertVisible('[data-test--editors--focused-document-type="bpmn"]', ASSERT_VISIBLE_TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();

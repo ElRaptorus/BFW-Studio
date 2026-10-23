@@ -24,6 +24,8 @@ A pane that belongs to one page carries the page id as its prefix: `<pageId>/<na
 
 The module must export `paneProvider: PaneProvider`. Panes are then placed into a pane group on an area (`left` / `right` / `bottom`) via `registerPaneGroup` / `prependToPaneGroup` / `appendToPaneGroup`.
 
+A provider is registered once and may back several panes. File explorers work this way: `std` registers `ExplorerPane` under `EXPLORER_PANE_PROVIDER_ID`, and `bifrost.explorers.register(definition)` / `getPane(id)` return a `PaneObject` for the explorer's `paneId`. The pane finds its explorer through `props.paneId` and takes its header title from the definition. `getPaneTitle` gets no pane id (it only feeds pane tabs, `PaneTabDraggable`), so the shared provider returns "Explorer". See [workspace.md](workspace.md) §Explorers.
+
 ### PaneProvider Contract
 
 **Path:** `studio/src/bifrost/contracts/PaneTypes.ts`

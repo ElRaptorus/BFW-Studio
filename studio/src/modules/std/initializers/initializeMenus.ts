@@ -1,6 +1,7 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { DESIGNER_EXPLORER_ID } from '#bifrost/contracts/ExplorerTypes';
 
 import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
@@ -706,11 +707,17 @@ function registerApplicationMenu(bifrost: Bifrost): void {
   });
 }
 
+/** Whether the explorer of a tree row offers moving, new directories, folder changes and hidden files. */
+function isStructuralExplorer(bifrost: Bifrost, metadata: any): boolean {
+  return bifrost.explorers.get(metadata?.explorerId ?? DESIGNER_EXPLORER_ID).structuralOperations === true;
+}
+
 function registerFileExplorerMenus(bifrost: Bifrost): void {
   bifrost.menus.registerMenu('std/file-explorer/solution', (metadata: any): Menu => {
     const uri = metadata.uri;
     assertNotNull(uri, 'uri');
 
+    const structural = isStructuralExplorer(bifrost, metadata);
     const solution = bifrost.solution.getSolution();
     const settingsItems: Menu = [];
     if (solution?.solutionFileUri != null) {
@@ -770,6 +777,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         id: 'std/file-explorer/solution/show-hidden-files',
         checked: !!bifrost.solution.getSolution()?.showHiddenFiles,
         command: 'std.solution.toggleHiddenFiles',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
     ];
   });
@@ -777,6 +786,7 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
   bifrost.menus.registerMenu('std/file-explorer/project', (metadata: any): Menu => {
     const uri = metadata.uri;
     assertNotNull(uri, 'uri');
+    const structural = isStructuralExplorer(bifrost, metadata);
 
     return [
       {
@@ -784,21 +794,28 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         label: 'New File ...',
         id: 'std/file-explorer/project/new-file',
         command: 'std.solution.newFile',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'command',
         label: 'New Directory ...',
         id: 'std/file-explorer/project/new-directory',
         command: 'std.solution.addDirectory',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'command',
         label: 'Add Folder to Solution ...',
         id: 'std/file-explorer/project/add-folder',
         command: 'std.solution.addFolder',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'divider',
+        visible: structural,
       },
       {
         type: 'command',
@@ -841,6 +858,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         id: 'std/file-explorer/project/show-hidden-files',
         checked: !!bifrost.solution.getSolution()?.showHiddenFiles,
         command: 'std.solution.toggleHiddenFiles',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
     ];
   });
@@ -849,6 +868,7 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
     const uri = metadata.uri;
     assertNotNull(uri, 'uri');
 
+    const structural = isStructuralExplorer(bifrost, metadata);
     const solution = bifrost.solution.getSolution();
     const project = solution?.projects.find((project) => project.baseUri === uri);
 
@@ -868,18 +888,24 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         label: 'New File ...',
         id: 'std/file-explorer/solution-root/new-file',
         command: 'std.solution.newFile',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'command',
         label: 'New Directory ...',
         id: 'std/file-explorer/solution-root/new-directory',
         command: 'std.solution.addDirectory',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'command',
         label: 'Add Folder to Solution ...',
         id: 'std/file-explorer/solution-root/add-folder',
         command: 'std.solution.addFolder',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'divider',
@@ -926,6 +952,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         id: 'std/file-explorer/solution-root/show-hidden-files',
         checked: !!solution?.showHiddenFiles,
         command: 'std.solution.toggleHiddenFiles',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
     ];
   });
@@ -933,6 +961,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
   bifrost.menus.registerMenu('std/file-explorer/directory', (metadata: any): Menu => {
     const uri = metadata.uri;
     assertNotNull(uri, 'uri');
+    const structural = isStructuralExplorer(bifrost, metadata);
+    const changeable = structural && metadata.protected !== true;
 
     return [
       {
@@ -940,21 +970,28 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         label: 'New File ...',
         id: 'std/file-explorer/directory/new-file',
         command: 'std.solution.newFile',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: changeable,
       },
       {
         type: 'command',
         label: 'New Directory ...',
         id: 'std/file-explorer/directory/new-directory',
         command: 'std.solution.addDirectory',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: changeable,
       },
       {
         type: 'command',
         label: 'Add Folder to Solution ...',
         id: 'std/file-explorer/directory/add-folder',
         command: 'std.solution.addFolder',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'divider',
+        visible: structural,
       },
       {
         type: 'command',
@@ -973,38 +1010,47 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
       {
         type: 'divider',
         id: 'std/file-explorer/directory/divider-before-rename',
+        visible: structural,
       },
       {
         type: 'command',
         label: `Rename`,
         id: 'std/file-explorer/directory/rename',
         command: 'std.solution.renameFileOrDirectory',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: changeable,
       },
       {
         type: 'command',
         label: `Delete`,
         id: 'std/file-explorer/directory/delete',
         command: 'std.solution.deleteSelectedElementsInFileExplorer',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: changeable,
       },
       {
         type: 'divider',
+        visible: changeable,
       },
       {
         type: 'command',
         label: `Hide Directory by Name`,
         id: 'std/file-explorer/directory/hide-by-name',
         command: 'std.fileExplorer.hideDirByName',
-        commandArgs: [uri],
+        commandArgs: [uri, metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'command',
         label: `Hide Directory by Path`,
         id: 'std/file-explorer/directory/hide-by-path',
         command: 'std.fileExplorer.hideDirByPath',
-        commandArgs: [uri],
+        commandArgs: [uri, metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'divider',
+        visible: structural,
       },
       {
         type: 'command',
@@ -1012,6 +1058,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         id: 'std/file-explorer/directory/show-hidden-files',
         checked: !!bifrost.solution.getSolution()?.showHiddenFiles,
         command: 'std.solution.toggleHiddenFiles',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
     ];
   });
@@ -1019,6 +1067,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
   bifrost.menus.registerMenu('std/file-explorer/file', (metadata: any): Menu => {
     const uri = metadata.uri;
     assertNotNull(uri, 'uri');
+    const structural = isStructuralExplorer(bifrost, metadata);
+    const changeable = metadata.protected !== true;
 
     return [
       {
@@ -1045,24 +1095,31 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
       {
         type: 'divider',
         id: 'std/file-explorer/file/divider-before-new-file-commands',
+        visible: structural,
       },
       {
         type: 'command',
         label: 'New File ...',
         id: 'std/file-explorer/file/new-file',
         command: 'std.solution.newFile',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: structural && changeable,
       },
       {
         type: 'command',
         label: 'New Directory ...',
         id: 'std/file-explorer/file/new-directory',
         command: 'std.solution.addDirectory',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: structural && changeable,
       },
       {
         type: 'command',
         label: 'Add Folder to Solution ...',
         id: 'std/file-explorer/file/add-folder',
         command: 'std.solution.addFolder',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
       {
         type: 'divider',
@@ -1094,27 +1151,35 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
       },
       {
         type: 'divider',
+        visible: changeable,
       },
       {
         type: 'command',
         label: `Duplicate`,
         id: 'std/file-explorer/file/duplicate',
         command: 'std.solution.duplicateFile',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: changeable,
       },
       {
         type: 'command',
         label: `Rename`,
         id: 'std/file-explorer/file/rename',
         command: 'std.solution.renameFileOrDirectory',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: changeable,
       },
       {
         type: 'command',
         label: `Delete`,
         id: 'std/file-explorer/file/delete',
         command: 'std.solution.deleteSelectedElementsInFileExplorer',
+        commandArgs: [undefined, metadata.explorerId],
+        visible: changeable,
       },
       {
         type: 'divider',
+        visible: structural,
       },
       {
         type: 'command',
@@ -1122,6 +1187,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         id: 'std/file-explorer/file/show-hidden-files',
         checked: !!bifrost.solution.getSolution()?.showHiddenFiles,
         command: 'std.solution.toggleHiddenFiles',
+        commandArgs: [metadata.explorerId],
+        visible: structural,
       },
     ];
   });
@@ -1138,6 +1205,13 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         .filter((meta: any) => meta?.type === 'file')
         .map((meta: any) => meta?.uri)
         .filter((uri: string | undefined): uri is string => uri != null);
+
+      const explorerId = clickedMetadata?.explorerId ?? selectedMetadata[0]?.explorerId;
+      const structural = isStructuralExplorer(studio, { explorerId });
+      const deletable =
+        uris.length > 0 &&
+        selectedMetadata.every((meta: any) => meta?.protected !== true) &&
+        (structural || uris.length === fileUris.length);
 
       return [
         {
@@ -1179,17 +1253,19 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
         {
           type: 'divider',
           id: 'std/file-explorer/multi-selection/divider-before-delete',
-          visible: uris.length > 0,
+          visible: deletable,
         },
         {
           type: 'command',
           label: `Delete ${uris.length} Items`,
           id: 'std/file-explorer/multi-selection/delete',
           command: 'std.solution.deleteSelectedElementsInFileExplorer',
-          visible: uris.length > 0,
+          commandArgs: [undefined, explorerId],
+          visible: deletable,
         },
         {
           type: 'divider',
+          visible: structural,
         },
         {
           type: 'command',
@@ -1197,6 +1273,8 @@ function registerFileExplorerMenus(bifrost: Bifrost): void {
           id: 'std/file-explorer/multi-selection/show-hidden-files',
           checked: !!studio.solution.getSolution()?.showHiddenFiles,
           command: 'std.solution.toggleHiddenFiles',
+          commandArgs: [explorerId],
+          visible: structural,
         },
       ];
     },

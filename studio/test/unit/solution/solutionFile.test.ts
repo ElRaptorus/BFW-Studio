@@ -257,6 +257,101 @@ describe('solution file writes', () => {
     assert.strictEqual(files.files.get(solutionFileUri), '{');
   });
 
+  it('declares view folders relative to the solution file and keeps them across writes and repairs', async () => {
+    const files = memoryFiles();
+    files.files.set(
+      solutionFileUri,
+      '{\n  "folders": [{ "path": "/tmp/app" }],\n  // views\n  "views": { "other": { "path": "../shared/other", "note": 1 }, "blank": { "path": " " } },\n  "settings": {}\n}\n',
+    );
+    const watched: string[] = [];
+    files.watchDirectory = ((uri: string) => {
+      watched.push(uri);
+      return { dispose: () => undefined };
+    }) as never;
+    const storage = new LocalStorageItem(
+      { getItem: () => null, setItem: () => undefined, removeItem: () => undefined },
+      'Settings',
+    );
+    const solutionMediator = new SolutionMediator(
+      files,
+      { mark: () => undefined, measure: () => undefined } as never,
+      { addRecentlyOpenedSolutionItem: () => undefined } as never,
+      new SettingsMediator(storage),
+      { on: () => ({ dispose: () => undefined }), traverse: () => undefined } as never,
+      storage,
+      async () => false,
+    );
+
+    await solutionMediator.openSolutionFile(solutionFileUri);
+    assert.strictEqual(solutionMediator.getViewFolderUri('other'), 'file:///shared/other');
+    assert.strictEqual(solutionMediator.getViewFolderUri('blank'), null);
+    assert.deepStrictEqual(watched, ['file:///tmp/app', 'file:///shared/other']);
+
+    assert.strictEqual(await solutionMediator.setViewFolder('landscapes', 'file:///tmp/landscapes'), true);
+    assert.strictEqual(solutionMediator.getViewFolderUri('landscapes'), 'file:///tmp/landscapes');
+    let saved = files.files.get(solutionFileUri) ?? '';
+    assert.match(saved, /\/\/ views/);
+    assert.deepStrictEqual(JSON.parse(saved.replace(/\/\/ views\n/, '')).views, {
+      other: { path: '../shared/other', note: 1 },
+      blank: { path: ' ' },
+      landscapes: { path: 'landscapes' },
+    });
+
+    assert.strictEqual(await solutionMediator.setViewFolder('other', null), true);
+    assert.strictEqual(await solutionMediator.setViewFolder('blank', null), true);
+    assert.strictEqual(solutionMediator.getViewFolderUri('other'), null);
+
+    const opened = solutionMediator.getSolution() as Solution;
+    await writeSolutionFolders('file:///elsewhere/Copy.bfwsln', opened, files);
+    assert.deepStrictEqual(JSON.parse(files.files.get('file:///elsewhere/Copy.bfwsln') ?? '{}').views, {
+      landscapes: { path: '../tmp/landscapes' },
+    });
+
+    files.files.set(solutionFileUri, '{ broken');
+    await repairSolutionFile(solutionFileUri, opened, files);
+    saved = files.files.get(solutionFileUri) ?? '';
+    assert.deepStrictEqual(JSON.parse(saved).views, { landscapes: { path: 'landscapes' } });
+    assert.deepStrictEqual((await readSolutionFile(solutionFileUri, files)).views, {
+      landscapes: 'file:///tmp/landscapes',
+    });
+  });
+
+  it('refuses view folders without a saved solution file and when the file cannot be read', async () => {
+    const files = memoryFiles();
+    const storage = new LocalStorageItem(
+      { getItem: () => null, setItem: () => undefined, removeItem: () => undefined },
+      'Settings',
+    );
+    let repairOffers = 0;
+    const solutionMediator = new SolutionMediator(
+      files,
+      { mark: () => undefined, measure: () => undefined } as never,
+      { addRecentlyOpenedSolutionItem: () => undefined } as never,
+      new SettingsMediator(storage),
+      { on: () => ({ dispose: () => undefined }), traverse: () => undefined } as never,
+      storage,
+      async () => {
+        repairOffers++;
+        return false;
+      },
+    );
+    files.watchDirectory = (() => ({ dispose: () => undefined })) as never;
+
+    solutionMediator.openDirectoryAsSolution('file:///tmp/app');
+    assert.strictEqual(solutionMediator.getViewFolderUri('landscapes'), null);
+    await assert.rejects(
+      () => solutionMediator.setViewFolder('landscapes', 'file:///tmp/app/maps'),
+      /Save the solution/,
+    );
+
+    files.files.set(solutionFileUri, JSON.stringify({ folders: [{ path: '/tmp/app' }] }));
+    await solutionMediator.openSolutionFile(solutionFileUri);
+    files.files.set(solutionFileUri, '{');
+    assert.strictEqual(await solutionMediator.setViewFolder('landscapes', 'file:///tmp/app/maps'), false);
+    assert.strictEqual(repairOffers, 1);
+    assert.strictEqual(solutionMediator.getViewFolderUri('landscapes'), null);
+  });
+
   it('returns the settings text with comments', async () => {
     const files = memoryFiles();
     files.files.set(solutionFileUri, '{\n  "folders": [],\n  "settings": {\n    // note\n    "grid": true\n  }\n}\n');

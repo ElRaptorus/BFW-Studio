@@ -1,7 +1,6 @@
 import { Bifrost } from '#bifrost/Bifrost';
 import type { TreeViewMediator } from '#bifrost/browser/TreeViewMediator';
-import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
-import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
+import { DESIGNER_EXPLORER_ID, type ExplorerDefinition, getExplorerTreeId } from '#bifrost/contracts/ExplorerTypes';
 import type { PaneComponentProps, PaneProvider } from '#bifrost/contracts/PaneTypes';
 import { DRAG_TYPE_FILES, useDropTarget } from '#components/DragAndDrop';
 import { useScrollPositionManager } from '#components/ScrollPositionManager';
@@ -17,89 +16,112 @@ import { Icon } from '../../../Icon';
 const GET_PATHS_COMMAND = 'std.internal.getPathsFromFiles';
 
 export const paneProvider: PaneProvider = {
-  getPaneTitle: getPaneTitle,
+  getPaneTitle: () => 'Explorer',
   Pane: PaneFull,
   PaneContent: PaneContent,
   classNames: 'app-layout__solution-pane',
 };
 
+function getDefinition(bifrost: Bifrost, paneId: string): ExplorerDefinition {
+  return bifrost.explorers.getByPaneId(paneId) ?? bifrost.explorers.get(DESIGNER_EXPLORER_ID);
+}
+
 function PaneFull(props: PaneComponentProps): React.JSX.Element {
+  const bifrost: Bifrost = Bifrost.cast(props.studio);
+  const definition = getDefinition(bifrost, props.paneId);
+  const solution = bifrost.explorers.getView(definition.id).getViewData().solution;
+
   return (
     <Pane classNames="app-layout__full-height-pane">
       <PaneHeader
         studio={props.studio}
-        title={getPaneTitle(props.editorDocument, props.editorDocumentModel, props.studio)}
+        title={definition.label ?? solution?.label ?? 'Explorer'}
         className="pane-header--hero"
         paneId={props.paneId}
         collapsed={props.collapsed}
       >
-        <PaneTabOptions {...props} />
+        {props.collapsed !== true && <PaneTabOptions bifrost={bifrost} definition={definition} />}
       </PaneHeader>
       {props.collapsed !== true && <PaneContent {...props} />}
     </Pane>
   );
 }
 
-export function getPaneTitle(
-  editorDocument: EditorDocument,
-  editorDocumentModel: EditorDocumentModel,
-  studio: Bifrost,
-): string {
-  const solution = Bifrost.cast(studio).fileExplorerView.getViewData().solution;
-  const solutionName = solution ? solution.label : 'Explorer';
-
-  return solutionName;
-}
-
-export function PaneTabOptions(props: PaneComponentProps): React.JSX.Element | null {
-  const bifrost: Bifrost = Bifrost.cast(props.studio);
+function PaneTabOptions(props: { bifrost: Bifrost; definition: ExplorerDefinition }): React.JSX.Element {
+  const { bifrost, definition } = props;
   const solution = bifrost.solution.getSolution();
-
-  if (props.collapsed) {
-    return null;
-  }
+  const structural = definition.structuralOperations === true;
 
   return (
     <>
-      <PaneHeaderIcon studio={bifrost} icon="ph ph-file-plus" command="std.solution.newFile" tooltip="New file..." />
-      <PaneHeaderIcon
-        studio={bifrost}
-        icon="ph ph-folder-plus"
-        command="std.solution.addDirectory"
-        tooltip="New directory..."
-      />
-      {solution != null && solution.isExplicitSolution === true && (
-        <PaneHeaderIcon
-          studio={bifrost}
-          icon="ph ph-package"
-          command="std.solution.addFolder"
-          tooltip="Add Folder to Solution..."
-        />
-      )}
-      {solution != null && solution.isExplicitSolution !== true && (
-        <PaneHeaderIcon
-          studio={bifrost}
-          icon="ph-fill ph-tree-view"
-          command="std.solution.convertFolderToSolution"
-          tooltip="Convert to Solution..."
-        />
+      {structural && (
+        <>
+          <PaneHeaderIcon
+            studio={bifrost}
+            icon="ph ph-file-plus"
+            command="std.solution.newFile"
+            tooltip="New file..."
+          />
+          <PaneHeaderIcon
+            studio={bifrost}
+            icon="ph ph-folder-plus"
+            command="std.solution.addDirectory"
+            tooltip="New directory..."
+          />
+          {solution != null && solution.isExplicitSolution === true && (
+            <PaneHeaderIcon
+              studio={bifrost}
+              icon="ph ph-package"
+              command="std.solution.addFolder"
+              tooltip="Add Folder to Solution..."
+            />
+          )}
+          {solution != null && solution.isExplicitSolution !== true && (
+            <PaneHeaderIcon
+              studio={bifrost}
+              icon="ph-fill ph-tree-view"
+              command="std.solution.convertFolderToSolution"
+              tooltip="Convert to Solution..."
+            />
+          )}
+        </>
       )}
       <PaneHeaderIcon studio={bifrost} icon="ph ph-arrows-clockwise" command="std.solution.refresh" tooltip="Refresh" />
       <PaneHeaderIcon
         studio={bifrost}
         icon="ph ph-arrows-in-line-vertical"
         command="std.fileExplorer.collapseAll"
+        commandArgs={[definition.id]}
         tooltip="Collapse All"
       />
+      {definition.headerActions?.map((action) => (
+        <PaneHeaderIcon
+          key={action.command}
+          studio={bifrost}
+          icon={action.icon}
+          command={action.command}
+          commandArgs={action.commandArgs ? [...action.commandArgs] : undefined}
+          tooltip={action.tooltip}
+          dataTestId={action.dataTestId}
+        />
+      ))}
     </>
   );
 }
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost: Bifrost = Bifrost.cast(props.studio);
+  const definition = getDefinition(bifrost, props.paneId);
+  const view = bifrost.explorers.getView(definition.id);
+  const treeId = getExplorerTreeId(definition.id);
+  const structural = definition.structuralOperations === true;
 
-  const solution = bifrost.fileExplorerView.getViewData().solution;
-  const decorationSource = useMemo(() => bifrost.fileExplorerView.getDecorationSource(), [bifrost]);
+  const solution = view.getViewData().solution;
+  const viewHasFiles = view.hasFiles();
+  const decorationSource = useMemo(
+    () => bifrost.explorers.getDecorationSource(definition.id),
+    [bifrost, definition.id],
+  );
   const lastDropEventRef = useRef<DragEvent | null>(null);
 
   useEffect(() => {
@@ -139,21 +161,17 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
     }));
   }, [solution]);
 
-  const projectRootUri = useMemo(() => {
-    const currentSolution = bifrost.solution.getSolution();
-    if (currentSolution == null) {
+  const rootUri = useMemo((): string | null => {
+    if (solution == null || solution.isExplicitSolution || solution.entries.length !== 1) {
       return null;
     }
-    if (currentSolution.projects.length === 1 && currentSolution.isExplicitSolution !== true) {
-      return currentSolution.projects[0].baseUri;
-    }
-    return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bifrost.solution, solution]);
+    const root = solution.entries[0];
+    return root.type === 'project' ? root.uri : null;
+  }, [solution]);
 
   const resolveSourceUris = useCallback(
     (draggedItem: any): string[] => {
-      const treeViewMediator = bifrost.views.getById<TreeViewMediator>('std/file-explorer/open-solution');
+      const treeViewMediator = bifrost.views.getById<TreeViewMediator>(treeId);
       const selectedMetadata = treeViewMediator.getSelectedMetadata();
       const draggedUri = draggedItem.metadata?.uri;
       const isPartOfSelection = selectedMetadata.some((metadata: any) => metadata?.uri === draggedUri);
@@ -164,7 +182,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
             .filter(Boolean)
         : [draggedUri].filter(Boolean);
     },
-    [bifrost],
+    [bifrost, treeId],
   );
 
   const onClick = useCallback(
@@ -239,9 +257,9 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
 
   const { isOver: isOverRoot, dropTargetProps: rootDropProps } = useDropTarget({
     accept: ['tree_item', DRAG_TYPE_FILES],
-    canDrop: () => projectRootUri != null,
+    canDrop: () => structural && rootUri != null,
     onDrop: (subject) => {
-      if (projectRootUri == null) {
+      if (!structural || rootUri == null) {
         return;
       }
 
@@ -254,10 +272,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           if (paths.length === 0) {
             return;
           }
-          await bifrost.commands.executeCommand('std.fileExplorer.handleExternalDropIntoSolution', [
-            paths,
-            projectRootUri,
-          ]);
+          await bifrost.commands.executeCommand('std.fileExplorer.handleExternalDropIntoSolution', [paths, rootUri]);
         })().catch((error) => console.warn('External root drop failed:', error));
         return;
       }
@@ -266,43 +281,46 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
       if (sourceUris.length === 0) {
         return;
       }
-      executeDropCommand(sourceUris, projectRootUri);
+      executeDropCommand(sourceUris, rootUri);
     },
   });
 
-  const connectScrollTarget = useScrollPositionManager('solutions-scroll', { precise: true });
+  const connectScrollTarget = useScrollPositionManager(`explorer-scroll-${definition.id}`, { precise: true });
+
+  const isLoading = solution?.entries[0]?.type === 'loading-indicator';
+  const EmptyState = definition.emptyState;
+  if (EmptyState != null && !isLoading && !viewHasFiles) {
+    return <EmptyState studio={bifrost} />;
+  }
+  if (solution == null) {
+    return <SolutionExplorerEmptyState bifrost={bifrost} />;
+  }
 
   return (
-    <>
-      {solution == null ? (
-        <SolutionExplorerEmptyState bifrost={props.studio} />
-      ) : (
-        <div
-          {...rootDropProps}
-          ref={connectScrollTarget}
-          className={`pane__content pane__content--treeview pane__content--scroll-vertically${isOverRoot ? ' pane__content--drop-target' : ''}`}
-        >
-          <Tree
-            studio={props.studio}
-            viewMediatorId="std/file-explorer/open-solution"
-            entries={solutionEntries ?? []}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
-            onDragAndDropItem={onDragAndDropItem}
-            onExternalFileDrop={onExternalFileDrop}
-            iconComponent={Icon}
-            className="kbm-file-explorer"
-            multiSelectionMenuId="std/file-explorer/multi-selection"
-            decorationSource={decorationSource}
-          />
-        </div>
-      )}
-    </>
+    <div
+      {...(structural ? rootDropProps : {})}
+      ref={connectScrollTarget}
+      className={`pane__content pane__content--treeview pane__content--scroll-vertically${isOverRoot ? ' pane__content--drop-target' : ''}`}
+    >
+      <Tree
+        studio={props.studio}
+        viewMediatorId={treeId}
+        entries={solutionEntries ?? []}
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        onDragAndDropItem={structural ? onDragAndDropItem : undefined}
+        onExternalFileDrop={structural ? onExternalFileDrop : undefined}
+        iconComponent={Icon}
+        className="kbm-file-explorer"
+        multiSelectionMenuId="std/file-explorer/multi-selection"
+        decorationSource={decorationSource}
+      />
+    </div>
   );
 }
 
-function SolutionExplorerEmptyState(props: any): React.JSX.Element {
-  const bifrost: Bifrost = props.bifrost;
+function SolutionExplorerEmptyState(props: { bifrost: Bifrost }): React.JSX.Element {
+  const bifrost = props.bifrost;
   const clickHandler = bifrost.commands.getClickHandler();
 
   const { isOver, dropTargetProps } = useDropTarget({

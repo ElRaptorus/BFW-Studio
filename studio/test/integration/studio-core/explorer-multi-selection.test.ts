@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, it } from 'vitest';
 import type { StudioAgent } from '../../StudioAgent';
 import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioAgent';
 
-const TREE_ID = 'std/file-explorer/open-solution';
+const TREE_ID = 'std/file-explorer/design';
 const FIXTURES_DIR = path.join(__dirname, '..', '..', 'fixtures');
 const TEMPORARY_DIRECTORY_NAME = 'explorer-multi-selection-temporary';
 const TEMPORARY_DIRECTORY = path.join(FIXTURES_DIR, TEMPORARY_DIRECTORY_NAME);
