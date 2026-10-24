@@ -13,6 +13,7 @@ describe('createElementId', () => {
   it('names the type and adds seven random base-36 characters', () => {
     expect(createElementId('mapLink', () => false)).toMatch(/^MapLink_[0-9a-z]{7}$/);
     expect(createElementId('connector', () => false)).toMatch(/^Connector_[0-9a-z]{7}$/);
+    expect(createElementId('level', () => false)).toMatch(/^Level_[0-9a-z]{7}$/);
   });
 
   it('draws again while the id is taken', () => {
@@ -262,6 +263,22 @@ describe('LandscapeMapFile', () => {
       `The process 'p' appears more than once; a map shows a process once.`,
       `Connector 'loop' starts and ends at 'two'.`,
       `Connector 'away' points to 'ghost', which is not on the map.`,
+    ]);
+  });
+
+  it('rejects ids that the canvas reserves for the planes of groups and for relation lines', async () => {
+    const box = 'x="0" y="0" width="10" height="10"';
+    const errors = await errorsOf(
+      mapText(
+        `<landscape:group id="plane:team" ${box} />` +
+          `<landscape:note id="relation:call:a:b" ${box} />` +
+          `<landscape:note id="plane" ${box} />`,
+      ),
+    );
+
+    expect(errors).toEqual([
+      `The id 'plane:team' is reserved for elements the canvas derives.`,
+      `The id 'relation:call:a:b' is reserved for elements the canvas derives.`,
     ]);
   });
 

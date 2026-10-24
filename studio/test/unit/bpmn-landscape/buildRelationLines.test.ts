@@ -91,4 +91,17 @@ describe('buildRelationLines', () => {
       'relation:message:shape-order:shape-billing',
     ]);
   });
+
+  it('draws no line for a relation whose two processes are the same shape, as inside a collapsed group', () => {
+    const inGroup = placed('order', 'payment').map((placedProcess) => ({ ...placedProcess, elementId: 'group' }));
+
+    const lines = buildRelationLines({
+      relations: [relation('callActivity', 'order', 'payment')],
+      placedProcesses: inGroup,
+      relationLayers: ALL_LAYERS,
+      hiddenRelations: [],
+    });
+
+    expect(lines).toEqual([]);
+  });
 });

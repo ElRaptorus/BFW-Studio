@@ -1,14 +1,17 @@
 import type EventBus from 'diagram-js/lib/core/EventBus';
 import OrderingProvider from 'diagram-js/lib/features/ordering/OrderingProvider';
 
-const isContainer = (element: any): boolean => element.type === 'group' || element.type === 'band';
+import { isCollapsedGroup } from './landscapeHierarchy';
+
+const isBehind = (element: any): boolean => element.type === 'group' || element.type === 'band';
+const isContainer = (element: any): boolean => isBehind(element) && !isCollapsedGroup(element);
 
 /** Bands and groups are drawn behind the other shapes of their parent, connections in front of everything. */
 function levelOf(element: any): number {
   if (element.waypoints != null) {
     return 2;
   }
-  return isContainer(element) ? 0 : 1;
+  return isBehind(element) ? 0 : 1;
 }
 
 export default class LandscapeOrdering extends OrderingProvider {

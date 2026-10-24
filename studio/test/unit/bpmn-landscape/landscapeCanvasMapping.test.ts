@@ -166,4 +166,67 @@ describe('landscapeCanvasMapping', () => {
 
     expect(canvasToMap(canvas, map).connectors.map((connector) => connector.id)).toEqual(['link']);
   });
+
+  it('writes a collapsed group with its expanded size, followed by the contents of its plane', () => {
+    const map = fullMap();
+    const canvas = buildCanvas(map);
+    const band = canvas.children.find((node) => node.businessObject.id === 'band');
+    const sales = band.children.find((node: any) => node.businessObject.id === 'sales');
+    const inner = sales.children.find((node: any) => node.businessObject.id === 'inner');
+    // Collapsing moves the contents onto the plane and shrinks the group to its collapsed box.
+    inner.plane = { children: inner.children };
+    inner.children = [];
+    inner.expandedBounds = { width: geometry.width, height: geometry.height };
+    Object.assign(inner, { width: 200, height: 80 });
+
+    const exported = canvasToMap(canvas, map);
+
+    expect(exported).toEqual(map);
+  });
+
+  it('keeps the real ends and the stored bends of a connector that is drawn at a collapsed group', () => {
+    const map = fullMap();
+    const canvas = buildCanvas(map);
+    const link = canvas.children.find((node) => node.businessObject.id === 'link');
+    link.source = canvas.children.find((node) => node.businessObject.id === 'band');
+    // The canvas line runs to the group; only the file element knows the real bends.
+    link.waypoints = [
+      { x: 500, y: 500 },
+      { x: 600, y: 600 },
+    ];
+    link.businessObject.waypoints = [
+      { x: 1.2, y: 2 },
+      { x: 1, y: 40 },
+      { x: 9, y: 40 },
+    ];
+
+    const [connector] = canvasToMap(canvas, map).connectors;
+
+    expect(connector).toMatchObject({
+      id: 'link',
+      sourceId: 'order',
+      targetId: 'finance',
+      waypoints: [
+        { x: 1, y: 2 },
+        { x: 1, y: 40 },
+        { x: 9, y: 40 },
+      ],
+    });
+  });
+
+  it('writes the canvas waypoints of a connector that is drawn at its real ends', () => {
+    const map = fullMap();
+    const canvas = buildCanvas(map);
+    const link = canvas.children.find((node) => node.businessObject.id === 'link');
+    link.waypoints = [
+      { x: 5, y: 6 },
+      { x: 7, y: 8 },
+    ];
+    link.businessObject.waypoints = [{ x: 99, y: 99 }];
+
+    expect(canvasToMap(canvas, map).connectors[0].waypoints).toEqual([
+      { x: 5, y: 6 },
+      { x: 7, y: 8 },
+    ]);
+  });
 });

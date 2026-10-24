@@ -31,6 +31,7 @@ import LandscapeModeler from './modeler/LandscapeModeler';
 import type { LandscapeMapProperties } from './modeler/LandscapeUpdates';
 import type LandscapeUpdates from './modeler/LandscapeUpdates';
 import { UPDATE_ELEMENT_COMMAND, UPDATE_MAP_COMMAND } from './modeler/LandscapeUpdates';
+import { levelDepthOf } from './modeler/landscapeHierarchy';
 import type { ProcessCandidate, ReferenceStatus } from './resolveProcessReference';
 import { replaceCandidates, resolveProcessReference } from './resolveProcessReference';
 import type { LandscapeMapEntry } from './scanSolutionLandscapeMaps';
@@ -275,8 +276,9 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     }
     const existing = modeler.findProcessShape(request.processId);
     if (existing != null) {
-      modeler.get('selection').select(existing);
+      // Scrolling first: it opens the plane that holds the shape, and a plane change clears the selection.
       modeler.get('canvas').scrollToElement(existing);
+      modeler.get('selection').select(existing);
       return;
     }
     const element: LandscapeProcessElement = {
@@ -426,8 +428,8 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     if (modeler == null || first == null) {
       return false;
     }
-    modeler.get('selection').select(first);
     modeler.get('canvas').scrollToElement(first);
+    modeler.get('selection').select(first);
     return true;
   }
 
@@ -633,6 +635,33 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.modeler?.get('commandStack').execute(UPDATE_MAP_COMMAND, { properties });
   }
 
+  addLevel(): void {
+    const levels = this.getMapProperties()?.levels;
+    if (levels != null) {
+      const id = createElementId('level', (candidate) => levels.some((level) => level.id === candidate));
+      this.updateMap({ levels: [...levels, { id, name: `Level ${levels.length + 1}` }] });
+    }
+  }
+
+  renameLevel(levelId: string, name: string): void {
+    const levels = this.getMapProperties()?.levels;
+    if (levels?.some((level) => level.id === levelId && level.name !== name)) {
+      this.updateMap({ levels: levels.map((level) => (level.id === levelId ? { ...level, name } : level)) });
+    }
+  }
+
+  removeLevel(levelId: string): void {
+    const levels = this.getMapProperties()?.levels;
+    if (levels?.some((level) => level.id === levelId)) {
+      this.updateMap({ levels: levels.filter((level) => level.id !== levelId) });
+    }
+  }
+
+  /** The name the map gives the nesting depth of a group (a canvas shape); `null` when that depth has no name. */
+  getGroupLevelName(group: any): string | null {
+    return this.getMapProperties()?.levels[levelDepthOf(group)]?.name ?? null;
+  }
+
   setRelationLayer(kind: ProcessRelationKind, visible: boolean): void {
     const relationLayers = this.getMapProperties()?.relationLayers;
     if (relationLayers != null && relationLayers[kind] !== visible) {
@@ -711,8 +740,11 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
         this.openMapLink(element.businessObject);
       }
     });
+    // The relation lines depend on the plane on screen. A microtask keeps this out of a running undo.
+    eventBus.on('root.set', () => queueMicrotask(() => this.showRelations()));
     eventBus.on('canvas.viewbox.changed', ({ viewbox }: { viewbox: Viewbox }) => {
-      if (isUsableViewbox(viewbox)) {
+      // Only the top-level map's view is restored when the map is reopened; planes start fitted.
+      if (isUsableViewbox(viewbox) && modeler.get('canvas').getRootElement()?.group == null) {
         this.updateMetadata({
           viewbox: { x: viewbox.x, y: viewbox.y, width: viewbox.width, height: viewbox.height },
         });
@@ -758,6 +790,19 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     });
   }
 
+  /** The processes as the plane on screen shows them: a process inside a collapsed group is its group. */
+  private visiblePlacedProcesses(): PlacedProcess[] {
+    const modeler = this.modeler;
+    if (modeler == null) {
+      return [];
+    }
+    return this.placedProcesses().flatMap((placedProcess): PlacedProcess[] => {
+      const shape = modeler.get('elementRegistry').get(placedProcess.elementId);
+      const representative = shape == null ? null : modeler.representativeOnCurrentPlane(shape);
+      return representative == null ? [] : [{ ...placedProcess, elementId: representative.id }];
+    });
+  }
+
   private showRelations(): void {
     const modeler = this.modeler;
     const mapProperties = this.getMapProperties();
@@ -767,7 +812,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     modeler.showRelationLines(
       buildRelationLines({
         relations: this.relations,
-        placedProcesses: this.placedProcesses(),
+        placedProcesses: this.visiblePlacedProcesses(),
         relationLayers: mapProperties.relationLayers,
         hiddenRelations: mapProperties.hiddenRelations,
       }),

@@ -120,6 +120,20 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
+## Collapsed landscape groups as drill-down planes with redrawn connectors
+
+**Context:** A collapsed group on a landscape map hides its contents behind a box that can be opened. Manual connectors may run between an element inside the group and one outside, and a collapsed group needs both a way in and a way to edit its label.
+
+**Options:** For connectors: hide them while the group is collapsed, or draw them to the collapsed group and keep the real end. For opening: double-click edits the label and only a button drills down, or double-click drills down and the label is edited in the properties pane.
+
+**Decision:** The contents move to a diagram-js plane (a root element owned by the group). A crossing connector is drawn to the collapsed group while the file keeps its real end; expanding restores it, and it is not drawn inside the plane. Double-click drills down; the label is edited in the properties pane, and the drill-down button stays.
+
+**Rationale:** Redrawn connectors keep the map's links visible at every level without changing the file. Planes give breadcrumbs, a viewbox per level and undo across levels from diagram-js, as in the BPMN editor's subprocess drill-down.
+
+**Bends and growth:** The file element of a crossing connector keeps the real bends while the line is drawn to a group, and the file stores them; expanding repairs them where shapes moved (the alternative was to lay the line out afresh and lose them). Expanding moves the contents back into the stored size when they fit and grows the group right and down only for the excess (the alternative was to grow it in every direction around the contents).
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md) §Hierarchy.
+
 ## Explorer perspectives over one solution
 
 **Context:** The Landscapes page needed its own file tree of maps. The Studio had one `FileExplorerView` and one Solution pane, and every file command assumed that tree.

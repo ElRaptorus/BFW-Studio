@@ -25,13 +25,16 @@ import ResizeModule from 'diagram-js/lib/features/resize';
 import RootElementsModule from 'diagram-js/lib/features/root-elements';
 import SelectionModule from 'diagram-js/lib/features/selection';
 import CroppingConnectionDocking from 'diagram-js/lib/layout/CroppingConnectionDocking';
+import { getMid } from 'diagram-js/lib/layout/LayoutUtil';
 import MoveCanvasModule from 'diagram-js/lib/navigation/movecanvas';
 import ZoomScrollModule from 'diagram-js/lib/navigation/zoomscroll';
 
 import type { LandscapeConnector, LandscapeElement, LandscapeMap } from '../LandscapeMapFile';
 import { createElementId } from '../LandscapeMapFile';
 import type { RelationLine } from '../buildRelationLines';
+import LandscapeCollapse from './LandscapeCollapse';
 import LandscapeContextPadProvider from './LandscapeContextPadProvider';
+import LandscapeDrilldown from './LandscapeDrilldown';
 import LandscapeGroupMembership from './LandscapeGroupMembership';
 import LandscapeLabelEditing from './LandscapeLabelEditing';
 import LandscapeLayouter from './LandscapeLayouter';
@@ -43,6 +46,14 @@ import LandscapeRenderer from './LandscapeRenderer';
 import LandscapeRules from './LandscapeRules';
 import LandscapeUpdates from './LandscapeUpdates';
 import { canvasToMap, mapToCanvasDescriptors, shapeAttributesOf } from './landscapeCanvasMapping';
+import {
+  COLLAPSED_SIZE,
+  isCollapsedGroup,
+  mainRootOf,
+  placeConnection,
+  representativeOf,
+  rootOf,
+} from './landscapeHierarchy';
 
 /** Copies keep the file element, so a pasted shape is drawn and exported like its original, under a new id. */
 class LandscapeCopyPaste {
@@ -70,21 +81,29 @@ class LandscapeCopyPaste {
   }
 }
 
-/** A connector drawn with the connect tool gets its file element; the exporter fills in ends and waypoints. */
+/**
+ * A connector drawn with the connect tool gets its file element; the exporter fills in the waypoints. A pasted
+ * connector keeps the file element of its original, whose ends are replaced by the ends of the copy.
+ */
 class LandscapeConnectors {
   static $inject = ['eventBus'];
 
   constructor(eventBus: EventBus) {
     eventBus.on('commandStack.connection.create.preExecute', ({ context }: any) => {
       const connection = context.connection;
-      if (connection.type === 'connector' && connection.businessObject == null) {
+      if (connection.type !== 'connector') {
+        return;
+      }
+      const ends = { sourceId: context.source.businessObject.id, targetId: context.target.businessObject.id };
+      if (connection.businessObject == null) {
         connection.businessObject = {
           id: connection.id,
-          sourceId: context.source.businessObject.id,
-          targetId: context.target.businessObject.id,
+          ...ends,
           label: '',
           waypoints: [],
         } satisfies LandscapeConnector;
+      } else {
+        Object.assign(connection.businessObject, ends);
       }
     });
   }
@@ -101,6 +120,8 @@ const LANDSCAPE_MODULE = {
     'landscapeGroupMembership',
     'landscapeRelationLayer',
     'landscapeUpdates',
+    'landscapeCollapse',
+    'landscapeDrilldown',
     'paletteProvider',
     'contextPadProvider',
   ],
@@ -113,6 +134,8 @@ const LANDSCAPE_MODULE = {
   landscapeGroupMembership: ['type', LandscapeGroupMembership],
   landscapeRelationLayer: ['type', LandscapeRelationLayer],
   landscapeUpdates: ['type', LandscapeUpdates],
+  landscapeCollapse: ['type', LandscapeCollapse],
+  landscapeDrilldown: ['type', LandscapeDrilldown],
   paletteProvider: ['type', LandscapePaletteProvider],
   contextPadProvider: ['type', LandscapeContextPadProvider],
   connectionDocking: ['type', CroppingConnectionDocking],
@@ -195,49 +218,83 @@ export default class LandscapeModeler {
     return this.diagram.get<T>(serviceName);
   }
 
-  /** Replaces the canvas content with `map`; the import is not undoable. */
+  /**
+   * Replaces the canvas content with `map`; the import is not undoable. A collapsed group becomes a box with a plane
+   * for its contents, and a connector is drawn between the shapes that stand for its ends.
+   */
   importMap(map: LandscapeMap): void {
     this.diagram.clear();
     const canvas = this.get('canvas');
     const elementFactory = this.get('elementFactory');
+    const collapse = this.get<LandscapeCollapse>('landscapeCollapse');
     const root = canvas.getRootElement();
     const shapesById = new Map<string, any>();
     const { shapes, connections } = mapToCanvasDescriptors(map);
     for (const element of shapes) {
-      const shape = elementFactory.createShape(shapeAttributesOf(structuredClone(element)));
-      canvas.addShape(shape, element.parentId == null ? root : shapesById.get(element.parentId));
+      const attributes = shapeAttributesOf(structuredClone(element));
+      const isCollapsed = element.type === 'group' && element.collapsed;
+      if (isCollapsed) {
+        Object.assign(attributes, COLLAPSED_SIZE, { expandedBounds: { width: element.width, height: element.height } });
+      }
+      const shape = elementFactory.createShape(attributes);
+      const parent = element.parentId == null ? root : shapesById.get(element.parentId);
+      canvas.addShape(shape, parent.plane ?? parent);
       shapesById.set(element.id, shape);
+      if (isCollapsed) {
+        collapse.createPlane(shape);
+      }
     }
     for (const connector of connections) {
-      const connection = elementFactory.createConnection({
-        id: connector.id,
-        type: 'connector',
-        source: shapesById.get(connector.sourceId),
-        target: shapesById.get(connector.targetId),
-        waypoints: connector.waypoints.map((point) => ({ ...point })),
-        businessObject: structuredClone(connector),
-      });
-      if (connection.waypoints.length < 2) {
-        connection.waypoints = this.get('layouter').layoutConnection(connection);
-      }
-      canvas.addConnection(connection, root);
+      this.importConnector(connector, shapesById, root);
     }
-    const { name, relationLayers, hiddenRelations } = structuredClone(map);
-    this.get<LandscapeUpdates>('landscapeUpdates').setMapProperties({ name, relationLayers, hiddenRelations });
+    const { name, levels, relationLayers, hiddenRelations } = structuredClone(map);
+    this.get<LandscapeUpdates>('landscapeUpdates').setMapProperties({ name, levels, relationLayers, hiddenRelations });
     this.get('commandStack').clear();
   }
 
-  exportMap(previousMap: LandscapeMap): LandscapeMap {
-    const mapProperties = this.get<LandscapeUpdates>('landscapeUpdates').getMapProperties();
-    return canvasToMap(this.get('canvas').getRootElement(), { ...previousMap, ...mapProperties });
+  private importConnector(connector: LandscapeConnector, shapesById: Map<string, any>, root: any): void {
+    const realSource = shapesById.get(connector.sourceId);
+    const realTarget = shapesById.get(connector.targetId);
+    const placement = placeConnection(realSource, realTarget);
+    const isHidden = placement.source === placement.target;
+    const isDrawnAtItsEnds = placement.source === realSource && placement.target === realTarget;
+    const connection = this.get('elementFactory').createConnection({
+      id: connector.id,
+      type: 'connector',
+      source: placement.source,
+      target: placement.target,
+      hidden: isHidden,
+      waypoints: isDrawnAtItsEnds ? connector.waypoints.map((point) => ({ ...point })) : [],
+      businessObject: structuredClone(connector),
+    });
+    if (isHidden) {
+      connection.waypoints = [getMid(placement.source), getMid(placement.target)];
+    } else if (connection.waypoints.length < 2) {
+      connection.waypoints = this.get('layouter').layoutConnection(connection);
+    }
+    this.get('canvas').addConnection(connection, placement.rootGroup?.plane ?? root);
   }
 
-  /** Adds a shape centred on the point, inside the smallest group or band that contains the point. */
+  /** The whole map, however deep the plane on screen; the plane contents of collapsed groups are included. */
+  exportMap(previousMap: LandscapeMap): LandscapeMap {
+    const mapProperties = this.get<LandscapeUpdates>('landscapeUpdates').getMapProperties();
+    return canvasToMap(mainRootOf(this.get('canvas')), { ...previousMap, ...mapProperties });
+  }
+
+  /** The shape that stands for `shape` on the plane on screen; `null` when it is on another plane. */
+  representativeOnCurrentPlane(shape: any): any | null {
+    return representativeOf(shape, this.get('canvas').getRootElement().group ?? null);
+  }
+
+  /** Adds a shape centred on the point, inside the smallest open group or band on screen that contains the point. */
   addElementShape(element: LandscapeElement, center: { x: number; y: number }): any {
+    const currentRoot = this.get('canvas').getRootElement();
     const containers = this.get('elementRegistry')
       .filter(
         (candidate: any) =>
           isContainer(candidate) &&
+          !isCollapsedGroup(candidate) &&
+          rootOf(candidate) === currentRoot &&
           center.x >= candidate.x &&
           center.x <= candidate.x + candidate.width &&
           center.y >= candidate.y &&
@@ -258,7 +315,7 @@ export default class LandscapeModeler {
   }
 
   /**
-   * The whole map as a standalone SVG: the content layer and its marker definitions, framed by the bounds of the
+   * The map or the open group's plane, as on screen, as a standalone SVG: the content layer and its marker definitions, framed by the bounds of the
    * elements with a margin. Selection outlines, hit areas, the grid and the minimap are not part of it. Colours are
    * still theme variables; the caller maps them.
    */
@@ -269,8 +326,11 @@ export default class LandscapeModeler {
     const lineLabelBoxes = [...activeLayer.querySelectorAll<SVGGraphicsElement>('.landscape-line-label')]
       .map((text) => text.getBBox())
       .filter((box) => box.width > 0 && box.height > 0);
+    const currentRoot = canvas.getRootElement();
     const bounds = boundsOf([
-      ...this.get('elementRegistry').filter((element: any) => element.parent != null),
+      ...this.get('elementRegistry').filter(
+        (element: any) => element.parent != null && rootOf(element) === currentRoot,
+      ),
       ...lineLabelBoxes,
     ]);
     const layer = activeLayer.cloneNode(true) as Element;

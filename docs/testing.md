@@ -66,12 +66,9 @@ studio/test/
     │   ├── bpmn-elements.test.ts
     │   ├── bpmn-drilldown.test.ts
     │   └── form-builder.test.ts  # Form Builder fragment editor tests
-    ├── bpmn-landscape/         # Landscapes page, landscape folder gate, map editing, relations
+    ├── bpmn-landscape/         # Landscapes page, landscape folder gate, map editing, relations, hierarchy
     │   ├── landscapeWorkspace.ts      # createLandscapeWorkspace(): temporary copy of test-solution-deploy saved as Landscapes.bfwsln with views.landscapes = landscapes/
-    │   ├── landscape-page.test.ts
-    │   ├── landscape-folder.test.ts   # gate states, setup, choose and create folder, refused maps, maps closed with the solution, Maps explorer menus
-    │   ├── landscape-editing.test.ts
-    │   └── landscape-relations.test.ts
+    │   └── landscape.test.ts          # one file, one Electron window: page, folder gate, solution, relations, editing and hierarchy blocks
     ├── dmn-editor/             # DMN editor tests
     │   ├── dmn-smoke.test.ts
     │   └── dmn-elements.test.ts
@@ -456,8 +453,13 @@ Architecture constraints that tests also hit live in [`architecture/common-pitfa
 - **Custom Properties fixtures.** Keep only rows tests assert (or Custom Attributes indexes, Timer Start `enabled`, merge-diff payload). Do not leave ProcessEngine leftovers (`module` / `method` / `params` / `role`, Task-level `enabled`, `payload` on `##external`) in fixture XML.
 - **`client.execute` return shape.** A renderer execute callback must not return a top-level `error` property — WebDriverIO treats that as a protocol failure. Rename the field.
 - **Strict `$()` in WebDriverIO 10.** `$()` is strict by default and throws `StrictSelectorError` when the selector matches more than one element. `startWdioSession` does not forward `strictSelectors`, so the helpers in `TestDriver` / `StudioAgent*` pass `{ strict: false }` per call to keep first-match semantics. Use `$$()` when a test needs all matches.
+- **`getAllNotifications()` keeps closed notifications.** `NotificationManager` only marks a closed notification `visible: false` and never removes it, so in a window that several tests share, a `find` over `getAllNotifications()` can return a closed one from an earlier test, whose callback belongs to a closed document. Look notifications up with `getVisibleNotifications()`.
 - **Named Escape.** `sendKeyboardInput(['Escape'])` or `['escape']` both send the Escape key. A lowercase `'escape'` used to be typed as the letters e-s-c-a-p-e; do not invent other spellings.
 - **Letter shortcuts follow the host keyboard layout.** On a QWERTZ machine `sendKeyboardInput(['cmd-z'])` arrives as `cmd-y` (redo), so undo silently does nothing. Run undo and redo through `std.editor.undoInFocusedEditorDocument` / `std.editor.redoInFocusedEditorDocument`. Shortcuts whose letter is in the same place on both layouts (Cmd/Ctrl+S, C, V) are safe.
+
+## Landscape tests share one window
+
+`bpmn-landscape/landscape.test.ts` starts one Electron window in `beforeAll` and keeps it for all tests. Each block (`page`, `folder`, `solution`, `relations`, `editing`, `hierarchy`) has a `prepare` function that creates a temporary workspace through the shared `createWorkspace` and opens its solution; every test calls it first, with options for fixture variants. The `afterEach` returns the window to a blank state, in this order: record errors, close dialog and notifications, restore `bifrost.dialog.showOpenDirectory` / `showSaveFile`, `Test: Close all` (closes unsaved maps without a prompt), activate `design/workspace`, `Test: Close solution`, delete the temporary workspaces. Closing the solution alone is not enough: it asks about unsaved maps and leaves BPMN and DMN documents open. A test that replaces another renderer global must add it to the restore step. Tests must not depend on each other; run `npm run test:integration:bpmn-landscape -- --sequence.shuffle` to check.
 
 ## Drag and drop
 

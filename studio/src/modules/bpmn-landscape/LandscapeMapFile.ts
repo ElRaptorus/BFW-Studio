@@ -186,7 +186,7 @@ const tagOf = (node: ModdleElement): string => {
 
 const ID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
 const ID_RANDOM_LENGTH = 7;
-const ID_PREFIX_BY_TYPE: Record<LandscapeElementType | 'connector', string> = {
+const ID_PREFIX_BY_TYPE: Record<LandscapeElementType | 'connector' | 'level', string> = {
   band: 'Band',
   group: 'Group',
   process: 'Process',
@@ -194,13 +194,17 @@ const ID_PREFIX_BY_TYPE: Record<LandscapeElementType | 'connector', string> = {
   mapLink: 'MapLink',
   note: 'Note',
   connector: 'Connector',
+  level: 'Level',
 };
 
 /**
  * A new id in the pattern bpmn-js uses: type, underscore, seven random base-36 characters (`Group_0k3x9vb`).
  * A taken id is drawn again, because the reader rejects a map that uses an id twice.
  */
-export function createElementId(type: LandscapeElementType | 'connector', isTaken: (id: string) => boolean): string {
+export function createElementId(
+  type: LandscapeElementType | 'connector' | 'level',
+  isTaken: (id: string) => boolean,
+): string {
   let id: string;
   do {
     const randomValues = crypto.getRandomValues(new Uint8Array(ID_RANDOM_LENGTH));
@@ -428,6 +432,9 @@ function readExtensionAttributes(root: ModdleElement): Record<string, string> {
   );
 }
 
+/** The canvas names the planes of collapsed groups and the derived relation lines with these prefixes. */
+const RESERVED_ID_PREFIXES = ['plane:', 'relation:'];
+
 function checkIdentifiers(reader: LandscapeMapReader, map: LandscapeMap): void {
   const seenIds = new Set<string>();
   for (const item of [...map.elements, ...map.connectors]) {
@@ -435,6 +442,9 @@ function checkIdentifiers(reader: LandscapeMapReader, map: LandscapeMap): void {
       reader.errors.push(`The id '${item.id}' is used more than once.`);
     }
     seenIds.add(item.id);
+    if (RESERVED_ID_PREFIXES.some((prefix) => item.id.startsWith(prefix))) {
+      reader.errors.push(`The id '${item.id}' is reserved for elements the canvas derives.`);
+    }
   }
   const seenProcessIds = new Set<string>();
   for (const element of map.elements) {

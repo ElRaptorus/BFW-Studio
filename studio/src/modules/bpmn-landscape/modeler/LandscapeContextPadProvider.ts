@@ -1,20 +1,43 @@
 import type { RelationLine } from '../buildRelationLines';
+import type LandscapeCollapse from './LandscapeCollapse';
+import type LandscapeDrilldown from './LandscapeDrilldown';
 import { UPDATE_MAP_COMMAND } from './LandscapeUpdates';
 import type LandscapeUpdates from './LandscapeUpdates';
+import { isCollapsedGroup } from './landscapeHierarchy';
 
 export default class LandscapeContextPadProvider {
-  static $inject = ['contextPad', 'modeling', 'connect', 'commandStack', 'landscapeUpdates'];
+  static $inject = [
+    'contextPad',
+    'modeling',
+    'connect',
+    'commandStack',
+    'landscapeUpdates',
+    'landscapeCollapse',
+    'landscapeDrilldown',
+  ];
 
   private modeling: any;
   private connect: any;
   private commandStack: any;
   private landscapeUpdates: LandscapeUpdates;
+  private landscapeCollapse: LandscapeCollapse;
+  private landscapeDrilldown: LandscapeDrilldown;
 
-  constructor(contextPad: any, modeling: any, connect: any, commandStack: any, landscapeUpdates: LandscapeUpdates) {
+  constructor(
+    contextPad: any,
+    modeling: any,
+    connect: any,
+    commandStack: any,
+    landscapeUpdates: LandscapeUpdates,
+    landscapeCollapse: LandscapeCollapse,
+    landscapeDrilldown: LandscapeDrilldown,
+  ) {
     this.modeling = modeling;
     this.connect = connect;
     this.commandStack = commandStack;
     this.landscapeUpdates = landscapeUpdates;
+    this.landscapeCollapse = landscapeCollapse;
+    this.landscapeDrilldown = landscapeDrilldown;
     contextPad.registerProvider(this);
   }
 
@@ -37,6 +60,23 @@ export default class LandscapeContextPadProvider {
         action: { click: () => this.modeling.removeElements([element]) },
       },
     };
+    if (element.type === 'group') {
+      const isCollapsed = isCollapsedGroup(element);
+      entries.toggleCollapse = {
+        group: 'hierarchy',
+        className: isCollapsed ? 'ph ph-arrows-out' : 'ph ph-arrows-in',
+        title: isCollapsed ? 'Expand' : 'Collapse',
+        action: { click: () => this.landscapeCollapse.toggle(element) },
+      };
+      if (isCollapsed) {
+        entries.open = {
+          group: 'hierarchy',
+          className: 'ph ph-arrows-out-simple',
+          title: 'Open',
+          action: { click: () => this.landscapeDrilldown.open(element) },
+        };
+      }
+    }
     if (element.waypoints == null && element.type !== 'band') {
       const start = (event: Event) => this.connect.start(event, element);
       entries.connect = {

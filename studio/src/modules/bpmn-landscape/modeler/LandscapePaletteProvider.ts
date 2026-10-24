@@ -1,28 +1,53 @@
+import type EventBus from 'diagram-js/lib/core/EventBus';
+
 import type { LandscapeElement } from '../LandscapeMapFile';
 import { createElementId } from '../LandscapeMapFile';
 import { shapeAttributesOf } from './landscapeCanvasMapping';
 
 type NewElementFields =
+  | { type: 'band'; label: string }
   | { type: 'group'; label: string; collapsed: boolean }
   | { type: 'placeholder'; label: string; shape: 'box' }
   | { type: 'note'; text: string };
 
 export default class LandscapePaletteProvider {
-  static $inject = ['palette', 'create', 'elementFactory', 'elementRegistry', 'handTool', 'lassoTool'];
+  static $inject = [
+    'palette',
+    'create',
+    'elementFactory',
+    'elementRegistry',
+    'handTool',
+    'lassoTool',
+    'canvas',
+    'eventBus',
+  ];
 
+  private canvas: any;
   private create: any;
   private elementFactory: any;
   private elementRegistry: any;
   private handTool: any;
   private lassoTool: any;
 
-  constructor(palette: any, create: any, elementFactory: any, elementRegistry: any, handTool: any, lassoTool: any) {
+  constructor(
+    palette: any,
+    create: any,
+    elementFactory: any,
+    elementRegistry: any,
+    handTool: any,
+    lassoTool: any,
+    canvas: any,
+    eventBus: EventBus,
+  ) {
+    this.canvas = canvas;
     this.create = create;
     this.elementFactory = elementFactory;
     this.elementRegistry = elementRegistry;
     this.handTool = handTool;
     this.lassoTool = lassoTool;
     palette.registerProvider(this);
+    // A band belongs on the map, not on the plane of a group; the entries depend on which one is on screen.
+    eventBus.on('root.set', () => palette._rebuild());
   }
 
   getPaletteEntries(): Record<string, unknown> {
@@ -46,7 +71,7 @@ export default class LandscapePaletteProvider {
       action: { dragstart: action, click: action },
     });
 
-    return {
+    const entries: Record<string, unknown> = {
       'hand-tool': {
         group: 'tools',
         className: 'ph ph-hand',
@@ -60,6 +85,11 @@ export default class LandscapePaletteProvider {
         action: { click: (event: Event) => this.lassoTool.activateSelection(event) },
       },
       'tool-separator': { group: 'tools', separator: true },
+      'create-band': createEntry(
+        'ph ph-rows',
+        'Create a band that spans the map',
+        startCreate({ type: 'band', label: 'Band' }, 1200, 240),
+      ),
       'create-group': createEntry(
         'ph ph-bounding-box',
         'Create a group',
@@ -72,5 +102,9 @@ export default class LandscapePaletteProvider {
       ),
       'create-note': createEntry('ph ph-note', 'Create a note', startCreate({ type: 'note', text: 'Note' }, 160, 80)),
     };
+    if (this.canvas.getRootElement().group != null) {
+      delete entries['create-band'];
+    }
+    return entries;
   }
 }

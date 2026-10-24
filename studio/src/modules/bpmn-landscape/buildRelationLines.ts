@@ -1,6 +1,9 @@
 import type { LandscapeProcessReference, ProcessRelation, ProcessRelationKind } from './buildProcessRelations';
 
-/** A process shape on the map and the solution process it resolves to. */
+/**
+ * A process and the solution process it resolves to, with the shape that stands for it on the plane on screen: the
+ * process shape, or the collapsed group that holds it.
+ */
 export type PlacedProcess = { elementId: string; reference: LandscapeProcessReference };
 
 /** One drawn line: every visible relation of one kind from one map element to another. */
@@ -37,6 +40,10 @@ export function buildRelationLines(input: {
     const sourceElementId = elementIdByReference.get(referenceKey(relation.source));
     const targetElementId = elementIdByReference.get(referenceKey(relation.target));
     if (sourceElementId == null || targetElementId == null || !input.relationLayers[relation.kind]) {
+      continue;
+    }
+    // Both processes sit in the same collapsed group: there is nothing to draw between them.
+    if (sourceElementId === targetElementId) {
       continue;
     }
     const id = `relation:${relation.kind}:${sourceElementId}:${targetElementId}`;

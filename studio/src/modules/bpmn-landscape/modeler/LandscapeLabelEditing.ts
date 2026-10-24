@@ -1,14 +1,21 @@
 import type Canvas from 'diagram-js/lib/core/Canvas';
 import type EventBus from 'diagram-js/lib/core/EventBus';
 
-import { connectorLabelPoint } from './LandscapeRenderer';
+import { BAND_HEADER_WIDTH, connectorLabelPoint } from './LandscapeRenderer';
 import { UPDATE_ELEMENT_COMMAND } from './LandscapeUpdates';
+import { isCollapsedGroup } from './landscapeHierarchy';
 
 const CONTAINER_TITLE_HEIGHT = 30;
 const CONNECTOR_LABEL_BOX = { width: 140, height: 40 };
 
-/** The edited property of a canvas element; a process and a map link take their label from the properties pane. */
+/**
+ * The edited property of a canvas element; a process and a map link take their label from the properties pane, and so
+ * does a collapsed group, whose double-click opens it.
+ */
 function textPropertyOf(element: any): 'label' | 'text' | null {
+  if (isCollapsedGroup(element)) {
+    return null;
+  }
   switch (element.type) {
     case 'note':
       return 'text';
@@ -38,7 +45,7 @@ export default class LandscapeLabelEditing {
     // so Backspace, arrows and Cmd/Ctrl+C/V would never reach the contenteditable text box.
     directEditing._textbox.content.addEventListener('keydown', (event: KeyboardEvent) => event.stopPropagation());
 
-    // Double-click on a process or a map link is reserved for opening it.
+    // Double-click on a process, a map link or a collapsed group is reserved for opening it.
     eventBus.on('element.dblclick', ({ element }: any) => {
       if (textPropertyOf(element) != null) {
         directEditing.activate(element);
@@ -77,12 +84,28 @@ export default class LandscapeLabelEditing {
       };
     }
     const bounds = this.canvas.getAbsoluteBBox(element);
-    const isContainer = element.type === 'group' || element.type === 'band';
+    if (element.type === 'band') {
+      // The band writes its label upwards in the strip on its left edge; the box is laid flat, centred on the strip,
+      // and turned the same way.
+      const stripWidth = BAND_HEADER_WIDTH * zoom;
+      return {
+        bounds: {
+          x: bounds.x + stripWidth / 2 - bounds.height / 2,
+          y: bounds.y + bounds.height / 2 - stripWidth / 2,
+          width: bounds.height,
+          height: stripWidth,
+        },
+        text,
+        style: { ...style, transform: 'rotate(-90deg)' },
+        options: { centerVertically: true },
+      };
+    }
+    const isGroup = element.type === 'group';
     return {
-      bounds: isContainer ? { ...bounds, height: CONTAINER_TITLE_HEIGHT * zoom } : bounds,
+      bounds: isGroup ? { ...bounds, height: CONTAINER_TITLE_HEIGHT * zoom } : bounds,
       text,
       style,
-      options: { centerVertically: !isContainer },
+      options: { centerVertically: !isGroup },
     };
   }
 

@@ -46,6 +46,7 @@ const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 const DEFAULT_FILL = 'var(--color-bpmn-defaultFillColor)';
 const DEFAULT_STROKE = 'var(--color-bpmn-defaultStrokeColor)';
 const NOTE_CORNER = 14;
+export const BAND_HEADER_WIDTH = 32;
 const LINE_LABEL_WIDTH = 160;
 const LINE_STYLES: Record<RelationLine['kind'] | 'connector', { width: number; dash: string | null; arrow: string }> = {
   callActivity: { width: 2, dash: null, arrow: 'filled' },
@@ -150,7 +151,16 @@ export default class LandscapeRenderer extends BaseRenderer {
       this.drawMapLinkDecoration(parentGraphics, shape.width, shape.height, stroke, isBroken);
     }
 
-    const isContainer = element.type === 'group' || element.type === 'band';
+    const isCollapsedGroup = element.type === 'group' && element.collapsed;
+    if (isCollapsedGroup) {
+      this.drawCollapsedGroupDecoration(parentGraphics, shape.width, shape.height, stroke);
+    }
+    if (element.type === 'band') {
+      this.drawBandHeader(parentGraphics, shape.height, element.label, stroke);
+      return visual;
+    }
+
+    const isContainer = element.type === 'group' && !isCollapsedGroup;
     let padding: number | { left: number; right: number; top: number; bottom: number } = isContainer ? 8 : 6;
     if (hasChevronShape(element)) {
       padding = { left: 18, right: 18, top: 6, bottom: 6 };
@@ -222,14 +232,19 @@ export default class LandscapeRenderer extends BaseRenderer {
     return `M${connection.waypoints.map((point: { x: number; y: number }) => `${point.x},${point.y}`).join('L')}`;
   }
 
+  /** A relation line that ends at a collapsed group stands for several relations; its label is their count. */
   private lineLabelOf(connection: any): string {
     if (connection.type !== 'relation') {
       return (connection.businessObject as LandscapeConnector).label;
     }
     const relationLine: RelationLine = connection.businessObject;
     const hidden = new Set(relationLine.hiddenKeys);
-    return relationLine.relations
-      .filter((relation) => relation.name != null && !hidden.has(relation.key))
+    const visibleRelations = relationLine.relations.filter((relation) => !hidden.has(relation.key));
+    if (connection.source.type === 'group' || connection.target.type === 'group') {
+      return String(visibleRelations.length);
+    }
+    return visibleRelations
+      .filter((relation) => relation.name != null)
       .map((relation) => relation.name)
       .join(', ');
   }
@@ -246,6 +261,47 @@ export default class LandscapeRenderer extends BaseRenderer {
     });
     text.classList.add('landscape-label', 'landscape-line-label');
     text.setAttribute('transform', `translate(${point.x - LINE_LABEL_WIDTH / 2}, ${point.y})`);
+    parentGraphics.appendChild(text);
+  }
+
+  /** An inner border and a plus in a square mark a group that is collapsed. */
+  private drawCollapsedGroupDecoration(
+    parentGraphics: SVGElement,
+    width: number,
+    height: number,
+    stroke: string,
+  ): void {
+    const lineStyle = `fill: none; stroke: ${stroke}; stroke-width: 1px;`;
+    parentGraphics.appendChild(
+      createSvgElement('rect', { x: 4, y: 4, width: width - 8, height: height - 8, rx: 2, style: lineStyle }),
+    );
+    const glyph = createSvgElement('path', {
+      ['d']: 'M0,0H10V10H0ZM5,2V8M2,5H8',
+      transform: `translate(${width - 22}, 8)`,
+      style: lineStyle,
+    });
+    parentGraphics.appendChild(glyph);
+  }
+
+  /** A band has a strip on its left edge that carries the label, written upwards. */
+  private drawBandHeader(parentGraphics: SVGElement, height: number, label: string, stroke: string): void {
+    parentGraphics.appendChild(
+      createSvgElement('rect', {
+        x: 0,
+        y: 0,
+        width: BAND_HEADER_WIDTH,
+        height,
+        style: `fill: ${stroke}; fill-opacity: 0.12; stroke: ${stroke}; stroke-width: 2px;`,
+      }),
+    );
+    const text = this.textRenderer.createText(label, {
+      box: { width: height, height: BAND_HEADER_WIDTH },
+      align: 'center-middle',
+      padding: 4,
+    });
+    text.classList.add('landscape-label');
+    text.setAttribute('transform', `translate(0, ${height}) rotate(-90)`);
+    text.setAttribute('style', `fill: ${stroke};`);
     parentGraphics.appendChild(text);
   }
 

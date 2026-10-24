@@ -35,6 +35,57 @@
     user-select: none;
   }
 
+  .landscape-breadcrumbs {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0;
+    padding: 4px 10px;
+    list-style: none;
+    border-radius: 4px;
+    border: 1px solid var(--theme-diagram-selected-outline);
+    background-color: var(--theme-diagram-bg);
+
+    li + li::before {
+      content: '›';
+      margin: 0 6px;
+      color: var(--theme-fg-muted);
+    }
+
+    button {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  }
+
+  .landscape-breadcrumbs__current {
+    font-weight: 600;
+  }
+
+  .landscape-drilldown {
+    padding: 0 4px;
+    line-height: 1.2;
+    border-radius: 3px;
+    border: 1px solid var(--theme-diagram-selected-outline);
+    background-color: var(--theme-diagram-bg);
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .landscape-properties__level {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
   .landscape-line-label {
     stroke: var(--theme-diagram-bg);
     stroke-width: 4px;

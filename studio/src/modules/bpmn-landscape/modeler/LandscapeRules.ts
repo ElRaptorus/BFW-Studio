@@ -3,24 +3,32 @@ import type EventBus from 'diagram-js/lib/core/EventBus';
 import RuleProvider from 'diagram-js/lib/features/rules/RuleProvider';
 
 import { createElementId } from '../LandscapeMapFile';
+import { isCollapsedGroup } from './landscapeHierarchy';
 
 const isConnection = (element: any): boolean => element.waypoints != null;
 const isRelation = (element: any): boolean => element?.type === 'relation';
 
-/** The root holds everything; groups and bands hold everything but bands; nothing else holds elements. */
+/**
+ * The top-level root holds everything; a plane holds everything but bands; groups and bands hold everything but
+ * bands, except a collapsed group, which holds nothing until it is expanded.
+ */
 function canContain(target: any, elementType: string): boolean {
   if (target == null || isConnection(target)) {
     return false;
   }
   if (target.businessObject == null) {
-    return true;
+    return target.group == null || elementType !== 'band';
   }
-  return (target.type === 'group' || target.type === 'band') && elementType !== 'band';
+  return (target.type === 'group' || target.type === 'band') && !isCollapsedGroup(target) && elementType !== 'band';
 }
 
-/** Groups dropped on an element that holds nothing go into that element's parent, see `LandscapeOrdering`. */
+/**
+ * Groups dropped on an element that holds nothing, a collapsed group included, go into that element's parent, see
+ * `LandscapeOrdering`.
+ */
 function containerFor(target: any, shapes: any[]): any {
-  if (target?.businessObject == null || isConnection(target) || target.type === 'group' || target.type === 'band') {
+  const isOpenContainer = (target?.type === 'group' && !isCollapsedGroup(target)) || target?.type === 'band';
+  if (target?.businessObject == null || isConnection(target) || isOpenContainer) {
     return target;
   }
   return shapes.every((shape) => shape.type === 'group') ? target.parent : target;
@@ -74,14 +82,18 @@ export default class LandscapeRules extends RuleProvider {
         .every((shape: any) => canContain(container, shape.type));
     });
 
-    // Relation lines are derived: they are hidden, never deleted, and follow their shapes.
+    // Relation lines are derived: they are hidden, never deleted, and follow their shapes. A hidden connector, between
+    // a collapsed group and its contents, can only be lassoed by accident.
     this.addRule('elements.delete', ({ elements }: any) => {
-      const removable = elements.filter((element: any) => !isRelation(element));
+      const removable = elements.filter((element: any) => !isRelation(element) && element.hidden !== true);
       return removable.length === 0 ? false : removable;
     });
 
-    this.addRule('shape.resize', () => true);
-    this.addRule('element.autoResize', ({ target }: any) => target?.type === 'group' || target?.type === 'band');
+    this.addRule('shape.resize', ({ shape }: any) => !isCollapsedGroup(shape));
+    this.addRule(
+      'element.autoResize',
+      ({ target }: any) => (target?.type === 'group' || target?.type === 'band') && !isCollapsedGroup(target),
+    );
 
     this.addRule('connection.create', ({ source, target }: any) =>
       canConnect(source, target)
@@ -94,8 +106,13 @@ export default class LandscapeRules extends RuleProvider {
     );
     this.addRule('connection.updateWaypoints', ({ connection }: any) => !isRelation(connection));
 
-    // A pasted process would always be a second shape of the same process on this map.
-    this.addRule('element.copy', ({ element }: any) => element.type !== 'process' && !isRelation(element));
+    // A pasted process would always be a second shape of the same process on this map, and a collapsed group would
+    // paste without its contents.
+    this.addRule(
+      'element.copy',
+      ({ element }: any) =>
+        element.type !== 'process' && !isRelation(element) && !isCollapsedGroup(element) && element.hidden !== true,
+    );
   }
 
   private isProcessOnMap(shape: any): boolean {

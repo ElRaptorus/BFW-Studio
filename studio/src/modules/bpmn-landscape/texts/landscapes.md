@@ -24,10 +24,21 @@ Maps outside the landscape folder do not open.
 
 1. **Create a map.** Press the _New Landscape Map_ button in the Maps explorer, or right-click a folder there and choose _New Landscape Map…_. The map is saved in the landscape folder or one of its subfolders.
 2. **Add processes.** Drag a process from the Processes pane onto the map. A process appears at most once on a map; dragging it again selects it.
-3. **Structure the map.** Use the palette on the left of the map for groups, placeholders for processes that are not modelled yet, and notes. Drop elements into a group to nest them. A group holds every element it fully encloses: draw, resize or move it around elements and they become part of it; an element it only partly covers stays outside and in front of it.
+3. **Structure the map.** Use the palette on the left of the map for bands, groups, placeholders for processes that are not modelled yet, and notes. Drop elements into a group to nest them. A group holds every element it fully encloses: draw, resize or move it around elements and they become part of it; an element it only partly covers stays outside and in front of it.
 4. **Label elements.** Double-click a group, placeholder, note or connector to edit its text.
 5. **Connect elements.** Select an element and drag or click _Connect_ in its context pad, then click the target. Connectors are saved with the map; bands cannot be connected.
-6. **Save.** Press Cmd/Ctrl+S. Undo and redo work as in every editor.
+6. **Collapse a group.** Select a group and press _Collapse_ in its context pad; see _Groups, levels and planes_ below.
+7. **Save.** Press Cmd/Ctrl+S. Undo and redo work as in every editor.
+
+&nbsp;
+
+## Groups, levels and planes
+
+- **Bands** are wide strips at the top level of a map, for example one per business area. A band holds groups and elements, but a band can be created only on the map itself, not inside a group; the palette shows the band only while the map itself is open.
+- **Collapse a group** with _Collapse_ in its context pad. The group becomes one box and its contents move to a plane of their own. _Expand_ puts them back. A collapsed group cannot be resized and holds nothing until it is expanded.
+- **Open a collapsed group** by double-clicking it or pressing the arrows button on its box. Its contents appear alone on the canvas, with breadcrumbs at the top left; press a crumb to go back. A collapsed group's label is edited in the Properties pane.
+- **Connectors and relations** keep working across a collapsed group: a connector into a group is drawn to the group's box and returns to the process when the group is expanded. A relation line that ends at a group counts the relations it stands for; relations inside one collapsed group are not drawn. A connector that crosses a group border keeps its bends when the group is collapsed or expanded, and they are saved with the map; if you moved a shape meanwhile, the line is adjusted at that end. Expanding moves the contents back into the group's size when they fit; the group grows to the right and down only when the contents are wider or higher than that.
+- **Levels** name the depths of nested groups. Add them in the Properties pane with nothing selected: the first name is for top-level groups, the second for groups inside them, and so on. A selected group shows the name of its depth.
 
 &nbsp;
 
@@ -44,7 +55,7 @@ The map draws the relations between the processes on it, read from the saved BPM
 
 The Properties pane on the right edits the selected element: label, shape (box or chevron), colour. For a process it shows the file, version, relations and decisions; _Open_ opens a decision. With nothing selected it edits the map name and the relation types.
 
-Double-click a process to open it in the Designer. The Processes pane shows on how many maps each process appears.
+Double-click a process to open it in the Designer, or a collapsed group to open its plane. The Processes pane shows on how many maps each process appears.
 
 &nbsp;
 
@@ -66,7 +77,7 @@ Drag a map from the Maps explorer onto another map to add a link to it. Double-c
 
 ## Export
 
-The _Export_ button in the toolbar saves the whole map as SVG, PNG, JPEG or WebP, depending on the file extension you choose.
+The _Export_ button in the toolbar saves what the canvas shows, the map or the open group, as SVG, PNG, JPEG or WebP, depending on the file extension you choose.
 
 &nbsp;
 

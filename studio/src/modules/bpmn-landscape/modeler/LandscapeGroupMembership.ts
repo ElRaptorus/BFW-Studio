@@ -1,8 +1,11 @@
 import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
 import type EventBus from 'diagram-js/lib/core/EventBus';
 
+import { isCollapsedGroup, isShape, rootOf } from './landscapeHierarchy';
+
 const isContainer = (element: any): boolean => element.type === 'group' || element.type === 'band';
-const isShape = (element: any): boolean => element.waypoints == null;
+/** An expanded group or band holds exactly the shapes it encloses; a collapsed group's box holds nothing. */
+const holdsByEnclosure = (element: any): boolean => isContainer(element) && !isCollapsedGroup(element);
 
 const encloses = (outer: any, inner: any): boolean =>
   inner.x >= outer.x &&
@@ -20,31 +23,29 @@ function isInside(element: any, ancestor: any): boolean {
 }
 
 /**
- * After a group is created, resized or moved, it holds exactly the shapes it fully encloses: enclosed siblings
+ * After a group or band is created, resized or moved, it holds exactly the shapes it fully encloses: enclosed siblings
  * move in, children that stick out move to the smallest container outside the group that encloses them. The moves
  * run inside the triggering command, so one undo reverts them together.
  */
 export default class LandscapeGroupMembership extends CommandInterceptor {
-  static $inject = ['eventBus', 'modeling', 'elementRegistry', 'canvas'];
+  static $inject = ['eventBus', 'modeling', 'elementRegistry'];
 
   private modeling: any;
   private elementRegistry: any;
-  private canvas: any;
 
-  constructor(eventBus: EventBus, modeling: any, elementRegistry: any, canvas: any) {
+  constructor(eventBus: EventBus, modeling: any, elementRegistry: any) {
     super(eventBus);
     this.modeling = modeling;
     this.elementRegistry = elementRegistry;
-    this.canvas = canvas;
 
     this.postExecuted(['shape.create', 'shape.resize'], ({ context }: any) => {
-      if (context.shape.type === 'group') {
+      if (holdsByEnclosure(context.shape)) {
         this.updateMembership(context.shape);
       }
     });
     this.postExecuted('elements.move', ({ context }: any) => {
       for (const shape of context.shapes) {
-        if (shape.type === 'group') {
+        if (isShape(shape) && holdsByEnclosure(shape)) {
           this.updateMembership(shape);
         }
       }
@@ -65,10 +66,17 @@ export default class LandscapeGroupMembership extends CommandInterceptor {
   }
 
   private enclosingContainerOutside(shape: any, group: any): any {
+    const root = rootOf(group);
     const candidates = this.elementRegistry
-      .filter((candidate: any) => isContainer(candidate) && !isInside(candidate, group) && encloses(candidate, shape))
+      .filter(
+        (candidate: any) =>
+          holdsByEnclosure(candidate) &&
+          !isInside(candidate, group) &&
+          rootOf(candidate) === root &&
+          encloses(candidate, shape),
+      )
       .sort((first: any, second: any) => first.width * first.height - second.width * second.height);
-    return candidates[0] ?? this.canvas.getRootElement();
+    return candidates[0] ?? root;
   }
 
   private moveInto(shapes: any[], target: any): void {

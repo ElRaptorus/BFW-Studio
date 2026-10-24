@@ -91,22 +91,31 @@ todos:
     status: completed
   - id: m4-gate-review
     content: "M4: Studio gate, copy this plan to docs/, ask before running the landscape suite, stop for review"
-    status: in_progress
-  - id: m5-levels-bands
-    content: "M5 Hierarchy: levels editor, bands, nested groups with auto-resize"
-    status: pending
-  - id: m5-collapse-drilldown
-    content: "M5: collapse, expand and drill-down via planes with breadcrumbs"
-    status: pending
+    status: completed
+  - id: m5-levels
+    content: "M5 Hierarchy: levels in map properties, import and export; levels editor; computed level for groups"
+    status: completed
+  - id: m5-bands
+    content: "M5: band palette entry, rules, distinct look, membership for bands"
+    status: completed
+  - id: m5-planes
+    content: "M5: LandscapeCollapse toggle command, interceptors, rules, root-aware placement, import and export with planes"
+    status: completed
+  - id: m5-crossing-connectors
+    content: "M5: crossing connectors drawn to collapsed groups with hidden real ends (decision 11)"
+    status: completed
+  - id: m5-drilldown-ui
+    content: "M5: LandscapeDrilldown overlay, context pad, double-click drill-down, breadcrumbs, viewbox per root, exportSvg per root"
+    status: completed
   - id: m5-aggregated-relations
-    content: "M5: relations aggregated onto collapsed groups"
-    status: pending
+    content: "M5: relations aggregated onto collapsed groups with a count"
+    status: completed
   - id: m5-tests-docs
-    content: "M5: unit tests, docs, integration tests for collapse and drill-down"
-    status: pending
+    content: "M5: unit tests, docs, integration tests for hierarchy"
+    status: completed
   - id: m5-gate-review
-    content: "M5: Studio gate, ask before running the landscape suite, stop for review"
-    status: pending
+    content: "M5: Studio gate, copy plan to docs/, ask before running the landscape suite, stop for review"
+    status: completed
   - id: m6-layout-function
     content: "M6 Assistance: pure layoutLandscape, tests"
     status: pending
@@ -143,6 +152,8 @@ isProject: false
 | 8 | (M4) "Drop reference" turns the broken process shape into a placeholder in the same place; it keeps its label (defaulting to the old process id) and its connectors. Undoable. |
 | 9 | (M4) "Keep" lasts for the session only: the shape stays greyed, Review skips it, and the next opening lists it again. The file format does not change. |
 | 10 | (M4) A map link's target is changed with a "Target map" picker in the properties pane. |
+| 11 | (M5) A connector between an element inside a collapsed group and one outside is drawn to the collapsed group while it is collapsed; the file keeps the real end and expanding restores it. It is not visible inside the group's plane. |
+| 12 | (M5) Double-click on a collapsed group drills down; its label is edited in the properties pane, and the drill-down button stays. |
 
 ## Eingaben-Nachweis
 
@@ -457,19 +468,229 @@ The properties pane, for a broken process, shows the status sentence and three a
 
 ### Milestone 5 — Hierarchy
 
-31. Levels editor in the map properties, computed level in the element properties; bands at top level; nested groups with auto-resize.
-32. Collapse, expand and drill-down via planes with breadcrumbs.
-33. Relations aggregated onto collapsed groups with a count.
-34. Unit tests (collapse, expand and save keep ids and relations), `bpmn-landscape.md`, integration tests (collapse, drill down, save, reopen).
-35. Studio gate. Ask before running the landscape suite. **Stop for review.**
+**Ziel (M5):** Maps gain hierarchy: named levels, top-level bands, nested groups that collapse into a box and open as their own plane with breadcrumbs, relation lines aggregated onto collapsed groups, all undoable and saved in the existing `.bfwmap` format.
+
+#### Eingaben-Nachweis (M5)
+
+- **Decision 6 and the user's answers in this planning session.**
+  - Decision 6 asks for nested groups with collapse and drill-down.
+  - **Decision 11:** a manual connector between an element inside a collapsed group and one outside is drawn to the collapsed group while the group is collapsed. The file keeps the real end, and expanding restores it. The connector is not visible inside the group's plane.
+  - **Decision 12:** double-click on a collapsed group drills down. Its label is then edited in the properties pane, and the drill-down button stays as well.
+- **`LandscapeMapFile.ts`.**
+  - The format already carries everything M5 needs, so the format does not change:
+    - `levels: { id, name }[]`, where `levels[0]` names top-level groups and `levels[1]` the groups inside them;
+    - `Group.collapsed` (moddle default `false`, written only when true);
+    - `band`, which the reader refuses inside a container ("bands stay at the top level") and as a connector end.
+  - `createElementId(type, isTaken)` accepts element types and `'connector'` only.
+- **`modeler/LandscapeModeler.ts` (353 lines).**
+  - The module wires `RootElementsModule`, `OverlaysModule` and `AutoResizeModule`.
+  - `importMap` calls `diagram.clear()`, adds every shape to the canvas root or to its parent shape, adds connectors to the root, and sets `name`, `relationLayers` and `hiddenRelations`.
+  - `exportMap` walks `canvas.getRootElement()`, which is the current plane, not the map, once drill-down exists.
+  - `addElementShape` picks the smallest container from the whole registry and falls back to `canvas.getRootElement()`.
+- **`modeler/LandscapeRules.ts` and `LandscapeGroupMembership.ts`.**
+  - A root without a businessObject holds anything; group and band hold anything except a band.
+  - `shape.resize` is always allowed, and `element.autoResize` is allowed for group and band, so nested groups already grow with their content.
+  - Membership runs after `shape.create` and `shape.resize` of a group and after `elements.move` of groups. Children no longer enclosed move to `enclosingContainerOutside` (whole registry, else `canvas.getRootElement()`), and fully enclosed non-band siblings move in, using `moveElements(…, {x:0,y:0}, target, {autoResize:false})`. Bands get no membership.
+- **`modeler/landscapeCanvasMapping.ts`.**
+  - `mapToCanvasDescriptors` orders parents first.
+  - `canvasToMap(root, base)` walks canvas children depth-first, derives `parentId` from the canvas parent's businessObject, rounds the geometry and skips relation lines.
+- **`LandscapeUpdates.ts`.** `LandscapeMapProperties` is `name | relationLayers | hiddenRelations`; `levels` is missing. `UPDATE_MAP_COMMAND` and `UPDATE_ELEMENT_COMMAND` undo through `pickOld`.
+- **Relation pipeline.**
+  - `buildRelationLines(PlacedProcess[])` groups relations into `relation:<kind>:<source>:<target>` lines and drops a line whose relations are all hidden. It has no self-line filter.
+  - `LandscapeRelationLayer.show` adds relation connections to `canvas.getRootElement()` and removes stale ones.
+  - The model's `placedProcesses()` and `showRelations()` feed it, then call `updateFocus`.
+- **UI pieces.**
+  - **Palette:** hand, lasso, group (400×240), placeholder, note; no band entry.
+  - **Context pad:** Delete and Connect (not for bands); Hide relation for relation lines.
+  - **Properties pane:** `MapProperties` shows Name, the relation switches and "Show N hidden relations". `ShapeProperties` shows Label, Shape, colour and the process and map-link details.
+  - **Renderer:** draws groups and bands as the same 4 px rounded rect with a top-centred label.
+- **diagram-js 15.28.1 `Canvas`** has the plane API:
+  - `addRootElement` creates a hidden layer;
+  - `setRootElement` fires `root.set`, on which selection and overlays clear;
+  - `removeRootElement`, `findRoot` and `getRootElements`;
+  - `scrollToElement` switches to the element's root on its own.
+  
+  `MoveHelper` re-parents an enclosed connection only when the connection itself is in the moved list (`topLevel[c.id]`).
+- **bpmn-js drilldown (reference only, not a dependency).**
+  - `DrilldownBreadcrumbs` rebuilds a `ul` on `root.set`; `DrilldownCentering` keeps one viewbox per root; `DrilldownOverlayBehavior` adds a `drilldown` overlay button.
+  - `SubProcessPlaneBehavior` adds and removes the plane root in `executed` / `reverted`, moves children with `modeling.moveElements(children, offset, target, {autoResize:false})` and deletes plane children with the shape.
+
+#### Approach (M5)
+
+**Levels.**
+- **Properties:** `LandscapeMapProperties` gains `levels`; `importMap` sets it and `exportMap` writes it back, with undo through `UPDATE_MAP_COMMAND`.
+- **Editor:** `MapProperties` gets a "Levels" section with one text field per depth ("Level 1", "Level 2", … as placeholder), a remove button per row and "Add level". Levels are positional: removing a level shifts the deeper names up, which the remove button's title says.
+- **Ids:** `createElementId` accepts `'level'` (prefix `Level`), and `isTaken` checks the registry and the existing levels.
+- **Computed level:** a group's depth is the number of enclosing groups across planes; bands do not count. `ShapeProperties` shows a read-only "Level" field for groups: `levels[depth].name`, or "Level N (unnamed)".
+
+**Bands.**
+- **Palette:** "Create band", 1200×240. The rules refuse a band on a plane and inside a container (the latter exists already).
+- **Look:** a light fill and a 32 px header strip on the left with the label written vertically, so a band reads differently from a group.
+- **Membership:** the existing logic is generalised from groups to groups and bands. A band adopts the top-level non-band shapes it fully encloses and releases the ones it no longer encloses.
+
+**Planes for collapsed groups.** A collapsed group is a shape of fixed size, 200×80 at the same top-left. Its expanded width and height are kept on the shape as `expandedBounds`. Its plane is a root element `{ id: '<groupId>_plane', groupId }` without a businessObject. Contents keep their absolute coordinates on the plane, so expanding restores the layout exactly.
+- **Command:** a new handler `landscape.toggleCollapse` (in a new service `LandscapeCollapse`) composes modeling operations so undo works.
+  - **Collapse:**
+    1. store `expandedBounds`;
+    2. resize to the collapsed size;
+    3. add the plane root;
+    4. move the group's children, plus every connector whose ends are both inside, onto the plane;
+    5. sync crossing connectors;
+    6. set `collapsed` on the businessObject.
+  - **Expand:**
+    1. resize to `expandedBounds` grown to enclose the plane contents plus padding;
+    2. move the contents back under the group (connectors to the group's root);
+    3. remove the plane root;
+    4. sync connectors;
+    5. clear `collapsed`.
+  - Expanding never pushes neighbours: membership skips this resize through a hint, so siblings under the expanded area stay where they are, overlap visibly and are not swallowed.
+- **Follow-up behaviours** (CommandInterceptor in `LandscapeCollapse`):
+  - moving a collapsed group moves its plane contents by the same delta;
+  - deleting a collapsed group deletes its plane contents and removes the plane root;
+  - deleting an element on a plane also deletes connectors whose hidden end is that element;
+  - undo removing the current plane first switches to the group's root.
+- **Rules:** a collapsed group cannot be resized or auto-resized and is not copyable; copying stays possible after expanding. Membership skips collapsed groups.
+- **Root-aware placement:** a helper `logicalParent(shape)` (the plane's group for a shape on a plane) serves depth, export and representatives. `addElementShape`, `enclosingContainerOutside` and the membership fallback only consider shapes on the target's own root.
+- **Import and export:**
+  - The importer creates a collapsed group at the collapsed size with `expandedBounds` from the file, adds its plane root and places descendants on it.
+  - `exportMap` always starts from the map root, stored at import, and `canvasToMap` descends into planes (`collapsed` from the businessObject, width and height from `expandedBounds`).
+  - Both functions take plain element objects, so they stay unit-testable.
+
+**Crossing connectors (decision 11).**
+- **Drawing:** a connector whose ends lie on different planes is drawn on their lowest common plane, between each end's representative there: the end itself, or its outermost collapsed ancestor.
+- **Hidden end:** when a representative differs from the real end, the connection records `hiddenSourceId` / `hiddenTargetId`, set inside the toggle command so undo restores it. A user reconnect of that side clears it.
+- **Export:** `sourceId = hiddenSourceId ?? source.businessObject.id`, and the same for the target.
+- **Sync:** one `syncConnectors(affected)` step recomputes parent, ends and hidden ids after every collapse and expand, which also covers nested collapses (the hidden end stays the deepest real element).
+
+**Drill-down UI** (new service `LandscapeDrilldown`):
+- **Entry points:** a `drilldown` overlay button on every collapsed group; context-pad entries "Collapse" and "Expand" on groups and "Open" on collapsed groups; double-click on a collapsed group drills down (decision 12, wired where the model handles double-click; `LandscapeLabelEditing` skips collapsed groups).
+- **Breadcrumbs:** `ul.landscape-breadcrumbs` in the canvas container, rebuilt on `root.set` and hidden on the map root. It shows map name › ancestor groups › current group, each crumb clickable.
+- **Viewbox:** one viewbox per root, restored when a plane is entered again; a plane entered for the first time is zoomed to fit its contents.
+- **Elsewhere:** focus, Review and `findProcessShape` keep working across planes, because `scrollToElement` switches roots. `exportSvg` measures only the elements of the current root, so the image shows the plane on screen.
+
+**Aggregated relations.**
+- **Placement:** `placedProcesses()` maps each process to its representative on the current root (itself, or its outermost collapsed ancestor visible there). Processes not under the current root, such as siblings outside the drilled-in group, are left out.
+- **Lines:** `buildRelationLines` drops self-lines (source equals target), so relations inside one collapsed group vanish. Relations between two collapsed groups merge into one line per kind through the existing grouping.
+- **Count and recompute:** a line with an end at a collapsed group shows the relation count as its label; the title already lists the relations. `showRelations` also runs on `root.set`.
+- **Hiding:** "Hide relation" on an aggregated line hides all its relations, as for any multi-relation line.
+
+#### Pre-conditions (M5)
+
+- You have accepted the Milestone 4 review. Its landscape integration suite is still unrun (`m4-gate-review` in progress) and runs only after your approval.
+- Unit tests and lint are green. `studio/test/integration/plugins/plugin-host.test.ts` and `.github/workflows/studio.yml` stay untouched.
+
+#### Scope (M5)
+
+- **New:**
+  - `studio/src/modules/bpmn-landscape/modeler/LandscapeCollapse.ts` (toggle command, interceptors, connector sync);
+  - `modeler/LandscapeDrilldown.ts` (overlay, breadcrumbs, viewbox per root);
+  - integration test `test/integration/bpmn-landscape/landscape-hierarchy.test.ts` with a fixture map.
+- **Changed:**
+  - in `bpmn-landscape`:
+    - `LandscapeMapFile.ts` (`createElementId` accepts `'level'`);
+    - `modeler/LandscapeModeler.ts` (module wiring, import and export with planes, map root, root-aware placement, `exportSvg` bounds);
+    - `modeler/landscapeCanvasMapping.ts`, `LandscapeRules.ts`, `LandscapeGroupMembership.ts`, `LandscapeUpdates.ts`, `LandscapeRenderer.ts` (band look, count label), `LandscapeContextPadProvider.ts`, `LandscapePaletteProvider.ts`, `LandscapeLabelEditing.ts`;
+    - `buildRelationLines.ts`, `LandscapeMapDocumentModel.ts`, `panes/LandscapePropertiesPane.tsx`, `styles/landscape.scss`, `texts/landscapes.md`;
+  - unit tests `landscapeCanvasMapping.test.ts`, `buildRelationLines.test.ts`, `LandscapeMapFile.test.ts`;
+  - `docs/architecture/bpmn-landscape.md`; the decision table (11, 12) of this plan; `docs/process_landscape_map_3b8e61d4.plan.md` (copy).
+- **Not touched:** the `.bfwmap` schema, the scans and the Maps explorer, `bpmn-core`, the SDK, the Engine and Lite.
+
+#### Assumptions (M5)
+
+- A group inside a band has depth 0; bands are not levels.
+- The collapsed size is fixed (200×80) and not stored. A long label wraps and is cut off at the box.
+- A file with `collapsed="true"` written by hand opens collapsed. An empty collapsed group gets an empty plane.
+- Relations from inside the drilled-in plane to processes outside it are not shown there; the parent plane shows them aggregated.
+- Copying a collapsed group is refused, like copying a process. Expanding first makes it copyable.
+
+#### Risks (M5)
+
+- **Data integrity of connectors:**
+  - **Risk:** a hidden end that points at a deleted or moved element would write an invalid file.
+  - **Mitigation:** delete cascades to such connectors, the sync runs after every toggle, and export falls back to the canvas end only when no hidden id is set.
+  - **Tests:** a roundtrip unit test and an integration test (collapse, save, reopen, expand) cover this.
+- **Undo while drilled in:** reverting a collapse removes the plane on screen. The handler switches to the group's root first; covered by an integration test.
+- **`diagram.clear()` and planes:** re-import must drop all plane roots. Checked in the import code and covered by the reopen test; if `clear` leaves roots, the importer removes them explicitly.
+- **Membership on expand:** expanded bounds can cover siblings. The hint stops them from being swallowed; overlap stays visible and is the user's to fix.
+- **Global registry lookups:** every `elementRegistry.filter` that assumes one root is reviewed: containers, `isProcessOnMap`, focus and `exportSvg` bounds. `isProcessOnMap` must stay map-wide, so a process on any plane counts as on the map.
+- **Operations and topology:** none beyond the desktop app. Each open map has its own diagram, so breadcrumbs and plane state are per editor, and nothing is stored in localStorage metadata beyond the existing selection revision.
+- **Compatibility:** the format is unchanged, and maps saved by M4 open expanded as before.
+
+#### Definition of Done (M5)
+
+- **Levels:** the map pane edits levels (rename, add, remove) with undo, and the group pane shows the computed level.
+- **Bands:** bands can be drawn at top level only, look distinct and adopt enclosed shapes.
+- **Collapse and drill-down:**
+  - groups collapse and expand with undo;
+  - a collapsed group opens as its own plane by double-click, overlay button or context pad;
+  - breadcrumbs lead back;
+  - moving or deleting a collapsed group carries its contents.
+- **Connectors and relations:**
+  - crossing connectors are drawn to the collapsed group and restored on expand;
+  - the file keeps real ends and `collapsed`;
+  - relation lines aggregate onto collapsed groups with a count.
+- **Gate:** the Studio gate is green, the landscape suite has been run after your approval, `bpmn-landscape.md` and the help text are updated, and the plan copy in `docs/` is current.
+
+#### Checklist (M5)
+
+31. Levels:
+    - `levels` in `LandscapeMapProperties`, import and export;
+    - `createElementId('level', …)`;
+    - Levels section in `MapProperties` (rename, add, remove, undoable);
+    - read-only computed "Level" in the group properties (depth across planes, bands ignored).
+32. Bands:
+    - palette entry "Create band";
+    - rules refuse bands on planes;
+    - renderer look (left header strip, vertical label);
+    - membership generalised to bands.
+33. Planes (`LandscapeCollapse`):
+    - `landscape.toggleCollapse` command (collapsed size, `expandedBounds`, plane root, contents and enclosed connectors moved);
+    - interceptors for move, delete and undo-while-drilled-in;
+    - rules (no resize, auto-resize or copy for collapsed groups);
+    - membership skips collapsed groups and the expand resize;
+    - root-aware `addElementShape` and `enclosingContainerOutside`;
+    - import and export with planes from the stored map root.
+34. Crossing connectors (decision 11):
+    - representative ends on the lowest common plane;
+    - `hiddenSourceId` / `hiddenTargetId` set inside the toggle command and cleared by a user reconnect;
+    - export of the real ends;
+    - `syncConnectors` after every toggle;
+    - cascade delete when a hidden end is deleted.
+35. Drill-down UI (`LandscapeDrilldown`):
+    - drilldown overlay button;
+    - context-pad Collapse, Expand and Open;
+    - double-click drills into a collapsed group (decision 12) and label editing skips it;
+    - breadcrumbs;
+    - viewbox per root;
+    - `exportSvg` limited to the current root.
+36. Aggregated relations:
+    - representatives in `placedProcesses()`;
+    - self-line filter in `buildRelationLines`;
+    - count label on lines ending at a collapsed group;
+    - `showRelations` on `root.set`.
+37. Unit tests:
+    - `canvasToMap` / import descriptors with collapsed groups (ids, `parentId`, geometry, `collapsed`, real connector ends survive a roundtrip);
+    - the self-line filter;
+    - `createElementId('level')`.
+
+    Docs: `bpmn-landscape.md` (levels, bands, planes, crossing connectors, drill-down, aggregation), `texts/landscapes.md`, decisions 11 and 12 in this plan.
+
+    Integration tests in `landscape-hierarchy.test.ts`:
+    - collapse with a crossing connector, save, reopen, expand (positions and connector end restored);
+    - double-click drill-down and breadcrumb back;
+    - undo of a collapse while drilled in;
+    - aggregated line count;
+    - levels rename and computed level;
+    - band creation refused inside a group.
+38. Studio gate (`npm run build`, `npm run lint:fix`, `npm run format`, `npm run test:unit`). Copy this plan file to `docs/process_landscape_map_3b8e61d4.plan.md`. Ask before running `npm run test:integration:bpmn-landscape`. **Stop for review** (focus: the collapse and connector walk-through, the band look).
 
 ### Milestone 6 — Assistance
 
-36. `layoutLandscape`; tests for determinism, no overlaps, cycles and grouping.
-37. Auto-create wizard; "Create Map from Selection" in the Processes pane opens it.
-38. Scan cost (open item from the Milestone 4 review): every solution change scans all maps and the BPMN catalog once for the Maps explorer badges, once for the Processes pane and once per open map. Share one scan per solution change between these consumers (or cache map parses by text hash like the BPMN scan) and remove the `ponytail:` note in `scanSolutionLandscapeMaps.ts`.
-39. `bpmn-landscape.md` (layout), `docs/decisions.md` (own layout, elkjs in reserve), final help text, integration tests (wizard creates the expected map).
-40. Studio gate. Ask before running the full integration run (`npm run test:integration`). **Final review**; whether elkjs is needed is your decision at this point.
+39. `layoutLandscape`; tests for determinism, no overlaps, cycles and grouping.
+40. Auto-create wizard; "Create Map from Selection" in the Processes pane opens it.
+41. Scan cost (open item from the Milestone 4 review): every solution change scans all maps and the BPMN catalog once for the Maps explorer badges, once for the Processes pane and once per open map. Share one scan per solution change between these consumers (or cache map parses by text hash like the BPMN scan) and remove the `ponytail:` note in `scanSolutionLandscapeMaps.ts`.
+42. `bpmn-landscape.md` (layout), `docs/decisions.md` (own layout, elkjs in reserve), final help text, integration tests (wizard creates the expected map).
+43. Studio gate. Ask before running the full integration run (`npm run test:integration`). **Final review**; whether elkjs is needed is your decision at this point.
 
 Plan-Gate: bestanden.
 

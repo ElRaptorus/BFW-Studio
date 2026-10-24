@@ -125,7 +125,9 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
       </PaneBody>
     );
   }
-  return <ShapeProperties key={key} studio={props.studio} model={model} element={element.businessObject} />;
+  return (
+    <ShapeProperties key={key} studio={props.studio} model={model} shape={element} element={element.businessObject} />
+  );
 }
 
 function MapProperties(props: { model: LandscapeMapDocumentModel }): React.JSX.Element | null {
@@ -163,6 +165,35 @@ function MapProperties(props: { model: LandscapeMapDocumentModel }): React.JSX.E
       >
         {hiddenCount === 1 ? 'Show 1 hidden relation' : `Show ${hiddenCount} hidden relations`}
       </button>
+      <h6 className="landscape-properties__heading">Levels</h6>
+      {mapProperties.levels.map((level, index) => (
+        <div key={level.id} className="landscape-properties__level">
+          <PaneProperty
+            type="text"
+            label={`Depth ${index + 1}`}
+            value={level.name}
+            onCommit={(value: string) => model.renameLevel(level.id, value)}
+            htmlAttributes={{ 'data-test--landscape-level': index }}
+          />
+          <button
+            type="button"
+            className="btn btn-sm btn-secondary"
+            title="Remove this level"
+            onClick={() => model.removeLevel(level.id)}
+            data-test--landscape-level-remove={index}
+          >
+            <i className="ph ph-trash" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="btn btn-sm btn-secondary landscape-properties__button"
+        onClick={() => model.addLevel()}
+        data-test--landscape-level-add
+      >
+        Add level
+      </button>
     </PaneBody>
   );
 }
@@ -176,9 +207,10 @@ function colorOf(element: LandscapeElement): BpmnElementColor | null {
 function ShapeProperties(props: {
   studio: Bifrost;
   model: LandscapeMapDocumentModel;
+  shape: unknown;
   element: LandscapeElement;
 }): React.JSX.Element {
-  const { studio, model, element } = props;
+  const { studio, model, shape, element } = props;
   const style = element.style ?? { fill: null, stroke: null };
 
   const onElementColorChange = (option: SelectOption): void => {
@@ -196,6 +228,16 @@ function ShapeProperties(props: {
   return (
     <PaneBody>
       <LabelProperty model={model} element={element} />
+      {element.type === 'group' && (
+        <PaneProperty
+          type="text"
+          label="Level"
+          value={model.getGroupLevelName(shape) ?? ''}
+          placeholder="No name for this depth"
+          disabled
+          htmlAttributes={{ 'data-test--landscape-property': 'level' }}
+        />
+      )}
       {(element.type === 'process' || element.type === 'placeholder') && (
         <PaneProperty
           type="select"
@@ -441,16 +483,24 @@ function RelationLineProperties(props: { model: LandscapeMapDocumentModel; eleme
   const line: RelationLine = element.businessObject;
   const hidden = new Set(line.hiddenKeys);
   const visibleKeys = line.relations.map((relation) => relation.key).filter((key) => !hidden.has(key));
+  // A line ending at a collapsed group stands for relations of several processes; each switch names its two.
+  const isAggregated = element.source.type === 'group' || element.target.type === 'group';
+  const endLabel = (end: any): string =>
+    end.type === 'process' ? model.getProcessLabel(end.businessObject) : end.businessObject.label || 'Group';
+  const relationLabel = (relation: RelationLine['relations'][number]): string => {
+    const detail = relation.name ?? relation.sourceFlowNodeIds.join(', ');
+    return isAggregated ? `${relation.source.processId} → ${relation.target.processId}: ${detail}` : detail;
+  };
   return (
     <PaneBody>
       <PaneProperty type="text" label="Kind" value={KIND_LABELS[line.kind]} disabled />
-      <PaneProperty type="text" label="From" value={model.getProcessLabel(element.source.businessObject)} disabled />
-      <PaneProperty type="text" label="To" value={model.getProcessLabel(element.target.businessObject)} disabled />
+      <PaneProperty type="text" label="From" value={endLabel(element.source)} disabled />
+      <PaneProperty type="text" label="To" value={endLabel(element.target)} disabled />
       {line.relations.map((relation) => (
         <Switch
           key={relation.key}
           id={`landscape-relation-${relation.key}`}
-          label={relation.name ?? relation.sourceFlowNodeIds.join(', ')}
+          label={relationLabel(relation)}
           checked={!hidden.has(relation.key)}
           onChange={(checked) => model.setRelationsHidden([relation.key], !checked)}
         />

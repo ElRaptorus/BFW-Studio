@@ -8,6 +8,10 @@ export type CanvasShapeLike = {
   height: number;
   businessObject: LandscapeElement;
   children?: CanvasNodeLike[];
+  /** The plane of a collapsed group, which holds the group's contents. */
+  plane?: { children: CanvasNodeLike[] } | null;
+  /** The size of a collapsed group when expanded; this is what the file stores as its size. */
+  expandedBounds?: { width: number; height: number } | null;
 };
 
 export type CanvasConnectionLike = {
@@ -15,6 +19,7 @@ export type CanvasConnectionLike = {
   type?: string;
   waypoints: LandscapePoint[];
   businessObject: LandscapeConnector;
+  /** The shapes the line is drawn between; for a connector inside a collapsed group these are the group. */
   source: { businessObject: LandscapeElement };
   target: { businessObject: LandscapeElement };
 };
@@ -56,7 +61,10 @@ export function mapToCanvasDescriptors(map: LandscapeMap): {
 
 /**
  * Reads the canvas back into a map. Elements are written depth-first, so the file order follows the stacking
- * order; geometry and parents come from the canvas, every other field from the element the shape carries.
+ * order; geometry and parents come from the canvas, every other field from the element the shape carries. A
+ * collapsed group is written with its expanded size and followed by its plane's contents. A connector keeps the ends
+ * its file element names, which differ from the shapes it is drawn between while a group hides them; such a
+ * connector is written with the bends its file element holds, because the canvas line runs to the group.
  */
 export function canvasToMap(root: { children: CanvasNodeLike[] }, previousMap: LandscapeMap): LandscapeMap {
   const elements: LandscapeElement[] = [];
@@ -67,23 +75,27 @@ export function canvasToMap(root: { children: CanvasNodeLike[] }, previousMap: L
         if (node.type === 'relation') {
           continue;
         }
+        const isDrawnAtItsEnds =
+          node.source.businessObject.id === node.businessObject.sourceId &&
+          node.target.businessObject.id === node.businessObject.targetId;
+        const waypoints = isDrawnAtItsEnds ? node.waypoints : node.businessObject.waypoints;
         connectors.push({
           ...node.businessObject,
-          sourceId: node.source.businessObject.id,
-          targetId: node.target.businessObject.id,
-          waypoints: node.waypoints.map((point) => ({ x: Math.round(point.x), y: Math.round(point.y) })),
+          waypoints: waypoints.map((point) => ({ x: Math.round(point.x), y: Math.round(point.y) })),
         });
         continue;
       }
+      const size = node.expandedBounds ?? node;
       elements.push({
         ...node.businessObject,
         parentId,
         x: Math.round(node.x),
         y: Math.round(node.y),
-        width: Math.round(node.width),
-        height: Math.round(node.height),
+        width: Math.round(size.width),
+        height: Math.round(size.height),
       });
       visit(node.children ?? [], node.businessObject.id);
+      visit(node.plane?.children ?? [], node.businessObject.id);
     }
   };
   visit(root.children, null);
