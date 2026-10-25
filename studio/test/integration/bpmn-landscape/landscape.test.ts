@@ -297,6 +297,9 @@ describe('bpmn-landscape', () => {
           await studioAgent.getElementCount(`[data-test--context-menu-id="std/file-explorer/directory/${entry}"]`),
         ).toBe(0);
       }
+      // An open context menu would swallow the keyboard input of the next test.
+      await studioAgent.sendKeyboardInput([Key.Escape], false);
+      await studioAgent.assertContextMenuNotVisible(TIMEOUT);
     });
 
     it('"New Landscape Map..." saves into the clicked folder', async () => {
@@ -951,9 +954,15 @@ describe('bpmn-landscape', () => {
       });
 
       await studioAgent.clickOn(element('order'));
-      await studioAgent.clickOn('[data-test--landscape-decision="discount-rules"] button');
+      // The pane re-renders after the selection, which can swallow a click on the old button, so click until it opens.
       await studioAgent.waitUntil(
-        async () => (await studioAgent.getFocusedDocumentUri()).endsWith('discount-rules.dmn'),
+        async () => {
+          if ((await studioAgent.getFocusedDocumentUri()).endsWith('discount-rules.dmn')) {
+            return true;
+          }
+          await studioAgent.clickOn('[data-test--landscape-decision="discount-rules"] button');
+          return false;
+        },
         {
           timeout: TIMEOUT,
           timeoutMsg: 'The decision did not open',
@@ -1294,6 +1303,8 @@ describe('bpmn-landscape', () => {
          && near(visible.left - container.left, bounds.x) && near(visible.top - container.top, bounds.y);`,
       );
       expect(isOverStrip).toBe(true);
+      // An open edit box keeps the keyboard focus, so the reset could not reach the command search.
+      await onCanvas('Test.bfwmap', `modeler.get('directEditing').cancel();`);
     });
 
     it('saving writes the process and the group, and a reopened map shows both', async () => {
