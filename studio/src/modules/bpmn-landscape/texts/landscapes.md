@@ -32,6 +32,21 @@ Maps outside the landscape folder do not open.
 
 &nbsp;
 
+## Creating a map automatically
+
+Let the Studio place the processes for you. Right-click one or more processes or BPMN files in the Processes pane and choose _Create Map from Process…_ (or _…from File…_, _…from Selection…_). For a map of the whole solution use _Landscapes: Create Map from Processes…_ in the command search.
+
+A dialog asks for:
+
+- **Name** of the map.
+- **Add related processes:** none, or the processes that call or message the selection, up to three steps away.
+- **Group processes:** none, by folder or by file of the BPMN file.
+- **Arrange by call hierarchy:** on, a process sits above the processes it calls; off, all relations (messages and signals too) count.
+
+Then you choose where to save the map. The result is an ordinary map: move, regroup or delete anything. Relation lines are drawn from the BPMN files as usual.
+
+&nbsp;
+
 ## Groups, levels and planes
 
 - **Bands** are wide strips at the top level of a map, for example one per business area. A band holds groups and elements, but a band can be created only on the map itself, not inside a group; the palette shows the band only while the map itself is open.

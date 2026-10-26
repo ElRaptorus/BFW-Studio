@@ -4,6 +4,7 @@ import type { Menu } from '@elraptorus/bfw_studio_sdk';
 
 import LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
 import LandscapeMapRenderer from './LandscapeMapRenderer';
+import { LANDSCAPE_SOLUTION_SCAN_KEY, LandscapeSolutionScan } from './LandscapeSolutionScan';
 import { registerLandscapeCommands } from './commands';
 import { getMapOpenRefusal, LANDSCAPES_PAGE_ID, LANDSCAPES_VIEW_ID } from './landscapeFolder';
 import { MapsDecorationProvider } from './mapsExplorerDecorations';
@@ -15,6 +16,7 @@ const MAPS_EXPLORER_ID = 'landscapes';
 const MAP_URI_PATTERN = /\.bfwmap$/;
 const EDITOR_SELECTOR = '.kbm-editor[data-editor-document-type=bpmn-landscape-map]';
 const FOCUS_MODE_KEY = 'f';
+const CREATE_MAP_COMMAND = 'bpmn.landscape.createMapFromProcesses';
 
 const SELECTION_KEYS = {
   left: 'bpmn.landscape.moveSelectionLeft',
@@ -60,17 +62,18 @@ export function onLoad(bifrost: Bifrost): void {
   });
 
   bifrost.solution.registerDefaultIncludedFiles(['**/*.bfwmap']);
+  const solutionScan = new LandscapeSolutionScan(bifrost);
+  bifrost.registerSharedRessource(LANDSCAPE_SOLUTION_SCAN_KEY, solutionScan);
   const mapsDecorationProvider = new MapsDecorationProvider();
   bifrost.explorers.registerDecorationProvider(mapsDecorationProvider, [MAPS_EXPLORER_ID]);
-  bifrost.events.on('solutionChanged', () => void mapsDecorationProvider.refresh(bifrost));
-  void mapsDecorationProvider.refresh(bifrost);
-  bifrost.events.on('solutionChanged', () => void closeMapsOutsideLandscapeFolder(bifrost));
-  // Restoring the last session bypasses `canOpen`; without a stored solution no `solutionChanged` follows.
-  bifrost.events.on('ready', () => {
-    if (bifrost.solution.getSolution() == null) {
-      void closeMapsOutsideLandscapeFolder(bifrost);
+  solutionScan.onDidChange(() => {
+    const snapshot = solutionScan.getSnapshot();
+    if (snapshot != null) {
+      mapsDecorationProvider.apply(snapshot);
     }
   });
+  solutionScan.start();
+  bifrost.events.on('solutionChanged', () => void closeMapsOutsideLandscapeFolder(bifrost));
   // Restored documents skip `canOpen`. With a stored solution, opening it fires `solutionChanged`; without one nothing
   // else would close a restored map.
   bifrost.events.on('ready', () => {
@@ -137,6 +140,26 @@ export function onLoad(bifrost: Bifrost): void {
   }
 
   registerLandscapeCommands(bifrost);
+
+  const PROCESSES_MENU_ID = ProcessesPane.PROCESSES_MENU_ID;
+  const createMapItem = (label: string, id: string, rows: { fileUri: string; processId?: string }[]): Menu => [
+    { type: 'command', label, id, icon: 'ph ph-map-trifold', command: CREATE_MAP_COMMAND, commandArgs: [rows] },
+  ];
+  bifrost.menus.registerMenu(`${PROCESSES_MENU_ID}/process`, (metadata: any) =>
+    createMapItem('Create Map from Process...', `${PROCESSES_MENU_ID}/process/create-map`, [
+      { fileUri: metadata.fileUri, processId: metadata.processId },
+    ]),
+  );
+  bifrost.menus.registerMenu(`${PROCESSES_MENU_ID}/file`, (metadata: any) =>
+    createMapItem('Create Map from File...', `${PROCESSES_MENU_ID}/file/create-map`, [{ fileUri: metadata.fileUri }]),
+  );
+  bifrost.menus.registerMenu(`${PROCESSES_MENU_ID}/multi-selection`, (selectedMetadata: any[]) =>
+    createMapItem(
+      'Create Map from Selection...',
+      `${PROCESSES_MENU_ID}/multi-selection/create-map`,
+      selectedMetadata.map((metadata) => ({ fileUri: metadata.fileUri, processId: metadata.processId })),
+    ),
+  );
 
   bifrost.keybindings.registerKeyBindings({
     client: '*',

@@ -6,18 +6,21 @@ import { Tree } from '#components/Tree/Tree';
 import { Pane } from '#components/panes/Pane';
 import { PaneHeader } from '#components/panes/PaneHeader';
 import type { SolutionBpmnModelEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
-import { scanSolutionBpmnModels } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 
 import LandscapeMapDocumentModel from '../LandscapeMapDocumentModel';
+import type { LandscapeSolutionScan } from '../LandscapeSolutionScan';
+import { LANDSCAPE_SOLUTION_SCAN_KEY } from '../LandscapeSolutionScan';
 import { getLandscapeGate } from '../landscapeFolder';
 import { resolveProcessReference } from '../resolveProcessReference';
 import type { LandscapeMapEntry } from '../scanSolutionLandscapeMaps';
-import { scanSolutionLandscapeMaps } from '../scanSolutionLandscapeMaps';
 
 const BPMN_ICON = 'bpmn/editor-tab/bpmn';
 const PROCESS_ICON = 'ph ph-flow-arrow';
+const NO_ENTRIES: SolutionBpmnModelEntry[] = [];
+/** Menus of the rows: `/process`, `/file` and `/multi-selection`, registered by the module. */
+export const PROCESSES_MENU_ID = 'bpmn-landscape/processes';
 
 export const paneProvider: PaneProvider = {
   getPaneTitle: () => 'Processes',
@@ -86,6 +89,7 @@ function buildProcessTree(
           labelIcon: BPMN_ICON,
           labelTooltip: entry.uri.replace(/^file:\/\//, ''),
           metadata: { fileUri: entry.uri },
+          menuId: `${PROCESSES_MENU_ID}/file`,
           expanded: filter !== '',
           entries: processes.map(({ process, label }): TreeItem => {
             const mapCount = mapCountByProcessKey.get(`${entry.uri}#${process.id}`) ?? 0;
@@ -97,6 +101,7 @@ function buildProcessTree(
               labelIcon: PROCESS_ICON,
               labelTooltip: `${process.id}${onMaps} — drag onto the map`,
               metadata: { processId: process.id, fileUri: entry.uri },
+              menuId: `${PROCESSES_MENU_ID}/process`,
               badges: processBadges(mapCount, processIdsOnMap.has(process.id)),
             };
           }),
@@ -135,35 +140,21 @@ function countMapsPerProcess(catalog: SolutionBpmnModelEntry[], maps: LandscapeM
 
 function PaneContent(props: PaneComponentProps): React.JSX.Element {
   const bifrost: Bifrost = props.studio;
-  const solution = bifrost.solution.getSolution();
-  const [entries, setEntries] = useState<SolutionBpmnModelEntry[]>([]);
-  const [mapCountByProcessKey, setMapCountByProcessKey] = useState<Map<string, number>>(new Map());
+  const solutionScan = bifrost.getSharedRessource<LandscapeSolutionScan>(LANDSCAPE_SOLUTION_SCAN_KEY);
+  const subscribeToScan = useCallback(
+    (listener: () => void) => {
+      const subscription = solutionScan.onDidChange(listener);
+      return () => subscription.dispose();
+    },
+    [solutionScan],
+  );
+  const snapshot = useSyncExternalStore(subscribeToScan, () => solutionScan.getSnapshot());
   const [filterText, setFilterText] = useState('');
   const model = props.editorDocumentModel instanceof LandscapeMapDocumentModel ? props.editorDocumentModel : null;
   const processIdsOnMap = model?.getProcessIdsOnMap().join('\n') ?? '';
 
-  // The solution object stays the same when its files change, so the scan follows `solutionChanged`.
-  useEffect(() => {
-    let latestScan = 0;
-    const scan = (): void => {
-      const scanNumber = ++latestScan;
-      void Promise.all([scanSolutionBpmnModels(bifrost), scanSolutionLandscapeMaps(bifrost)]).then(
-        ([scanned, maps]) => {
-          if (scanNumber !== latestScan) {
-            return;
-          }
-          setEntries(scanned);
-          setMapCountByProcessKey(countMapsPerProcess(scanned, maps));
-        },
-      );
-    };
-    scan();
-    const subscription = bifrost.events.on('solutionChanged', scan);
-    return () => {
-      latestScan = -1;
-      subscription.dispose();
-    };
-  }, [bifrost, solution]);
+  const entries = snapshot?.catalog ?? NO_ENTRIES;
+  const mapCountByProcessKey = useMemo(() => countMapsPerProcess(entries, snapshot?.maps ?? []), [entries, snapshot]);
 
   const treeEntries = useMemo(
     () => buildProcessTree(entries, filterText, new Set(processIdsOnMap.split('\n')), mapCountByProcessKey),
@@ -194,6 +185,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
           iconComponent={Icon}
           onClick={onClick}
           draggable
+          multiSelectionMenuId={`${PROCESSES_MENU_ID}/multi-selection`}
         />
       </div>
     </>

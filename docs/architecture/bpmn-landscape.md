@@ -116,6 +116,8 @@ Validation also rejects: a missing or empty required attribute; a band inside a 
 | Included files | `**/*.bfwmap` |
 | Left pane group | `landscapes`: the Maps explorer (`discover/landscapes/maps`) above the Processes pane (`discover/landscapes/landscapes`) |
 | Menu modifiers | `std/file-explorer/directory` and `std/file-explorer/project`: "New Landscape Map..." (`bpmn.landscape.newMap` with the row's URI), only on rows of the Maps explorer |
+| Menus | `bpmn-landscape/processes/process` ("Create Map from Process..."), `…/file` ("Create Map from File..."), `…/multi-selection` ("Create Map from Selection..."), the context menus of the Processes pane rows; each runs `bpmn.landscape.createMapFromProcesses` |
+| Shared resource | `bpmn-landscape/solution-scan`: the `LandscapeSolutionScan` instance, created in `onLoad` |
 | Right pane | `discover/landscapes/properties` (Properties), prepended to the `property` group |
 | Icons | `bpmn-landscape/page/landscapes`, `bpmn-landscape/document-type/map` |
 | Help text | `discover/landscapes` (`texts/landscapes.md`) |
@@ -146,7 +148,7 @@ Registered with `bifrost.explorers.register` ([workspace.md](workspace.md) §Exp
 
 Map rows can be dragged (`draggable` on `Tree`, see [tree.md](tree.md)) but not dropped on: the explorer is not structural, so dropping a row on another row does nothing, and the Designer's `std.fileExplorer.dropItems` refuses sources inside a view folder. The canvas of an open map accepts a row as a map link.
 
-`mapsExplorerDecorations.ts` registers a `TreeDecorationProvider` scoped to the `landscapes` explorer (`registerDecorationProvider(provider, ['landscapes'])`). `refresh` runs on load and on every `solutionChanged`: it scans the maps and, when there are any, the BPMN catalog, and puts a yellow `number` badge on a map for each process it shows that is missing or ambiguous, or a red `!` badge on a map that cannot be read. The badge's `tooltip` names the count or the parse error. Only the newest of overlapping scans applies and `onDidChange` fires for the changed URIs only. Broken map links are not counted.
+`mapsExplorerDecorations.ts` registers a `TreeDecorationProvider` scoped to the `landscapes` explorer (`registerDecorationProvider(provider, ['landscapes'])`). `apply(snapshot)` runs whenever the shared scan publishes ([§Shared Solution Scan](#shared-solution-scan)): it puts a yellow `number` badge on a map for each process it shows that is missing or ambiguous, or a red `!` badge on a map that cannot be read. The badge's `tooltip` names the count or the parse error. `onDidChange` fires for the changed URIs only. Broken map links are not counted.
 
 ### Reference Resolution and Map Scan
 
@@ -163,7 +165,20 @@ Map rows can be dragged (`draggable` on `Tree`, see [tree.md](tree.md)) but not 
 
 `replaceCandidates(catalog, processIdsOnMap)` lists every catalog process whose id is not on the map, which is what Replace offers for a missing process. `resolveRelativeUri(mapUri, relativePath)` in `LandscapeMapFile.ts` is the inverse of `relativeFileHint` and names the target of a map link.
 
-`scanSolutionLandscapeMaps(bifrost)` returns `LandscapeMapEntry { uri, name, error, processReferences }`, sorted by URI. It returns `[]` unless the gate is `ready` or when the folder does not exist yet. It lists the landscape folder with `files.traverseProject` on a project for that folder, with the Maps explorer's patterns (`**/*.bfwmap` included; `std.fileExplorer.exclude` and the solution's default excludes excluded), rather than `solution.listIncludedFileUris`, because the folder may lie outside every project. A map the explorer hides counts nowhere, even while the explorer shows hidden files greyed. An empty file reads as an empty map; a read or parse failure keeps the map in the list with `error` set and the file name as `name`. There is no cache (`ponytail:` note in the file).
+`scanSolutionLandscapeMaps(bifrost)` returns `LandscapeMapEntry { uri, name, error, processReferences }`, sorted by URI. It returns `[]` unless the gate is `ready` or when the folder does not exist yet. It lists the landscape folder with `files.traverseProject` on a project for that folder, with the Maps explorer's patterns (`**/*.bfwmap` included; `std.fileExplorer.exclude` and the solution's default excludes excluded), rather than `solution.listIncludedFileUris`, because the folder may lie outside every project. A map the explorer hides counts nowhere, even while the explorer shows hidden files greyed. An empty file reads as an empty map; a read or parse failure keeps the map in the list with `error` set and the file name as `name`. There is no cache; consumers read the result through `LandscapeSolutionScan` instead of calling the function.
+
+### Shared Solution Scan
+
+**Path:** `studio/src/modules/bpmn-landscape/LandscapeSolutionScan.ts`
+
+One instance per window (`new LandscapeSolutionScan(bifrost)`, registered as the shared resource `bpmn-landscape/solution-scan` in `onLoad`) scans the BPMN catalog (`scanSolutionBpmnModels`) and the landscape maps (`scanSolutionLandscapeMaps`) in parallel, once at `start()` and once per `solutionChanged`. It publishes a `LandscapeSolutionSnapshot { catalog, maps, relations }` with `relations = buildProcessRelations(catalog)` computed once. `getSnapshot()` is `null` until the first scan finished; `onDidChange(listener)` returns a `{ dispose }`; `refresh()` scans on demand. Only the newest of overlapping scans publishes, and a failed scan keeps the previous snapshot (`console.warn`). A `ponytail:` note in the file names the ceiling: every change parses all maps on the main thread.
+
+| Consumer | Reads the snapshot |
+|---|---|
+| `MapsDecorationProvider` | `apply(snapshot)` from the listener registered in `index.tsx` |
+| Processes pane | `useSyncExternalStore` over `onDidChange` / `getSnapshot` |
+| `LandscapeMapDocumentModel` | `applySnapshot` on creation and on every change; it keeps its own `catalog`, `maps` and `relations` copies. Focus does not rescan; `onEditorDocumentDidFocus` only runs `notifyBrokenProcesses`, so the Review warning appears when the map becomes the focused document. |
+| `bpmn.landscape.createMapFromProcesses` | `getSnapshot()`, after `refresh()` when there is none yet |
 
 ### LandscapeMapDocumentModel
 
@@ -178,7 +193,7 @@ Map rows can be dragged (`draggable` on `Tree`, see [tree.md](tree.md)) but not 
 | Undo / redo | `commandStack.undo()` / `redo()` |
 | Watcher | DMN pattern. A readable external change reloads; text equal to the current data only clears the flags and keeps undo history and selection; an unreadable change while a modeler exists keeps the last good map and sets `errorOnReloadingFile`; `unlink` / `add` set `removedFromFileSystem`. |
 | Metadata | `readable`, `viewbox`, `hasSelection`, `selectionRevision`, `focusMode`, the watcher flags. Nothing else is persisted. |
-| Catalog | `scanSolutionBpmnModels` and `scanSolutionLandscapeMaps` together on create, focus and `solutionChanged`; only the newest of overlapping scans is applied (`latestCatalogScan`); afterwards `relations = buildProcessRelations(catalog)`, `elements.changed` redraws the process and map link shapes, the relation lines are redrawn and `notifyBrokenProcesses` runs. Until the first scan finished (`maps === null`) no reference counts as broken. |
+| Catalog | `applySnapshot(snapshot)` takes `catalog`, `maps` and `relations` from the shared scan on create and on every change (not without a solution); `elements.changed` redraws the process and map link shapes, the relation lines are redrawn and `notifyBrokenProcesses` runs. Until the first snapshot arrived (`maps === null`) no reference counts as broken. |
 | Process resolution | `resolveProcess(element)` delegates to `resolveProcessReference` and returns the process only for `resolved`; a missing or ambiguous reference gives no label, decision badge, relation line or details. `getProcessStatus(element)` returns the status for the renderer and the pane. |
 | Process label | `getProcessLabel(element)`: the element label, else the resolved process name, else `processId`. |
 | Relation lines | `showRelations()` after every import, command (including undo and redo) and catalog refresh: `buildRelationLines({ relations, placedProcesses, relationLayers, hiddenRelations })`, then `modeler.showRelationLines(lines)` and `updateFocus`. |
@@ -273,11 +288,12 @@ Commands may still hold a relation connection (deleting a process takes its line
   | Connector | Label |
   | Several | "N elements selected" |
 
-- **Processes pane (`panes/ProcessesPane.tsx`):** one collapsed row per BPMN file (sorted by name, `!` badge for an invalid file), process rows with `metadata.processId` and `fileUri`, a map-pin badge when the process is on the focused map, and a number badge and an "on N maps" tooltip with the count of saved maps whose reference resolves to that file and process (`scanSolutionLandscapeMaps` plus `resolveProcessReference`). The rows are `draggable` (source only). The filter matches file name, process name and id and expands matching files. The pane is shown only while the landscape gate is `ready`; it carries `app-layout__solution-pane`, so it takes the remaining height and scrolls itself, while `landscape.scss` keeps the Maps pane above it from shrinking (at most 40% of the column). The pane scans on mount and on every `solutionChanged` (the solution object stays the same when files change); only the newest scan is shown. Rows carry no `uri`, so nothing can be dropped inside the tree.
+- **Processes pane (`panes/ProcessesPane.tsx`):** one collapsed row per BPMN file (sorted by name, `!` badge for an invalid file), process rows with `metadata.processId` and `fileUri`, a map-pin badge when the process is on the focused map, and a number badge and an "on N maps" tooltip with the count of saved maps whose reference resolves to that file and process (the snapshot's maps plus `resolveProcessReference`). The rows are `draggable` (source only). Process rows have `menuId` `bpmn-landscape/processes/process`, valid file rows `…/file` (an invalid file has no menu), and the `Tree` has `multiSelectionMenuId` `…/multi-selection`, which also makes the tree multi-selectable. The filter matches file name, process name and id and expands matching files. The pane is shown only while the landscape gate is `ready`; it carries `app-layout__solution-pane`, so it takes the remaining height and scrolls itself, while `landscape.scss` keeps the Maps pane above it from shrinking (at most 40% of the column). Rows carry no `uri`, so nothing can be dropped inside the tree.
 
 | Command | Behaviour |
 |---|---|
-| `bpmn.landscape.newMap(directoryUri?)` | With the gate closed, activates the Landscapes page and shows an info notice instead. Otherwise creates the landscape folder if missing, asks for a path with the native save dialog (starting in `directoryUri` when it lies in the landscape folder, else in the folder itself; the dialog can create subfolders), appends `.bfwmap` when missing (and stops with a warning when that file exists, because the dialog only checked the name without the extension), writes an empty map via `editors.createNewEditorDocument` and calls `solution.onElementAdded`. A path outside the landscape folder is refused with a warning. |
+| `bpmn.landscape.newMap(directoryUri?)` | Asks for a path with `askForNewMapUri` (below), writes an empty map via `editors.createNewEditorDocument` and calls `solution.onElementAdded`. |
+| `bpmn.landscape.createMapFromProcesses(rows?)` | In the command search ("Landscapes: Create Map from Processes..."). See [§Automatic Map Creation](#automatic-map-creation). |
 | `bpmn.landscape.setUpLandscapeFolder` | In the command search. Creates the declared landscape folder, or `landscapes/` next to the `.bfwsln` when none is declared, and writes it with `solution.setViewFolder('landscapes', …)`. Also the "Create Folder" action for a missing folder. Enabled with a saved solution |
 | `bpmn.landscape.chooseLandscapeFolder` | In the command search. Native directory dialog, then `setViewFolder`. A folder at or above a root folder of the solution is refused with a warning, since it would turn that root read-only in the Designer. Maps in the previous folder stay where they are. Enabled with a saved solution |
 | `bpmn.landscape.addMapLinkToMap` | `{ mapUri, x, y }` in canvas coordinates, on the focused map |
@@ -287,7 +303,51 @@ Commands may still hold a relation connection (deleting a process takes its line
 | `bpmn.landscape.moveSelection{Left,Right,Up,Down}[Accelerated]` | `keyboardMoveSelection.moveSelection` |
 | `bpmn.landscape.toggleFocusMode` | In the command search ("Landscapes: Toggle Focus Mode"); enabled for a focused readable map |
 
+`askForNewMapUri(bifrost, defaultName, directoryUri?)` in `commands.ts` serves `newMap` and the wizard. With the gate closed (`getReadyGateOrExplain`) it activates the Landscapes page, shows an info notice and returns `null`. Otherwise it creates the landscape folder if missing, asks for a path with the native save dialog (starting in `directoryUri` when it lies in the landscape folder, else in the folder itself; the dialog can create subfolders; default file name `<defaultName>.bfwmap`), appends `.bfwmap` when missing (and stops with a warning when that file exists, because the dialog only checked the name without the extension) and refuses a path outside the landscape folder with a warning. It returns the chosen URI.
+
 The selection commands do nothing while direct editing is active, so the keys reach the text box. Keybindings are scoped to `.kbm-editor[data-editor-document-type=bpmn-landscape-map]`: Backspace (macOS) / Delete, Cmd/Ctrl+C, Cmd/Ctrl+V, F (focus mode), the arrow keys and Shift+arrow keys. `KeybindingsManager` ignores single-character keys in inputs, so F still types in the properties pane. Undo, redo and save use the global `std.editor.*` bindings.
+
+---
+
+## Automatic Map Creation
+
+### layoutLandscape
+
+**Path:** `studio/src/modules/bpmn-landscape/layoutLandscape.ts`
+
+An adapter from processes and relations to the layered algorithm of the Eclipse Layout Kernel (`elkjs`, EPL-2.0; [decisions.md](../decisions.md) §elkjs for the landscape layout) and back. `layoutLandscape({ nodes, edges, options })` resolves to `{ nodes: Map<key, { x, y }>, groups: { key, label, x, y, width, height }[] }` in map coordinates.
+
+| Part | Behaviour |
+|---|---|
+| Nodes | `{ key, groupKey, groupLabel }`, 140×60 (`PROCESS_SHAPE_WIDTH` / `HEIGHT`) |
+| Edges | `{ sourceKey, targetKey, kind }`. With `options.callHierarchy` only `callActivity` edges count, so rows are the call depth; otherwise every kind counts, so processes that talk to each other sit near each other and a receiver sits below its sender. Several edges between two processes become one; self-edges and edges to unknown keys are dropped. |
+| Graph | A root with `elk.algorithm: layered`, `elk.direction: DOWN`, `elk.hierarchyHandling: INCLUDE_CHILDREN`, `elk.layered.cycleBreaking.strategy: DEPTH_FIRST`, node spacing 40, layer spacing 60 and component spacing 60. A group is a compound child with `elk.padding` top 60 (a 40 px header plus the 20 px inset), left, bottom and right 20, holding its processes. Edges sit on the root. |
+| Result | Positions of grouped processes are relative to their group in ELK; the adapter adds the group's position. |
+| Determinism | Nodes, edges and groups are sorted by key before the graph is built, and ELK uses a fixed random seed: the same sets give the same layout in any input order. |
+| Failure | A rejected layout throws "The layout of N processes failed: <reason>". After 30 seconds the worker is terminated (`terminateWorker`, the next layout starts a fresh one) and the layout fails the same way. |
+
+The engine is `new ELK({ workerUrl: new URL('out/elk-worker.min.js', document.baseURI).href })` from `elkjs/lib/elk-api`, created on first use. The 1.6 MB worker script is copied from the package to `out/` unchanged ([build.md](build.md) §Third-party Worker Script) and loaded only when a layout starts; the renderer bundle gains the 10 KB `elk-api`. Unit tests mock `elkjs/lib/elk-api` with the class from `elkjs/lib/elk.bundled.js` and stub `document.baseURI`; the real worker runs in the integration block `assistance`. A `ponytail:` note in the file: one group level only.
+
+### createLandscapeMap
+
+**Path:** `studio/src/modules/bpmn-landscape/createLandscapeMap.ts`
+
+`createLandscapeMap({ catalog, relations, seeds, neighbourSteps, grouping, callHierarchy, name, mapUri })` returns a `LandscapeMap`:
+
+- **Selection:** the seeds that exist in the catalog, plus everything within `neighbourSteps` (0–3) relations of them, breadth-first over every relation kind in both directions and independent of a map's relation toggles.
+- **One shape per process id:** the seed's file wins, else the file the first relation names. `fileHint = relativeFileHint(mapUri, uri)`, so the shape resolves.
+- **Grouping:** `none`, `folder` (group per BPMN file folder, label = the folder name) or `file` (group per file, label = the file name). With grouping, `levels[0]` is named "Folder" or "File".
+- **Elements:** groups first, then processes (`shape: 'box'`, label `null`) with `parentId` the group; ids from `createElementId` with a local taken set; no connectors, because relations are derived; all relation layers on. Positions come from `layoutLandscape`, so the editor zooms to fit on the first open.
+
+### Wizard
+
+`bpmn.landscape.createMapFromProcesses(rows?)` in `commands.ts`. `rows` are `{ fileUri, processId? }` from the Processes pane (a file row without `processId` means all its processes); without rows, every process of the solution is selected.
+
+1. **Gate:** the same refusal as `newMap`.
+2. **Seeds:** `collectSeeds(catalog, rows)`; with none, an info notice ("There are no processes to put on a map.").
+3. **Dialog** (`bifrost.dialog.open`): "N processes selected", Name (the single process's name, else "New Landscape"; a blank name is refused), Add related processes (None, 1–3 steps; default None for the whole solution, 1 for a selection), Group processes (None, By folder, By file; default By file) and the checkbox "Arrange by call hierarchy" (default on).
+4. **File:** `askForNewMapUri(bifrost, name)`. The save dialog comes before the layout because every `fileHint` is relative to the chosen file.
+5. **Layout and write:** `createLandscapeMap`, then `editors.createNewEditorDocument` and `solution.onElementAdded`. A failing layout shows an error notification (source "Landscapes") and writes no file.
 
 ---
 
@@ -302,6 +362,8 @@ The selection commands do nothing while direct editing is active, so the keys re
 | Processes pane, properties pane | `studio/src/modules/bpmn-landscape/panes/ProcessesPane.tsx`, `LandscapePropertiesPane.tsx` |
 | Relation lines | `studio/src/modules/bpmn-landscape/buildRelationLines.ts`, `modeler/LandscapeRelationLayer.ts` |
 | Reference resolution, map scan | `studio/src/modules/bpmn-landscape/resolveProcessReference.ts`, `scanSolutionLandscapeMaps.ts` |
+| Shared scan | `studio/src/modules/bpmn-landscape/LandscapeSolutionScan.ts` |
+| Auto-layout, map creation | `studio/src/modules/bpmn-landscape/layoutLandscape.ts`, `createLandscapeMap.ts` |
 | Maps explorer badges, export | `studio/src/modules/bpmn-landscape/mapsExplorerDecorations.ts`, `exportCommands.ts` |
 | Styles, help text | `studio/src/modules/bpmn-landscape/styles/landscape.scss`, `texts/landscapes.md` |
 | Relation derivation | `studio/src/modules/bpmn-landscape/buildProcessRelations.ts` |

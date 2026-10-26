@@ -1,9 +1,7 @@
-import type { Bifrost } from '#bifrost/Bifrost';
 import type { TreeDecorationProvider, TreeItemDecoration } from '#bifrost/contracts/TreeTypes';
-import { scanSolutionBpmnModels } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
+import type { LandscapeSolutionSnapshot } from './LandscapeSolutionScan';
 import { resolveProcessReference } from './resolveProcessReference';
-import { scanSolutionLandscapeMaps } from './scanSolutionLandscapeMaps';
 
 /**
  * Marks the maps of the Maps explorer that need attention: a number counts the processes a map shows that are
@@ -12,7 +10,6 @@ import { scanSolutionLandscapeMaps } from './scanSolutionLandscapeMaps';
 export class MapsDecorationProvider implements TreeDecorationProvider {
   private decorations = new Map<string, TreeItemDecoration>();
   private listeners: ((uris: string[]) => void)[] = [];
-  private latestScan = 0;
 
   provideDecoration(uri: string): TreeItemDecoration | null {
     return this.decorations.get(uri) ?? null;
@@ -23,38 +20,26 @@ export class MapsDecorationProvider implements TreeDecorationProvider {
     return { dispose: () => void (this.listeners = this.listeners.filter((candidate) => candidate !== listener)) };
   }
 
-  async refresh(bifrost: Bifrost): Promise<void> {
-    const scanNumber = ++this.latestScan;
+  apply(snapshot: LandscapeSolutionSnapshot): void {
     const next = new Map<string, TreeItemDecoration>();
-    try {
-      const maps = await scanSolutionLandscapeMaps(bifrost);
-      const catalog = maps.length === 0 ? [] : await scanSolutionBpmnModels(bifrost);
-      for (const map of maps) {
-        if (map.error != null) {
-          next.set(map.uri, {
-            styles: { badgeColor: 'red' },
-            badges: [{ type: 'character', character: '!', tooltip: `This map cannot be read: ${map.error}` }],
-          });
-          continue;
-        }
-        const brokenCount = map.processReferences.filter(
-          (reference) => resolveProcessReference(catalog, map.uri, reference).status !== 'resolved',
-        ).length;
-        if (brokenCount > 0) {
-          const tooltip = `${brokenCount} ${brokenCount === 1 ? 'process on this map is' : 'processes on this map are'} not found in the solution or defined in several files.`;
-          next.set(map.uri, {
-            styles: { badgeColor: 'yellow' },
-            badges: [{ type: 'number', number: brokenCount, tooltip }],
-          });
-        }
+    for (const map of snapshot.maps) {
+      if (map.error != null) {
+        next.set(map.uri, {
+          styles: { badgeColor: 'red' },
+          badges: [{ type: 'character', character: '!', tooltip: `This map cannot be read: ${map.error}` }],
+        });
+        continue;
       }
-    } catch (error) {
-      console.warn('[MapsDecorationProvider] The scan failed; the badges stay as they are:', error);
-      return;
-    }
-    // Scans overlap (every solution change); only the newest one counts.
-    if (scanNumber !== this.latestScan) {
-      return;
+      const brokenCount = map.processReferences.filter(
+        (reference) => resolveProcessReference(snapshot.catalog, map.uri, reference).status !== 'resolved',
+      ).length;
+      if (brokenCount > 0) {
+        const tooltip = `${brokenCount} ${brokenCount === 1 ? 'process on this map is' : 'processes on this map are'} not found in the solution or defined in several files.`;
+        next.set(map.uri, {
+          styles: { badgeColor: 'yellow' },
+          badges: [{ type: 'number', number: brokenCount, tooltip }],
+        });
+      }
     }
     const changedUris = [...new Set([...this.decorations.keys(), ...next.keys()])].filter(
       (uri) => JSON.stringify(this.decorations.get(uri)) !== JSON.stringify(next.get(uri)),

@@ -97,7 +97,10 @@ const configElectronRenderer = {
   },
   plugins: [
     new rspack.CopyRspackPlugin({
-      patterns: [{ from: 'assets/icons', to: '.' }],
+      patterns: [
+        { from: 'assets/icons', to: '.' },
+        { from: 'node_modules/elkjs/lib/elk-worker.min.js', to: '.', info: { minimized: true } },
+      ],
     }),
     new rspack.CssExtractRspackPlugin({ filename: 'imported-styles.css' }),
     new rspack.DefinePlugin({

@@ -146,6 +146,18 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md) §Hierarchy.
 
 See [workspace.md](architecture/workspace.md) §Explorers.
 
+## elkjs for the landscape layout
+
+**Context:** Creating a landscape map from processes needs positions for dozens of processes, in groups, ordered by who calls whom. bpmn-js and dmn-js ship no general layouter (bpmn-js only lays out single connections and `auto-place`).
+
+**Options:** Own layered layout; `dagre` (small, but no compound nodes and unmaintained); `graphlib` (data structure only); `cytoscape` and `d3-force` (force-directed, so no rows by call depth and unstable results); React Flow (a renderer that delegates layout to elk or dagre); `elkjs` (the Eclipse Layout Kernel compiled to JavaScript: layered, compound nodes, deterministic).
+
+**Decision:** `elkjs`, as a devDependency. Only `elk-api` is bundled; the worker script is copied unchanged to `out/` and runs off the UI thread. The package is EPL-2.0 OR GPL-3.0-or-later and ships unmodified, so the EPL conditions apply to it only and the Studio stays MIT. `studio/THIRD-PARTY-NOTICES.md` holds the notice and license text and goes into every installer.
+
+**Rationale:** Own code would be days of work for a worse result; dagre cannot lay out groups as compound nodes, which is the core of the feature; force layouts cannot express call depth. The notices file is the smallest compliant disclosure for an unmodified binary dependency.
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md) §Automatic Map Creation and [build.md](architecture/build.md) §Third-party Worker Script.
+
 ## Analysis views require a saved solution and a declared view folder
 
 **Context:** Landscape maps resolve processes against the whole solution. A map opened from a folder solution, or from a folder outside its solution, would show missing processes that exist elsewhere.

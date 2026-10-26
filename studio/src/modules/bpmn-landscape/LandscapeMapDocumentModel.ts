@@ -5,7 +5,6 @@ import type { FileEventType, WatcherDisposable } from '#bifrost/common/FileHandl
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import { replaceThemeColorsInSvg } from '#modules/bpmn-core/ImageExportFunctions';
 import type { SolutionBpmnModelEntry, SolutionProcessEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
-import { scanSolutionBpmnModels } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 import type {
   LandscapeElement,
@@ -23,8 +22,9 @@ import {
   resolveRelativeUri,
   serializeLandscapeMap,
 } from './LandscapeMapFile';
+import type { LandscapeSolutionScan, LandscapeSolutionSnapshot } from './LandscapeSolutionScan';
+import { LANDSCAPE_SOLUTION_SCAN_KEY } from './LandscapeSolutionScan';
 import type { LandscapeProcessReference, ProcessRelation, ProcessRelationKind } from './buildProcessRelations';
-import { buildProcessRelations } from './buildProcessRelations';
 import type { PlacedProcess } from './buildRelationLines';
 import { buildRelationLines } from './buildRelationLines';
 import LandscapeModeler from './modeler/LandscapeModeler';
@@ -35,7 +35,6 @@ import { levelDepthOf } from './modeler/landscapeHierarchy';
 import type { ProcessCandidate, ReferenceStatus } from './resolveProcessReference';
 import { replaceCandidates, resolveProcessReference } from './resolveProcessReference';
 import type { LandscapeMapEntry } from './scanSolutionLandscapeMaps';
-import { scanSolutionLandscapeMaps } from './scanSolutionLandscapeMaps';
 
 export type AddProcessRequest = { processId: string; fileUri: string; x: number; y: number };
 
@@ -92,7 +91,6 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   private catalog: SolutionBpmnModelEntry[] = [];
   /** `null` until the first scan finished; until then no reference counts as broken. */
   private maps: LandscapeMapEntry[] | null = null;
-  private latestCatalogScan = 0;
   /** Shapes the user chose to keep broken for this session; Review skips them. */
   private keptElementIds = new Set<string>();
   private notifiedBrokenIds = new Set<string>();
@@ -121,7 +119,8 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.pendingViewbox = isUsableViewbox(restoredMetadata?.viewbox) ? restoredMetadata.viewbox : null;
     this.focusMode = restoredMetadata?.focusMode === true;
     this.parseErrors = this.applyParseResult(parseResult);
-    this.subscriptions.push(studio.events.on('solutionChanged', () => void this.refreshCatalog()));
+    const solutionScan = studio.getSharedRessource<LandscapeSolutionScan>(LANDSCAPE_SOLUTION_SCAN_KEY);
+    this.subscriptions.push(solutionScan.onDidChange(() => this.applySnapshot(solutionScan.getSnapshot())));
     this.startFileWatcher();
   }
 
@@ -143,7 +142,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       typeof restoredCurrentData === 'string' && restoredCurrentData !== '' ? restoredCurrentData : null;
     const parseResult = await parseLandscapeMap(restoredText ?? textOnFile);
     const model = new LandscapeMapDocumentModel(uri, textOnFile, restoredText, restoredMetadata, studio, parseResult);
-    void model.refreshCatalog();
+    model.applySnapshot(studio.getSharedRessource<LandscapeSolutionScan>(LANDSCAPE_SOLUTION_SCAN_KEY).getSnapshot());
     return model;
   }
 
@@ -190,9 +189,9 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.startFileWatcher();
   }
 
-  /** Other files of the solution may have changed while this tab was in the background. */
+  /** The shared scan keeps the references current; the warning waits until the user looks at the map. */
   onEditorDocumentDidFocus(): void {
-    void this.refreshCatalog();
+    this.notifyBrokenProcesses();
   }
 
   onEditorDocumentWillClose(): void {
@@ -837,34 +836,19 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     void this.studio.commands.executeCommand('std.editor.gotoSymbolInDocument', [resolved.uri, resolved.process.id]);
   }
 
-  private async refreshCatalog(): Promise<void> {
-    if (this.studio.solution.getSolution() == null) {
+  /** Takes over the shared solution scan; without a solution or a first scan, no reference counts as broken yet. */
+  private applySnapshot(snapshot: LandscapeSolutionSnapshot | null): void {
+    if (snapshot == null || this.studio.solution.getSolution() == null) {
       return;
     }
-    const scanNumber = ++this.latestCatalogScan;
-    let catalog: SolutionBpmnModelEntry[];
-    let maps: LandscapeMapEntry[];
-    try {
-      [catalog, maps] = await Promise.all([
-        scanSolutionBpmnModels(this.studio),
-        scanSolutionLandscapeMaps(this.studio),
-      ]);
-    } catch (error) {
-      console.warn('[LandscapeMapDocumentModel] The solution scan failed; process names stay as they are:', error);
-      return;
-    }
-    // Scans overlap (open, focus, every solution change); only the newest one counts.
-    if (scanNumber !== this.latestCatalogScan) {
-      return;
-    }
-    this.catalog = catalog;
-    this.maps = maps;
-    // The document may have been closed while the scan ran.
+    this.catalog = snapshot.catalog;
+    this.maps = snapshot.maps;
+    // The document may have been closed since the scan started.
     const modeler = this.modeler;
     if (modeler == null) {
       return;
     }
-    this.relations = buildProcessRelations(this.catalog);
+    this.relations = snapshot.relations;
     const referenceShapes = modeler
       .get('elementRegistry')
       .filter((element: any) => element.type === 'process' || element.type === 'mapLink');

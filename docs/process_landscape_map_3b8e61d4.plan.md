@@ -1,6 +1,6 @@
 ---
 name: Process landscape map (Discover)
-overview: Add the first Discover page to the Studio, an editor for process landscape maps stored as .bfwmap files, with process and map lists, derived call, message and signal relations, free hierarchies, auto-creation and image export, without a new third-party package. Delivered in six milestones, each ending in a review stop.
+overview: Add the first Discover page to the Studio, an editor for process landscape maps stored as .bfwmap files, with process and map lists, derived call, message and signal relations, free hierarchies, auto-creation and image export, with elkjs as the only new third-party package (auto-layout, Milestone 6). Delivered in six milestones, each ending in a review stop.
 todos:
   - id: m1-catalog-relations
     content: "M1 Data foundation: add message and signal throw and catch names to SolutionProcessEntry, tests"
@@ -117,26 +117,26 @@ todos:
     content: "M5: Studio gate, copy plan to docs/, ask before running the landscape suite, stop for review"
     status: completed
   - id: m6-layout-function
-    content: "M6 Assistance: pure layoutLandscape, tests"
-    status: pending
-  - id: m6-wizard
-    content: "M6: auto-create wizard and Create Map from Selection"
-    status: pending
+    content: "M6 Assistance: elkjs dependency, worker copied unminified, layoutLandscape as ELK adapter (layered, nested groups), unit tests"
+    status: completed
   - id: m6-scan-cost
-    content: "M6: one shared map and catalog scan per solution change instead of one per consumer (decorations, Processes pane, each open map)"
-    status: pending
+    content: "M6: LandscapeSolutionScan shared by decorations, Processes pane and open maps; ponytail note moved; duplicate ready handler removed"
+    status: completed
+  - id: m6-wizard
+    content: "M6: createLandscapeMap, askForNewMapUri, wizard command and the Processes pane menus (process, file, selection)"
+    status: completed
   - id: m6-tests-docs
-    content: "M6: docs, decisions, help text, integration tests for the wizard"
-    status: pending
+    content: "M6: THIRD-PARTY-NOTICES.md shipped with the app, bpmn-landscape.md, build.md, decisions.md, testing.md, help text, integration block assistance"
+    status: completed
   - id: m6-gate-review
     content: "M6: Studio gate, ask before running the full integration run, final review"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Process landscape map (Discover)
 
-**Ziel:** Die Discover-Kategorie erhält ihre erste Seite: einen Editor für Prozesslandkarten, die als `.bfwmap`-Dateien in der Solution liegen, mit Prozess- und Kartenliste, abgeleiteten Beziehungen (Call Activity, Message, Signal), frei definierbaren Hierarchien, Auto-Erstellung und Bildexport – ohne neues Fremdpaket.
+**Ziel:** Die Discover-Kategorie erhält ihre erste Seite: einen Editor für Prozesslandkarten, die als `.bfwmap`-Dateien in der Solution liegen, mit Prozess- und Kartenliste, abgeleiteten Beziehungen (Call Activity, Message, Signal), frei definierbaren Hierarchien, Auto-Erstellung und Bildexport – mit elkjs als einzigem neuen Fremdpaket (Auto-Layout).
 
 ## Decisions (from `do inn`)
 
@@ -146,7 +146,7 @@ isProject: false
 | 2 | The user picks the folder on creation; the default is `landscapes/` in the first project. Maps are found by extension. |
 | 3 | One page `discover/landscapes`, a left group with two stacked panes (Maps, Processes), properties on the right. |
 | 4 | diagram-js (already installed) as canvas. |
-| 5 | Own layout code; elkjs stays the reserve if dense message networks stay tangled. |
+| 5 | (revised before M6) elkjs for the auto-layout: layered algorithm with nested groups, run in its own worker. Chosen over own code, dagre (weak with lines across groups), cytoscape and d3-force (no rows) and React Flow (a renderer, not a layout engine). EPL-2.0 notice in a shipped `THIRD-PARTY-NOTICES.md`; no notice in the UI. |
 | 6 | Nested groups with collapse and drill-down, plus map-link nodes between maps. |
 | 7 | No DMN nodes; a process shows a decision badge and lists its decisions in the properties pane. |
 | 8 | (M4) "Drop reference" turns the broken process shape into a placeholder in the same place; it keeps its label (defaulting to the old process id) and its connectors. Undoable. |
@@ -157,7 +157,7 @@ isProject: false
 
 ## Eingaben-Nachweis
 
-- **User decisions 1–7 and the missing-process rule** (previous message): the three actions replace, drop and keep, greyed-out and disabled drawing, extension `.bfwmap`, elkjs only as reserve.
+- **User decisions 1–7 and the missing-process rule** (previous message): the three actions replace, drop and keep, greyed-out and disabled drawing, extension `.bfwmap`, elkjs only as reserve (decision 5, since revised to elkjs).
 - **`docs/architecture/workbench-categories.md`:** `discover` is registered by `std` and hidden until a page exists; pages are `<categoryId>/<name>` with `icon`, `paneAreas`, `defaultDocumentUri`; R1 routes a document to its type's page, so a `.bfwmap` opened from the Designer's Explorer activates Discover.
 - **`studio/src/modules/engine-deploy/index.tsx`:** template for a module that registers a page, a document type with model and renderer, a left pane group with `pages`, a pane prepended to the right `property` group, menus and keybindings.
 - **`studio/src/modules/bpmn-editor/index.tsx`:** file-backed type via `uriMatch: /\.bpmn$/`, `registerDefaultIncludedFiles`, keybindings on `.kbm-editor[data-editor-document-type=…]`, `createNewEditorDocumentAsBuffer` for new BPMN files.
@@ -211,7 +211,7 @@ Every element may carry `fill` and `stroke`. Paths are relative to the map file.
 
 **Commands** (`bpmn.landscape.*`): new map (save dialog defaulting to `<first project>/landscapes/<name>.bfwmap`, creates the folder, writes an empty map, opens it), Explorer directory menu "New Landscape Map…", open process in the Designer (double-click), open map link, export as image (serialise the canvas SVG, replace theme colours, `renderSvgToRasterImage` under `runWithExportHint`, same filters and errors as BPMN), focus mode (dim everything except the selection and its direct relations), relation toggles, keybindings for delete, copy, paste and arrow moves scoped to the landscape editor.
 
-**Auto-create.** `layoutLandscape` is a pure function: optional grouping (none, folder, file), call depth as rows (cycles broken by depth-first order), two barycenter sweeps to reduce crossings, shelf packing of groups, fixed spacing. The wizard is a custom dialog: processes preselected from the Processes pane, neighbours within 0–3 relation steps, grouping, call hierarchy as levels on or off, name and folder; it writes the file and opens it.
+**Auto-create.** `layoutLandscape` hands the selection to elkjs (decision 5): optional grouping (none, folder, file) as nested ELK children, call depth as rows through the layered algorithm, crossings minimised across groups, fixed spacing. Details are in Milestone 6. The wizard is a custom dialog: processes preselected from the Processes pane, neighbours within 0–3 relation steps, grouping, call hierarchy as levels on or off, name and folder; it writes the file and opens it.
 
 ## Pre-conditions
 
@@ -222,7 +222,7 @@ Every element may carry `fill` and `stroke`. Paths are relative to the map file.
 
 - New: `studio/src/modules/bpmn-landscape/**`, `studio/test/unit/bpmn-landscape/**`, `studio/test/integration/bpmn-landscape/**`, `docs/architecture/bpmn-landscape.md`.
 - Changed: `studio/src/modules/bpmn-core/scanSolutionBpmnModels.ts` plus a worker and its client, `studio/src/createAndInitializeBifrost.ts`, `studio/package.json` (`diagram-js` declared, script `test:integration:bpmn-landscape`), existing scan tests, docs listed in step 20, `.cursor/rules/studio-testing.mdc` (script table).
-- Out of scope: Studio SDK and plugin API, Git Cruiser merge resolver for maps, overlays (linter score, engine status), owner and status attributes, presentation mode, elkjs, the Engine and Lite.
+- Out of scope: Studio SDK and plugin API, Git Cruiser merge resolver for maps, overlays (linter score, engine status), owner and status attributes, presentation mode, the Engine and Lite.
 
 ## Assumptions
 
@@ -244,7 +244,7 @@ Every element may carry `fill` and `stroke`. Paths are relative to the map file.
 
 - Discover shows the Landscapes page; maps can be created, drawn, nested, collapsed, linked, saved, reopened, auto-created and exported as PNG, JPG, WebP and SVG.
 - Missing and ambiguous processes behave as decided.
-- No new third-party package in `package-lock.json`.
+- `elkjs` (Milestone 6) is the only new third-party package in `package-lock.json`.
 - `npm run build`, `npm run lint:fix`, `npm run format`, `npm run test:unit` green; the integration suite written and run after the user's approval.
 - Architecture docs updated.
 
@@ -261,7 +261,7 @@ Docs grow with each milestone instead of in one batch at the end, so they always
 | M3 Relations and properties | See call, message and signal links, edit properties, jump to the Designer | Whether the derived relations match your mental model on a real solution |
 | M4 Solution integration | Maps list, missing-process mitigation, map links, image export | The rename and delete walk-through, export quality |
 | M5 Hierarchy | Levels, bands, collapse and drill-down | Whether the two-level hierarchy is user-friendly |
-| M6 Assistance | Auto-create maps from a selection | Layout quality on a large solution, and whether elkjs is needed |
+| M6 Assistance | Auto-create maps from a selection | Layout quality on a large solution, the notices file |
 
 ## Checklist
 
@@ -509,7 +509,7 @@ The properties pane, for a broken process, shows the status sentence and three a
   - `setRootElement` fires `root.set`, on which selection and overlays clear;
   - `removeRootElement`, `findRoot` and `getRootElements`;
   - `scrollToElement` switches to the element's root on its own.
-  
+
   `MoveHelper` re-parents an enclosed connection only when the connection itself is in the moved list (`topLevel[c.id]`).
 - **bpmn-js drilldown (reference only, not a dependency).**
   - `DrilldownBreadcrumbs` rebuilds a `ul` on `root.set`; `DrilldownCentering` keeps one viewbox per root; `DrilldownOverlayBehavior` adds a `drilldown` overlay button.
@@ -686,11 +686,162 @@ The properties pane, for a broken process, shows the status sentence and three a
 
 ### Milestone 6 — Assistance
 
-39. `layoutLandscape`; tests for determinism, no overlaps, cycles and grouping.
-40. Auto-create wizard; "Create Map from Selection" in the Processes pane opens it.
-41. Scan cost (open item from the Milestone 4 review): every solution change scans all maps and the BPMN catalog once for the Maps explorer badges, once for the Processes pane and once per open map. Share one scan per solution change between these consumers (or cache map parses by text hash like the BPMN scan) and remove the `ponytail:` note in `scanSolutionLandscapeMaps.ts`.
-42. `bpmn-landscape.md` (layout), `docs/decisions.md` (own layout, elkjs in reserve), final help text, integration tests (wizard creates the expected map).
-43. Studio gate. Ask before running the full integration run (`npm run test:integration`). **Final review**; whether elkjs is needed is your decision at this point.
+**Ziel (M6):** Maps can be created automatically from a selection of processes (or the whole solution) with a deterministic layout, and every solution change is scanned once for all landscape consumers instead of once per consumer.
+
+#### Eingaben-Nachweis (M6)
+
+- **Decision 5 as revised in chat.** elkjs replaces the own layout. The comparison with own code, dagre, graphlib, cytoscape, d3-force and React Flow came out for elkjs because it lays out nested groups together with the lines between them. EPL-2.0 needs three things: a pointer to the source, no restriction of that source by our MIT licence, and its copyright notices kept. A shipped notices file covers them; nothing has to show in the UI.
+- **elkjs 0.12.0 in the registry and tarball.** It has no dependencies and is licensed "EPL-2.0 OR GPL-3.0-or-later". `lib/elk-api.js` (10 KB) is the async `ELK` class, taking a `workerUrl` or `workerFactory`. `lib/elk-worker.min.js` (1.6 MB) is the algorithm as a classic worker script. `lib/elk.bundled.js` is both in one file, for Node and tests. The copyright comments are in `elk-api.js` and `main.js` only, not in `elk-worker.min.js`; `LICENSE.md` holds the EPL text.
+- **Studio build and packaging.** Every package is a `devDependency` and bundled by Rspack; `electron-builder` ships `out/**`, `vendor/**` and the HTML files, not `node_modules`. The production minifier (`SwcJsMinimizerRspackPlugin`, `format.comments: false`) strips all comments. `CopyRspackPlugin` already copies `assets/icons` into `out/`. The renderer page `electron-renderer.html` loads `./out/bundle-electron-renderer.js`. Existing workers use `new Worker(new URL('./…-worker.ts', import.meta.url), { type: 'module' })` with a timeout and error mapping (`DmnSimulationWorkerClient`). Errors reach the user through `bifrost.notifications.open` (`commands.ts`). No third-party notices file exists yet; the README says only "MIT".
+- **Approach §Auto-create (wizard part).** The wizard offers processes preselected in the Processes pane, neighbours within 0–3 relation steps, grouping, call hierarchy on or off, name and folder, then writes the file and opens it.
+- **The scan-cost step as worded after the Milestone 4 review (now step 40).** Every solution change runs `scanSolutionBpmnModels` and `scanSolutionLandscapeMaps` once for the Maps explorer badges, once for the Processes pane and once per open map; the step asks for one shared scan and the removal of the `ponytail:` note in `scanSolutionLandscapeMaps.ts`.
+- **The three scan consumers today.**
+  - `mapsExplorerDecorations.ts`: `MapsDecorationProvider.refresh(bifrost)` scans maps, then the catalog only when there are maps, keeps the newest scan (`latestScan`), and fires `onDidChange` with the URIs whose badge changed. `index.tsx` calls it on load and on every `solutionChanged`. Its unit test mocks both scan functions.
+  - `panes/ProcessesPane.tsx`: `PaneContent` runs both scans in a `useEffect` on mount and on `solutionChanged`, keeps the newest, and derives `mapCountByProcessKey` with `countMapsPerProcess`. Rows have no `menuId`, the `Tree` has no `multiSelectionMenuId`.
+  - `LandscapeMapDocumentModel.ts` (926 lines): `refreshCatalog()` runs on create, on `onEditorDocumentDidFocus` and on `solutionChanged` (subscription in the constructor), skips without a solution, keeps the newest scan (`latestCatalogScan`), then sets `catalog`, `maps`, `relations = buildProcessRelations(catalog)`, fires `elements.changed` for process and map-link shapes, `showRelations()`, `bumpSelectionRevision()` and `notifyBrokenProcesses()`.
+- **`scanSolutionBpmnModels.ts`.** Reads every included `.bpmn` on each call, re-parses only files whose SHA-256 changed (module-level `scanCache`, parse in the `bpmn-model-scan-worker`), sorted by URI. Engine modules call it too; it stays unchanged.
+- **`scanSolutionLandscapeMaps.ts`.** Returns `[]` unless the gate is `ready`; lists the landscape folder with the Maps explorer's patterns, parses each map on the main thread, returns `{ uri, name, error, processReferences }` sorted by URI; carries the `ponytail:` note.
+- **`commands.ts`.** `newMap(bifrost, directoryUri?)` checks the gate, creates the folder, asks with `showSaveFile` (default `New Landscape.bfwmap` in the target folder), refuses a path outside the folder and an existing name without the extension, then `createNewEditorDocument(uri, serializeLandscapeMap(map))` and `solution.onElementAdded(uri)`.
+- **`index.tsx`.** Registers the Maps explorer and the Processes pane in the left group `landscapes`; it holds two identical `ready` handlers that call `closeMapsOutsideLandscapeFolder` (a duplicate).
+- **`LandscapeMapFile.ts`.** `LandscapeMap { name, levels, relationLayers, elements, connectors, hiddenRelations, extensions }`; elements carry `id`, `parentId`, `x`, `y`, `width`, `height`, `style`; groups `label`, `collapsed`; processes `processId`, `fileHint`, `label`, `shape`. `createElementId(type, isTaken)` draws random ids; `createEmptyLandscapeMap(name)`; `relativeFileHint(mapUri, fileUri)`. The model's process size is 140×60.
+- **`buildProcessRelations.ts`.** Returns call, message and signal relations between `{ uri, processId }` pairs, never self-relations, sorted by key.
+- **Tree and menus.** `Tree` shows `itemData.menuId` on right-click and, when `multiSelectionMenuId` is set and more than one row is selected, that menu with `[selectedMetadata, itemMetadata, studio]`; without `multiSelectionMenuId`, modifier clicks are forwarded instead of multi-selecting. `engine-deploy` registers its own multi-selection menu with `bifrost.menus.registerMenu`.
+- **Dialog system (skill `dialog-system`).** `bifrost.dialog.open` with `text_input`, `select`, `checkbox`, `text` content and a validation callback; the wizard pattern chains a custom dialog with `showSaveFile` after it closes.
+- **`bifrost.registerSharedRessource(name, instance)` / `getSharedRessource(name)`.** Global singletons, used by the engine modules for `engineConnectionManager`; the data-placement rule forbids them only for per-document state.
+- **Fixture `test-solution-deploy`.** `order-process` calls `payment-process` (twice) and `archive-process` (not in the solution); `draft-process` and `unversioned-process` have no relations.
+- **Integration harness (`landscape.test.ts`).** One shared window; every block has a `prepare`; the reset restores `showOpenDirectory` / `showSaveFile`; a test must not leave a context menu open (fixed earlier today).
+
+#### Approach (M6)
+
+**Shared scan** (new `LandscapeSolutionScan.ts`, step 40, before the wizard, which uses it):
+- **Class:** `LandscapeSolutionScan` with `start()` (the `Bifrost` goes to the constructor), `getSnapshot(): LandscapeSolutionSnapshot | null`, `onDidChange(listener): { dispose() }` and `refresh()`. The snapshot is `{ catalog, maps, relations }`, with `relations = buildProcessRelations(catalog)` computed once.
+- **Scanning:** `start` scans once and on every `solutionChanged`; without a solution the snapshot is empty. Both scans run in parallel; only the newest result is published; a failed scan keeps the previous snapshot with a `console.warn`, as the consumers do today.
+- **Wiring:** `index.tsx` creates the instance in `onLoad`, registers it as shared resource `bpmn-landscape/solution-scan` and starts it. The duplicate `ready` handler is removed.
+- **Consumers:**
+  - `MapsDecorationProvider` gets `apply(snapshot)` instead of `refresh(bifrost)`; the scan and the newest-scan counter move out, the badge diff stays.
+  - The Processes pane subscribes in its `useEffect` and reads `getSnapshot()` on mount.
+  - `LandscapeMapDocumentModel` subscribes in the constructor and applies the current snapshot on create; `refreshCatalog()` becomes `applySnapshot(snapshot)` (no own scan, no `latestCatalogScan`). Focus no longer rescans, because `solutionChanged` reaches the shared scan whether a tab is focused or not.
+- **Note:** the `ponytail:` note leaves `scanSolutionLandscapeMaps.ts`; one shorter note in `LandscapeSolutionScan.ts` names the remaining ceiling (maps parsed on the main thread once per change; cache by text hash for hundreds of maps).
+
+**Dependency and worker** (step 39):
+- **Install:** `elkjs` `^0.12.0` as a `devDependency`, like every other package; the lock may add only `elkjs`.
+- **Worker file:** `rspack.config.electron.js` copies `node_modules/elkjs/lib/elk-worker.min.js` to `out/elk-worker.min.js` with `info: { minimized: true }`, so the minifier leaves it byte-identical. It runs as a classic worker, which is what the script expects, and only loads when a layout starts. The renderer bundle gains only `elk-api` (10 KB).
+
+**Layout** (new `layoutLandscape.ts`, an adapter from our graph to ELK and back):
+- **Signature:** `layoutLandscape(input): Promise<LandscapeLayout>`.
+- **Input:** `nodes: { key, groupKey: string | null, groupLabel }[]` (a node `label` is not needed), `edges: { sourceKey, targetKey, kind }[]`, `options: { callHierarchy: boolean }`.
+- **Output:** `{ nodes: Map<key, { x, y }>, groups: { key, label, x, y, width, height }[] }` in absolute coordinates; every node is 140×60.
+- **Engine:** a module-level `new ELK({ workerUrl: new URL('out/elk-worker.min.js', document.baseURI).href })` from `elkjs/lib/elk-api`, created on first use. A layout that fails or takes longer than 30 seconds rejects with a diagnostic message.
+- **ELK graph:**
+  - A root with `elk.algorithm: layered`, `elk.direction: DOWN` and `elk.hierarchyHandling: INCLUDE_CHILDREN`.
+  - Spacing is `elk.spacing.nodeNode: 40`, `elk.layered.spacing.nodeNodeBetweenLayers: 60` and `elk.spacing.componentComponent: 60`.
+  - Groups are compound children with `elk.padding: [top=60,left=20,bottom=20,right=20]` (a 40 px header plus the 20 px inset), holding their processes.
+  - Edges sit on the root with ids `e0…`.
+  - `elk.layered.cycleBreaking.strategy: DEPTH_FIRST` handles call cycles.
+- **Edges passed:** with `callHierarchy`, only call edges, so rows are the call depth. Without it, all three kinds, so processes that talk to each other sit near each other. A pair with several edges of the passed kinds becomes one edge.
+- **Back-mapping:** a group's children are relative to the group, so their positions get the group's x and y added.
+- **Determinism:** nodes, edges and groups are sorted by key before the graph is built. ELK uses a fixed random seed, so the same sets give the same result.
+- **Note:** `ponytail:` on the file: one group level (`levels[0]`) only. Nested folders would become nested ELK children if the wizard ever groups deeper.
+
+**Map from a selection** (new pure `createLandscapeMap.ts`, called by the wizard command):
+- `createLandscapeMap({ catalog, relations, seeds, neighbourSteps, grouping, callHierarchy, name, mapUri })` returns a `LandscapeMap`.
+- **Selection:** the seeds are `{ uri, processId }`; neighbours are added breadth-first over `relations` in both directions and all three kinds, up to `neighbourSteps` (0–3).
+- **One shape per process id:** a process id defined in several files appears once (the map rule); the seed wins, else the first URI; its `fileHint` is set, so it resolves.
+- **Grouping:** `none`, `folder` (the BPMN file's folder relative to the solution base, label = that path or the folder name) or `file` (label = file name). With grouping, `levels[0]` is named "Folder" or "File".
+- **Elements:** groups and processes from `layoutLandscape`, ids from `createElementId` with a local taken-set, `relationLayers` all on, no connectors (relations are derived). Laid out at the origin; the editor zooms to fit on first open.
+
+**Wizard command** `bpmn.landscape.createMapFromProcesses(seeds?)` in `commands.ts`:
+- **Gate:** the same refusal as `newMap` when the landscape gate is not `ready`.
+- **Seeds:** without arguments, every process of the solution (command search: "Landscapes: Create Map from Processes…"); from the Processes pane, the selected processes, a file row meaning all its processes.
+- **Dialog** (`bifrost.dialog.open`): a `text` line "N processes selected", `text_input` Name (default "New Landscape" or the single process's label), `select` Neighbours (0, 1, 2, 3 steps; default 0 for a whole-solution start, 1 otherwise), `select` Grouping (None, Folder, File; default File), `checkbox` "Arrange by call hierarchy" (default on), actions Cancel and Create; validation refuses a blank name.
+- **File:** the save-dialog part of `newMap` is extracted into `askForNewMapUri(bifrost, defaultName, directoryUri?)` (folder creation, save dialog, folder and existing-name checks) and used by both commands. Then `createNewEditorDocument(uri, serializeLandscapeMap(createLandscapeMap(…)))` and `solution.onElementAdded(uri)`, as `newMap` does; the map opens on the Landscapes page.
+- **Snapshot:** the command reads the shared scan's snapshot; when there is none yet, it waits for `refresh()`.
+- **Layout failure:** a rejected `layoutLandscape` shows an error notification (`source: 'Landscapes'`) and writes no file. **Deviation:** the save dialog comes before the layout, because every `fileHint` is relative to the chosen file.
+
+**Processes pane entry points:**
+- Process rows get `menuId: 'bpmn-landscape/processes/process'` with "Create Map from Process…"; file rows get `'bpmn-landscape/processes/file'` with "Create Map from File…".
+- The `Tree` gets `multiSelectionMenuId: 'bpmn-landscape/processes/multi-selection'` with "Create Map from Selection…".
+- All three call `bpmn.landscape.createMapFromProcesses` with the seeds from the row metadata.
+
+**Licence notice** (step 42):
+- **File:** new `studio/THIRD-PARTY-NOTICES.md` with one entry for elkjs: name and version, `Copyright (c) 2017, 2021 Kiel University and others.`, the note that the Studio uses it under EPL-2.0 (of "EPL-2.0 OR GPL-3.0-or-later"), unmodified, with its source at `https://github.com/kieler/elkjs`, followed by the full EPL-2.0 text from the package's `LICENSE.md`.
+- **Shipping:** `build/electron-builder.js` adds the file to `files`, so it lands in every installer.
+- **Pointer:** the README's License section gets one line pointing to the file.
+- **Not done:** no UI entry and no About page change. Other bundled packages are not listed. Their missing notices are a gap that predates this plan and stays a separate follow-up, by your decision.
+
+#### Pre-conditions (M6)
+
+- Milestone 5 accepted. The shared-window fixes in `landscape.test.ts` from today are in the working tree (commit or keep); M6 adds a block to that file.
+- Unit tests, lint and the shuffled landscape suite are green (verified today: 951 unit tests, 44 landscape tests).
+
+#### Scope (M6)
+
+- **New:** `studio/src/modules/bpmn-landscape/LandscapeSolutionScan.ts`, `layoutLandscape.ts`, `createLandscapeMap.ts`; unit tests `test/unit/bpmn-landscape/LandscapeSolutionScan.test.ts`, `layoutLandscape.test.ts`, `createLandscapeMap.test.ts`.
+- **Changed:**
+  - in `bpmn-landscape`: `index.tsx` (scan instance, menus, duplicate `ready` handler), `commands.ts` (wizard command, `askForNewMapUri`), `mapsExplorerDecorations.ts`, `panes/ProcessesPane.tsx`, `LandscapeMapDocumentModel.ts`, `scanSolutionLandscapeMaps.ts` (note), `texts/landscapes.md`;
+  - `test/unit/bpmn-landscape/mapsExplorerDecorations.test.ts`;
+  - `test/integration/bpmn-landscape/landscape.test.ts` (new block `assistance`);
+  - `docs/architecture/bpmn-landscape.md`, `docs/architecture/build.md` (copied worker, notices file), `docs/decisions.md`, `docs/testing.md` (block list), `docs/process_landscape_map_3b8e61d4.plan.md` (copy);
+  - build and packaging: `package.json` and `package-lock.json` (elkjs), `rspack.config.electron.js` (copy pattern), `build/electron-builder.js` (notices file), new `studio/THIRD-PARTY-NOTICES.md`, `README.md` (License line).
+- **Not touched:** the `.bfwmap` format, `bpmn-core` and its scan, the SDK, the Engine, Lite, the About page.
+
+#### Assumptions (M6)
+
+- "Call hierarchy as levels" means rows by call depth, not nested groups. With it on, only call relations shape the layout; with it off, all relations do, and rows then follow the message and signal direction. Map levels name the grouping depth only.
+- Using elkjs unmodified under EPL-2.0 with a shipped notices file meets its terms. This is my reading of the licence, not legal advice.
+- Neighbour steps follow all relation kinds in both directions, independent of a map's relation toggles (a new map has all toggles on).
+- A start from the command search without a selection means the whole solution.
+- The wizard always creates a new map; it does not add to an open one.
+- Processes are 140×60 like a dropped process; labels longer than the box wrap as today.
+
+#### Risks (M6)
+
+- **Shared scan timing:** a consumer created after a scan must not wait for the next solution change. Every consumer reads `getSnapshot()` when it starts and subscribes; covered by a unit test of the scan and by the existing landscape suite (open map, badges, Processes pane).
+- **Focus refresh removed:** a map opened in the background still updates, because the shared scan follows `solutionChanged` globally; the relation and missing-process integration tests cover a change while a map is open.
+- **Layout quality on a large solution:** tests check determinism, no overlaps, call rows and group containment, not beauty; the final review judges a whole-solution map.
+- **Worker loading:** the GWT worker script must run as a classic worker from `out/`. Unit tests cannot reach it (they mock `elk-api` with `elk.bundled.js`); the integration block runs the real worker in Electron, and step 39 checks the copied file in a production build.
+- **Minifier:** if `info: { minimized: true }` does not keep the minifier away, the copyright comments vanish from the copy. Step 39 checks `out/elk-worker.min.js` after `NODE_ENV=production npm run build:studio`: it must match the package file byte for byte (the worker file carries no copyright header).
+- **Performance:** ELK runs off the main thread, so the window stays responsive. A whole-solution map of a few thousand processes may take seconds; the 30-second timeout ends a runaway layout with a notification.
+- **Bundle size:** the renderer bundle grows by about 10 KB; the 1.6 MB worker loads only when a layout starts.
+- **Licence:** EPL-2.0 is weak copyleft at file level and the Studio stays MIT. Modifying elkjs's own files would put the changes under EPL; the plan never modifies them.
+- **Data integrity:** the wizard writes only a new file through the existing new-map checks (inside the folder, no overwrite without the save dialog's own prompt).
+- **Operations and topology:** desktop only; the scan instance is per window like every other module state.
+- **Compatibility:** generated maps are plain format-v1 files; nothing else changes on disk.
+
+#### Definition of Done (M6)
+
+- One scan per solution change feeds the Maps explorer badges, the Processes pane and every open map; the `ponytail:` note has moved.
+- "Create Map from Process/File/Selection…" in the Processes pane and "Landscapes: Create Map from Processes…" open the wizard; it writes a laid-out map in the landscape folder and opens it.
+- The ELK layout is deterministic, overlap-free, places callees below callers and keeps grouped processes inside their groups; it runs in the copied worker.
+- `elkjs` is the only package the lock adds; `THIRD-PARTY-NOTICES.md` is in the repository and in the packaged files, and `out/elk-worker.min.js` is byte-identical to the package file in a production build.
+- Studio gate green; the full integration run has been run after your approval; `bpmn-landscape.md`, `decisions.md`, `testing.md` and the help text are updated; the plan copy in `docs/` is current.
+
+#### Checklist (M6)
+
+39. elkjs and the layout:
+    - `npm install --save-dev elkjs@^0.12.0`; confirm the lock adds only `elkjs`;
+    - copy pattern for `elk-worker.min.js` in `rspack.config.electron.js`; after `NODE_ENV=production npm run build:studio`, `out/elk-worker.min.js` equals the package file byte for byte; then a normal `npm run build` again for the dev output;
+    - `layoutLandscape.ts` as an ELK adapter with the `ponytail:` note;
+    - unit tests mock `elkjs/lib/elk-api` with the class from `elkjs/lib/elk.bundled.js`:
+      - same result for shuffled input order;
+      - no two node rectangles overlap, and no two groups overlap;
+      - a call cycle terminates and places every node;
+      - with `callHierarchy`, a callee sits below its caller and a message edge does not change rows; without it, a message receiver sits below its sender;
+      - grouped nodes lie inside their group's bounds below the 40 px header;
+      - a failing layout rejects with a message.
+40. Shared scan:
+    - `LandscapeSolutionScan.ts` (start, snapshot, change event, newest-only, failure keeps the snapshot) registered as `bpmn-landscape/solution-scan`; unit test with mocked scans and a fake event bus;
+    - `MapsDecorationProvider.apply(snapshot)` and its updated unit test; Processes pane and document model consume the snapshot; focus rescan and `latestCatalogScan` removed;
+    - `ponytail:` note moved; duplicate `ready` handler in `index.tsx` removed.
+41. Wizard:
+    - `createLandscapeMap.ts`; unit tests for neighbour steps 0 and 2, one shape per process id with the `fileHint`, folder and file grouping with `levels[0]`, unique ids;
+    - `askForNewMapUri` extracted from `newMap`; command `bpmn.landscape.createMapFromProcesses` with the dialog and its validation;
+    - Processes pane: `menuId` on process and file rows, `multiSelectionMenuId`, the three menus registered in `index.tsx`.
+42. Docs and tests:
+    - licence notice: `THIRD-PARTY-NOTICES.md`, the `files` entry in `build/electron-builder.js`, the README line;
+    - `bpmn-landscape.md` (shared scan, ELK layout and its options, wizard, menus, file paths), `build.md` (copied worker, notices file), `docs/decisions.md` (elkjs for the landscape layout: the compared options and the licence handling), `docs/testing.md` (block list), `texts/landscapes.md` (creating a map automatically);
+    - integration block `assistance` in `landscape.test.ts`: the wizard from "Create Map from Process…" on `order-process` with one neighbour step writes a map with `order-process` above `payment-process` and opens it, through the real worker; Cancel writes nothing; every test closes its context menu.
+43. Studio gate (`npm run build`, `npm run lint:fix`, `npm run format`, `npm run test:unit`). Copy this plan file to `docs/process_landscape_map_3b8e61d4.plan.md`. Ask before running the full integration run (`npm run test:integration`). **Final review** (focus: layout quality on a whole-solution map, the notices file).
 
 Plan-Gate: bestanden.
 

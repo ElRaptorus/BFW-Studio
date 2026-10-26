@@ -49,10 +49,8 @@ async function scanMap(bifrost: Bifrost, uri: string): Promise<LandscapeMapEntry
 
 /**
  * Reads every map in the landscape folder of the open solution, sorted by URI. Without a ready landscape gate there
- * are no maps. Only saved files count, like the BPMN catalog; there is no cache, because maps are small.
- *
- * ponytail: parses on the main thread on every solution change; cache by text hash like the BPMN scan once a
- * solution holds hundreds of maps.
+ * are no maps. Only saved files count, like the BPMN catalog. Consumers read the result through
+ * `LandscapeSolutionScan` instead of calling this directly.
  */
 export async function scanSolutionLandscapeMaps(bifrost: Bifrost): Promise<LandscapeMapEntry[]> {
   const gate = getLandscapeGate(bifrost);

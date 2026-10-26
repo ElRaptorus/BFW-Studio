@@ -1717,4 +1717,70 @@ describe('bpmn-landscape', () => {
       expect(isAllowed).toBe(false);
     });
   });
+
+  describe('assistance', () => {
+    const PANE_ID = 'discover/landscapes/landscapes';
+    const CREATE_MAP_ENTRY = '[data-test--context-menu-id="bpmn-landscape/processes/process/create-map"]';
+
+    let landscapeWorkspace: LandscapeWorkspace;
+
+    const prepare = async (): Promise<void> => {
+      landscapeWorkspace = createWorkspace('bfw-landscape-assistance-');
+      await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
+      await studioAgent.navigation.showLeftPane(PANE_ID);
+      // The save dialog proposes a file in the landscape folder; accept it.
+      await studioAgent.executeInRenderer('bifrost.dialog.showSaveFile = async (options) => options.defaultPath');
+    };
+
+    /** Right-clicks the process "Order Process" in the Processes pane and starts the wizard from the menu. */
+    const startWizardFromOrderProcess = async (): Promise<void> => {
+      await studioAgent.clickOn('.treeview__label=order-process.bpmn');
+      await studioAgent.rightClickOn('.treeview__label=Order Process');
+      await studioAgent.assertContextMenuVisible();
+      await studioAgent.clickOn(CREATE_MAP_ENTRY);
+      await studioAgent.assertVisible('[data-test--dialog]', TIMEOUT);
+    };
+
+    it('creates a map around a process from the context menu, with the caller above the called process', async () => {
+      await prepare();
+      await startWizardFromOrderProcess();
+
+      await studioAgent.submitActiveDialog('create', {
+        name: 'Order Overview',
+        neighbourSteps: '1',
+        grouping: 'file',
+        callHierarchy: true,
+      });
+
+      const mapPath = path.join(landscapeWorkspace.landscapeFolder, 'Order Overview.bfwmap');
+      await studioAgent.waitUntil(async () => (await studioAgent.getFocusedDocumentUri()) === `file://${mapPath}`, {
+        timeout: 30_000,
+        timeoutMsg: 'The new map did not open',
+      });
+      await studioAgent.assertVisible(CANVAS, TIMEOUT);
+
+      const parsed = await parseLandscapeMap(fs.readFileSync(mapPath, 'utf8'));
+      if (!parsed.ok) {
+        throw new Error(`The new map cannot be read: ${parsed.errors.join(' ')}`);
+      }
+      const processes = parsed.map.elements.filter((entry) => entry.type === 'process');
+      const order = processes.find((entry) => entry.processId === 'order-process');
+      const payment = processes.find((entry) => entry.processId === 'payment-process');
+      expect(order, 'order-process on the map').toBeDefined();
+      expect(payment, 'payment-process on the map').toBeDefined();
+      expect(order!.y + order!.height).toBeLessThanOrEqual(payment!.y);
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+
+    it('writes no file when the dialog is cancelled', async () => {
+      await prepare();
+      await startWizardFromOrderProcess();
+
+      await studioAgent.submitActiveDialog('cancel');
+
+      await studioAgent.waitForNotVisible('[data-test--dialog]');
+      expect(fs.readdirSync(landscapeWorkspace.landscapeFolder)).toEqual([]);
+      expect(await studioAgent.getFocusedDocumentUri()).toBe('');
+    });
+  });
 });

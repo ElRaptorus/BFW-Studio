@@ -1,9 +1,18 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { DialogResult, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
+import type { SolutionBpmnModelEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 import type { AddMapLinkRequest, AddProcessRequest } from './LandscapeMapDocumentModel';
 import LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
+import type { LandscapeMap } from './LandscapeMapFile';
 import { createEmptyLandscapeMap, serializeLandscapeMap } from './LandscapeMapFile';
+import type { LandscapeSolutionScan } from './LandscapeSolutionScan';
+import { LANDSCAPE_SOLUTION_SCAN_KEY } from './LandscapeSolutionScan';
+import type { LandscapeProcessReference } from './buildProcessRelations';
+import type { NewMapGrouping } from './createLandscapeMap';
+import { createLandscapeMap } from './createLandscapeMap';
 import { registerLandscapeExportCommands } from './exportCommands';
+import type { LandscapeGate } from './landscapeFolder';
 import {
   describeLandscapeFolder,
   getLandscapeGate,
@@ -38,16 +47,28 @@ function showLandscapeNotification(bifrost: Bifrost, type: 'info' | 'warning', c
   bifrost.notifications.open({ type, content, source: 'Landscapes' });
 }
 
-async function newMap(bifrost: Bifrost, directoryUri?: string): Promise<void> {
+type ReadyLandscapeGate = Extract<LandscapeGate, { state: 'ready' }>;
+
+/** The gate when maps can be saved; otherwise the user is told what is missing and the result is `null`. */
+function getReadyGateOrExplain(bifrost: Bifrost): ReadyLandscapeGate | null {
   const gate = getLandscapeGate(bifrost);
-  if (gate.state !== 'ready') {
-    bifrost.categories.activatePage(LANDSCAPES_PAGE_ID);
-    showLandscapeNotification(
-      bifrost,
-      'info',
-      'Landscape maps are saved in the landscape folder of a saved solution. Set it up in the Maps explorer first.',
-    );
-    return;
+  if (gate.state === 'ready') {
+    return gate;
+  }
+  bifrost.categories.activatePage(LANDSCAPES_PAGE_ID);
+  showLandscapeNotification(
+    bifrost,
+    'info',
+    'Landscape maps are saved in the landscape folder of a saved solution. Set it up in the Maps explorer first.',
+  );
+  return null;
+}
+
+/** Asks where to save a new map; `null` when the user cancelled or was told why the place does not work. */
+async function askForNewMapUri(bifrost: Bifrost, defaultName: string, directoryUri?: string): Promise<string | null> {
+  const gate = getReadyGateOrExplain(bifrost);
+  if (gate == null) {
+    return null;
   }
   const { folderUri, solutionFileUri } = gate;
   const folderPath = bifrost.files.getLocalFilenameForUri(folderUri);
@@ -61,12 +82,12 @@ async function newMap(bifrost: Bifrost, directoryUri?: string): Promise<void> {
     title: 'New Landscape Map',
     defaultPath: bifrost.files.joinPaths(
       bifrost.files.getLocalFilenameForUri(targetUri),
-      `New Landscape${MAP_EXTENSION}`,
+      `${defaultName}${MAP_EXTENSION}`,
     ),
     filters: [{ name: 'Landscape Map', extensions: ['bfwmap'] }],
   });
   if (chosenPath == null) {
-    return;
+    return null;
   }
 
   const path = chosenPath.endsWith(MAP_EXTENSION) ? chosenPath : `${chosenPath}${MAP_EXTENSION}`;
@@ -77,7 +98,7 @@ async function newMap(bifrost: Bifrost, directoryUri?: string): Promise<void> {
       'warning',
       `Landscape maps are saved in the landscape folder ${describeLandscapeFolder(bifrost, solutionFileUri, folderUri)}. Choose a place inside it.`,
     );
-    return;
+    return null;
   }
   // The save dialog only asked about overwriting the name without the extension.
   if (path !== chosenPath && (await bifrost.files.doesFileOrDirectoryExist(path))) {
@@ -86,9 +107,138 @@ async function newMap(bifrost: Bifrost, directoryUri?: string): Promise<void> {
       'warning',
       `${bifrost.files.getLocalBasename(uri)} already exists. Choose another name for the new map.`,
     );
+    return null;
+  }
+  return uri;
+}
+
+async function newMap(bifrost: Bifrost, directoryUri?: string): Promise<void> {
+  const uri = await askForNewMapUri(bifrost, 'New Landscape', directoryUri);
+  if (uri == null) {
     return;
   }
   const map = createEmptyLandscapeMap(bifrost.files.getLocalBasename(uri, true));
+  await bifrost.editors.createNewEditorDocument(uri, serializeLandscapeMap(map));
+  await bifrost.solution.onElementAdded(uri);
+}
+
+/** A row of the Processes pane: a process, or a whole file when no process id is given. */
+type ProcessSeedRow = { fileUri: string; processId?: string | null };
+
+const NEIGHBOUR_STEP_ENTRIES = [0, 1, 2, 3].map((steps) => ({
+  label: steps === 0 ? 'None' : `${steps} ${steps === 1 ? 'step' : 'steps'}`,
+  value: String(steps),
+}));
+
+const GROUPING_ENTRIES: { label: string; value: NewMapGrouping }[] = [
+  { label: 'None', value: 'none' },
+  { label: 'By folder', value: 'folder' },
+  { label: 'By file', value: 'file' },
+];
+
+/** The processes the rows stand for, each once; without rows, every process of the solution. */
+function collectSeeds(catalog: SolutionBpmnModelEntry[], rows?: ProcessSeedRow[]): LandscapeProcessReference[] {
+  const seeds = new Map<string, LandscapeProcessReference>();
+  for (const entry of catalog) {
+    if (entry.kind !== 'bpmn') {
+      continue;
+    }
+    for (const process of entry.processes) {
+      const isWanted =
+        rows == null || rows.some((row) => row.fileUri === entry.uri && (row.processId ?? process.id) === process.id);
+      if (isWanted) {
+        seeds.set(`${entry.uri}#${process.id}`, { uri: entry.uri, processId: process.id });
+      }
+    }
+  }
+  return [...seeds.values()];
+}
+
+async function createMapFromProcesses(bifrost: Bifrost, rows?: ProcessSeedRow[]): Promise<void> {
+  if (getReadyGateOrExplain(bifrost) == null) {
+    return;
+  }
+  const solutionScan = bifrost.getSharedRessource<LandscapeSolutionScan>(LANDSCAPE_SOLUTION_SCAN_KEY);
+  if (solutionScan.getSnapshot() == null) {
+    await solutionScan.refresh();
+  }
+  const snapshot = solutionScan.getSnapshot();
+  const seeds = snapshot == null ? [] : collectSeeds(snapshot.catalog, rows);
+  if (snapshot == null || seeds.length === 0) {
+    showLandscapeNotification(bifrost, 'info', 'There are no processes to put on a map.');
+    return;
+  }
+
+  const singleProcess =
+    seeds.length === 1
+      ? snapshot.catalog
+          .flatMap((entry) => (entry.kind === 'bpmn' ? entry.processes : []))
+          .find((process) => process.id === seeds[0]?.processId)
+      : undefined;
+  const dialogResult = await bifrost.dialog.open(
+    {
+      title: 'Create Landscape Map from Processes',
+      content: [
+        { type: 'text', text: `${seeds.length} ${seeds.length === 1 ? 'process' : 'processes'} selected.` },
+        {
+          type: 'text_input',
+          id: 'name',
+          label: 'Name',
+          value: singleProcess == null ? 'New Landscape' : singleProcess.name || singleProcess.id,
+          focus: true,
+        },
+        {
+          type: 'select',
+          id: 'neighbourSteps',
+          label: 'Add related processes',
+          value: rows == null ? '0' : '1',
+          entries: NEIGHBOUR_STEP_ENTRIES,
+          hint: 'Processes that call, message or signal the selection, within this many relation steps.',
+        },
+        { type: 'select', id: 'grouping', label: 'Group processes', value: 'file', entries: GROUPING_ENTRIES },
+        { type: 'checkbox', id: 'callHierarchy', label: 'Arrange by call hierarchy', checked: true },
+      ],
+      actions: [
+        { label: 'Cancel', response: 'cancel', cancel: true },
+        { label: 'Create', response: 'create', default: true },
+      ],
+    },
+    async (result: DialogResult): Promise<DialogValidationResult> => {
+      if (result.response === 'create' && String(result.formData?.name ?? '').trim() === '') {
+        return { closeDialog: false, validationErrors: [{ contentId: 'name', errorLabel: 'Name cannot be empty' }] };
+      }
+      return { closeDialog: true };
+    },
+  );
+  if (dialogResult.wasCancelled || dialogResult.response !== 'create') {
+    return;
+  }
+  const name = String(dialogResult.formData?.name).trim();
+
+  const uri = await askForNewMapUri(bifrost, name);
+  if (uri == null) {
+    return;
+  }
+  let map: LandscapeMap;
+  try {
+    map = await createLandscapeMap({
+      catalog: snapshot.catalog,
+      relations: snapshot.relations,
+      seeds,
+      neighbourSteps: Number(dialogResult.formData?.neighbourSteps),
+      grouping: dialogResult.formData?.grouping,
+      callHierarchy: dialogResult.formData?.callHierarchy === true,
+      name,
+      mapUri: uri,
+    });
+  } catch (error) {
+    bifrost.notifications.open({
+      type: 'error',
+      content: `The map could not be arranged: ${error instanceof Error ? error.message : String(error)}`,
+      source: 'Landscapes',
+    });
+    return;
+  }
   await bifrost.editors.createNewEditorDocument(uri, serializeLandscapeMap(map));
   await bifrost.solution.onElementAdded(uri);
 }
@@ -148,6 +298,18 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     visibleInSearch: true,
     description: ['Landscapes: New Map', 'Create a new landscape map'],
   });
+
+  bifrost.commands.register(
+    'bpmn.landscape.createMapFromProcesses',
+    (rows?: ProcessSeedRow[]) => createMapFromProcesses(bifrost, rows),
+    {
+      visibleInSearch: true,
+      description: [
+        'Landscapes: Create Map from Processes...',
+        'Create a landscape map from the processes of the solution, arranged automatically',
+      ],
+    },
+  );
 
   bifrost.commands.register('bpmn.landscape.setUpLandscapeFolder', () => setUpLandscapeFolder(bifrost), {
     visibleInSearch: true,

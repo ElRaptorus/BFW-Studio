@@ -25,7 +25,7 @@ const buildConfiguration = {
   },
   fileOptions: {
     // NOTE: electron-builder adds `package.json` and `node_modules` (among others)
-    files: ['out/**/*', 'vendor/**/*', 'electron-renderer.html', 'migration.html'],
+    files: ['out/**/*', 'vendor/**/*', 'electron-renderer.html', 'migration.html', 'THIRD-PARTY-NOTICES.md'],
     extraResources: [
       {
         from: 'assets/',

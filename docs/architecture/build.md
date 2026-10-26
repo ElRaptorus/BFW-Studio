@@ -9,7 +9,7 @@ The Studio uses **Rspack** (a Rust-based, webpack 5-compatible bundler) for all 
 - **Transpilation**: `builtin:swc-loader` (Rust-native SWC)
 - **Type checking**: `ts-checker-rspack-plugin` — async (non-blocking) in development, synchronous in production
 - **CSS extraction**: `rspack.CssExtractRspackPlugin`
-- **Asset copying**: `rspack.CopyRspackPlugin`
+- **Asset copying**: `rspack.CopyRspackPlugin` (icons, and the `elkjs` worker script, see §Third-party Worker Script)
 - **Production minification**: `SwcJsMinimizerRspackPlugin` for JS (with `keep_classnames` for runtime reflection)
 
 ## Configuration Files
@@ -68,6 +68,12 @@ Bootstrap 5 CSS is loaded via `import 'bootstrap/dist/css/bootstrap.min.css'` in
 ## Workers
 
 Web Workers use the standard `new URL('./Worker.ts', import.meta.url)` pattern, which Rspack supports natively. Workers are split into separate chunks automatically.
+
+### Third-party Worker Script
+
+The layout worker of `elkjs` is a 1.6 MB classic worker script that is not bundled. The renderer config's `CopyRspackPlugin` copies `node_modules/elkjs/lib/elk-worker.min.js` to `out/elk-worker.min.js` with `info: { minimized: true }`; without the flag the production minifier would rewrite the file, with it the copy stays byte-identical to the package in development and production builds. `layoutLandscape.ts` starts the worker from `new URL('out/elk-worker.min.js', document.baseURI)`, because `electron-renderer.html` sits next to `out/`. Only `elkjs/lib/elk-api` (10 KB) is part of the renderer bundle.
+
+The package is licensed under the EPL-2.0. `studio/THIRD-PARTY-NOTICES.md` carries its copyright, source location and license text; `build/electron-builder.js` lists the file in `fileOptions.files`, so every installer ships it, and the README points to it. The Studio does not list its other bundled packages there yet.
 
 ## Conditional Compilation
 
