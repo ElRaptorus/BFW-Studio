@@ -1,0 +1,15 @@
+{
+  "name": "landscape-no-perm",
+  "version": "1.0.0",
+  "displayName": "Landscape No Permission",
+  "description": "Fixture plugin for testing landscape API permission denial (no landscape permission declared).",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "2.0.0",
+    "displayName": "Landscape No Permission",
+    "permissions": [],
+    "activationEvents": [
+      "onStartup"
+    ]
+  }
+}

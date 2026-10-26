@@ -56,6 +56,21 @@ describe('LandscapeSolutionScan', () => {
     expect(scanCatalog).toHaveBeenCalledTimes(2);
   });
 
+  it('does not notify when a scan finds what the previous one found', async () => {
+    const { bifrost, fireSolutionChanged } = createFakeBifrost();
+    const scan = new LandscapeSolutionScan(bifrost);
+    scan.start();
+    await flushPromises();
+    const changes = vi.fn();
+    scan.onDidChange(changes);
+
+    fireSolutionChanged();
+    await flushPromises();
+
+    expect(scanCatalog).toHaveBeenCalledTimes(2);
+    expect(changes).not.toHaveBeenCalled();
+  });
+
   it('publishes only the newest of two overlapping scans', async () => {
     const { bifrost } = createFakeBifrost();
     const scan = new LandscapeSolutionScan(bifrost);

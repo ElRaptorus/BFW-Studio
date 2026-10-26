@@ -20,6 +20,8 @@ type LandscapeElementBase = {
   width: number;
   height: number;
   style: LandscapeElementStyle | null;
+  /** Foreign-namespace attributes, written back unchanged; absent when there are none. */
+  extensionAttributes?: Record<string, string>;
 };
 
 export type LandscapeBandElement = LandscapeElementBase & { type: 'band'; label: string };
@@ -62,9 +64,11 @@ export type LandscapeConnector = {
   targetId: string;
   label: string;
   waypoints: LandscapePoint[];
+  /** Foreign-namespace attributes, written back unchanged; absent when there are none. */
+  extensionAttributes?: Record<string, string>;
 };
 
-export type LandscapeLevel = { id: string; name: string };
+export type LandscapeLevel = { id: string; name: string; extensionAttributes?: Record<string, string> };
 
 export type LandscapeMap = {
   name: string;
@@ -173,6 +177,15 @@ const ELEMENT_TYPE_BY_MODDLE_TYPE = new Map(
 const NOT_A_MAP_MESSAGE = `The file is not a landscape map: the root element must be <landscape:map> in the namespace ${LANDSCAPE_MAP_NAMESPACE}.`;
 /** An absolute path, a Windows drive, or a URI scheme. */
 const NON_RELATIVE_PATH_PATTERN = /^(?:[a-z][a-z0-9+.-]*:|[\\/])/i;
+/** A hex colour, a colour name, or an `rgb()` / `hsl()` function. */
+const COLOUR_PATTERN = /^(?:#[0-9a-f]{3,8}|[a-z]+|(?:rgb|hsl)a?\([0-9\s.,%/deg]*\))$/i;
+
+/** Whether the text is a plain colour, the only kind the renderer may write into a `style` attribute. */
+export const isPlainColour = (value: string): boolean => COLOUR_PATTERN.test(value);
+
+/** Whether the text is a path relative to the map file, as `fileHint` and `mapPath` store it. */
+export const isRelativePath = (value: string): boolean => !NON_RELATIVE_PATH_PATTERN.test(value);
+
 const UNPARSABLE_CONTENT_PATTERN =
   /^unparsable content .* detected\n\tline: (\d+)\n\tcolumn: (\d+)\n\tnested error: (.*)$/s;
 
@@ -315,10 +328,20 @@ class LandscapeMapReader {
     return value;
   }
 
-  style(node: ModdleElement): LandscapeElementStyle | null {
-    const fill = this.optionalString(node, 'fill');
-    const stroke = this.optionalString(node, 'stroke');
+  style(node: ModdleElement, where: string): LandscapeElementStyle | null {
+    const fill = this.colour(node, 'fill', where);
+    const stroke = this.colour(node, 'stroke', where);
     return fill == null && stroke == null ? null : { fill, stroke };
+  }
+
+  /** The renderer writes colours into a `style` attribute; anything but a plain colour could add declarations there. */
+  private colour(node: ModdleElement, key: string, where: string): string | null {
+    const value = this.optionalString(node, key);
+    if (value != null && !COLOUR_PATTERN.test(value)) {
+      this.errors.push(`${where} has ${key} "${value}", which is not a colour such as "#ffcdd2".`);
+      return null;
+    }
+    return value;
   }
 }
 
@@ -341,7 +364,8 @@ function readElement(
     y: reader.number(node, 'y', where),
     width: reader.number(node, 'width', where, 0),
     height: reader.number(node, 'height', where, 0),
-    style: reader.style(node),
+    style: reader.style(node, where),
+    ...readExtensionAttributes(node),
   };
   switch (type) {
     case 'band':
@@ -411,6 +435,7 @@ function readConnector(reader: LandscapeMapReader, node: ModdleElement): Landsca
     targetId: reader.string(node, 'targetId', where, 'non-empty'),
     label: reader.string(node, 'label', where),
     waypoints,
+    ...readExtensionAttributes(node),
   };
 }
 
@@ -423,17 +448,22 @@ function readRelationLayers(root: ModdleElement): Record<ProcessRelationKind, bo
   };
 }
 
-/** The root's own namespace declaration is written by moddle; everything else on the root is kept. */
-function readExtensionAttributes(root: ModdleElement): Record<string, string> {
+/**
+ * The foreign-namespace attributes of a node, which the lax reader keeps in `$attrs`. The landscape namespace
+ * declaration is written by moddle and left out.
+ */
+function foreignAttributesOf(node: ModdleElement): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(root.$attrs).filter(
+    Object.entries(node.$attrs).filter(
       ([name, value]) => !((name === 'xmlns' || name.startsWith('xmlns:')) && value === LANDSCAPE_MAP_NAMESPACE),
     ),
   );
 }
 
-/** The canvas names the planes of collapsed groups and the derived relation lines with these prefixes. */
-const RESERVED_ID_PREFIXES = ['plane:', 'relation:'];
+function readExtensionAttributes(node: ModdleElement): { extensionAttributes?: Record<string, string> } {
+  const attributes = foreignAttributesOf(node);
+  return Object.keys(attributes).length === 0 ? {} : { extensionAttributes: attributes };
+}
 
 function checkIdentifiers(reader: LandscapeMapReader, map: LandscapeMap): void {
   const seenIds = new Set<string>();
@@ -442,8 +472,9 @@ function checkIdentifiers(reader: LandscapeMapReader, map: LandscapeMap): void {
       reader.errors.push(`The id '${item.id}' is used more than once.`);
     }
     seenIds.add(item.id);
-    if (RESERVED_ID_PREFIXES.some((prefix) => item.id.startsWith(prefix))) {
-      reader.errors.push(`The id '${item.id}' is reserved for elements the canvas derives.`);
+    // The canvas names the planes of collapsed groups and the derived relation lines `plane:…` and `relation:…`.
+    if (item.id.includes(':')) {
+      reader.errors.push(`The id '${item.id}' contains ':'; map ids cannot contain it.`);
     }
   }
   const seenProcessIds = new Set<string>();
@@ -520,6 +551,7 @@ export async function parseLandscapeMap(text: string): Promise<LandscapeMapParse
     levels: (root.get('levels') as ModdleElement[]).map((level) => ({
       id: reader.string(level, 'id', 'A level', 'non-empty'),
       name: reader.string(level, 'name', 'A level'),
+      ...readExtensionAttributes(level),
     })),
     relationLayers: readRelationLayers(root),
     elements,
@@ -527,7 +559,7 @@ export async function parseLandscapeMap(text: string): Promise<LandscapeMapParse
     hiddenRelations: (root.get('hiddenRelations') as ModdleElement[]).map((node) =>
       reader.string(node, 'key', 'A hidden relation', 'non-empty'),
     ),
-    extensions: { attributes: readExtensionAttributes(root), elements: [...root.get('extensions')] },
+    extensions: { attributes: foreignAttributesOf(root), elements: [...root.get('extensions')] },
   };
   checkIdentifiers(reader, map);
   checkConnectors(reader, map);
@@ -535,11 +567,17 @@ export async function parseLandscapeMap(text: string): Promise<LandscapeMapParse
 }
 
 /** Leaves out every property that is `null`, `undefined` or empty, so defaults are not written. */
-function createNode(type: string, properties: Record<string, unknown>): ModdleElement {
-  return LANDSCAPE_MODDLE.create(
+function createNode(
+  type: string,
+  properties: Record<string, unknown>,
+  extensionAttributes: Record<string, string> = {},
+): ModdleElement {
+  const node = LANDSCAPE_MODDLE.create(
     type,
     Object.fromEntries(Object.entries(properties).filter(([, value]) => value != null && value !== '')),
   );
+  Object.assign(node.$attrs, extensionAttributes);
+  return node;
 }
 
 function writeElement(
@@ -581,7 +619,7 @@ function writeElement(
       properties.text = element.text;
       break;
   }
-  const node = createNode(MODDLE_TYPE_BY_ELEMENT_TYPE[element.type], properties);
+  const node = createNode(MODDLE_TYPE_BY_ELEMENT_TYPE[element.type], properties, element.extensionAttributes);
   if (element.type === 'band' || element.type === 'group') {
     node
       .get('elements')
@@ -601,8 +639,11 @@ export function serializeLandscapeMap(map: LandscapeMap): string {
     childrenByParentId.set(parentId, [...(childrenByParentId.get(parentId) ?? []), element]);
   }
 
-  const root = createNode('landscape:Map', { version: LANDSCAPE_MAP_VERSION, name: map.name });
-  Object.assign(root.$attrs, map.extensions.attributes);
+  const root = createNode(
+    'landscape:Map',
+    { version: LANDSCAPE_MAP_VERSION, name: map.name },
+    map.extensions.attributes,
+  );
   const { callActivity, message, signal } = map.relationLayers;
   if (!callActivity || !message || !signal) {
     root.set(
@@ -614,18 +655,23 @@ export function serializeLandscapeMap(map: LandscapeMap): string {
       }),
     );
   }
-  root.get('levels').push(...map.levels.map((level) => createNode('landscape:Level', level)));
+  root
+    .get('levels')
+    .push(
+      ...map.levels.map((level) =>
+        createNode('landscape:Level', { id: level.id, name: level.name }, level.extensionAttributes),
+      ),
+    );
   root
     .get('elements')
     .push(...(childrenByParentId.get(null) ?? []).map((element) => writeElement(element, childrenByParentId)));
   root.get('connectors').push(
     ...map.connectors.map((connector) => {
-      const node = createNode('landscape:Connector', {
-        id: connector.id,
-        sourceId: connector.sourceId,
-        targetId: connector.targetId,
-        label: connector.label,
-      });
+      const node = createNode(
+        'landscape:Connector',
+        { id: connector.id, sourceId: connector.sourceId, targetId: connector.targetId, label: connector.label },
+        connector.extensionAttributes,
+      );
       node.get('waypoints').push(...connector.waypoints.map((point) => createNode('landscape:Waypoint', point)));
       return node;
     }),

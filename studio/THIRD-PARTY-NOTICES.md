@@ -1,8 +1,8 @@
 # Third-Party Notices
 
-Bifrost Forge World is released under the MIT License (see `LICENSE`). It uses the following third-party software
-under its own license. This file names the software, the license it is used under, and where its source code is
-available.
+Bifrost Forge World is released under the MIT License (see `LICENSE`). This file names third-party software whose
+license asks for a notice, the license it is used under, and where its source code is available. It does not yet
+list every bundled package.
 
 ## elkjs
 

@@ -327,7 +327,7 @@ function ProcessDetailsView(props: {
           <div key={kind} className="landscape-properties__group">
             <div className="landscape-properties__group-title">{KIND_LABELS[kind]}</div>
             {entries.map((entry) => (
-              <RelationEntry key={`${entry.relation.key}-${entry.direction}`} model={model} entry={entry} />
+              <RelationEntry key={relationEntryKey(entry)} model={model} entry={entry} />
             ))}
           </div>
         );
@@ -453,6 +453,10 @@ function MapLinkDetails(props: {
   );
 }
 
+/** A relation key names processes by id only; two files with the same process id give two entries with one key. */
+const relationEntryKey = (entry: ProcessRelationEntry): string =>
+  `${entry.relation.key}-${entry.direction}-${entry.relation.source.uri}-${entry.relation.target.uri}`;
+
 function RelationEntry(props: { model: LandscapeMapDocumentModel; entry: ProcessRelationEntry }): React.JSX.Element {
   const { model, entry } = props;
   const arrow = entry.direction === 'outgoing' ? '→' : '←';
@@ -470,7 +474,7 @@ function RelationEntry(props: { model: LandscapeMapDocumentModel; entry: Process
   }
   return (
     <Switch
-      id={`landscape-relation-${entry.relation.key}`}
+      id={`landscape-relation-${relationEntryKey(entry)}`}
       label={label}
       checked={!entry.hidden}
       onChange={(checked) => model.setRelationsHidden([entry.relation.key], !checked)}
@@ -484,7 +488,7 @@ function RelationLineProperties(props: { model: LandscapeMapDocumentModel; eleme
   const hidden = new Set(line.hiddenKeys);
   const visibleKeys = line.relations.map((relation) => relation.key).filter((key) => !hidden.has(key));
   // A line ending at a collapsed group stands for relations of several processes; each switch names its two.
-  const isAggregated = element.source.type === 'group' || element.target.type === 'group';
+  const isAggregated = element.relationSource.type === 'group' || element.relationTarget.type === 'group';
   const endLabel = (end: any): string =>
     end.type === 'process' ? model.getProcessLabel(end.businessObject) : end.businessObject.label || 'Group';
   const relationLabel = (relation: RelationLine['relations'][number]): string => {
@@ -494,8 +498,8 @@ function RelationLineProperties(props: { model: LandscapeMapDocumentModel; eleme
   return (
     <PaneBody>
       <PaneProperty type="text" label="Kind" value={KIND_LABELS[line.kind]} disabled />
-      <PaneProperty type="text" label="From" value={endLabel(element.source)} disabled />
-      <PaneProperty type="text" label="To" value={endLabel(element.target)} disabled />
+      <PaneProperty type="text" label="From" value={endLabel(element.relationSource)} disabled />
+      <PaneProperty type="text" label="To" value={endLabel(element.relationTarget)} disabled />
       {line.relations.map((relation) => (
         <Switch
           key={relation.key}

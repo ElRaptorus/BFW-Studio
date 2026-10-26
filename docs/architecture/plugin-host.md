@@ -148,7 +148,7 @@ When a single plugin is unloaded or reloaded (via `bifrost.plugins.togglePlugin(
 
 1. **Re-discover from disk** — `discoverSinglePlugin(pluginPath)` re-reads `package.json`, re-validates the manifest, and refreshes all metadata fields on the `PluginInfo` entry. This picks up user edits to the manifest.
 2. **Re-validate** — Manifest errors and API version checks are re-run. If validation fails, the plugin stays in `status: 'error'` with a refreshed `errorMessage` and a toast notification. No IPC is sent to the child process.
-3. **Re-register contributions** — If validation passes, manifest contributions (commands, menus, keybindings, settings, panes, icons, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules) are re-registered via the `ContributionRegistrar`.
+3. **Re-register contributions** — If validation passes, manifest contributions (commands, menus, keybindings, settings, panes, icons, bpmnPalette, bpmnContextPad, bpmnModules, dmnPalette, dmnContextPad, dmnModules, landscapePalette, landscapeContextPad, landscapeModules) are re-registered via the `ContributionRegistrar`.
 4. **Load or defer** — Plugins with `activationEvents`, or with a non-empty `contributes.editorDocumentTypes` (an implicit lazy trigger — see `hasLazyActivationTrigger` in `PluginHost.ts`), go to `status: 'pending'` (lazy). Others attempt an IPC `PH_RELOAD_PLUGIN`. IPC failures are caught and preserve the `error` state.
 
 `togglePlugin` cooperates by routing errored plugins (not in `plugins.disabledPlugins`) to `reloadPlugin` instead of the disable branch. Plugins in `status: 'quarantined'` are not retried via toggle alone — use `bifrost.plugins.trustAndReEnablePlugin(name)` (see _Per-plugin crash recovery and quarantine_).
@@ -233,7 +233,7 @@ export async function activate(api: StudioPluginApi): Promise<void> {
 | `themes` | `bifrost.theme` (ThemeMediator / ThemeManager) via `PluginHostBridge` + CSS injection |
 | `env` | Frozen environment object |
 
-Method signatures live on `StudioPluginApi` in `@elraptorus/bfw_studio_sdk`. How-to examples: [plugin-development-guide.md](../plugin-development-guide.md). iframe protocol: [webviews.md](webviews.md). BPMN/DMN enrichment: [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) / [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md).
+Method signatures live on `StudioPluginApi` in `@elraptorus/bfw_studio_sdk`. How-to examples: [plugin-development-guide.md](../plugin-development-guide.md). iframe protocol: [webviews.md](webviews.md). BPMN/DMN/landscape enrichment: [plugin-bpmn-enrichment.md](plugin-bpmn-enrichment.md) / [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md) / [plugin-landscape-enrichment.md](plugin-landscape-enrichment.md).
 
 Host-only facts:
 
@@ -245,7 +245,7 @@ Host-only facts:
 - **Workspace** — official file I/O; `ModuleGate` also gates raw `fs`. Prefer `api.workspace`.
 - **Themes** — only `--theme-*` custom properties; injected as `<style>` on `.bifrost.bifrost-theme--<id>`.
 - **Views** — push-only `PluginTreeItem[]`.
-- **`bpmn` / `dmn`** — permission-gated; see the enrichment docs. `dmn` is DRD-only.
+- **`bpmn` / `dmn` / `landscape`** — permission-gated; see the enrichment docs. `dmn` is DRD-only; `landscape` overlays cover the plane on screen.
 
 #### Static editor document type contributions (`contributes.editorDocumentTypes`)
 
@@ -272,7 +272,7 @@ Commands registered by plugins are automatically prefixed with `plugin.<pluginNa
 | Rule | Commands |
 |------|----------|
 | **Hard-denied** (no permission can grant) | `git.*`, `engine.*`, `plugins.*`, `dev.*`, plus `std.solution.*`, `std.window.*`, `std.internal.*`, `std.test.*` |
-| **Permission-gated** | `std.*` → `commands.std`; `bpmn.*` (except modeler register) → `commands.bpmn`; `dmn.*` (except modeler register) → `commands.dmn`; `bpmn.modeler.registerModule` / `dmn.modeler.registerModule` → `bpmn.renderer` (legacy alias: `renderer-modules`); `api.bpmn.modeling.*` → `bpmn.modelling`; `api.bpmn.postToRendererModule` / `api.bpmn.onRendererModuleMessage` → `bpmn.renderer`; `api.dmn.modeling.*` → `dmn.modelling`; `api.dmn.postToRendererModule` / `api.dmn.onRendererModuleMessage` → `dmn.renderer` |
+| **Permission-gated** | `std.*` → `commands.std`; `bpmn.*` (except modeler register) → `commands.bpmn`; `dmn.*` (except modeler register) → `commands.dmn`; `bpmn.modeler.registerModule` → `bpmn.renderer` (legacy alias: `renderer-modules`); `dmn.modeler.registerModule` → `dmn.renderer`; `bpmn.landscape.modeler.registerModule` → `landscape.renderer`; `api.bpmn.modeling.*` → `bpmn.modelling`; `api.bpmn.postToRendererModule` / `api.bpmn.onRendererModuleMessage` → `bpmn.renderer`; `api.dmn.modeling.*` → `dmn.modelling`; `api.dmn.postToRendererModule` / `api.dmn.onRendererModuleMessage` → `dmn.renderer`; `api.landscape.modeling.*` and the palette / context pad methods → `landscape.modelling`; `api.landscape.postToRendererModule` / `api.landscape.onRendererModuleMessage` → `landscape.renderer` |
 | **Always allowed** | `plugin.<pluginName>.*` (own commands) |
 
 Failures throw `CommandBlockedError` or `PermissionDeniedError`, serialized back to the worker as API errors.
@@ -295,7 +295,7 @@ bifrost.plugins.registerApiNamespace((context) => new BpmnApiBridge(bifrost, con
 
 | Member | Called by | Purpose |
 |---|---|---|
-| `namespace` | `PluginHostBridge` | Routing key; limited to `'bpmn' \| 'dmn'` because each needs `<namespace>`, `.modelling` and `.renderer` entries in `PluginPermission` |
+| `namespace` | `PluginHostBridge` | Routing key; limited to `'bpmn' \| 'dmn' \| 'landscape'` because each needs `<namespace>`, `.modelling` and `.renderer` entries in `PluginPermission` |
 | `handleApiRequest(method, args, pluginName)` | `PluginHostBridge.executeApiRequest` | After the generic gate: `<namespace>` always, `<namespace>.modelling` for palette/context-pad registration and `modeling.*`, `<namespace>.renderer` for `postToRendererModule` |
 | `registerCallback(payload, getOrCreatePluginGroup)` | `PluginHostBridge.registerCallback` | Event subscriptions; `onRendererModuleMessage` also needs `<namespace>.renderer` |
 | `deliverRendererModuleMessage(pluginName, data)` | `PluginHostBridge` fan-out | Renderer-module → plugin messages |
@@ -308,6 +308,7 @@ bifrost.plugins.registerApiNamespace((context) => new BpmnApiBridge(bifrost, con
 |---|---|
 | `bpmn` | `modules/bpmn-editor/plugin-api/BpmnApiBridge.ts` (+ `PluginOverlayStore.ts`) |
 | `dmn` | `modules/dmn-editor/plugin-api/DmnApiBridge.ts` |
+| `landscape` | `modules/bpmn-landscape/plugin-api/LandscapeApiBridge.ts` |
 
 ### IPC caller attestation
 
@@ -331,6 +332,9 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 | `dmn` | Read DMN DRD elements, subscribe to events, place overlays |
 | `dmn.modelling` | All of `dmn` + model modification + DRD palette/context pad contributions |
 | `dmn.renderer` | All of `dmn.modelling` + inject diagram-js modules into the DRD renderer |
+| `landscape` | Read landscape map elements, subscribe to events, place overlays |
+| `landscape.modelling` | All of `landscape` + model modification + palette/context pad contributions |
+| `landscape.renderer` | All of `landscape.modelling` + inject diagram-js modules into the map renderer |
 | `native` | Load `.node` native addons via `require()` |
 | `system-info` | `require('os')` (safe subset only, via `ModuleGate`) |
 
@@ -342,7 +346,7 @@ Seven explicit permissions (declared in `bifrostStudio.permissions` in `package.
 - **Read**: Unrestricted (user preferences, not secrets)
 - **Register**: Descriptor keys must start with `plugin.<name>.`
 
-- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workbench, workspace, views, themes) plus every module-registered `PluginApiNamespace` (see §Module API Namespaces). The `bpmn` namespace is handled by `BpmnApiBridge` and the `dmn` namespace by `DmnApiBridge`; the bridge enforces the tiered permissions `<namespace>` → `<namespace>.modelling` → `<namespace>.renderer` for both, and every DMN modeling/renderer operation is additionally gated on the DRD view being active.
+- **API requests**: Dispatched to namespace-specific handlers (commands, diagnostics, dialogs, notifications, settings, webviews, editors, panes, statusBar, menuBar, menus, workbench, workspace, views, themes) plus every module-registered `PluginApiNamespace` (see §Module API Namespaces). The `bpmn` namespace is handled by `BpmnApiBridge`, the `dmn` namespace by `DmnApiBridge` and the `landscape` namespace by `LandscapeApiBridge`; the host enforces the tiered permissions `<namespace>` → `<namespace>.modelling` → `<namespace>.renderer` for all three, and every DMN modeling/renderer operation is additionally gated on the DRD view being active.
 - **Command registration**: Handled via `PH_REGISTER_CALLBACK` with `namespace: 'commands'` and `method: 'register'`. The bridge creates a proxy handler in `bifrost.commands` that forwards invocations to the plugin Worker via `PH_CALLBACK_INVOCATION`. Manifest stub commands are unregistered and replaced when the real handler registers.
 - **Settings change listeners**: Subscribes to `EVENT_SETTINGS_CHANGED` with key filtering, invokes callbacks via the connection.
 - **Webview messaging**: `postMessage` forwards data to `PluginIframeManager.postMessageToIframe()`. `onMessage` sets a `messageHandler` on the iframe entry which routes incoming iframe messages back to the child process via `PH_CALLBACK_INVOCATION`. `createPanel` returns a deterministic `iframeId`.

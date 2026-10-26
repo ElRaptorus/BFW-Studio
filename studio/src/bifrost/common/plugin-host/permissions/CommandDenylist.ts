@@ -16,6 +16,7 @@ const HARD_DENIED_SUBPATTERNS: RegExp[] = [/^std\.solution\./, /^std\.window\./,
 const PERMISSION_GATED = new Map<RegExp, PluginPermission>([
   [/^bpmn\.modeler\.registerModule$/, 'bpmn.renderer'],
   [/^dmn\.modeler\.registerModule$/, 'dmn.renderer'],
+  [/^bpmn\.landscape\.modeler\.registerModule$/, 'landscape.renderer'],
 ]);
 
 const GROUP_PERMISSION: Record<string, PluginPermission> = {

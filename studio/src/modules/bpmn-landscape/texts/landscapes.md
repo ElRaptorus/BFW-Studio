@@ -39,8 +39,8 @@ Let the Studio place the processes for you. Right-click one or more processes or
 A dialog asks for:
 
 - **Name** of the map.
-- **Add related processes:** none, or the processes that call or message the selection, up to three steps away.
-- **Group processes:** none, by folder or by file of the BPMN file.
+- **Add related processes:** none, or the processes linked to the selection by a call, message or signal in either direction, up to three steps away.
+- **Group processes:** none, by the folder or by the file of each process.
 - **Arrange by call hierarchy:** on, a process sits above the processes it calls; off, all relations (messages and signals too) count.
 
 Then you choose where to save the map. The result is an ordinary map: move, regroup or delete anything. Relation lines are drawn from the BPMN files as usual.

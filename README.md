@@ -64,5 +64,5 @@ See [here](./docs/introduction.md).
 
 ## License
 
-MIT. Third-party software that ships with the app and its licenses are listed in
-[`studio/THIRD-PARTY-NOTICES.md`](./studio/THIRD-PARTY-NOTICES.md).
+MIT. Notices for third-party software that ships with the app are in
+[`studio/THIRD-PARTY-NOTICES.md`](./studio/THIRD-PARTY-NOTICES.md); it does not yet list every bundled package.

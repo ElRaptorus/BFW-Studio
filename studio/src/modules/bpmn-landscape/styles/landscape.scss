@@ -25,11 +25,6 @@
     font-size: 22px;
   }
 
-  .landscape-group,
-  .landscape-band {
-    fill-opacity: 0.6;
-  }
-
   .landscape-label {
     pointer-events: none;
     user-select: none;
@@ -84,13 +79,6 @@
     display: flex;
     align-items: flex-end;
     gap: 0.5rem;
-  }
-
-  .landscape-line-label {
-    stroke: var(--theme-diagram-bg);
-    stroke-width: 4px;
-    stroke-linejoin: round;
-    paint-order: stroke;
   }
 
   .landscape-map--focus .djs-element:not(.landscape-focused) > .djs-visual {

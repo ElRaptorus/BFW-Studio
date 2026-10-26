@@ -19,7 +19,7 @@ type ChangeListener = () => void;
  * Written by ContributionRegistrar (manifest entries) and BpmnApiBridge (runtime entries).
  * Read by PluginPaletteProvider and PluginContextPadProvider (diagram-js modules).
  */
-class PluginBpmnContributionStore {
+export class PluginBpmnContributionStore {
   private paletteEntries = new Map<string, ManifestBpmnPaletteEntry[]>();
   private contextPadEntries = new Map<string, Map<string, ResolvedContextPadEntry>>();
   private listeners: ChangeListener[] = [];

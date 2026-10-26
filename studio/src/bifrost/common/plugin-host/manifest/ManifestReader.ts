@@ -274,6 +274,40 @@ export function readManifest(pkg: Record<string, unknown>): ManifestReadResult {
     }
   }
 
+  // Cross-validate: landscapePalette/landscapeContextPad require 'landscape.modelling' permission
+  const hasLandscapeModellingPermission =
+    permissions?.includes('landscape.modelling') === true || permissions?.includes('landscape.renderer') === true;
+  if (!hasLandscapeModellingPermission) {
+    if (contributes?.landscapePalette != null && contributes.landscapePalette.length > 0) {
+      warnings.push({
+        path: 'bifrostStudio.contributes.landscapePalette',
+        message:
+          'landscapePalette contributions require the "landscape.modelling" permission. ' +
+          'These entries will be ignored at runtime until the permission is declared.',
+      });
+    }
+    if (contributes?.landscapeContextPad != null && contributes.landscapeContextPad.length > 0) {
+      warnings.push({
+        path: 'bifrostStudio.contributes.landscapeContextPad',
+        message:
+          'landscapeContextPad contributions require the "landscape.modelling" permission. ' +
+          'These entries will be ignored at runtime until the permission is declared.',
+      });
+    }
+  }
+
+  // Cross-validate: landscapeModules require 'landscape.renderer' permission
+  if (contributes?.landscapeModules != null && contributes.landscapeModules.length > 0) {
+    if (permissions?.includes('landscape.renderer') !== true) {
+      errors.push({
+        path: 'bifrostStudio.contributes.landscapeModules',
+        message:
+          'landscapeModules contributions require the "landscape.renderer" permission. ' +
+          'Renderer modules will not be loaded without this permission.',
+      });
+    }
+  }
+
   return { manifest, errors, warnings };
 }
 
@@ -327,13 +361,22 @@ function validateContributes(
     result.bpmnModules = validateBpmnModules(raw.bpmnModules, errors);
   }
   if (raw.dmnPalette != null) {
-    result.dmnPalette = validateDmnPalette(raw.dmnPalette, errors);
+    result.dmnPalette = validateDiagramPalette(raw.dmnPalette, errors, 'dmnPalette');
   }
   if (raw.dmnContextPad != null) {
-    result.dmnContextPad = validateDmnContextPad(raw.dmnContextPad, errors);
+    result.dmnContextPad = validateDiagramContextPad(raw.dmnContextPad, errors, 'dmnContextPad');
   }
   if (raw.dmnModules != null) {
-    result.dmnModules = validateDmnModules(raw.dmnModules, errors);
+    result.dmnModules = validateDiagramModules(raw.dmnModules, errors, 'dmnModules');
+  }
+  if (raw.landscapePalette != null) {
+    result.landscapePalette = validateDiagramPalette(raw.landscapePalette, errors, 'landscapePalette');
+  }
+  if (raw.landscapeContextPad != null) {
+    result.landscapeContextPad = validateDiagramContextPad(raw.landscapeContextPad, errors, 'landscapeContextPad');
+  }
+  if (raw.landscapeModules != null) {
+    result.landscapeModules = validateDiagramModules(raw.landscapeModules, errors, 'landscapeModules');
   }
   if (raw.editorDocumentTypes != null) {
     result.editorDocumentTypes = validateEditorDocumentTypes(raw.editorDocumentTypes, errors);
@@ -359,6 +402,9 @@ function validateContributes(
     'dmnPalette',
     'dmnContextPad',
     'dmnModules',
+    'landscapePalette',
+    'landscapeContextPad',
+    'landscapeModules',
     'editorDocumentTypes',
     'pages',
   ]);
@@ -921,10 +967,14 @@ function validateBpmnModules(raw: unknown, errors: ManifestError[]): ManifestBpm
   return result;
 }
 
-// ─── DMN Palette ─────────────────────────────────────────────
+// ─── DMN and Landscape Palette ───────────────────────────────
 
-function validateDmnPalette(raw: unknown, errors: ManifestError[]): ManifestDmnPaletteEntry[] {
-  const basePath = 'bifrostStudio.contributes.dmnPalette';
+function validateDiagramPalette(
+  raw: unknown,
+  errors: ManifestError[],
+  contributionKey: 'dmnPalette' | 'landscapePalette',
+): ManifestDmnPaletteEntry[] {
+  const basePath = `bifrostStudio.contributes.${contributionKey}`;
   if (!Array.isArray(raw)) {
     errors.push({ path: basePath, message: 'Must be an array' });
     return [];
@@ -967,10 +1017,14 @@ function validateDmnPalette(raw: unknown, errors: ManifestError[]): ManifestDmnP
   return result;
 }
 
-// ─── DMN Context Pad ─────────────────────────────────────────
+// ─── DMN and Landscape Context Pad ───────────────────────────
 
-function validateDmnContextPad(raw: unknown, errors: ManifestError[]): ManifestDmnContextPadEntry[] {
-  const basePath = 'bifrostStudio.contributes.dmnContextPad';
+function validateDiagramContextPad(
+  raw: unknown,
+  errors: ManifestError[],
+  contributionKey: 'dmnContextPad' | 'landscapeContextPad',
+): ManifestDmnContextPadEntry[] {
+  const basePath = `bifrostStudio.contributes.${contributionKey}`;
   if (!Array.isArray(raw)) {
     errors.push({ path: basePath, message: 'Must be an array' });
     return [];
@@ -1230,10 +1284,14 @@ function validateEditorDocumentTypes(raw: unknown, errors: ManifestError[]): Man
   return result;
 }
 
-// ─── DMN Modules ──────────────────────────────────────────────
+// ─── DMN and Landscape Modules ────────────────────────────────
 
-function validateDmnModules(raw: unknown, errors: ManifestError[]): ManifestDmnModule[] {
-  const basePath = 'bifrostStudio.contributes.dmnModules';
+function validateDiagramModules(
+  raw: unknown,
+  errors: ManifestError[],
+  contributionKey: 'dmnModules' | 'landscapeModules',
+): ManifestDmnModule[] {
+  const basePath = `bifrostStudio.contributes.${contributionKey}`;
   if (!Array.isArray(raw)) {
     errors.push({ path: basePath, message: 'Must be an array' });
     return [];

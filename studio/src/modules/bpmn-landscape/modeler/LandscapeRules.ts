@@ -34,11 +34,13 @@ function containerFor(target: any, shapes: any[]): any {
   return shapes.every((shape) => shape.type === 'group') ? target.parent : target;
 }
 
-/** Connectors run between two different map elements; bands and lines are no ends. */
+/** Bands and lines are no ends of a connector. */
+const isConnectorEnd = (element: any): boolean =>
+  element?.businessObject != null && !isConnection(element) && element.type !== 'band';
+
+/** Connectors run between two different map elements. */
 function canConnect(source: any, target: any): boolean {
-  const isEnd = (element: any): boolean =>
-    element?.businessObject != null && !isConnection(element) && element.type !== 'band';
-  return isEnd(source) && isEnd(target) && source !== target;
+  return isConnectorEnd(source) && isConnectorEnd(target) && source !== target;
 }
 
 export default class LandscapeRules extends RuleProvider {
@@ -94,6 +96,9 @@ export default class LandscapeRules extends RuleProvider {
       'element.autoResize',
       ({ target }: any) => (target?.type === 'group' || target?.type === 'band') && !isCollapsedGroup(target),
     );
+
+    // The global connect tool asks this before it lets the user start a connector at an element.
+    this.addRule('connection.start', ({ source }: any) => isConnectorEnd(source));
 
     this.addRule('connection.create', ({ source, target }: any) =>
       canConnect(source, target)

@@ -41,11 +41,11 @@ At runtime, `permissionGate.assert(pluginName, requiredPermission, context)` thr
 
 ## Overlay API
 
-DMN has no internal overlay factory pipeline of its own (unlike BPMN). `DmnPluginOverlayManager` combines factory-chain resolution with direct rendering of raw DOM overlays onto the DRD's `overlays` diagram-js service, obtained via `DmnModelerComponentAdapter.getDrdOverlays()` / `getDrdElementRegistry()`.
+DMN has no internal overlay factory pipeline of its own (unlike BPMN). `PluginDiagramOverlayManager` (shared with the landscape bridge, see [plugin-landscape-enrichment.md](plugin-landscape-enrichment.md)) combines factory-chain resolution with direct rendering of raw DOM overlays onto the DRD's `overlays` diagram-js service, obtained via `DmnModelerComponentAdapter.getDrdOverlays()` / `getDrdElementRegistry()`.
 
 ### Overlay types
 
-DMN overlays support the same two mechanisms as BPMN: direct, imperative overlays via `api.dmn.setOverlays(uri, overlays)` / `clearOverlays(uri, filter?)` (rendered immediately, tracked per plugin+uri, and re-applied automatically once the DRD view reactivates if it was inactive when set), and factory-based overlays via `api.dmn.registerOverlayFactory(factory, options?)` (auto-resolved and re-rendered whenever the element set, selection, or active view changes). Both are rendered by `DmnPluginOverlayManager` / `DmnApiBridge` onto the same DRD `overlays` diagram-js service.
+DMN overlays support the same two mechanisms as BPMN: direct, imperative overlays via `api.dmn.setOverlays(uri, overlays)` / `clearOverlays(uri, filter?)` (rendered immediately, tracked per plugin+uri, and re-applied automatically once the DRD view reactivates if it was inactive when set), and factory-based overlays via `api.dmn.registerOverlayFactory(factory, options?)` (auto-resolved and re-rendered whenever the element set, selection, or active view changes). Both are rendered by `PluginDiagramOverlayManager` / `DmnApiBridge` onto the same DRD `overlays` diagram-js service.
 
 | Type | Rendering | Interactivity | Use case |
 |------|-----------|---------------|----------|
@@ -79,7 +79,7 @@ Call `api.dmn.requestOverlayRefresh()` when a plugin's internal state changes in
 
 ### View awareness
 
-Because DMN documents have multiple views, `DmnPluginOverlayManager.refresh()` must be view-aware: when `EVENT_DMN_ADAPTER_VIEW_CHANGED` fires and the new view is not the DRD, the manager clears every previously-rendered overlay from the DRD's overlay service without re-invoking factories (there is nothing to render on a decision table). When the view switches back to the DRD, the manager re-resolves and re-renders from scratch. This prevents the "view-switch overlay leak" — overlays that would otherwise linger, detached from their now-invisible canvas, if the manager only reacted to `EVENT_DMN_ADAPTER_XML_CHANGED`.
+Because DMN documents have multiple views, `DmnApiBridge` calls `PluginDiagramOverlayManager.refresh(null, …)` when the view is not the DRD; the manager must be view-aware: when `EVENT_DMN_ADAPTER_VIEW_CHANGED` fires and the new view is not the DRD, the manager clears every previously-rendered overlay from the DRD's overlay service without re-invoking factories (there is nothing to render on a decision table). When the view switches back to the DRD, the manager re-resolves and re-renders from scratch. This prevents the "view-switch overlay leak" — overlays that would otherwise linger, detached from their now-invisible canvas, if the manager only reacted to `EVENT_DMN_ADAPTER_XML_CHANGED`.
 
 The direct `setOverlays`/`clearOverlays` mechanism follows the same deferral discipline: `DmnApiBridge.handleSetOverlays()` never drops a plugin's overlay request just because the DRD is inactive at call time — it stores the descriptors and, via a per-uri `EVENT_DMN_ADAPTER_VIEW_CHANGED` listener, re-applies them the moment the DRD reactivates.
 
@@ -236,7 +236,7 @@ When a plugin with renderer modules is disabled:
 | `bifrost/electron-renderer/plugin-host/PluginHostBridge.ts` | Namespace dispatch + permission gating (shared with BPMN) |
 | `bifrost/common/plugin-host/permissions/PermissionTypes.ts` | Permission types + hierarchy (shared with BPMN) |
 | `bifrost/common/plugin-host/permissions/PermissionGate.ts` | Runtime permission enforcement (shared with BPMN) |
-| `modules/dmn-editor/DmnPluginOverlayManager.ts` | Overlay factory-chain resolution + direct DRD overlay rendering |
+| `bifrost/common/plugin-host/PluginDiagramOverlayManager.ts` | Overlay factory-chain resolution + direct DRD overlay rendering |
 | `modules/dmn-core/plugin-modules/PluginDmnModuleLoader.ts` | Loads plugin renderer modules for the DRD |
 | `modules/dmn-core/DmnModelerModuleRegistry.ts` | Module registry (internal + plugin), keyed per DRD modeler |
 | `modules/dmn-core/PluginDmnContributionStore.ts` | Palette/context pad contribution registry |

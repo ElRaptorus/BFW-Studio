@@ -3,7 +3,8 @@
  * it needs in its manifest. Undeclared capabilities are denied at runtime.
  *
  * BPMN permissions form a hierarchy: `'bpmn.renderer'` implies `'bpmn.modelling'`
- * implies `'bpmn'`. DMN permissions mirror the same hierarchy.
+ * implies `'bpmn'`. DMN permissions mirror the same hierarchy, and so do the landscape map permissions
+ * (`'landscape.renderer'` implies `'landscape.modelling'` implies `'landscape'`).
  *
  * Hierarchy helpers (`PERMISSION_HIERARCHY`, `ALL_PERMISSIONS`) live in
  * `studio/src/bifrost/common/plugin-host/permissions/PermissionTypes.ts` —
@@ -21,5 +22,8 @@ export type PluginPermission =
   | 'dmn'
   | 'dmn.modelling'
   | 'dmn.renderer'
+  | 'landscape'
+  | 'landscape.modelling'
+  | 'landscape.renderer'
   | 'native'
   | 'system-info';

@@ -159,6 +159,43 @@ describe('LandscapeMapFile', () => {
     expect(await parseLandscapeMap(written)).toEqual(result);
   });
 
+  it('keeps foreign attributes on levels, elements and connectors and writes them back', async () => {
+    const box = 'x="0" y="0" width="10" height="10"';
+    const text = mapText(
+      '<landscape:level id="l" name="Domain" foo:code="D" />' +
+        `<landscape:group id="g" ${box} foo:owner="Sales"><landscape:note id="n" ${box} foo:tag="x" /></landscape:group>` +
+        '<landscape:connector id="c" sourceId="g" targetId="n" foo:kind="data" />',
+      ' xmlns:foo="http://foo"',
+    );
+    const result = await parseLandscapeMap(text);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.map.levels[0]?.extensionAttributes).toEqual({ 'foo:code': 'D' });
+    expect(result.map.elements.map((element) => element.extensionAttributes)).toEqual([
+      { 'foo:owner': 'Sales' },
+      { 'foo:tag': 'x' },
+    ]);
+    expect(result.map.connectors[0]?.extensionAttributes).toEqual({ 'foo:kind': 'data' });
+    expect(await parseLandscapeMap(serializeLandscapeMap(result.map))).toEqual(result);
+  });
+
+  it('rejects a fill or stroke that is not a plain colour', async () => {
+    const box = 'x="0" y="0" width="10" height="10"';
+    const errors = await errorsOf(
+      mapText(
+        `<landscape:note id="a" ${box} fill="#ffcdd2" stroke="rgb(1, 2, 3)" />` +
+          `<landscape:note id="b" ${box} fill="red; fill: url(https://example.com/x)" stroke="steelblue" />`,
+      ),
+    );
+
+    expect(errors).toEqual([
+      `Element 'b' has fill "red; fill: url(https://example.com/x)", which is not a colour such as "#ffcdd2".`,
+    ]);
+  });
+
   it('reads a minimal map, also with a default namespace, and fills the defaults', async () => {
     expect(await parseLandscapeMap(mapText('').replace('name="Test"', 'name="Minimal"'))).toEqual({
       ok: true,
@@ -266,7 +303,7 @@ describe('LandscapeMapFile', () => {
     ]);
   });
 
-  it('rejects ids that the canvas reserves for the planes of groups and for relation lines', async () => {
+  it('rejects ids with a colon, which the canvas uses for the planes of groups and for relation lines', async () => {
     const box = 'x="0" y="0" width="10" height="10"';
     const errors = await errorsOf(
       mapText(
@@ -277,8 +314,8 @@ describe('LandscapeMapFile', () => {
     );
 
     expect(errors).toEqual([
-      `The id 'plane:team' is reserved for elements the canvas derives.`,
-      `The id 'relation:call:a:b' is reserved for elements the canvas derives.`,
+      `The id 'plane:team' contains ':'; map ids cannot contain it.`,
+      `The id 'relation:call:a:b' contains ':'; map ids cannot contain it.`,
     ]);
   });
 

@@ -1,6 +1,7 @@
 import type { RelationLine } from '../buildRelationLines';
 import type LandscapeCollapse from './LandscapeCollapse';
 import type LandscapeDrilldown from './LandscapeDrilldown';
+import type LandscapeReplaceMenuProvider from './LandscapeReplaceMenuProvider';
 import { UPDATE_MAP_COMMAND } from './LandscapeUpdates';
 import type LandscapeUpdates from './LandscapeUpdates';
 import { isCollapsedGroup } from './landscapeHierarchy';
@@ -14,6 +15,7 @@ export default class LandscapeContextPadProvider {
     'landscapeUpdates',
     'landscapeCollapse',
     'landscapeDrilldown',
+    'landscapeReplaceMenu',
   ];
 
   private modeling: any;
@@ -22,6 +24,7 @@ export default class LandscapeContextPadProvider {
   private landscapeUpdates: LandscapeUpdates;
   private landscapeCollapse: LandscapeCollapse;
   private landscapeDrilldown: LandscapeDrilldown;
+  private landscapeReplaceMenu: LandscapeReplaceMenuProvider;
 
   constructor(
     contextPad: any,
@@ -31,6 +34,7 @@ export default class LandscapeContextPadProvider {
     landscapeUpdates: LandscapeUpdates,
     landscapeCollapse: LandscapeCollapse,
     landscapeDrilldown: LandscapeDrilldown,
+    landscapeReplaceMenu: LandscapeReplaceMenuProvider,
   ) {
     this.modeling = modeling;
     this.connect = connect;
@@ -38,6 +42,7 @@ export default class LandscapeContextPadProvider {
     this.landscapeUpdates = landscapeUpdates;
     this.landscapeCollapse = landscapeCollapse;
     this.landscapeDrilldown = landscapeDrilldown;
+    this.landscapeReplaceMenu = landscapeReplaceMenu;
     contextPad.registerProvider(this);
   }
 
@@ -60,6 +65,16 @@ export default class LandscapeContextPadProvider {
         action: { click: () => this.modeling.removeElements([element]) },
       },
     };
+    if (this.landscapeReplaceMenu.canReplace(element)) {
+      entries.replace = {
+        group: 'edit',
+        className: 'ph ph-swap',
+        title: 'Change type',
+        action: {
+          click: (event: MouseEvent) => this.landscapeReplaceMenu.open(element, { x: event.x, y: event.y }),
+        },
+      };
+    }
     if (element.type === 'group') {
       const isCollapsed = isCollapsedGroup(element);
       entries.toggleCollapse = {

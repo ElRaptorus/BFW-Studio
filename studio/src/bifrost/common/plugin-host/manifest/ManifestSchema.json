@@ -47,6 +47,9 @@
           "dmn",
           "dmn.modelling",
           "dmn.renderer",
+          "landscape",
+          "landscape.modelling",
+          "landscape.renderer",
           "native",
           "system-info"
         ]

@@ -54,7 +54,7 @@ export type PluginApiNamespaceContext = {
  */
 export interface PluginApiNamespace {
   /** Limited to namespaces with `<namespace>`, `.modelling` and `.renderer` entries in `PluginPermission`. */
-  readonly namespace: 'bpmn' | 'dmn';
+  readonly namespace: 'bpmn' | 'dmn' | 'landscape';
   handleApiRequest(method: string, args: unknown[], pluginName: string): Promise<unknown>;
   registerCallback(
     payload: RegisterCallbackPayload,

@@ -18,6 +18,8 @@ export default class LandscapePaletteProvider {
     'elementRegistry',
     'handTool',
     'lassoTool',
+    'spaceTool',
+    'globalConnect',
     'canvas',
     'eventBus',
   ];
@@ -28,6 +30,8 @@ export default class LandscapePaletteProvider {
   private elementRegistry: any;
   private handTool: any;
   private lassoTool: any;
+  private spaceTool: any;
+  private globalConnect: any;
 
   constructor(
     palette: any,
@@ -36,6 +40,8 @@ export default class LandscapePaletteProvider {
     elementRegistry: any,
     handTool: any,
     lassoTool: any,
+    spaceTool: any,
+    globalConnect: any,
     canvas: any,
     eventBus: EventBus,
   ) {
@@ -45,6 +51,8 @@ export default class LandscapePaletteProvider {
     this.elementRegistry = elementRegistry;
     this.handTool = handTool;
     this.lassoTool = lassoTool;
+    this.spaceTool = spaceTool;
+    this.globalConnect = globalConnect;
     palette.registerProvider(this);
     // A band belongs on the map, not on the plane of a group; the entries depend on which one is on screen.
     eventBus.on('root.set', () => palette._rebuild());
@@ -83,6 +91,18 @@ export default class LandscapePaletteProvider {
         className: 'ph ph-selection',
         title: 'Select several elements',
         action: { click: (event: Event) => this.lassoTool.activateSelection(event) },
+      },
+      'space-tool': {
+        group: 'tools',
+        className: 'ph ph-arrows-out-line-horizontal',
+        title: 'Make or remove space between elements',
+        action: { click: (event: Event) => this.spaceTool.activateSelection(event) },
+      },
+      'global-connect-tool': {
+        group: 'tools',
+        className: 'ph ph-line-segment',
+        title: 'Connect two elements',
+        action: { click: (event: Event) => this.globalConnect.start(event) },
       },
       'tool-separator': { group: 'tools', separator: true },
       'create-band': createEntry(

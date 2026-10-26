@@ -12,6 +12,7 @@ import CopyPasteModule from 'diagram-js/lib/features/copy-paste';
 import CreateModule from 'diagram-js/lib/features/create';
 import DistributeElementsModule from 'diagram-js/lib/features/distribute-elements';
 import EditorActionsModule from 'diagram-js/lib/features/editor-actions';
+import GlobalConnectModule from 'diagram-js/lib/features/global-connect';
 import GridSnappingModule from 'diagram-js/lib/features/grid-snapping';
 import HandToolModule from 'diagram-js/lib/features/hand-tool';
 import KeyboardModule from 'diagram-js/lib/features/keyboard';
@@ -21,9 +22,12 @@ import ModelingModule from 'diagram-js/lib/features/modeling';
 import MoveModule from 'diagram-js/lib/features/move';
 import OverlaysModule from 'diagram-js/lib/features/overlays';
 import PaletteModule from 'diagram-js/lib/features/palette';
+import PopupMenuModule from 'diagram-js/lib/features/popup-menu';
 import ResizeModule from 'diagram-js/lib/features/resize';
 import RootElementsModule from 'diagram-js/lib/features/root-elements';
 import SelectionModule from 'diagram-js/lib/features/selection';
+import SnappingModule from 'diagram-js/lib/features/snapping';
+import SpaceToolModule from 'diagram-js/lib/features/space-tool';
 import CroppingConnectionDocking from 'diagram-js/lib/layout/CroppingConnectionDocking';
 import { getMid } from 'diagram-js/lib/layout/LayoutUtil';
 import MoveCanvasModule from 'diagram-js/lib/navigation/movecanvas';
@@ -40,10 +44,13 @@ import LandscapeLabelEditing from './LandscapeLabelEditing';
 import LandscapeLayouter from './LandscapeLayouter';
 import LandscapeOrdering from './LandscapeOrdering';
 import LandscapePaletteProvider from './LandscapePaletteProvider';
+import { LandscapePluginContextPadProvider, LandscapePluginPaletteProvider } from './LandscapePluginEntries';
 import LandscapeRelationLayer from './LandscapeRelationLayer';
 import type { LandscapeRendererConfig } from './LandscapeRenderer';
 import LandscapeRenderer from './LandscapeRenderer';
+import LandscapeReplaceMenuProvider from './LandscapeReplaceMenuProvider';
 import LandscapeRules from './LandscapeRules';
+import LandscapeSnapping from './LandscapeSnapping';
 import LandscapeUpdates from './LandscapeUpdates';
 import { canvasToMap, mapToCanvasDescriptors, shapeAttributesOf } from './landscapeCanvasMapping';
 import {
@@ -124,6 +131,9 @@ const LANDSCAPE_MODULE = {
     'landscapeDrilldown',
     'paletteProvider',
     'contextPadProvider',
+    'landscapeReplaceMenu',
+    'landscapePluginPalette',
+    'landscapePluginContextPad',
   ],
   landscapeRenderer: ['type', LandscapeRenderer],
   landscapeRules: ['type', LandscapeRules],
@@ -138,8 +148,12 @@ const LANDSCAPE_MODULE = {
   landscapeDrilldown: ['type', LandscapeDrilldown],
   paletteProvider: ['type', LandscapePaletteProvider],
   contextPadProvider: ['type', LandscapeContextPadProvider],
+  landscapeReplaceMenu: ['type', LandscapeReplaceMenuProvider],
+  landscapePluginPalette: ['type', LandscapePluginPaletteProvider],
+  landscapePluginContextPad: ['type', LandscapePluginContextPadProvider],
   connectionDocking: ['type', CroppingConnectionDocking],
   layouter: ['type', LandscapeLayouter],
+  createMoveSnapping: ['type', LandscapeSnapping],
 };
 
 const EXPORT_PADDING = 10;
@@ -175,7 +189,8 @@ export default class LandscapeModeler {
   readonly container: HTMLDivElement;
   private readonly diagram: Diagram;
 
-  constructor(config: LandscapeRendererConfig) {
+  /** `additionalModules` come after the built-in modules, so they can override a service of theirs. */
+  constructor(config: LandscapeRendererConfig, additionalModules: any[] = []) {
     this.container = document.createElement('div');
     this.container.className = 'landscape-map__canvas';
     this.diagram = new Diagram({
@@ -199,17 +214,22 @@ export default class LandscapeModeler {
         KeyboardModule,
         KeyboardMoveSelectionModule,
         EditorActionsModule,
+        SnappingModule,
         GridSnappingModule,
+        SpaceToolModule,
+        GlobalConnectModule,
         RootElementsModule,
         OverlaysModule,
         ContextPadModule,
         PaletteModule,
+        PopupMenuModule,
         ZoomScrollModule,
         MoveCanvasModule,
         GridModule,
         MinimapModule,
         DirectEditingModule,
         LANDSCAPE_MODULE,
+        ...additionalModules,
       ],
     });
   }
@@ -322,9 +342,14 @@ export default class LandscapeModeler {
   exportSvg(): string {
     const canvas = this.get('canvas');
     const activeLayer: Element = canvas.getActiveLayer();
-    // A line label may stick out of the line's bends; a detached canvas measures every text as empty.
+    // A line label may stick out of the line's bends; a detached canvas measures every text as empty. `getBBox` leaves
+    // out the label's own `translate`, so it is added here.
     const lineLabelBoxes = [...activeLayer.querySelectorAll<SVGGraphicsElement>('.landscape-line-label')]
-      .map((text) => text.getBBox())
+      .map((text) => {
+        const box = text.getBBox();
+        const offset = text.transform.baseVal.consolidate()?.matrix;
+        return { x: box.x + (offset?.e ?? 0), y: box.y + (offset?.f ?? 0), width: box.width, height: box.height };
+      })
       .filter((box) => box.width > 0 && box.height > 0);
     const currentRoot = canvas.getRootElement();
     const bounds = boundsOf([
@@ -371,16 +396,23 @@ export default class LandscapeModeler {
     }
     const focused = new Set<any>();
     const addLine = (connection: any): void => {
-      focused.add(connection).add(connection.source).add(connection.target);
+      focused
+        .add(connection)
+        .add(connection.source ?? connection.relationSource)
+        .add(connection.target ?? connection.relationTarget);
     };
     const addWithDescendants = (element: any): void => {
       focused.add(element);
       (element.children ?? []).forEach(addWithDescendants);
     };
     selected.forEach((element) => (element.waypoints == null ? addWithDescendants(element) : addLine(element)));
+    const relationLines: any[] = this.get('elementRegistry').filter((element: any) => element.type === 'relation');
     for (const element of [...focused]) {
       if (element.waypoints == null) {
         [...element.incoming, ...element.outgoing].forEach(addLine);
+        relationLines
+          .filter((line) => line.relationSource === element || line.relationTarget === element)
+          .forEach(addLine);
       }
     }
     for (const element of focused) {

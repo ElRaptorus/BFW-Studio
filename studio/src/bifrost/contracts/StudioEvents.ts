@@ -6,10 +6,12 @@ export type StudioEventName =
   | 'sourceControlSelectedRepositoryChanged'
   | 'pluginOverlayFactoriesChanged'
   | 'pluginDmnOverlayFactoriesChanged'
+  | 'pluginLandscapeOverlayFactoriesChanged'
   | 'unspecifiedGlobalUpdate';
 
 export type StudioSolutionChangedEvent = 'solutionChanged';
 export type StudioEmittableEventName =
   | 'unspecifiedGlobalUpdate'
   | 'pluginOverlayFactoriesChanged'
-  | 'pluginDmnOverlayFactoriesChanged';
+  | 'pluginDmnOverlayFactoriesChanged'
+  | 'pluginLandscapeOverlayFactoriesChanged';

@@ -654,7 +654,7 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 **Why**: File changes, additions, renames and moves emit `solutionChanged` with the same `Solution` object. The pane re-renders, but the effect does not run again, so the scan stays stale until the solution is reopened.
 
-**Correct approach**: Subscribe to `bifrost.events.on('solutionChanged', …)` inside the effect, dispose the subscription in the cleanup, and drop results of an older scan that finishes late. See `bpmn-landscape/panes/ProcessesPane.tsx`.
+**Correct approach**: Subscribe to `bifrost.events.on('solutionChanged', …)`, dispose the subscription when done, and drop results of an older scan that finishes late. See `bpmn-landscape/LandscapeSolutionScan.ts`.
 
 ---
 

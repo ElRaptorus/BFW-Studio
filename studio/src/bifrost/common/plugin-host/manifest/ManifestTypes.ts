@@ -28,6 +28,9 @@ export interface ManifestContributions {
   dmnPalette?: ManifestDmnPaletteEntry[];
   dmnContextPad?: ManifestDmnContextPadEntry[];
   dmnModules?: ManifestDmnModule[];
+  landscapePalette?: ManifestLandscapePaletteEntry[];
+  landscapeContextPad?: ManifestLandscapeContextPadEntry[];
+  landscapeModules?: ManifestLandscapeModule[];
   editorDocumentTypes?: ManifestEditorDocumentType[];
   pages?: ManifestPageContribution[];
 }
@@ -69,6 +72,11 @@ export interface ManifestBpmnModule {
 }
 
 export interface ManifestDmnModule {
+  entry: string;
+  description?: string;
+}
+
+export interface ManifestLandscapeModule {
   entry: string;
   description?: string;
 }
@@ -147,6 +155,22 @@ export interface ManifestDmnPaletteEntry {
 }
 
 export interface ManifestDmnContextPadEntry {
+  id: string;
+  icon: string;
+  title: string;
+  command: string;
+  elementTypes?: string[];
+}
+
+export interface ManifestLandscapePaletteEntry {
+  id: string;
+  group?: string;
+  icon: string;
+  title: string;
+  command: string;
+}
+
+export interface ManifestLandscapeContextPadEntry {
   id: string;
   icon: string;
   title: string;

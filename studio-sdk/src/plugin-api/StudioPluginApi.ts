@@ -5,6 +5,7 @@ import type { DialogsApi } from './DialogsApi';
 import type { DmnApi } from './DmnApi';
 import type { EditorsApi } from './EditorsApi';
 import type { EventsApi } from './EventsApi';
+import type { LandscapeApi } from './LandscapeApi';
 import type { MenuBarApi } from './MenuBarApi';
 import type { MenusApi } from './MenusApi';
 import type { NotificationsApi } from './NotificationsApi';
@@ -49,6 +50,8 @@ export interface StudioPluginApi {
   readonly dialogs: DialogsApi;
   /** DMN DRD editor interaction: overlays, element events, queries. Requires 'dmn' permission. */
   readonly dmn: DmnApi;
+  /** Landscape map editor interaction: overlays, element events, queries. Requires 'landscape' permission. */
+  readonly landscape: LandscapeApi;
   /** Toast notification management. */
   readonly notifications: NotificationsApi;
   /** Settings read/write and change observation. */

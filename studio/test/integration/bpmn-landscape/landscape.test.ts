@@ -465,6 +465,10 @@ describe('bpmn-landscape', () => {
         ...createEmptyLandscapeMap('Exported'),
         elements: [processShape('order', 'order-process', 50, 50), placeholderShape('archive', 'Archive', 350, 50)],
       });
+      writeMap('Linker.bfwmap', {
+        ...createEmptyLandscapeMap('Linker'),
+        elements: [{ ...box('link', 50, 50), type: 'mapLink', label: 'Target', mapPath: 'Target.bfwmap' }],
+      });
 
       await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
     };
@@ -595,6 +599,34 @@ describe('bpmn-landscape', () => {
       ).toEqual(['Exported.bfwmap', 'Exported']);
     });
 
+    it('the Target map select of the properties pane retargets a map link, and undo restores the old target', async () => {
+      await prepare();
+      await openMap('Linker.bfwmap');
+      await studioAgent.clickOn(`${CANVAS} [data-element-id="link"]`);
+      await studioAgent.assertVisible('#landscape-map-link-target', TIMEOUT);
+      const linkTarget = async (): Promise<unknown> =>
+        onCanvas(
+          'Linker.bfwmap',
+          `const link = registry.get('link').businessObject; return [link.mapPath, link.label];`,
+        );
+
+      await studioAgent.clickOn('#landscape-map-link-target');
+      await studioAgent.clickOn('#landscape-map-link-target [data-test-option-value="Exported.bfwmap"]');
+
+      await studioAgent.waitUntil(async () => JSON.stringify(await linkTarget()) === '["Exported.bfwmap","Exported"]', {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The map link did not take the chosen map as its target',
+      });
+      expect(await studioAgent.getElementCount(`${CANVAS} .landscape-reference-warning`)).toBe(0);
+
+      await studioAgent.executeCommand('std.editor.undoInFocusedEditorDocument');
+      await studioAgent.waitUntil(async () => JSON.stringify(await linkTarget()) === '["Target.bfwmap","Target"]', {
+        timeout: TIMEOUT,
+        timeoutMsg: 'Undo did not restore the old target',
+      });
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+
     it('a Maps explorer row dropped on another row does not move the file', async () => {
       await prepare();
       await studioAgent.navigation.showLeftPane('discover/landscapes/maps');
@@ -611,6 +643,7 @@ describe('bpmn-landscape', () => {
         'Connected.bfwmap',
         'Dropper.bfwmap',
         'Exported.bfwmap',
+        'Linker.bfwmap',
         'Missing.bfwmap',
         'Target.bfwmap',
       ]);
@@ -804,8 +837,207 @@ describe('bpmn-landscape', () => {
         }),
       );
 
+      fs.writeFileSync(
+        mapPath('Nested.bfwmap'),
+        serializeLandscapeMap({
+          ...createEmptyLandscapeMap('Nested'),
+          elements: [
+            { ...box('team', 50, 50), width: 300, height: 200, type: 'group', label: 'Team', collapsed: true },
+            { ...box('inner', 70, 90), parentId: 'team', type: 'placeholder', label: 'Hidden Gem', shape: 'box' },
+          ],
+        }),
+      );
+
       await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
     };
+
+    const canvasBounds = async (): Promise<{ left: number; top: number; right: number; bottom: number }> => {
+      const target = await studioAgent.getTestDriver().client!.$(CANVAS);
+      const location = await target.getLocation();
+      const size = await target.getSize();
+      return {
+        left: Math.round(location.x),
+        top: Math.round(location.y),
+        right: Math.round(location.x + size.width),
+        bottom: Math.round(location.y + size.height),
+      };
+    };
+
+    it('the Show Grid checkbox and the toggle command switch the grid through one setting', async () => {
+      await prepare();
+      await openMap();
+      const isGridVisible = async (): Promise<unknown> => onCanvas(`return modeler.get('grid').isVisible();`);
+      const waitForGrid = async (expected: boolean): Promise<void> =>
+        studioAgent.waitUntil(async () => (await isGridVisible()) === expected, {
+          timeout: TIMEOUT,
+          timeoutMsg: `Expected the grid to be ${expected ? 'visible' : 'hidden'}`,
+        });
+      await waitForGrid(true);
+
+      await studioAgent.clickOn('[data-test--landscape-show-grid]');
+      await waitForGrid(false);
+
+      await studioAgent.executeCommand('bpmn.landscape.toggleShowGrid');
+      await waitForGrid(true);
+    });
+
+    it('the element context menu offers the entries of the clicked element, and the empty canvas only Paste', async () => {
+      await prepare();
+      await openMap();
+      const entry = (name: string): string => `[data-test--context-menu-id="bpmn/landscape/element/${name}"]`;
+      const expectEntries = async (present: string[], absent: string[]): Promise<void> => {
+        await studioAgent.assertContextMenuVisible();
+        for (const name of present) {
+          expect(await studioAgent.getElementCount(entry(name)), `${name} should be offered`).toBe(1);
+        }
+        for (const name of absent) {
+          expect(await studioAgent.getElementCount(entry(name)), `${name} should not be offered`).toBe(0);
+        }
+        // An open context menu would swallow the keyboard input of the next step.
+        await studioAgent.sendKeyboardInput([Key.Escape], false);
+        await studioAgent.assertContextMenuNotVisible(TIMEOUT);
+      };
+
+      await studioAgent.rightClickOn(element('order'));
+      await expectEntries(['copy', 'paste', 'delete', 'open', 'change-type', 'open-in-text-editor'], []);
+
+      await studioAgent.rightClickOn(element('archive'));
+      await expectEntries(['copy', 'paste', 'delete', 'change-type', 'open-in-text-editor'], ['open']);
+
+      const bounds = await canvasBounds();
+      await pointerActions([
+        { type: 'pointerMove', duration: 0, x: bounds.right - 40, y: bounds.bottom - 40 },
+        { type: 'pointerDown', button: 2 },
+        { type: 'pointerUp', button: 2 },
+      ]);
+      await expectEntries(['paste'], ['copy', 'delete', 'open', 'change-type', 'open-in-text-editor']);
+    });
+
+    it('Delete in the element context menu removes the clicked element', async () => {
+      await prepare();
+      await openMap();
+
+      await studioAgent.rightClickOn(element('archive'));
+      await studioAgent.clickOn('[data-test--context-menu-id="bpmn/landscape/element/delete"]');
+      await save();
+
+      await waitForFile((map) => !map.elements.some((entry) => entry.id === 'archive'));
+    });
+
+    it('a search result opens its map, opens the collapsed group and selects the element inside it', async () => {
+      await prepare();
+      await openMap();
+      const results = `bifrost.searchView.getViewData().searchResults.filter((result) => result.documentType === 'bpmn-landscape-map')`;
+
+      await studioAgent.executeInRenderer(`bifrost.searchView.search('Hidden Gem'); return true;`);
+      await studioAgent.waitUntil(
+        async () => ((await studioAgent.executeInRenderer(`return ${results}.length;`)) as number) > 0,
+        { timeout: TIMEOUT, timeoutMsg: 'The landscape element was not found by the global search' },
+      );
+      await studioAgent.executeInRenderer(
+        `bifrost.searchView.open(${results}.find((result) => result.metadata.elementId === 'inner')); return true;`,
+      );
+
+      const nestedUri = `file://${mapPath('Nested.bfwmap')}`;
+      await studioAgent.waitUntil(async () => (await studioAgent.getFocusedDocumentUri()) === nestedUri, {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The map of the search result did not open',
+      });
+      await studioAgent.waitUntil(
+        async () =>
+          (await studioAgent.executeInRenderer(`
+            const editorDocument = bifrost.editors.getEditorDocumentByUri(${JSON.stringify(nestedUri)});
+            const modeler = bifrost.editors.getEditorDocumentModelIfPresent(editorDocument).modeler;
+            const registry = modeler.get('elementRegistry');
+            return modeler.get('canvas').getRootElement().group === registry.get('team')
+              && modeler.get('selection').get().map((shape) => shape.id).join() === 'inner';
+          `)) === true,
+        { timeout: TIMEOUT, timeoutMsg: 'The group was not opened with the element selected' },
+      );
+    });
+
+    it('the space tool pushes the shapes behind the dragged line aside and keeps the others', async () => {
+      await prepare();
+      await openMap();
+      await studioAgent.clickOn('.djs-palette .entry[data-action="space-tool"]');
+      const left = await centerOf(element('order'));
+      const right = await centerOf(element('payment'));
+      const lineX = Math.round((left.x + right.x) / 2);
+      // Between the two rows: a pointer on a relation line would make the line, not the map, the space to change.
+      const lineY = left.y + 75;
+      const beforeX = (await onCanvas(`return registry.get('payment').x;`)) as number;
+
+      await pointerActions([
+        { type: 'pointerMove', duration: 0, x: lineX, y: lineY },
+        { type: 'pointerDown', button: 0 },
+        { type: 'pointerMove', duration: 200, x: lineX + 40, y: lineY },
+        { type: 'pointerMove', duration: 200, x: lineX + 120, y: lineY },
+        { type: 'pointerUp', button: 0 },
+      ]);
+
+      await studioAgent.waitUntil(
+        async () => ((await onCanvas(`return registry.get('payment').x;`)) as number) > beforeX,
+        { timeout: TIMEOUT, timeoutMsg: 'The payment process was not pushed aside' },
+      );
+      expect(await onCanvas(`return registry.get('order').x;`)).toBe(50);
+      await waitForRelations([CALL_LINE, MESSAGE_LINE]);
+      await studioAgent.assertNoErrorsPresent();
+    });
+
+    it('the global connect tool draws a connector between two clicked shapes', async () => {
+      await prepare();
+      await openMap();
+
+      await studioAgent.clickOn('.djs-palette .entry[data-action="global-connect-tool"]');
+      await studioAgent.clickOn(element('note'));
+      await studioAgent.clickOn(element('archive'));
+      await save();
+
+      const saved = await waitForFile((map) => map.connectors.length === 1);
+      expect(saved.connectors[0]).toMatchObject({ sourceId: 'note', targetId: 'archive' });
+    });
+
+    it('the snapping offers the neighbouring shapes but not the relation lines as targets', async () => {
+      await prepare();
+      await openMap();
+
+      const targetTypes = (await onCanvas(`
+        const snapTargets = modeler.get('createMoveSnapping').getSnapTargets(registry.get('note'), registry.get('order').parent);
+        return snapTargets.map((target) => target.type === 'relation' ? 'relation' : target.id);
+      `)) as string[];
+
+      expect(targetTypes).toContain('order');
+      expect(targetTypes).not.toContain('relation');
+    });
+
+    it('Change type turns a placeholder into a note and undo restores it', async () => {
+      await prepare();
+      await openMap();
+
+      await studioAgent.clickOn(element('archive'));
+      await studioAgent.clickOn('.djs-context-pad .entry[data-action="replace"]');
+      await studioAgent.clickOn('.djs-popup [data-id="replace-with-note"]');
+
+      // The replacement is a new shape with a new id, so the placeholder is gone and a second note exists.
+      const archiveAndNoteTypes = `return [registry.get('archive')?.type ?? null, registry.filter((shape) => shape.type === 'note').length].join();`;
+      await studioAgent.waitUntil(async () => (await onCanvas(archiveAndNoteTypes)) === ',2', {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The placeholder was not turned into a note',
+      });
+      await onCanvas(`commandStack.undo();`);
+      await studioAgent.waitUntil(async () => (await onCanvas(archiveAndNoteTypes)) === 'placeholder,1', {
+        timeout: TIMEOUT,
+        timeoutMsg: 'Undo did not restore the placeholder',
+      });
+    });
+
+    it('offers Show Changes and History in the toolbar', async () => {
+      await prepare();
+      await openMap();
+
+      await studioAgent.assertVisible('[data-test--landscape-show-changes]', TIMEOUT);
+      await studioAgent.assertVisible('[data-test--landscape-history]', TIMEOUT);
+    });
 
     it('draws the call and message relations, labels the message, and does not save them', async () => {
       await prepare();
@@ -1087,9 +1319,8 @@ describe('bpmn-landscape', () => {
       ${script}
     `);
 
-    /** Drops a new group with its centre on `point`; by default in the upper-left quarter, which is empty canvas. */
-    const createGroupFromPalette = async (point?: { x: number; y: number }): Promise<void> => {
-      await studioAgent.clickOn('.djs-palette .entry[data-action="create-group"]');
+    /** Clicks the canvas at `point`; by default in the upper-left quarter, which is empty canvas. */
+    const dropOnCanvas = async (point?: { x: number; y: number }): Promise<void> => {
       const canvas = await studioAgent.getTestDriver().client!.$(CANVAS);
       const location = await canvas.getLocation();
       const size = await canvas.getSize();
@@ -1099,7 +1330,7 @@ describe('bpmn-landscape', () => {
       await studioAgent.getTestDriver().client!.performActions([
         {
           type: 'pointer',
-          id: 'placeGroup',
+          id: 'dropOnCanvas',
           actions: [
             { type: 'pointerMove', duration: 0, x: x - 10, y: y - 10 },
             { type: 'pointerMove', duration: 100, x, y },
@@ -1109,6 +1340,12 @@ describe('bpmn-landscape', () => {
         },
       ]);
       await studioAgent.getTestDriver().client!.releaseActions();
+    };
+
+    /** Drops a new group with its centre on `point`. */
+    const createGroupFromPalette = async (point?: { x: number; y: number }): Promise<void> => {
+      await studioAgent.clickOn('.djs-palette .entry[data-action="create-group"]');
+      await dropOnCanvas(point);
     };
 
     const prepare = async ({
@@ -1356,6 +1593,36 @@ describe('bpmn-landscape', () => {
       });
     });
 
+    it('the keyboard copies a shape and pastes a second one with a new id and the same label', async () => {
+      await prepare();
+      await openMap('Test.bfwmap');
+      await waitForCount('landscape-placeholder', 1);
+      await studioAgent.clickOn('[data-element-id="placeholder-1"]');
+      await studioAgent.assertVisible('[data-element-id="placeholder-1"].selected', TIMEOUT);
+
+      await studioAgent.sendKeyboardInput([OsSpecificKeystroke('cmd-c', 'ctrl-c')], false);
+      await studioAgent.sendKeyboardInput([OsSpecificKeystroke('cmd-v', 'ctrl-v')], false);
+      // Paste attaches the copy to the mouse; a click on the canvas drops it.
+      await waitForCount('landscape-placeholder', 2);
+      await dropOnCanvas();
+      await studioAgent.waitUntil(async () => (await studioAgent.getElementCount(`${CANVAS} .djs-dragger`)) === 0, {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The pasted copy stayed attached to the mouse after the click',
+      });
+      await studioAgent.waitUntil(async () => await hasUnsavedChanges('Test.bfwmap'), {
+        timeout: TIMEOUT,
+        timeoutMsg: 'Dropping the pasted copy did not change the map',
+      });
+      await studioAgent.sendKeyboardInput([SAVE], false);
+
+      const saved = await waitForFile('Test.bfwmap', (map) => map.elements.length === 2);
+      const [original, pasted] = saved.elements;
+      expect(original?.id).toBe('placeholder-1');
+      expect(pasted?.id).not.toBe('placeholder-1');
+      expect(pasted).toMatchObject({ type: 'placeholder', label: 'Billing' });
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+
     it('an unreadable map shows the error view and saving leaves the file unchanged', async () => {
       await prepare();
       const before = fs.readFileSync(mapPath('Broken.bfwmap'));
@@ -1567,6 +1834,60 @@ describe('bpmn-landscape', () => {
       expect(isRestored).toBe(true);
     });
 
+    it('relation lines survive undo and redo of collapse, move, hide and delete', async () => {
+      const callLine = 'relation:callActivity:order:payment';
+      const callKey = 'callActivity:order-process:payment-process';
+      await prepare();
+      await openMap();
+      await waitForCanvas(`return registry.get(${JSON.stringify(callLine)}) != null;`, 'the call line');
+
+      const lineIds = async (): Promise<string[]> =>
+        (await onCanvas(
+          `return registry.filter((shape) => shape.type === 'relation').map((shape) => shape.id).sort();`,
+        )) as string[];
+      const expectLines = async (expected: string[]): Promise<void> => {
+        await studioAgent.waitUntil(async () => JSON.stringify(await lineIds()) === JSON.stringify(expected), {
+          timeout: TIMEOUT,
+          timeoutMsg: `Expected the relation lines ${expected.join(', ') || '(none)'}`,
+        });
+      };
+
+      await onCanvas(`modeler.get('landscapeCollapse').toggle(registry.get('team'));`);
+      await expectLines([CALL_LINE_TO_GROUP]);
+      await onCanvas(`commandStack.undo();`);
+      await expectLines([callLine]);
+      await onCanvas(`commandStack.redo();`);
+      await expectLines([CALL_LINE_TO_GROUP]);
+      await onCanvas(`commandStack.undo();`);
+      await expectLines([callLine]);
+
+      // A line in the selection stays out of the move.
+      const moved = await onCanvas(
+        `const startY = registry.get('payment').y;
+       modeler.get('modeling').moveElements(['order', 'payment', ${JSON.stringify(callLine)}].map((id) => registry.get(id)), { x: 0, y: 40 });
+       const movedY = registry.get('payment').y;
+       commandStack.undo();
+       return { by: movedY - startY, back: registry.get('payment').y === startY };`,
+      );
+      expect(moved).toEqual({ by: 40, back: true });
+      await expectLines([callLine]);
+
+      await onCanvas(`model.setRelationsHidden([${JSON.stringify(callKey)}], true);`);
+      await expectLines([]);
+      await onCanvas(`commandStack.undo();`);
+      await expectLines([callLine]);
+
+      await onCanvas(`modeler.get('modeling').removeElements([registry.get('payment')]);`);
+      await expectLines([]);
+      await onCanvas(`commandStack.undo();`);
+      await expectLines([callLine]);
+      await onCanvas(`commandStack.redo();`);
+      await expectLines([]);
+      await onCanvas(`commandStack.undo();`);
+      await expectLines([callLine]);
+      await studioAgent.assertNoErrorsPresent();
+    });
+
     it('expanding puts contents that were moved far away back inside the stored size', async () => {
       await prepare();
       await openMap();
@@ -1769,6 +2090,92 @@ describe('bpmn-landscape', () => {
       expect(order, 'order-process on the map').toBeDefined();
       expect(payment, 'payment-process on the map').toBeDefined();
       expect(order!.y + order!.height).toBeLessThanOrEqual(payment!.y);
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+
+    /** Waits until the wizard has opened the map `fileName` and returns what the wizard saved. */
+    const readCreatedMap = async (fileName: string): Promise<LandscapeMap> => {
+      const filePath = path.join(landscapeWorkspace.landscapeFolder, fileName);
+      await studioAgent.waitUntil(async () => (await studioAgent.getFocusedDocumentUri()) === `file://${filePath}`, {
+        timeout: 30_000,
+        timeoutMsg: `The new map ${fileName} did not open`,
+      });
+      await studioAgent.assertVisible(CANVAS, TIMEOUT);
+      const parsed = await parseLandscapeMap(fs.readFileSync(filePath, 'utf8'));
+      if (!parsed.ok) {
+        throw new Error(`${fileName} cannot be read: ${parsed.errors.join(' ')}`);
+      }
+      return parsed.map;
+    };
+
+    const processIdsOf = (map: LandscapeMap): string[] =>
+      map.elements.flatMap((entry) => (entry.type === 'process' ? [entry.processId] : [])).sort();
+
+    /** Clicks the Processes pane row with the Ctrl modifier, which adds it to the selection. */
+    const ctrlClickRow = async (label: string): Promise<void> => {
+      await studioAgent.executeInRenderer(`
+        const row = [...document.querySelectorAll('[data-test--tree="bpmn-landscape/processes"] .treeview__label')]
+          .find((candidate) => candidate.textContent === ${JSON.stringify(label)});
+        row.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));
+      `);
+    };
+
+    it('creates a map from a BPMN file row of the Processes pane with only the processes of that file', async () => {
+      await prepare();
+      await studioAgent.rightClickOn('.treeview__label=order-process.bpmn');
+      await studioAgent.assertContextMenuVisible();
+      await studioAgent.clickOn('[data-test--context-menu-id="bpmn-landscape/processes/file/create-map"]');
+      await studioAgent.assertVisible('[data-test--dialog]', TIMEOUT);
+
+      await studioAgent.submitActiveDialog('create', {
+        name: 'File Overview',
+        neighbourSteps: '0',
+        grouping: 'none',
+        callHierarchy: false,
+      });
+
+      const map = await readCreatedMap('File Overview.bfwmap');
+      expect(processIdsOf(map)).toEqual(['order-process']);
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+
+    it('creates a map from a multi-selection of the Processes pane with exactly the selected processes', async () => {
+      await prepare();
+      await studioAgent.clickOn('.treeview__label=order-process.bpmn');
+      await studioAgent.clickOn('.treeview__label=payment-process.bpmn');
+      await studioAgent.clickOn('.treeview__label=Order Process');
+      await ctrlClickRow('Payment Process');
+      await studioAgent.rightClickOn('.treeview__label=Payment Process');
+      await studioAgent.assertContextMenuVisible();
+      await studioAgent.clickOn('[data-test--context-menu-id="bpmn-landscape/processes/multi-selection/create-map"]');
+      await studioAgent.assertVisible('[data-test--dialog]', TIMEOUT);
+
+      await studioAgent.submitActiveDialog('create', {
+        name: 'Selection Overview',
+        neighbourSteps: '0',
+        grouping: 'none',
+        callHierarchy: false,
+      });
+
+      const map = await readCreatedMap('Selection Overview.bfwmap');
+      expect(processIdsOf(map)).toEqual(['order-process', 'payment-process']);
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+
+    it('creates a map of every process of the solution from the command search', async () => {
+      await prepare();
+      await studioAgent.openViaCommandSearch('Landscapes: Create Map from Processes');
+      await studioAgent.assertVisible('[data-test--dialog]', TIMEOUT);
+
+      await studioAgent.submitActiveDialog('create', {
+        name: 'Everything',
+        neighbourSteps: '0',
+        grouping: 'file',
+        callHierarchy: false,
+      });
+
+      const map = await readCreatedMap('Everything.bfwmap');
+      expect(processIdsOf(map)).toEqual(['draft-process', 'order-process', 'payment-process', 'unversioned-process']);
       await studioAgent.assertNoErrorsPresentAndIdle();
     });
 

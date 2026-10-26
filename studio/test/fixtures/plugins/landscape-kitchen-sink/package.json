@@ -1,0 +1,44 @@
+{
+  "name": "landscape-kitchen-sink",
+  "version": "1.0.0",
+  "displayName": "Landscape Kitchen Sink",
+  "description": "End-to-end fixture exercising every landscape map editor enrichment feature.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "2.0.0",
+    "displayName": "Landscape Kitchen Sink",
+    "permissions": [
+      "landscape.renderer"
+    ],
+    "activationEvents": [
+      "onStartup"
+    ],
+    "contributes": {
+      "landscapePalette": [
+        {
+          "id": "ks-mark",
+          "icon": "ph-light ph-flag",
+          "title": "Mark (KS)",
+          "command": "mark"
+        }
+      ],
+      "landscapeContextPad": [
+        {
+          "id": "ks-mark-process",
+          "icon": "ph-light ph-flag",
+          "title": "Mark process (KS)",
+          "command": "mark",
+          "elementTypes": [
+            "process"
+          ]
+        }
+      ],
+      "landscapeModules": [
+        {
+          "entry": "renderer/ring-module.js",
+          "description": "Marks elements on a pluginChannel message."
+        }
+      ]
+    }
+  }
+}

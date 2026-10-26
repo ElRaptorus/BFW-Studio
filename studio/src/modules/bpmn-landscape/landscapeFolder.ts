@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 
+export const LANDSCAPE_DOCUMENT_TYPE = 'bpmn-landscape-map';
 export const LANDSCAPES_PAGE_ID = 'discover/landscapes';
 export const LANDSCAPES_VIEW_ID = 'landscapes';
 

@@ -282,6 +282,7 @@ function createPluginApi(): Record<string, unknown> {
   const diagnosticsCallbackApi = createCallbackApi('diagnostics');
   const bpmnCallbackApi = createCallbackApi('bpmn');
   const dmnCallbackApi = createCallbackApi('dmn');
+  const landscapeCallbackApi = createCallbackApi('landscape');
 
   return {
     commands: {
@@ -653,6 +654,94 @@ function createPluginApi(): Record<string, unknown> {
         },
         moveElement(uri: string, elementId: string, delta: unknown): Promise<unknown> {
           return sendApiRequest('dmn', 'modeling.moveElement', [uri, elementId, delta]);
+        },
+      },
+      disposeCallbacks() {
+        /* no-op in sandbox — cleanup handled by SandboxManager */
+      },
+    },
+    landscape: {
+      setOverlays(uri: string, overlays: unknown[]): Promise<unknown> {
+        return sendApiRequest('landscape', 'setOverlays', [uri, overlays]);
+      },
+      clearOverlays(uri: string, filter?: unknown): Promise<unknown> {
+        return sendApiRequest('landscape', 'clearOverlays', [uri, filter]);
+      },
+      getElements(uri: string): Promise<unknown> {
+        return sendApiRequest('landscape', 'getElements', [uri]);
+      },
+      getElement(uri: string, elementId: string): Promise<unknown> {
+        return sendApiRequest('landscape', 'getElement', [uri, elementId]);
+      },
+      getXml(uri: string): Promise<unknown> {
+        return sendApiRequest('landscape', 'getXml', [uri]);
+      },
+      onElementSelected(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return landscapeCallbackApi.register('onElementSelected', [uri], callback);
+      },
+      onElementHover(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return landscapeCallbackApi.register('onElementHover', [uri], callback);
+      },
+      onElementDoubleClick(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return landscapeCallbackApi.register('onElementDoubleClick', [uri], callback);
+      },
+      onElementContextMenu(uri: string, callback: (...cbArgs: unknown[]) => unknown): Promise<{ dispose: () => void }> {
+        return landscapeCallbackApi.register('onElementContextMenu', [uri], callback);
+      },
+      onOverlayContextChanged(
+        uri: string,
+        callback: (...cbArgs: unknown[]) => unknown,
+      ): Promise<{ dispose: () => void }> {
+        return landscapeCallbackApi.register('onOverlayContextChanged', [uri], callback);
+      },
+      registerOverlayFactory(
+        factory: (...cbArgs: unknown[]) => unknown,
+        options?: { priority?: number },
+      ): Promise<{ dispose: () => void }> {
+        return landscapeCallbackApi.register('registerOverlayFactory', [options], factory);
+      },
+      requestOverlayRefresh(): Promise<unknown> {
+        return sendApiRequest('landscape', 'requestOverlayRefresh', []);
+      },
+      registerPaletteEntry(entry: unknown): Promise<unknown> {
+        return sendApiRequest('landscape', 'registerPaletteEntry', [entry]);
+      },
+      unregisterPaletteEntry(entryId: string): Promise<unknown> {
+        return sendApiRequest('landscape', 'unregisterPaletteEntry', [entryId]);
+      },
+      registerContextPadEntry(entry: unknown): Promise<unknown> {
+        return sendApiRequest('landscape', 'registerContextPadEntry', [entry]);
+      },
+      unregisterContextPadEntry(entryId: string): Promise<unknown> {
+        return sendApiRequest('landscape', 'unregisterContextPadEntry', [entryId]);
+      },
+      updateContextPadEntry(entryId: string, update: unknown): Promise<unknown> {
+        return sendApiRequest('landscape', 'updateContextPadEntry', [entryId, update]);
+      },
+      onRendererModuleMessage(callback: (data: unknown) => void): Promise<{ dispose: () => void }> {
+        return landscapeCallbackApi.register('onRendererModuleMessage', [], callback);
+      },
+      postToRendererModule(data: unknown): Promise<unknown> {
+        return sendApiRequest('landscape', 'postToRendererModule', [data]);
+      },
+      modeling: {
+        updateProperties(uri: string, elementId: string, properties: unknown): Promise<unknown> {
+          return sendApiRequest('landscape', 'modeling.updateProperties', [uri, elementId, properties]);
+        },
+        removeElement(uri: string, elementId: string): Promise<unknown> {
+          return sendApiRequest('landscape', 'modeling.removeElement', [uri, elementId]);
+        },
+        createElement(uri: string, newElement: unknown): Promise<unknown> {
+          return sendApiRequest('landscape', 'modeling.createElement', [uri, newElement]);
+        },
+        appendElement(uri: string, sourceElementId: string, newElement: unknown): Promise<unknown> {
+          return sendApiRequest('landscape', 'modeling.appendElement', [uri, sourceElementId, newElement]);
+        },
+        createConnection(uri: string, sourceId: string, targetId: string): Promise<unknown> {
+          return sendApiRequest('landscape', 'modeling.createConnection', [uri, sourceId, targetId]);
+        },
+        moveElement(uri: string, elementId: string, delta: unknown): Promise<unknown> {
+          return sendApiRequest('landscape', 'modeling.moveElement', [uri, elementId, delta]);
         },
       },
       disposeCallbacks() {

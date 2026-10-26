@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
+import { PluginDiagramOverlayManager } from '#bifrost/common/plugin-host/PluginDiagramOverlayManager';
 import type { BifrostStudioManifest } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { CallbackInvocationPayload, RegisterCallbackPayload } from '#bifrost/contracts/PluginHostProtocol';
@@ -33,7 +34,6 @@ import type {
 
 import type DmnDocumentModel from '../DmnDocumentModel';
 import type { DmnElement } from '../DmnElementTypes';
-import { DmnPluginOverlayManager } from '../DmnPluginOverlayManager';
 
 const DMN_DOCUMENT_TYPE = 'dmn';
 
@@ -79,13 +79,16 @@ export class DmnApiBridge implements PluginApiNamespace {
   private editorCloseSubscription: AbstractSubscription | null = null;
 
   /** Manages registered overlay factories and renders their output directly onto the DRD view. */
-  readonly overlayManager: DmnPluginOverlayManager;
+  readonly overlayManager: PluginDiagramOverlayManager<DmnElementDetailSnapshot>;
 
   constructor(bifrost: Bifrost, context: PluginApiNamespaceContext) {
     this.bifrost = bifrost;
     this.pluginHost = context.pluginHost;
     pluginDmnModuleLoader.setSendFunction(context.deliverRendererModuleMessage);
-    this.overlayManager = new DmnPluginOverlayManager(context.pluginHost, bifrost);
+    this.overlayManager = new PluginDiagramOverlayManager<DmnElementDetailSnapshot>(context.pluginHost, bifrost, {
+      diagramLabel: 'DMN',
+      fingerprintOf: (element) => `${element.id}:${element.type}:${element.name ?? ''}`,
+    });
     this.overlayManager.onRefreshRequested(() => {
       this.emitPluginOverlayFactoriesChanged();
     });

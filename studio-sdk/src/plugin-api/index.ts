@@ -57,6 +57,37 @@ export type {
   PluginDmnPaletteEntry,
 } from './DmnApi';
 export { PluginDmnElementType, PluginDmnOverlayPosition, PluginDmnOverlayStyle } from './DmnApi';
+export type {
+  LandscapeApi,
+  LandscapeConnectorSnapshot,
+  LandscapeContextPadEntryUpdate,
+  LandscapeCreateConnectionResult,
+  LandscapeCreateElementDescriptor,
+  LandscapeCreateElementResult,
+  LandscapeElementEvent,
+  LandscapeElementSnapshot,
+  LandscapeElementStyleSnapshot,
+  LandscapeModelingApi,
+  LandscapeMoveDelta,
+  LandscapeOverlayContextEvent,
+  LandscapeOverlayDescriptor,
+  LandscapeOverlayFactoryContext,
+  LandscapeOverlayFactoryOptions,
+  LandscapeRelationSnapshot,
+  LandscapeShapeSnapshot,
+  PluginLandscapeContextPadEntry,
+  PluginLandscapeOverlay,
+  PluginLandscapeOverlayAction,
+  PluginLandscapeOverlayBadge,
+  PluginLandscapeOverlayIcon,
+  PluginLandscapeOverlayStatus,
+  PluginLandscapePaletteEntry,
+} from './LandscapeApi';
+export {
+  PluginLandscapeElementType,
+  PluginLandscapeOverlayPosition,
+  PluginLandscapeOverlayStyle,
+} from './LandscapeApi';
 export type { CommandsApi } from './CommandsApi';
 export type { DiagnosticsApi } from './DiagnosticsApi';
 export type { DialogsApi } from './DialogsApi';
@@ -131,6 +162,9 @@ export type {
   ManifestEditorDocumentType,
   ManifestPageContribution,
   ManifestKeybinding,
+  ManifestLandscapeContextPadEntry,
+  ManifestLandscapeModule,
+  ManifestLandscapePaletteEntry,
   ManifestMenuItem,
   ManifestPaneContribution,
   ManifestServiceTaskType,

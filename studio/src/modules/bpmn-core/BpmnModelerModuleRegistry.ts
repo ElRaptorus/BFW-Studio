@@ -10,7 +10,7 @@
  * when the plugin is disabled or uninstalled. Core modules registered
  * via the plain `register()` method are permanent.
  */
-class BpmnModelerModuleRegistry {
+export class BpmnModelerModuleRegistry {
   private modules: any[] = [];
   private pluginModules = new Map<string, any[]>();
 

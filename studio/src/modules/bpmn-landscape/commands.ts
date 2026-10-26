@@ -1,5 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { DialogResult, DialogValidationResult } from '#bifrost/contracts/DialogTypes';
+import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { SolutionBpmnModelEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 import type { AddMapLinkRequest, AddProcessRequest } from './LandscapeMapDocumentModel';
@@ -172,7 +173,7 @@ async function createMapFromProcesses(bifrost: Bifrost, rows?: ProcessSeedRow[])
   const singleProcess =
     seeds.length === 1
       ? snapshot.catalog
-          .flatMap((entry) => (entry.kind === 'bpmn' ? entry.processes : []))
+          .flatMap((entry) => (entry.kind === 'bpmn' && entry.uri === seeds[0]?.uri ? entry.processes : []))
           .find((process) => process.id === seeds[0]?.processId)
       : undefined;
   const dialogResult = await bifrost.dialog.open(
@@ -193,7 +194,7 @@ async function createMapFromProcesses(bifrost: Bifrost, rows?: ProcessSeedRow[])
           label: 'Add related processes',
           value: rows == null ? '0' : '1',
           entries: NEIGHBOUR_STEP_ENTRIES,
-          hint: 'Processes that call, message or signal the selection, within this many relation steps.',
+          hint: 'Processes linked to the selection by a call, message or signal, in either direction, within this many steps.',
         },
         { type: 'select', id: 'grouping', label: 'Group processes', value: 'file', entries: GROUPING_ENTRIES },
         { type: 'checkbox', id: 'callHierarchy', label: 'Arrange by call hierarchy', checked: true },
@@ -359,7 +360,60 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     enabledWhen: () => getFocusedMapForKeys(bifrost)?.getMapProperties() != null,
   });
 
+  bifrost.commands.register(
+    'bpmn.landscape.openSelectedElement',
+    (elementId: string) => getFocusedMap(bifrost)?.openElement(elementId),
+    { enabledWhen: () => getFocusedMap(bifrost) != null },
+  );
+
+  bifrost.commands.register(
+    'bpmn.landscape.changeElementType',
+    (elementId: string) => getFocusedMap(bifrost)?.openChangeTypeMenu(elementId),
+    { enabledWhen: () => getFocusedMap(bifrost) != null },
+  );
+
+  bifrost.commands.register(
+    'bpmn.landscape.openElementInTextEditor',
+    (editorDocument: EditorDocument, elementId: string) => {
+      const textBeforeElement = editorDocument.data.original.split(` id="${elementId}"`)[0];
+      const lines = textBeforeElement.split('\n');
+      // Without a match (an element not saved yet) the whole file is the text before it: open at the top instead.
+      const isOnFile = textBeforeElement !== editorDocument.data.original;
+      void bifrost.commands.executeCommand(
+        'std.shell.openDocumentInTextEditor',
+        isOnFile ? [editorDocument, lines.length, lines[lines.length - 1].length + 2] : [editorDocument],
+      );
+    },
+    {
+      enabledWhen: (editorDocument: EditorDocument): boolean =>
+        bifrost.commands.isCommandEnabled('std.shell.openDocumentInTextEditor', [editorDocument]),
+    },
+  );
+
+  bifrost.commands.register(
+    'bpmn.landscape.toggleShowGrid',
+    () => {
+      void bifrost.settings.set('bpmn.landscape.showGrid', bifrost.settings.get('bpmn.landscape.showGrid') === false);
+    },
+    {
+      visibleInSearch: true,
+      description: ['Landscapes: Toggle Show Grid', 'Show or hide the grid of the landscape map canvas'],
+    },
+  );
+
   registerLandscapeExportCommands(bifrost);
+
+  // `std.editor.zoomTo…` (menu, Ctrl+1/2/3, toolbar) dispatches to these by document type.
+  const zoomActions = {
+    zoomToViewport: (model: LandscapeMapDocumentModel) => model.zoomToViewport(),
+    zoomToActualSize: (model: LandscapeMapDocumentModel) => model.zoomToActualSize(),
+    zoomToSelectedElement: (model: LandscapeMapDocumentModel) => model.zoomToSelectedElement(),
+  };
+  for (const [name, zoom] of Object.entries(zoomActions)) {
+    bifrost.commands.register(`std.editor.${name}.bpmn-landscape-map`, async (editorDocument: EditorDocument) =>
+      zoom(await bifrost.editors.getEditorDocumentModel<LandscapeMapDocumentModel>(editorDocument)),
+    );
+  }
 
   for (const direction of DIRECTIONS) {
     const name = `${direction[0].toUpperCase()}${direction.slice(1)}`;

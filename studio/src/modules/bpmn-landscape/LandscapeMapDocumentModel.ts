@@ -2,16 +2,18 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { FileEventType, WatcherDisposable } from '#bifrost/common/FileHandlingService';
+import type { PluginDiagramOverlayManager } from '#bifrost/common/plugin-host/PluginDiagramOverlayManager';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import { replaceThemeColorsInSvg } from '#modules/bpmn-core/ImageExportFunctions';
 import type { SolutionBpmnModelEntry, SolutionProcessEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
+
+import type { LandscapeElementSnapshot } from '@elraptorus/bfw_studio_sdk';
 
 import type {
   LandscapeElement,
   LandscapeMap,
   LandscapeMapLinkElement,
   LandscapeMapParseResult,
-  LandscapePlaceholderElement,
   LandscapeProcessElement,
 } from './LandscapeMapFile';
 import {
@@ -28,10 +30,15 @@ import type { LandscapeProcessReference, ProcessRelation, ProcessRelationKind } 
 import type { PlacedProcess } from './buildRelationLines';
 import { buildRelationLines } from './buildRelationLines';
 import LandscapeModeler from './modeler/LandscapeModeler';
+import { convertLandscapeElement } from './modeler/LandscapeReplace';
+import type LandscapeReplaceMenuProvider from './modeler/LandscapeReplaceMenuProvider';
 import type { LandscapeMapProperties } from './modeler/LandscapeUpdates';
 import type LandscapeUpdates from './modeler/LandscapeUpdates';
 import { UPDATE_ELEMENT_COMMAND, UPDATE_MAP_COMMAND } from './modeler/LandscapeUpdates';
 import { levelDepthOf } from './modeler/landscapeHierarchy';
+import { PLUGIN_LANDSCAPE_OVERLAY_MANAGER_KEY } from './plugin-api/LandscapeApiBridge';
+import { landscapeModelerModuleRegistry } from './plugin-api/landscapePluginModules';
+import { snapshotLandscapeElements } from './plugin-api/landscapeSnapshots';
 import type { ProcessCandidate, ReferenceStatus } from './resolveProcessReference';
 import { replaceCandidates, resolveProcessReference } from './resolveProcessReference';
 import type { LandscapeMapEntry } from './scanSolutionLandscapeMaps';
@@ -68,6 +75,8 @@ type ProcessDetails = {
 
 type Viewbox = { x: number; y: number; width: number; height: number };
 
+export const SHOW_GRID_SETTING = 'bpmn.landscape.showGrid';
+
 const PROCESS_WIDTH = 140;
 const PROCESS_HEIGHT = 60;
 
@@ -75,6 +84,12 @@ const referenceKey = (reference: LandscapeProcessReference): string => `${refere
 
 const sameReference = (first: LandscapeProcessReference, second: LandscapeProcessReference): boolean =>
   first.uri === second.uri && first.processId === second.processId;
+
+/** Whether `target` already holds every value of `properties`; values are plain data, compared as JSON. */
+const hasValues = (target: object, properties: object): boolean =>
+  Object.entries(properties).every(
+    ([name, value]) => JSON.stringify((target as Record<string, unknown>)[name]) === JSON.stringify(value),
+  );
 
 /** A hidden canvas reports a 0×0 viewbox; storing or restoring one breaks the zoom. */
 function isUsableViewbox(viewbox: any): viewbox is Viewbox {
@@ -100,9 +115,14 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   private focusMode: boolean;
   private pendingViewbox: Viewbox | null;
   private hasBeenAttached = false;
+  private isAttached = false;
+  /** A search result opened the map before its canvas was on screen; shown once it is. */
+  private pendingRevealElementId: string | null = null;
   private watcherDisposable?: WatcherDisposable;
   private subscriptions: AbstractSubscription[] = [];
   private manualSaveTriggered = false;
+  private isClosed = false;
+  private settingsRevision = 0;
 
   private constructor(
     uri: string,
@@ -121,6 +141,19 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.parseErrors = this.applyParseResult(parseResult);
     const solutionScan = studio.getSharedRessource<LandscapeSolutionScan>(LANDSCAPE_SOLUTION_SCAN_KEY);
     this.subscriptions.push(solutionScan.onDidChange(() => this.applySnapshot(solutionScan.getSnapshot())));
+    this.subscriptions.push(
+      studio.settings.onDidChange(
+        (settingName) => {
+          if (settingName === SHOW_GRID_SETTING) {
+            this.applyGridSetting();
+            // The toolbar checkbox reads the setting; a changed revision makes it render again.
+            this.updateMetadata({ settingsRevision: ++this.settingsRevision });
+          }
+        },
+        () => this.getUri(),
+      ),
+      studio.events.on('pluginLandscapeOverlayFactoriesChanged', () => this.refreshPluginOverlays()),
+    );
     this.startFileWatcher();
   }
 
@@ -195,6 +228,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   }
 
   onEditorDocumentWillClose(): void {
+    this.isClosed = true;
     this.subscriptions.forEach((subscription) => subscription.dispose());
     this.subscriptions = [];
     this.eventEmitter.removeAllListeners();
@@ -239,6 +273,16 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     return this.parseErrors;
   }
 
+  /** The canvas of the map, for the plugin API; `null` while the map cannot be read. */
+  getModeler(): LandscapeModeler | null {
+    return this.modeler;
+  }
+
+  /** The text of the map as it would be saved now. */
+  getText(): string {
+    return this.currentText;
+  }
+
   /** Appends the canvas to `element`; the model keeps the diagram while the renderer is unmounted. */
   attachTo(element: HTMLElement): void {
     if (this.modeler == null) {
@@ -253,10 +297,36 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       canvas.zoom('fit-viewport', 'auto');
     }
     this.hasBeenAttached = true;
+    this.isAttached = true;
+    if (this.pendingRevealElementId != null) {
+      this.reveal(this.pendingRevealElementId);
+      this.pendingRevealElementId = null;
+    }
   }
 
   detach(): void {
+    this.isAttached = false;
     this.modeler?.container.remove();
+  }
+
+  /** Scrolls to the element and selects it, opening the plane of a collapsed group when it holds the element. */
+  revealElement(elementId: string): void {
+    if (this.isAttached) {
+      this.reveal(elementId);
+    } else {
+      this.pendingRevealElementId = elementId;
+    }
+  }
+
+  private reveal(elementId: string): void {
+    const modeler = this.modeler;
+    const element = modeler?.get('elementRegistry').get(elementId);
+    if (modeler == null || element == null) {
+      return;
+    }
+    // Scrolling first: it opens the plane that holds the shape, and a plane change clears the selection.
+    modeler.get('canvas').scrollToElement(element);
+    modeler.get('selection').select(element);
   }
 
   toCanvasPoint(clientX: number, clientY: number): { x: number; y: number } | null {
@@ -275,9 +345,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     }
     const existing = modeler.findProcessShape(request.processId);
     if (existing != null) {
-      // Scrolling first: it opens the plane that holds the shape, and a plane change clears the selection.
-      modeler.get('canvas').scrollToElement(existing);
-      modeler.get('selection').select(existing);
+      this.reveal(existing.id);
       return;
     }
     const element: LandscapeProcessElement = {
@@ -331,6 +399,23 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.focusMode = !this.focusMode;
     this.updateMetadata({ focusMode: this.focusMode });
     this.modeler?.updateFocus(this.focusMode);
+  }
+
+  zoomToViewport(): void {
+    this.modeler?.get('canvas').zoom('fit-viewport', 'auto');
+  }
+
+  zoomToActualSize(): void {
+    this.modeler?.get('canvas').zoom(1, 'auto');
+  }
+
+  /** Scrolls the selection into view at 100 %; with nothing selected, nothing happens. */
+  zoomToSelectedElement(): void {
+    const selected = this.getSelectedElements()[0];
+    if (this.modeler != null && selected != null) {
+      this.modeler.get('canvas').zoom(1);
+      this.modeler.get('canvas').scrollToElement(selected);
+    }
   }
 
   //#endregion Canvas
@@ -394,19 +479,11 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       return;
     }
     const shape = selected[0];
-    const reference: LandscapeProcessElement = shape.businessObject;
-    const placeholder: LandscapePlaceholderElement = {
-      id: createElementId('placeholder', (id) => modeler.get('elementRegistry').get(id) != null),
-      type: 'placeholder',
-      parentId: reference.parentId,
-      x: shape.x,
-      y: shape.y,
-      width: shape.width,
-      height: shape.height,
-      style: reference.style,
-      label: reference.label ?? reference.processId,
-      shape: reference.shape,
-    };
+    const placeholder = convertLandscapeElement(
+      shape.businessObject,
+      'placeholder',
+      createElementId('placeholder', (id) => modeler.get('elementRegistry').get(id) != null),
+    );
     const replacement = modeler.replaceWithElement(shape, placeholder);
     modeler.get('selection').select(replacement);
   }
@@ -572,6 +649,37 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     return this.modeler?.get<LandscapeUpdates>('landscapeUpdates').getMapProperties() ?? null;
   }
 
+  /**
+   * Prepares a context menu on a shape: a shape outside the selection becomes the selection. Returns the type of the
+   * shape, or `null` when the click was not on a shape (the empty canvas).
+   */
+  selectForContextMenu(elementId: string | null): string | null {
+    const modeler = this.modeler;
+    const element = elementId == null ? null : modeler?.get('elementRegistry').get(elementId);
+    if (modeler == null || element?.parent == null) {
+      return null;
+    }
+    const selection = modeler.get('selection');
+    if (!selection.isSelected(element)) {
+      selection.select(element);
+    }
+    return element.type;
+  }
+
+  /** Opens the "Change type" popup at the element; nothing happens for a shape whose type cannot change. */
+  openChangeTypeMenu(elementId: string): void {
+    const replaceMenu = this.modeler?.get<LandscapeReplaceMenuProvider>('landscapeReplaceMenu');
+    const element = this.modeler?.get('elementRegistry').get(elementId);
+    if (element != null && replaceMenu?.canReplace(element) === true) {
+      replaceMenu.open(element);
+    }
+  }
+
+  /** Opens the process or the map a shape stands for; other shapes have nothing to open. */
+  openElement(elementId: string): void {
+    this.openShape(this.modeler?.get('elementRegistry').get(elementId));
+  }
+
   /** The selected canvas elements; each carries its file element, or its relation line, as `businessObject`. */
   getSelectedElements(): any[] {
     return this.modeler?.get('selection').get() ?? [];
@@ -621,17 +729,26 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     }).reduce((count, line) => count + line.relations.filter((relation) => hidden.has(relation.key)).length, 0);
   }
 
-  /** Changes the file element of the only selected element in one undo step. */
+  /** Changes the file element of the only selected element in one undo step; an unchanged value adds no step. */
   updateSelectedElement(properties: Partial<LandscapeElement>): void {
     const selected = this.getSelectedElements();
-    if (this.modeler == null || selected.length !== 1 || selected[0].type === 'relation') {
+    if (
+      this.modeler == null ||
+      selected.length !== 1 ||
+      selected[0].type === 'relation' ||
+      hasValues(selected[0].businessObject, properties)
+    ) {
       return;
     }
     this.modeler.get('commandStack').execute(UPDATE_ELEMENT_COMMAND, { element: selected[0], properties });
   }
 
+  /** Changes map properties in one undo step; an unchanged value adds no step. */
   updateMap(properties: Partial<LandscapeMapProperties>): void {
-    this.modeler?.get('commandStack').execute(UPDATE_MAP_COMMAND, { properties });
+    const mapProperties = this.getMapProperties();
+    if (mapProperties != null && !hasValues(mapProperties, properties)) {
+      this.modeler?.get('commandStack').execute(UPDATE_MAP_COMMAND, { properties });
+    }
   }
 
   addLevel(): void {
@@ -644,14 +761,14 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
 
   renameLevel(levelId: string, name: string): void {
     const levels = this.getMapProperties()?.levels;
-    if (levels?.some((level) => level.id === levelId && level.name !== name)) {
+    if (levels != null) {
       this.updateMap({ levels: levels.map((level) => (level.id === levelId ? { ...level, name } : level)) });
     }
   }
 
   removeLevel(levelId: string): void {
     const levels = this.getMapProperties()?.levels;
-    if (levels?.some((level) => level.id === levelId)) {
+    if (levels != null) {
       this.updateMap({ levels: levels.filter((level) => level.id !== levelId) });
     }
   }
@@ -663,7 +780,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
 
   setRelationLayer(kind: ProcessRelationKind, visible: boolean): void {
     const relationLayers = this.getMapProperties()?.relationLayers;
-    if (relationLayers != null && relationLayers[kind] !== visible) {
+    if (relationLayers != null) {
       this.updateMap({ relationLayers: { ...relationLayers, [kind]: visible } });
     }
   }
@@ -673,18 +790,15 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     if (hiddenRelations == null) {
       return;
     }
-    const next = hidden
-      ? [...hiddenRelations, ...keys.filter((key) => !hiddenRelations.includes(key))]
-      : hiddenRelations.filter((key) => !keys.includes(key));
-    if (next.length !== hiddenRelations.length) {
-      this.updateMap({ hiddenRelations: next });
-    }
+    this.updateMap({
+      hiddenRelations: hidden
+        ? [...hiddenRelations, ...keys.filter((key) => !hiddenRelations.includes(key))]
+        : hiddenRelations.filter((key) => !keys.includes(key)),
+    });
   }
 
   showAllRelations(): void {
-    if ((this.getMapProperties()?.hiddenRelations.length ?? 0) > 0) {
-      this.updateMap({ hiddenRelations: [] });
-    }
+    this.updateMap({ hiddenRelations: [] });
   }
 
   //#endregion Properties
@@ -702,17 +816,28 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       this.modeler = this.createModeler();
     }
     this.modeler.importMap(result.map);
+    this.applyGridSetting();
     this.showRelations();
     return [];
   }
 
+  private applyGridSetting(): void {
+    this.modeler?.get('grid').toggle(this.studio.settings.get(SHOW_GRID_SETTING, this.getUri()) !== false);
+  }
+
   private createModeler(): LandscapeModeler {
-    const modeler = new LandscapeModeler({
-      getProcessLabel: (element) => this.getProcessLabel(element),
-      getDecisionCount: (element) => this.resolveProcess(element)?.process.decisionRefs.length ?? 0,
-      getProcessStatus: (element) => this.getProcessStatus(element),
-      getMapLinkStatus: (element) => this.getMapLinkStatus(element),
-    });
+    const modeler = new LandscapeModeler(
+      {
+        getProcessLabel: (element) => this.getProcessLabel(element),
+        getDecisionCount: (element) => this.resolveProcess(element)?.process.decisionRefs.length ?? 0,
+        getProcessStatus: (element) => this.getProcessStatus(element),
+        getMapLinkStatus: (element) => this.getMapLinkStatus(element),
+        executePluginCommand: (pluginName, command, args) => {
+          void this.studio.commands.executeCommand(`plugin.${pluginName}.${command}`, args);
+        },
+      },
+      landscapeModelerModuleRegistry.getAll(),
+    );
     const eventBus = modeler.get('eventBus');
     eventBus.on('commandStack.changed', ({ trigger }: { trigger: string }) => {
       if (trigger === 'clear' || this.map == null) {
@@ -732,13 +857,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       this.bumpSelectionRevision();
       modeler.updateFocus(this.focusMode);
     });
-    eventBus.on('element.dblclick', ({ element }: any) => {
-      if (element.type === 'process') {
-        this.openProcess(element.businessObject);
-      } else if (element.type === 'mapLink') {
-        this.openMapLink(element.businessObject);
-      }
-    });
+    eventBus.on('element.dblclick', ({ element }: any) => this.openShape(element));
     // The relation lines depend on the plane on screen. A microtask keeps this out of a running undo.
     eventBus.on('root.set', () => queueMicrotask(() => this.showRelations()));
     eventBus.on('canvas.viewbox.changed', ({ viewbox }: { viewbox: Viewbox }) => {
@@ -817,6 +936,38 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       }),
     );
     modeler.updateFocus(this.focusMode);
+    this.refreshPluginOverlays();
+  }
+
+  /** Draws the overlays of the plugins' factories for the plane on screen. */
+  private refreshPluginOverlays(): void {
+    const modeler = this.modeler;
+    const overlayManager = this.getPluginOverlayManager();
+    if (modeler == null || overlayManager == null || this.isClosed) {
+      return;
+    }
+    const target = { overlays: modeler.get('overlays'), elementRegistry: modeler.get('elementRegistry') };
+    overlayManager.refresh(target, snapshotLandscapeElements(modeler, this.uri, 'plane'), this.uri).catch((error) => {
+      console.warn('[LandscapeMapDocumentModel] Plugin overlay refresh failed:', error);
+    });
+  }
+
+  private getPluginOverlayManager(): PluginDiagramOverlayManager<LandscapeElementSnapshot> | null {
+    try {
+      return this.studio.getSharedRessource<PluginDiagramOverlayManager<LandscapeElementSnapshot>>(
+        PLUGIN_LANDSCAPE_OVERLAY_MANAGER_KEY,
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  private openShape(shape: any): void {
+    if (shape?.type === 'process') {
+      this.openProcess(shape.businessObject);
+    } else if (shape?.type === 'mapLink') {
+      this.openMapLink(shape.businessObject);
+    }
   }
 
   private openProcess(element: LandscapeProcessElement): void {
@@ -865,6 +1016,9 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
 
       const reload = async (): Promise<void> => {
         const newText = await this.studio.files.load(this.uri);
+        if (this.isClosed) {
+          return;
+        }
         const currentData = this.getCurrentData();
         // Importing the same text again would only clear the undo history and the selection.
         if (newText === currentData) {
@@ -873,7 +1027,12 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
           this.updateMetadata({ errorOnReloadingFile: null });
           return;
         }
-        const errors = this.applyParseResult(await parseLandscapeMap(newText));
+        const parseResult = await parseLandscapeMap(newText);
+        // A canvas created after the close would never be destroyed.
+        if (this.isClosed) {
+          return;
+        }
+        const errors = this.applyParseResult(parseResult);
         if (errors.length === 0 || this.modeler == null) {
           this.parseErrors = errors;
           this.originalText = this.currentText = newText;

@@ -2,14 +2,23 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import { type CallbackInvocationPayload, PH_CALLBACK_INVOCATION } from '#bifrost/contracts/PluginHostProtocol';
 import type { PluginApiNamespaceContext } from '#bifrost/contracts/PluginHostTypes';
 
-import type {
-  DmnElementDetailSnapshot,
-  DmnOverlayDescriptor,
-  DmnOverlayFactoryContext,
-} from '@elraptorus/bfw_studio_sdk';
-import { PluginDmnOverlayPosition } from '@elraptorus/bfw_studio_sdk';
+import type { DmnOverlayDescriptor, LandscapeOverlayDescriptor } from '@elraptorus/bfw_studio_sdk';
 
-import type DmnModelerComponentAdapter from '../dmn-core/DmnModelerComponentAdapter';
+/** The DMN and landscape overlay descriptors are structurally identical; only their position enums are nominal. */
+type OverlayDescriptor = DmnOverlayDescriptor | LandscapeOverlayDescriptor;
+
+/** The diagram-js services a plugin overlay is drawn with: the plane or view on screen of one document. */
+export interface DiagramOverlayTarget {
+  overlays: any;
+  elementRegistry: any;
+}
+
+export interface PluginDiagramOverlayManagerOptions<ElementSnapshot> {
+  /** Names the diagram kind in log messages, for example `DMN` or `Landscape`. */
+  diagramLabel: string;
+  /** Changes whenever the factories would have to run again for the element set. */
+  fingerprintOf: (element: ElementSnapshot) => string;
+}
 
 const FACTORY_TIMEOUT_MS = 500;
 
@@ -19,36 +28,42 @@ interface RegisteredFactory {
   priority: number;
 }
 
-interface TrackedOverlay {
-  overlayId: string;
+interface RenderedOverlays {
+  overlayService: any;
+  overlayIds: string[];
 }
 
 /**
- * Manages registered DMN DRD overlay factory callbacks from plugins and
- * renders the resolved overlay descriptors directly onto the DRD overlays
- * service via raw DOM elements.
+ * Manages registered overlay factory callbacks from plugins and renders the resolved overlay descriptors directly
+ * onto a diagram-js overlays service via raw DOM elements.
  *
- * Unlike BPMN (which layers plugin overlays on top of a rich Studio-owned
- * internal overlay set rendered through React — see `PluginOverlayStore` and
- * `BpmnElementOverlayManager`), the DMN DRD view has no built-in overlay
- * decorations for plugins to merge with. This class therefore combines
- * factory-chain resolution (mirroring `PluginOverlayStore.resolve`) with
- * direct rendering (mirroring `BpmnApiBridge`'s raw-DOM overlay methods) in
- * a single component, instantiated once by `DmnApiBridge`.
+ * Unlike BPMN (which layers plugin overlays on top of a rich Studio-owned internal overlay set rendered through
+ * React — see `PluginOverlayStore` and `BpmnElementOverlayManager`), the DMN DRD view and the landscape map have no
+ * built-in overlay decorations for plugins to merge with. This class therefore combines factory-chain resolution
+ * (mirroring `PluginOverlayStore.resolve`) with direct rendering in a single component. `DmnApiBridge` and
+ * `LandscapeApiBridge` each instantiate one; it knows nothing about either editor beyond the
+ * {@link DiagramOverlayTarget} it is handed.
  */
-export class DmnPluginOverlayManager {
+export class PluginDiagramOverlayManager<ElementSnapshot> {
   private pluginHost: PluginApiNamespaceContext['pluginHost'];
   private bifrost: Bifrost;
   private factories = new Map<string, RegisteredFactory>();
   private cachedFingerprintByUri = new Map<string, string>();
-  private cachedResultByUri = new Map<string, DmnOverlayDescriptor[]>();
-  private renderedOverlaysByUri = new Map<string, TrackedOverlay[]>();
+  private cachedResultByUri = new Map<string, OverlayDescriptor[]>();
+  private renderedOverlaysByUri = new Map<string, RenderedOverlays>();
 
   private refreshRequestCallback: (() => void) | null = null;
 
-  constructor(pluginHost: PluginApiNamespaceContext['pluginHost'], bifrost: Bifrost) {
+  private options: PluginDiagramOverlayManagerOptions<ElementSnapshot>;
+
+  constructor(
+    pluginHost: PluginApiNamespaceContext['pluginHost'],
+    bifrost: Bifrost,
+    options: PluginDiagramOverlayManagerOptions<ElementSnapshot>,
+  ) {
     this.pluginHost = pluginHost;
     this.bifrost = bifrost;
+    this.options = options;
   }
 
   /**
@@ -59,7 +74,7 @@ export class DmnPluginOverlayManager {
     const existing = this.factories.get(pluginName);
     if (existing != null) {
       console.warn(
-        `[DmnPluginOverlayManager] Plugin '${pluginName}' tried to register multiple DMN Overlay factories. ` +
+        `[PluginDiagramOverlayManager] Plugin '${pluginName}' tried to register multiple ${this.options.diagramLabel} Overlay factories. ` +
           'By design, only ONE factory may be active per plugin. The previously registered factory has been replaced. ' +
           'This indicates a bug in your plugin code, please check it out.',
       );
@@ -80,7 +95,7 @@ export class DmnPluginOverlayManager {
     return this.factories.get(pluginName)?.callbackId;
   }
 
-  /** Set the callback that triggers an overlay refresh on all open DMN documents. */
+  /** Set the callback that triggers an overlay refresh on all open documents. */
   onRefreshRequested(callback: () => void): void {
     this.refreshRequestCallback = callback;
   }
@@ -95,27 +110,26 @@ export class DmnPluginOverlayManager {
   }
 
   /**
-   * Resolve the factory chain for the given DRD element set and render the
-   * result directly onto the adapter's DRD overlays service.
+   * Resolve the factory chain for the given element set and render the result onto the target's overlays service.
    *
-   * No-op while the DRD view is not active — clears any previously rendered
-   * overlays for this URI instead, since they would be invisible/stale.
+   * A `null` target means there is nothing to draw on (for example the DMN view that is not the DRD): the overlays
+   * rendered earlier for this URI are removed instead, since they would be invisible or stale.
    */
-  async refresh(adapter: DmnModelerComponentAdapter, elements: DmnElementDetailSnapshot[], uri: string): Promise<void> {
-    if (!adapter.isDrdActive() || this.factories.size === 0) {
-      this.clearRenderedOverlays(adapter, uri);
+  async refresh(target: DiagramOverlayTarget | null, elements: ElementSnapshot[], uri: string): Promise<void> {
+    if (target == null || this.factories.size === 0) {
+      this.clearRenderedOverlays(uri);
       return;
     }
 
     const descriptors = await this.resolve(elements, uri);
-    this.render(adapter, uri, descriptors);
+    this.render(target, uri, descriptors);
   }
 
   /**
    * Resolve all plugin overlay factories at the descriptor level.
    * Factories are invoked sequentially in priority order (lowest first).
    */
-  async resolve(elements: DmnElementDetailSnapshot[], uri: string): Promise<DmnOverlayDescriptor[]> {
+  async resolve(elements: ElementSnapshot[], uri: string): Promise<OverlayDescriptor[]> {
     if (this.factories.size === 0) {
       return [];
     }
@@ -130,26 +144,21 @@ export class DmnPluginOverlayManager {
       (factoryA, factoryB) => factoryA.priority - factoryB.priority,
     );
 
-    let currentOverlays: DmnOverlayDescriptor[] = [];
-    const originalDefaultOverlays: DmnOverlayDescriptor[] = [];
+    let currentOverlays: OverlayDescriptor[] = [];
+    const originalDefaultOverlays: OverlayDescriptor[] = [];
 
     for (const factory of sortedFactories) {
-      const context: DmnOverlayFactoryContext = {
-        elements,
-        uri,
-        currentOverlays,
-        originalDefaultOverlays,
-      };
+      const context = { elements, uri, currentOverlays, originalDefaultOverlays };
 
       try {
         const result = await this.invokeFactory(factory.callbackId, context);
         if (Array.isArray(result)) {
-          currentOverlays = result as DmnOverlayDescriptor[];
+          currentOverlays = result as OverlayDescriptor[];
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.warn(
-          `[DmnPluginOverlayManager] Factory from plugin '${factory.pluginName}' failed: ${message}. ` +
+          `[PluginDiagramOverlayManager] Factory from plugin '${factory.pluginName}' failed: ${message}. ` +
             'Passing currentOverlays unchanged to next factory.',
         );
       }
@@ -177,68 +186,65 @@ export class DmnPluginOverlayManager {
 
   // ─── Rendering ──────────────────────────────────────────────────────
 
-  private render(adapter: DmnModelerComponentAdapter, uri: string, descriptors: DmnOverlayDescriptor[]): void {
-    this.clearRenderedOverlays(adapter, uri);
+  private render(target: DiagramOverlayTarget, uri: string, descriptors: OverlayDescriptor[]): void {
+    this.clearRenderedOverlays(uri);
 
-    let overlayService: any;
-    let elementRegistry: any;
-    try {
-      overlayService = adapter.getDrdOverlays();
-      elementRegistry = adapter.getDrdElementRegistry();
-    } catch {
-      return;
-    }
-
-    const tracked: TrackedOverlay[] = [];
+    const overlayIds: string[] = [];
 
     for (const descriptor of descriptors) {
-      const shape = elementRegistry.get(descriptor.elementId);
-      if (shape == null) {
-        continue;
-      }
-
-      const htmlElement = this.createOverlayHtmlElement(descriptor);
-      const position = this.mapPosition(descriptor.position);
-
-      try {
-        const overlayId = overlayService.add(descriptor.elementId, 'plugin-overlay', {
-          position,
-          html: htmlElement,
-        });
-        tracked.push({ overlayId });
-      } catch {
-        // Element may not be visible, or the overlay limit was reached
+      const overlayId = this.addOverlay(target, descriptor);
+      if (overlayId !== '') {
+        overlayIds.push(overlayId);
       }
     }
 
-    this.renderedOverlaysByUri.set(uri, tracked);
+    this.renderedOverlaysByUri.set(uri, { overlayService: target.overlays, overlayIds });
   }
 
-  private clearRenderedOverlays(adapter: DmnModelerComponentAdapter, uri: string): void {
-    const tracked = this.renderedOverlaysByUri.get(uri);
-    if (tracked == null || tracked.length === 0) {
-      return;
+  /**
+   * Draws one overlay on the target and returns its id, or `''` when the element is not there or the overlay could
+   * not be added. With `ownerPluginName` a click command must belong to that plugin (the direct `setOverlays` path);
+   * without it the descriptor comes out of the factory chain, which has already merged several plugins.
+   */
+  addOverlay(target: DiagramOverlayTarget, descriptor: OverlayDescriptor, ownerPluginName?: string): string {
+    if (target.elementRegistry.get(descriptor.elementId) == null) {
+      return '';
     }
-
-    let overlayService: any;
     try {
-      overlayService = adapter.getDrdOverlays();
+      return target.overlays.add(descriptor.elementId, 'plugin-overlay', {
+        position: this.mapPosition(descriptor.position),
+        html: this.createOverlayHtmlElement(descriptor, ownerPluginName),
+      });
     } catch {
-      this.renderedOverlaysByUri.delete(uri);
-      return;
+      // Element may not be visible, or the overlay limit was reached
+      return '';
     }
+  }
 
-    for (const { overlayId } of tracked) {
+  removeOverlays(overlayService: any, overlayIds: string[]): void {
+    for (const overlayId of overlayIds) {
+      if (overlayId === '') {
+        continue;
+      }
       try {
         overlayService.remove(overlayId);
       } catch {
         // overlay may already have been removed (element deleted, tab closed)
       }
     }
-    this.renderedOverlaysByUri.delete(uri);
   }
 
-  private createOverlayHtmlElement(descriptor: DmnOverlayDescriptor): HTMLElement {
+  private clearRenderedOverlays(uri: string): void {
+    const rendered = this.renderedOverlaysByUri.get(uri);
+    this.renderedOverlaysByUri.delete(uri);
+    if (rendered == null) {
+      return;
+    }
+
+    this.removeOverlays(rendered.overlayService, rendered.overlayIds);
+  }
+
+  private createOverlayHtmlElement(descriptor: OverlayDescriptor, ownerPluginName?: string): HTMLElement {
     const container = document.createElement('div');
     container.className = 'bfw-plugin-overlay';
 
@@ -277,11 +283,20 @@ export class DmnPluginOverlayManager {
     if ('onClickCommand' in descriptor && descriptor.onClickCommand != null) {
       container.style.pointerEvents = 'auto';
       container.style.cursor = 'pointer';
-      const commandId = descriptor.onClickCommand;
       const commandArgs = ('onClickCommandArgs' in descriptor ? descriptor.onClickCommandArgs : []) ?? [];
+      const commandId =
+        ownerPluginName == null || descriptor.onClickCommand.startsWith('plugin.')
+          ? descriptor.onClickCommand
+          : `plugin.${ownerPluginName}.${descriptor.onClickCommand}`;
 
       container.addEventListener('click', (event) => {
         event.stopPropagation();
+        if (ownerPluginName != null && !this.isOwnedRegisteredCommand(commandId, ownerPluginName)) {
+          console.warn(
+            `[PluginDiagramOverlayManager] Plugin '${ownerPluginName}' overlay click rejected: command '${commandId}' is not owned by this plugin or is not registered`,
+          );
+          return;
+        }
         this.bifrost.commands.executeCommand(commandId, commandArgs as any[]);
       });
     } else {
@@ -291,26 +306,26 @@ export class DmnPluginOverlayManager {
     return container;
   }
 
-  private mapPosition(position: PluginDmnOverlayPosition): {
+  private mapPosition(position: OverlayDescriptor['position']): {
     top: number;
     left: number;
     bottom?: number;
     right?: number;
   } {
-    switch (position) {
-      case PluginDmnOverlayPosition.TopLeft:
+    switch (position as string) {
+      case 'top-left':
         return { top: -10, left: -10 };
-      case PluginDmnOverlayPosition.TopRight:
+      case 'top-right':
         return { top: -10, left: 0, right: -10 };
-      case PluginDmnOverlayPosition.MiddleLeft:
+      case 'middle-left':
         return { top: 20, left: -10 };
-      case PluginDmnOverlayPosition.MiddleRight:
+      case 'middle-right':
         return { top: 20, left: 0, right: -10 };
-      case PluginDmnOverlayPosition.BottomLeft:
+      case 'bottom-left':
         return { top: 0, left: -10, bottom: -10 };
-      case PluginDmnOverlayPosition.BottomRight:
+      case 'bottom-right':
         return { top: 0, left: 0, bottom: -10, right: -10 };
-      case PluginDmnOverlayPosition.Below:
+      case 'below':
         return { top: 0, left: 0, bottom: -30 };
       default:
         return { top: -10, left: -10 };
@@ -319,11 +334,15 @@ export class DmnPluginOverlayManager {
 
   // ─── Private Helpers ──────────────────────────────────────────────────
 
-  private computeFingerprint(elements: DmnElementDetailSnapshot[]): string {
-    return elements.map((element) => `${element.id}:${element.type}:${element.name ?? ''}`).join('|');
+  private isOwnedRegisteredCommand(commandId: string, pluginName: string): boolean {
+    return commandId.startsWith(`plugin.${pluginName}.`) && this.bifrost.commands.isRegistered(commandId);
   }
 
-  private async invokeFactory(callbackId: string, context: DmnOverlayFactoryContext): Promise<unknown> {
+  private computeFingerprint(elements: ElementSnapshot[]): string {
+    return elements.map(this.options.fingerprintOf).join('|');
+  }
+
+  private async invokeFactory(callbackId: string, context: unknown): Promise<unknown> {
     const connection = this.pluginHost.getConnection();
     if (connection == null) {
       throw new Error('Plugin host connection not available');

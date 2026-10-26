@@ -1,0 +1,17 @@
+{
+  "name": "landscape-read-only",
+  "version": "1.0.0",
+  "displayName": "Landscape Read Only",
+  "description": "Fixture plugin holding only the base landscape permission: queries and overlays, no modelling, no renderer.",
+  "main": "index.js",
+  "bifrostStudio": {
+    "apiVersion": "2.0.0",
+    "displayName": "Landscape Read Only",
+    "permissions": [
+      "landscape"
+    ],
+    "activationEvents": [
+      "onStartup"
+    ]
+  }
+}

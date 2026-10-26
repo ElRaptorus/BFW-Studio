@@ -3,6 +3,7 @@ import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { FileEventType, WatcherDisposable } from '#bifrost/common/FileHandlingService';
 import { waitForAcceptance } from '#bifrost/common/WaitingFunctions';
+import type { PluginDiagramOverlayManager } from '#bifrost/common/plugin-host/PluginDiagramOverlayManager';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import { EVENT_METADATA_UPDATED } from '#bifrost/contracts/internal/EditorEvents';
 import { dmnModelerModuleRegistry } from '#modules/dmn-core/DmnModelerModuleRegistry';
@@ -10,6 +11,8 @@ import type { SolutionDmnModelEntry } from '#modules/dmn-core/scanSolutionDmnMod
 import { scanSolutionDmnModels } from '#modules/dmn-core/scanSolutionDmnModels';
 import type { Debugger } from 'debug';
 import Debug from 'debug';
+
+import type { DmnElementDetailSnapshot } from '@elraptorus/bfw_studio_sdk';
 
 import DmnModelerComponentAdapter, {
   type DmnView,
@@ -22,7 +25,6 @@ import DmnModelerComponentAdapter, {
 import type { DmnImportIndex, DmnImportedElementType } from '../dmn-core/validation/DmnValidator';
 import DmnDocumentElementAccess, { EVENT_DMN_ELEMENT_PROPERTY_UPDATED } from './DmnDocumentElementAccess';
 import DmnDocumentSelection, { EVENT_DMN_SELECTION_ELEMENTS_UPDATED } from './DmnDocumentSelection';
-import type { DmnPluginOverlayManager } from './DmnPluginOverlayManager';
 import DmnValidationOverlayManager from './DmnValidationOverlayManager';
 import { PLUGIN_DMN_OVERLAY_MANAGER_KEY } from './plugin-api/DmnApiBridge';
 
@@ -385,7 +387,7 @@ export default class DmnDocumentModel extends EditorDocumentModel {
     }
 
     if (!this.dmnComponentAdapter.isDrdActive()) {
-      overlayManager.refresh(this.dmnComponentAdapter, [], this.uri).catch((error) => {
+      overlayManager.refresh(null, [], this.uri).catch((error) => {
         console.warn('[DmnDocumentModel] Plugin overlay refresh failed:', error);
       });
       return;
@@ -405,14 +407,17 @@ export default class DmnDocumentModel extends EditorDocumentModel {
       };
     });
 
-    overlayManager.refresh(this.dmnComponentAdapter, elements, this.uri).catch((error) => {
+    const target = { overlays: this.dmnComponentAdapter.getDrdOverlays(), elementRegistry };
+    overlayManager.refresh(target, elements, this.uri).catch((error) => {
       console.warn('[DmnDocumentModel] Plugin overlay refresh failed:', error);
     });
   }
 
-  private getPluginOverlayManager(): DmnPluginOverlayManager | null {
+  private getPluginOverlayManager(): PluginDiagramOverlayManager<DmnElementDetailSnapshot> | null {
     try {
-      return this.studio.getSharedRessource<DmnPluginOverlayManager>(PLUGIN_DMN_OVERLAY_MANAGER_KEY);
+      return this.studio.getSharedRessource<PluginDiagramOverlayManager<DmnElementDetailSnapshot>>(
+        PLUGIN_DMN_OVERLAY_MANAGER_KEY,
+      );
     } catch {
       return null;
     }

@@ -54,10 +54,13 @@ The `permissions` array declares which sandbox capabilities the plugin needs. Pl
 | `dmn` | Read DMN elements, subscribe to events, place overlays | Low |
 | `dmn.modelling` | All of `dmn` + modify DMN model + palette/context pad contributions | Medium |
 | `dmn.renderer` | All of `dmn.modelling` + inject diagram-js modules into renderer | High |
+| `landscape` | Read landscape map elements, subscribe to events, place overlays | Low |
+| `landscape.modelling` | All of `landscape` + modify the map + palette/context pad contributions | Medium |
+| `landscape.renderer` | All of `landscape.modelling` + inject diagram-js modules into renderer | High |
 | `native` | Load `.node` native addons | Critical |
 | `system-info` | `require('os')` (safe subset: `platform`, `arch`, `tmpdir`, `EOL`) | Low |
 
-**BPMN permission hierarchy**: `bpmn.renderer` ⊃ `bpmn.modelling` ⊃ `bpmn`. Declaring a higher tier implicitly grants all lower tiers. Same shape for `dmn` / `dmn.modelling` / `dmn.renderer`. `renderer-modules` is a legacy alias of `bpmn.renderer` only.
+**BPMN permission hierarchy**: `bpmn.renderer` ⊃ `bpmn.modelling` ⊃ `bpmn`. Declaring a higher tier implicitly grants all lower tiers. Same shape for `dmn` / `dmn.modelling` / `dmn.renderer` and `landscape` / `landscape.modelling` / `landscape.renderer`. `renderer-modules` is a legacy alias of `bpmn.renderer` only.
 
 **Reserved**: `network` is recognized but rejected — plugins have zero network access in v1.
 
@@ -242,6 +245,10 @@ Array of context pad entry declarations. Requires `bpmn.modelling` permission.
 | `elementTypes` | `string[]` | No | Restrict to specific BPMN types (e.g. `["bpmn:Task", "bpmn:ServiceTask"]`). If omitted, shown on all elements |
 
 Context pad entries support a two-level filter: `elementTypes` (static, from manifest) + `elementIds` (dynamic, updated at runtime via `api.bpmn.updateContextPadEntry()`). Both must match for an entry to appear.
+
+#### `contributes.landscapePalette`, `landscapeContextPad`, `landscapeModules`
+
+Landscape map counterparts of the BPMN entries. `landscapePalette` takes `{ id, icon, title, command, group? }` (group default `plugins`) and `landscapeContextPad` `{ id, icon, title, command, elementTypes? }`, both requiring `landscape.modelling`; `landscapeModules` takes `{ entry, description? }` and requires `landscape.renderer`. The reader warns when an entry lacks the permission and fails for `landscapeModules` without `landscape.renderer`. Behaviour: [plugin-landscape-enrichment.md](plugin-landscape-enrichment.md).
 
 #### `contributes.bpmnModules`
 

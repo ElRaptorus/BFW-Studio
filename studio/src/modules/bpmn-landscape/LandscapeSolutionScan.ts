@@ -63,7 +63,12 @@ export class LandscapeSolutionScan {
     if (scanNumber !== this.latestScan) {
       return;
     }
-    this.snapshot = { catalog, maps, relations: buildProcessRelations(catalog) };
+    const snapshot = { catalog, maps, relations: buildProcessRelations(catalog) };
+    // Most solution changes touch no BPMN file or map; consumers re-render, and an open text field would lose its input.
+    if (this.snapshot != null && JSON.stringify(snapshot) === JSON.stringify(this.snapshot)) {
+      return;
+    }
+    this.snapshot = snapshot;
     this.listeners.forEach((listener) => listener());
   }
 }

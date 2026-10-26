@@ -68,6 +68,10 @@ bifrost.commands.executeCommand('bpmn.modeler.registerModule', {
 });
 ```
 
+### Landscape maps
+
+The landscape map editor has its own registry, `landscapeModelerModuleRegistry` (`studio/src/modules/bpmn-landscape/plugin-api/landscapePluginModules.ts`, the same `BpmnModelerModuleRegistry` class), and its own command `bpmn.landscape.modeler.registerModule`, registered in `bpmn-landscape/index.tsx`. `LandscapeMapDocumentModel` hands `getAll()` to `new LandscapeModeler(config, additionalModules)`, which appends the modules after the built-in ones. Plugins reach it through `contributes.landscapeModules` ([plugin-landscape-enrichment.md](plugin-landscape-enrichment.md)).
+
 ## Modeler Adapter Access
 
 **Host type:** `studio/src/modules/bpmn-core/BpmnModelerComponentAdapter.ts`

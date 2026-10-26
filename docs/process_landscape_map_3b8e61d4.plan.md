@@ -558,8 +558,8 @@ The properties pane, for a broken process, shows the status sentence and three a
 
 **Crossing connectors (decision 11).**
 - **Drawing:** a connector whose ends lie on different planes is drawn on their lowest common plane, between each end's representative there: the end itself, or its outermost collapsed ancestor.
-- **Hidden end:** when a representative differs from the real end, the connection records `hiddenSourceId` / `hiddenTargetId`, set inside the toggle command so undo restores it. A user reconnect of that side clears it.
-- **Export:** `sourceId = hiddenSourceId ?? source.businessObject.id`, and the same for the target.
+- **Hidden end:** the real ends stay in the connector's file element (`businessObject.sourceId` / `targetId`); the canvas ends are the representatives. A user reconnect updates the real end of the side that changed. (As built; the first draft stored `hiddenSourceId` / `hiddenTargetId` on the connection.)
+- **Export:** `sourceId` / `targetId` come from the file element, not from the canvas ends.
 - **Sync:** one `syncConnectors(affected)` step recomputes parent, ends and hidden ids after every collapse and expand, which also covers nested collapses (the hidden end stays the deepest real element).
 
 **Drill-down UI** (new service `LandscapeDrilldown`):
@@ -652,7 +652,7 @@ The properties pane, for a broken process, shows the status sentence and three a
     - import and export with planes from the stored map root.
 34. Crossing connectors (decision 11):
     - representative ends on the lowest common plane;
-    - `hiddenSourceId` / `hiddenTargetId` set inside the toggle command and cleared by a user reconnect;
+    - the real ends kept in the file element and updated by a user reconnect of that side;
     - export of the real ends;
     - `syncConnectors` after every toggle;
     - cascade delete when a hidden end is deleted.

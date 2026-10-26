@@ -76,15 +76,16 @@ export function registerLandscapeExportCommands(bifrost: Bifrost): void {
         showExportNotification(bifrost, 'error', `The image format '${format}' is not supported.`);
         return;
       }
-      const content =
-        rasterFormat == null
-          ? svg
-          : await runWithExportHint(bifrost.dialog, async () => renderSvgToRasterImage(svg, rasterFormat));
       try {
+        // A map too large for a raster canvas fails to render; it gets the same notice as a failed write.
+        const content =
+          rasterFormat == null
+            ? svg
+            : await runWithExportHint(bifrost.dialog, async () => renderSvgToRasterImage(svg, rasterFormat));
         await bifrost.files.save(bifrost.files.getUriForFilename(filename), content);
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
-        showExportNotification(bifrost, 'error', `The map could not be written to '${filename}': ${reason}`);
+        showExportNotification(bifrost, 'error', `The map could not be exported to '${filename}': ${reason}`);
       }
     },
   );

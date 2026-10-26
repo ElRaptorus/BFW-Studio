@@ -1,6 +1,7 @@
 import type { ManifestBpmnModule } from '#bifrost/common/plugin-host/manifest/ManifestTypes';
 import path from 'path';
 
+import type { BpmnModelerModuleRegistry } from '../BpmnModelerModuleRegistry';
 import { bpmnModelerModuleRegistry } from '../BpmnModelerModuleRegistry';
 import { PluginChannel } from './PluginChannel';
 
@@ -54,7 +55,7 @@ function rewriteChannelInjections(moduleDescriptor: Record<string, any>, channel
  * Loads plugin-provided diagram-js modules into the renderer process
  * and manages their lifecycle.
  *
- * Each plugin's modules are registered in the BpmnModelerModuleRegistry.
+ * Each plugin's modules are registered in the module registry given to the constructor.
  * A PluginChannel is injected alongside the modules for bidirectional
  * communication with the plugin host.
  *
@@ -62,9 +63,11 @@ function rewriteChannelInjections(moduleDescriptor: Record<string, any>, channel
  * (`pluginChannel__<pluginName>`) to prevent collisions when multiple
  * plugins register renderer modules simultaneously.
  */
-class PluginModuleLoader {
+export class PluginModuleLoader {
   private loadedPlugins = new Map<string, LoadedPlugin>();
   private sendFn: SendFunction = () => {};
+
+  constructor(private readonly moduleRegistry: BpmnModelerModuleRegistry) {}
 
   /**
    * Set the transport function for sending messages from renderer modules
@@ -94,7 +97,7 @@ class PluginModuleLoader {
     const channelModule = { [channelDiName]: ['value', channel] };
 
     try {
-      bpmnModelerModuleRegistry.registerPluginModule(pluginName, channelModule);
+      this.moduleRegistry.registerPluginModule(pluginName, channelModule);
 
       for (const moduleDeclaration of bpmnModules) {
         const modulePath = path.join(pluginPath, moduleDeclaration.entry);
@@ -127,7 +130,7 @@ class PluginModuleLoader {
         }
 
         rewriteChannelInjections(resolvedModule, channelDiName);
-        bpmnModelerModuleRegistry.registerPluginModule(pluginName, resolvedModule);
+        this.moduleRegistry.registerPluginModule(pluginName, resolvedModule);
       }
 
       this.loadedPlugins.set(pluginName, { channel });
@@ -151,7 +154,7 @@ class PluginModuleLoader {
       loaded.channel.dispose();
       this.loadedPlugins.delete(pluginName);
     }
-    bpmnModelerModuleRegistry.unregisterPluginModules(pluginName);
+    this.moduleRegistry.unregisterPluginModules(pluginName);
   }
 
   /**
@@ -170,4 +173,4 @@ class PluginModuleLoader {
   }
 }
 
-export const pluginModuleLoader = new PluginModuleLoader();
+export const pluginModuleLoader = new PluginModuleLoader(bpmnModelerModuleRegistry);

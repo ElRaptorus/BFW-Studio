@@ -22,6 +22,8 @@ export type LandscapeRendererConfig = {
   getProcessStatus(element: LandscapeProcessElement): ReferenceStatus;
   /** `missing` when the map the link names does not exist. */
   getMapLinkStatus(element: LandscapeMapLinkElement): Exclude<ReferenceStatus, 'ambiguous'>;
+  /** Runs a command a plugin registered, for a palette or context pad entry the plugin contributes. */
+  executePluginCommand(pluginName: string, command: string, args: unknown[]): void;
 };
 
 const BROKEN_OPACITY = 0.45;
@@ -128,7 +130,9 @@ export default class LandscapeRenderer extends BaseRenderer {
     const element: LandscapeElement = shape.businessObject;
     const fill = element.style?.fill ?? DEFAULT_FILL;
     const stroke = element.style?.stroke ?? DEFAULT_STROKE;
-    const style = `fill: ${fill}; stroke: ${stroke}; stroke-width: 2px;`;
+    // Styles are inline, not in the stylesheet, so an exported image looks the same.
+    const fillOpacity = element.type === 'group' || element.type === 'band' ? ' fill-opacity: 0.6;' : '';
+    const style = `fill: ${fill};${fillOpacity} stroke: ${stroke}; stroke-width: 2px;`;
     const status = statusOf(element, this.config);
     const isBroken = status !== 'resolved';
     const dashedStyle = element.type === 'placeholder' || isBroken ? `${style} stroke-dasharray: 6 4;` : style;
@@ -240,7 +244,7 @@ export default class LandscapeRenderer extends BaseRenderer {
     const relationLine: RelationLine = connection.businessObject;
     const hidden = new Set(relationLine.hiddenKeys);
     const visibleRelations = relationLine.relations.filter((relation) => !hidden.has(relation.key));
-    if (connection.source.type === 'group' || connection.target.type === 'group') {
+    if (connection.relationSource.type === 'group' || connection.relationTarget.type === 'group') {
       return String(visibleRelations.length);
     }
     return visibleRelations
@@ -261,6 +265,11 @@ export default class LandscapeRenderer extends BaseRenderer {
     });
     text.classList.add('landscape-label', 'landscape-line-label');
     text.setAttribute('transform', `translate(${point.x - LINE_LABEL_WIDTH / 2}, ${point.y})`);
+    // A halo in the fill colour keeps the label readable where it crosses a line.
+    text.setAttribute(
+      'style',
+      `stroke: ${DEFAULT_FILL}; stroke-width: 4px; stroke-linejoin: round; paint-order: stroke;`,
+    );
     parentGraphics.appendChild(text);
   }
 

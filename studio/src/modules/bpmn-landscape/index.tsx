@@ -1,16 +1,20 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type { SearchResult } from '#bifrost/contracts/internal/SearchTypes';
 
-import type { Menu } from '@elraptorus/bfw_studio_sdk';
+import type { Menu, MenuItem } from '@elraptorus/bfw_studio_sdk';
 
 import LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
 import LandscapeMapRenderer from './LandscapeMapRenderer';
+import { LandscapeSearchIndexerClient } from './LandscapeSearchIndexerClient';
 import { LANDSCAPE_SOLUTION_SCAN_KEY, LandscapeSolutionScan } from './LandscapeSolutionScan';
 import { registerLandscapeCommands } from './commands';
-import { getMapOpenRefusal, LANDSCAPES_PAGE_ID, LANDSCAPES_VIEW_ID } from './landscapeFolder';
+import { getMapOpenRefusal, LANDSCAPE_DOCUMENT_TYPE, LANDSCAPES_PAGE_ID, LANDSCAPES_VIEW_ID } from './landscapeFolder';
 import { MapsDecorationProvider } from './mapsExplorerDecorations';
 import { LandscapeFolderHint } from './panes/LandscapeFolderHint';
 import * as LandscapePropertiesPane from './panes/LandscapePropertiesPane';
 import * as ProcessesPane from './panes/ProcessesPane';
+import { LandscapeApiBridge } from './plugin-api/LandscapeApiBridge';
+import { landscapeModelerModuleRegistry } from './plugin-api/landscapePluginModules';
 
 const MAPS_EXPLORER_ID = 'landscapes';
 const MAP_URI_PATTERN = /\.bfwmap$/;
@@ -30,11 +34,19 @@ const SELECTION_KEYS = {
 };
 
 export function onLoad(bifrost: Bifrost): void {
+  bifrost.plugins.registerApiNamespace((context) => new LandscapeApiBridge(bifrost, context));
+
   bifrost.helpTexts.registerHelpText(LANDSCAPES_PAGE_ID, require('./texts/landscapes.md'));
 
   bifrost.icons.registerIcons({
     'bpmn-landscape/page/landscapes': 'ph ph-map-trifold',
     'bpmn-landscape/document-type/map': 'ph-duotone ph-map-trifold',
+    'bpmn-landscape/search-result/types/band': 'ph ph-rows',
+    'bpmn-landscape/search-result/types/group': 'ph ph-selection',
+    'bpmn-landscape/search-result/types/process': 'ph ph-flow-arrow',
+    'bpmn-landscape/search-result/types/placeholder': 'ph ph-dots-three-outline',
+    'bpmn-landscape/search-result/types/mapLink': 'ph ph-map-trifold',
+    'bpmn-landscape/search-result/types/note': 'ph ph-note',
   });
 
   bifrost.categories.registerPage({
@@ -47,7 +59,7 @@ export function onLoad(bifrost: Bifrost): void {
     editorTabsVisible: true,
   });
 
-  bifrost.editors.registerDocumentType('bpmn-landscape-map', {
+  bifrost.editors.registerDocumentType(LANDSCAPE_DOCUMENT_TYPE, {
     page: LANDSCAPES_PAGE_ID,
     uriMatch: MAP_URI_PATTERN,
     modelKey: 'LandscapeMapDocumentModel',
@@ -59,6 +71,53 @@ export function onLoad(bifrost: Bifrost): void {
       const refusal = getMapOpenRefusal(bifrost, uri);
       return refusal == null ? { documentCanBeOpened: true } : { documentCanBeOpened: false, error: refusal };
     },
+  });
+
+  bifrost.commands.register('bpmn.landscape.modeler.registerModule', (module: any) => {
+    landscapeModelerModuleRegistry.register(module);
+  });
+
+  bifrost.settings.register({
+    'bpmn.landscape.showGrid': {
+      category: 'Landscapes',
+      scope: 'project',
+      type: 'boolean',
+      label: 'Show Grid',
+      description: 'Display a grid overlay on the landscape map canvas.',
+      default: true,
+    },
+  });
+
+  bifrost.menus.registerMenuModifier('std/application/main', async (mainMenu: Promise<Menu>): Promise<Menu> => {
+    const menu = await mainMenu;
+    return bifrost.menus.insertAfterMenuItem(menu, 'view/editor-tabs', [
+      {
+        type: 'menu',
+        label: 'Landscape Map Editor',
+        id: 'view/landscape-editor',
+        submenu: [
+          {
+            type: 'command',
+            label: 'Show Grid',
+            checked: bifrost.settings.get('bpmn.landscape.showGrid') !== false,
+            id: 'view/landscape-editor/show-grid',
+            command: 'bpmn.landscape.toggleShowGrid',
+          },
+        ],
+      },
+    ]);
+  });
+
+  bifrost.searchIndex.registerSearchIndexerWorkerClient(LANDSCAPE_DOCUMENT_TYPE, new LandscapeSearchIndexerClient());
+  bifrost.searchIndex.registerSearchResultFilter(
+    LANDSCAPE_DOCUMENT_TYPE,
+    (searchResult: SearchResult) => searchResult.label !== '',
+  );
+  bifrost.searchView.onOpenSearchResult(LANDSCAPE_DOCUMENT_TYPE, (searchResult: SearchResult) => {
+    const editorDocument = bifrost.editors.focusOrOpenEditorDocument(searchResult.uri);
+    void bifrost.editors
+      .getEditorDocumentModel<LandscapeMapDocumentModel>(editorDocument)
+      .then((model) => model.revealElement(searchResult.metadata.elementId));
   });
 
   bifrost.solution.registerDefaultIncludedFiles(['**/*.bfwmap']);
@@ -140,6 +199,62 @@ export function onLoad(bifrost: Bifrost): void {
   }
 
   registerLandscapeCommands(bifrost);
+
+  // Opened by the canvas context menu with the clicked shape's id and type; both are `null` on the empty canvas.
+  bifrost.menus.registerMenu('bpmn/landscape/element', (elementId: string | null, elementType: string | null): Menu => {
+    const editorDocument = bifrost.editors.getFocusedEditorDocument();
+    const isOpenable = elementType === 'process' || elementType === 'mapLink';
+    // Relation lines are drawn from the solution and have no element in the file.
+    const isInFile = elementType !== 'relation';
+    const pasteItem: MenuItem = {
+      type: 'command',
+      label: 'Paste',
+      id: 'bpmn/landscape/element/paste',
+      command: 'bpmn.landscape.paste',
+    };
+    if (elementId == null) {
+      return [pasteItem];
+    }
+    const clipboardMenu: Menu = [
+      { type: 'command', label: 'Copy', id: 'bpmn/landscape/element/copy', command: 'bpmn.landscape.copySelection' },
+      pasteItem,
+      {
+        type: 'command',
+        label: 'Delete',
+        id: 'bpmn/landscape/element/delete',
+        command: 'bpmn.landscape.deleteSelection',
+      },
+    ];
+    const elementMenu: Menu = [];
+    if (isOpenable) {
+      elementMenu.push({
+        type: 'command',
+        label: 'Open',
+        id: 'bpmn/landscape/element/open',
+        command: 'bpmn.landscape.openSelectedElement',
+        commandArgs: [elementId],
+      });
+    }
+    if (elementType === 'process' || elementType === 'placeholder' || elementType === 'note') {
+      elementMenu.push({
+        type: 'command',
+        label: 'Change type',
+        id: 'bpmn/landscape/element/change-type',
+        command: 'bpmn.landscape.changeElementType',
+        commandArgs: [elementId],
+      });
+    }
+    if (isInFile && editorDocument != null) {
+      elementMenu.push({
+        type: 'command',
+        label: 'Open element in text editor',
+        id: 'bpmn/landscape/element/open-in-text-editor',
+        command: 'bpmn.landscape.openElementInTextEditor',
+        commandArgs: [editorDocument, elementId],
+      });
+    }
+    return elementMenu.length === 0 ? clipboardMenu : [...clipboardMenu, { type: 'divider' }, ...elementMenu];
+  });
 
   const PROCESSES_MENU_ID = ProcessesPane.PROCESSES_MENU_ID;
   const createMapItem = (label: string, id: string, rows: { fileUri: string; processId?: string }[]): Menu => [

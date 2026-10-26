@@ -78,6 +78,26 @@ export const PERMISSION_DISPLAY: Record<PluginPermission, PermissionDisplayInfo>
     warningLevel: 'high',
     icon: '⚠',
   },
+  landscape: {
+    label: 'Landscape Map Editor Access',
+    description: 'Read landscape map element data, subscribe to editor events, and place overlays on map elements.',
+    warningLevel: 'low',
+    icon: 'ℹ',
+  },
+  'landscape.modelling': {
+    label: 'Landscape Map Modelling',
+    description:
+      'Modify the landscape map: update element properties, add/remove elements, and contribute palette and context pad entries.',
+    warningLevel: 'medium',
+    icon: '⚠',
+  },
+  'landscape.renderer': {
+    label: 'Landscape Map Renderer Module Injection',
+    description:
+      'Inject custom diagram-js modules directly into the landscape map editor renderer. Has full access to all diagram-js services.',
+    warningLevel: 'high',
+    icon: '⚠',
+  },
   native: {
     label: 'Native Code',
     description: 'Load compiled native modules. Bypasses sandboxing entirely.',

@@ -89,6 +89,17 @@ export interface ManifestContributions {
    * with the plugin host via a `pluginChannel` DI value.
    */
   dmnModules?: ManifestDmnModule[];
+  /** Landscape map palette entries (left toolbar). Requires `'landscape.modelling'` permission. */
+  landscapePalette?: ManifestLandscapePaletteEntry[];
+  /** Landscape map context pad entries (element-level actions). Requires `'landscape.modelling'` permission. */
+  landscapeContextPad?: ManifestLandscapeContextPadEntry[];
+  /**
+   * Diagram-js modules injected into the landscape map renderer process.
+   * Requires the `'landscape.renderer'` permission (high risk).
+   * Each module bundle has full access to diagram-js services and communicates
+   * with the plugin host via a `pluginChannel` DI value.
+   */
+  landscapeModules?: ManifestLandscapeModule[];
   /**
    * Editor document types the plugin's `activate()` will register via `registerWebviewDocumentType()`.
    * The Studio pre-registers a placeholder editor for each entry's `uriPattern` at discovery time
@@ -295,6 +306,48 @@ export interface ManifestDmnContextPadEntry {
  * the plugin host.
  */
 export interface ManifestDmnModule {
+  /** Relative path to the JS bundle (e.g. `'dist/renderer/my-module.js'`). */
+  entry: string;
+  /** Human-readable description of what the module does. */
+  description?: string;
+}
+
+/** A landscape map palette entry contributed by a plugin. */
+export interface ManifestLandscapePaletteEntry {
+  /** Entry identifier (unique within this plugin). */
+  id: string;
+  /** Palette group name. Defaults to `'plugins'`. */
+  group?: string;
+  /** Phosphor icon class or plugin-provided icon key. */
+  icon: string;
+  /** Tooltip / label shown on hover. */
+  title: string;
+  /** Command ID to execute (auto-prefixed with `plugin.<name>.`). */
+  command: string;
+}
+
+/** A landscape map context pad entry contributed by a plugin. */
+export interface ManifestLandscapeContextPadEntry {
+  /** Entry identifier (unique within this plugin). */
+  id: string;
+  /** Phosphor icon class or plugin-provided icon key. */
+  icon: string;
+  /** Tooltip / label shown on hover. */
+  title: string;
+  /** Command ID to execute (auto-prefixed with `plugin.<name>.`). */
+  command: string;
+  /** Static element type filter. When present, only show on elements of these types. */
+  elementTypes?: string[];
+}
+
+/**
+ * A diagram-js module injected into the landscape map editor's renderer process.
+ * The module bundle is loaded via `require()` and must export a diagram-js
+ * module object (with `__init__`, service declarations). A `pluginChannel`
+ * value module is injected alongside for bidirectional communication with
+ * the plugin host.
+ */
+export interface ManifestLandscapeModule {
   /** Relative path to the JS bundle (e.g. `'dist/renderer/my-module.js'`). */
   entry: string;
   /** Human-readable description of what the module does. */

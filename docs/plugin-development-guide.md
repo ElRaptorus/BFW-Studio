@@ -119,7 +119,7 @@ export async function deactivate(): Promise<void> {
 
 Your code runs in a Worker Thread inside a SES Compartment. There is no DOM, no Electron, no `fetch` / `http` / `net`, and no `eval`. File I/O goes through `api.workspace` (or `fs` if you declared `filesystem`). Settings writes are only `plugin.<name>.*`. Crash 3 times in 60 seconds and the plugin is quarantined until **Trust & Re-enable**. Users see a permission dialog on every activation path unless they trust the current permission set.
 
-Declare the minimum `permissions` in `bifrostStudio`. Vocabulary: `filesystem`, `commands.std` / `commands.bpmn` / `commands.dmn`, `bpmn` / `bpmn.modelling` / `bpmn.renderer` (same for `dmn`), `native`, `system-info`. `renderer-modules` is a legacy alias of `bpmn.renderer`. `network` is rejected.
+Declare the minimum `permissions` in `bifrostStudio`. Vocabulary: `filesystem`, `commands.std` / `commands.bpmn` / `commands.dmn`, `bpmn` / `bpmn.modelling` / `bpmn.renderer` (same for `dmn` and `landscape`), `native`, `system-info`. `renderer-modules` is a legacy alias of `bpmn.renderer`. `network` is rejected.
 
 Full tables, ModuleGate, and quarantine mechanics: [architecture/plugin-host.md](architecture/plugin-host.md) and [architecture/plugin-manifest.md](architecture/plugin-manifest.md).
 
@@ -177,7 +177,7 @@ Schema, contribution keys, and cleanup: [architecture/plugin-manifest.md](archit
 | `workspace` | Project folders, read/write, watch |
 | `views` | Push-only tree views |
 | `themes` | `--theme-*` token maps |
-| `bpmn` / `dmn` | Editor enrichment (permissions required) |
+| `bpmn` / `dmn` / `landscape` | Editor enrichment (permissions required) |
 | `env` | Frozen paths |
 
 `enabledWhen` on plugin commands is not supported (sync predicate vs async IPC). `api.webviews.createPanel` is a stub — use an editor document or a pane.
@@ -186,13 +186,15 @@ Host-side wiring and denylist: [architecture/plugin-host.md](architecture/plugin
 
 ---
 
-## BPMN and DMN
+## BPMN, DMN and landscape maps
 
 You will subscribe to selection, place overlays, and (with modelling permission) mutate the diagram. Overlays are non-interactive unless they declare `onClickCommand`. Context-pad visibility is an `elementIds` allowlist you push, not a sync `visibleWhen`. Renderer modules must not touch `window.bifrost`; they talk through `postToRendererModule` / `onRendererModuleMessage`. Do not share the DI name `pluginChannel` across renderer-module plugins.
 
 DMN APIs target the **DRD only**. Modeling throws when the user is in a decision table; queries return empty. Re-subscribe on `api.dmn.onViewChanged` after drill-down.
 
-Permissions, overlay types, palette/context pad, modeling, renderer injection: [architecture/plugin-bpmn-enrichment.md](architecture/plugin-bpmn-enrichment.md) and [architecture/plugin-dmn-enrichment.md](architecture/plugin-dmn-enrichment.md).
+Permissions, overlay types, palette/context pad, modeling, renderer injection: [architecture/plugin-bpmn-enrichment.md](architecture/plugin-bpmn-enrichment.md), [architecture/plugin-dmn-enrichment.md](architecture/plugin-dmn-enrichment.md) and [architecture/plugin-landscape-enrichment.md](architecture/plugin-landscape-enrichment.md).
+
+Landscape maps (`.bfwmap`): `api.landscape` offers the same overlay, event, palette, context pad and modeling surface as the other editors. Overlays and factories cover the plane on screen, queries the whole map; relation lines are read-only. Request `landscape` for reading, `landscape.modelling` for edits and entries, `landscape.renderer` for diagram-js modules.
 
 ---
 

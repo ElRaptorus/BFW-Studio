@@ -1,4 +1,6 @@
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
+import { Checkbox } from '#components/Checkbox';
+import { showContextMenu } from '#components/ContextMenuFunctions';
 import { useDropTarget } from '#components/DragAndDrop';
 import { Icon } from '#components/Icon';
 import { Editor } from '#components/editor/Editor';
@@ -9,12 +11,14 @@ import { EditorTitleText } from '#components/editor/EditorTitleText';
 import { EditorToolbar } from '#components/editor/EditorToolbar';
 import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
 import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
+import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import 'diagram-js/assets/diagram-js.css';
 import 'diagram-js-minimap/assets/diagram-js-minimap.css';
 
 import React, { useEffect, useRef, useState } from 'react';
 
 import type LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
+import { SHOW_GRID_SETTING } from './LandscapeMapDocumentModel';
 import './styles/landscape.scss';
 
 function TitleWarning(props: { studio: EditorDocumentRendererProps['studio']; label: string; sublabel: string }) {
@@ -60,6 +64,20 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
     }
     model.attachTo(host);
     return () => model.detach();
+  }, [model, readable]);
+
+  useEffect(() => {
+    const host = canvasHostRef.current;
+    if (model == null || host == null || !readable) {
+      return;
+    }
+    const openContextMenu = (event: MouseEvent): void => {
+      const elementId = (event.target as Element).closest('[data-element-id]')?.getAttribute('data-element-id') ?? null;
+      const elementType = model.selectForContextMenu(elementId);
+      void showContextMenu(event, 'bpmn/landscape/element', [elementType == null ? null : elementId, elementType]);
+    };
+    host.addEventListener('contextmenu', openContextMenu);
+    return () => host.removeEventListener('contextmenu', openContextMenu);
   }, [model, readable]);
 
   const { isOver, dropTargetProps } = useDropTarget({
@@ -139,7 +157,46 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             command="std.editor.showExportDialog.bpmn-landscape-map"
             dataTestId="landscape-export"
           />
+          {studio.commands.isRegistered('git.showGitDiff') && (
+            <EditorToolbarButton
+              studio={studio}
+              icon="ph ph-git-diff"
+              label="Show Changes"
+              tooltip="Compare the map file against the last commit"
+              command="git.showGitDiff"
+              commandArgs={[editorDocument.uri]}
+              dataTestId="landscape-show-changes"
+            />
+          )}
+          {studio.commands.isRegistered('git.showFileHistory') && (
+            <EditorToolbarButton
+              studio={studio}
+              icon="git-cruiser/history"
+              label="History"
+              tooltip="Browse the commit history of this map"
+              command="git.showFileHistory"
+              commandArgs={[editorDocument.uri]}
+              dataTestId="landscape-history"
+            />
+          )}
         </EditorToolbarLeft>
+        <EditorToolbarRight>
+          <Checkbox
+            label="Show Grid"
+            checked={studio.settings.get(SHOW_GRID_SETTING, editorDocument.uri) !== false}
+            onChange={() => void studio.commands.executeCommand('bpmn.landscape.toggleShowGrid')}
+            htmlAttributes={{ 'data-test--landscape-show-grid': true }}
+          />
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-arrows-in"
+            tooltip="Zoom to viewport"
+            label="Zoom to viewport"
+            command="std.editor.zoomToViewport"
+            commandArgs={[editorDocument]}
+            dataTestId="landscape-zoom-to-viewport"
+          />
+        </EditorToolbarRight>
       </EditorToolbar>
       <EditorContent>
         <div

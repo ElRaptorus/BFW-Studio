@@ -108,15 +108,15 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
-## Derived landscape relations as attached connections reconciled outside the command stack
+## Derived landscape relations as unbound connections reconciled outside the command stack
 
-**Context:** A landscape map draws the call, message and signal relations between its processes. They come from the solution scan, change with the catalog and the placed processes, and are never saved. They must follow a dragged shape and be selectable for Hide.
+**Context:** A landscape map draws the call, message and signal relations between its processes. They come from the solution scan, change with the catalog and the placed processes, and are never saved. They must be selectable for Hide and survive undo and redo of the edits around them.
 
-**Options:** A separate SVG layer redrawn from the shape positions; diagram-js connections created through commands; diagram-js connections of type `relation` added and removed with `canvas.addConnection` / `removeConnection`, outside the command stack.
+**Options:** A separate SVG layer redrawn from the shape positions; diagram-js connections attached to their shapes (`source`/`target`); diagram-js connections of type `relation` without `source`/`target`, added and removed with `canvas.addConnection` / `removeConnection` outside the command stack.
 
-**Decision:** Connections of type `relation`, attached to their shapes and reconciled by id after every import, command, undo, redo and catalog refresh. Rules keep them from being moved alone, copied, reconnected or deleted; the exporter skips them.
+**Decision:** Connections of type `relation` that carry their ends as `relationSource`/`relationTarget`, laid out again after every import, command, undo, redo and catalog refresh. Rules keep them from being moved alone, copied, reconnected or deleted; the exporter skips them.
 
-**Rationale:** Attached connections follow a drag, get selection, hover and the context pad for free, and keep undo free of derived state. Reconciling by id keeps the object a command may still hold, such as a line removed with its process and restored by undo.
+**Rationale:** Attached connections enter every diagram-js closure (move, delete, replace), so a command could hold a line whose ends the reconciler had cleared, and undo crashed. Unbound lines are invisible to those closures, keep selection, hover and the context pad, and keep undo free of derived state. The price is that a line jumps to its shapes on drop instead of following the drag, as a sequence flow does in the BPMN editor.
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
@@ -133,6 +133,18 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 **Bends and growth:** The file element of a crossing connector keeps the real bends while the line is drawn to a group, and the file stores them; expanding repairs them where shapes moved (the alternative was to lay the line out afresh and lose them). Expanding moves the contents back into the stored size when they fit and grows the group right and down only for the excess (the alternative was to grow it in every direction around the contents).
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md) §Hierarchy.
+
+## No Viewer for the landscape map editor
+
+**Context:** The BPMN and DMN editors each have a read-only Viewer next to the Modeler. Reviewing the landscape editor raised whether maps need one too.
+
+**Options:** Add a `LandscapeViewer` now; add it together with the first read-only use.
+
+**Decision:** No Viewer. `LandscapeModeler` already is the canvas adapter that owns the diagram-js instance, import and export. A Viewer is added together with the first read-only use.
+
+**Rationale:** No read-only use exists: git shows maps through the text diff, and the file history preview refuses anything but BPMN and DMN. A Viewer without a caller would be dead code that has to be kept in step with the Modeler.
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
 ## Explorer perspectives over one solution
 
