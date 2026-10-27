@@ -82,7 +82,7 @@ describe('plugin/landscape-api', () => {
 
   const overlayTexts = async (): Promise<string[]> =>
     (await studioAgent.executeInRenderer(
-      `return [...document.querySelectorAll('.bfw-plugin-overlay')].map((overlay) => overlay.textContent ?? '');`,
+      `return [...document.querySelectorAll('${CANVAS} .bfw-plugin-overlay')].map((overlay) => overlay.textContent ?? '');`,
     )) as string[];
 
   const recordedEvents = async (): Promise<any[]> =>
@@ -266,6 +266,22 @@ describe('plugin/landscape-api', () => {
       }
       assert.ok(events.some((event) => event.kind === 'overlayContext' && event.reason === 'selection-changed'));
 
+      // The double click opened the process in front of the map, which hides its palette and overlays from the DOM.
+      const processUri = 'order-process.bpmn';
+      await waitFor(
+        async () =>
+          (await studioAgent.executeInRenderer(
+            `return bifrost.editors.getOpenEditorDocuments().some((document) => document.uri.endsWith('/${processUri}'));`,
+          )) as boolean,
+        'The double click did not open the process',
+      );
+      await studioAgent.executeInRenderer(`
+        const document = bifrost.editors.getOpenEditorDocuments().find((candidate) => candidate.uri.endsWith('/${processUri}'));
+        return bifrost.editors.closeEditorDocument(document, false, true);
+      `);
+      await studioAgent.openUriAsDocument(mapUri);
+      await studioAgent.assertVisible(CANVAS, ASSERT_VISIBLE_TIMEOUT);
+
       await onCanvas(`modeler.get('selection').select([]); return true;`);
       await waitFor(
         async () => (await recordedEvents()).some((event) => event.kind === 'selected' && event.elementId === ''),
@@ -429,8 +445,8 @@ describe('plugin/landscape-api', () => {
   });
 
   describe('palette and context pad', () => {
-    const PALETTE_ENTRY = `.djs-palette [data-action="plugin.${KITCHEN_SINK}.ks-mark"]`;
-    const PAD_ENTRY = `.djs-context-pad [data-action="plugin.${KITCHEN_SINK}.ks-mark-process"]`;
+    const PALETTE_ENTRY = `${CANVAS} .djs-palette [data-action="plugin.${KITCHEN_SINK}.ks-mark"]`;
+    const PAD_ENTRY = `${CANVAS} .djs-context-pad [data-action="plugin.${KITCHEN_SINK}.ks-mark-process"]`;
 
     const invocations = async (): Promise<any[][]> =>
       (await studioAgent.executeCommand(`plugin.${KITCHEN_SINK}.markInvocations`)) as any[][];
@@ -467,7 +483,9 @@ describe('plugin/landscape-api', () => {
     });
 
     it('clicking the context pad entry runs the command with the element id and type', async () => {
-      await openContextPad('payment');
+      // Not `payment`: it ends at the right edge of the fitted map, so its pad sticks out of the canvas and the click
+      // scrolls the canvas host while it lands.
+      await openContextPad('order');
       await studioAgent.assertVisible(PAD_ENTRY, ASSERT_VISIBLE_TIMEOUT);
       const before = (await invocations()).length;
 
@@ -475,7 +493,7 @@ describe('plugin/landscape-api', () => {
 
       await waitFor(async () => (await invocations()).length === before + 1, 'The context pad command did not run');
       const latest = (await invocations()).at(-1)!;
-      assert.deepStrictEqual(latest[0], { elementId: 'payment', elementType: 'process' });
+      assert.deepStrictEqual(latest[0], { elementId: 'order', elementType: 'process' });
     });
 
     it('registers, filters by element id, updates and removes a runtime context pad entry', async () => {
@@ -513,12 +531,14 @@ describe('plugin/landscape-api', () => {
         command: 'mark',
       });
       await studioAgent.assertVisible(
-        `.djs-palette [data-action="plugin.${KITCHEN_SINK}.dynamic-palette"]`,
+        `${CANVAS} .djs-palette [data-action="plugin.${KITCHEN_SINK}.dynamic-palette"]`,
         ASSERT_VISIBLE_TIMEOUT,
       );
 
       await callOk('unregisterPaletteEntry', 'dynamic-palette');
-      await studioAgent.waitForNotVisible(`.djs-palette [data-action="plugin.${KITCHEN_SINK}.dynamic-palette"]`);
+      await studioAgent.waitForNotVisible(
+        `${CANVAS} .djs-palette [data-action="plugin.${KITCHEN_SINK}.dynamic-palette"]`,
+      );
     });
   });
 

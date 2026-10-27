@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type EventBus from 'diagram-js/lib/core/EventBus';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
 import { pluginBpmnContributionStore } from '../../PluginBpmnContributionStore';
@@ -13,17 +14,16 @@ function resolveIconClassName(icon: string): string {
 }
 
 class PluginContextPadProvider {
-  static $inject = ['contextPad'];
+  static $inject = ['contextPad', 'eventBus'];
 
   private contextPad: any;
-  private changeDisposer: { dispose: () => void } | null = null;
   private reopenScheduled = false;
 
-  constructor(contextPad: any) {
+  constructor(contextPad: any, eventBus: EventBus) {
     this.contextPad = contextPad;
     contextPad.registerProvider(600, this);
 
-    this.changeDisposer = pluginBpmnContributionStore.onChange(() => {
+    const subscription = pluginBpmnContributionStore.onChange(() => {
       if (this.reopenScheduled) {
         return;
       }
@@ -38,6 +38,7 @@ class PluginContextPadProvider {
         }
       });
     });
+    eventBus.on('diagram.destroy', () => subscription.dispose());
   }
 
   static setStudio(studio: Bifrost): void {
@@ -75,10 +76,6 @@ class PluginContextPadProvider {
       }
     }
     return entries;
-  }
-
-  destroy(): void {
-    this.changeDisposer?.dispose();
   }
 }
 

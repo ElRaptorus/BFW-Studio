@@ -200,5 +200,5 @@ Escalation boundary entries stay available on every host: the Engine fires them 
 | PluginChannel | `studio/src/modules/bpmn-core/plugin-modules/PluginChannel.ts` |
 | PluginPaletteProvider | `studio/src/modules/bpmn-core/plugin-contributions/PluginPaletteProvider.ts` |
 | PluginContextPadProvider | `studio/src/modules/bpmn-core/plugin-contributions/PluginContextPadProvider.ts` |
-| PluginBpmnContributionStore | `studio/src/modules/bpmn-core/plugin-contributions/PluginBpmnContributionStore.ts` |
+| PluginBpmnContributionStore | `studio/src/modules/bpmn-core/PluginBpmnContributionStore.ts` |
 | CustomPopupProvider (replace menu) | `studio/src/modules/bpmn-core/bpmn-js/Provider/CustomPopupProvider.ts` |

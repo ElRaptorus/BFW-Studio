@@ -272,11 +272,12 @@ export class LandscapeApiBridge implements PluginApiNamespace {
   }
 
   disposePlugin(pluginName: string): void {
-    for (const [uri, entry] of this.directOverlays.get(pluginName) ?? []) {
+    const overlaysByUri = this.directOverlays.get(pluginName);
+    this.directOverlays.delete(pluginName);
+    for (const [uri, entry] of overlaysByUri ?? []) {
       this.overlayManager.removeOverlays(entry.overlayService, entry.overlayIds);
       this.stopReapplyListenerWithoutOverlays(uri);
     }
-    this.directOverlays.delete(pluginName);
 
     for (const subscription of this.eventSubscriptions.get(pluginName)?.values() ?? []) {
       subscription.disposer();

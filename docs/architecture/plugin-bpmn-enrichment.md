@@ -111,7 +111,7 @@ api.commands.register('myCommand', async (elementId) => { ... });
 
 ### Architecture
 
-- `PluginBpmnContributionStore` — Singleton registry for all plugin-contributed palette and context pad entries
+- `PluginBpmnContributionStore` — Singleton registry for all plugin-contributed palette and context pad entries. It copies the manifest entries, so runtime registrations never change the manifest; a runtime entry with an id the plugin already uses replaces that entry
 - `PluginPaletteProvider` — diagram-js module that multiplexes entries from all plugins into the palette
 - `PluginContextPadProvider` — diagram-js module with two-level filtering (elementTypes + elementIds)
 
@@ -211,7 +211,7 @@ When a plugin with renderer modules is disabled:
 | `modules/bpmn-core/plugin-modules/PluginChannel.ts` | Per-plugin bidirectional message channel |
 | `modules/bpmn-core/plugin-modules/PluginModuleLoader.ts` | Loads plugin renderer modules |
 | `modules/bpmn-core/BpmnModelerModuleRegistry.ts` | Module registry (internal + plugin) |
-| `modules/bpmn-core/plugin-contributions/PluginBpmnContributionStore.ts` | Palette/context pad contribution registry |
+| `modules/bpmn-core/PluginBpmnContributionStore.ts` | Palette/context pad contribution registry |
 | `modules/bpmn-core/plugin-contributions/PluginPaletteProvider.ts` | diagram-js palette multiplexer |
 | `modules/bpmn-core/plugin-contributions/PluginContextPadProvider.ts` | diagram-js context pad multiplexer |
 | `studio-sdk/src/plugin-api/BpmnApi.ts` | SDK type definitions |

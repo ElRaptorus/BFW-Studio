@@ -1,4 +1,5 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import type EventBus from 'diagram-js/lib/core/EventBus';
 
 import { pluginDmnContributionStore } from '../../PluginDmnContributionStore';
 
@@ -12,18 +13,18 @@ function resolveIconClassName(icon: string): string {
 }
 
 class PluginDmnPaletteProvider {
-  static $inject = ['palette'];
+  static $inject = ['palette', 'eventBus'];
 
   private palette: any;
-  private changeDisposer: { dispose: () => void } | null = null;
 
-  constructor(palette: any) {
+  constructor(palette: any, eventBus: EventBus) {
     this.palette = palette;
     palette.registerProvider(600, this);
 
-    this.changeDisposer = pluginDmnContributionStore.onChange(() => {
+    const subscription = pluginDmnContributionStore.onChange(() => {
       this.palette._update();
     });
+    eventBus.on('diagram.destroy', () => subscription.dispose());
   }
 
   static setStudio(studio: Bifrost): void {
@@ -52,10 +53,6 @@ class PluginDmnPaletteProvider {
       }
     }
     return entries;
-  }
-
-  destroy(): void {
-    this.changeDisposer?.dispose();
   }
 }
 

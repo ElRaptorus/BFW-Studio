@@ -234,6 +234,16 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## diagram-js services never get a `destroy()` call
+
+**Mistake**: A diagram-js service (palette or context pad provider) subscribes to a module-level store and releases the subscription in its own `destroy()` method.
+
+**Why**: diagram-js does not call methods on its services when the diagram is destroyed. Every closed editor stays subscribed and keeps its whole diagram in memory.
+
+**Correct approach**: Inject `eventBus` and release the subscription in `eventBus.on('diagram.destroy', …)`, as the plugin palette and context pad providers of the BPMN, DMN and landscape editors do.
+
+---
+
 ## bpmnlint resolver: package name prefixing
 
 **Mistake**: Matching `pkg === 'bifrost-forge-world'` in a custom resolver.

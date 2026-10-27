@@ -26,7 +26,8 @@ class PluginDmnContributionStore {
   private listeners: ChangeListener[] = [];
 
   setPaletteEntries(pluginName: string, entries: ManifestDmnPaletteEntry[]): void {
-    this.paletteEntries.set(pluginName, entries);
+    // A copy: runtime entries are added to and removed from this list, never from the plugin's manifest.
+    this.paletteEntries.set(pluginName, [...entries]);
     this.notifyChange();
   }
 
@@ -120,7 +121,12 @@ class PluginDmnContributionStore {
       entries = [];
       this.paletteEntries.set(pluginName, entries);
     }
-    entries.push(entry);
+    const existingIndex = entries.findIndex((existing) => existing.id === entry.id);
+    if (existingIndex === -1) {
+      entries.push(entry);
+    } else {
+      entries[existingIndex] = entry;
+    }
     this.notifyChange();
   }
 
