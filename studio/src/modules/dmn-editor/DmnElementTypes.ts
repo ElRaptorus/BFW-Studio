@@ -55,9 +55,9 @@ export const FEEL_BUILTIN_TYPES: string[] = [
   'boolean',
   'date',
   'time',
-  'dateTime',
-  'dayTimeDuration',
-  'yearMonthDuration',
+  'date and time',
+  'days and time duration',
+  'years and months duration',
   'Any',
 ];
 

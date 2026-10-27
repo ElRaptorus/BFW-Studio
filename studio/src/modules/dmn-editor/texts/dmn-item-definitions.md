@@ -8,7 +8,7 @@ Item Definitions define the data types used throughout your DMN model. They can 
 
 ## Simple Types
 
-A simple Item Definition references a FEEL built-in type: `string`, `number`, `boolean`, `date`, `time`, `dateTime`, `dayTimeDuration`, `yearMonthDuration`, or `Any`.
+A simple Item Definition references a FEEL built-in type: `string`, `number`, `boolean`, `date`, `time`, `date and time`, `days and time duration`, `years and months duration`, or `Any`.
 
 Optional `allowedValues` constraints can restrict the valid values (e.g., `> 0`, `"low", "medium", "high"`).
 

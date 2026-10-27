@@ -38,7 +38,7 @@ dmn-core  ←  dmn-editor  ←  dmn-diff
 
 `studio/src/modules/dmn-core/DmnModelerComponentAdapter.ts`
 
-The adapter wraps the `dmn-js` `Manager` (v17.8.1) and provides a unified API for the document model and panes. Key responsibilities:
+The adapter wraps the `dmn-js` `Manager` (v18.0.1) and provides a unified API for the document model and panes. Key responsibilities:
 
 - **Lifecycle:** `initialize(xml, restoredMetadata)`, `attachToHtmlElement(target)`, `dispose()`. `EVENT_DMN_ADAPTER_ATTACHED_TO_HTML` fires on `Manager.attach`. `EVENT_DMN_ADAPTER_READY_FOR_INTERACTION` fires **after** `waitForDrdCanvasLayout` sees a non-zero DRD `viewbox.outer` and the initial zoom/restore has run. Do not treat attach as interactive — dmn-js imported XML into a detached 0×0 container.
 - **View management:** `getActiveView()`, `getActiveViewType()`, `getViews()`, `switchToView(view)` — DRD, decision table, literal expression, boxed expression
@@ -157,7 +157,7 @@ Do **not** reuse BPMN’s `linter` group. DMN `validation` hides on BPMN documen
 | DecisionTable | `PropertiesDecisionTable` | DMN focused, `decisionTable` view active | Hit Policy; Aggregation when Hit Policy is COLLECT |
 | LiteralExpression | `PropertiesLiteralExpression` | DMN focused, `literalExpression` view active | Output Type (owning Decision `variable.typeRef`, creatable catalog); `FeelEditor` for the expression text |
 
-`typeRef` fields use `PaneProperty type="text-with-suggestions"` via `getTypeRefSuggestions` in `PropertiesPaneFunctions.ts`: FEEL builtins (`FEEL_BUILTIN_TYPES`) plus `model.elements.getItemDefinitionNames()`. Free text remains allowed (create option). Simple Item Definition Type on the Scripts pane uses the same helper (`excludeName` skips the definition being edited). Composite Item Definition Type stays a disabled dump. Table column Type menus still list only the nine builtins until a dedicated `dataTypes` follow-up.
+`typeRef` fields use `PaneProperty type="text-with-suggestions"` via `getTypeRefSuggestions` in `PropertiesPaneFunctions.ts`: FEEL builtins (`FEEL_BUILTIN_TYPES`) plus `model.elements.getItemDefinitionNames()`. Free text remains allowed (create option). Simple Item Definition Type on the Scripts pane uses the same helper (`excludeName` skips the definition being edited). Composite Item Definition Type stays a disabled dump. The built-in names are the DMN-specification names (`date and time`, `days and time duration`, `years and months duration`), the same ones dmn-js writes into `typeRef`; the Engine accepts no other spelling. The dmn-js type menus (decision table columns, literal expression, BKM parameters, DRD) are dmn-js's own and list the built-ins plus the diagram's named item definitions, grouped.
 
 Expression views treat the canvas as the editor. Property does not reprint table columns, rule counts, or boxed-expression structure. Column types and labels are edited in the decision-table column headers.
 
@@ -471,7 +471,7 @@ DMN merge is element-level (one conflict key per DRG element) without custom-pro
 
 ## dmn-js Integration Details
 
-- **Package:** `dmn-js` v17.8.1
+- **Package:** `dmn-js` v18.0.1
 - **CSS imports:** 10 stylesheet imports in `DmnDocumentRenderer.tsx` (diagram-js, dmn-font, decision table, boxed expression, literal expression, DRD, shared, controls)
 - **View switching:** Internal to dmn-js `Manager`. The Studio renders a view-switcher bar mapping to `DmnView` objects.
 - **Event wiring:** Adapter subscribes to `views.changed`, `commandStack.changed`, `selection.changed` on each sub-viewer
