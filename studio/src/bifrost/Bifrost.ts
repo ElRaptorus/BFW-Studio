@@ -1,5 +1,4 @@
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
-import type { DialogOptionsStrict_OpenFile } from '#bifrost/contracts/DialogTypes';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import {
   EVENT_EDITOR_AREA_FOCUS_UPDATED,
@@ -807,28 +806,20 @@ export class Bifrost {
   }
 
   /**
-   * Internal: Shows a typical "Open File" dialog to open a file/folder.
+   * Internal: Shows a typical "Open File" dialog to open BPMN and DMN files.
    */
-  async showOpenFileDialogAndFocusOrOpenFileOrDirectory(): Promise<void> {
-    const properties: DialogOptionsStrict_OpenFile['properties'] = ['openFile'];
-    if (process.platform === 'darwin') {
-      properties.push('openDirectory');
-    }
-
-    const dialogArgs = {
-      properties,
-      filters: [
-        { name: 'BPMN', extensions: ['bpmn'] },
-        { name: 'Bifrost Forge World Solution', extensions: ['bfwsln'] },
-      ],
-    };
-
-    const filenames = await this.dialog.showOpenFile(dialogArgs);
+  async showOpenFileDialogAndFocusOrOpenFile(): Promise<void> {
+    const filenames = await this.dialog.showOpenFile({
+      properties: ['openFile'],
+      filters: [{ name: 'BPMN and DMN', extensions: ['bpmn', 'dmn'] }],
+    });
     if (filenames == null) {
       return;
     }
 
-    this.focusOrOpenEditorDocumentOrDirectoryAsSolution(filenames);
+    for (const filename of filenames) {
+      this.editors.focusOrOpenEditorDocument(this.files.getUriForFilename(filename));
+    }
   }
 
   private async focusOrOpenEditorDocumentOrDirectoryAsSolution(localFilenames: string[]): Promise<void> {

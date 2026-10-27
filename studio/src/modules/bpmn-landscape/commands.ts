@@ -244,18 +244,41 @@ async function createMapFromProcesses(bifrost: Bifrost, rows?: ProcessSeedRow[])
   await bifrost.solution.onElementAdded(uri);
 }
 
-/** Creates the declared landscape folder, or `landscapes/` next to the solution file when none is declared yet. */
-async function setUpLandscapeFolder(bifrost: Bifrost): Promise<void> {
+/**
+ * Creates and declares `givenFolderUri`, else the declared landscape folder, else `landscapes/` next to the solution
+ * file. Returns the folder, or `null` without a saved solution or when the solution file could not be written.
+ */
+async function setUpLandscapeFolder(bifrost: Bifrost, givenFolderUri?: string): Promise<string | null> {
   const gate = getLandscapeGate(bifrost);
   if (gate.state !== 'no-folder' && gate.state !== 'ready') {
-    return;
+    return null;
   }
   const folderUri =
-    gate.state === 'ready' ? gate.folderUri : `${getSolutionDirectoryUri(gate.solutionFileUri)}/${DEFAULT_FOLDER_NAME}`;
+    givenFolderUri ??
+    (gate.state === 'ready'
+      ? gate.folderUri
+      : `${getSolutionDirectoryUri(gate.solutionFileUri)}/${DEFAULT_FOLDER_NAME}`);
   if (!(await bifrost.files.doesFileOrDirectoryExist(bifrost.files.getLocalFilenameForUri(folderUri)))) {
     await bifrost.files.createDirectory(folderUri);
   }
-  await bifrost.solution.setViewFolder(LANDSCAPES_VIEW_ID, folderUri);
+  return (await bifrost.solution.setViewFolder(LANDSCAPES_VIEW_ID, folderUri)) ? folderUri : null;
+}
+
+/** Sets up the landscape folder of a solution the wizard just saved and opens a map named after the solution. */
+async function setUpNewSolution(bifrost: Bifrost, folderUri?: string): Promise<void> {
+  const landscapeFolderUri = await setUpLandscapeFolder(bifrost, folderUri);
+  const solutionFileUri = bifrost.solution.getSolution()?.solutionFileUri;
+  if (landscapeFolderUri == null || solutionFileUri == null) {
+    return;
+  }
+  const name = bifrost.files.getLocalBasename(solutionFileUri, true);
+  const mapUri = `${landscapeFolderUri}/${name}${MAP_EXTENSION}`;
+  if (await bifrost.files.doesFileOrDirectoryExist(bifrost.files.getLocalFilenameForUri(mapUri))) {
+    bifrost.editors.focusOrOpenEditorDocument(mapUri);
+    return;
+  }
+  await bifrost.editors.createNewEditorDocument(mapUri, serializeLandscapeMap(createEmptyLandscapeMap(name)));
+  await bifrost.solution.onElementAdded(mapUri);
 }
 
 /** Declares another folder as the landscape folder. Maps in the previous folder stay where they are. */
@@ -320,6 +343,12 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     ],
     enabledWhen: () => hasSavedSolution(bifrost),
   });
+
+  bifrost.commands.register(
+    'bpmn.landscape.setUpNewSolution',
+    (folderUri?: string) => setUpNewSolution(bifrost, folderUri),
+    { enabledWhen: () => hasSavedSolution(bifrost) },
+  );
 
   bifrost.commands.register('bpmn.landscape.chooseLandscapeFolder', () => chooseLandscapeFolder(bifrost), {
     visibleInSearch: true,

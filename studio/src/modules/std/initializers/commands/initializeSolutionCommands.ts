@@ -15,6 +15,9 @@ import {
   updateOpenEditorDocuments,
 } from './explorerGuards';
 
+const SET_UP_LANDSCAPES_COMMAND = 'bpmn.landscape.setUpNewSolution';
+const LANDSCAPES_PAGE_ID = 'discover/landscapes';
+
 export function initializeSolutionCommands(bifrost: Bifrost): void {
   const commands = bifrost.commands;
 
@@ -63,6 +66,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
   commands.register(
     'std.solution.createSolution',
     async (initialFolders?: string[]) => {
+      const offersLandscapeFolder = commands.isRegistered(SET_UP_LANDSCAPES_COMMAND);
       const wizardOptions: DialogOptions = {
         title: 'Solution Wizard',
         content: [
@@ -81,6 +85,18 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
             initialValue: initialFolders,
             hint: 'You can always add more directories later.',
           },
+          ...(offersLandscapeFolder
+            ? [
+                {
+                  type: 'path_picker' as const,
+                  id: 'landscapeFolder',
+                  label: 'Landscape folder',
+                  mode: 'directory' as const,
+                  placeholder: 'landscapes, next to the solution file',
+                  hint: 'Landscape maps are saved here. You can choose another folder later in the Maps explorer.',
+                },
+              ]
+            : []),
         ],
         actions: [
           { label: 'Cancel', response: 'cancel', cancel: true },
@@ -95,6 +111,24 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
             return {
               closeDialog: false,
               validationErrors: [{ contentId: 'solutionName', errorLabel: 'Solution name cannot be empty' }],
+            };
+          }
+          const landscapeFolder: string = dialogResult.formData?.landscapeFolder ?? '';
+          const includedDirectories: string[] = JSON.parse(dialogResult.formData?.directories ?? '[]');
+          const landscapeFolderUri = landscapeFolder === '' ? null : bifrost.files.getUriForFilename(landscapeFolder);
+          const holdsIncludedDirectory = includedDirectories
+            .map((directory) => bifrost.files.getUriForFilename(directory))
+            .some((uri) => uri === landscapeFolderUri || uri.startsWith(`${landscapeFolderUri}/`));
+          if (landscapeFolderUri != null && holdsIncludedDirectory) {
+            return {
+              closeDialog: false,
+              validationErrors: [
+                {
+                  contentId: 'landscapeFolder',
+                  errorLabel:
+                    'The landscape folder must not hold a directory of the solution: it is read-only in the Designer.',
+                },
+              ],
             };
           }
         }
@@ -138,7 +172,15 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       await bifrost.files.save(solutionFileUri, serialized);
 
       await bifrost.solution.openSolutionFile(solutionFileUri);
-      leaveWelcomePageForWorkspace(bifrost);
+      if (offersLandscapeFolder) {
+        const landscapeFolder: string = wizardResult.formData?.landscapeFolder ?? '';
+        await commands.executeCommand(
+          SET_UP_LANDSCAPES_COMMAND,
+          landscapeFolder === '' ? [] : [bifrost.files.getUriForFilename(landscapeFolder)],
+        );
+      } else {
+        leaveWelcomePage(bifrost, solutionFileUri);
+      }
     },
     { visibleInSearch: true, description: 'Solution: Create New Solution...' },
   );
@@ -427,6 +469,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
       }
 
       await bifrost.solution.openSolutionFile(solutionFileUri);
+      leaveWelcomePage(bifrost, solutionFileUri);
     },
     { visibleInSearch: true, description: 'Open Solution File...' },
   );
@@ -967,7 +1010,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
 
     if (isElectron) {
       if (isTargetAlreadyOpenHere(bifrost, uri)) {
-        leaveWelcomePageForWorkspace(bifrost);
+        leaveWelcomePage(bifrost, uri);
         return;
       }
 
@@ -988,7 +1031,7 @@ export function initializeSolutionCommands(bifrost: Bifrost): void {
     }
 
     await openSolutionOrDirectory(bifrost, uri, localPath);
-    leaveWelcomePageForWorkspace(bifrost);
+    leaveWelcomePage(bifrost, uri);
   });
 
   commands.register(
@@ -1029,10 +1072,18 @@ function getSelectedMetadataCount(bifrost: Bifrost, explorerId: string): number 
   return getExplorerTree(bifrost, explorerId)?.getSelectedMetadata().length ?? 0;
 }
 
-/** Opening a solution from the Welcome page would otherwise look like nothing happened. Other pages stay put. */
-function leaveWelcomePageForWorkspace(bifrost: Bifrost): void {
-  if (bifrost.categories.getActivePageId() === 'home/welcome' && bifrost.categories.hasPage('design/workspace')) {
-    bifrost.categories.activatePage('design/workspace');
+/**
+ * Opening a solution from the Welcome page would otherwise look like nothing happened. A `.bfwsln` opens on the
+ * Landscapes page, a folder on the Workspace. Other pages stay put.
+ */
+function leaveWelcomePage(bifrost: Bifrost, uri: string): void {
+  if (bifrost.categories.getActivePageId() !== 'home/welcome') {
+    return;
+  }
+  const pageId =
+    uri.endsWith('.bfwsln') && bifrost.categories.hasPage(LANDSCAPES_PAGE_ID) ? LANDSCAPES_PAGE_ID : 'design/workspace';
+  if (bifrost.categories.hasPage(pageId)) {
+    bifrost.categories.activatePage(pageId);
   }
 }
 

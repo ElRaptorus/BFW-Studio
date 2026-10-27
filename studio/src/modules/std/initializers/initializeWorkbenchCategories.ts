@@ -3,8 +3,8 @@ import type { Bifrost } from '#bifrost/Bifrost';
 /** Header order; the position decides the `alt-<n>` (Windows, Linux) / `cmd-alt-<n>` (macOS) shortcut. */
 export const GO_TO_CATEGORY_COMMANDS: readonly { categoryId: string; label: string; command: string }[] = [
   { categoryId: 'home', label: 'Home', command: 'std.workbench.goToHome' },
-  { categoryId: 'design', label: 'Design', command: 'std.workbench.goToDesign' },
   { categoryId: 'discover', label: 'Discover', command: 'std.workbench.goToDiscover' },
+  { categoryId: 'design', label: 'Design', command: 'std.workbench.goToDesign' },
   { categoryId: 'deploy', label: 'Deploy', command: 'std.workbench.goToDeploy' },
   { categoryId: 'debug', label: 'Debug', command: 'std.workbench.goToDebug' },
   { categoryId: 'control', label: 'Control', command: 'std.workbench.goToControl' },
@@ -32,14 +32,14 @@ export function initializeWorkbenchCategories(bifrost: Bifrost): void {
     label: 'Design',
     icon: 'std/category/design',
     placement: 'main',
-    order: 10,
+    order: 20,
   });
   categories.registerCategory({
     id: 'discover',
     label: 'Discover',
     icon: 'std/category/discover',
     placement: 'main',
-    order: 20,
+    order: 10,
   });
   categories.registerCategory({
     id: 'deploy',

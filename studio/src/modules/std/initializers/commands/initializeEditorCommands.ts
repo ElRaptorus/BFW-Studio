@@ -171,7 +171,7 @@ export function initializeEditorCommands(bifrost: Bifrost): void {
     { enabledWhen: () => bifrost.editors.hasNextEditorDocument() },
   );
 
-  commands.register('std.editor.openDocument', () => bifrost.showOpenFileDialogAndFocusOrOpenFileOrDirectory(), {
+  commands.register('std.editor.openDocument', () => bifrost.showOpenFileDialogAndFocusOrOpenFile(), {
     visibleInSearch: true,
     description: 'Editor: Open Document ...',
   });

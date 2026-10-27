@@ -1,5 +1,4 @@
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -7,6 +6,7 @@ import type { StudioAgent } from '../../StudioAgent';
 import { ASSERT_VISIBLE_TIMEOUT, createAndStartStudioAgent } from '../../StudioAgent';
 
 const TIMEOUT = ASSERT_VISIBLE_TIMEOUT;
+const TEMPORARY_ROOT = path.join(__dirname, '..', '..', '..', 'tmp');
 const DESIGNER_TREE = '[data-test--tree="std/file-explorer/design"]';
 const MAP_XML =
   '<landscape:map xmlns:landscape="https://bifrostforge.world/schema/landscape" version="1" name="Overview" />\n';
@@ -28,7 +28,9 @@ describe('explorer view folders', () => {
   const dialogText = async (): Promise<string> => studioAgent.getText('[data-test--dialog]');
 
   beforeEach(async ({ task }) => {
-    workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'bfw-view-folders-')));
+    // Not `os.tmpdir()`: deleting moves to the trash, and the desktop trash refuses items on a tmpfs `/tmp`.
+    fs.mkdirSync(TEMPORARY_ROOT, { recursive: true });
+    workspace = fs.realpathSync(fs.mkdtempSync(path.join(TEMPORARY_ROOT, 'bfw-view-folders-')));
     fs.mkdirSync(path.join(workspace, 'docs', 'landscapes'), { recursive: true });
     fs.writeFileSync(path.join(workspace, 'docs', 'landscapes', 'Overview.bfwmap'), MAP_XML);
     fs.writeFileSync(path.join(workspace, 'docs', 'notes.md'), '# Notes\n');

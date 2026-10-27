@@ -9,13 +9,13 @@ The start page uses a vertically stacked, single-column layout (max-width 900px,
 1. **Header** — Product name + release channel via `ProductNameHeadline`
 2. **Hero card grid** — Large cards for primary actions (BPMN, DMN, Solution) + injected hero cards
 3. **Recent section** — Recently opened solutions and files
-4. **Action card grid** — Smaller cards for secondary actions (Open File, Open Folder, Pick a Theme, Search Files, Search Commands) + injected action cards + legacy extra renderers
+4. **Action card grid** — Smaller cards for secondary actions (Open File, Open Folder, Open Solution, Pick a Theme, Search Files, Search Commands) + injected action cards + legacy extra renderers. Open File (`std.editor.openDocument`) picks `.bpmn` and `.dmn` files only; Open Solution runs `std.solution.openSolutionFile` (a `.bfwsln` dialog)
 5. **Footer** — "Show Welcome Page at startup" checkbox + "Did you know?" tip
 6. **Flavor text** — Three hardcoded lore strings placed between sections
 
 ## Leaving the Welcome page
 
-Opening a document activates the page of its document type (`EditorMediator`), so files and new BPMN/DMN documents already leave Home for `design/workspace`. Solutions have no page of their own: `std.solution.openDirectory` (recent items, Open Folder, Open File on a folder) and `std.solution.createSolution` call `leaveWelcomePageForWorkspace`, which activates `design/workspace` only while `home/welcome` is the active page, so a user on another page stays there.
+Opening a document activates the page of its document type (`EditorMediator`), so files and new BPMN/DMN documents already leave Home for `design/workspace`. Solutions have no page of their own: `std.solution.openDirectory` (recent items, Open Folder) and `std.solution.openSolutionFile` (Open Solution) call `leaveWelcomePage(bifrost, uri)`, which acts only while `home/welcome` is the active page, so a user on another page stays there. A `.bfwsln` activates `discover/landscapes` (when registered), a folder `design/workspace`. `std.solution.createSolution` hands over to `bpmn.landscape.setUpNewSolution`, which opens the solution's first map and so the Landscapes page ([bpmn-landscape.md](bpmn-landscape.md)); without the landscape module it falls back to `leaveWelcomePage`.
 
 ## File Structure
 

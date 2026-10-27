@@ -73,6 +73,14 @@ export default function StartpageRenderer(props: EditorDocumentRendererProps): R
       testId: 'startpage-action-open-folder',
     },
     {
+      key: 'open-solution',
+      icon: 'ph ph-tree-view',
+      title: 'Open Solution',
+      command: 'std.solution.openSolutionFile',
+      description: '',
+      testId: 'startpage-action-open-solution',
+    },
+    {
       key: 'pick-theme',
       icon: 'ph ph-palette',
       title: 'Pick a Theme',

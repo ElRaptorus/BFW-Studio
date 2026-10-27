@@ -654,6 +654,8 @@ export class StudioAgent {
 
     await this.sendKeyboardInput([...solutionFileUri.split(''), 'enter'], false);
 
+    // From the Welcome page a solution file opens on the Landscapes page; the Designer tree is on the Workspace.
+    await this.executeCommand('std.workbench.activatePage', ['design/workspace']);
     await this.assertVisible('[data-test--tree="std/file-explorer/design"]', ASSERT_VISIBLE_TIMEOUT);
     await this.waitForNotVisible('[data-test--tree="std/file-explorer/design"] .treeview__entry--loading-indicator');
   }

@@ -170,7 +170,7 @@ Do not wait for plugin load inside `it()`. Waits that observe an action the test
 | `openFixturesDirectoryAsSolution(name)` | Opens a fixture directory as single-root solution |
 | `openSolutionFileFromFixtures(filename)` | Opens a `.bfwsln` file from fixtures as multi-root solution |
 | `openDirectoryAsSolution(directory)` | Opens an arbitrary directory as solution |
-| `openSolutionFile(solutionFilePath)` | Opens a `.bfwsln` file at an absolute path (for example one written into a temporary directory) |
+| `openSolutionFile(solutionFilePath)` | Opens a `.bfwsln` file at an absolute path (for example one written into a temporary directory), then activates `design/workspace` (from Home a solution file would land on `discover/landscapes`). A test that deletes files through the Studio keeps its workspace under `studio/tmp`, not `os.tmpdir()`: deleting moves to the trash, which refuses items on a tmpfs `/tmp` |
 | `openViaQuickJump(query)` | Opens a file via the Quick Jump dialog |
 | `openViaCommandSearch(command)` | Executes a command via the command search |
 | `clickOn(selector)` | Left-clicks on an element |

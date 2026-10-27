@@ -1,3 +1,7 @@
+import * as assert from 'node:assert';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import type { StudioAgent, TestContext } from '../../StudioAgent';
@@ -32,10 +36,15 @@ describe('studio/workbench-categories', () => {
     await studioAgent?.stop();
   });
 
-  it('header: shows Home, Discover, Design, Deploy, Debug and Control', async () => {
-    for (const id of ['home', 'discover', 'design', 'deploy', 'debug', 'control']) {
+  it('header: shows Home, Discover, Design, Deploy, Debug and Control in this order', async () => {
+    const order = ['home', 'discover', 'design', 'deploy', 'debug', 'control'];
+    for (const id of order) {
       await studioAgent.assertVisible(category(id), TIMEOUT);
     }
+    const shownOrder = await studioAgent.executeInRenderer(
+      `return [...document.querySelectorAll('.workbench-header__category')].map((element) => element.dataset.categoryId);`,
+    );
+    assert.deepStrictEqual(shownOrder, order);
   });
 
   it('categories: activating a category shows its page bar and pages', async () => {
@@ -73,6 +82,22 @@ describe('studio/workbench-categories', () => {
     await studioAgent.openFile(studioAgent.getFixturesAbsoluteFileUri('test-solution-sanitizer/haunted-house.bpmn'));
     await studioAgent.assertVisible(activePage('design/workspace'), TIMEOUT);
     await studioAgent.assertVisible('[data-test--editors--focused-document-type=bpmn]', TIMEOUT);
+  });
+
+  it('routing: opening a solution file from Home lands in Discover/Landscapes', async () => {
+    await studioAgent.executeCommand('std.workbench.activatePage', ['home/welcome']);
+    await studioAgent.assertVisible(activePage('home/welcome'), TIMEOUT);
+    const solutionDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'bfw-categories-'));
+    const solutionFile = path.join(solutionDirectory, 'routing.bfwsln');
+    const folder = path.join(__dirname, '..', '..', 'fixtures', 'test-solution-simple');
+    fs.writeFileSync(solutionFile, JSON.stringify({ folders: [{ path: folder }], settings: {} }));
+    try {
+      await studioAgent.executeCommand('std.solution.openDirectory', [`file://${solutionFile}`]);
+      await studioAgent.assertVisible(activePage('discover/landscapes'), TIMEOUT);
+    } finally {
+      await studioAgent.executeCommand('std.solution.closeSolution');
+      fs.rmSync(solutionDirectory, { recursive: true, force: true });
+    }
   });
 
   it('defaults: pages open their default document and Home hides editor tabs', async () => {
