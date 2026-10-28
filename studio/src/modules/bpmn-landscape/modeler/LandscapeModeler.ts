@@ -428,6 +428,22 @@ export default class LandscapeModeler {
     );
   }
 
+  /** The placeholder on the plane on screen that contains the point; the smallest one when they overlap. */
+  findPlaceholderShapeAt(point: { x: number; y: number }): any {
+    const currentRoot = this.get('canvas').getRootElement();
+    return this.get('elementRegistry')
+      .filter(
+        (element: any) =>
+          element.type === 'placeholder' &&
+          rootOf(element) === currentRoot &&
+          point.x >= element.x &&
+          point.x <= element.x + element.width &&
+          point.y >= element.y &&
+          point.y <= element.y + element.height,
+      )
+      .sort((first: any, second: any) => first.width * first.height - second.width * second.height)[0];
+  }
+
   /** Converts a mouse position on screen into diagram coordinates. */
   toCanvasPoint(clientX: number, clientY: number): { x: number; y: number } {
     const viewbox = this.get('canvas').viewbox();

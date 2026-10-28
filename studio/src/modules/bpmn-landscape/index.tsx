@@ -235,6 +235,24 @@ export function onLoad(bifrost: Bifrost): void {
         commandArgs: [elementId],
       });
     }
+    if (elementType === 'placeholder') {
+      elementMenu.push(
+        {
+          type: 'command',
+          label: 'Model this process…',
+          id: 'bpmn/landscape/element/model-placeholder',
+          command: 'bpmn.landscape.modelPlaceholder',
+          commandArgs: [elementId],
+        },
+        {
+          type: 'command',
+          label: 'Link to existing process…',
+          id: 'bpmn/landscape/element/link-placeholder',
+          command: 'bpmn.landscape.linkPlaceholder',
+          commandArgs: [elementId],
+        },
+      );
+    }
     if (elementType === 'process' || elementType === 'placeholder' || elementType === 'note') {
       elementMenu.push({
         type: 'command',

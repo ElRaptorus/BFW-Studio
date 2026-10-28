@@ -22,6 +22,8 @@ export type LandscapeRendererConfig = {
   getProcessStatus(element: LandscapeProcessElement): ReferenceStatus;
   /** `missing` when the map the link names does not exist. */
   getMapLinkStatus(element: LandscapeMapLinkElement): Exclude<ReferenceStatus, 'ambiguous'>;
+  /** Why a connector is drawn with a warning (it repeats a relation line); `null` when it is fine. */
+  getConnectorWarning(connector: LandscapeConnector): string | null;
   /** Runs a command a plugin registered, for a palette or context pad entry the plugin contributes. */
   executePluginCommand(pluginName: string, command: string, args: unknown[]): void;
 };
@@ -56,7 +58,7 @@ const LINE_STYLES: Record<RelationLine['kind'] | 'connector', { width: number; d
   signal: { width: 1.5, dash: '2 4', arrow: 'open' },
   connector: { width: 1.5, dash: null, arrow: 'filled' },
 };
-const RELATION_TITLES: Record<RelationLine['kind'], string> = {
+export const RELATION_TITLES: Record<RelationLine['kind'], string> = {
   callActivity: 'calls',
   message: 'sends message',
   signal: 'throws signal',
@@ -220,6 +222,9 @@ export default class LandscapeRenderer extends BaseRenderer {
       line.appendChild(title);
     }
     this.drawLineLabel(parentGraphics, connection.waypoints, this.lineLabelOf(connection));
+    if (!isRelation) {
+      this.drawConnectorWarning(parentGraphics, connection);
+    }
     return line;
   }
 
@@ -343,8 +348,18 @@ export default class LandscapeRenderer extends BaseRenderer {
     }
   }
 
-  private drawWarning(parentGraphics: SVGElement, title: string): void {
-    const warning = createSvgElement('g', { transform: 'translate(7, 6)' });
+  /** The warning triangle sits above the middle of the connector, where its label is. */
+  private drawConnectorWarning(parentGraphics: SVGElement, connection: any): void {
+    const title = this.config.getConnectorWarning(connection.businessObject as LandscapeConnector);
+    if (title == null) {
+      return;
+    }
+    const point = connectorLabelPoint(connection.waypoints);
+    this.drawWarning(parentGraphics, title, { x: point.x - 7, y: point.y - 22 });
+  }
+
+  private drawWarning(parentGraphics: SVGElement, title: string, position: LandscapePoint = { x: 7, y: 6 }): void {
+    const warning = createSvgElement('g', { transform: `translate(${position.x}, ${position.y})` });
     warning.classList.add('landscape-reference-warning');
     warning.appendChild(
       createSvgElement('path', {

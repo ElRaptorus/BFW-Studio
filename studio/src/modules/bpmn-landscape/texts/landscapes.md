@@ -26,9 +26,10 @@ Maps outside the landscape folder do not open.
 2. **Add processes.** Drag a process from the Processes pane onto the map. A process appears at most once on a map; dragging it again selects it.
 3. **Structure the map.** Use the palette on the left of the map for bands, groups, placeholders for processes that are not modelled yet, and notes. Drop elements into a group to nest them. A group holds every element it fully encloses: draw, resize or move it around elements and they become part of it; an element it only partly covers stays outside and in front of it.
 4. **Label elements.** Double-click a group, placeholder, note or connector to edit its text.
-5. **Connect elements.** Select an element and drag or click _Connect_ in its context pad, then click the target. Connectors are saved with the map; bands cannot be connected.
-6. **Collapse a group.** Select a group and press _Collapse_ in its context pad; see _Groups, levels and planes_ below.
-7. **Save.** Press Cmd/Ctrl+S. Undo and redo work as in every editor.
+5. **Fill a placeholder.** Once a placeholder is ready to become a real process, right-click it (or select it and use the Properties pane) and choose _Model this process…_ or _Link to existing process…_. _Model this process…_ asks for a name and a folder, creates the BPMN file, adds the folder to the solution if it is new to it, replaces the placeholder with the process and opens it in the Designer. _Link to existing process…_ replaces the placeholder with a process of the solution that is not on the map yet. You can also drag a process from the Processes pane onto a placeholder. The new shape keeps the placeholder's place, form, colours, group and connectors and shows the process name; undo brings the placeholder back.
+6. **Connect elements.** Select an element and drag or click _Connect_ in its context pad, then click the target. Connectors are saved with the map; bands cannot be connected.
+7. **Collapse a group.** Select a group and press _Collapse_ in its context pad; see _Groups, levels and planes_ below.
+8. **Save.** Press Cmd/Ctrl+S. Undo and redo work as in every editor.
 
 &nbsp;
 
@@ -62,6 +63,7 @@ Then you choose where to save the map. The result is an ordinary map: move, regr
 The map draws the relations between the processes on it, read from the saved BPMN files: call activities as solid lines, messages as dashed lines and signals as dotted lines, labelled with the message or signal names. Relations are never saved; they update when a BPMN file is saved.
 
 - **Hide a relation:** select its line and press _Hide_ in the context pad or in the Properties pane. A process's relations can also be shown or hidden from its properties.
+- **Connectors that repeat a relation:** a connector you drew between two processes that a visible relation line already joins shows a warning sign, and its Properties pane says why. The map is never changed for you: delete the connector or hide the relation line to clear the warning.
 - **Hide a relation type:** with nothing selected, switch call activities, messages or signals off in the Properties pane. _Show hidden relations_ brings back every hidden one.
 
 &nbsp;

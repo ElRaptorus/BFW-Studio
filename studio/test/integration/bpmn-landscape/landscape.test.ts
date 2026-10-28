@@ -31,7 +31,10 @@ describe('bpmn-landscape', () => {
   const createdWorkspaces: string[] = [];
 
   /** A temporary workspace that the reset after the test removes. */
-  const createWorkspace = (prefix: string, options: { declareLandscapeFolder?: boolean } = {}): LandscapeWorkspace => {
+  const createWorkspace = (
+    prefix: string,
+    options: { declareLandscapeFolder?: boolean; withoutProjectFolder?: boolean } = {},
+  ): LandscapeWorkspace => {
     const landscapeWorkspace = createLandscapeWorkspace(prefix, options);
     createdWorkspaces.push(landscapeWorkspace.workspace);
     return landscapeWorkspace;
@@ -2188,6 +2191,414 @@ describe('bpmn-landscape', () => {
       await studioAgent.waitForNotVisible('[data-test--dialog]');
       expect(fs.readdirSync(landscapeWorkspace.landscapeFolder)).toEqual([]);
       expect(await studioAgent.getFocusedDocumentUri()).toBe('');
+    });
+  });
+
+  describe('placeholders', () => {
+    const PROPERTIES_PANE = 'discover/landscapes/properties';
+    const DIALOG = '[data-test--dialog]';
+    const MODEL_ENTRY = '[data-test--context-menu-id="bpmn/landscape/element/model-placeholder"]';
+    const LINK_ENTRY = '[data-test--context-menu-id="bpmn/landscape/element/link-placeholder"]';
+    const MODEL_BUTTON = '[data-test--landscape-model-placeholder]';
+    const LINK_BUTTON = '[data-test--landscape-link-placeholder]';
+    const DUPLICATE_TEXT = '[data-test--landscape-duplicate-connector]';
+    const CALL_LINE = 'relation:callActivity:order:payment';
+
+    const box = (id: string, x: number, y: number) => ({
+      id,
+      parentId: null,
+      x,
+      y,
+      width: 120,
+      height: 50,
+      style: null,
+    });
+    const processShape = (id: string, processId: string, x: number, y: number): LandscapeElement => ({
+      ...box(id, x, y),
+      type: 'process',
+      processId,
+      fileHint: `../${processId}.bpmn`,
+      label: null,
+      shape: 'box',
+    });
+    const placeholderShape = (id: string, label: string, x: number, y: number): LandscapeElement => ({
+      ...box(id, x, y),
+      type: 'placeholder',
+      label,
+      shape: 'box',
+    });
+
+    let workspace: string;
+    let landscapeWorkspace: LandscapeWorkspace;
+
+    const mapPath = (fileName: string): string => path.join(landscapeWorkspace.landscapeFolder, fileName);
+    const writeMap = (fileName: string, map: LandscapeMap): void =>
+      fs.writeFileSync(mapPath(fileName), serializeLandscapeMap(map));
+    const readMap = async (fileName: string): Promise<LandscapeMap> => {
+      const result = await parseLandscapeMap(fs.readFileSync(mapPath(fileName), 'utf8'));
+      if (!result.ok) {
+        throw new Error(`${fileName} cannot be read: ${result.errors.join(' ')}`);
+      }
+      return result.map;
+    };
+    const element = (id: string): string => `${CANVAS} [data-element-id="${id}"]`;
+
+    /** Runs `script` in the renderer with `model`, `modeler`, `registry` and `commandStack` of the map in scope. */
+    const onCanvas = async (fileName: string, script: string): Promise<unknown> =>
+      studioAgent.executeInRenderer(`
+      const editorDocument = bifrost.editors.getEditorDocumentByUri(${JSON.stringify(`file://${mapPath(fileName)}`)});
+      const model = bifrost.editors.getEditorDocumentModelIfPresent(editorDocument);
+      const modeler = model.modeler;
+      const registry = modeler.get('elementRegistry');
+      const commandStack = modeler.get('commandStack');
+      ${script}
+    `);
+
+    const waitForCanvas = async (fileName: string, script: string, description: string): Promise<void> => {
+      await studioAgent.waitUntil(async () => (await onCanvas(fileName, script)) === true, {
+        timeout: TIMEOUT,
+        timeoutMsg: `Expected ${description}`,
+      });
+    };
+
+    const waitForMapFile = async (
+      fileName: string,
+      condition: (map: LandscapeMap) => boolean,
+    ): Promise<LandscapeMap> => {
+      let map = await readMap(fileName);
+      await studioAgent.waitUntil(
+        async () => {
+          map = await readMap(fileName);
+          return condition(map);
+        },
+        { timeout: TIMEOUT, timeoutMsg: `${fileName} was not saved as expected` },
+      );
+      return map;
+    };
+
+    const openMap = async (fileName: string): Promise<void> => {
+      await studioAgent.openUriAsDocument(`file://${mapPath(fileName)}`);
+      await studioAgent.navigation.assertActivePage('discover/landscapes');
+      await studioAgent.assertVisible(CANVAS, TIMEOUT);
+      await studioAgent.assertPaneVisible(PROPERTIES_PANE);
+    };
+
+    const hasUnsavedChanges = async (fileName: string): Promise<boolean> =>
+      (await studioAgent.executeInRenderer(
+        `return bifrost.editors.getEditorDocumentByUri(${JSON.stringify(`file://${mapPath(fileName)}`)})?.hasUnsavedChanges ?? null`,
+      )) as boolean;
+
+    const dialogText = async (): Promise<string> =>
+      (await studioAgent.executeInRenderer(`return document.querySelector('${DIALOG}')?.textContent ?? ''`)) as string;
+
+    const waitForDialogText = async (expected: string): Promise<void> => {
+      await studioAgent.waitUntil(async () => (await dialogText()).includes(expected), {
+        timeout: TIMEOUT,
+        timeoutMsg: `The dialog did not show "${expected}"`,
+      });
+    };
+
+    /** Whether the connector `connectorId` carries the duplicate warning glyph. */
+    const hasWarningGlyph = async (fileName: string, connectorId: string): Promise<boolean> =>
+      (await onCanvas(
+        fileName,
+        `return registry.getGraphics(${JSON.stringify(connectorId)})?.querySelector('.landscape-reference-warning') != null;`,
+      )) as boolean;
+
+    const waitForWarningGlyph = async (fileName: string, connectorId: string, expected: boolean): Promise<void> => {
+      await studioAgent.waitUntil(async () => (await hasWarningGlyph(fileName, connectorId)) === expected, {
+        timeout: TIMEOUT,
+        timeoutMsg: `Expected the warning glyph on ${connectorId} to be ${expected ? 'shown' : 'gone'}`,
+      });
+    };
+
+    const closeContextMenu = async (): Promise<void> => {
+      // An open context menu would swallow the keyboard input of the next step.
+      await studioAgent.sendKeyboardInput([Key.Escape], false);
+      await studioAgent.assertContextMenuNotVisible(TIMEOUT);
+    };
+
+    const prepare = async ({
+      withoutProjectFolder = false,
+    }: { withoutProjectFolder?: boolean } = {}): Promise<void> => {
+      landscapeWorkspace = createWorkspace('bfw-landscape-placeholders-', { withoutProjectFolder });
+      workspace = landscapeWorkspace.workspace;
+      if (withoutProjectFolder) {
+        writeMap('Solo.bfwmap', {
+          ...createEmptyLandscapeMap('Solo'),
+          elements: [placeholderShape('billing', 'Billing', 50, 50)],
+        });
+      } else {
+        fs.writeFileSync(
+          path.join(workspace, 'existing-billing.bpmn'),
+          `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bfw="https://bifrostforge.world/schema/bpmn" id="Definitions_billing" targetNamespace="https://bifrostforge.world/schema/bpmn">
+  <bpmn:process id="Billing_Process" name="Billing" isExecutable="true" />
+</bpmn:definitions>
+`,
+        );
+        writeMap('Fill.bfwmap', {
+          ...createEmptyLandscapeMap('Fill'),
+          elements: [processShape('order', 'order-process', 50, 50), placeholderShape('pay', 'Payment', 350, 50)],
+          connectors: [{ id: 'link', sourceId: 'order', targetId: 'pay', label: '', waypoints: [] }],
+        });
+        writeMap('Full.bfwmap', {
+          ...createEmptyLandscapeMap('Full'),
+          elements: [
+            processShape('order', 'order-process', 50, 50),
+            processShape('payment', 'payment-process', 350, 50),
+            processShape('draft', 'draft-process', 50, 200),
+            processShape('unversioned', 'unversioned-process', 350, 200),
+            processShape('billing', 'Billing_Process', 650, 50),
+            placeholderShape('open', 'Open', 650, 200),
+          ],
+        });
+        writeMap('Duplicate.bfwmap', {
+          ...createEmptyLandscapeMap('Duplicate'),
+          elements: [
+            processShape('order', 'order-process', 50, 50),
+            processShape('payment', 'payment-process', 350, 50),
+          ],
+          connectors: [{ id: 'dup', sourceId: 'order', targetId: 'payment', label: '', waypoints: [] }],
+        });
+      }
+      await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
+    };
+
+    /** Replaces the Fill map's placeholder by the process `processId` through the Link dialog. */
+    const linkPayPlaceholder = async (processId: string): Promise<void> => {
+      await studioAgent.rightClickOn(element('pay'));
+      await studioAgent.clickOn(LINK_ENTRY);
+      await studioAgent.assertVisible(DIALOG, TIMEOUT);
+      const index = await onCanvas(
+        'Fill.bfwmap',
+        `return model.getFreeProcessCandidates().findIndex((candidate) => candidate.process.id === ${JSON.stringify(processId)});`,
+      );
+      await studioAgent.submitActiveDialog('link', { process: String(index) });
+      await studioAgent.waitForNotVisible(DIALOG);
+    };
+
+    const processShapeScript = (processId: string): string =>
+      `const shape = registry.filter((entry) => entry.type === 'process' && entry.businessObject.processId === ${JSON.stringify(processId)})[0];`;
+
+    it('offers both ways in the context menu and the properties pane for a placeholder only', async () => {
+      await prepare();
+      await openMap('Fill.bfwmap');
+
+      await studioAgent.rightClickOn(element('pay'));
+      await studioAgent.assertContextMenuVisible();
+      expect(await studioAgent.getElementCount(MODEL_ENTRY)).toBe(1);
+      expect(await studioAgent.getElementCount(LINK_ENTRY)).toBe(1);
+      await closeContextMenu();
+
+      await studioAgent.rightClickOn(element('order'));
+      await studioAgent.assertContextMenuVisible();
+      expect(await studioAgent.getElementCount(MODEL_ENTRY)).toBe(0);
+      expect(await studioAgent.getElementCount(LINK_ENTRY)).toBe(0);
+      await closeContextMenu();
+
+      await studioAgent.clickOn(element('pay'));
+      await studioAgent.assertVisible(MODEL_BUTTON, TIMEOUT);
+      await studioAgent.assertVisible(LINK_BUTTON, TIMEOUT);
+      await studioAgent.clickOn(element('order'));
+      await studioAgent.waitUntil(async () => (await studioAgent.getElementCount(MODEL_BUTTON)) === 0, {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The placeholder buttons stayed after selecting a process',
+      });
+    });
+
+    it('disables Link to existing process when every process is on the map', async () => {
+      await prepare();
+      await openMap('Full.bfwmap');
+
+      await studioAgent.clickOn(element('open'));
+      await studioAgent.assertVisible(LINK_BUTTON, TIMEOUT);
+      const isDisabled = (selector: string): Promise<unknown> =>
+        studioAgent.executeInRenderer(`return document.querySelector('${selector}').disabled;`);
+      expect(await isDisabled(LINK_BUTTON)).toBe(true);
+      expect(await isDisabled(MODEL_BUTTON)).toBe(false);
+    });
+
+    it('Link to existing process keeps form, position and connector, saves the process and undoes in one step', async () => {
+      await prepare();
+      await openMap('Fill.bfwmap');
+      const before = await onCanvas(
+        'Fill.bfwmap',
+        `const pay = registry.get('pay'); return { x: pay.x, y: pay.y, width: pay.width, height: pay.height };`,
+      );
+
+      await linkPayPlaceholder('draft-process');
+
+      await waitForCanvas(
+        'Fill.bfwmap',
+        `${processShapeScript('draft-process')} return shape != null;`,
+        'the linked process',
+      );
+      expect(
+        await onCanvas(
+          'Fill.bfwmap',
+          `${processShapeScript('draft-process')}
+          const link = registry.get('link');
+          return {
+            bounds: { x: shape.x, y: shape.y, width: shape.width, height: shape.height },
+            label: shape.businessObject.label ?? null,
+            placeholderGone: registry.get('pay') == null,
+            connectorEnd: link.target.id === shape.id && link.source.id === 'order',
+          };`,
+        ),
+      ).toEqual({ bounds: before, label: null, placeholderGone: true, connectorEnd: true });
+
+      await studioAgent.sendKeyboardInput([SAVE], false);
+      const saved = await waitForMapFile('Fill.bfwmap', (map) =>
+        map.elements.some((entry) => entry.type === 'process' && entry.processId === 'draft-process'),
+      );
+      expect(saved.elements.some((entry) => entry.id === 'pay')).toBe(false);
+      const linkedId = saved.elements.find(
+        (entry) => entry.type === 'process' && entry.processId === 'draft-process',
+      )?.id;
+      expect(saved.connectors[0]).toMatchObject({ sourceId: 'order', targetId: linkedId });
+
+      await onCanvas('Fill.bfwmap', `commandStack.undo();`);
+      await waitForCanvas(
+        'Fill.bfwmap',
+        `${processShapeScript('draft-process')} return shape == null && registry.get('pay')?.type === 'placeholder' && registry.get('link').target.id === 'pay';`,
+        'one undo to bring the placeholder and its connector back',
+      );
+    });
+
+    it('dropping a process onto a placeholder links it instead of adding a second shape', async () => {
+      await prepare();
+      await openMap('Fill.bfwmap');
+
+      await studioAgent.executeCommand('bpmn.landscape.addProcessToMap', [
+        { processId: 'draft-process', fileUri: `file://${path.join(workspace, 'draft-process.bpmn')}`, x: 410, y: 75 },
+      ]);
+
+      await waitForCanvas(
+        'Fill.bfwmap',
+        `${processShapeScript('draft-process')}
+        return shape != null && registry.get('pay') == null && registry.filter((entry) => entry.type === 'process').length === 2;`,
+        'the dropped process in place of the placeholder',
+      );
+    });
+
+    it('Model this process with a project folder saves the file, fills the placeholder and opens the Designer', async () => {
+      await prepare();
+      await openMap('Fill.bfwmap');
+
+      await studioAgent.clickOn(element('pay'));
+      await studioAgent.clickOn(MODEL_BUTTON);
+      await studioAgent.assertVisible(DIALOG, TIMEOUT);
+      await studioAgent.submitActiveDialog('create', {
+        name: 'Invoicing',
+        folder: `file://${workspace}`,
+        otherFolder: '',
+      });
+
+      const fileUri = `file://${path.join(workspace, 'Invoicing.bpmn')}`;
+      await studioAgent.waitUntil(async () => (await studioAgent.getFocusedDocumentUri()) === fileUri, {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The Designer did not open the new process',
+      });
+      expect(fs.existsSync(path.join(workspace, 'Invoicing.bpmn'))).toBe(true);
+      expect(
+        await onCanvas(
+          'Fill.bfwmap',
+          `${processShapeScript('Invoicing_Process')}
+          return shape != null && registry.get('pay') == null && (shape.businessObject.label ?? null) === null;`,
+        ),
+      ).toBe(true);
+      expect(await hasUnsavedChanges('Fill.bfwmap')).toBe(true);
+      expect(fs.readFileSync(mapPath('Fill.bfwmap'), 'utf8')).not.toContain('Invoicing_Process');
+    });
+
+    it('Model this process without a project folder creates processes/, adds it to the solution and lists the process', async () => {
+      await prepare({ withoutProjectFolder: true });
+      await openMap('Solo.bfwmap');
+
+      await studioAgent.rightClickOn(element('billing'));
+      await studioAgent.clickOn(MODEL_ENTRY);
+      await studioAgent.assertVisible(DIALOG, TIMEOUT);
+      await studioAgent.submitActiveDialog('create', {
+        name: 'Billing',
+        folder: `file://${path.join(workspace, 'processes')}`,
+        otherFolder: '',
+      });
+
+      const fileUri = `file://${path.join(workspace, 'processes', 'Billing.bpmn')}`;
+      await studioAgent.waitUntil(async () => (await studioAgent.getFocusedDocumentUri()) === fileUri, {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The Designer did not open the new process',
+      });
+      expect(fs.existsSync(path.join(workspace, 'processes', 'Billing.bpmn'))).toBe(true);
+      expect(fs.readFileSync(landscapeWorkspace.solutionFile, 'utf8')).toContain('processes');
+      expect(await studioAgent.getSolutionProjectCount()).toBe(1);
+      expect(
+        await onCanvas(
+          'Solo.bfwmap',
+          `${processShapeScript('Billing_Process')} return shape != null && registry.get('billing') == null;`,
+        ),
+      ).toBe(true);
+
+      await studioAgent.navigation.showLeftPane('discover/landscapes/landscapes');
+      await studioAgent.assertVisible('.treeview__label=Billing.bpmn', TIMEOUT);
+    });
+
+    it('keeps the dialog open with an error when the name is empty or the process id already exists', async () => {
+      await prepare();
+      await openMap('Fill.bfwmap');
+      await studioAgent.clickOn(element('pay'));
+      await studioAgent.clickOn(MODEL_BUTTON);
+      await studioAgent.assertVisible(DIALOG, TIMEOUT);
+
+      await studioAgent.submitActiveDialog('create', { name: '', folder: `file://${workspace}`, otherFolder: '' });
+      await waitForDialogText('Name cannot be empty');
+
+      await studioAgent.submitActiveDialog('create', {
+        name: 'Billing',
+        folder: `file://${workspace}`,
+        otherFolder: '',
+      });
+      await waitForDialogText('Billing_Process already exists in existing-billing.bpmn');
+      expect(fs.existsSync(path.join(workspace, 'Billing.bpmn'))).toBe(false);
+
+      await studioAgent.submitActiveDialog('cancel');
+      await studioAgent.waitForNotVisible(DIALOG);
+      expect(await onCanvas('Fill.bfwmap', `return registry.get('pay')?.type === 'placeholder';`)).toBe(true);
+    });
+
+    it('warns about a connector that repeats a visible relation line until the line is hidden', async () => {
+      await prepare();
+      await openMap('Duplicate.bfwmap');
+
+      await waitForWarningGlyph('Duplicate.bfwmap', 'dup', true);
+      expect(await hasUnsavedChanges('Duplicate.bfwmap')).toBe(false);
+      await onCanvas('Duplicate.bfwmap', `modeler.get('selection').select(registry.get('dup'));`);
+      await studioAgent.assertVisible(DUPLICATE_TEXT, TIMEOUT);
+
+      await onCanvas(
+        'Duplicate.bfwmap',
+        `modeler.get('selection').select(registry.get(${JSON.stringify(CALL_LINE)}));`,
+      );
+      await studioAgent.clickOn('.djs-context-pad .entry[data-action="hide"]');
+      await waitForWarningGlyph('Duplicate.bfwmap', 'dup', false);
+
+      await studioAgent.executeCommand('std.editor.undoInFocusedEditorDocument');
+      await waitForWarningGlyph('Duplicate.bfwmap', 'dup', true);
+    });
+
+    it('linking a placeholder that a connector already joins to a calling process starts the warning', async () => {
+      await prepare();
+      await openMap('Fill.bfwmap');
+      expect(await hasWarningGlyph('Fill.bfwmap', 'link')).toBe(false);
+
+      await linkPayPlaceholder('payment-process');
+
+      await waitForWarningGlyph('Fill.bfwmap', 'link', true);
+      await onCanvas('Fill.bfwmap', `modeler.get('selection').select(registry.get('link'));`);
+      await studioAgent.assertVisible(DUPLICATE_TEXT, TIMEOUT);
+      const unmodifiedFile = await readMap('Fill.bfwmap');
+      expect(unmodifiedFile.elements.some((entry) => entry.id === 'pay')).toBe(true);
     });
   });
 });

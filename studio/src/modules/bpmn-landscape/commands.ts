@@ -13,6 +13,7 @@ import type { LandscapeProcessReference } from './buildProcessRelations';
 import type { NewMapGrouping } from './createLandscapeMap';
 import { createLandscapeMap } from './createLandscapeMap';
 import { registerLandscapeExportCommands } from './exportCommands';
+import { linkPlaceholderToProcess, modelPlaceholderAsProcess } from './fillPlaceholder';
 import type { LandscapeGate } from './landscapeFolder';
 import {
   describeLandscapeFolder,
@@ -363,6 +364,52 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     'bpmn.landscape.addProcessToMap',
     (request: AddProcessRequest) => getFocusedMap(bifrost)?.addProcess(request),
     { enabledWhen: () => getFocusedMap(bifrost) != null },
+  );
+
+  /** The placeholder a command acts on: the given element, else the only selected one. */
+  const getPlaceholderTarget = (
+    elementId?: string,
+  ): { model: LandscapeMapDocumentModel; placeholderId: string } | null => {
+    const model = getFocusedMap(bifrost);
+    const selected = model?.getSelectedElements() ?? [];
+    const placeholderId = elementId ?? (selected.length === 1 ? selected[0].id : null);
+    return model != null && placeholderId != null && model.getPlaceholder(placeholderId) != null
+      ? { model, placeholderId }
+      : null;
+  };
+
+  bifrost.commands.register(
+    'bpmn.landscape.modelPlaceholder',
+    async (elementId?: string) => {
+      const target = getPlaceholderTarget(elementId);
+      const gate = target == null ? null : getReadyGateOrExplain(bifrost);
+      if (target != null && gate != null) {
+        await modelPlaceholderAsProcess(bifrost, target.model, target.placeholderId, gate);
+      }
+    },
+    {
+      visibleInSearch: true,
+      description: ['Landscapes: Model this Process...', 'Create a BPMN process for the selected placeholder'],
+      enabledWhen: (elementId?: string) => getPlaceholderTarget(elementId) != null,
+    },
+  );
+
+  bifrost.commands.register(
+    'bpmn.landscape.linkPlaceholder',
+    async (elementId?: string) => {
+      const target = getPlaceholderTarget(elementId);
+      if (target != null) {
+        await linkPlaceholderToProcess(bifrost, target.model, target.placeholderId);
+      }
+    },
+    {
+      visibleInSearch: true,
+      description: ['Landscapes: Link to Existing Process...', 'Link the selected placeholder to a process'],
+      enabledWhen: (elementId?: string) => {
+        const target = getPlaceholderTarget(elementId);
+        return target != null && target.model.getFreeProcessCandidates().length > 0;
+      },
+    },
   );
 
   bifrost.commands.register(

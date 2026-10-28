@@ -10,13 +10,19 @@ export type LandscapeWorkspace = {
   solutionFile: string;
 };
 
-/** A temporary copy of the deploy fixture, saved as a solution whose landscape folder is `landscapes/` next to the solution file. */
+/**
+ * A temporary copy of the deploy fixture, saved as a solution whose landscape folder is `landscapes/` next to the solution file.
+ * `withoutProjectFolder` leaves the fixture out and declares no project folder.
+ */
 export function createLandscapeWorkspace(
   prefix: string,
-  options: { declareLandscapeFolder?: boolean } = {},
+  options: { declareLandscapeFolder?: boolean; withoutProjectFolder?: boolean } = {},
 ): LandscapeWorkspace {
   const workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
-  fs.cpSync(path.join(__dirname, '..', '..', 'fixtures', 'test-solution-deploy'), workspace, { recursive: true });
+  const withoutProjectFolder = options.withoutProjectFolder ?? false;
+  if (!withoutProjectFolder) {
+    fs.cpSync(path.join(__dirname, '..', '..', 'fixtures', 'test-solution-deploy'), workspace, { recursive: true });
+  }
   const landscapeFolder = path.join(workspace, 'landscapes');
   const solutionFile = path.join(workspace, 'Landscapes.bfwsln');
   const declareLandscapeFolder = options.declareLandscapeFolder ?? true;
@@ -27,7 +33,7 @@ export function createLandscapeWorkspace(
     solutionFile,
     `${JSON.stringify(
       {
-        folders: [{ path: workspace }],
+        folders: withoutProjectFolder ? [] : [{ path: workspace }],
         ...(declareLandscapeFolder ? { views: { landscapes: { path: 'landscapes' } } } : {}),
       },
       null,

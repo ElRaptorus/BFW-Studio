@@ -32,3 +32,29 @@ export function convertLandscapeElement(
   }
   return { ...base, type, label: name.split('\n')[0] ?? '', shape: element.type === 'note' ? 'box' : element.shape };
 }
+
+/**
+ * The process shape a placeholder becomes once it is filled with a process, under the new `id`: same place, size,
+ * group, colours and shape. The label is reset, so the shape shows the process name.
+ */
+export function convertPlaceholderToProcess(
+  placeholder: LandscapePlaceholderElement,
+  reference: { processId: string; fileHint: string | null },
+  id: string,
+): LandscapeProcessElement {
+  const { parentId, x, y, width, height, style, shape } = placeholder;
+  return {
+    id,
+    parentId,
+    x,
+    y,
+    width,
+    height,
+    style,
+    type: 'process',
+    processId: reference.processId,
+    fileHint: reference.fileHint,
+    label: null,
+    shape,
+  };
+}
