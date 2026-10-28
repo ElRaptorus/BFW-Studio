@@ -442,6 +442,10 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.modeler?.updateFocus(this.focusMode);
   }
 
+  toggleSearch(): void {
+    this.modeler?.get('searchPad').toggle();
+  }
+
   zoomToViewport(): void {
     this.modeler?.get('canvas').zoom('fit-viewport', 'auto');
   }
@@ -712,7 +716,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     return element.type;
   }
 
-  /** Opens the "Change type" popup at the element; nothing happens for a shape whose type cannot change. */
+  /** Opens the "Change element" popup at the element; nothing happens for a shape whose type cannot change. */
   openChangeTypeMenu(elementId: string): void {
     const replaceMenu = this.modeler?.get<LandscapeReplaceMenuProvider>('landscapeReplaceMenu');
     const element = this.modeler?.get('elementRegistry').get(elementId);
@@ -902,9 +906,15 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
         executePluginCommand: (pluginName, command, args) => {
           void this.studio.commands.executeCommand(`plugin.${pluginName}.${command}`, args);
         },
+        runPlaceholderAction: (action, placeholderId) => {
+          const command = action === 'model' ? 'bpmn.landscape.modelPlaceholder' : 'bpmn.landscape.linkPlaceholder';
+          void this.studio.commands.executeCommand(command, [placeholderId]);
+        },
+        hasFreeProcesses: () => this.getFreeProcessCandidates().length > 0,
       },
       landscapeModelerModuleRegistry.getAll(),
     );
+    modeler.get('colorContextPadProvider').setSettings(this.studio.settings, () => this.getUri());
     const eventBus = modeler.get('eventBus');
     eventBus.on('commandStack.changed', ({ trigger }: { trigger: string }) => {
       if (trigger === 'clear' || this.map == null) {

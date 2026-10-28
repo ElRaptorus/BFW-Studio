@@ -256,7 +256,7 @@ export function onLoad(bifrost: Bifrost): void {
     if (elementType === 'process' || elementType === 'placeholder' || elementType === 'note') {
       elementMenu.push({
         type: 'command',
-        label: 'Change type',
+        label: 'Change element',
         id: 'bpmn/landscape/element/change-type',
         command: 'bpmn.landscape.changeElementType',
         commandArgs: [elementId],
@@ -302,6 +302,7 @@ export function onLoad(bifrost: Bifrost): void {
         backspace: 'bpmn.landscape.deleteSelection',
         'cmd-c': 'bpmn.landscape.copySelection',
         'cmd-v': 'bpmn.landscape.paste',
+        'cmd-f': 'bpmn.landscape.find',
         [FOCUS_MODE_KEY]: 'bpmn.landscape.toggleFocusMode',
         ...SELECTION_KEYS,
       },
@@ -317,6 +318,7 @@ export function onLoad(bifrost: Bifrost): void {
           delete: 'bpmn.landscape.deleteSelection',
           'ctrl-c': 'bpmn.landscape.copySelection',
           'ctrl-v': 'bpmn.landscape.paste',
+          'ctrl-f': 'bpmn.landscape.find',
           [FOCUS_MODE_KEY]: 'bpmn.landscape.toggleFocusMode',
           ...SELECTION_KEYS,
         },

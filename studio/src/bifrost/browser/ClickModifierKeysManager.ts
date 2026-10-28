@@ -94,15 +94,8 @@ export class ClickModifierKeysManager extends AbstractEmitter {
     for (const keystroke of keystrokes) {
       const clickModifiers = this.clickModifiersByKeystroke[keystroke];
       if (clickModifiers) {
-        const sortBySpecificityDesc = (left: ClickModifierKeyObject, right: ClickModifierKeyObject): number => {
-          if (left.specificity < right.specificity) {
-            return 1;
-          }
-          if (right.specificity > left.specificity) {
-            return -1;
-          }
-          return 0;
-        };
+        const sortBySpecificityDesc = (left: ClickModifierKeyObject, right: ClickModifierKeyObject): number =>
+          right.specificity - left.specificity;
         const element = event.target as Element;
         const foundClickModifiers = clickModifiers
           .filter(({ selector }) => element.matches(`${selector}, ${selector} ${element.nodeName}`))

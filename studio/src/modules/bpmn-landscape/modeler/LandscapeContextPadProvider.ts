@@ -16,9 +16,11 @@ export default class LandscapeContextPadProvider {
     'landscapeCollapse',
     'landscapeDrilldown',
     'landscapeReplaceMenu',
+    'rules',
   ];
 
   private modeling: any;
+  private rules: any;
   private connect: any;
   private commandStack: any;
   private landscapeUpdates: LandscapeUpdates;
@@ -35,8 +37,10 @@ export default class LandscapeContextPadProvider {
     landscapeCollapse: LandscapeCollapse,
     landscapeDrilldown: LandscapeDrilldown,
     landscapeReplaceMenu: LandscapeReplaceMenuProvider,
+    rules: any,
   ) {
     this.modeling = modeling;
+    this.rules = rules;
     this.connect = connect;
     this.commandStack = commandStack;
     this.landscapeUpdates = landscapeUpdates;
@@ -60,7 +64,7 @@ export default class LandscapeContextPadProvider {
     const entries: Record<string, unknown> = {
       delete: {
         group: 'edit',
-        className: 'ph ph-trash',
+        className: 'bpmn-icon-trash',
         title: 'Delete',
         action: { click: () => this.modeling.removeElements([element]) },
       },
@@ -68,8 +72,8 @@ export default class LandscapeContextPadProvider {
     if (this.landscapeReplaceMenu.canReplace(element)) {
       entries.replace = {
         group: 'edit',
-        className: 'ph ph-swap',
-        title: 'Change type',
+        className: 'bpmn-icon-screw-wrench',
+        title: 'Change element',
         action: {
           click: (event: MouseEvent) => this.landscapeReplaceMenu.open(element, { x: event.x, y: event.y }),
         },
@@ -79,7 +83,7 @@ export default class LandscapeContextPadProvider {
       const isCollapsed = isCollapsedGroup(element);
       entries.toggleCollapse = {
         group: 'hierarchy',
-        className: isCollapsed ? 'ph ph-arrows-out' : 'ph ph-arrows-in',
+        className: isCollapsed ? 'bpmn-icon-subprocess-expanded' : 'bpmn-icon-subprocess-collapsed',
         title: isCollapsed ? 'Expand' : 'Collapse',
         action: { click: () => this.landscapeCollapse.toggle(element) },
       };
@@ -96,12 +100,29 @@ export default class LandscapeContextPadProvider {
       const start = (event: Event) => this.connect.start(event, element);
       entries.connect = {
         group: 'connect',
-        className: 'ph ph-arrow-up-right',
+        className: 'bpmn-icon-connection-multi',
         title: 'Connect',
         action: { click: start, dragstart: start },
       };
     }
     return entries;
+  }
+
+  /** The `elements.delete` rule leaves relation lines and hidden connectors out of a selection. */
+  getMultiElementContextPadEntries(elements: any[]): Record<string, unknown> {
+    const allowed = this.rules.allowed('elements.delete', { elements });
+    if (allowed === false) {
+      return {};
+    }
+    const removable: any[] = Array.isArray(allowed) ? allowed : elements;
+    return {
+      delete: {
+        group: 'edit',
+        className: 'bpmn-icon-trash',
+        title: 'Delete',
+        action: { click: () => this.modeling.removeElements(removable.slice()) },
+      },
+    };
   }
 
   private hideRelationLine(line: RelationLine): void {

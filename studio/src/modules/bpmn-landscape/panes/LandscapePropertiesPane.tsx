@@ -264,42 +264,9 @@ function ShapeProperties(props: {
           setBorderColor={(stroke) => model.updateSelectedElement({ style: { ...style, stroke } })}
         />
       </div>
-      {element.type === 'placeholder' && <PlaceholderActions studio={studio} model={model} elementId={element.id} />}
       {element.type === 'process' && <ProcessDetailsView studio={studio} model={model} element={element} />}
       {element.type === 'mapLink' && <MapLinkDetails model={model} element={element} />}
     </PaneBody>
-  );
-}
-
-/** A placeholder is a process that is not modelled yet: model it now, or link a process the solution has. */
-function PlaceholderActions(props: {
-  studio: Bifrost;
-  model: LandscapeMapDocumentModel;
-  elementId: string;
-}): React.JSX.Element {
-  const { studio, model, elementId } = props;
-  const hasFreeProcess = model.getFreeProcessCandidates().length > 0;
-  return (
-    <div>
-      <button
-        type="button"
-        className="btn btn-sm btn-secondary landscape-properties__button"
-        onClick={() => void studio.commands.executeCommand('bpmn.landscape.modelPlaceholder', [elementId])}
-        data-test--landscape-model-placeholder
-      >
-        Model this process…
-      </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-secondary landscape-properties__button"
-        disabled={!hasFreeProcess}
-        title={hasFreeProcess ? undefined : 'Every process of the solution is already on this map'}
-        onClick={() => void studio.commands.executeCommand('bpmn.landscape.linkPlaceholder', [elementId])}
-        data-test--landscape-link-placeholder
-      >
-        Link to existing process…
-      </button>
-    </div>
   );
 }
 

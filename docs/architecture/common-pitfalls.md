@@ -675,3 +675,33 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 **Why**: `BendpointMove` asks that rule, but `ConnectionSegmentMove` (dragging the middle of an orthogonal segment) does not, and calls `modeling.updateWaypoints` anyway.
 
 **Correct approach**: Also return `false` from a `connectionSegment.move.init` listener for those connections; `Dragging` cancels the drag. See `bpmn-landscape/modeler/LandscapeRules.ts`.
+
+---
+
+## Do not overwrite the `style` attribute of diagram-js `Text` output
+
+**Mistake**: Colouring a label from `Text.createText` with `text.setAttribute('style', 'fill: …')`.
+
+**Why**: tiny-svg writes `font-family`, `font-size`, `fill` and `stroke` into `node.style`. Replacing the whole `style` attribute drops the font, so the browser measures and draws the label in its default font; centring and line breaks no longer match.
+
+**Correct approach**: Pass colours in `options.style` (`{ fill, stroke, strokeWidth }`) to `createText`, and set a property tiny-svg does not know (e.g. `paint-order`) on `text.style` directly. See `bpmn-landscape/modeler/features/LandscapeTextRenderer.ts`.
+
+---
+
+## Popup menu entries take icons in `imageHtml`, not Phosphor classes in `className`
+
+**Mistake**: Giving a diagram-js popup menu entry `className: 'ph ph-note'`.
+
+**Why**: `PopupMenuItem` puts `className` on the span that also wraps the label. Phosphor's `.ph` sets the icon font on the element itself, so the label is drawn in the icon font (one glyph and a letter). bpmn-font classes set the font only on `::before` and work.
+
+**Correct approach**: Put the icon into `imageHtml: '<i class="ph ph-note" aria-hidden="true"></i>'`. See `popupEntry` in `bpmn-landscape/modeler/LandscapeReplaceMenuProvider.ts`.
+
+---
+
+## `popupMenu.open` takes viewport coordinates
+
+**Mistake**: Opening a diagram-js popup at a canvas or container-relative position (e.g. the element's `x`/`y`, or a point from `canvas.viewbox()`).
+
+**Why**: `PopupMenu` positions itself `fixed` in the document; the position is a viewport point. A canvas point puts the menu somewhere else on screen, usually far from the element.
+
+**Correct approach**: Use `getBoundingClientRect()` of the context pad (`contextPad.getPad(element).html`) or of the element's graphics, and pass `cursor` for the overflow correction. See `popupPositionOf` in `bpmn-landscape/modeler/LandscapeReplaceMenuProvider.ts`.

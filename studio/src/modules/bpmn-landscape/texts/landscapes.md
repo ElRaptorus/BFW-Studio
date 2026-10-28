@@ -26,8 +26,8 @@ Maps outside the landscape folder do not open.
 2. **Add processes.** Drag a process from the Processes pane onto the map. A process appears at most once on a map; dragging it again selects it.
 3. **Structure the map.** Use the palette on the left of the map for bands, groups, placeholders for processes that are not modelled yet, and notes. Drop elements into a group to nest them. A group holds every element it fully encloses: draw, resize or move it around elements and they become part of it; an element it only partly covers stays outside and in front of it.
 4. **Label elements.** Double-click a group, placeholder, note or connector to edit its text.
-5. **Fill a placeholder.** Once a placeholder is ready to become a real process, right-click it (or select it and use the Properties pane) and choose _Model this process…_ or _Link to existing process…_. _Model this process…_ asks for a name and a folder, creates the BPMN file, adds the folder to the solution if it is new to it, replaces the placeholder with the process and opens it in the Designer. _Link to existing process…_ replaces the placeholder with a process of the solution that is not on the map yet. You can also drag a process from the Processes pane onto a placeholder. The new shape keeps the placeholder's place, form, colours, group and connectors and shows the process name; undo brings the placeholder back.
-6. **Connect elements.** Select an element and drag or click _Connect_ in its context pad, then click the target. Connectors are saved with the map; bands cannot be connected.
+5. **Fill a placeholder.** Once a placeholder is ready to become a real process, right-click it, or select it and press the link button in its context pad, and choose _Model this process…_ or _Link to existing process…_. _Model this process…_ asks for a name and a folder, creates the BPMN file, adds the folder to the solution if it is new to it, replaces the placeholder with the process and opens it in the Designer. _Link to existing process…_ replaces the placeholder with a process of the solution that is not on the map yet. You can also drag a process from the Processes pane onto a placeholder. The new shape keeps the placeholder's place, form, colours, group and connectors and shows the process name; undo brings the placeholder back.
+6. **Connect elements.** Select an element and drag or click _Connect_ in its context pad, then click the target. Connectors are saved with the map; bands cannot be connected. _Append placeholder_ and _Append note_ in the context pad add a new element with a connector in one step.
 7. **Collapse a group.** Select a group and press _Collapse_ in its context pad; see _Groups, levels and planes_ below.
 8. **Save.** Press Cmd/Ctrl+S. Undo and redo work as in every editor.
 
@@ -73,6 +73,8 @@ The map draws the relations between the processes on it, read from the saved BPM
 The Properties pane on the right edits the selected element: label, shape (box or chevron), colour. For a process it shows the file, version, relations and decisions; _Open_ opens a decision. With nothing selected it edits the map name and the relation types.
 
 Double-click a process to open it in the Designer, or a collapsed group to open its plane. The Processes pane shows on how many maps each process appears.
+
+The context pad of a selected element also offers _Change element_ (the wrench: turn a process into a placeholder or a note, or switch between box and chevron) and a colour panel. With several elements selected it offers _Delete_ and _Align elements_, which also distributes three or more elements evenly. Press Cmd/Ctrl+F to find an element of the map or group on screen by its label.
 
 &nbsp;
 

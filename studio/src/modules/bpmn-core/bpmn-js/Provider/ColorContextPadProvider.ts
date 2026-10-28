@@ -1,6 +1,7 @@
 import type { SettingsMediator } from '#bifrost/common/SettingsMediator';
 import type { BpmnElementColor } from '#modules/bpmn-core/BpmnElementCoreTypes';
 import { PREDEFINED_COLORS } from '#modules/bpmn-core/components/BpmnElementColorPicker';
+import type EventBus from 'diagram-js/lib/core/EventBus';
 import type { ElementLike } from 'diagram-js/lib/model/Types';
 
 const noColor = {
@@ -9,19 +10,23 @@ const noColor = {
   borderColor: undefined,
 };
 
-class ColorContextPadProvider {
-  static $inject = ['contextPad', 'modeling'];
+export class ColorContextPadProvider {
+  static $inject = ['contextPad', 'modeling', 'canvas', 'eventBus'];
   private settings: SettingsMediator | null = null;
   private documentUri: () => string = () => '';
 
   private contextPad: any;
   private modeling;
+  private canvas: any;
   private panel: HTMLDivElement | null = null;
 
-  constructor(contextPad: any, modeling) {
+  constructor(contextPad: any, modeling, canvas: any, eventBus: EventBus) {
     this.contextPad = contextPad;
     this.modeling = modeling;
+    this.canvas = canvas;
     contextPad.registerProvider(this);
+    // The panel is positioned once, below the pad; it would stay behind when the canvas scrolls.
+    eventBus.on(['selection.changed', 'canvas.viewbox.changing'], () => this.closeColorPicker());
   }
 
   setSettings(settings: SettingsMediator, documentUri: () => string) {
@@ -34,7 +39,7 @@ class ColorContextPadProvider {
       entries['custom-color-picker'] = {
         group: 'edit',
         className: 'ph-fill ph-palette',
-        title: 'Farbe wählen',
+        title: 'Choose color',
         action: {
           click: () => this.openColorPicker(element),
         },
@@ -44,9 +49,7 @@ class ColorContextPadProvider {
   }
 
   openColorPicker(element: ElementLike) {
-    const pad = this.contextPad.getPad(element)?.html;
-
-    if (this.panel || !pad || !pad.classList.contains('open')) {
+    if (this.panel || !this.contextPad.isOpen(element)) {
       this.closeColorPicker();
       return;
     }
@@ -72,28 +75,26 @@ class ColorContextPadProvider {
       }
 
       btn.onclick = () => {
-        this.modeling.setColor(element, { fill: color.backgroundColor, stroke: color.borderColor });
+        this.applyColor(element, color);
         this.closeColorPicker();
       };
 
       this.panel!.appendChild(btn);
     });
 
-    const editorContent = document.querySelector('.editor__content');
-    if (editorContent) {
-      editorContent.appendChild(this.panel);
-    } else {
-      document.body.appendChild(this.panel);
-    }
+    const editorContent = this.editorContent();
+    editorContent.appendChild(this.panel);
 
-    const pos = this.getStartPosition([element]);
+    const padRect = this.contextPad.getPad(element).html.getBoundingClientRect();
+    const editorRect = editorContent.getBoundingClientRect();
     this.panel.style.position = 'absolute';
-    this.panel.style.left = pos.x + 'px';
-    this.panel.style.top = pos.y + 'px';
+    this.panel.style.left = padRect.left - editorRect.left + 'px';
+    this.panel.style.top = padRect.bottom - editorRect.top + 5 + 'px';
+  }
 
-    this.contextPad._eventBus.on('selection.changed', () => {
-      this.closeColorPicker();
-    });
+  /** `color` without colours is "No Color". */
+  protected applyColor(element: ElementLike, color: BpmnElementColor) {
+    this.modeling.setColor(element, { fill: color.backgroundColor, stroke: color.borderColor });
   }
 
   closeColorPicker() {
@@ -103,23 +104,10 @@ class ColorContextPadProvider {
     }
   }
 
-  getStartPosition(elements: ElementLike[]) {
-    const Y_OFFSET = 5;
-    const pad = this.contextPad.getPad(elements).html;
-
-    if (!pad) {
-      return { x: 0, y: 0 };
-    }
-
-    const padRect = pad.getBoundingClientRect();
-
-    const editorContent = document.querySelector('.editor__content') as HTMLElement;
-    const editorRect = editorContent?.getBoundingClientRect();
-
-    return {
-      x: padRect.left - (editorRect?.left ?? 0),
-      y: padRect.bottom - (editorRect?.top ?? 0) + Y_OFFSET,
-    };
+  /** The editor that shows this canvas; several editors can be open side by side. */
+  private editorContent(): HTMLElement {
+    const container: HTMLElement = this.canvas.getContainer();
+    return container.closest<HTMLElement>('.editor__content') ?? container.parentElement ?? document.body;
   }
 }
 

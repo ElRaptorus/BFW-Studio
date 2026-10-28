@@ -357,15 +357,8 @@ export class KeybindingsManager extends AbstractEmitter {
       this.keybindingsByKeystroke[`${this.lastKeyStroke} ${keystroke}`] || this.keybindingsByKeystroke[keystroke];
 
     if (bindings) {
-      const sortBySpecificityDesc = (left: KeybindingObject, right: KeybindingObject): number => {
-        if (left.specificity < right.specificity) {
-          return 1;
-        }
-        if (right.specificity > left.specificity) {
-          return -1;
-        }
-        return 0;
-      };
+      const sortBySpecificityDesc = (left: KeybindingObject, right: KeybindingObject): number =>
+        right.specificity - left.specificity;
       const element = event.target as Element;
       const foundBindings = bindings
         .filter(({ selector }) => element.matches(`${selector}, ${selector} ${element.nodeName}`))

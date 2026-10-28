@@ -7,7 +7,7 @@
 // .bifrost, every DMN view automatically inherits the active Studio theme.
 //
 // DRD elements (shapes, connections) share diagram-js infrastructure with BPMN.
-// The existing .djs-* overrides in bpmn.scss apply here too; we only add
+// The .djs-* overrides in bpmn-core/styles/bpmn-js.scss apply here too; we only add
 // DRD-specific container and definitions-overlay overrides.
 
 // ─── Shared dmn-js color palette (scoped to Studio root) ─────

@@ -1013,7 +1013,7 @@ describe('bpmn-landscape', () => {
       expect(targetTypes).not.toContain('relation');
     });
 
-    it('Change type turns a placeholder into a note and undo restores it', async () => {
+    it('Change element turns a placeholder into a note and undo restores it', async () => {
       await prepare();
       await openMap();
 
@@ -1031,6 +1031,223 @@ describe('bpmn-landscape', () => {
       await studioAgent.waitUntil(async () => (await onCanvas(archiveAndNoteTypes)) === 'placeholder,1', {
         timeout: TIMEOUT,
         timeoutMsg: 'Undo did not restore the placeholder',
+      });
+    });
+
+    describe('editor interaction', () => {
+      const PAD_ENTRY = (action: string): string => `.djs-context-pad .entry[data-action="${action}"]`;
+      const POPUP_ENTRY = (id: string): string => `.djs-popup [data-id="${id}"]`;
+
+      const waitForCanvasCondition = async (script: string, description: string): Promise<void> => {
+        await studioAgent.waitUntil(async () => (await onCanvas(script)) === true, {
+          timeout: TIMEOUT,
+          timeoutMsg: `Expected ${description}`,
+        });
+      };
+
+      it('draws labels in the map font, centred inside the shape', async () => {
+        await prepare();
+        await openMap();
+
+        expect(
+          await onCanvas(`
+            const label = registry.getGraphics('archive').querySelector('.landscape-label');
+            const box = label.getBBox();
+            const shape = registry.get('archive');
+            return {
+              font: label.style.fontFamily.includes('Arial') && label.style.fontSize === '12px',
+              centred: Math.abs(box.x + box.width / 2 - shape.width / 2) <= 2,
+            };
+          `),
+        ).toEqual({ font: true, centred: true });
+      });
+
+      it('previews the connector while it is drawn from the context pad', async () => {
+        await prepare();
+        await openMap();
+        await studioAgent.clickOn(element('note'));
+        const start = await centerOf(PAD_ENTRY('connect'));
+        const end = await centerOf(element('archive'));
+        const client = studioAgent.getTestDriver().client!;
+
+        await client.performActions([
+          {
+            type: 'pointer',
+            id: 'landscapePointer',
+            actions: [
+              { type: 'pointerMove', duration: 0, ...start },
+              { type: 'pointerDown', button: 0 },
+              { type: 'pointerMove', duration: 200, x: start.x + 40, y: start.y + 40 },
+              { type: 'pointerMove', duration: 200, ...end },
+            ],
+          },
+        ]);
+        const hasPreview = await onCanvas(
+          `return modeler.get('canvas').getContainer().querySelector('.djs-dragger path, .djs-dragger polyline') != null;`,
+        );
+        await client.releaseActions();
+
+        expect(hasPreview).toBe(true);
+      });
+
+      it('opens the Change element popup below the context pad with titled entries', async () => {
+        await prepare();
+        await openMap();
+        // A shape in the top row leaves room below its pad; near the bottom edge diagram-js moves the popup up.
+        await studioAgent.clickOn(element('payment'));
+        expect(await studioAgent.getElementCount(`${PAD_ENTRY('replace')}.bpmn-icon-screw-wrench`)).toBe(1);
+        await studioAgent.clickOn(PAD_ENTRY('replace'));
+        await studioAgent.assertVisible(POPUP_ENTRY('replace-with-note'), TIMEOUT);
+
+        expect(
+          await onCanvas(`
+            const popup = document.querySelector('.djs-popup');
+            const pad = document.querySelector('.djs-context-pad.open');
+            return {
+              title: popup.querySelector('.djs-popup-title')?.textContent,
+              description: popup.querySelector('[data-id="replace-with-note"] .djs-popup-entry-description')?.textContent,
+              below: popup.getBoundingClientRect().top >= pad.getBoundingClientRect().bottom,
+            };
+          `),
+        ).toEqual({ title: 'Change element', description: 'Free text on the map', below: true });
+        await studioAgent.sendKeyboardInput([Key.Escape], false);
+      });
+
+      it('offers Model and Link in the popup of the placeholder context pad entry', async () => {
+        await prepare();
+        await openMap();
+        await studioAgent.clickOn(element('order'));
+        expect(await studioAgent.getElementCount(PAD_ENTRY('placeholder-actions'))).toBe(0);
+
+        await studioAgent.clickOn(element('archive'));
+        await studioAgent.clickOn(PAD_ENTRY('placeholder-actions'));
+        await studioAgent.assertVisible(POPUP_ENTRY('placeholder-model'), TIMEOUT);
+        await studioAgent.assertVisible(POPUP_ENTRY('placeholder-link'), TIMEOUT);
+        await studioAgent.sendKeyboardInput([Key.Escape], false);
+      });
+
+      it('outlines a selected shape along its form, also after a change to a chevron', async () => {
+        await prepare();
+        await openMap();
+        const outlinePath = `const d = registry.getGraphics('archive').querySelector('.djs-outline')?.getAttribute('d') ?? '';`;
+
+        await onCanvas(`modeler.get('selection').select(registry.get('archive'));`);
+        expect(await onCanvas(`${outlinePath} return d;`)).toContain('A15,15');
+
+        await onCanvas(
+          `commandStack.execute('landscape.updateElement', { element: registry.get('archive'), properties: { shape: 'chevron' } });`,
+        );
+        await waitForCanvasCondition(`${outlinePath} return d !== '' && !d.includes('A');`, 'a chevron outline');
+      });
+
+      it('deletes several selected shapes from the context pad and aligns them through its popup', async () => {
+        await prepare();
+        await openMap();
+
+        await onCanvas(`modeler.get('selection').select([registry.get('order'), registry.get('receiver')]);`);
+        await studioAgent.clickOn(PAD_ENTRY('align-elements'));
+        await studioAgent.clickOn(POPUP_ENTRY('align-elements-top'));
+        await waitForCanvasCondition(`return registry.get('receiver').y === registry.get('order').y;`, 'aligned tops');
+
+        await onCanvas(`modeler.get('selection').select([registry.get('note'), registry.get('archive')]);`);
+        await studioAgent.clickOn(PAD_ENTRY('delete'));
+        await waitForCanvasCondition(
+          `return registry.get('note') == null && registry.get('archive') == null;`,
+          'both shapes removed',
+        );
+      });
+
+      it('appends a connected placeholder from the context pad', async () => {
+        await prepare();
+        await openMap();
+        await studioAgent.clickOn(element('note'));
+        await studioAgent.clickOn(PAD_ENTRY('append.placeholder'));
+
+        await waitForCanvasCondition(
+          `const added = registry.filter((shape) => shape.type === 'placeholder' && shape.id !== 'archive')[0];
+           return added != null && registry.get('note').outgoing.some((connector) => connector.target === added);`,
+          'a placeholder connected to the note',
+        );
+      });
+
+      it('explains a drop on a collapsed group in a tooltip', async () => {
+        await prepare();
+        await studioAgent.openUriAsDocument(`file://${mapPath('Nested.bfwmap')}`);
+        await studioAgent.assertVisible(CANVAS, TIMEOUT);
+        const end = await centerOf(element('team'));
+
+        // A click on the palette entry starts the create; the next click drops the note.
+        await studioAgent.clickOn('.djs-palette .entry[data-action="create-note"]');
+        await pointerActions([
+          { type: 'pointerMove', duration: 0, x: end.x - 10, y: end.y - 10 },
+          { type: 'pointerMove', duration: 100, ...end },
+          { type: 'pointerDown', button: 0 },
+          { type: 'pointerUp', button: 0 },
+        ]);
+
+        await studioAgent.waitUntil(
+          async () =>
+            (
+              (await studioAgent.executeInRenderer(
+                `return document.querySelector('.djs-tooltip-error')?.textContent ?? '';`,
+              )) as string
+            ).includes('A collapsed group holds no elements'),
+          { timeout: TIMEOUT, timeoutMsg: 'The rejected drop showed no tooltip' },
+        );
+      });
+
+      it('colours a shape from the context pad in one undo step', async () => {
+        await prepare();
+        await openMap();
+        await studioAgent.clickOn(element('note'));
+        await studioAgent.clickOn(PAD_ENTRY('custom-color-picker'));
+        await studioAgent.clickOn('.color-picker-panel .color-option:nth-child(2)');
+
+        await waitForCanvasCondition(
+          `return registry.get('note').businessObject.style?.fill != null;`,
+          'a fill colour',
+        );
+        await onCanvas(`commandStack.undo();`);
+        await waitForCanvasCondition(
+          `return registry.get('note').businessObject.style == null;`,
+          'no colour after undo',
+        );
+      });
+
+      it('finds an element by its label with the search pad', async () => {
+        await prepare();
+        await openMap();
+        await studioAgent.clickOn(element('order'));
+        await studioAgent.sendKeyboardInput([OsSpecificKeystroke('cmd-f', 'ctrl-f')], false);
+        await waitForCanvasCondition(
+          `return modeler.get('canvas').getContainer().classList.contains('djs-search-open');`,
+          'the search pad',
+        );
+
+        await studioAgent.sendKeyboardInput([...'Archive'.split('')], false);
+        await waitForCanvasCondition(
+          `return modeler.get('selection').get().map((shape) => shape.id).join() === 'archive';`,
+          'the placeholder selected',
+        );
+        await studioAgent.sendKeyboardInput([Key.Escape], false);
+      });
+
+      it('grows the label box while the text gets longer', async () => {
+        await prepare();
+        await openMap();
+
+        const grows = await onCanvas(`
+          modeler.get('directEditing').activate(registry.get('note'));
+          const box = document.querySelector('.djs-direct-editing-parent');
+          const content = box.querySelector('.djs-direct-editing-content');
+          const before = box.getBoundingClientRect().height;
+          content.innerText = 'one\\ntwo\\nthree\\nfour\\nfive\\nsix\\nseven';
+          content.dispatchEvent(new Event('input'));
+          const after = box.getBoundingClientRect().height;
+          modeler.get('directEditing').cancel();
+          return after > before;
+        `);
+        expect(grows).toBe(true);
       });
     });
 
@@ -1970,6 +2187,25 @@ describe('bpmn-landscape', () => {
       );
     });
 
+    it('appending inside an opened collapsed group puts the new placeholder and its connector into the group', async () => {
+      await prepare({ collapsed: true });
+      await openMap();
+      await waitForCanvas(`return registry.get('team').businessObject.collapsed === true;`, 'a collapsed group');
+      await onCanvas(`modeler.get('landscapeDrilldown').open(registry.get('team'));`);
+      await waitForCanvas(`return canvas.getRootElement().group === registry.get('team');`, 'the group to be open');
+
+      await studioAgent.clickOn(element('order'));
+      await studioAgent.clickOn('.djs-context-pad .entry[data-action="append.placeholder"]');
+      await save();
+
+      const saved = await waitForFile((map) => map.elements.some((entry) => entry.type === 'placeholder'));
+      const placeholder = saved.elements.find((entry) => entry.type === 'placeholder')!;
+      expect(placeholder.parentId).toBe('team');
+      expect(
+        saved.connectors.some((connector) => connector.sourceId === 'order' && connector.targetId === placeholder.id),
+      ).toBe(true);
+    });
+
     it('undoing a collapse while drilled into the group returns to the map', async () => {
       await prepare();
       await openMap();
@@ -2199,8 +2435,9 @@ describe('bpmn-landscape', () => {
     const DIALOG = '[data-test--dialog]';
     const MODEL_ENTRY = '[data-test--context-menu-id="bpmn/landscape/element/model-placeholder"]';
     const LINK_ENTRY = '[data-test--context-menu-id="bpmn/landscape/element/link-placeholder"]';
-    const MODEL_BUTTON = '[data-test--landscape-model-placeholder]';
-    const LINK_BUTTON = '[data-test--landscape-link-placeholder]';
+    const PAD_ENTRY = '.djs-context-pad .entry[data-action="placeholder-actions"]';
+    const POPUP_MODEL = '.djs-popup [data-id="placeholder-model"]';
+    const POPUP_LINK = '.djs-popup [data-id="placeholder-link"]';
     const DUPLICATE_TEXT = '[data-test--landscape-duplicate-connector]';
     const CALL_LINE = 'relation:callActivity:order:payment';
 
@@ -2381,7 +2618,7 @@ describe('bpmn-landscape', () => {
     const processShapeScript = (processId: string): string =>
       `const shape = registry.filter((entry) => entry.type === 'process' && entry.businessObject.processId === ${JSON.stringify(processId)})[0];`;
 
-    it('offers both ways in the context menu and the properties pane for a placeholder only', async () => {
+    it('offers both ways in the context menu and the context pad for a placeholder only', async () => {
       await prepare();
       await openMap('Fill.bfwmap');
 
@@ -2398,12 +2635,11 @@ describe('bpmn-landscape', () => {
       await closeContextMenu();
 
       await studioAgent.clickOn(element('pay'));
-      await studioAgent.assertVisible(MODEL_BUTTON, TIMEOUT);
-      await studioAgent.assertVisible(LINK_BUTTON, TIMEOUT);
+      await studioAgent.assertVisible(PAD_ENTRY, TIMEOUT);
       await studioAgent.clickOn(element('order'));
-      await studioAgent.waitUntil(async () => (await studioAgent.getElementCount(MODEL_BUTTON)) === 0, {
+      await studioAgent.waitUntil(async () => (await studioAgent.getElementCount(PAD_ENTRY)) === 0, {
         timeout: TIMEOUT,
-        timeoutMsg: 'The placeholder buttons stayed after selecting a process',
+        timeoutMsg: 'The placeholder pad entry stayed after selecting a process',
       });
     });
 
@@ -2412,11 +2648,13 @@ describe('bpmn-landscape', () => {
       await openMap('Full.bfwmap');
 
       await studioAgent.clickOn(element('open'));
-      await studioAgent.assertVisible(LINK_BUTTON, TIMEOUT);
+      await studioAgent.clickOn(PAD_ENTRY);
+      await studioAgent.assertVisible(POPUP_LINK, TIMEOUT);
       const isDisabled = (selector: string): Promise<unknown> =>
-        studioAgent.executeInRenderer(`return document.querySelector('${selector}').disabled;`);
-      expect(await isDisabled(LINK_BUTTON)).toBe(true);
-      expect(await isDisabled(MODEL_BUTTON)).toBe(false);
+        studioAgent.executeInRenderer(`return document.querySelector('${selector}').classList.contains('disabled');`);
+      expect(await isDisabled(POPUP_LINK)).toBe(true);
+      expect(await isDisabled(POPUP_MODEL)).toBe(false);
+      await studioAgent.sendKeyboardInput([Key.Escape], false);
     });
 
     it('Link to existing process keeps form, position and connector, saves the process and undoes in one step', async () => {
@@ -2487,7 +2725,8 @@ describe('bpmn-landscape', () => {
       await openMap('Fill.bfwmap');
 
       await studioAgent.clickOn(element('pay'));
-      await studioAgent.clickOn(MODEL_BUTTON);
+      await studioAgent.clickOn(PAD_ENTRY);
+      await studioAgent.clickOn(POPUP_MODEL);
       await studioAgent.assertVisible(DIALOG, TIMEOUT);
       await studioAgent.submitActiveDialog('create', {
         name: 'Invoicing',
@@ -2548,7 +2787,8 @@ describe('bpmn-landscape', () => {
       await prepare();
       await openMap('Fill.bfwmap');
       await studioAgent.clickOn(element('pay'));
-      await studioAgent.clickOn(MODEL_BUTTON);
+      await studioAgent.clickOn(PAD_ENTRY);
+      await studioAgent.clickOn(POPUP_MODEL);
       await studioAgent.assertVisible(DIALOG, TIMEOUT);
 
       await studioAgent.submitActiveDialog('create', { name: '', folder: `file://${workspace}`, otherFolder: '' });

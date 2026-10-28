@@ -5,8 +5,10 @@ import MinimapModule from 'diagram-js-minimap';
 import type EventBus from 'diagram-js/lib/core/EventBus';
 import AlignElementsModule from 'diagram-js/lib/features/align-elements';
 import AutoResizeModule from 'diagram-js/lib/features/auto-resize';
+import AutoScrollModule from 'diagram-js/lib/features/auto-scroll';
 import BendpointsModule from 'diagram-js/lib/features/bendpoints';
 import ConnectModule from 'diagram-js/lib/features/connect';
+import ConnectionPreviewModule from 'diagram-js/lib/features/connection-preview';
 import ContextPadModule from 'diagram-js/lib/features/context-pad';
 import CopyPasteModule from 'diagram-js/lib/features/copy-paste';
 import CreateModule from 'diagram-js/lib/features/create';
@@ -15,6 +17,7 @@ import EditorActionsModule from 'diagram-js/lib/features/editor-actions';
 import GlobalConnectModule from 'diagram-js/lib/features/global-connect';
 import GridSnappingModule from 'diagram-js/lib/features/grid-snapping';
 import HandToolModule from 'diagram-js/lib/features/hand-tool';
+import KeepSelectionVisibleModule from 'diagram-js/lib/features/keep-selection-visible';
 import KeyboardModule from 'diagram-js/lib/features/keyboard';
 import KeyboardMoveSelectionModule from 'diagram-js/lib/features/keyboard-move-selection';
 import LassoToolModule from 'diagram-js/lib/features/lasso-tool';
@@ -52,6 +55,14 @@ import LandscapeReplaceMenuProvider from './LandscapeReplaceMenuProvider';
 import LandscapeRules from './LandscapeRules';
 import LandscapeSnapping from './LandscapeSnapping';
 import LandscapeUpdates from './LandscapeUpdates';
+import LandscapeAlignDistributeModule from './features/LandscapeAlignDistribute';
+import LandscapeAppendModule from './features/LandscapeAppend';
+import LandscapeColorPadModule from './features/LandscapeColorPad';
+import LandscapeModelingFeedbackModule from './features/LandscapeModelingFeedback';
+import LandscapeOutlineModule from './features/LandscapeOutline';
+import LandscapePlaceholderMenuModule from './features/LandscapePlaceholderMenu';
+import LandscapeSearchModule from './features/LandscapeSearch';
+import LandscapeTextRendererModule from './features/LandscapeTextRenderer';
 import { canvasToMap, mapToCanvasDescriptors, shapeAttributesOf } from './landscapeCanvasMapping';
 import {
   COLLAPSED_SIZE,
@@ -205,6 +216,7 @@ export default class LandscapeModeler {
         ModelingModule,
         CreateModule,
         ConnectModule,
+        ConnectionPreviewModule,
         BendpointsModule,
         LassoToolModule,
         HandToolModule,
@@ -228,6 +240,16 @@ export default class LandscapeModeler {
         GridModule,
         MinimapModule,
         DirectEditingModule,
+        AutoScrollModule,
+        KeepSelectionVisibleModule,
+        LandscapeTextRendererModule,
+        LandscapeOutlineModule,
+        LandscapeAlignDistributeModule,
+        LandscapePlaceholderMenuModule,
+        LandscapeAppendModule,
+        LandscapeModelingFeedbackModule,
+        LandscapeColorPadModule,
+        LandscapeSearchModule,
         LANDSCAPE_MODULE,
         ...additionalModules,
       ],

@@ -146,6 +146,18 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md) §Hierarchy.
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
+## Landscape editor features as built-in diagram-js modules
+
+**Context:** The landscape map editor lacked editor features that bpmn-js ships for BPMN (outlines, align and distribute, append, search pad, colour pad, modelling feedback). Each one needs a landscape form, because landscape elements have no BPMN types.
+
+**Options:** Keep adding services to `LANDSCAPE_MODULE`; register every feature through `landscapeModelerModuleRegistry` like a plugin; one built-in didi module per feature in `modeler/features/`, passed to the `Diagram` directly, with the registry kept for plugins.
+
+**Decision:** One built-in module per feature in `modeler/features/`, listed after the diagram-js modules and before `LANDSCAPE_MODULE`; plugin modules from the registry come last.
+
+**Rationale:** A feature stays one file with its own dependencies, as bpmn-js organises its features. The registry is global and loads late; built-in features through it would depend on registration order at module start, and plugins could no longer override them by coming last.
+
+See [bpmn-landscape.md](architecture/bpmn-landscape.md) §LandscapeModeler.
+
 ## Explorer perspectives over one solution
 
 **Context:** The Landscapes page needed its own file tree of maps. The Studio had one `FileExplorerView` and one Solution pane, and every file command assumed that tree.

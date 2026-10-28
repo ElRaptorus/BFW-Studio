@@ -83,3 +83,210 @@
     flex-direction: column;
   }
 }
+
+// ─── Themed overrides for diagram-js elements ──────
+// Shared by every diagram-js editor of the Studio: BPMN, DMN DRD and landscape maps.
+.bifrost {
+  .bjs-container {
+    background-color: var(--theme-diagram-bg);
+  }
+
+  .color-picker-panel {
+    background: var(--theme-color-picker-bg);
+    border: 1px solid var(--theme-color-picker-border);
+  }
+
+  .color-picker-panel .color-option {
+    border: 1px solid var(--theme-color-picker-option-border);
+  }
+
+  .color-picker-panel .color-option:hover {
+    box-shadow: 0 0 5px var(--theme-color-picker-option-hover-shadow);
+  }
+
+  .djs-container {
+    --context-pad-entry-background-color: var(--theme-diagram-context-pad-bg) !important;
+
+    .djs-context-pad .entry {
+      background-color: var(--context-pad-entry-background-color);
+      box-shadow: 0 0 2px 1px var(--context-pad-entry-background-color);
+    }
+
+    .djs-context-pad .entry:hover {
+      background: var(--theme-diagram-context-pad-hover-bg) !important;
+      color: var(--theme-focus) !important;
+    }
+  }
+
+  .djs-palette {
+    color: var(--theme-diagram-fg);
+    background-color: var(--theme-diagram-palette-bg) !important;
+    border-right-color: var(--theme-diagram-palette-border) !important;
+  }
+
+  .djs-palette .entry,
+  .djs-palette .djs-palette-toggle {
+    color: var(--theme-diagram-fg) !important;
+  }
+
+  .djs-palette .entry:hover,
+  .djs-palette .entry.highlighted-entry {
+    color: var(--theme-focus) !important;
+  }
+
+  .djs-palette .separator {
+    border-bottom: solid 1px var(--theme-diagram-fg) !important;
+  }
+
+  .djs-direct-editing-parent {
+    background-color: var(--theme-diagram-direct-editing-bg) !important;
+    border: 1px solid var(--theme-diagram-direct-editing-border) !important;
+  }
+
+  .djs-popup {
+    background-color: var(--theme-diagram-popup-bg) !important;
+    box-shadow: 0px 2px 6px var(--theme-diagram-popup-shadow) !important;
+  }
+
+  .djs-popup-header {
+    background-color: var(--theme-diagram-popup-bg) !important;
+  }
+
+  .djs-popup button.entry {
+    color: var(--theme-diagram-fg) !important;
+  }
+
+  .djs-popup-body {
+    background-color: var(--theme-diagram-popup-bg) !important;
+  }
+
+  .djs-popup .entry.selected {
+    background-color: var(--theme-diagram-popup-selected-bg) !important;
+  }
+
+  .djs-popup-search input,
+  .djs-popup-search input:focus {
+    background-color: var(--theme-diagram-input-bg) !important;
+    color: var(--theme-diagram-input-fg) !important;
+  }
+
+  .djs-popup-search input:focus {
+    border: solid 1px var(--theme-focus) !important;
+  }
+
+  .djs-popup-search-icon > path {
+    fill: var(--theme-pane-tab-hover-fg) !important;
+  }
+
+  .djs-minimap {
+    color: var(--theme-diagram-fg);
+    background-color: var(--theme-diagram-minimap-bg) !important;
+  }
+
+  .djs-minimap.open .overlay {
+    background: var(--theme-diagram-minimap-overlay-bg) !important;
+  }
+
+  // The popup menu and the search pad read these diagram-js variables, which default to its light palette.
+  .djs-parent {
+    --popup-entry-selected-color: var(--theme-diagram-fg);
+    --popup-entry-selected-background-color: var(--theme-diagram-popup-selected-bg);
+    --search-container-background-color: var(--theme-diagram-popup-bg);
+    --search-shadow-color: var(--theme-diagram-popup-shadow);
+    --search-input-focus-background-color: var(--theme-diagram-input-bg);
+    --search-input-focus-border-color: var(--theme-focus);
+    --search-result-hover-background-color: var(--theme-diagram-popup-selected-bg);
+  }
+
+  .djs-search-container {
+    color: var(--theme-diagram-fg);
+  }
+
+  .djs-search-input input {
+    background-color: var(--theme-diagram-input-bg);
+    color: var(--theme-diagram-input-fg);
+  }
+
+  // ─── Selection & hover outlines ─────────────────────
+  .editor__content svg .djs-element.selected .djs-outline {
+    stroke: var(--theme-diagram-selected-outline);
+    stroke-width: 2px;
+  }
+
+  .editor__content svg .djs-element.hover .djs-outline {
+    stroke: var(--theme-diagram-hover-outline);
+    stroke-width: 2px;
+    visibility: visible;
+  }
+
+  // ─── Bendpoints & segment draggers ──────────────────
+  .editor__content svg .djs-segment-dragger .djs-visual {
+    fill: var(--theme-diagram-segment-dragger-fill) !important;
+    stroke: var(--theme-diagram-segment-dragger-stroke) !important;
+    stroke-width: 1px;
+    stroke-opacity: 1;
+  }
+
+  .editor__content svg .djs-bendpoint .djs-visual {
+    fill: var(--theme-diagram-bendpoint-fill) !important;
+    stroke: var(--theme-diagram-bendpoint-stroke);
+  }
+
+  .editor__content svg .djs-segment-dragger:hover .djs-visual,
+  .editor__content svg .djs-segment-dragger.djs-dragging .djs-visual,
+  .editor__content svg .djs-bendpoint:hover .djs-visual,
+  .editor__content svg .djs-bendpoint.floating .djs-visual,
+  .editor__content svg .djs-bendpoint.djs-dragging .djs-visual {
+    fill: var(--theme-diagram-bendpoint-hover-fill) !important;
+    stroke-opacity: 0.5;
+    stroke: var(--theme-diagram-bendpoint-stroke);
+  }
+
+  // ─── Connect preview ────────────────────────────────
+  .editor__content svg .djs-shape.connect-ok .djs-visual > :nth-child(1) {
+    fill: var(--theme-diagram-connect-ok-fill) !important;
+  }
+}
+
+// The colour panel of the context pad (`ColorContextPadProvider`); after the block above, so these borders win.
+.editor__content {
+  .color-picker-panel {
+    position: absolute;
+    display: grid;
+    grid-template-columns: repeat(3, 20px);
+    gap: 4px;
+    padding: 6px;
+    background: var(--theme-color-picker-bg);
+    border: 1px solid var(--theme-color-picker-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 6px var(--theme-color-picker-shadow);
+    z-index: 9999;
+  }
+
+  .color-picker-panel .color-option {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1.2px solid;
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+}
+
+.bifrost.bifrost-theme--light {
+  --theme-color-picker-bg: #ecf2f9;
+  --theme-color-picker-border: #b4c8dc;
+  --theme-color-picker-option-border: rgba(180, 200, 220, 0.3);
+  --theme-color-picker-option-hover-shadow: rgba(15, 40, 80, 0.3);
+  --theme-color-picker-shadow: rgba(15, 40, 80, 0.2);
+}
+
+.bifrost.bifrost-theme--dark {
+  --theme-color-picker-bg: #101828;
+  --theme-color-picker-border: #a0bcd8;
+  --theme-color-picker-option-border: rgba(80, 100, 130, 0.5);
+  --theme-color-picker-option-hover-shadow: rgba(200, 220, 240, 0.4);
+  --theme-color-picker-shadow: rgba(0, 0, 0, 0.5);
+}

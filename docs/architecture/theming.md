@@ -118,14 +118,15 @@ Module-specific tokens include both `--color-*` (icon tints, brand colors) and `
 }
 ```
 
-Themed CSS overrides for third-party library elements (e.g., bpmn-js `.djs-palette`, `.bjs-container`) also belong in the module that imports and uses that library, not in `bifrost.scss`.
+Themed CSS overrides for third-party library elements (e.g., bpmn-js `.djs-palette`, `.bjs-container`) also belong in the module that imports and uses that library, not in `bifrost.scss`. The diagram-js overrides that the BPMN, DMN and landscape editors share (context pad, palette, popup menu, direct editing, minimap, outlines, bendpoints, the colour panel of the context pad) live in `modules/bpmn-core/styles/bpmn-js.scss`.
 
 **Current module token ownership**:
 
 | Module | Token prefixes | SCSS file |
 |-----------|---------------|-----------|
 | Core (`bifrost/styles`) | `--theme-diagram-*`, `--color-bpmn-defaultFillColor`, `--color-bpmn-defaultStrokeColor` | `bifrost/styles/theme.light.scss`, `theme.dark.scss` |
-| `bpmn-editor` | `--theme-color-picker-*`, `--color-bpmn-editor-icon-primary` | `modules/bpmn-editor/styles/bpmn.scss` |
+| `bpmn-editor` | `--color-bpmn-editor-icon-primary` | `modules/bpmn-editor/styles/bpmn.scss` |
+| `bpmn-core` (diagram-js overrides) | `--theme-color-picker-*` | `modules/bpmn-core/styles/bpmn-js.scss` |
 | `bpmn-core` (diff) | `--theme-diff-*` | `modules/bpmn-core/diff/styles/component.bpmn-diff-infrastructure.scss` |
 | `bpmn-core` (overlays) | `--color-element-*`, `--color-process-*`, `--backcolor-element-*` | `modules/bpmn-core/overlays/BpmnElementOverlays.scss` |
 | `bpmn-diff` | `--color-bpmn-diff-*`, `--backcolor-bpmn-diff__*` | `modules/bpmn-diff/styles/component.bpmn-diff.scss` |

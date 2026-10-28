@@ -436,6 +436,12 @@ export function registerLandscapeCommands(bifrost: Bifrost): void {
     enabledWhen: () => getFocusedMapForKeys(bifrost)?.getMapProperties() != null,
   });
 
+  bifrost.commands.register('bpmn.landscape.find', () => getFocusedMapForKeys(bifrost)?.toggleSearch(), {
+    visibleInSearch: true,
+    description: ['Landscapes: Find Element', 'Search the labels and ids of the map elements'],
+    enabledWhen: () => getFocusedMapForKeys(bifrost)?.getMapProperties() != null,
+  });
+
   bifrost.commands.register(
     'bpmn.landscape.openSelectedElement',
     (elementId: string) => getFocusedMap(bifrost)?.openElement(elementId),

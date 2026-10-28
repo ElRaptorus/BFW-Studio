@@ -1,7 +1,6 @@
 import type EventBus from 'diagram-js/lib/core/EventBus';
 import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 import { createLine } from 'diagram-js/lib/util/RenderUtil';
-import Text from 'diagram-js/lib/util/Text';
 
 import type {
   LandscapeConnector,
@@ -12,6 +11,7 @@ import type {
 } from '../LandscapeMapFile';
 import type { RelationLine } from '../buildRelationLines';
 import type { ReferenceStatus } from '../resolveProcessReference';
+import type { LandscapeTextRenderer } from './features/LandscapeTextRenderer';
 
 export type LandscapeRendererConfig = {
   /** The text shown on a process shape: its own label, the process name from the solution, or the process id. */
@@ -26,6 +26,10 @@ export type LandscapeRendererConfig = {
   getConnectorWarning(connector: LandscapeConnector): string | null;
   /** Runs a command a plugin registered, for a palette or context pad entry the plugin contributes. */
   executePluginCommand(pluginName: string, command: string, args: unknown[]): void;
+  /** Models the placeholder as a new BPMN file, or links it to a process of the solution. */
+  runPlaceholderAction(action: 'model' | 'link', placeholderId: string): void;
+  /** Whether the solution has a process that is not on the map yet, so a placeholder can be linked to it. */
+  hasFreeProcesses(): boolean;
 };
 
 const BROKEN_OPACITY = 0.45;
@@ -49,7 +53,7 @@ function statusOf(element: LandscapeElement, config: LandscapeRendererConfig): R
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 const DEFAULT_FILL = 'var(--color-bpmn-defaultFillColor)';
 const DEFAULT_STROKE = 'var(--color-bpmn-defaultStrokeColor)';
-const NOTE_CORNER = 14;
+export const NOTE_CORNER = 14;
 export const BAND_HEADER_WIDTH = 32;
 const LINE_LABEL_WIDTH = 160;
 const LINE_STYLES: Record<RelationLine['kind'] | 'connector', { width: number; dash: string | null; arrow: string }> = {
@@ -97,35 +101,34 @@ export function connectorLabelPoint(waypoints: LandscapePoint[]): LandscapePoint
   return best.point;
 }
 
-function chevronPath(width: number, height: number): string {
+export function chevronPath(width: number, height: number): string {
   const notch = Math.min(height / 2, width / 4);
   return `M0,0H${width - notch}L${width},${height / 2}L${width - notch},${height}H0L${notch},${height / 2}Z`;
 }
 
-function hasChevronShape(element: LandscapeElement): boolean {
+export function hasChevronShape(element: LandscapeElement): boolean {
   return (element.type === 'process' || element.type === 'placeholder') && element.shape === 'chevron';
 }
 
 /** Draws landscape elements from the file element each shape carries as `businessObject`. */
 export default class LandscapeRenderer extends BaseRenderer {
-  static $inject = ['eventBus', 'config.landscape', 'canvas'];
+  static $inject = ['eventBus', 'config.landscape', 'canvas', 'landscapeTextRenderer'];
 
   private readonly config: LandscapeRendererConfig;
-  private readonly textRenderer: Text;
+  private readonly textRenderer: LandscapeTextRenderer;
   /** Marker ids are unique per canvas, because several maps can be open in one document. */
   private readonly markerIdPrefix = `landscape-marker-${crypto.randomUUID()}`;
 
-  constructor(eventBus: EventBus, config: LandscapeRendererConfig, canvas: any) {
+  constructor(eventBus: EventBus, config: LandscapeRendererConfig, canvas: any, textRenderer: LandscapeTextRenderer) {
     super(eventBus, 1500);
     this.config = config;
-    this.textRenderer = new Text({
-      style: { fontFamily: 'Arial, sans-serif', fontSize: 12, lineHeight: 1.2, fill: DEFAULT_STROKE },
-    });
+    this.textRenderer = textRenderer;
     this.addMarkers(canvas._svg);
   }
 
+  /** A connector being drawn has no file element yet; its preview is drawn like a connector. */
   canRender(element: any): boolean {
-    return element.businessObject != null;
+    return element.businessObject != null || element.type === 'connector';
   }
 
   drawShape(parentGraphics: SVGElement, shape: any): SVGElement {
@@ -175,9 +178,9 @@ export default class LandscapeRenderer extends BaseRenderer {
       box: { width: shape.width, height: shape.height },
       align: isContainer ? 'center-top' : 'center-middle',
       padding,
+      style: { fill: stroke },
     });
     text.classList.add('landscape-label');
-    text.setAttribute('style', `fill: ${stroke};`);
     parentGraphics.appendChild(text);
 
     if (status !== 'resolved') {
@@ -222,7 +225,7 @@ export default class LandscapeRenderer extends BaseRenderer {
       line.appendChild(title);
     }
     this.drawLineLabel(parentGraphics, connection.waypoints, this.lineLabelOf(connection));
-    if (!isRelation) {
+    if (!isRelation && connection.businessObject != null) {
       this.drawConnectorWarning(parentGraphics, connection);
     }
     return line;
@@ -244,7 +247,7 @@ export default class LandscapeRenderer extends BaseRenderer {
   /** A relation line that ends at a collapsed group stands for several relations; its label is their count. */
   private lineLabelOf(connection: any): string {
     if (connection.type !== 'relation') {
-      return (connection.businessObject as LandscapeConnector).label;
+      return (connection.businessObject as LandscapeConnector | undefined)?.label ?? '';
     }
     const relationLine: RelationLine = connection.businessObject;
     const hidden = new Set(relationLine.hiddenKeys);
@@ -263,18 +266,16 @@ export default class LandscapeRenderer extends BaseRenderer {
       return;
     }
     const point = connectorLabelPoint(waypoints);
+    // A halo in the fill colour keeps the label readable where it crosses a line.
     const text = this.textRenderer.createText(label, {
       box: { width: LINE_LABEL_WIDTH, height: 0 },
       align: 'center-middle',
       padding: 0,
+      style: { fill: DEFAULT_STROKE, stroke: DEFAULT_FILL, strokeWidth: 4, strokeLinejoin: 'round' },
     });
+    text.style.paintOrder = 'stroke';
     text.classList.add('landscape-label', 'landscape-line-label');
     text.setAttribute('transform', `translate(${point.x - LINE_LABEL_WIDTH / 2}, ${point.y})`);
-    // A halo in the fill colour keeps the label readable where it crosses a line.
-    text.setAttribute(
-      'style',
-      `stroke: ${DEFAULT_FILL}; stroke-width: 4px; stroke-linejoin: round; paint-order: stroke;`,
-    );
     parentGraphics.appendChild(text);
   }
 
@@ -312,10 +313,10 @@ export default class LandscapeRenderer extends BaseRenderer {
       box: { width: height, height: BAND_HEADER_WIDTH },
       align: 'center-middle',
       padding: 4,
+      style: { fill: stroke },
     });
     text.classList.add('landscape-label');
     text.setAttribute('transform', `translate(0, ${height}) rotate(-90)`);
-    text.setAttribute('style', `fill: ${stroke};`);
     parentGraphics.appendChild(text);
   }
 

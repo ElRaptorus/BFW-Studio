@@ -3,6 +3,7 @@ import type EventBus from 'diagram-js/lib/core/EventBus';
 
 import { BAND_HEADER_WIDTH, connectorLabelPoint } from './LandscapeRenderer';
 import { UPDATE_ELEMENT_COMMAND } from './LandscapeUpdates';
+import type { LandscapeTextRenderer } from './features/LandscapeTextRenderer';
 import { isCollapsedGroup } from './landscapeHierarchy';
 
 const CONTAINER_TITLE_HEIGHT = 30;
@@ -31,14 +32,22 @@ function textPropertyOf(element: any): 'label' | 'text' | null {
 
 /** Double-click edits the label of a group, band, placeholder or connector and the text of a note. */
 export default class LandscapeLabelEditing {
-  static $inject = ['eventBus', 'canvas', 'directEditing', 'commandStack'];
+  static $inject = ['eventBus', 'canvas', 'directEditing', 'commandStack', 'landscapeTextRenderer'];
 
   private canvas: Canvas;
   private commandStack: any;
+  private textRenderer: LandscapeTextRenderer;
 
-  constructor(eventBus: EventBus, canvas: Canvas, directEditing: any, commandStack: any) {
+  constructor(
+    eventBus: EventBus,
+    canvas: Canvas,
+    directEditing: any,
+    commandStack: any,
+    textRenderer: LandscapeTextRenderer,
+  ) {
     this.canvas = canvas;
     this.commandStack = commandStack;
+    this.textRenderer = textRenderer;
     directEditing.registerProvider(this);
 
     // Studio keybindings call preventDefault even for disabled commands and only spare INPUT and TEXTAREA,
@@ -64,7 +73,7 @@ export default class LandscapeLabelEditing {
       return null;
     }
     const zoom = this.canvas.zoom();
-    const style = { fontSize: `${12 * zoom}px`, lineHeight: 1.2, fontFamily: 'Arial, sans-serif', textAlign: 'center' };
+    const style = this.textRenderer.getEditingStyle(zoom);
     const text = element.businessObject[property];
     if (element.type === 'connector') {
       const point = connectorLabelPoint(element.waypoints);
@@ -80,7 +89,7 @@ export default class LandscapeLabelEditing {
         },
         text,
         style,
-        options: { centerVertically: true },
+        options: { centerVertically: true, autoResize: true },
       };
     }
     const bounds = this.canvas.getAbsoluteBBox(element);
@@ -105,7 +114,7 @@ export default class LandscapeLabelEditing {
       bounds: isGroup ? { ...bounds, height: CONTAINER_TITLE_HEIGHT * zoom } : bounds,
       text,
       style,
-      options: { centerVertically: !isGroup },
+      options: { centerVertically: !isGroup, autoResize: true },
     };
   }
 

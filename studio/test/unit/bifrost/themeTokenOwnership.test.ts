@@ -5,6 +5,7 @@ import { describe, it } from 'vitest';
 
 const stylesDirectory = path.resolve(__dirname, '../../../src/bifrost/styles');
 const bpmnEditorStyles = path.resolve(__dirname, '../../../src/modules/bpmn-editor/styles/bpmn.scss');
+const bpmnCoreStyles = path.resolve(__dirname, '../../../src/modules/bpmn-core/styles/bpmn-js.scss');
 
 describe('theme token ownership', () => {
   const coreStyles = readdirSync(stylesDirectory)
@@ -19,9 +20,10 @@ describe('theme token ownership', () => {
     assert.equal(coreStyles.includes('.djs-palette'), false);
   });
 
-  it('keeps the color-picker tokens in the BPMN editor stylesheet', () => {
+  it('keeps the color-picker tokens in bpmn-core and the icon tokens in the BPMN editor stylesheet', () => {
     const editorStyles = readFileSync(bpmnEditorStyles, 'utf8');
-    assert.equal(editorStyles.includes('--theme-color-picker-'), true);
+    assert.equal(readFileSync(bpmnCoreStyles, 'utf8').includes('--theme-color-picker-'), true);
+    assert.equal(editorStyles.includes('--theme-color-picker-'), false);
     assert.equal(editorStyles.includes('--color-bpmn-editor-icon-primary'), true);
   });
 });

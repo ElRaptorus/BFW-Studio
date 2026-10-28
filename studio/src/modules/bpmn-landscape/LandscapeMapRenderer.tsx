@@ -12,6 +12,7 @@ import { EditorToolbar } from '#components/editor/EditorToolbar';
 import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
 import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
 import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
+import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import 'diagram-js-minimap/assets/diagram-js-minimap.css';
 

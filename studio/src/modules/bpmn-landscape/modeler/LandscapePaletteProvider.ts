@@ -82,25 +82,25 @@ export default class LandscapePaletteProvider {
     const entries: Record<string, unknown> = {
       'hand-tool': {
         group: 'tools',
-        className: 'ph ph-hand',
+        className: 'bpmn-icon-hand-tool',
         title: 'Move the canvas',
         action: { click: (event: Event) => this.handTool.activateHand(event) },
       },
       'lasso-tool': {
         group: 'tools',
-        className: 'ph ph-selection',
+        className: 'bpmn-icon-lasso-tool',
         title: 'Select several elements',
         action: { click: (event: Event) => this.lassoTool.activateSelection(event) },
       },
       'space-tool': {
         group: 'tools',
-        className: 'ph ph-arrows-out-line-horizontal',
+        className: 'bpmn-icon-space-tool',
         title: 'Make or remove space between elements',
         action: { click: (event: Event) => this.spaceTool.activateSelection(event) },
       },
       'global-connect-tool': {
         group: 'tools',
-        className: 'ph ph-line-segment',
+        className: 'bpmn-icon-connection',
         title: 'Connect two elements',
         action: { click: (event: Event) => this.globalConnect.start(event) },
       },
