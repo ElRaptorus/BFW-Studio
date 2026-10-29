@@ -8,6 +8,19 @@ A curated overview of the Studio's standout capabilities for the v1 release.
 
 Apart from a Fully featured BPMN 2.0 Editor, covering the entire Spec, there are several additional tools to help you build coherent and powerful BPMNs.
 
+### BPMN Landscape Map Editor
+
+A fully featured Mapping Editor, which allows you to create High-Level maps of your business landscape.
+
+- Allows you to create High-Level Business Landscape Maps which describe your actual process landscape
+- Define what your business looks like, before even modeling the first process
+- Start with placeholders, fill them with actualy BPMNs, when you're ready
+- Auto-Generate a map from the currently opened solution
+- Alternatively create a map from a range of BPMNs
+- Create multiple maps per solution
+- Visualizes relations and couplings, created through Message- or Signal Events, as well as Call Activities
+- Uses diagram-js, so it offers the same modeling experience as the other Editors
+
 ### BPMN Linter
 
 A fully configurable static analysis engine for BPMN diagrams.
@@ -296,7 +309,7 @@ A process-isolated, permission-gated plugin architecture.
 - Plugins are individually toggleable with a dedicated management pane
 - Permissions must be declared upfront (filesystem, commands, renderer modules, native access, etc.)
     - Network access via Node.js native libraries is blocked. Period.
-- **Plugin API 2.0.0:** document types must name their `page`, left panes name their `pages`, the menu bar API targets the header and the page bar areas (`header`, `pageBarCenter`, `pageBarEnd`), and plugins can add pages to built-in categories (`contributes.pages`, `api.workbench.registerPage`)
+- Allows plugins to modify and extend almost every aspect of the Studio's Editors and Appearance
 - Declarative feature manifest for commands, panes, webview-based documents, menus, settings, themes, and more
 - Full API bridge for runtime interaction with the Studio
 - The Studio SDK provides fully typed contracts and interfaces, which Plugin developers can use for properly accessing the Studio's Plugin Host
@@ -312,8 +325,7 @@ See [plugin-development-guide](./docs/plugin-development-guide.md) and [manifest
 Ideas under consideration for future development:
 
 - Webapp Build for using the Studio directly in the browser
-- Process Landscape Map as a solution-level feature
-- Project organization tools (grouping, tagging, folder organization by tags) — potentially combined with the landscape map
-- Cross-process data and message flow visualization ("Flow Chart") with optional debugger integration
+- Solution organization tools (grouping, tagging, etc)
 - Collaborative modeling tools
+- Tools for aiding in writing and testing payload and result contracts
 - Multi-platform format support (read and convert diagrams from other BPM platforms)
