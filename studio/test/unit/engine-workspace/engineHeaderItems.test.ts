@@ -112,7 +112,7 @@ describe('buildEngineHeaderItems', () => {
 
 describe('addEngineHeaderItems', () => {
   it('appends the cluster to the page bar center and leaves the other areas alone', () => {
-    const existing = { type: 'button', id: 'existing' } as const;
+    const existing = { type: 'button', id: 'existing', icon: 'x', command: 'x', tooltip: 'x' } as const;
     const result = addEngineHeaderItems(
       { header: [existing], pageBarCenter: [existing], pageBarEnd: [existing] },
       buildEngineHeaderItems(createState()),

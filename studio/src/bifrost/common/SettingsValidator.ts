@@ -3,7 +3,6 @@ import type {
   SettingDescriptor,
   SettingDescriptorObject,
   SettingValidationError,
-  SettingsValidationResult,
 } from '@elraptorus/bfw_studio_sdk';
 import {
   SETTING_COLOR_VALUE_PATTERN,
@@ -14,8 +13,27 @@ import {
 const colorValueRegex = new RegExp(SETTING_COLOR_VALUE_PATTERN);
 const dateValueRegex = new RegExp(SETTING_DATE_VALUE_PATTERN);
 
-export function validateSetting(key: string, value: unknown, descriptor: SettingDescriptor): SettingValidationError[] {
-  const errors: SettingValidationError[] = [];
+/** A validation error with the location of the wrong value: the setting key, then property names and item indices. */
+export type LocatedSettingValidationError = SettingValidationError & { path: (string | number)[] };
+
+export function validateSetting(
+  key: string,
+  value: unknown,
+  descriptor: SettingDescriptor,
+): LocatedSettingValidationError[] {
+  return validateValueAt(key, [key], value, descriptor);
+}
+
+function validateValueAt(
+  key: string,
+  path: (string | number)[],
+  value: unknown,
+  descriptor: SettingDescriptor,
+): LocatedSettingValidationError[] {
+  const errors: LocatedSettingValidationError[] = [];
+  const add = (message: string, expected: string, actual: string, at: (string | number)[] = path): void => {
+    errors.push({ key, message, expected, actual, path: at });
+  };
 
   if (value === undefined) {
     return errors;
@@ -24,137 +42,83 @@ export function validateSetting(key: string, value: unknown, descriptor: Setting
   switch (descriptor.type) {
     case 'boolean':
       if (typeof value !== 'boolean') {
-        errors.push({
-          key,
-          message: `Expected boolean, got ${typeof value}`,
-          expected: 'boolean',
-          actual: typeof value,
-        });
+        add(`Expected boolean, got ${typeof value}`, 'boolean', typeof value);
       }
       break;
 
     case 'string':
       if (value !== null && typeof value !== 'string') {
-        errors.push({
-          key,
-          message: `Expected string or null, got ${typeof value}`,
-          expected: 'string | null',
-          actual: typeof value,
-        });
+        add(`Expected string or null, got ${typeof value}`, 'string | null', typeof value);
       }
       {
         const enumValues = resolveSettingEnum(descriptor.enum);
         if (enumValues != null && value != null && !enumValues.includes(value as string)) {
-          errors.push({
-            key,
-            message: `Value "${value}" is not one of the allowed values: ${enumValues.join(', ')}`,
-            expected: enumValues.join(' | '),
-            actual: String(value),
-          });
+          add(
+            `Value "${value}" is not one of the allowed values: ${enumValues.join(', ')}`,
+            enumValues.join(' | '),
+            String(value),
+          );
         }
       }
       if (descriptor.pattern != null && typeof value === 'string') {
         try {
           const regex = new RegExp(descriptor.pattern);
           if (!regex.test(value)) {
-            errors.push({
-              key,
-              message: descriptor.patternErrorMessage ?? `Value does not match pattern: ${descriptor.pattern}`,
-              expected: `match(${descriptor.pattern})`,
-              actual: String(value),
-            });
+            add(
+              descriptor.patternErrorMessage ?? `Value does not match pattern: ${descriptor.pattern}`,
+              `match(${descriptor.pattern})`,
+              String(value),
+            );
           }
         } catch {
-          errors.push({
-            key,
-            message: `Invalid pattern "${descriptor.pattern}" in descriptor`,
-            expected: 'valid regex',
-            actual: descriptor.pattern,
-          });
+          add(`Invalid pattern "${descriptor.pattern}" in descriptor`, 'valid regex', descriptor.pattern);
         }
       }
       break;
 
     case 'color':
       if (typeof value !== 'string') {
-        errors.push({
-          key,
-          message: `Expected string (CSS hex color), got ${typeof value}`,
-          expected: 'color (hex string)',
-          actual: typeof value,
-        });
+        add(`Expected string (CSS hex color), got ${typeof value}`, 'color (hex string)', typeof value);
       } else if (!colorValueRegex.test(value)) {
-        errors.push({
-          key,
-          message: `Value is not a valid CSS hex color (expected #RGB, #RRGGBB, or #RRGGBBAA)`,
-          expected: SETTING_COLOR_VALUE_PATTERN,
-          actual: value,
-        });
+        add(
+          `Value is not a valid CSS hex color (expected #RGB, #RRGGBB, or #RRGGBBAA)`,
+          SETTING_COLOR_VALUE_PATTERN,
+          value,
+        );
       }
       break;
 
     case 'date':
       if (typeof value !== 'string') {
-        errors.push({
-          key,
-          message: `Expected string (YYYY-MM-DD), got ${typeof value}`,
-          expected: 'date (YYYY-MM-DD)',
-          actual: typeof value,
-        });
+        add(`Expected string (YYYY-MM-DD), got ${typeof value}`, 'date (YYYY-MM-DD)', typeof value);
       } else if (!dateValueRegex.test(value)) {
-        errors.push({
-          key,
-          message: `Value is not a valid ISO date (expected YYYY-MM-DD)`,
-          expected: SETTING_DATE_VALUE_PATTERN,
-          actual: value,
-        });
+        add(`Value is not a valid ISO date (expected YYYY-MM-DD)`, SETTING_DATE_VALUE_PATTERN, value);
       }
       break;
 
     case 'number':
     case 'integer':
       if (typeof value !== 'number') {
-        errors.push({
-          key,
-          message: `Expected number, got ${typeof value}`,
-          expected: 'number',
-          actual: typeof value,
-        });
+        add(`Expected number, got ${typeof value}`, 'number', typeof value);
       } else {
         if (descriptor.type === 'integer' && !Number.isInteger(value)) {
-          errors.push({
-            key,
-            message: `Expected integer, got float (${value})`,
-            expected: 'integer',
-            actual: 'float',
-          });
+          add(`Expected integer, got float (${value})`, 'integer', 'float');
         }
         const enumValues = resolveSettingEnum(descriptor.enum);
         if (enumValues != null) {
           if (!enumValues.includes(value)) {
-            errors.push({
-              key,
-              message: `Value ${value} is not one of the allowed values: ${enumValues.join(', ')}`,
-              expected: enumValues.join(' | '),
-              actual: String(value),
-            });
+            add(
+              `Value ${value} is not one of the allowed values: ${enumValues.join(', ')}`,
+              enumValues.join(' | '),
+              String(value),
+            );
           }
         } else {
           if (descriptor.minimum != null && value < descriptor.minimum) {
-            errors.push({
-              key,
-              message: `Value ${value} is below minimum ${descriptor.minimum}`,
-              expected: `>= ${descriptor.minimum}`,
-              actual: String(value),
-            });
+            add(`Value ${value} is below minimum ${descriptor.minimum}`, `>= ${descriptor.minimum}`, String(value));
           }
           if (descriptor.maximum != null && value > descriptor.maximum) {
-            errors.push({
-              key,
-              message: `Value ${value} exceeds maximum ${descriptor.maximum}`,
-              expected: `<= ${descriptor.maximum}`,
-              actual: String(value),
-            });
+            add(`Value ${value} exceeds maximum ${descriptor.maximum}`, `<= ${descriptor.maximum}`, String(value));
           }
         }
       }
@@ -162,12 +126,7 @@ export function validateSetting(key: string, value: unknown, descriptor: Setting
 
     case 'array':
       if (!Array.isArray(value)) {
-        errors.push({
-          key,
-          message: `Expected array, got ${typeof value}`,
-          expected: 'array',
-          actual: typeof value,
-        });
+        add(`Expected array, got ${typeof value}`, 'array', typeof value);
       } else {
         if (descriptor.items != null) {
           if (isObjectArrayItems(descriptor.items)) {
@@ -182,56 +141,49 @@ export function validateSetting(key: string, value: unknown, descriptor: Setting
               const el = value[i];
               if (el === null || typeof el !== 'object' || Array.isArray(el)) {
                 const actualKind = describeNonPlainObjectElement(el);
-                errors.push({
-                  key,
-                  message: `Item at index ${i}: expected object, got ${actualKind}`,
-                  expected: 'object',
-                  actual: actualKind,
-                });
+                add(`Item at index ${i}: expected object, got ${actualKind}`, 'object', actualKind, [...path, i]);
               } else {
                 errors.push(
-                  ...validateObjectProperties(`${key}[${i}]`, el as Record<string, unknown>, objectItemDescriptor),
+                  ...validateObjectProperties(
+                    `${key}[${i}]`,
+                    [...path, i],
+                    el as Record<string, unknown>,
+                    objectItemDescriptor,
+                  ),
                 );
               }
             }
           } else {
             for (let i = 0; i < value.length; i++) {
               if (!matchesPrimitiveType(value[i], descriptor.items.type)) {
-                errors.push({
-                  key,
-                  message: `Item at index ${i}: expected ${descriptor.items.type}, got ${typeof value[i]}`,
-                  expected: descriptor.items.type,
-                  actual: typeof value[i],
-                });
+                add(
+                  `Item at index ${i}: expected ${descriptor.items.type}, got ${typeof value[i]}`,
+                  descriptor.items.type,
+                  typeof value[i],
+                  [...path, i],
+                );
               }
             }
           }
         }
         if (descriptor.minItems != null && value.length < descriptor.minItems) {
-          errors.push({
-            key,
-            message: `Array has ${value.length} items, minimum is ${descriptor.minItems}`,
-            expected: `>= ${descriptor.minItems} items`,
-            actual: `${value.length} items`,
-          });
+          add(
+            `Array has ${value.length} items, minimum is ${descriptor.minItems}`,
+            `>= ${descriptor.minItems} items`,
+            `${value.length} items`,
+          );
         }
         if (descriptor.maxItems != null && value.length > descriptor.maxItems) {
-          errors.push({
-            key,
-            message: `Array has ${value.length} items, maximum is ${descriptor.maxItems}`,
-            expected: `<= ${descriptor.maxItems} items`,
-            actual: `${value.length} items`,
-          });
+          add(
+            `Array has ${value.length} items, maximum is ${descriptor.maxItems}`,
+            `<= ${descriptor.maxItems} items`,
+            `${value.length} items`,
+          );
         }
         if (descriptor.uniqueItems === true) {
           const serialized = value.map((item) => JSON.stringify(item));
           if (new Set(serialized).size !== serialized.length) {
-            errors.push({
-              key,
-              message: 'Array contains duplicate items',
-              expected: 'unique items',
-              actual: 'duplicates found',
-            });
+            add('Array contains duplicate items', 'unique items', 'duplicates found');
           }
         }
       }
@@ -239,14 +191,10 @@ export function validateSetting(key: string, value: unknown, descriptor: Setting
 
     case 'object':
       if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-        errors.push({
-          key,
-          message: `Expected object, got ${Array.isArray(value) ? 'array' : typeof value}`,
-          expected: 'object',
-          actual: Array.isArray(value) ? 'array' : typeof value,
-        });
+        const actual = Array.isArray(value) ? 'array' : typeof value;
+        add(`Expected object, got ${actual}`, 'object', actual);
       } else if (descriptor.properties != null) {
-        errors.push(...validateObjectProperties(key, value as Record<string, unknown>, descriptor));
+        errors.push(...validateObjectProperties(key, path, value as Record<string, unknown>, descriptor));
       }
       break;
   }
@@ -272,19 +220,20 @@ function describeNonPlainObjectElement(el: unknown): string {
 
 function validateObjectProperties(
   parentKey: string,
+  parentPath: (string | number)[],
   value: Record<string, unknown>,
   descriptor: SettingDescriptorObject,
-): SettingValidationError[] {
+): LocatedSettingValidationError[] {
   if (descriptor.properties == null) {
     return [];
   }
 
-  const errors: SettingValidationError[] = [];
+  const errors: LocatedSettingValidationError[] = [];
 
   for (const [propKey, propDescriptor] of Object.entries(descriptor.properties)) {
     const propValue = value[propKey];
     if (propValue !== undefined) {
-      errors.push(...validateSetting(`${parentKey}.${propKey}`, propValue, propDescriptor));
+      errors.push(...validateValueAt(`${parentKey}.${propKey}`, [...parentPath, propKey], propValue, propDescriptor));
     }
   }
 
@@ -324,8 +273,8 @@ function matchesPrimitiveType(value: unknown, expectedType: string): boolean {
 export function validateSettings(
   dump: Record<string, unknown>,
   schemaRegistry: Map<string, SettingDescriptor>,
-): SettingsValidationResult {
-  const errors: SettingValidationError[] = [];
+): { valid: boolean; errors: LocatedSettingValidationError[] } {
+  const errors: LocatedSettingValidationError[] = [];
 
   for (const [key, value] of Object.entries(dump)) {
     const descriptor = schemaRegistry.get(key);

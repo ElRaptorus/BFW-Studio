@@ -2,13 +2,15 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { SettingsMediator } from '#bifrost/common/SettingsMediator';
+import { validateSettings } from '#bifrost/common/SettingsValidator';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
+import type { JsonAssistBackend } from '#components/code-editor/jsonAssist';
 import * as jsonComment from 'comment-json';
 
 import type { SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
 
-import { buildJsonSchema } from './validation/schemaToJsonSchema';
+import { createSettingsJsonAssist } from './validation/settingsJsonAssist';
 
 export const EVENT_SETTINGS_RECEIVED_UPDATE = 'EVENT_SETTINGS_RECEIVED_UPDATE';
 /** Emitted with a `SettingsValidationResult` after every save attempt of a settings JSON document. */
@@ -52,8 +54,11 @@ export default class UserSettingsDocumentModel extends EditorDocumentModel {
     return new UserSettingsDocumentModel(uri, bifrost.settings, restoredCurrentData);
   }
 
-  getJsonSchema(): ReturnType<typeof buildJsonSchema> {
-    return buildJsonSchema(this.settings.getSchemas());
+  getJsonAssist(): JsonAssistBackend {
+    return createSettingsJsonAssist(this.settings.getSchemas(), {
+      validateLayer: (layer) => validateSettings(layer, this.settings.getSchemas()).errors,
+      isKeyOffered: () => true,
+    });
   }
 
   getSettingsAsString(): string {
@@ -85,7 +90,16 @@ export default class UserSettingsDocumentModel extends EditorDocumentModel {
     }
 
     const currentData = this.getSettingsAsString();
-    const result = this.settings.merge(jsonComment.parse(currentData) as any);
+    const parsed = jsonComment.parse(currentData);
+    if (parsed == null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return this.finishSave({
+        valid: false,
+        errors: [
+          { key: '', message: 'Settings layer must be a JSON object.', expected: 'object', actual: typeof parsed },
+        ],
+      });
+    }
+    const result = this.settings.merge(parsed);
     if (result.valid) {
       this.updateOriginalAndCurrentData(currentData, currentData);
     }

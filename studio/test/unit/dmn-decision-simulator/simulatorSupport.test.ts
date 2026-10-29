@@ -45,7 +45,7 @@ describe('import resolution', () => {
       listDecisionModels: async () => [{ uri: 'helper.dmn', namespace: helper.namespace }],
       loadText: async () => helperText,
     });
-    expect(loaded.importedModels.has(helper.namespace)).toBe(true);
+    expect(loaded.importedModels.has(helper.namespace!)).toBe(true);
     expect(loaded.unresolvedImports).toEqual([]);
 
     const missing = await loadSimulationModels(readFixture('importing_model.dmn'), {

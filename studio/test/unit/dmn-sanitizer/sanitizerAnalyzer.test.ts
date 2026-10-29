@@ -16,7 +16,14 @@ describe('DmnSanitizerAnalyzer', () => {
     parseWarnings = (result.warnings ?? []) as ModdleParseWarning[];
   });
 
-  const EXPECTED_ISSUES = [
+  const EXPECTED_ISSUES: {
+    type: string;
+    elementId?: string;
+    elementName?: string;
+    elementType: string;
+    category: string;
+    severity: string;
+  }[] = [
     {
       type: 'shapeless-decision',
       elementId: 'Decision_ghost',
@@ -78,7 +85,7 @@ describe('DmnSanitizerAnalyzer', () => {
       category: 'empty-container',
       severity: 'warning',
     },
-  ] as const;
+  ];
 
   it('detects all expected issue types from the haunted DMN fixture', () => {
     const issues = analyzeDmnSanitizableIssues(definitions, undefined, parseWarnings);

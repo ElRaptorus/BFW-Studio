@@ -86,7 +86,7 @@ All descriptors include `label`, `description`, optional `hidden`, `category`, `
 
 - **`category`**: Sets the group heading in the Settings GUI. If omitted, it is inferred from the first key segment (e.g., `engineBrowser` becomes "Engine Browser"). Use `category` when the inferred label would be unclear (e.g., `std` -> `category: 'General'`, `bpmn` -> `category: 'BPMN Editor'`).
 - **`deprecated`**: Deprecation message string. Triggers strikethrough + hover message in the JSON editor. Shows a warning badge in the GUI.
-- **`markdownDescription`**: Markdown-capable description. The Settings JSON editor hover shows `description` only in v1 (`codemirror-json-schema` does not map `markdownDescription`). Falls back to `description` in the GUI.
+- **`markdownDescription`**: Markdown-capable description. The Settings JSON editor hover shows it instead of `description`. Falls back to `description` in the GUI.
 
 #### Constraint fields
 

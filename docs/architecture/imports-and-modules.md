@@ -105,6 +105,7 @@ Key settings for module resolution:
 |--------|-------|-------|
 | `tsconfig.electron-renderer.json` | `src/` except `src/bifrost/electron-main` and tests | Renderer checker. `src/tsconfig.json` extends it, so the editor uses the same project. Web workers are included. |
 | `tsconfig.electron-main.json` | `src/` except `src/bifrost/electron-renderer` and tests | Main-process and plugin-host checker. `src/bifrost/electron-main/tsconfig.json` extends it. |
+| `test/tsconfig.json` | `test/` plus `src/**/*.d.ts`, without `test/fixtures/plugins/` | Test checker (`npm run typecheck:test`; Vitest only transpiles). The plugin fixtures have their own configs. |
 | `studio-sdk/tsconfig.json` | SDK sources | Emits `.d.ts` declarations to `out/` |
 
 `src/bifrost/electron-renderer/tsconfig.json` is a one-line extend of the renderer config so the editor does not stop at `src/tsconfig.json`. Web workers are type-checked by these two projects. `src/packages.d.ts` is part of `include: ["src"]`.

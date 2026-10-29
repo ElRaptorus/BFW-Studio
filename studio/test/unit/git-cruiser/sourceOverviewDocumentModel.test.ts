@@ -418,8 +418,8 @@ describe('SourceOverviewDocumentModel', () => {
 
       const pending = new Map<string, (page: { entries: any[]; hasMore: boolean }) => void>();
       environment.store.getHistory.mockImplementation(
-        (_root: string, _skip: number, searchText: string) =>
-          new Promise((resolve) => pending.set(searchText, resolve)) as any,
+        (_root: string, _skip: number, searchText?: string) =>
+          new Promise((resolve) => pending.set(searchText ?? '', resolve)) as any,
       );
 
       const firstSearch = model.setHistorySearchText('first');

@@ -37,7 +37,8 @@ When asking, name the script and the suites it covers, and say roughly how long 
 When verifying code changes in `studio/`:
 
 1. `npm run build` — Compile bundles
-2. `npm run lint:fix` — Oxlint with auto-fix
-3. `npm run format` — Oxfmt
-4. `npm run test:unit` — Unit tests
-5. Integration tests — **only after asking the user and getting a yes**
+2. `npm run typecheck:test` — Type-check `test/`
+3. `npm run lint:fix` — Oxlint with auto-fix
+4. `npm run format` — Oxfmt
+5. `npm run test:unit` — Unit tests
+6. Integration tests — **only after asking the user and getting a yes**

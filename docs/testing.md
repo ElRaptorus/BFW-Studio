@@ -30,7 +30,7 @@ Private Engine packages (`@elraptorus/bfw_engine_sdk`, `@elraptorus/bfw_engine_c
 
 ### TypeScript Configuration
 
-- Tests are compiled on-the-fly by Vitest (via esbuild) — they are not included in any build-time tsconfig
+- Tests are compiled on-the-fly by Vitest (via esbuild), which does not type-check. `studio/test/tsconfig.json` does: `npm run typecheck:test` (also in CI). It excludes `test/fixtures/plugins/`, whose plugins build with their own configs
 - Path aliases (`#bifrost`, `#components`, `#modules`) are configured in `studio/vitest.config.mts`
 
 ## Test Framework
@@ -355,6 +355,7 @@ it('should add folder to solution', async () => {
 - **Multi-root via `.bfwsln`**: open file, project entries, cross-project search
 - **Custom project names**, add/remove folders, context menus, `.bfwsln` file persistence
 - **Explorer view folders** (`explorer-view-folders.test.ts`): the landscape folder is read-only in the Designer, the danger dialog on deleting a parent, the declared path follows a parent rename
+- **Settings JSON editor** (`settings-json-editor.test.ts`): unknown-key warning and errors at the exact value, hover description, Ctrl+Space key completion and accepting it; an unquoted key flagged as non-JSONC and fixed through its lint action
 - **Workbench pane toggles** (`workbench-panes.test.ts`): hide/show Property Panel and Sidebar; parked left icons restore the sidebar; property-panel control is a button, not a Layout context menu
 
 ### BPMN Editor (`bpmn-editor/`)

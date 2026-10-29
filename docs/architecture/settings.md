@@ -81,7 +81,7 @@ When a document model changes its URI, `EditorMediator` calls `settings.resource
 ### JSON editors
 
 - `about:settings-json` edits User settings. `about:settings-json?scope=solution` and `?scope=project&project=<encoded baseUri>` edit a layer through `ScopedSettingsDocumentModel`.
-- Both models expose `getJsonSchema()`. The scoped schema marks registered but ineligible keys as deprecated with "Not eligible for <scope> scope. This entry is ignored and blocks saving.". Unregistered keys still show "Unknown setting.". Hidden eligible keys are editable, as in the User editor.
+- Both models expose `getJsonAssist()`, a `createSettingsJsonAssist` backend whose `validateLayer` is the save-time validation, so editor and save report the same errors. User: `validateSettings(layer, schemas).errors`, every registered key offered (hidden keys included). Scoped: the private `validateLayer` used by `saveEditorDocument` as well; registered but ineligible keys get the error "Not eligible for <scope> scope. This entry is ignored and blocks saving." and are not offered in completion. Unregistered keys show the warning "Unknown setting." in both.
 - Both models emit `EVENT_SETTINGS_SAVE_VALIDATED` with a `SettingsValidationResult` after every save attempt. The renderer shows the errors in the toolbar hint.
 - `std.settings.openSettingsAtScope(target)` opens the GUI at a scope (used by the JSON editor's "Open GUI Editor" button).
 - The scoped JSON model reloads on `EVENT_SETTINGS_CHANGED` only when the fourth argument matches its target.
@@ -164,7 +164,7 @@ type EnumField = string[] | (() => string[]);
 type EnumLabelsField = Record<string, string> | (() => Record<string, string>);
 ```
 
-The SDK provides a `resolveSettingEnum<T>(value)` utility that handles both forms transparently. All consumers of enum fields (`SettingsValidator`, `SettingRow`, `schemaToJsonSchema`) use this resolver.
+The SDK provides a `resolveSettingEnum<T>(value)` utility that handles both forms transparently. All consumers of enum fields (`SettingsValidator`, `SettingRow`, `settingsJsonAssist`) use this resolver.
 
 **Use case**: The `workbench.general.theme` setting uses factory functions that read from `bifrost.theme.getRegisteredThemes()`, so the Settings GUI dropdown dynamically reflects all themes registered at runtime — including those added by the `themes` module or by plugins.
 
@@ -193,6 +193,8 @@ Performs runtime validation of setting values against their descriptors:
 - Array item validation (primitive element types, or object elements with the same nested checks as `object.properties`)
 - Array size validation (`minItems`, `maxItems`) and uniqueness (`uniqueItems`)
 - Recursive object property validation
+
+Errors are `LocatedSettingValidationError` (`SettingValidationError & { path: (string | number)[] }`, Studio-internal; the SDK type is unchanged). `path` locates the wrong value: `[key]`, `[key, prop]`, `[key, i, prop]` for object items, `[key, i]` for primitive items. `key` keeps the string form (`key[i].prop`; the bare key for primitive items). The Settings JSON editor maps `path` to the exact range.
 
 ### SettingsManager
 
@@ -311,7 +313,7 @@ studio.events.on('settingsUpdate', (settingName: string, value: any) => {
 |-------|-------------|-------------|
 | `EVENT_SETTINGS_CHANGED` | A single setting value is created, updated, or deleted | Settings GUI (bumps revision to re-read values), Bifrost (broadcasts `settingsUpdate`), SettingsMediator (persists to storage) |
 | `EVENT_SETTINGS_MERGED` | A bulk `deserialize` / `merge` replaces the entire config | Engine modules (re-apply connection settings) |
-| `EVENT_SETTINGS_SCHEMA_REGISTERED` | `register()` adds new descriptors to the schema registry | Settings GUI (re-fetches schemas so newly registered settings appear), JSON editor (calls `updateJsonSchema` on the CodeMirror editor) |
+| `EVENT_SETTINGS_SCHEMA_REGISTERED` | `register()` adds new descriptors to the schema registry | Settings GUI (re-fetches schemas so newly registered settings appear), JSON editor (passes a fresh `model.getJsonAssist()` as the `jsonAssist` prop) |
 
 ---
 
@@ -346,13 +348,14 @@ Shell command settings use platform suffixes (`.macos`, `.windows`). These are r
 The settings system provides two independent editor document types:
 
 - **GUI Editor** (`about:settings`): Renders each visible setting with an appropriate control (checkbox, text input, number input, dropdown, color picker + hex field, date picker, array editor). Settings are grouped by category in a two-panel layout: a **category sidebar** on the left for quick navigation, and a scrollable settings body on the right. The sidebar highlights the currently visible category using `IntersectionObserver` and supports click-to-scroll. Boolean settings use a VS Code-style layout (label on top, checkbox + description on the row below). A search bar filters by key, label, or description. Changes are applied immediately. No editor document model is needed — the GUI reads live from `studio.settings`. The GUI subscribes to both `EVENT_SETTINGS_CHANGED` and `EVENT_SETTINGS_SCHEMA_REGISTERED`, so it reacts to both value changes and late schema registrations (e.g., plugins loading after the editor was restored from a previous session).
-- **JSON Editor** (`about:settings-json`): Raw CodeMirror 6 editor for editing the full settings JSON (JSONC). Validation uses `createJson5SchemaExtensions(buildJsonSchema())` plus save-time `isInvalidJSON()` / `settings.merge()`. Changes are applied on save. Uses `UserSettingsDocumentModel` for dirty tracking and save/merge. Stock schema coverage:
-  - **Property-key completion** from registered `properties`
-  - **Enum value completion**
-  - **Type / enum / min / max / pattern squiggles**
-  - **Hover** of `description` (not `markdownDescription`)
+- **JSON Editor** (`about:settings-json`): Raw CodeMirror 6 editor for editing the full settings JSON (JSONC). The editor runs the JSON assist layer in the `jsonc` dialect with the model's `getJsonAssist()` backend, so it flags everything `comment-json` would reject on save (unquoted keys, single quotes, JSON5 numbers, with one-click fixes); save goes through `isInvalidJSON()` / `settings.merge()`. Changes are applied on save. Uses `UserSettingsDocumentModel` for dirty tracking and save/merge. Coverage:
+  - **Key completion** for registered keys, object properties and object-item properties, inserting the default
+  - **Value completion** for enums (with `enumDescriptions` / `enumLabels`), booleans and the default
+  - **Errors at the exact value** from `SettingsValidator` (type, enum, range, pattern with `patternErrorMessage`, list items)
+  - **Hover** of `markdownDescription` (else `description`) and the deprecation message
   - **Unknown keys** as warnings (`Unknown setting.`) — leftover keys from unloaded plugins; save is not blocked
-  - VS Code dialect fields (`deprecationMessage` strikethrough, `enumDescriptions`, custom unknown-key copy) are not mapped natively; unknown-key copy is rewritten in `createJson5SchemaExtensions`
+  - **Deprecated keys** as warnings with strikethrough
+  - **JSONC syntax**: comments and trailing commas are fine; JSON5-only syntax is an error with a fix action, so a lint-clean document always saves
 
 See [code-editors.md](code-editors.md).
 
@@ -387,7 +390,7 @@ Settings marked with `hidden: true` are validated but not shown in the GUI. Thes
 | `studio/src/modules/std/settings/settingsNavigation.ts` | Shared state for programmatic navigation: category (`requestCategoryNavigation`, `consumePendingCategory`, `onCategoryNavigationRequested`) and scope (`requestScopeNavigation`, `peekPendingScope`, `clearPendingScope`, `onScopeNavigationRequested`) |
 | `studio/src/modules/std/settings/UserSettingsDocumentModel.ts` | JSON Settings editor model (save → validate → merge) |
 | `studio/src/modules/std/settings/SettingsGuiDocumentRenderer.tsx` | GUI Settings editor (about:settings) |
-| `studio/src/modules/std/settings/SettingsJsonDocumentRenderer.tsx` | JSON Settings editor (about:settings-json); passes `jsonSchema` into `MultiLineCodeEditor` |
+| `studio/src/modules/std/settings/SettingsJsonDocumentRenderer.tsx` | JSON Settings editor (about:settings-json); passes `language="jsonc"` and the model's `getJsonAssist()` into `MultiLineCodeEditor` |
 | `studio/src/modules/std/settings/gui/SettingsGui.tsx` | Main GUI container with scope bar, search, category sidebar, and domain grouping |
 | `studio/src/modules/std/settings/gui/SettingsScopeBar.tsx` | User / Solution / Project scope bar |
 | `studio/src/modules/std/settings/ScopedSettingsDocumentModel.ts` | JSON editor for a solution or project layer |
@@ -396,6 +399,6 @@ Settings marked with `hidden: true` are validated but not shown in the GUI. Thes
 | `studio/src/modules/std/settings/gui/SettingRow.tsx` | Individual setting row with label, description, and control |
 | `studio/src/modules/std/settings/gui/SettingsSearch.tsx` | Search input for filtering settings |
 | `studio/src/modules/std/settings/gui/controls/*.tsx` | Type-specific controls (Boolean, String, Number, Enum, Color, Date, Array, Object, ObjectArrayItems) |
-| `studio/src/modules/std/settings/validation/schemaToJsonSchema.ts` | Converts SettingDescriptor registry to JSON Schema for `codemirror-json-schema` |
-| `studio/src/components/code-editor/json5SchemaExtensions.ts` | Settings JSON5 schema bundle; unknown keys → warning `Unknown setting.` |
+| `studio/src/modules/std/settings/validation/settingsJsonAssist.ts` | `createSettingsJsonAssist`: JSON assist backend from the descriptor registry (validate, describe, complete) |
+| `studio/src/components/code-editor/jsonAssist.ts` | JSON assist wiring (lint, completion, hover); see [code-editors.md](code-editors.md) §JSON assist |
 | `studio/src/modules/std/settings/DefaultSettingsDocumentRenderer.tsx` | Default Settings viewer (read-only) |

@@ -53,7 +53,7 @@ Do not export, extract or add parameters to production code just so a unit test 
 After modifying test files:
 
 ```bash
-cd studio && npx tsc --noEmit -p tsconfig.components.json
+cd studio && npm run typecheck:test
 ```
 
 ## Reference

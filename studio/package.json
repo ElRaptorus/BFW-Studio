@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=24.20.0",
+    "node": ">=26.13.0",
     "npm": ">=12.0.0"
   },
   "allowScripts": {
@@ -45,6 +45,7 @@
     "start": "electron out/bundle-electron-main.js",
     "test": "npm run test:integration",
     "test:unit": "vitest run test/unit/",
+    "typecheck:test": "tsc -p test",
     "test:integration": "npm run test:integration:all",
     "test:integration:all": "npm run build:plugin-fixtures && cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/ --bail 1 --retry 1 --no-file-parallelism",
     "test:integration:bpmn-editor": "cross-env APP_TEST=true WDIO_LOG_LEVEL=silent vitest run test/integration/bpmn-editor/ --bail 1 --retry 1 --no-file-parallelism",
@@ -95,7 +96,6 @@
     "bpmnlint": "^12.0.0",
     "bpmnlint-utils": "^1.1.1",
     "chokidar": "^6.0.0",
-    "codemirror-json-schema": "^0.8.1",
     "codemirror-json5": "^1.0.3",
     "comment-json": "^5.0.0",
     "cross-env": "^10.1.0",

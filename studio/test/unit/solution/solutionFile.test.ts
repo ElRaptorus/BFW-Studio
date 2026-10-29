@@ -130,7 +130,10 @@ describe('writeSolutionFolders', () => {
 
     files.files.delete(solutionFileUri);
     await assert.rejects(
-      () => updateSolutionSettings(solutionFileUri, files, (settings) => (settings['bpmn.editor.showGrid'] = true)),
+      () =>
+        updateSolutionSettings(solutionFileUri, files, (settings) => {
+          settings['bpmn.editor.showGrid'] = true;
+        }),
       SolutionFileUnreadableError,
     );
     assert.strictEqual(files.files.has(solutionFileUri), false);

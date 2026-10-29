@@ -40,6 +40,7 @@ All three must exit 0. If `lint:fix` reports errors that cannot be auto-fixed, l
 
 ```bash
 cd studio && npx tsc --noEmit -p tsconfig.electron-renderer.json && npx tsc --noEmit -p tsconfig.electron-main.json
+cd studio && npm run typecheck:test
 ```
 
 Must exit 0 with no type errors.

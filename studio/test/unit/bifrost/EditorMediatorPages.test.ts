@@ -5,6 +5,8 @@ import { EVENT_EDITOR_AREA_FOCUS_UPDATED } from '#bifrost/contracts/internal/Edi
 import assert from 'node:assert';
 import { beforeEach, describe, it, vi } from 'vitest';
 
+class TestEmitter extends AbstractEmitter {}
+
 class FakeStorage {
   value: any = null;
   load() {
@@ -29,7 +31,7 @@ function createFixture(storage = new FakeStorage()) {
   categories.activatePage('design/workspace');
 
   const notifications: any[] = [];
-  const events = new AbstractEmitter();
+  const events = new TestEmitter();
   const bifrost: any = {
     categories,
     events,
@@ -37,7 +39,7 @@ function createFixture(storage = new FakeStorage()) {
     settings: { get: () => false, resourceMoved: () => undefined },
     recentlyOpened: { addRecentlyOpenedEditorDocumentItem: () => undefined },
     recentlyClosed: { addItem: () => undefined },
-    files: new AbstractEmitter(),
+    files: new TestEmitter(),
   };
   const mediator = new EditorMediator(storage as any, bifrost);
   const register = (id: string, pattern: RegExp, page: string) =>
@@ -331,7 +333,7 @@ describe('EditorMediator removed pages', () => {
     fixture.register('workspace-type', /\.wsp$/, 'design/workspace');
     fixture.register('plugin-type', /\.plg$/, 'design/plugin');
     fixture.mediator.focusOrOpenEditorDocument('file:///a.plg');
-    fixture.mediator.getEditorDocumentByUri('file:///a.plg')!.data.current = 'unsaved';
+    (fixture.mediator.getEditorDocumentByUri('file:///a.plg')!.data as { current: string }).current = 'unsaved';
     fixture.categories.activatePage('design/plugin');
 
     fixture.categories.unregisterPage('design/plugin');

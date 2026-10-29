@@ -19,6 +19,7 @@ function makeDefinitions(): BpmnDefinitions {
       { id: 'Esc_Blank', name: 'unnamed', escalationCode: null },
     ],
     rawXml: '',
+    linterScores: [],
   };
 }
 

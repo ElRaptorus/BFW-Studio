@@ -346,7 +346,7 @@ describe('plugin/bpmn-palette-contextpad', () => {
           return pluginEntry != null;
         },
         bpmnUri,
-        targetElementId,
+        targetElementId as string,
       );
       assert.strictEqual(hasEntry, true, `Expected view-connections entry to appear on ${targetElementId}`);
     });
@@ -491,7 +491,7 @@ describe('plugin/bpmn-palette-contextpad', () => {
           return pluginEntry != null;
         },
         bpmnUri,
-        taskId,
+        taskId as string,
       );
       assert.strictEqual(taskHasEntry, true, 'Expected inspect-element to appear on Task (types AND ids match)');
 
@@ -519,7 +519,7 @@ describe('plugin/bpmn-palette-contextpad', () => {
           return pluginEntry == null;
         },
         bpmnUri,
-        startEventId,
+        startEventId as string,
       );
       assert.strictEqual(
         startHasEntry,

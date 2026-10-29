@@ -72,6 +72,7 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
       inMappings: [],
       outMappings: [],
       payloadContract: null,
+      correlationRetrievalExpression: null,
     });
     const receiveTask = flowNode(FlowNodeType.ReceiveTask, {
       type: 'receive_task',
@@ -107,6 +108,7 @@ describe('BpmnFlowNodeAccessors mapping visibility', () => {
       sequenceFlows: [],
       dataObjects: [],
       dataObjectReferences: [],
+      dataStoreReferences: [],
     });
 
     expect(hasInputMappings(throwEvent)).toBe(true);

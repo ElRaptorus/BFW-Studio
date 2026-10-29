@@ -204,7 +204,7 @@ describe('plugin/bpmn-modeling', () => {
           return el?.businessObject?.name ?? null;
         },
         bpmnUri,
-        targetId,
+        targetId as string,
       );
       assert.strictEqual(updatedName, 'Updated by Plugin');
     });
@@ -281,7 +281,7 @@ describe('plugin/bpmn-modeling', () => {
           return registry.get(elementId) != null;
         },
         bpmnUri,
-        result.elementId,
+        result.elementId as string,
       );
       assert.strictEqual(exists, true, 'Appended element should exist in the registry');
     });
@@ -342,7 +342,7 @@ describe('plugin/bpmn-modeling', () => {
           return { x: el.x, y: el.y };
         },
         bpmnUri,
-        elementData.id,
+        elementData.id as string,
       );
       assert.ok(newPosition != null, 'Expected element to still exist');
       assert.strictEqual(newPosition.x, elementData.x + 30, 'X should be moved +30');
@@ -421,7 +421,7 @@ describe('plugin/bpmn-modeling', () => {
           return registry.get(elementId) != null;
         },
         bpmnUri,
-        toDeleteId,
+        toDeleteId as string,
       );
       assert.strictEqual(stillExists, false, 'Element should no longer exist after removal');
     });

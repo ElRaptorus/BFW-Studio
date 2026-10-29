@@ -114,9 +114,6 @@ describe('lintBpmnXmlOnDisk', () => {
   it('writes bfw:LinterRulesetScore with the active rulesetId', async () => {
     const result = await lintBpmnXmlOnDisk(DAEMON_ENGINE_XML, DISK_OPTIONS);
     assert.strictEqual(result.status, 'updated');
-    if (result.status === 'skipped-foreign') {
-      throw new Error('expected updated xml');
-    }
     assert.match(result.xml, /rulesetId="bpmn-development"/);
     assert.match(result.xml, /linterRulesetScore/i);
     assert.match(result.xml, /scorePercent="/);
@@ -131,18 +128,12 @@ describe('lintBpmnXmlOnDisk', () => {
       alwaysLintForeignDiagrams: true,
     });
     assert.strictEqual(allowed.status, 'updated');
-    if (allowed.status === 'skipped-foreign') {
-      throw new Error('expected updated xml');
-    }
     assert.match(allowed.xml, /rulesetId="bpmn-development"/);
   });
 
   it('returns unchanged when the persisted score already matches', async () => {
     const first = await lintBpmnXmlOnDisk(DAEMON_ENGINE_XML, DISK_OPTIONS);
     assert.strictEqual(first.status, 'updated');
-    if (first.status === 'skipped-foreign') {
-      throw new Error('expected updated xml');
-    }
     const second = await lintBpmnXmlOnDisk(first.xml, DISK_OPTIONS);
     assert.strictEqual(second.status, 'unchanged');
   });
@@ -165,9 +156,6 @@ describe('lintBpmnXmlOnDisk', () => {
 
     const result = await lintBpmnXmlOnDisk(POOL_LANE_XML, DISK_OPTIONS);
     assert.strictEqual(result.status, 'updated');
-    if (result.status === 'skipped-foreign') {
-      throw new Error('expected updated xml');
-    }
     assert.match(result.xml, /maxPoints="7"/);
   });
 

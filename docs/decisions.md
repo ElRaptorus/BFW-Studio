@@ -194,4 +194,28 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md) §Automatic Map Creation
 
 See [workspace.md](architecture/workspace.md) §`.bfwsln` Solution File Format and [bpmn-landscape.md](architecture/bpmn-landscape.md) §Landscape Folder.
 
+## Own JSON assist instead of codemirror-json-schema
+
+**Context:** The Settings JSON editor used `codemirror-json-schema` 0.8.1 (unmaintained). It pinned json-schema-library 9, which carries the deepmerge advisory GHSA-gcqx-w48m-w2h4, and pulled 48 packages (the shiki stack, markdown-it, …) into the renderer. Its validator disagreed with the save path, so unknown-key messages had to be rewritten, and `markdownDescription`, `enumDescriptions` and deprecation were not shown. Planned contract-authoring and contract-testing tools need JSON assist too.
+
+**Options:** (A) adopt a maintained fork on json-schema-library 11; (B) fork and trim the library ourselves; (C) a Studio-owned assist layer with a descriptor-based Settings backend; (C+) C with a pluggable backend interface shaped for the contract tools.
+
+**Decision:** C+. `components/code-editor/jsonSyntaxPaths.ts` and `jsonAssist.ts` provide lint, completion and hover for JSON and JSON5 from a `JsonAssistBackend`. The Settings backend validates with `SettingsValidator`, the same code that guards saving. A JSON Schema validator arrives with the contract-testing feature, behind the same interface.
+
+**Rationale:** Settings needs no JSON Schema at all, so converting descriptors to a schema only to validate them a second, different way was cost without benefit. A few hundred lines of Studio code replace 48 packages, and editor and save can no longer disagree.
+
+See [code-editors.md](architecture/code-editors.md) §JSON assist.
+
+## Settings JSON editor lints JSONC; saving stays on comment-json
+
+**Context:** The Settings JSON editor used the JSON5 dialect, while saving parses with `comment-json` (JSONC). Unquoted keys, single quotes and JSON5 numbers linted clean and then failed on save. Comments in settings files and in the `.bfwsln` must keep working.
+
+**Options:** (A) keep the save parser and make the editor flag what it rejects; (B) switch saving to JSON5; (C) drop comments and use strict JSON.
+
+**Decision:** A. The `jsonc` dialect keeps the JSON5 grammar for comments and trailing commas, flags JSON5-only tokens with one-click fixes, and falls back to the `comment-json` error for what the grammar cannot see.
+
+**Rationale:** `comment-json` keeps comments when the Studio writes settings back (`SolutionFile`, `SettingsLayerManager` parse and `stringify` through it). JSON5 has no comment-preserving writer in the dependency tree, and strict JSON would drop the comments users rely on.
+
+See [code-editors.md](architecture/code-editors.md) §JSON assist.
+
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

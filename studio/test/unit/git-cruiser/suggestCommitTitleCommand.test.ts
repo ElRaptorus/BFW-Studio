@@ -54,7 +54,7 @@ async function suggest(files: any[], digests: Record<string, any> = {}) {
     });
   }
 
-  const title = await handlers.get('git.suggestCommitTitle')?.(repositoryRoot);
+  const title = (await handlers.get('git.suggestCommitTitle')?.(repositoryRoot)) as string | null;
   return { title, notifications };
 }
 

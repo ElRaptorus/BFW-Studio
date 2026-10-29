@@ -18,7 +18,9 @@ describe('Engine conformance parity (C40-C61)', () => {
     const importedModels = new Map(
       [...parsed]
         .filter(([fixture]) => fixture !== parityCase.mainFixture)
-        .map(([, definitions]) => [definitions.namespace, definitions]),
+        .flatMap(([, definitions]) =>
+          definitions.namespace == null ? [] : [[definitions.namespace, definitions] as const],
+        ),
     );
     const targetId = parityCase.target.id ?? model.decisions[0].id;
 

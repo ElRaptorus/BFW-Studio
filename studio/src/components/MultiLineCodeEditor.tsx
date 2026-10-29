@@ -1,12 +1,14 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { createDefaultEditorExtensions } from '#components/code-editor/defaultExtensions';
-import { createJson5SchemaExtensions } from '#components/code-editor/json5SchemaExtensions';
+import {
+  type JsonAssistBackend,
+  createJsonAssistExtensions,
+  updateJsonAssist,
+} from '#components/code-editor/jsonAssist';
 import { jsonParseLinterExtension } from '#components/code-editor/jsonParseLinter';
 import { getLanguageSupport } from '#components/code-editor/languageSupport';
 import { EditorState, type Extension } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
-import { updateSchema } from 'codemirror-json-schema';
-import type { JSONSchema7 } from 'json-schema';
 
 import React, { useCallback, useEffect, useRef } from 'react';
 
@@ -32,10 +34,10 @@ type MultiLineCodeEditorProps = {
    */
   minimap?: boolean;
   /**
-   * When set, the editor uses JSON5 + `codemirror-json-schema` instead of
-   * strict JSON parse lint. Used by Settings JSON (JSONC comments).
+   * When set, lint, completion and hover come from this backend (`language` `jsonc` or `json`).
+   * Used by Settings JSON. A new backend is swapped in without a remount.
    */
-  jsonSchema?: object;
+  jsonAssist?: JsonAssistBackend;
 };
 
 type MultiLineCodeEditorInnerProps = MultiLineCodeEditorProps & {
@@ -53,18 +55,20 @@ const shiftEnterBlurKeymap = keymap.of([
 ]);
 
 function buildExtensions(props: MultiLineCodeEditorProps): Extension[] {
-  const useSchema = props.jsonSchema != null;
-  const useStrictJsonLint = props.language === 'json' && !useSchema;
+  const useAssist = props.jsonAssist != null;
+  const useStrictJsonLint = props.language === 'json' && !useAssist;
 
   return [
     ...createDefaultEditorExtensions({
       readOnly: props.readOnly,
       lineNumbers: props.lineNumbers,
       fontSize: props.fontSize,
-      lintGutter: useStrictJsonLint || useSchema,
+      lintGutter: useStrictJsonLint || useAssist,
     }),
     shiftEnterBlurKeymap,
-    useSchema ? createJson5SchemaExtensions(props.jsonSchema as JSONSchema7) : getLanguageSupport(props.language),
+    props.jsonAssist != null
+      ? createJsonAssistExtensions(props.language === 'jsonc' ? 'jsonc' : 'json', props.jsonAssist)
+      : getLanguageSupport(props.language),
     ...(useStrictJsonLint ? [jsonParseLinterExtension()] : []),
   ];
 }
@@ -102,13 +106,6 @@ export class MultiLineCodeEditor extends React.Component<MultiLineCodeEditorProp
     view.dispatch({
       changes: { from: 0, to: view.state.doc.length, insert: value },
     });
-  }
-
-  updateJsonSchema(schema: object): void {
-    if (this.editorInstance == null) {
-      return;
-    }
-    updateSchema(this.editorInstance, schema as JSONSchema7);
   }
 
   render(): React.JSX.Element {
@@ -202,8 +199,8 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
       view.destroy();
       editorRef.current = null;
     };
-    // Mount once; language / schema / readOnly are applied at construction.
-    // Schema updates go through `updateJsonSchema`.
+    // Mount once; language / JSON assist / readOnly are applied at construction.
+    // A changed `jsonAssist` prop is swapped in by the effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -218,10 +215,10 @@ function MultiLineCodeEditorInner(props: MultiLineCodeEditorInnerProps): React.J
   }, [props.initialValue]);
 
   useEffect(() => {
-    if (editorRef.current != null && props.jsonSchema != null) {
-      updateSchema(editorRef.current, props.jsonSchema as JSONSchema7);
+    if (editorRef.current != null && props.jsonAssist != null) {
+      updateJsonAssist(editorRef.current, props.jsonAssist);
     }
-  }, [props.jsonSchema]);
+  }, [props.jsonAssist]);
 
   const sizeClass = props.size ? `pane__textarea--${props.size}` : '';
   return (

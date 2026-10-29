@@ -568,6 +568,26 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## Lezer JSON and JSON5 trees differ
+
+**Mistake**: Walking a JSON5 tree with JSON node names, or trusting node boundaries in half-typed text.
+
+**Why**: `@lezer/json` has root `JsonText`, colon `:` and comma nodes; `lezer-json5` has root `File`, `PropertyColon`, comment nodes and no commas. Error recovery differs too: JSON5 splits an unterminated `"bpmn.ed` into `⚠ bpmn . ed` (two property names) and wraps a trailing bare word in a phantom `Object`.
+
+**Correct approach**: Go through `jsonPathAt` / `jsonRangeOf` in `components/code-editor/jsonSyntaxPaths.ts`. They accept both grammars, count array items by value nodes, and read the token under the cursor from the text unless it is a terminated string. Unit-test new cases on real trees in both grammars (`test/unit/components/jsonSyntaxPaths.test.ts`). The `jsonc` dialect uses the JSON5 grammar and adds its own JSONC token checks. See [`code-editors.md`](code-editors.md) §JSON assist.
+
+---
+
+## The JSON5 grammar breaks on some string escapes
+
+**Mistake**: Reading string contents, or deciding what is valid, from the `lezer-json5` tree.
+
+**Why**: Inside a double-quoted string the grammar fails on `\u0041`, `\/`, `\x41`, `\'` and `\0`, the first two valid JSON. The rest of the string becomes `⚠` fragments and bare `PropertyName` / `Number` nodes, so tree checks see phantom unquoted keys, and hover and completion are off for the rest of the document. `JSON5.parse` and `comment-json` read these escapes by their own rules (JSON5 accepts all five, JSONC only the first two).
+
+**Correct approach**: Take values from `JSON5.parse` (or `comment-json` for JSONC), never from the tree. Trust token-level findings only when the tree has no error node; otherwise fall back to the parser's own error, as the `jsonc` lint in `jsonAssist.ts` does. See [`code-editors.md`](code-editors.md) §JSON assist.
+
+---
+
 ## Do not key uncontrolled editors on the live value
 
 **Mistake**: `key={…${committedValue}}` on `PaneProperty`, CreatableSelect, `OneLineFeelEditor`, or a DMN pane that includes `name`.

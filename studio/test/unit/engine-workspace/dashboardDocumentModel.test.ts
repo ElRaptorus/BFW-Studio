@@ -26,7 +26,7 @@ async function createModel(stats: () => Promise<unknown>): Promise<DashboardDocu
 describe('DashboardDocumentModel.refresh', () => {
   it('keeps the dashboard usable and reports "unavailable" when statistics answer 503', async () => {
     const model = await createModel(async () => {
-      throw new ServiceUnavailableError('Statistics are unavailable', 5);
+      throw new ServiceUnavailableError('Statistics are unavailable');
     });
 
     await model.refresh();

@@ -58,6 +58,7 @@ function makeProcess(): BpmnProcess {
       ],
       dataObjects: [],
       dataObjectReferences: [],
+      dataStoreReferences: [],
     },
     incoming: ['Flow_1'],
     outgoing: [],

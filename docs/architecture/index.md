@@ -41,7 +41,7 @@ Each file owns one topic. Point to other files; do not copy their tables.
 - **[plugin-host.md](plugin-host.md)** — Process-isolated Plugin Host: `PluginService`, SES workers, permissions, quarantine, PH protocol, management UI
 - **[webviews.md](webviews.md)** — Plugin iframes: `bifrostfw-webview://`, postMessage bridge, editor/pane surfaces, CSP
 - **[feel-editor.md](feel-editor.md)** — FEEL expression editor: CodeMirror 6 components (`FeelEditor`, `OneLineFeelEditor`), theming tokens, FEEL context command, variable structure, dependency chain
-- **[code-editors.md](code-editors.md)** — Host CodeMirror 6 wrappers (`MultiLineCodeEditor`, `DiffEditor`), shared kit, language map, Settings `json5Schema`, rainbow brackets, test selectors
+- **[code-editors.md](code-editors.md)** — Host CodeMirror 6 wrappers (`MultiLineCodeEditor`, `DiffEditor`), shared kit, language map, JSON assist (lint, completion, hover; Settings backend), rainbow brackets, test selectors
 - **[plugin-manifest.md](plugin-manifest.md)** — `bifrostStudio` schema: contributions, activation events, permissions (`filesystem`, `commands.*`, `bpmn` / `bpmn.modelling` / `bpmn.renderer`, same for `dmn` and `landscape`; `renderer-modules` is a legacy alias of `bpmn.renderer`)
 - **[dmn-editor.md](dmn-editor.md)** — DMN editor module system: three-module split (dmn-core/dmn-editor/dmn-diff), DmnModelerComponentAdapter, multi-view architecture, property panes, search indexing, validation, diff engine, merge resolver, SDK types, FEEL context, dmn-js integration
 - **[dmn-decision-simulator.md](dmn-decision-simulator.md)** — Studio-local DMN evaluation: TypeScript port of the Engine evaluator over feelin, worker, DRD overlays, decision-table rule highlighting, Engine parity suite

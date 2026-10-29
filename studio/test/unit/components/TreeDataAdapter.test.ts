@@ -3,18 +3,20 @@ import { TreeDataAdapter } from '#components/Tree/TreeDataAdapter';
 import assert from 'node:assert';
 import { describe, it } from 'vitest';
 
-const makeFile = (label: string, overrides?: Partial<TreeItem>): TreeItem => ({
-  type: 'file',
-  label,
-  ...overrides,
-});
+const makeFile = (label: string, overrides?: Partial<TreeItem>): TreeItem =>
+  ({
+    type: 'file',
+    label,
+    ...overrides,
+  }) as TreeItem;
 
-const makeDir = (label: string, entries: TreeItem[], overrides?: Partial<TreeItem>): TreeItem => ({
-  type: 'directory',
-  label,
-  entries,
-  ...overrides,
-});
+const makeDir = (label: string, entries: TreeItem[], overrides?: Partial<TreeItem>): TreeItem =>
+  ({
+    type: 'directory',
+    label,
+    entries,
+    ...overrides,
+  }) as TreeItem;
 
 describe('TreeDataAdapter', () => {
   describe('constructor and getDataLoader', () => {

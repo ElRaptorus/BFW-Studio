@@ -3,6 +3,7 @@ import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
 import { EVENT_SETTINGS_SCHEMA_REGISTERED } from '#bifrost/contracts/internal/SettingsEvents';
 import { MultiLineCodeEditor } from '#components/MultiLineCodeEditor';
+import type { JsonAssistBackend } from '#components/code-editor/jsonAssist';
 import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
 import { EditorToolbar } from '#components/editor/EditorToolbar';
@@ -19,7 +20,6 @@ import type ScopedSettingsDocumentModel from './ScopedSettingsDocumentModel';
 import { parseSettingsScopeUri } from './ScopedSettingsDocumentModel';
 import type UserSettingsDocumentModel from './UserSettingsDocumentModel';
 import { EVENT_SETTINGS_RECEIVED_UPDATE, EVENT_SETTINGS_SAVE_VALIDATED } from './UserSettingsDocumentModel';
-import { buildJsonSchema } from './validation/schemaToJsonSchema';
 
 type SettingsJsonModel = UserSettingsDocumentModel | ScopedSettingsDocumentModel;
 
@@ -32,16 +32,16 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
   const [model, setModel] = useState<SettingsJsonModel | null>(null);
   const scopeTarget = parseSettingsScopeUri(props.editorDocument.uri);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
-  const [jsonSchema, setJsonSchema] = useState(() => buildJsonSchema(studio.settings.getSchemas()));
+  const [jsonAssist, setJsonAssist] = useState<JsonAssistBackend | undefined>(undefined);
   const editorRef = useRef<MultiLineCodeEditor | null>(null);
   const modelRef = useRef<SettingsJsonModel | null>(null);
   const subscriptionsRef = useRef<AbstractSubscription[]>([]);
 
   useEffect(() => {
     const sub = studio.settings.on(EVENT_SETTINGS_SCHEMA_REGISTERED, () => {
-      const nextSchema = modelRef.current?.getJsonSchema() ?? buildJsonSchema(studio.settings.getSchemas());
-      setJsonSchema(nextSchema);
-      editorRef.current?.updateJsonSchema(nextSchema);
+      if (modelRef.current != null) {
+        setJsonAssist(modelRef.current.getJsonAssist());
+      }
     });
     return () => sub.dispose();
   }, [studio]);
@@ -58,9 +58,7 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
 
       modelRef.current = documentModel;
       setModel(documentModel);
-      const nextSchema = documentModel.getJsonSchema();
-      setJsonSchema(nextSchema);
-      editorRef.current?.updateJsonSchema(nextSchema);
+      setJsonAssist(documentModel.getJsonAssist());
 
       subscriptionsRef.current = [
         documentModel.on(EVENT_SETTINGS_RECEIVED_UPDATE, () => {
@@ -129,8 +127,8 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
           <MultiLineCodeEditor
             key={model ? 'loaded' : 'loading'}
             initialValue={model?.getSettingsAsString() ?? ''}
-            language="json"
-            jsonSchema={jsonSchema}
+            language="jsonc"
+            jsonAssist={jsonAssist}
             lineNumbers={true}
             readOnly={false}
             studio={props.studio}

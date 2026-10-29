@@ -2,20 +2,21 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { AbstractSubscription } from '#bifrost/common/AbstractEmitter';
 import { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 import type { SettingsMediator } from '#bifrost/common/SettingsMediator';
-import { validateSetting } from '#bifrost/common/SettingsValidator';
+import { type LocatedSettingValidationError, validateSetting } from '#bifrost/common/SettingsValidator';
 import type { ILoadable } from '#bifrost/contracts/LoaderTypes';
 import type { SettingsScopeTarget } from '#bifrost/contracts/SettingsScopeTypes';
 import { EVENT_SETTINGS_CHANGED } from '#bifrost/contracts/internal/SettingsEvents';
+import type { JsonAssistBackend } from '#components/code-editor/jsonAssist';
 import * as jsonComment from 'comment-json';
 
-import type { SettingDescriptor, SettingValidationError, SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
+import type { SettingsValidationResult } from '@elraptorus/bfw_studio_sdk';
 
 import {
   EVENT_SETTINGS_RECEIVED_UPDATE,
   EVENT_SETTINGS_SAVE_VALIDATED,
   INVALID_JSON_VALIDATION_RESULT,
 } from './UserSettingsDocumentModel';
-import { buildJsonSchema } from './validation/schemaToJsonSchema';
+import { createSettingsJsonAssist } from './validation/settingsJsonAssist';
 
 type LayerScopeTarget = Exclude<SettingsScopeTarget, { scope: 'user' }>;
 
@@ -100,17 +101,11 @@ export default class ScopedSettingsDocumentModel extends EditorDocumentModel {
     return this.target;
   }
 
-  getJsonSchema(): ReturnType<typeof buildJsonSchema> {
-    const descriptors = new Map<string, SettingDescriptor>();
-    for (const [key, descriptor] of this.settings.getSchemas()) {
-      descriptors.set(
-        key,
-        this.settings.isEligibleForScope(key, this.target.scope)
-          ? descriptor
-          : { ...descriptor, deprecated: ineligibleSettingMessage(this.target.scope) },
-      );
-    }
-    return buildJsonSchema(descriptors);
+  getJsonAssist(): JsonAssistBackend {
+    return createSettingsJsonAssist(this.settings.getSchemas(), {
+      validateLayer: (layer) => this.validateLayer(layer),
+      isKeyOffered: (key) => this.settings.isEligibleForScope(key, this.target.scope),
+    });
   }
 
   getSettingsAsString(): string {
@@ -150,24 +145,7 @@ export default class ScopedSettingsDocumentModel extends EditorDocumentModel {
       });
     }
 
-    const errors: SettingValidationError[] = [];
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      const descriptor = this.settings.getSchema(key);
-      if (descriptor == null) {
-        continue;
-      }
-      if (!this.settings.isEligibleForScope(key, this.target.scope)) {
-        errors.push({
-          key,
-          message: ineligibleSettingMessage(this.target.scope),
-          expected: this.target.scope,
-          actual: descriptor.scope ?? 'application',
-        });
-        continue;
-      }
-      errors.push(...validateSetting(key, value, descriptor));
-    }
-
+    const errors = this.validateLayer(parsed as Record<string, unknown>);
     if (errors.length > 0) {
       return this.finishSave({ valid: false, errors });
     }
@@ -186,6 +164,28 @@ export default class ScopedSettingsDocumentModel extends EditorDocumentModel {
   onEditorDocumentWillClose(): void {
     this.eventEmitter.removeAllListeners();
     this.subscriptions.forEach((subscription) => subscription.dispose());
+  }
+
+  private validateLayer(layer: Record<string, unknown>): LocatedSettingValidationError[] {
+    const errors: LocatedSettingValidationError[] = [];
+    for (const [key, value] of Object.entries(layer)) {
+      const descriptor = this.settings.getSchema(key);
+      if (descriptor == null) {
+        continue;
+      }
+      if (!this.settings.isEligibleForScope(key, this.target.scope)) {
+        errors.push({
+          key,
+          message: ineligibleSettingMessage(this.target.scope),
+          expected: this.target.scope,
+          actual: descriptor.scope ?? 'application',
+          path: [key],
+        });
+        continue;
+      }
+      errors.push(...validateSetting(key, value, descriptor));
+    }
+    return errors;
   }
 
   private finishSave(result: SettingsValidationResult): boolean {

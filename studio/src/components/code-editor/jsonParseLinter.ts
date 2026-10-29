@@ -8,7 +8,7 @@ const stockJsonParseLinter = jsonParseLinter();
 /**
  * Strict JSON parse lint for contract / token / dialog editors.
  * Do not attach this to Settings JSON (JSONC comments); Settings uses
- * `json5Schema` instead.
+ * `createJsonAssistExtensions('jsonc', …)` instead.
  *
  * Blank and whitespace-only documents are not linted. Optional JSON
  * properties (payload/result contracts, unset tokens, …) mount an empty
