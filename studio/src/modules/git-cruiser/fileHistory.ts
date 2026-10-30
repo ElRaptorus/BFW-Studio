@@ -1,6 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
+import * as path from 'path';
 
 import type { RepositoryStore } from './RepositoryStore';
+import { getModelCommand } from './modelFileTypes';
 
 export async function showFileHistory(bifrost: Bifrost, repositoryStore: RepositoryStore, uri: string): Promise<void> {
   const repoRoot = repositoryStore.getRepoRootForUri(uri);
@@ -11,6 +13,12 @@ export async function showFileHistory(bifrost: Bifrost, repositoryStore: Reposit
 
   const filePath = uri.startsWith('file://') ? uri.substring('file://'.length) : uri;
   const relativePath = filePath.substring(repoRoot.length + 1);
+
+  const previewCommand = getModelCommand(uri, 'openHistoryPreview');
+  if (previewCommand == null || !bifrost.commands.isRegistered(previewCommand)) {
+    bifrost.notifications.open(`${path.basename(relativePath)} cannot be previewed.`);
+    return;
+  }
 
   const log = await bifrost.sourceControl.getLog(repoRoot, { file: relativePath });
   if (log.length <= 1) {
@@ -28,7 +36,7 @@ export async function showFileHistory(bifrost: Bifrost, repositoryStore: Reposit
       label: entry.message.split('\n')[0],
       sublabel: `${entry.author} · ${shortHash} · ${formattedDate}`,
       badges: index === 0 ? [{ type: 'text' as const, text: 'current' }] : undefined,
-      command: uri.endsWith('.dmn') ? 'dmn.diff.openHistoryPreview' : 'bpmn.diff.openHistoryPreview',
+      command: previewCommand,
       commandArgs: [uri, entry.hash, entry.message, entry.author, entry.date],
     };
   });

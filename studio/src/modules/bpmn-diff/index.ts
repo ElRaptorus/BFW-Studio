@@ -412,42 +412,7 @@ export function onLoad(bifrost: Bifrost): void {
     ),
   ]);
 
-  bifrost.commands.register(
-    'bpmn.diff.suggestBranchNameForProcess',
-    async (): Promise<{ uri: string; suggestedName: string } | null> => {
-      const editorDocument = bifrost.editors.getFocusedEditorDocument();
-      if (!editorDocument || editorDocument.documentType !== BPMN_DOCUMENT_TYPE) {
-        return null;
-      }
-
-      const uri = editorDocument.uri;
-      let processName: string | null = null;
-
-      try {
-        const xml = await bifrost.files.load(uri);
-        processName = xml.match(/<(?:[\w-]+:)?process\b[^>]*\sname="([^"]+)"/)?.[1] ?? null;
-      } catch {
-        // fall through — will use filename
-      }
-
-      if (!processName) {
-        const filename = bifrost.files.getFilename(uri);
-        processName = filename.replace(/\.bpmn$/i, '');
-      }
-
-      const slug = slugify(processName);
-      return { uri, suggestedName: `feature/${slug}` };
-    },
-  );
-
   bifrost.helpTexts.registerHelpText(BPMN_DIFF_HELP_TEXT_ID, require('./texts/bpmn-diff.md'));
-}
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
 
 type DiffDataType = 'original' | 'current';

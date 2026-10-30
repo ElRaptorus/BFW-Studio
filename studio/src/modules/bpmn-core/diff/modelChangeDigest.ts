@@ -31,7 +31,7 @@ function decodeXmlEntities(value: string): string {
 }
 
 /** The `name` attribute of the first `<rootElementName>` tag (any namespace prefix); blank or missing → `null`. */
-function extractModelName(xml: string, rootElementName: 'process' | 'definitions'): string | null {
+function extractModelName(xml: string, rootElementName: 'process' | 'definitions' | 'map'): string | null {
   const rootMatch = xml.match(new RegExp(`<(?:[\\w-]+:)?${rootElementName}\\b[^>]*>`));
   const nameMatch = rootMatch?.[0].match(/\sname="([^"]*)"/);
   return nameMatch != null && nameMatch[1].trim() !== '' ? decodeXmlEntities(nameMatch[1]) : null;
@@ -64,14 +64,15 @@ function buildWholeModelDigest(fileChange: 'added' | 'deleted', modelName: strin
 /**
  * Builds the digest for a before/after pair of model sources. A `null` side means the file did not exist
  * on that side, so no diff is computed. The model name is the `name` of the `rootElementName` element
- * (`process` for BPMN, `definitions` for DMN) of the present side, the after side when both exist.
+ * (`process` for BPMN, `definitions` for DMN, `map` for landscape maps) of the present side, the after side when
+ * both exist.
  *
  * @throws If both sides are `null`, or if `computeSummary` throws (e.g. for unparsable XML).
  */
 export async function buildModelChangeDigestForXmlPair(
   beforeXml: string | null,
   afterXml: string | null,
-  rootElementName: 'process' | 'definitions',
+  rootElementName: 'process' | 'definitions' | 'map',
   computeSummary: (beforeXml: string, afterXml: string) => Promise<ModelChangeSummaryLike>,
 ): Promise<ModelChangeDigest> {
   if (beforeXml == null && afterXml == null) {

@@ -1,0 +1,29 @@
+.bifrost {
+  .landscape-diff__tab-icon,
+  .landscape-diff__history-icon {
+    color: var(--theme-icon-purple);
+  }
+
+  // A row above the canvases instead of the centred floating hint, which would cover the "After" title.
+  .editor__hint.landscape-diff__relation-hint {
+    position: static;
+    align-self: center;
+    margin: 0.25rem 0.5rem;
+    transform: none;
+    color: var(--theme-fg-muted);
+  }
+
+  .landscape-diff__canvas {
+    position: relative;
+    background-color: var(--theme-diagram-bg);
+
+    .landscape-breadcrumbs {
+      top: 2.25rem;
+    }
+
+    // The diff overlays ignore the mouse; the drill-down button of a collapsed group must stay clickable.
+    .landscape-drilldown {
+      pointer-events: auto;
+    }
+  }
+}

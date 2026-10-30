@@ -1,6 +1,6 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import { assertNotNull } from '#bifrost/common/AssertionFunctions';
-import { getUrlForOpenInNewTab } from '#bifrost/common/OpenInNewTabUrl';
+import { getUrlForOpenInNewTab, parseOpenInNewTabUrl } from '#bifrost/common/OpenInNewTabUrl';
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type { ModelChangeDigest } from '#bifrost/contracts/SourceControlTypes';
 
@@ -193,6 +193,26 @@ export function onLoad(bifrost: Bifrost): void {
       bifrost.editors.focusOrOpenEditorDocument(uri, `Diff: ${editorDocument.label} (Working copy)`);
     },
     { enabledWhen: () => bifrost.editors.getFocusedEditorDocument()?.documentType === DMN_DOCUMENT_TYPE },
+  );
+
+  bifrost.commands.register(
+    'dmn.diff.exportBeforeToNewFile',
+    async (editorDocument: EditorDocument) => {
+      const model = await bifrost.editors.getEditorDocumentModel<DmnDiffDocumentModel>(editorDocument);
+      const { beforeUri, sourceFileUri } = parseOpenInNewTabUrl(editorDocument.uri).data;
+      const realUri = sourceFileUri ?? beforeUri;
+      const targetFilename = await bifrost.dialog.showSaveFile({
+        defaultPath: bifrost.files.isLocalFilename(realUri)
+          ? bifrost.files.getLocalFilenameForUri(realUri).replace(/\.dmn$/i, ' (before).dmn')
+          : `${editorDocument.label} (before).dmn`,
+        filters: [{ name: 'DMN', extensions: ['dmn'] }],
+      });
+      if (targetFilename == null || targetFilename.trim() === '') {
+        return;
+      }
+      await bifrost.files.save(bifrost.files.getUriForFilename(targetFilename), model.getBeforeXml());
+    },
+    { enabledWhen: (editorDocument: EditorDocument) => editorDocument?.documentType === DMN_DIFF_DOCUMENT_TYPE },
   );
 
   bifrost.commands.register(

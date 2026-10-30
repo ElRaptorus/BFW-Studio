@@ -171,7 +171,20 @@ export default class DmnDocumentRenderer extends React.Component<
               <EditorTitleText
                 studio={bifrost}
                 label="File was changed"
-                sublabel="The file was changed from outside Studio."
+                sublabel={
+                  <>
+                    The file was changed from outside Studio.{' '}
+                    <a
+                      href="#"
+                      onClick={bifrost.commands.getClickHandler()('dmn.diff.openDiffCurrentDataVsOriginalData', [
+                        this.props.editorDocument,
+                      ])}
+                    >
+                      Click here
+                    </a>{' '}
+                    to view the diffs between your changes and the new data of the file.
+                  </>
+                }
               />
             </>
           )}

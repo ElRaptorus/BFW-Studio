@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:bfw="https://bifrostforge.world/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="payment-process_Definition" targetNamespace="https://bifrostforge.world/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_payment">
+    <bpmn:participant id="Participant_payment" name="Payment" processRef="payment-process" />
+  </bpmn:collaboration>
+  <bpmn:process id="payment-process" name="Payment Process" isExecutable="true">
+    <bpmn:extensionElements>
+      <bfw:version>1.0.0</bfw:version>
+    </bpmn:extensionElements>
+    <bpmn:laneSet id="LaneSet_payment">
+      <bpmn:lane id="Lane_payment_default" name="default">
+        <bpmn:flowNodeRef>Start_payment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_payment</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_payment" name="Payment requested">
+      <bpmn:outgoing>Flow_payment_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="End_payment" name="Payment done">
+      <bpmn:incoming>Flow_payment_1</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_payment_1" sourceRef="Start_payment" targetRef="End_payment" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_payment">
+    <bpmndi:BPMNPlane id="BPMNPlane_payment" bpmnElement="Collaboration_payment">
+      <bpmndi:BPMNShape id="Participant_payment_di" bpmnElement="Participant_payment" isHorizontal="true">
+        <dc:Bounds x="100" y="60" width="400" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_payment_default_di" bpmnElement="Lane_payment_default" isHorizontal="true">
+        <dc:Bounds x="130" y="60" width="370" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_payment_di" bpmnElement="Start_payment">
+        <dc:Bounds x="190" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_payment_di" bpmnElement="End_payment">
+        <dc:Bounds x="390" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_payment_1_di" bpmnElement="Flow_payment_1">
+        <di:waypoint x="226" y="160" />
+        <di:waypoint x="390" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

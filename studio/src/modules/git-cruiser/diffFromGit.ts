@@ -5,6 +5,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import type { RepositoryStore } from './RepositoryStore';
+import { getModelCommand } from './modelFileTypes';
 
 const TEMP_DIR_NAME = 'bifrost-forge-world/git-diff';
 const tempFilePaths: string[] = [];
@@ -21,11 +22,6 @@ type ChangeDiffRequest = {
   readonly previousRelativePath: string | null;
   readonly beforeRef: DiffRef;
   readonly afterRef: DiffRef;
-};
-
-const MODEL_DIFF_COMMANDS: Record<string, string> = {
-  '.bpmn': 'bpmn.diff.openDiffTwoFiles',
-  '.dmn': 'dmn.diff.openDiffTwoFiles',
 };
 
 function getTempDir(): string {
@@ -83,7 +79,7 @@ async function getVersionUri(
 /**
  * Opens the comparison of one file between two versions on the Source page.
  *
- * A BPMN or DMN file with both sides present opens the visual diff; everything else, and a model with one side
+ * A model file with both sides present opens the visual diff of its type; everything else, and a model with one side
  * missing, opens the text diff.
  */
 export async function openChangeDiff(bifrost: Bifrost, request: ChangeDiffRequest): Promise<void> {
@@ -95,7 +91,7 @@ export async function openChangeDiff(bifrost: Bifrost, request: ChangeDiffReques
   const fileName = path.basename(relativePath);
   const tabTitle = `Diff: ${fileName} (${beforeLabel} ↔ ${afterLabel})`;
 
-  const modelDiffCommand = MODEL_DIFF_COMMANDS[path.extname(relativePath).toLowerCase()];
+  const modelDiffCommand = getModelCommand(relativePath, 'openDiffTwoFiles');
   const bothSidesPresent = beforeRef !== 'NONE' && afterRef !== 'NONE';
 
   if (modelDiffCommand != null && bothSidesPresent && bifrost.commands.isRegistered(modelDiffCommand)) {

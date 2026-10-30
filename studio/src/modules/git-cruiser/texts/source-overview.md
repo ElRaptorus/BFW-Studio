@@ -12,14 +12,14 @@ Use this page to see what changed in your project before you commit, what your b
 
 1. **Review** your uncommitted changes in the list.
 2. **Click** a file to see its two versions side by side.
-3. **Stage** the files in the Git pane (click a file there to see its changes) and **commit** them. The magic wand next to the commit button suggests a title from your staged BPMN and DMN changes.
+3. **Stage** the files in the Git pane (click a file there to see its changes) and **commit** them. The magic wand next to the commit button suggests a title from your staged BPMN, DMN and landscape map changes.
 4. **Push** them to the server from the Git pane.
 
 &nbsp;
 
 ## Uncommitted changes
 
-Every changed file is one row, BPMN and DMN files first. A row shows whether the file is a process, a decision or another file, what happened to it, and its name. For processes and decisions a second line says how many elements were added, changed or removed. Click a row to see the two versions side by side; the arrow button at the end opens the file itself. When nothing changed since the last commit, the tab says so.
+Every changed file is one row, BPMN, DMN and landscape map files first. A row shows whether the file is a process, a decision, a landscape map or another file, what happened to it, and its name. For processes, decisions and landscape maps a second line says how many elements were added, changed or removed. Click a row to see the two versions side by side; the arrow button at the end opens the file itself. When nothing changed since the last commit, the tab says so.
 
 | Word     | Meaning                                            |
 | -------- | -------------------------------------------------- |
@@ -40,7 +40,7 @@ The list shows the commits of the branch you are on, newest first, along a line.
 - **Not pushed** marks commits that are only on your computer.
 - Click a commit to see the files it changed. Right-click it to **Copy Commit Hash**.
 - Click a file of the commit to see what the commit changed in it.
-- The clock button (**Preview this version**) opens a BPMN or DMN file as it was in that commit. You can restore it from there.
+- The clock button (**Preview this version**) opens a BPMN, DMN or landscape map file as it was in that commit. You can restore it from there.
 
 Type in the search field to find commits by their message. The whole history of the branch is searched, not only the commits you can see, and capital letters do not matter. Clear the field to see every commit again.
 
@@ -58,5 +58,5 @@ This tab shows everything your branch changed compared with the branch it starte
 
 Clicking a file opens a tab with the two versions side by side.
 
-- For BPMN and DMN files, **Visual** compares the diagrams and **XML** compares the sources line by line.
+- For BPMN, DMN and landscape map files, **Visual** compares the diagrams and **XML** compares the sources line by line.
 - **Open File** opens the file itself.

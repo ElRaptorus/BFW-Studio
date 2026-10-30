@@ -22,7 +22,11 @@ import type LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
 import { SHOW_GRID_SETTING } from './LandscapeMapDocumentModel';
 import './styles/landscape.scss';
 
-function TitleWarning(props: { studio: EditorDocumentRendererProps['studio']; label: string; sublabel: string }) {
+function TitleWarning(props: {
+  studio: EditorDocumentRendererProps['studio'];
+  label: string;
+  sublabel: string | React.JSX.Element;
+}) {
   return (
     <>
       <div className="editor-title__icon editor-title__icon--warning">
@@ -100,6 +104,31 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
     },
   });
 
+  if (model != null && metadata.mergeConflict === true) {
+    return (
+      <Editor>
+        <EditorToolbar>
+          {studio.commands.isRegistered('git.merge.openResolver') && (
+            <EditorToolbarButton
+              studio={studio}
+              icon="ph ph-git-merge"
+              label="Open Merge Resolver"
+              tooltip="Open the merge conflict resolver to compare and resolve changes"
+              command="git.merge.openResolver"
+              dataTestId="landscape-open-merge-resolver"
+            />
+          )}
+        </EditorToolbar>
+        <EditorContent>
+          <EditorLoadingError
+            title="Merge conflicts must be resolved"
+            subtitle="The map cannot be displayed because the file contains Git conflict markers. Use the Merge Resolver to compare both versions and choose which changes to keep."
+          />
+        </EditorContent>
+      </Editor>
+    );
+  }
+
   if (model != null && !readable) {
     return (
       <Editor>
@@ -135,7 +164,20 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
           <TitleWarning
             studio={studio}
             label="File was changed"
-            sublabel="The file was changed from outside Studio. Saving this editor overwrites those changes."
+            sublabel={
+              <>
+                The file was changed from outside Studio. Saving this editor overwrites those changes.{' '}
+                <a
+                  href="#"
+                  onClick={studio.commands.getClickHandler()('bpmn.landscape.diff.openDiffCurrentDataVsOriginalData', [
+                    editorDocument,
+                  ])}
+                  data-test--landscape-changed-outside-diff
+                >
+                  Compare your changes with the file
+                </a>
+              </>
+            }
           />
         )}
       </EditorTitle>

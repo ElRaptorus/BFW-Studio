@@ -70,6 +70,15 @@ describe('ChangeRow', () => {
     expect(render({ kind: 'loading' })).not.toContain('data-test--change-row-summarize');
   });
 
+  it('shows the type of a model file and treats a landscape map as a model', () => {
+    expect(render(null, 'landscape/overview.bfwmap')).toContain(
+      'title="Landscape map"><span class="ph-light ph-map-trifold">',
+    );
+    expect(render(null, 'landscape/overview.bfwmap')).toContain('data-test--change-row="model"');
+    expect(render(null, 'rules.dmn')).toContain('title="Decision"><span class="ph-light ph-table">');
+    expect(render(null, 'notes.txt')).toContain('title="File"><span class="ph-light ph-file">');
+  });
+
   it('keeps the actions beside the main button instead of inside it', () => {
     const markup = render(null);
     const mainButton = markup.substring(markup.indexOf('<button'), markup.indexOf('</button>'));

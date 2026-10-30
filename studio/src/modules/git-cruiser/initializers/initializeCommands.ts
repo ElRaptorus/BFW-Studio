@@ -3,7 +3,6 @@ import type { DialogContentObject, DialogOptions } from '#bifrost/contracts/Dial
 import type { EditorDocument } from '#bifrost/contracts/EditorTypes';
 import type {
   ModelChangeDigest,
-  SourceControlFileStatus,
   SourceControlLogEntry,
   SourceControlRepositoryState,
 } from '#bifrost/contracts/SourceControlTypes';
@@ -29,7 +28,7 @@ import { suggestGitignore } from '../dialogs/suggestGitignoreDialog';
 import { openChangeDiff, showGitDiffForFile } from '../diffFromGit';
 import { showFileHistory } from '../fileHistory';
 import type MergeDocumentModel from '../merge/MergeDocumentModel';
-import { DIGEST_COMMANDS } from '../overview/SourceOverviewDocumentModel';
+import { getModelCommand, isModelFile } from '../modelFileTypes';
 
 const MAXIMUM_TITLE_LENGTH = 72;
 const MAXIMUM_LISTED_MODELS = 2;
@@ -81,7 +80,7 @@ function describeSingleModel(model: CommitTitleModel): string {
 }
 
 /**
- * A commit title for the staged BPMN and DMN files: what happened in one model, or which models were updated.
+ * A commit title for the staged model files: what happened in one model, or which models were updated.
  * Returns `null` when no model changed. Titles are cut at 72 characters with an ellipsis.
  */
 function suggestCommitTitle(models: readonly CommitTitleModel[]): string | null {
@@ -293,23 +292,15 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
         }
       }
 
-      let bpmnSummary: string | null = null;
-      if (state) {
-        const stagedBpmn = state.files.filter(
-          (gitFile) => gitFile.indexStatus != null && gitFile.path.endsWith('.bpmn'),
-        );
-        if (stagedBpmn.length > 0) {
-          bpmnSummary = await buildChangeSummaryForFiles(bifrost, resolved, stagedBpmn);
-        }
+      const changeSummary = state
+        ? await buildChangeSummaryForFiles(
+            bifrost,
+            resolved,
+            state.files.filter((gitFile) => gitFile.indexStatus != null && isModelFile(gitFile.path)),
+          )
+        : null;
 
-        const stagedDmn = state.files.filter((gitFile) => gitFile.indexStatus != null && gitFile.path.endsWith('.dmn'));
-        if (stagedDmn.length > 0) {
-          const dmnSummary = await buildChangeSummaryForDmnFiles(bifrost, repositoryStore, resolved, stagedDmn);
-          bpmnSummary = bpmnSummary ? `${bpmnSummary}\n\n${dmnSummary}` : dmnSummary;
-        }
-      }
-
-      const options = await openCommitDialog(bifrost, undefined, bpmnSummary ?? undefined);
+      const options = await openCommitDialog(bifrost, undefined, changeSummary ?? undefined);
       if (!options) {
         return;
       }
@@ -595,26 +586,35 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
   bifrost.commands.register(
     'git.createBranchForProcess',
     async () => {
-      if (!bifrost.commands.isRegistered('bpmn.diff.suggestBranchNameForProcess')) {
-        bifrost.notifications.open('No branch name provider available for the current document type.');
+      const uri = bifrost.editors.getFocusedEditorDocument()?.uri;
+      const digestCommand = uri?.startsWith('file://') ? getModelCommand(uri, 'getChangeDigest') : null;
+      if (uri == null || digestCommand == null || !bifrost.commands.isRegistered(digestCommand)) {
+        bifrost.notifications.open('Focus a BPMN, DMN or landscape map file first.');
         return;
       }
 
-      const suggestion = await bifrost.commands.executeCommand<{ uri: string; suggestedName: string } | null>(
-        'bpmn.diff.suggestBranchNameForProcess',
-      );
-      if (!suggestion) {
-        bifrost.notifications.open('No BPMN document is currently focused.');
-        return;
-      }
-
-      const repoRoot = repositoryStore.getRepoRootForUri(suggestion.uri);
+      const repoRoot = repositoryStore.getRepoRootForUri(uri);
       if (!repoRoot) {
         bifrost.notifications.open('File is not in a Git repository.');
         return;
       }
 
-      const branchName = await bifrost.dialog.prompt('Create Branch for Process', suggestion.suggestedName);
+      let modelName: string | null = null;
+      try {
+        const digest = await bifrost.commands.executeCommand<ModelChangeDigest>(digestCommand, [
+          null,
+          await bifrost.files.load(uri),
+        ]);
+        modelName = digest.modelName;
+      } catch {
+        // The file name is the suggestion then.
+      }
+      const slug = (modelName ?? path.basename(uri, path.extname(uri)))
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      const branchName = await bifrost.dialog.prompt('Create Branch for Model', `feature/${slug}`);
       if (!branchName?.trim()) {
         return;
       }
@@ -625,14 +625,14 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
         showBranchCreateError(bifrost, error);
       }
     },
-    { visibleInSearch: true, description: 'Git: Create Branch for This Process' },
+    { visibleInSearch: true, description: 'Git: Create Branch for This Model' },
   );
 
   // ponytail: like the rest of the Git pane, the staged files are compared as HEAD against the file on disk, not
   // against the index. Ceiling: a file staged and then edited again is described with its unstaged edits too.
   bifrost.commands.register('git.suggestCommitTitle', async (repositoryRoot: string): Promise<string | null> => {
     const stagedModelFiles = (repositoryStore.getRepoState(repositoryRoot)?.files ?? []).filter((file) => {
-      const digestCommand = DIGEST_COMMANDS[path.extname(file.path).toLowerCase()];
+      const digestCommand = getModelCommand(file.path, 'getChangeDigest');
       return (
         digestCommand != null &&
         bifrost.commands.isRegistered(digestCommand) &&
@@ -642,14 +642,14 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
       );
     });
     if (stagedModelFiles.length === 0) {
-      bifrost.notifications.open('Stage a BPMN or DMN file first.');
+      bifrost.notifications.open('Stage a BPMN, DMN or landscape map file first.');
       return null;
     }
 
     try {
       const models = await Promise.all(
         stagedModelFiles.map(async (file) => {
-          const digestCommand = DIGEST_COMMANDS[path.extname(file.path).toLowerCase()];
+          const digestCommand = getModelCommand(file.path, 'getChangeDigest')!;
           const beforeText =
             file.indexStatus === 'added'
               ? null
@@ -727,9 +727,9 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
   bifrost.commands.register(
     'git.previewFileVersion',
     async (fileUri: string, hash: string, subject: string, author: string, date: string) => {
-      const previewCommand = getHistoryPreviewCommand(fileUri);
+      const previewCommand = getModelCommand(fileUri, 'openHistoryPreview');
       if (previewCommand == null || !bifrost.commands.isRegistered(previewCommand)) {
-        bifrost.notifications.open('Only BPMN and DMN files can be previewed.');
+        bifrost.notifications.open('This file type cannot be previewed.');
         return;
       }
 
@@ -743,7 +743,7 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
     },
     {
       enabledWhen: (fileUri?: string): boolean => {
-        const previewCommand = fileUri == null ? null : getHistoryPreviewCommand(fileUri);
+        const previewCommand = fileUri == null ? null : getModelCommand(fileUri, 'openHistoryPreview');
         return previewCommand != null && bifrost.commands.isRegistered(previewCommand);
       },
     },
@@ -881,14 +881,6 @@ export function initializeCommands(bifrost: Bifrost, repositoryStore: Repository
   if (process.env.APP_TEST === 'true') {
     initializeTestCommands(bifrost, repositoryStore);
   }
-}
-
-function getHistoryPreviewCommand(fileUri: string): string | null {
-  const lowerCaseUri = fileUri.toLowerCase();
-  if (lowerCaseUri.endsWith('.bpmn')) {
-    return 'bpmn.diff.openHistoryPreview';
-  }
-  return lowerCaseUri.endsWith('.dmn') ? 'dmn.diff.openHistoryPreview' : null;
 }
 
 function initializeMergeCommands(bifrost: Bifrost, repositoryStore: RepositoryStore): void {
@@ -1059,6 +1051,10 @@ function initializeMergeCommands(bifrost: Bifrost, repositoryStore: RepositorySt
         model.advanceToNext();
         return;
       }
+      // The resolver reported why the merged model is invalid; writing one raw side would drop the other's changes.
+      if (resolverApi.wasResultRefused?.() === true) {
+        return;
+      }
     }
 
     if (model.conflictKind === 'ours-deleted') {
@@ -1089,6 +1085,9 @@ function initializeMergeCommands(bifrost: Bifrost, repositoryStore: RepositorySt
         await writeResolvedFile(bifrost, repositoryStore, repoRoot, entry.relativePath, xml, { stage: true });
         model.markCurrentResolved();
         model.advanceToNext();
+        return;
+      }
+      if (resolverApi.wasResultRefused?.() === true) {
         return;
       }
     }
@@ -2131,47 +2130,10 @@ function findProtectedDiagramsInStaged(bifrost: Bifrost, state: SourceControlRep
 
   const matchers = patterns.map((pattern) => new Minimatch(pattern, { matchBase: true }));
   const stagedDiagrams = state.files
-    .filter(
-      (gitFile) => gitFile.indexStatus != null && (gitFile.path.endsWith('.bpmn') || gitFile.path.endsWith('.dmn')),
-    )
+    .filter((gitFile) => gitFile.indexStatus != null && isModelFile(gitFile.path))
     .map((gitFile) => gitFile.path);
 
   return stagedDiagrams.filter((filePath) => matchers.some((patternMatcher) => patternMatcher.match(filePath)));
-}
-
-async function buildChangeSummaryForDmnFiles(
-  bifrost: Bifrost,
-  repositoryStore: RepositoryStore,
-  repoRoot: string,
-  stagedFiles: SourceControlFileStatus[],
-): Promise<string> {
-  const summaryParts: string[] = [];
-
-  for (const gitFile of stagedFiles) {
-    const filePath = gitFile.uri.startsWith('file://') ? gitFile.uri.substring('file://'.length) : gitFile.uri;
-    const relativePath = filePath.substring(repoRoot.length + 1);
-    const fileName = relativePath.split('/').pop() ?? relativePath;
-
-    try {
-      const headXml = await bifrost.sourceControl.getFileContentAtRevision(repoRoot, 'HEAD', relativePath);
-      const currentXml = await bifrost.files.load(gitFile.uri);
-
-      if (bifrost.commands.isRegistered('dmn.diff.getChangeSummaryMarkdown')) {
-        const markdown = await bifrost.commands.executeCommand<string>('dmn.diff.getChangeSummaryMarkdown', [
-          headXml,
-          currentXml,
-          fileName,
-        ]);
-        summaryParts.push(markdown);
-      } else {
-        summaryParts.push(`- **${fileName}**: (detailed diff unavailable)`);
-      }
-    } catch {
-      summaryParts.push(`- **${relativePath}**: (diff unavailable)`);
-    }
-  }
-
-  return summaryParts.join('\n\n');
 }
 
 async function confirmRevert(bifrost: Bifrost, filePaths: readonly string[]): Promise<boolean> {

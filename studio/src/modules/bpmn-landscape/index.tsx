@@ -8,8 +8,11 @@ import LandscapeMapRenderer from './LandscapeMapRenderer';
 import { LandscapeSearchIndexerClient } from './LandscapeSearchIndexerClient';
 import { LANDSCAPE_SOLUTION_SCAN_KEY, LandscapeSolutionScan } from './LandscapeSolutionScan';
 import { registerLandscapeCommands } from './commands';
+import { registerLandscapeDiff } from './diff';
 import { getMapOpenRefusal, LANDSCAPE_DOCUMENT_TYPE, LANDSCAPES_PAGE_ID, LANDSCAPES_VIEW_ID } from './landscapeFolder';
 import { MapsDecorationProvider } from './mapsExplorerDecorations';
+import { registerLandscapeMerge } from './merge';
+import LandscapeMergeResolver from './merge/LandscapeMergeResolver';
 import { LandscapeFolderHint } from './panes/LandscapeFolderHint';
 import * as LandscapePropertiesPane from './panes/LandscapePropertiesPane';
 import * as ProcessesPane from './panes/ProcessesPane';
@@ -66,6 +69,8 @@ export function onLoad(bifrost: Bifrost): void {
     modelConstructor: LandscapeMapDocumentModel,
     rendererKey: 'LandscapeMapRenderer',
     rendererConstructor: LandscapeMapRenderer,
+    mergeResolverKey: 'LandscapeMergeResolver',
+    mergeResolverConstructor: LandscapeMergeResolver,
     icon: 'bpmn-landscape/document-type/map',
     canOpen: (uri: string) => {
       const refusal = getMapOpenRefusal(bifrost, uri);
@@ -199,6 +204,8 @@ export function onLoad(bifrost: Bifrost): void {
   }
 
   registerLandscapeCommands(bifrost);
+  registerLandscapeDiff(bifrost);
+  registerLandscapeMerge(bifrost);
 
   // Opened by the canvas context menu with the clicked shape's id and type; both are `null` on the empty canvas.
   bifrost.menus.registerMenu('bpmn/landscape/element', (elementId: string | null, elementType: string | null): Menu => {

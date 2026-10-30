@@ -3,7 +3,7 @@ import type { EditorDocumentModel } from '#bifrost/common/EditorDocumentModel';
 
 export type MergeConflictKind = 'content' | 'ours-deleted' | 'theirs-deleted' | 'added-by-both';
 
-export type MergeFileType = 'bpmn' | 'dmn';
+export type MergeFileType = 'bpmn' | 'dmn' | 'landscape';
 
 export const EVENT_MERGE_FILE_CHANGED = 'EVENT_MERGE_FILE_CHANGED';
 export const EVENT_RESOLUTION_CHANGED = 'EVENT_RESOLUTION_CHANGED';

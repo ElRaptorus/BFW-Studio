@@ -23,6 +23,7 @@ import KeyboardMoveSelectionModule from 'diagram-js/lib/features/keyboard-move-s
 import LassoToolModule from 'diagram-js/lib/features/lasso-tool';
 import ModelingModule from 'diagram-js/lib/features/modeling';
 import MoveModule from 'diagram-js/lib/features/move';
+import OutlineModule from 'diagram-js/lib/features/outline';
 import OverlaysModule from 'diagram-js/lib/features/overlays';
 import PaletteModule from 'diagram-js/lib/features/palette';
 import PopupMenuModule from 'diagram-js/lib/features/popup-menu';
@@ -127,7 +128,20 @@ class LandscapeConnectors {
   }
 }
 
+/** The landscape services that drawing and importing a map need; `LANDSCAPE_MODULE` adds the editing ones. */
+const LANDSCAPE_VIEWER_MODULE = {
+  __init__: ['landscapeRenderer', 'orderingProvider', 'landscapeUpdates', 'landscapeCollapse', 'landscapeDrilldown'],
+  landscapeRenderer: ['type', LandscapeRenderer],
+  orderingProvider: ['type', LandscapeOrdering],
+  landscapeUpdates: ['type', LandscapeUpdates],
+  landscapeCollapse: ['type', LandscapeCollapse],
+  landscapeDrilldown: ['type', LandscapeDrilldown],
+  connectionDocking: ['type', CroppingConnectionDocking],
+  layouter: ['type', LandscapeLayouter],
+};
+
 const LANDSCAPE_MODULE = {
+  ...LANDSCAPE_VIEWER_MODULE,
   __init__: [
     'landscapeRenderer',
     'landscapeRules',
@@ -146,26 +160,32 @@ const LANDSCAPE_MODULE = {
     'landscapePluginPalette',
     'landscapePluginContextPad',
   ],
-  landscapeRenderer: ['type', LandscapeRenderer],
   landscapeRules: ['type', LandscapeRules],
   landscapeLabelEditing: ['type', LandscapeLabelEditing],
   landscapeCopyPaste: ['type', LandscapeCopyPaste],
   landscapeConnectors: ['type', LandscapeConnectors],
-  orderingProvider: ['type', LandscapeOrdering],
   landscapeGroupMembership: ['type', LandscapeGroupMembership],
   landscapeRelationLayer: ['type', LandscapeRelationLayer],
-  landscapeUpdates: ['type', LandscapeUpdates],
-  landscapeCollapse: ['type', LandscapeCollapse],
-  landscapeDrilldown: ['type', LandscapeDrilldown],
   paletteProvider: ['type', LandscapePaletteProvider],
   contextPadProvider: ['type', LandscapeContextPadProvider],
   landscapeReplaceMenu: ['type', LandscapeReplaceMenuProvider],
   landscapePluginPalette: ['type', LandscapePluginPaletteProvider],
   landscapePluginContextPad: ['type', LandscapePluginContextPadProvider],
-  connectionDocking: ['type', CroppingConnectionDocking],
-  layouter: ['type', LandscapeLayouter],
   createMoveSnapping: ['type', LandscapeSnapping],
 };
+
+const READ_ONLY_MODULES = [
+  SelectionModule,
+  OutlineModule,
+  OverlaysModule,
+  ZoomScrollModule,
+  MoveCanvasModule,
+  RootElementsModule,
+  ModelingModule,
+  LandscapeTextRendererModule,
+  LandscapeOutlineModule,
+  LANDSCAPE_VIEWER_MODULE,
+];
 
 const EXPORT_PADDING = 10;
 
@@ -200,59 +220,65 @@ export default class LandscapeModeler {
   readonly container: HTMLDivElement;
   private readonly diagram: Diagram;
 
-  /** `additionalModules` come after the built-in modules, so they can override a service of theirs. */
-  constructor(config: LandscapeRendererConfig, additionalModules: any[] = []) {
+  /**
+   * `additionalModules` come after the built-in modules, so they can override a service of theirs. A read-only canvas
+   * draws, selects, zooms and opens collapsed groups, and leaves out `additionalModules`.
+   */
+  constructor(config: LandscapeRendererConfig, additionalModules: any[] = [], options: { readOnly?: boolean } = {}) {
     this.container = document.createElement('div');
     this.container.className = 'landscape-map__canvas';
     this.diagram = new Diagram({
       canvas: { container: this.container },
       keyboard: { bind: false },
       landscape: config,
-      modules: [
-        SelectionModule,
-        MoveModule,
-        ResizeModule,
-        AutoResizeModule,
-        ModelingModule,
-        CreateModule,
-        ConnectModule,
-        ConnectionPreviewModule,
-        BendpointsModule,
-        LassoToolModule,
-        HandToolModule,
-        AlignElementsModule,
-        DistributeElementsModule,
-        CopyPasteModule,
-        KeyboardModule,
-        KeyboardMoveSelectionModule,
-        EditorActionsModule,
-        SnappingModule,
-        GridSnappingModule,
-        SpaceToolModule,
-        GlobalConnectModule,
-        RootElementsModule,
-        OverlaysModule,
-        ContextPadModule,
-        PaletteModule,
-        PopupMenuModule,
-        ZoomScrollModule,
-        MoveCanvasModule,
-        GridModule,
-        MinimapModule,
-        DirectEditingModule,
-        AutoScrollModule,
-        KeepSelectionVisibleModule,
-        LandscapeTextRendererModule,
-        LandscapeOutlineModule,
-        LandscapeAlignDistributeModule,
-        LandscapePlaceholderMenuModule,
-        LandscapeAppendModule,
-        LandscapeModelingFeedbackModule,
-        LandscapeColorPadModule,
-        LandscapeSearchModule,
-        LANDSCAPE_MODULE,
-        ...additionalModules,
-      ],
+      modules:
+        options.readOnly === true
+          ? READ_ONLY_MODULES
+          : [
+              SelectionModule,
+              MoveModule,
+              ResizeModule,
+              AutoResizeModule,
+              ModelingModule,
+              CreateModule,
+              ConnectModule,
+              ConnectionPreviewModule,
+              BendpointsModule,
+              LassoToolModule,
+              HandToolModule,
+              AlignElementsModule,
+              DistributeElementsModule,
+              CopyPasteModule,
+              KeyboardModule,
+              KeyboardMoveSelectionModule,
+              EditorActionsModule,
+              SnappingModule,
+              GridSnappingModule,
+              SpaceToolModule,
+              GlobalConnectModule,
+              RootElementsModule,
+              OverlaysModule,
+              ContextPadModule,
+              PaletteModule,
+              PopupMenuModule,
+              ZoomScrollModule,
+              MoveCanvasModule,
+              GridModule,
+              MinimapModule,
+              DirectEditingModule,
+              AutoScrollModule,
+              KeepSelectionVisibleModule,
+              LandscapeTextRendererModule,
+              LandscapeOutlineModule,
+              LandscapeAlignDistributeModule,
+              LandscapePlaceholderMenuModule,
+              LandscapeAppendModule,
+              LandscapeModelingFeedbackModule,
+              LandscapeColorPadModule,
+              LandscapeSearchModule,
+              LANDSCAPE_MODULE,
+              ...additionalModules,
+            ],
     });
   }
 
@@ -477,7 +503,7 @@ export default class LandscapeModeler {
   }
 
   destroy(): void {
-    this.get('contextPad').close();
+    this.diagram.get<any>('contextPad', false)?.close();
     this.diagram.destroy();
   }
 }

@@ -19,8 +19,8 @@ import { EditorToolbarTextInput } from '#components/editor/EditorToolbarTextInpu
 
 import React, { useEffect, useReducer, useState } from 'react';
 
+import { isModelFile } from '../modelFileTypes';
 import type SourceOverviewDocumentModel from './SourceOverviewDocumentModel';
-import { isModelFile } from './SourceOverviewDocumentModel';
 import type { OverviewFile } from './SourceOverviewDocumentModel';
 import { ChangeRow } from './components/ChangeRow';
 import { SourceHistory } from './components/SourceHistory';
@@ -47,7 +47,7 @@ function ScrollingOverview(props: { scrollKey: string; children: React.ReactNode
   );
 }
 
-/** All changed files as one compact list, BPMN and DMN files first. */
+/** All changed files as one compact list, model files first. */
 function ChangeList(props: {
   model: SourceOverviewDocumentModel;
   repositoryRoot: string;

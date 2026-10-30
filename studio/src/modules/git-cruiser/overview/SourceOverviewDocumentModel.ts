@@ -15,6 +15,7 @@ import debounce from 'lodash.debounce';
 import * as path from 'path';
 
 import type { RepositoryStore } from '../RepositoryStore';
+import { getModelCommand, isModelFile } from '../modelFileTypes';
 
 export const SOURCE_OVERVIEW_URI = 'git:overview';
 
@@ -23,11 +24,6 @@ const REFRESH_DEBOUNCE_MILLISECONDS = 500;
 // ponytail: only the first 20 model files of a change list are summarized automatically, the rest wait for a click on
 // "Summarize". Ceiling: a very large change set stays partly unsummarized until the user asks.
 const EAGER_DIGEST_LIMIT = 20;
-
-export const DIGEST_COMMANDS: Record<string, string> = {
-  '.bpmn': 'bpmn.diff.getChangeDigest',
-  '.dmn': 'dmn.diff.getChangeDigest',
-};
 
 // ponytail: the default base is guessed from the usual names; the branch `origin/HEAD` points to is not read.
 const DEFAULT_BASE_CANDIDATES = ['main', 'master', 'origin/main', 'origin/master'];
@@ -68,10 +64,6 @@ type ComparisonState = {
 export type ExpandedCommit =
   | 'loading'
   | { readonly files: readonly OverviewFile[]; readonly previewablePaths: ReadonlySet<string> };
-
-export function isModelFile(relativePath: string): boolean {
-  return DIGEST_COMMANDS[path.extname(relativePath).toLowerCase()] != null;
-}
 
 function toOverviewFile(file: SourceControlChangedFile, beforeRef: string, afterRef: string): OverviewFile {
   return {
@@ -620,7 +612,7 @@ export default class SourceOverviewDocumentModel extends EditorDocumentModel {
 
   private async summarize(file: OverviewFile, rereadContents = true): Promise<void> {
     const repositoryRoot = this.getRepositoryRoot();
-    const command = DIGEST_COMMANDS[path.extname(file.path).toLowerCase()];
+    const command = getModelCommand(file.path, 'getChangeDigest');
     if (
       repositoryRoot == null ||
       command == null ||

@@ -310,8 +310,15 @@ export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositorySto
     });
   }
 
-  if (bifrost.menus.isMenuRegistered('bpmn/element')) {
-    bifrost.menus.registerMenuModifier('bpmn/element', (menu: Menu) => {
+  const elementMenus = [
+    { menuId: 'bpmn/element', itemId: 'git-cruiser/bpmn-element/show-diff' },
+    { menuId: 'bpmn/landscape/element', itemId: 'git-cruiser/landscape-element/show-diff' },
+  ];
+  for (const { menuId, itemId } of elementMenus) {
+    if (!bifrost.menus.isMenuRegistered(menuId)) {
+      continue;
+    }
+    bifrost.menus.registerMenuModifier(menuId, (menu: Menu) => {
       const editorDocument = bifrost.editors.getFocusedEditorDocument();
       if (!editorDocument) {
         return menu;
@@ -327,7 +334,7 @@ export function initializeMenus(bifrost: Bifrost, repositoryStore: RepositorySto
         {
           type: 'command',
           label: 'Show Changes',
-          id: 'git-cruiser/bpmn-element/show-diff',
+          id: itemId,
           icon: 'git-cruiser/diff',
           command: 'git.showGitDiff',
           commandArgs: [editorDocument.uri],

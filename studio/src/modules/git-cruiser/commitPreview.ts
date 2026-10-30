@@ -1,6 +1,8 @@
 import type { Bifrost } from '#bifrost/Bifrost';
 import type { SourceControlFileStatus } from '#bifrost/contracts/SourceControlTypes';
 
+import { getModelCommand } from './modelFileTypes';
+
 export async function buildChangeSummaryForFiles(
   bifrost: Bifrost,
   repoRoot: string,
@@ -33,13 +35,10 @@ export async function buildChangeSummaryForFiles(
 
     const fileName = relativePath.split('/').pop() ?? relativePath;
 
-    if (bifrost.commands.isRegistered('bpmn.diff.getChangeSummaryMarkdown')) {
+    const summaryCommand = getModelCommand(relativePath, 'getChangeSummaryMarkdown');
+    if (summaryCommand != null && bifrost.commands.isRegistered(summaryCommand)) {
       try {
-        const markdown = await bifrost.commands.executeCommand<string>('bpmn.diff.getChangeSummaryMarkdown', [
-          headXml,
-          currentXml,
-          fileName,
-        ]);
+        const markdown = await bifrost.commands.executeCommand<string>(summaryCommand, [headXml, currentXml, fileName]);
         summaryParts.push(markdown);
       } catch {
         summaryParts.push(`- **${relativePath}**: (diff unavailable)`);

@@ -234,6 +234,8 @@ Read-only `NavigatedViewer` (DRD only) with viewbox sync, selection sync, and di
 | Command | Description |
 |---------|-------------|
 | `dmn.diff.openDiffOriginalDataVsCurrentData` | Working copy diff for the focused DMN (command search) |
+| `dmn.diff.openDiffCurrentDataVsOriginalData` | Reverse working copy diff; the link in the editor's "File was changed" banner |
+| `dmn.diff.exportBeforeToNewFile` | Toolbar "Export 'Before'": saves the diff's before XML unchanged to a chosen `.dmn` file |
 | `dmn.diff.openDiffTwoFiles` | Compare two files by URI (called by git-cruiser). Optional third argument `{ label?, sourceFileUri?, beforeLabel?, afterLabel? }` as for `bpmn.diff.openDiffTwoFiles` |
 | `dmn.diff.showChangeSummaryDialog` | Markdown summary dialog from the computed `DmnDiffDocumentModel`. Toolbar passes `editorDocument`; `enabledWhen` and the handler fall back to the focused `dmn.diff` document when invoked with no args. The handler awaits `bifrost.dialog.open` until Close/Copy; integration tests must use `executeCommandWithoutBlocking`, not `executeCommand` |
 | `dmn.diff.getChangeSummaryMarkdown` | Markdown summary for two XMLs (git-cruiser commit preview) |
@@ -385,7 +387,7 @@ Dual diffs (`base→ours`, `base→theirs`) via `DmnDiff`; `classifyElements()` 
 
 Imperative API on `resolverRef` (same surface as BPMN): zoom, conflict navigation, selection, `getClassifiedElements()`, per-element/key resolution (`acceptOursForElement`, `acceptTheirsForElement`, `revertAutoApplied`, etc.), `getResultXml()`, `getResolutionProgress()`, `getResultModelerApi()`.
 
-Registered on the `dmn` document type via `mergeResolverKey: 'DmnMergeResolver'`. Git-cruiser dispatches to it via `classifyFileType()` returning `'dmn'` for `.dmn` files. Merge commands: `git.merge.acceptAllOurs.dmn`, `git.merge.getResultXml.dmn`, etc. in `initializeDmnCommands.ts`.
+Registered on the `dmn` document type via `mergeResolverKey: 'DmnMergeResolver'`. Git Cruiser walks `.dmn` files with `fileType` `'dmn'` from its model file table (`git-cruiser/modelFileTypes.ts`, see [git-cruiser.md](git-cruiser.md) §Model file types) and dispatches to the resolver of the file's document type. Merge commands: `git.merge.acceptAllOurs.dmn`, `git.merge.getResultXml.dmn`, etc. in `initializeDmnCommands.ts`.
 
 ---
 

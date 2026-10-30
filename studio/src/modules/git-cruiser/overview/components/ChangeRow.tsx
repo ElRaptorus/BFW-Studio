@@ -4,8 +4,8 @@ import { Icon } from '#components/Icon';
 
 import React from 'react';
 
+import { getModelFileType, isModelFile } from '../../modelFileTypes';
 import type { DigestState, OverviewFile } from '../SourceOverviewDocumentModel';
-import { isModelFile } from '../SourceOverviewDocumentModel';
 import { ChangeBadge } from './ChangeBadge';
 
 const MAXIMUM_LISTED_ELEMENT_NAMES = 3;
@@ -22,14 +22,7 @@ type ChangeRowProps = {
 };
 
 function getFileTypeIcon(relativePath: string): { icon: string; label: string } {
-  const lowerCasePath = relativePath.toLowerCase();
-  if (lowerCasePath.endsWith('.bpmn')) {
-    return { icon: 'ph-light ph-flow-arrow', label: 'Process' };
-  }
-  if (lowerCasePath.endsWith('.dmn')) {
-    return { icon: 'ph-light ph-table', label: 'Decision' };
-  }
-  return { icon: 'ph-light ph-file', label: 'File' };
+  return getModelFileType(relativePath) ?? { icon: 'ph-light ph-file', label: 'File' };
 }
 
 /** One short line, e.g. "2 added · 1 changed · layout moved". */

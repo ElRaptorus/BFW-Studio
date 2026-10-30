@@ -218,7 +218,7 @@ Properties pane methods: `getProcessLabel`, `getMapProperties` (`null` while unr
 
 `new Diagram({ canvas: { container }, keyboard: { bind: false }, landscape: config })`. The diagram-js keyboard is unbound; Studio keybindings drive the editor actions.
 
-- **Module order:** diagram-js modules (selection, move, resize, auto-resize, modeling, create, connect, connection-preview, bendpoints, lasso, hand tool, align, distribute, copy-paste, keyboard, keyboard-move-selection, editor-actions, snapping, grid-snapping, space-tool, global-connect, root-elements, overlays, context-pad, palette, popup-menu, zoomscroll, movecanvas, `diagram-js-grid`, `diagram-js-minimap`, `diagram-js-direct-editing`, auto-scroll, keep-selection-visible), then the built-in feature modules of `modeler/features/` (table below), then `LANDSCAPE_MODULE`, then `additionalModules`. The model passes `landscapeModelerModuleRegistry.getAll()` as `additionalModules`, so plugins come last and can override a service (see [plugin-landscape-enrichment.md](plugin-landscape-enrichment.md) and the command `bpmn.landscape.modeler.registerModule`).
+- **Module order:** diagram-js modules (selection, move, resize, auto-resize, modeling, create, connect, connection-preview, bendpoints, lasso, hand tool, align, distribute, copy-paste, keyboard, keyboard-move-selection, editor-actions, snapping, grid-snapping, space-tool, global-connect, root-elements, overlays, context-pad, palette, popup-menu, zoomscroll, movecanvas, `diagram-js-grid`, `diagram-js-minimap`, `diagram-js-direct-editing`, auto-scroll, keep-selection-visible), then the built-in feature modules of `modeler/features/` (table below), then `LANDSCAPE_MODULE`, then `additionalModules` (the read-only mode has its own short list, see [§Read-only LandscapeModeler](#read-only-landscapemodeler)). The model passes `landscapeModelerModuleRegistry.getAll()` as `additionalModules`, so plugins come last and can override a service (see [plugin-landscape-enrichment.md](plugin-landscape-enrichment.md) and the command `bpmn.landscape.modeler.registerModule`).
 - **Icons:** context pad and palette use bpmn-font classes where bpmn-js has the same action (`bpmn-icon-trash`, `bpmn-icon-screw-wrench`, `bpmn-icon-connection-multi`, `bpmn-icon-subprocess-collapsed` / `-expanded`, `bpmn-icon-hand-tool`, `bpmn-icon-lasso-tool`, `bpmn-icon-space-tool`, `bpmn-icon-connection`); `LandscapeMapRenderer.tsx` imports `bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css`. Landscape-only actions (create band, group, placeholder, note; append; hide; open; placeholder actions) use Phosphor.
 - **`importMap(map)`** clears the canvas, adds `mapToCanvasDescriptors(map)` shapes parent-first, bands and groups before their other siblings, and connectors as connections of type `connector` (laid out when they have fewer than two waypoints), sets the map properties on `landscapeUpdates`, then clears the command stack. **`exportMap(previousMap)`** walks the root depth-first, skips connections of type `relation`, and takes `name`, `relationLayers` and `hiddenRelations` from `landscapeUpdates`.
 - **`showRelationLines(lines)`** delegates to `landscapeRelationLayer`. **`updateFocus(enabled)`** clears the `landscape-focused` markers; with focus on and a selection it puts the class `landscape-map--focus` on the container and marks the selected elements, their descendants, every connection touching them and the elements at the other end.
@@ -306,7 +306,7 @@ A relation line is **unbound**: it has no `source` and `target`, so it is never 
 
 ### Renderer, Pane and Commands
 
-- **`LandscapeMapRenderer.tsx`:** shows `EditorLoadingError` while the map is unreadable, otherwise the watcher title warnings, an `EditorToolbar` with the Focus button (`bpmn.landscape.toggleFocusMode`, active class from metadata `focusMode`, `data-test--landscape-focus-mode`) and the canvas host (`data-test--landscape-canvas`). The toolbar also has Export (`std.editor.showExportDialog.bpmn-landscape-map`, `data-test--landscape-export`), Show Changes (`git.showGitDiff`, a text diff of the map file, `data-test--landscape-show-changes`) and History (`git.showFileHistory`, `data-test--landscape-history`), both only while the git commands are registered, and, on the right, the Show Grid checkbox (`data-test--landscape-show-grid`) and Zoom to viewport (`std.editor.zoomToViewport`, `data-test--landscape-zoom-to-viewport`). The host opens the context menu `bpmn/landscape/element` on `contextmenu`: `selectForContextMenu(elementId)` selects the clicked element first and the menu receives its id and type (`null` on the empty canvas, which offers only Paste). The entries are Copy, Paste, Delete, then Open (process, map link), Model this process… and Link to existing process… (placeholder only), Change element (process, placeholder, note) and Open element in text editor (everything except relation lines, which are not in the file).  The host is a `useDropTarget` for `tree_item` subjects with `metadata.processId` (a drop calls `bpmn.landscape.addProcessToMap`) or a `.bfwmap` file row of the Maps explorer (`bpmn.landscape.addMapLinkToMap`), both with `toCanvasPoint(event)`. Styles: `styles/landscape.scss`; focus mode dims `.landscape-map--focus .djs-element:not(.landscape-focused) > .djs-visual`, so the children of a dimmed group keep their own look.
+- **`LandscapeMapRenderer.tsx`:** shows `EditorLoadingError` while the map is unreadable, otherwise the watcher title warnings ("File was changed" links to `bpmn.landscape.diff.openDiffCurrentDataVsOriginalData`, `data-test--landscape-changed-outside-diff`), an `EditorToolbar` with the Focus button (`bpmn.landscape.toggleFocusMode`, active class from metadata `focusMode`, `data-test--landscape-focus-mode`) and the canvas host (`data-test--landscape-canvas`). The toolbar also has Export (`std.editor.showExportDialog.bpmn-landscape-map`, `data-test--landscape-export`), Show Changes (`git.showGitDiff`, which opens the visual map diff of §Diff View, `data-test--landscape-show-changes`) and History (`git.showFileHistory`, which lists the commits and opens §History Preview, `data-test--landscape-history`), both only while the git commands are registered, and, on the right, the Show Grid checkbox (`data-test--landscape-show-grid`) and Zoom to viewport (`std.editor.zoomToViewport`, `data-test--landscape-zoom-to-viewport`). The host opens the context menu `bpmn/landscape/element` on `contextmenu`: `selectForContextMenu(elementId)` selects the clicked element first and the menu receives its id and type (`null` on the empty canvas, which offers only Paste). The entries are Copy, Paste, Delete, then Open (process, map link), Model this process… and Link to existing process… (placeholder only), Change element (process, placeholder, note) and Open element in text editor (everything except relation lines, which are not in the file).  The host is a `useDropTarget` for `tree_item` subjects with `metadata.processId` (a drop calls `bpmn.landscape.addProcessToMap`) or a `.bfwmap` file row of the Maps explorer (`bpmn.landscape.addMapLinkToMap`), both with `toCanvasPoint(event)`. Styles: `styles/landscape.scss`; focus mode dims `.landscape-map--focus .djs-element:not(.landscape-focused) > .djs-visual`, so the children of a dimmed group keep their own look.
 - **Properties pane (`panes/LandscapePropertiesPane.tsx`):** shown for a readable `bpmn-landscape-map`. It reads the model through its getters and re-renders on `selectionRevision`.
 
   | Selection | View |
@@ -347,6 +347,176 @@ A relation line is **unbound**: it has no `source` and `target`, so it is never 
 `askForNewMapUri(bifrost, defaultName, directoryUri?)` in `commands.ts` serves `newMap` and the wizard. With the gate closed (`getReadyGateOrExplain`) it activates the Landscapes page, shows an info notice and returns `null`. Otherwise it creates the landscape folder if missing, asks for a path with the native save dialog (starting in `directoryUri` when it lies in the landscape folder, else in the folder itself; the dialog can create subfolders; default file name `<defaultName>.bfwmap`), appends `.bfwmap` when missing (and stops with a warning when that file exists, because the dialog only checked the name without the extension) and refuses a path outside the landscape folder with a warning. It returns the chosen URI.
 
 The selection commands do nothing while direct editing is active, so the keys reach the text box. Keybindings are scoped to `.kbm-editor[data-editor-document-type=bpmn-landscape-map]`: Backspace (macOS) / Delete, Cmd/Ctrl+C, Cmd/Ctrl+V, Cmd/Ctrl+F (search pad, more specific than the global inline search binding), F (focus mode), the arrow keys and Shift+arrow keys. `KeybindingsManager` ignores single-character keys in inputs, so F still types in the properties pane. Undo, redo and save use the global `std.editor.*` bindings.
+
+---
+
+## Source control: change model and viewer
+
+The pieces Git Cruiser and the landscape diff and merge views build on: an id-keyed diff of two maps, the two commands Git Cruiser calls by its naming convention ([git-cruiser.md](git-cruiser.md)), and a read-only canvas with viewbox and selection sync. `registerLandscapeDiff(bifrost)` (`diff/index.ts`) is called once from `onLoad`.
+
+### landscapeMapDiff
+
+**Path:** `studio/src/modules/bpmn-landscape/diff/landscapeMapDiff.ts`
+
+| Export | Shape |
+|---|---|
+| `LandscapeItemType` | `LandscapeElementType \| 'connector' \| 'level'` |
+| `LandscapePropertyChange` | `{ property, label, before: string \| null, after: string \| null }` |
+| `LandscapeItemChange` | `{ id, itemType, displayName, propertyChanges, layoutChanged }`; `propertyChanges` holds content properties only, `layoutChanged` is set when bounds or waypoints changed |
+| `LandscapeMapDiff` | `{ added, removed, modified, layoutChanged, mapProperties }`; `modified` has at least one content change (and may also have `layoutChanged: true`), `layoutChanged` holds items whose only change is the layout |
+| `diffLandscapeMaps(before, after)` | Pure diff of two `LandscapeMap`s |
+| `diffLandscapeMapTexts(beforeText, afterText)` | Parses both with `parseLandscapeMap`; rejects with an `Error` whose message is the reader's diagnostics joined by `\n` |
+| `formatLandscapeDiffAsMarkdown(diff, fileName, { includeHeading? })` | `### Changes in <file>` (left out with `includeHeading: false`), then `#### Map properties`, `Added`, `Removed`, `Modified`, `Layout changed` with counts; property rows `  - <label>: <before> → <after>` through bpmn-core's `formatSummaryValueForDisplay` (`(none)`, `(complex value)`, quoted text); "No semantic changes detected." when empty |
+
+Rules:
+
+- **Matching:** elements and connectors by id in one id space, levels by id in their own. Order is not compared (a `ponytail:` note): z-order and the order of level names are invisible in diff and merge.
+- **Content properties** (`property` key, values as strings, `null` when absent): every element `parentId`, `style.fill`, `style.stroke`, `extensionAttributes` (sorted, `name="value"` joined by spaces); `label` for band, group, placeholder and map link; group `collapsed`; process `processId`, `fileHint`, `label`, `shape`; placeholder `shape`; map link `mapPath`; note `text`; connector `label`, `sourceId`, `targetId`, `extensionAttributes`; level `name`. A property that only one side has (the type changed under the same id) is `null` on the other.
+- **Layout:** `x`, `y`, `width`, `height` of elements; connector `waypoints`.
+- **Display name:** process `label ?? processId`; note the first 40 characters of its text; other elements their label; an empty name becomes `<type> <id>`. Connector: its label, else `<source name> → <target name>`. Level: its name. Items present on both sides take the after side's name, removed items the before side's.
+- **Map properties:** `name`, `relationLayers.callActivity|message|signal` (`'true'` / `'false'`), one `hiddenRelations` change per key added (`before: null`) or removed (`after: null`), and one opaque `extensions` change whose values are the serialised extensions (attributes sorted), `null` when there are none.
+
+### Commands
+
+| Command | Behaviour |
+|---|---|
+| `bpmn.landscape.diff.getChangeSummaryMarkdown(beforeText, afterText, fileName)` | `formatLandscapeDiffAsMarkdown(await diffLandscapeMapTexts(…), fileName)`; rejects for an unreadable side |
+| `bpmn.landscape.diff.getChangeDigest(beforeText \| null, afterText \| null)` | `buildModelChangeDigestForXmlPair(…, 'map', …)` (`bpmn-core/diff/modelChangeDigest.ts`), with `mapProperties` passed as `definitionsMetadata`, so map property changes set `fileDetailsChanged`. The model name is the `name` of `<landscape:map>` |
+
+### Read-only LandscapeModeler
+
+`new LandscapeModeler(config, additionalModules, { readOnly: true })` builds the diagram from `READ_ONLY_MODULES` only and ignores `additionalModules` (no plugin modules):
+
+| Module | Why |
+|---|---|
+| diagram-js `selection`, `outline`, `overlays`, `zoomscroll`, `movecanvas`, `root-elements`, `modeling` | Select, show the selection outline, diff markers and the drill-down button, zoom and pan, planes of collapsed groups; `modeling` (with `commandStack`) is injected by `landscapeCollapse` and `landscapeUpdates` |
+| `LandscapeTextRenderer`, `LandscapeOutline` | Injected by `landscapeRenderer`; outlines in the shape of the drawn element |
+| `LANDSCAPE_VIEWER_MODULE` | `landscapeRenderer`, `orderingProvider`, `landscapeUpdates`, `landscapeCollapse`, `landscapeDrilldown`, `connectionDocking` (`CroppingConnectionDocking`), `layouter` |
+
+`LANDSCAPE_MODULE` spreads `LANDSCAPE_VIEWER_MODULE` and adds the editing services, so the editor's services and `__init__` order are unchanged. Left out in read-only mode: palette, context pad, direct and label editing, move, resize, create, connect, copy-paste, keyboard, lasso, hand and space tool, grid, minimap, search, colour pad, rules, group membership, relation layer and plugin entries. `importMap` works unchanged; `destroy()` closes the context pad only when the diagram has one. `showRelationLines` needs `landscapeRelationLayer` and must not be called on a read-only canvas.
+
+### LandscapeViewerWithSync
+
+**Path:** `studio/src/modules/bpmn-landscape/diff/LandscapeViewerWithSync.ts`
+
+A read-only `LandscapeModeler` with the public API of `BpmnViewerWithSync` (`bpmn-core/diff/BpmnViewerWithSync.tsx`), for the diff, history and merge views.
+
+| Method | Behaviour |
+|---|---|
+| `constructor(config: LandscapeRendererConfig)` | Builds the read-only modeler; `selection.changed` emits `EVENT_METADATA_UPDATED` with `{ selectedElementIds }` |
+| `attachTo(htmlElement)` | Appends the canvas container, `canvas.resized()` |
+| `loadXml(text)` / `loadMap(map)` | `parseLandscapeMap`, rejecting with the diagnostics joined by `\n`; `importMap` |
+| `addViewboxSync(other)`, `addSelectionSync(other)` | Emit `sync_viewbox` / `sync_select` and follow the other viewer's; a synced selection is mapped by id, ids missing on this side are skipped, and `add` (shift-click) is passed on |
+| `addOverlay(elementId, modifier, cssClass)` | `highlight-overlay highlight-overlay--<modifier>` with an inner `bpmn-diff-overlay bpmn-diff-overlay--<modifier>`, sized by `getBBox` (also for connectors); `false` for an unknown id. The overlays of selected elements get `highlight-overlay--selected`. Overlay type `landscape-change-marker` |
+| `removeOverlays()` | Removes the `landscape-change-marker` overlays only; the drill-down buttons stay |
+| `getElementRegistry()`, `getSelection()`, `getCanvas()` | diagram-js services |
+| `selectWithoutSync(elementIds?)` | Selects by id without emitting `sync_select` |
+| `focusViewOnElements(elementIds)` | Opens the plane of the first element when it lies in a collapsed group, then centres the elements on that plane at 100 % |
+| `zoomToViewport()`, `setZoom(percentage)`, `resetZoom()` | As in `BpmnViewerWithSync` |
+| `destroy()` | Disposes the sync subscriptions on the other viewer and destroys the diagram |
+
+`createLandscapeViewerConfig(bifrost, mapUri)` returns the `LandscapeRendererConfig` for these viewers. It reads the shared `LandscapeSolutionScan` snapshot (`getSharedRessource(LANDSCAPE_SOLUTION_SCAN_KEY)`) on every call and resolves like `LandscapeMapDocumentModel`: `resolveProcessReference(catalog, mapUri, element)` for label (the element label, else the process name, else `processId`), decision count and status, `resolveRelativeUri` against the scanned maps for map links. Without a solution or before the first scan every reference counts as `resolved`. `getConnectorWarning` returns `null`, `executePluginCommand` and `runPlaceholderAction` do nothing, `hasFreeProcesses` returns `false`. The viewer does not redraw when the scan changes.
+
+### Diff View
+
+The visual comparison of two versions of a map, on the page `design/source`. It mirrors the DMN diff (`dmn-diff/`); everything is registered by `registerLandscapeDiff`.
+
+| Part | Path |
+|---|---|
+| Model | `diff/LandscapeDiffDocumentModel.ts` (`modelKey` `LandscapeDiffDocumentModel`) |
+| Renderer | `diff/LandscapeDiffDocumentRenderer.tsx` (`rendererKey` `LandscapeDiffDocumentRenderer`) |
+| Change Overview pane | `panes/LandscapeChangeOverview.tsx` |
+| Styles | `styles/landscape-diff.scss`; markers, splitter and titles come from `bpmn-core/diff/styles/component.bpmn-diff-infrastructure.scss` |
+| Help text | `texts/landscape-diff.md`, id `bpmn-landscape/diff` |
+
+**Document type** `bpmn-landscape-map.diff`: `uriMatch /^fragment\+bpmn-landscape-map\.diff:/`, icon `bpmn-landscape/diff/editor-tab`. The fragment URI is `getUrlForOpenInNewTab('bpmn-landscape-map.diff', beforeUri, 'side-by-side', { beforeUri, beforeData: 'original', afterUri, afterData, sourceFileUri?, beforeLabel?, afterLabel? })`.
+
+**Model.** `loadTexts()` reads each side: `afterData: 'current'` takes `data.current` of the open map document, otherwise the file (it must exist). Both URIs must resolve to the document type `bpmn-landscape-map`. Both texts are parsed with `parseLandscapeMap`; an unreadable side rejects with "The <side> version of the map cannot be read:" plus the reader's diagnostics, which the renderer shows in `EditorLoadingError`. `diffLandscapeMaps` gives the `LandscapeMapDiff`. Two `LandscapeViewerWithSync` instances share one `createLandscapeViewerConfig(bifrost, sourceFileUri ?? parentUri)`, so process names resolve against the real map file, not a temporary copy. `attachTo(before, after)` imports the maps, adds the markers, attaches the canvases and, in the next frame, wires viewbox and selection sync once and fits the before viewer. The model reloads on every focus (`EVENT_RELOADING` / `EVENT_RELOADING_DONE`). It keeps its viewers on close: a fragment URI's model stays cached and is attached again when the same diff reopens (see [common-pitfalls.md](common-pitfalls.md)).
+
+| Marker (`addOverlay` modifier, icon) | Side |
+|---|---|
+| `added`, `ph-duotone ph-plus-circle` | after |
+| `deleted`, `ph-duotone ph-minus-circle` | before |
+| `updated`, `ph-duotone ph-pencil` (modified items) | both |
+| `moved`, `ph ph-arrows-out` (layout-only items and modified items with `layoutChanged`) | both |
+
+**Data placement.** Neither `data.original` nor `data.current` is written. The parsed maps, the diff, the two texts and the selection stay in model fields (`getDiff()`, `getBeforeText()`, `getAfterText()`, `getTextRevision()`, `getSelectedElements()`). The metadata holds `viewMode` (`visual` | `xml`, restored), `readyForInteraction`, `errorWhileReload` and a `selectionRevision` counter that each selection change increments, so the panes and the title re-render.
+
+**Selection and navigation.** `selectElements(ids)` selects each id on the side that has it (the selection sync mirrors it) and centres it in both viewers with `focusViewOnElements`, which switches to the plane of a collapsed group that contains the element. Change navigation in the title ("Change n / m", previous, next) walks added, removed, modified and layout-changed items in that order and skips levels, which have no shape. Clearing the selection on one side clears the other.
+
+**Renderer.** Title: hero icon, the before file name, a sublabel ("Comparing <beforeLabel> with <afterLabel>." when both labels are given, else the working-copy or two-file wording) and the change navigation in visual mode. Toolbar: Export 'Before' (`data-test--landscape-diff-export-before`), Open File (`std.editor.focusOrOpenDocument` on `sourceFileUri`, only when given, `data-test--diff-open-file`), zoom buttons in visual mode, Visual / XML (`data-test--diff-view-visual`, `data-test--diff-view-xml`) and Show Summary (`data-test--landscape-diff-summary`). Content: in visual mode a hint row (`editor__hint landscape-diff__relation-hint`, `data-test--landscape-diff-relation-hint`) with the text "Relation lines are not shown: calls, messages and signals are inferred from the solution's BPMN files at runtime and cannot be diffed reliably between versions.", then the two canvases in a `SplitterLayout` (`splitter-layout--bpmn-diff`, hidden with `diff-view--hidden` in XML mode so the canvases stay mounted). The XML mode shows `components/DiffEditor` on the two texts, keyed by `getTextRevision()`. Relation lines are never drawn: `showRelationLines` is never called on these canvases. A change of the parent map document (data, or the watcher's `fileChangedFromOutside` / `removedFromFileSystem`) reloads the diff.
+
+**Change Overview pane** (`bpmn-landscape/panes/properties/ChangeOverview`, prepended to `right` / `property`). `shouldBeDisplayed` holds for the model keys `LandscapeDiffDocumentModel` and `LandscapeHistoryPreviewDocumentModel`. It reads `getDiff()` and lists Map properties, Added, Removed, Modified and Layout changed with counts, each property row as `<label>: <before> → <after>` through `formatSummaryValueForDisplay`. Clicking an item (`data-test--landscape-change-entry="<id>"`) calls `setViewMode('visual')` and `selectElements([id])`; levels are not clickable.
+
+| Command | Behaviour |
+|---|---|
+| `bpmn.landscape.diff.openDiffTwoFiles(beforeUri, afterUri, options?)` | Opens the diff of two files; `options` as in [git-cruiser.md](git-cruiser.md) (`label` is the tab title, default `Diff: <before> vs <after>`) |
+| `bpmn.landscape.diff.openDiffOriginalDataVsCurrentData(editorDocument?)` | Saved file against the working copy of the focused map, tab `Diff: <label> (Working copy)`. Command search: "Diff: Show diff for working copy changes (Landscape map)", enabled when the focused document type is `bpmn-landscape-map` |
+| `bpmn.landscape.diff.openDiffCurrentDataVsOriginalData(editorDocument)` | Working copy against the file on disk, tab `Diff: <label> (Working copy)`; the link "Compare your changes with the file" in the map editor's "File was changed" warning |
+| `bpmn.landscape.diff.exportBeforeToNewFile(editorDocument)` | Toolbar "Export 'Before'": save dialog defaulting to `<file> (before).bfwmap` next to the source file, writes `getBeforeText()` unchanged; enabled for `bpmn-landscape-map.diff` |
+| `bpmn.landscape.diff.showVisualView` / `showXmlView(editorDocument)` | `setViewMode`; enabled for `bpmn-landscape-map.diff` |
+| `bpmn.landscape.diff.showChangeSummaryDialog(editorDocument?)` | Dialog "Change Summary for <after file name>" with `formatLandscapeDiffAsMarkdown(diff, …, { includeHeading: false })` in a `markdown_container`, Copy to Clipboard and Close; enabled for `bpmn-landscape-map.diff` |
+| `std.editor.zoomToViewport` / `zoomToActualSize` / `zoomToSelectedElement` `.bpmn-landscape-map.diff` | Fit the before viewer (the sync moves the other), 100 %, focus the selection; only once the model is ready |
+
+### History Preview
+
+One historical version of a map, from the map toolbar's History button (`git.showFileHistory`) or the Source Overview's Preview button (`git.previewFileVersion`), both of which Git Cruiser routes to `bpmn.landscape.diff.openHistoryPreview`.
+
+**Document type** `bpmn-landscape-map.history-preview`: `uriMatch /^fragment\+bpmn-landscape-map\.history-preview:/`, page `design/source`, icon `bpmn-landscape/diff/history-preview`, model `history/LandscapeHistoryPreviewDocumentModel.ts`, renderer `history/LandscapeHistoryPreviewDocumentRenderer.tsx`. The fragment URI is `getUrlForOpenInNewTab(type, fileUri, commitHash, { commitHash, message, author, date })`.
+
+**Model.** Extends `LandscapeDiffDocumentModel`. `loadTexts()` reads the historical text with `git.getFileAtRef(parentUri, commitHash)` (empty or missing rejects with "Could not load file at ref <short hash>") and the current file; the before side is the current file, the after side the historical version, named "current" and "historical (<short hash>)" in read errors. A third `LandscapeViewerWithSync` shows the historical map on its own. The viewer mode (`diff`, the default, or `preview`) is a model field with an `onViewerModeChanged` callback, not metadata. In preview mode selection, zoom and `selectElements` act on the preview viewer. `getHistoricalText()` keeps the text for Restore.
+
+**Renderer.** Title `<file> @ <short hash>` with the first message line, author and date, plus the change navigation in diff mode. Toolbar: Diff and Preview (`data-test--landscape-history-mode-diff`, `data-test--landscape-history-mode-preview`), the zoom buttons and Restore (`data-test--landscape-history-restore`). The relation hint row (`data-test--landscape-history-relation-hint`) is shown in both modes. Diff mode shows Current and Historical (<short hash>) side by side with the diff markers; preview mode shows `data-test--landscape-history-preview`. A failed load shows `EditorLoadingError` "Error while loading the history preview" with the error message, which carries the reader's diagnostics for an unreadable version. The Change Overview pane is shown for this type as well.
+
+| Command | Behaviour |
+|---|---|
+| `bpmn.landscape.diff.openHistoryPreview(uri, commitHash, message, author, date)` | Opens the preview, tab title `<file> @ <short hash>` |
+| `bpmn.landscape.diff.historyPreview.changeViewMode(model, 'preview' \| 'diff')` | `setViewerMode`; enabled once the model is ready |
+| `bpmn.landscape.diff.history.restoreFile(editorDocument)` | `git.restoreFileContent(editorDocument, parentUri, historicalText, fileName, shortHash)`, which confirms, writes the file, closes the preview and opens the map; an error notification when there is no historical text |
+| `std.editor.zoomToViewport` / `zoomToActualSize` / `zoomToSelectedElement` `.bpmn-landscape-map.history-preview` | As for the diff, on the viewer of the current mode |
+
+### Merge Resolver
+
+Git Cruiser resolves conflicted `.bfwmap` files through the landscape merge resolver, registered on the `bpmn-landscape-map` document type (`mergeResolverKey: 'LandscapeMergeResolver'`) and dispatched by `git.merge.<name>.bpmn-landscape-map` ([git-cruiser.md](git-cruiser.md)). Merging happens per map item in `merge/landscapeMergeEngine.ts`; the resolver UI mirrors the DMN resolver, and the result is a read-only preview rebuilt after every resolution. Relation lines are not merged: they are derived from the solution's BPMN files at runtime, and the resolver shows the same relation hint row as the diff.
+
+| File | Role |
+|---|---|
+| `merge/landscapeMergeEngine.ts` | `mergeLandscapeMaps(base, startingSide, applySide, resolutions, operationKind?) → Promise<LandscapeMergeResult>`; `MAP_PROPERTIES_KEY = '$map'` |
+| `merge/LandscapeMergeResolver.tsx` | Ours/Theirs `LandscapeViewerWithSync` (synced viewbox and selection), relation hint row, result panel; imperative API on `resolverRef` with the DMN resolver's keys |
+| `merge/LandscapeMergeResultView.tsx` | Read-only result canvas; reloaded on every new engine result, keeps its viewbox, follows both side viewers one way; an invalid result is not drawn, the last valid one stays with the "cannot be written" hint above it |
+| `merge/panes/LandscapeMergeChangeOverview.tsx` | Right pane "Merge Changes" (`bpmn-landscape/panes/merge/LandscapeMergeChangeOverview`, `MergeDocumentModel` with `currentFileType === 'landscape'`): progress, Conflicts, Auto-applied, Ours only, Theirs only |
+| `merge/index.ts` | `registerLandscapeMerge(bifrost)`: pane + `git.merge.<name>.bpmn-landscape-map` commands |
+
+The resolver reuses `RELATION_LINES_HINT` and the `landscape-diff__*` classes from `styles/landscape-diff.scss`.
+
+#### Engine
+
+`LandscapeMergeResult = { map, conflicts, autoApplied, invalidReason }`. The starting side is `ours` (`theirs` on rebase); the apply side is the other one. Statuses always name the Git side: `accepted-ours` is the `ours` blob, the engine swaps on rebase.
+
+| Rule | Behaviour |
+|---|---|
+| Items | Elements, connectors, levels by id; map name, relation layers, each hidden relation and extensions as item `$map` |
+| One side changed | That side's state; apply-side changes are `autoApplied` |
+| Both changed | Per content property; bounds/waypoints are one `$layout` property; equal values apply; different values → conflict |
+| Removal | Removed vs. modified → conflict; removed on both → removed |
+| Invariants | Missing connector endpoint, missing or non-container parent, nesting cycle, duplicate `processId` (apply-side holder), nested band → that item becomes a conflict (fixpoint loop). When the missing parent or endpoint was removed by one side, the removed element becomes a conflict too, so an open conflict keeps both at their starting-side state |
+| Open conflict | Keeps the starting-side state; dropped if that still breaks an invariant |
+| Resolved conflict | Takes the chosen side's whole item; invariants are checked again, a resolved violator goes into `invalidReason` |
+| `reverted` | An auto-applied item goes back to its starting-side state |
+| Order | Starting-side order, apply-side additions after it, parents before children; apply-side z-order changes are lost (a `ponytail:` note) |
+| Read-back | `serializeLandscapeMap` → `parseLandscapeMap`; reader errors are joined into `invalidReason` |
+
+#### Resolver contract
+
+- `getResultXml()` re-runs the engine; returns `null` and opens an error notification when `invalidReason != null`, else `serializeLandscapeMap(map)`. `wasResultRefused()` is `true` after such a refusal, so the generic Accept Ours / Accept Theirs write nothing instead of falling back to a raw side (see [git-cruiser.md](git-cruiser.md)).
+- Every re-merge redraws the conflict markers of both side canvases (`removeOverlays` + `addSideOverlays`). A conflict that only an invariant raised takes its name and type from the side maps (ours, theirs, base).
+- `getResolutionProgress().isComplete` (and `isFullyResolved()`) is true only when there is at least one conflict, every conflict is accepted and `invalidReason == null`, so Resolve & Stage never writes an unreadable map.
+- Commands: zoomToViewport, zoomToActualSize, zoomToSelectedElement, selectNextConflict, selectPreviousConflict, getCurrentConflictIndex, acceptOursForElement, acceptTheirsForElement, acceptAllOurs, acceptAllTheirs, getResultXml, wasResultRefused, isFullyResolved, getResolutionProgress.
+- Test hooks: `data-test--landscape-merge-{ours,theirs,result,relation-hint,invalid}`, pane entries `data-test--landscape-merge-conflict="<key>"` / `-auto-applied="<key>"`, buttons `data-test--landscape-merge-{accept-ours,accept-theirs,undo}`.
+
+#### Conflict markers in the map editor
+
+`LandscapeMapDocumentModel` does not parse text matching `/^<{7}\s/m`: the map gets no canvas and metadata `mergeConflict: true` (written on register and on every reload, so restored metadata is overwritten). `LandscapeMapRenderer` then shows "Merge conflicts must be resolved" with an "Open Merge Resolver" button (`git.merge.openResolver`, `data-test--landscape-open-merge-resolver`). A reload with markers drops the canvas only when the document has no unsaved edits; otherwise the canvas stays and the reload warning is shown.
 
 ---
 
@@ -410,7 +580,11 @@ The engine is `new ELK({ workerUrl, workerFactory })` from `elkjs/lib/elk-api`, 
 | Styles, help text | `studio/src/modules/bpmn-landscape/styles/landscape.scss`, `texts/landscapes.md` |
 | Relation derivation | `studio/src/modules/bpmn-landscape/buildProcessRelations.ts` |
 | Map file format | `studio/src/modules/bpmn-landscape/LandscapeMapFile.ts` |
+| Map diff, source control commands, read-only viewer | `studio/src/modules/bpmn-landscape/diff/landscapeMapDiff.ts`, `diff/index.ts`, `diff/LandscapeViewerWithSync.ts` |
+| Diff view, Change Overview pane | `studio/src/modules/bpmn-landscape/diff/LandscapeDiffDocumentModel.ts`, `diff/LandscapeDiffDocumentRenderer.tsx`, `panes/LandscapeChangeOverview.tsx`, `styles/landscape-diff.scss`, `texts/landscape-diff.md` |
+| History preview | `studio/src/modules/bpmn-landscape/history/LandscapeHistoryPreviewDocumentModel.ts`, `history/LandscapeHistoryPreviewDocumentRenderer.tsx` |
+| Merge engine, resolver, merge pane | `studio/src/modules/bpmn-landscape/merge/` |
 | Solution scan | `studio/src/modules/bpmn-core/scanSolutionBpmnModels.ts` |
 | Scan parsing (worker side) | `studio/src/modules/bpmn-core/parseSolutionBpmnModel.ts`, `bpmn-model-scan-worker.ts` |
 | Unit tests | `studio/test/unit/bpmn-landscape/`, `studio/test/unit/bpmn-core/scanSolutionBpmnModels.test.ts` |
-| Integration tests | `studio/test/integration/bpmn-landscape/` (`npm run test:integration:bpmn-landscape`) |
+| Integration tests | `studio/test/integration/bpmn-landscape/` (`npm run test:integration:bpmn-landscape`); diff and history: `studio/test/integration/git-cruiser/git-landscape-diff.test.ts`, merge: `git-landscape-merge.test.ts` (fixture `studio/test/fixtures/test-solution-git-merge-landscape/`) (both `npm run test:integration:git-cruiser`) |

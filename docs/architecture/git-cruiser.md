@@ -178,10 +178,34 @@ The git-cruiser module has **no BPMN-specific rendering, parsing, or document mo
 ### Delegation Pattern
 
 1. **Git primitives exposed as commands** — `git.getFileAtRef`, `git.getLog`, `git.getHeadContent`, `git.createBranchInRepoOf`, `git.restoreFileContent`. These know nothing about BPMN or DMN; they operate on URIs and refs.
-2. **Dispatch commands** — `git.showGitDiff` and `git.showFileHistory` are dispatchers that still live here because they need synchronous `RepositoryStore` enablement checks (`hasModifications`, `hasFileHistory`). Internally they call orchestrator functions (`diffFromGit.ts`, `fileHistory.ts`) that route to the appropriate diff module based on file extension (`.bpmn` → `bpmn-diff`, `.dmn` → `dmn-diff`, everything else → `git.text-diff`).
+2. **Dispatch commands** — `git.showGitDiff` and `git.showFileHistory` are dispatchers that still live here because they need synchronous `RepositoryStore` enablement checks (`hasModifications`, `hasFileHistory`). Internally they call orchestrator functions (`diffFromGit.ts`, `fileHistory.ts`) that route a model file to its type module through §Model file types, and everything else to `git.text-diff`.
 3. **Module-side wrapper commands** — Each diff module registers its own command set:
-   - **bpmn-diff**: `bpmn.diff.openDiffTwoFiles`, `bpmn.diff.getChangeDigest`, `bpmn.diff.openHistoryPreview`, `bpmn.diff.history.restoreFile`, `bpmn.diff.historyPreview.changeViewMode`, `bpmn.diff.suggestBranchNameForProcess`, `bpmn.diff.getChangeSummaryMarkdown`
+   - **bpmn-diff**: `bpmn.diff.openDiffTwoFiles`, `bpmn.diff.getChangeDigest`, `bpmn.diff.openHistoryPreview`, `bpmn.diff.history.restoreFile`, `bpmn.diff.historyPreview.changeViewMode`, `bpmn.diff.getChangeSummaryMarkdown`
    - **dmn-diff**: `dmn.diff.openDiffTwoFiles`, `dmn.diff.getChangeDigest`, `dmn.diff.openHistoryPreview`, `dmn.diff.history.restoreFile`, `dmn.diff.historyPreview.changeViewMode`, `dmn.diff.getChangeSummaryMarkdown`
+   - **bpmn-landscape**: `bpmn.landscape.diff.openDiffTwoFiles`, `bpmn.landscape.diff.getChangeDigest`, `bpmn.landscape.diff.openHistoryPreview`, `bpmn.landscape.diff.history.restoreFile`, `bpmn.landscape.diff.historyPreview.changeViewMode`, `bpmn.landscape.diff.getChangeSummaryMarkdown` ([bpmn-landscape.md](bpmn-landscape.md))
+
+### Model file types
+
+**Path:** `studio/src/modules/git-cruiser/modelFileTypes.ts`
+
+Git Cruiser knows model files from one table keyed by the lower-case extension. Call sites ask `getModelFileType(filePath)`, `getModelCommand(filePath, name)` or `isModelFile(filePath)` instead of testing an extension, so a file without an entry is never sent to a type module.
+
+| Extension | Command prefix | `MergeFileType` | Icon | Label |
+|---|---|---|---|---|
+| `.bpmn` | `bpmn` | `bpmn` | `ph-light ph-flow-arrow` | Process |
+| `.dmn` | `dmn` | `dmn` | `ph-light ph-table` | Decision |
+| `.bfwmap` | `bpmn.landscape` | `landscape` | `ph-light ph-map-trifold` | Landscape map |
+
+`getModelCommand` returns `<prefix>.diff.<name>` for the four commands a type module registers by convention. Every caller checks `bifrost.commands.isRegistered(command)` before executing and falls back otherwise:
+
+| Command | Signature | Called by | Fallback |
+|---|---|---|---|
+| `<prefix>.diff.openHistoryPreview` | `(fileUri, commitHash, message, author, date): void` | `fileHistory.ts` (History QuickJump), `git.previewFileVersion` | Notification "`<file name>` cannot be previewed." / "This file type cannot be previewed." |
+| `<prefix>.diff.openDiffTwoFiles` | `(beforeUri, afterUri, options?: { label?, sourceFileUri?, beforeLabel?, afterLabel? }): void` | `diffFromGit.ts` `openChangeDiff` | `git.text-diff` |
+| `<prefix>.diff.getChangeDigest` | `(beforeText: string \| null, afterText: string \| null): Promise<ModelChangeDigest>` | Source Overview digests, `git.suggestCommitTitle` | No digest; the file is left out of the title suggestion |
+| `<prefix>.diff.getChangeSummaryMarkdown` | `(beforeText, afterText, fileName): Promise<string>` | `commitPreview.ts` (commit dialog) | `- **<file>**: (detailed diff unavailable)` |
+
+`isModelFile` also drives the model-first order and the Summarize link of the Source Overview, protected-diagram matching at commit, the merge resolver walk and the Git Pane "Open Merge Resolver" action, and the diagram count of the pull-conflict notification. The icon and label are the type column of `ChangeRow` (other files: `ph-light ph-file` / File). `MergeDocumentModel` takes `mergeFileType` as the `fileType` of each walked file.
 
 ### Visual Diff
 
@@ -191,7 +215,7 @@ The git-cruiser module has **no BPMN-specific rendering, parsing, or document mo
 
 | Case | Target |
 |---|---|
-| `.bpmn` / `.dmn`, both sides exist, diff command registered | `bpmn.diff.openDiffTwoFiles` / `dmn.diff.openDiffTwoFiles` with `{ label, sourceFileUri, beforeLabel, afterLabel }`; committed sides are written to temp copies |
+| Model file, both sides exist, `<prefix>.diff.openDiffTwoFiles` registered | That command with `{ label, sourceFileUri, beforeLabel, afterLabel }`; committed sides are written to temp copies |
 | Anything else (other file types, one side `NONE`, diff module missing) | `git.text-diff` document |
 
 `showGitDiffForFile(bifrost, repositoryStore, uri)` derives the refs from the file status: `HEAD` → `WORKING` for modified files, `NONE` → `WORKING` for untracked/added files, `HEAD` → `NONE` for files deleted on disk. Labels read "Last commit", "Your changes" or the short hash. Temp files are content-addressed (`<tmp>/<sha1 of content>/<relative path>`), so two diffs of the same path never share a file and an open tab never shows a stale before side. They are cleaned up on module reload.
@@ -212,7 +236,7 @@ Singleton document `git:overview` (page `design/source`, also its `defaultDocume
 |------|----------|
 | Uncommitted changes | A clean branch shows the placeholder "No uncommitted changes on the current branch.". `OverviewFile` per changed path (`status`, `beforeRef`, `afterRef`, `previousPath`); conflicted files from `mergeState` get status `conflicted` and open the resolver |
 | Current vs. base (`comparison`) | A hint line says "Shows committed changes only.". Base defaults to the first existing of `main`, `master`, `origin/main`, `origin/master` that is not the current branch (the branch `origin/HEAD` points to is not read); `getMergeBase(base, 'HEAD')` → `getChangedFilesBetween(mergeBase, 'HEAD')`. `loading` (files not read yet), `on-base`, `no-base` and `failed` (git could not read the changes; the notice asks for a refresh) states render notices; a restored or chosen base that no longer exists falls back to the default, and the chosen base is dropped when another repository is selected. The toolbar menu `git-cruiser/overview-base` lists the other branches |
-| Digests | BPMN/DMN files are summarized through `bpmn.diff.getChangeDigest` / `dmn.diff.getChangeDigest` (rendered by a private function in `ChangeRow.tsx`). Keyed by repository, path and refs; SHA-1 hashes of both texts are remembered, so an unchanged pair is not summarized twice. A status-triggered refresh (`refresh(false)`) does not read already summarized files again; opening, focusing and the refresh button do. Only the first 20 model files are summarized automatically, the row's "Summarize" link does the rest |
+| Digests | Model files are summarized through `<prefix>.diff.getChangeDigest` (rendered by a private function in `ChangeRow.tsx`). Keyed by repository, path and refs; SHA-1 hashes of both texts are remembered, so an unchanged pair is not summarized twice. A status-triggered refresh (`refresh(false)`) does not read already summarized files again; opening, focusing and the refresh button do. Only the first 20 model files are summarized automatically, the row's "Summarize" link does the rest |
 | Current Branch (`history`) | `SourceHistory` lists commits (refs, "Merged <branch>", "Not pushed", age via a private `formatCommitAge`) along a rail: a dot per commit, a rotated square for merges, the accent colour for the commit carrying the `head` ref; the rail is a `::before` line on `.source-overview__commit`. Right-click opens the menu `git-cruiser/overview-history-entry` ("Copy Commit Hash" → `git.copyCommitHash`). The toolbar (history mode only) holds a search field (`HistorySearchField`, `EditorToolbarTextInput` with `dataTestId="history-search"`, debounced 300 ms, rebuilt per repository): `setHistorySearchText` trims the text (at most `MAXIMUM_HISTORY_SEARCH_LENGTH` = 200 characters), reloads the first page and keeps the text in a private model field (not metadata; a repository change clears it). git searches the whole history (`--grep`, `--fixed-strings`, `--regexp-ignore-case`, so literal and case-insensitive, over subject and body); a search without results shows `data-test--history-no-match`. History loads carry a sequence number (`historySequence`): a result of a load that is no longer the latest is dropped, and `loadMoreHistory` does nothing while a reload or another page is loading. Commits that leave the list are removed from the expanded ones. Expanding a commit loads `getChangedFilesBetween(firstParent | null, hash)` and lists the files as `ChangeRow`s; model files that still exist get the `git.previewFileVersion` icon button ("Preview this version") |
 
 Components: `ChangeRow`, `ChangeBadge`, `SourceHistory`. `ChangeRow` is one changed file, used by both change tabs (model files first) and by expanded commits: type icon (process / decision / file), status badge, model name with the muted path (path only without a model name), icon buttons on the right (preview for commits, Open File for `WORKING` files), and a summary line for models. The row is a container with the main `<button>` (type, badge, name, path, summary) and the action buttons as its siblings, so no interactive element is nested: the main button opens `git.showChangeDiff`, or `git.merge.openResolver` for a conflicted model file (any other conflicted file opens through `std.editor.focusOrOpenDocument`). Styles: `styles/source-overview.scss`, which uses `--theme-*` tokens only (status colours come from `--theme-git-*`). Commands (`overviewCommands.ts`): `git.overview.open`, `git.overview.showUncommitted`, `git.overview.showComparison`, `git.overview.showHistory`, `git.overview.setComparisonBase`, `git.overview.refresh`, `git.overview.toggleCommit(model, hash)`, `git.overview.loadMoreHistory(model)`, `git.overview.summarizeFile(model, file)` (all but `open` take the model as first argument; `open` is listed in the command search). The renderer reaches the model's actions only through these commands. The scrolling area (`.source-overview`) uses `useScrollPositionManager` with the key `source-overview:<document uri>:<mode>`, so each tab keeps its scroll position while a diff or another tab is in front (in memory, not persisted). Help text `git/overview` is opened by the toolbar help button.
@@ -223,13 +247,13 @@ The change summary dialog and the Change Overview pane live entirely in the **bp
 
 **Path:** `studio/src/modules/git-cruiser/commitPreview.ts`
 
-`buildChangeSummaryForFiles()` orchestrates the commit preview by fetching HEAD XML for each staged BPMN file and delegating formatting to `bpmn.diff.getChangeSummaryMarkdown`. A parallel `buildChangeSummaryForDmnFiles()` handles staged `.dmn` files via `dmn.diff.getChangeSummaryMarkdown`.
+`buildChangeSummaryForFiles()` builds the commit preview for all staged model files in one pass: it reads each file at `HEAD` and on disk and delegates formatting to `<prefix>.diff.getChangeSummaryMarkdown`. A file missing at `HEAD` is listed as "new file (untracked)"; a failing command gives "(diff unavailable)".
 
 ### File History and Restore
 
 The BPMN history preview document type, renderer, model, pane, and styles have been moved to the **bpmn-diff** module. See [bpmn-diff.md](bpmn-diff.md) for details.
 
-The QuickJump logic (`fileHistory.ts`) remains in git-cruiser for access to the synchronous `hasFileHistory` check, but dispatches to the appropriate diff module: `bpmn.diff.openHistoryPreview` for `.bpmn` files, `dmn.diff.openHistoryPreview` for `.dmn` files.
+The QuickJump logic (`fileHistory.ts`) remains in git-cruiser for access to the synchronous `hasFileHistory` check, but dispatches each version to `<prefix>.diff.openHistoryPreview` (§Model file types). A file without a registered preview command gets the notification "`<file name>` cannot be previewed." before any version is listed.
 
 ### Toolbar Buttons
 
@@ -239,7 +263,7 @@ Button enabled/disabled state is handled entirely by the commands' `enabledPredi
 
 ### Branch-Per-Process
 
-`git.createBranchForProcess` delegates to `bpmn.diff.suggestBranchNameForProcess` (which reads the process name of the focused BPMN file, or falls back to the file name, and slugifies it into `feature/<slug>`) to get a branch name suggestion, then performs the Git branch creation itself.
+`git.createBranchForProcess` ("Git: Create Branch for This Model") works for every model file type (§Model file types). It loads the focused file and calls its `<prefix>.diff.getChangeDigest(null, text)`; the digest's `modelName` (the file name without extension when there is none) is slugified into the suggestion `feature/<slug>`. Git Cruiser then creates the branch itself. A focused document that is not a model file on disk gets "Focus a BPMN, DMN or landscape map file first."
 
 ---
 
@@ -247,7 +271,7 @@ Button enabled/disabled state is handled entirely by the commands' `enabledPredi
 
 **Path:** `studio/src/modules/git-cruiser/config/ProjectConfig.ts`
 
-Glob patterns matching protected BPMN files. When committing, staged `.bpmn` files are checked against patterns using `minimatch`. Matched files trigger a confirmation dialog.
+Glob patterns matching protected model files. When committing, staged model files (`isModelFile`) are checked against patterns using `minimatch`. Matched files trigger a confirmation dialog.
 
 Configuration precedence:
 1. **Project-level**: `.bifrostfw/git-cruiser.json` at repo root (watched via `bifrost.files.watchFile`)
@@ -355,11 +379,11 @@ The current branch is marked with a `current` text badge. When `branchName` is p
 | `git.stashApply` | Git: Apply Stash | Command search |
 | `git.switchBranch` | Git: Switch Branch | Command search, status bar |
 | `git.createBranch` | Git: Create Branch | Command search |
-| `git.createBranchForProcess` | Git: Create Branch for This Process | Command search |
+| `git.createBranchForProcess` | Git: Create Branch for This Model | Command search |
 | `git.suggestCommitTitle` | Git pane wand button | `(repoRoot)` → suggested title or `null` |
-| `git.showGitDiff` | Git: Show Changes for This File | BPMN toolbar (static), context menus; accepts `uri: string`; enabled for every file with a git status (incl. untracked) |
+| `git.showGitDiff` | Git: Show Changes for This File | BPMN toolbar (static), context menus (including "Show Changes" appended to the canvas menus `bpmn/element` and `bpmn/landscape/element` when they are registered); accepts `uri: string`; enabled for every file with a git status (incl. untracked) |
 | `git.showChangeDiff` | — | Internal; `(repositoryRoot, relativePath, previousRelativePath, beforeRef, afterRef)` |
-| `git.previewFileVersion` | — | Internal; `(fileUri, hash, subject, author, date)` → `bpmn.diff.openHistoryPreview` / `dmn.diff.openHistoryPreview` |
+| `git.previewFileVersion` | — | Internal; `(fileUri, hash, subject, author, date)` → `<prefix>.diff.openHistoryPreview`; enabled while that command is registered |
 | `git.copyCommitHash` | Source Overview history row context menu | `(hash)` copies to the clipboard |
 | `git.getHeadContent` | — | Internal (data service for bpmn-diff commit preview) |
 | `git.getFileAtRef` | — | Internal (retrieve file at arbitrary Git ref) |
@@ -392,11 +416,11 @@ The Tree-level `onActionIconClick` callback receives the item data with an injec
 
 ### Row Click Behavior
 
-Clicking a file entry runs `git.showGitDiff(uri)` (HEAD against the file on disk; new, untracked and deleted files open a text diff with one empty side). A conflicted BPMN or DMN file runs `git.merge.openResolver`; any other conflicted file is opened in the editor. "Open File" stays in the `git-cruiser/pane-file` context menu.
+Clicking a file entry runs `git.showGitDiff(uri)` (HEAD against the file on disk; new, untracked and deleted files open a text diff with one empty side). A conflicted model file runs `git.merge.openResolver`; any other conflicted file is opened in the editor. Conflict entries carry the metadata `isBpmn` and `isDmn`. "Open File" stays in the `git-cruiser/pane-file` context menu.
 
 ### Commit Title Suggestion
 
-The ghost button `ph ph-magic-wand` ("Suggest a title from your staged model changes", `data-test--git-suggest-title`) in the commit action bar runs `git.suggestCommitTitle(repositoryRoot)`, which returns `string | null`. The command digests every staged, non-conflicted `.bpmn` / `.dmn` file (`HEAD` against the file on disk, through `bpmn.diff.getChangeDigest` / `dmn.diff.getChangeDigest`; a file deleted on disk counts as removed, and a file whose digest fails is only named, as `update`) and hands the digests to a private `suggestCommitTitle` in `initializeCommands.ts`. Without a staged model file it shows the notification "Stage a BPMN or DMN file first." and returns `null`; the pane writes a result into the title field (`commitTitleRef` and state). Rule: one model → `<model name or file name>: <parts>` with `add model` / `remove model` for a new or deleted model, otherwise `add 'X'`, `change 'Y'`, `remove 'Z'` (first name per kind, ` +N` for more), `adjust layout` for a layout-only change, `update` for anything else; two models → `Update A, B`; more → `Update A, B and N more`; at most 72 characters, cut with `…`.
+The ghost button `ph ph-magic-wand` ("Suggest a title from your staged model changes", `data-test--git-suggest-title`) in the commit action bar runs `git.suggestCommitTitle(repositoryRoot)`, which returns `string | null`. The command digests every staged, non-conflicted model file whose `<prefix>.diff.getChangeDigest` is registered (`HEAD` against the file on disk; a file deleted on disk counts as removed, and a file whose digest fails is only named, as `update`) and hands the digests to a private `suggestCommitTitle` in `initializeCommands.ts`. Without such a file it shows the notification "Stage a BPMN, DMN or landscape map file first." and returns `null`; the pane writes a result into the title field (`commitTitleRef` and state). Rule: one model → `<model name or file name>: <parts>` with `add model` / `remove model` for a new or deleted model, otherwise `add 'X'`, `change 'Y'`, `remove 'Z'` (first name per kind, ` +N` for more), `adjust layout` for a layout-only change, `update` for anything else; two models → `Update A, B`; more → `Update A, B and N more`; at most 72 characters, cut with `…`.
 
 ### Header
 
@@ -515,6 +539,7 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | Decorations | `studio/src/modules/git-cruiser/initializers/initializeDecorations.ts` |
 | Git Pane | `studio/src/modules/git-cruiser/panes/GitPane.tsx` |
 | Styles | `studio/src/modules/git-cruiser/styles/git-cruiser.scss` |
+| Model File Types | `studio/src/modules/git-cruiser/modelFileTypes.ts` |
 | Visual Diff Orchestrator | `studio/src/modules/git-cruiser/diffFromGit.ts` |
 | Commit Preview Orchestrator | `studio/src/modules/git-cruiser/commitPreview.ts` |
 | File History QuickJump | `studio/src/modules/git-cruiser/fileHistory.ts` |
@@ -529,6 +554,7 @@ Git CLI errors arrive wrapped in an IPC envelope (`Error invoking remote method 
 | **BPMN Merge Resolver** | `studio/src/modules/bpmn-editor/merge/BpmnMergeResolver.tsx` |
 | **BPMN Merge Change Overview Pane** | `studio/src/modules/bpmn-editor/merge/panes/BpmnMergeChangeOverview.tsx` |
 | **BPMN Merge Styles** | `studio/src/modules/bpmn-core/diff/styles/component.bpmn-merge.scss` (shared by the BPMN and DMN merge resolvers) |
+| **Landscape Merge Resolver, Pane** | `studio/src/modules/bpmn-landscape/merge/LandscapeMergeResolver.tsx`, `merge/panes/LandscapeMergeChangeOverview.tsx` |
 
 ## Merge Conflict Resolution
 
@@ -536,7 +562,7 @@ The merge conflict resolver is a **pluggable** subsystem for resolving Git merge
 
 ### Architecture overview
 
-The resolver follows the same pattern as the **EditorDocumentInspector**: each editor document type can optionally register a merge resolver component via `mergeResolverKey` / `mergeResolverConstructor` on the document type definition. The generic `MergeDocumentRenderer` in `git-cruiser` looks up the resolver at runtime. Only `.bpmn` and `.dmn` conflicted files enter the resolver walk; other extensions are skipped. If a walked file has no registered resolver, the renderer shows an error instead of a generic text editor.
+The resolver follows the same pattern as the **EditorDocumentInspector**: each editor document type can optionally register a merge resolver component via `mergeResolverKey` / `mergeResolverConstructor` on the document type definition. The generic `MergeDocumentRenderer` in `git-cruiser` looks up the resolver at runtime. Only model files (§Model file types) enter the resolver walk; other extensions are skipped. If a walked file has no registered resolver, the renderer shows an error instead of a generic text editor.
 
 Merge-specific actions (zoom, conflict navigation, etc.) use a **std-style command dispatch pattern**: generic commands like `git.merge.zoomToViewport` dispatch to type-specific variants like `git.merge.zoomToViewport.bpmn`. When no variant is registered, the command is simply disabled.
 
@@ -561,7 +587,7 @@ BPMN three-panel visualization, `xmlMergeEngine`, and per-attribute resolution: 
 | `SourceControlMergeState` | `bifrost/contracts/SourceControlTypes.ts` | Merge kind + list of conflicted `SourceControlFileStatus` entries |
 | `SourceControlConflictBlobs` | `bifrost/contracts/SourceControlTypes.ts` | `{ base, ours, theirs }` — each `string \| null` |
 | `MergeConflictKind` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'content' \| 'ours-deleted' \| 'theirs-deleted' \| 'added-by-both'` |
-| `MergeFileType` | `bifrost/contracts/MergeTypes.ts` | `'bpmn' \| 'dmn'` — only diagram files enter the merge resolver |
+| `MergeFileType` | `bifrost/contracts/MergeTypes.ts` | `'bpmn' \| 'dmn' \| 'landscape'` — the `mergeFileType` column of §Model file types; only model files enter the merge resolver |
 | `MergeFileEntry` | `MergeDocumentModel.ts` | Per-file tracking: path, URI, resolved flag, fileType |
 | `MergeResolverProps` | `studio/src/bifrost/contracts/MergeTypes.ts` | Props contract for resolver components (blobs, conflictKind, operationKind, entry, resolverRef, callbacks) |
 | `MergeOperationKind` | `studio/src/bifrost/contracts/MergeTypes.ts` | `'merge' \| 'rebase' \| 'cherry-pick' \| null` |
@@ -623,7 +649,7 @@ The merge resolution commands receive the `MergeDocumentModel` directly from the
 
 ### BPMN / DMN merge visualization
 
-Three-panel layout, `xmlMergeEngine`, per-attribute resolution, and the BPMN Change Overview pane are documented in [bpmn-diff.md](bpmn-diff.md) §Merge UI. git-cruiser owns the generic model, IPC, commands, and file walk (`.bpmn` / `.dmn` only).
+Three-panel layout, `xmlMergeEngine`, per-attribute resolution, and the BPMN Change Overview pane are documented in [bpmn-diff.md](bpmn-diff.md) §Merge UI. git-cruiser owns the generic model, IPC, commands, and file walk (model files only).
 
 The BPMN Change Overview pane is registered by `bpmn-editor` (`BpmnMergeChangeOverview.tsx`); the DMN pane by `dmn-editor` (`DmnMergeChangeOverview.tsx`). Both read type-specific data through `model.resolverRef` — call type-specific methods with optional chaining (`resolverApi?.getDefinitionsMetadataOurs?.() ?? []`).
 
@@ -633,7 +659,7 @@ When `hasResolutionProgress` is true (BPMN or DMN resolver with content conflict
 
 ### Whole-file accept with active result modeler
 
-`git.merge.acceptOurs` and `git.merge.acceptTheirs` check for an active resolver API. When one exists, they batch-resolve all pending conflicts via `acceptAllOurs()` / `acceptAllTheirs()`, retrieve the merged XML via `getResultXml()`, and write that instead of the raw blob. This preserves any partial resolution work the user has done. If no resolver is active, the commands fall back to writing the raw blob directly.
+`git.merge.acceptOurs` and `git.merge.acceptTheirs` check for an active resolver API. When one exists, they batch-resolve all pending conflicts via `acceptAllOurs()` / `acceptAllTheirs()`, retrieve the merged XML via `getResultXml()`, and write that instead of the raw blob. This preserves any partial resolution work the user has done. If no resolver is active, or `getResultXml()` returns `null`, the commands fall back to writing the raw blob directly — unless the resolver's optional `wasResultRefused()` returns `true`: the resolver has then reported why its merged model is invalid, and nothing is written (the landscape resolver does this; see [bpmn-landscape.md](bpmn-landscape.md) §Resolver contract).
 
 ### BPMN editor integration
 
@@ -642,21 +668,24 @@ When `hasResolutionProgress` is true (BPMN or DMN resolver with content conflict
 - On file watcher change (`onChange()`): sets `mergeConflict: true` and skips modeler update.
 - `BpmnDocumentRenderer` shows a conflict banner with "Open Merge Resolver", "Accept Ours", "Accept Theirs" buttons.
 
+`LandscapeMapDocumentModel` does the same for `.bfwmap` files; its renderer offers "Open Merge Resolver" only ([bpmn-landscape.md](bpmn-landscape.md) §Conflict markers in the map editor).
+
 ### Delete conflict handling
 
 When one side deletes a file while the other modifies it, `git show :N:` returns `null` for the missing stage. The model sets `conflictKind` to `'ours-deleted'` or `'theirs-deleted'`, and the renderer shows a placeholder panel with a trash icon and a "Compare with base" link instead of a viewer.
 
 ### File types in the merge resolver
 
-The merge resolver walks only `.bpmn` and `.dmn` files (`classifyFileType` in `MergeDocumentModel.ts`):
+`MergeDocumentModel` walks only model files; each entry's `fileType` is `getModelFileType(path)?.mergeFileType` (§Model file types):
 
 - `.bpmn` → `'bpmn'` — rendered with the registered `BpmnMergeResolver`
 - `.dmn` → `'dmn'` — rendered with the registered `DmnMergeResolver`
+- `.bfwmap` → `'landscape'` — rendered with the registered `LandscapeMergeResolver` ([bpmn-landscape.md](bpmn-landscape.md) §Merge Resolver)
 - Every other extension (text, binary, JSON, Markdown, …) is excluded from the walk
 
-Conflicted non-diagram files stay visible in the Git Pane (Accept Ours / Accept Theirs / Open in editor). They are not opened in the merge editor.
+Conflicted non-model files stay visible in the Git Pane (Accept Ours / Accept Theirs / Open in editor). They are not opened in the merge editor.
 
-There is no generic CodeMirror text-merge fallback. That courtesy editor was removed; the merge editor is BPMN/DMN only, matching the Studio's document-type scope.
+There is no generic CodeMirror text-merge fallback; the merge editor handles model files only, matching the Studio's document-type scope.
 
 ### Registering a new merge resolver
 

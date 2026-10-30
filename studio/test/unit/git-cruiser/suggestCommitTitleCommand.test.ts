@@ -44,8 +44,14 @@ async function suggest(files: any[], digests: Record<string, any> = {}) {
   const repositoryStore = createNoopProxy({ getRepoState: () => ({ files }) });
   initializeCommands(bifrost, repositoryStore);
 
-  for (const command of ['bpmn.diff.getChangeDigest', 'dmn.diff.getChangeDigest']) {
+  const digestCommands: string[] = [];
+  for (const command of [
+    'bpmn.diff.getChangeDigest',
+    'dmn.diff.getChangeDigest',
+    'bpmn.landscape.diff.getChangeDigest',
+  ]) {
     handlers.set(command, async (before: string | null, after: string | null) => {
+      digestCommands.push(command);
       const match = Object.keys(digests).find((path) => (after ?? before)?.endsWith(path));
       if (match == null) {
         throw new Error('unparsable');
@@ -55,14 +61,22 @@ async function suggest(files: any[], digests: Record<string, any> = {}) {
   }
 
   const title = (await handlers.get('git.suggestCommitTitle')?.(repositoryRoot)) as string | null;
-  return { title, notifications };
+  return { title, notifications, digestCommands };
 }
 
 describe('git.suggestCommitTitle', () => {
   it('asks to stage a model when none is staged', async () => {
     const { title, notifications } = await suggest([stagedFile('notes.txt')]);
     expect(title).toBeNull();
-    expect(notifications.open).toHaveBeenCalledWith('Stage a BPMN or DMN file first.');
+    expect(notifications.open).toHaveBeenCalledWith('Stage a BPMN, DMN or landscape map file first.');
+  });
+
+  it('summarizes a staged landscape map with the landscape digest', async () => {
+    const { title, digestCommands } = await suggest([stagedFile('landscape/overview.bfwmap')], {
+      'overview.bfwmap': digest({ modelName: 'Overview', addedElementNames: ['Sales'] }),
+    });
+    expect(digestCommands).toEqual(['bpmn.landscape.diff.getChangeDigest']);
+    expect(title).toBe("Overview: add 'Sales'");
   });
 
   it('names a new and a deleted model', async () => {

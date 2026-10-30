@@ -12,16 +12,7 @@ import type { SourceControlConflictBlobs, SourceControlMergeStateKind } from '#b
 
 import type { MergeFileEntry, MergeProgress } from '../GitTypes';
 import type { RepositoryStore } from '../RepositoryStore';
-
-function classifyFileType(filePath: string): MergeFileType | null {
-  if (filePath.endsWith('.bpmn')) {
-    return 'bpmn';
-  }
-  if (filePath.endsWith('.dmn')) {
-    return 'dmn';
-  }
-  return null;
-}
+import { getModelFileType } from '../modelFileTypes';
 
 /**
  * Generic merge document model.
@@ -151,7 +142,7 @@ export default class MergeDocumentModel extends EditorDocumentModel implements M
 
     this.conflictedFiles = [];
     for (const gitFile of state.mergeState.conflictedFiles) {
-      const fileType = classifyFileType(gitFile.path);
+      const fileType = getModelFileType(gitFile.path)?.mergeFileType;
       if (fileType == null) {
         continue;
       }

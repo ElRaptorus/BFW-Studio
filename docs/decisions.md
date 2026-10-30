@@ -218,4 +218,16 @@ See [code-editors.md](architecture/code-editors.md) §JSON assist.
 
 See [code-editors.md](architecture/code-editors.md) §JSON assist.
 
+## Git Cruiser knows model files from one extension table
+
+**Context:** History preview, diff, change digest, commit summary, commit preview and the merge resolver walk were each gated on hard-coded `.bpmn` / `.dmn` checks spread across Git Cruiser. Adding landscape maps (`.bfwmap`) would have meant a third branch at every one of them.
+
+**Options:** (A) add a `.bfwmap` branch at every check; (B) one extension table in Git Cruiser with command names derived by convention; (C) let model modules register their file type and commands with Git Cruiser at runtime.
+
+**Decision:** B. `git-cruiser/modelFileTypes.ts` maps each extension to a command prefix, merge file type, icon and label; commands are `<prefix>.diff.{openHistoryPreview|openDiffTwoFiles|getChangeDigest|getChangeSummaryMarkdown}`, and a missing command disables the feature for that type.
+
+**Rationale:** One row per type keeps every Git Cruiser feature in step without a registration API. The module direction is untouched: Git Cruiser only calls commands, and a model module only implements commands with the agreed names.
+
+See [git-cruiser.md](architecture/git-cruiser.md) §Model file types.
+
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"

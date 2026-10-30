@@ -176,13 +176,11 @@ Visible when an element is selected in either a `bpmn.diff` or `bpmn.history-pre
 | `bpmn.diff.openHistoryPreview` | Open history preview for a BPMN file at a commit | Internal |
 | `bpmn.diff.historyPreview.changeViewMode` | Toggle between preview/diff in history preview | Internal |
 | `bpmn.diff.history.restoreFile` | Restore BPMN to historical version (delegates to `git.restoreFileContent`) | Internal |
-| `bpmn.diff.suggestBranchNameForProcess` | Extract process name from focused BPMN and suggest a branch name | Internal |
-
 ### Cross-Module Integration
 
 `bpmn.diff.getChangeSummaryMarkdown` is called by git-cruiser's `buildChangeSummaryForFiles()` during the commit flow to produce detailed per-file summaries for the commit dialog.
 
-`bpmn.diff.openHistoryPreview` is called by git-cruiser's `fileHistory.ts` QuickJump entries. `bpmn.diff.history.restoreFile` is a wrapper that extracts the historical XML from its model and delegates to `git.restoreFileContent` for the actual file write and dialog. `bpmn.diff.suggestBranchNameForProcess` is called by `git.createBranchForProcess` to get a branch name suggestion; it reads the process name with one inline match (no entity decoding) and slugifies it.
+`bpmn.diff.openHistoryPreview` is called by git-cruiser's `fileHistory.ts` QuickJump entries. `bpmn.diff.history.restoreFile` is a wrapper that extracts the historical XML from its model and delegates to `git.restoreFileContent` for the actual file write and dialog. `git.createBranchForProcess` takes its branch name suggestion from `bpmn.diff.getChangeDigest` (the digest's `modelName`).
 
 The history preview model fetches historical XML via `git.getFileAtRef`, maintaining a clean separation: git-cruiser provides raw Git data, bpmn-diff handles all BPMN-specific rendering and UI.
 

@@ -95,6 +95,14 @@ const hasValues = (target: object, properties: object): boolean =>
     ([name, value]) => JSON.stringify((target as Record<string, unknown>)[name]) === JSON.stringify(value),
   );
 
+const hasMergeConflict = (text: string): boolean => /^<{7}\s/m.test(text);
+
+/** A file with Git conflict markers is not parsed: it gets no canvas, like an unreadable map. */
+const readMapText = (text: string): Promise<LandscapeMapParseResult> =>
+  hasMergeConflict(text)
+    ? Promise.resolve({ ok: false, errors: ['The file contains Git conflict markers.'] })
+    : parseLandscapeMap(text);
+
 /** A hidden canvas reports a 0×0 viewbox; storing or restoring one breaks the zoom. */
 function isUsableViewbox(viewbox: any): viewbox is Viewbox {
   return viewbox?.width > 0 && viewbox?.height > 0 && Number.isFinite(viewbox.width + viewbox.height);
@@ -179,7 +187,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     }
     const restoredText =
       typeof restoredCurrentData === 'string' && restoredCurrentData !== '' ? restoredCurrentData : null;
-    const parseResult = await parseLandscapeMap(restoredText ?? textOnFile);
+    const parseResult = await readMapText(restoredText ?? textOnFile);
     const model = new LandscapeMapDocumentModel(uri, textOnFile, restoredText, restoredMetadata, studio, parseResult);
     model.applySnapshot(studio.getSharedRessource<LandscapeSolutionScan>(LANDSCAPE_SOLUTION_SCAN_KEY).getSnapshot());
     return model;
@@ -189,7 +197,10 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
 
   onEditorDocumentModelDidRegister(): void {
     this.updateOriginalAndCurrentData(this.originalText, this.currentText);
-    this.updateMetadata({ readable: this.parseErrors.length === 0 });
+    this.updateMetadata({
+      readable: this.parseErrors.length === 0,
+      mergeConflict: hasMergeConflict(this.currentText),
+    });
   }
 
   async saveEditorDocument(): Promise<boolean | null> {
@@ -1133,17 +1144,25 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
           this.updateMetadata({ errorOnReloadingFile: null });
           return;
         }
-        const parseResult = await parseLandscapeMap(newText);
+        const parseResult = await readMapText(newText);
         // A canvas created after the close would never be destroyed.
         if (this.isClosed) {
           return;
+        }
+        // Unsaved edits keep their canvas, as for any other file that cannot be read.
+        const mergeConflict = hasMergeConflict(newText) && editorDocument?.hasUnsavedChanges !== true;
+        if (mergeConflict) {
+          this.modeler?.destroy();
+          this.modeler = null;
+          this.map = null;
+          this.hasBeenAttached = false;
         }
         const errors = this.applyParseResult(parseResult);
         if (errors.length === 0 || this.modeler == null) {
           this.parseErrors = errors;
           this.originalText = this.currentText = newText;
           this.updateOriginalAndCurrentData(newText, newText);
-          this.updateMetadata({ errorOnReloadingFile: null, readable: errors.length === 0 });
+          this.updateMetadata({ errorOnReloadingFile: null, readable: errors.length === 0, mergeConflict });
           return;
         }
         this.updateOriginalAndCurrentData(newText, this.currentText);

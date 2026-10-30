@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { EVENT_METADATA_UPDATED } from '../../../src/bifrost/contracts/internal/EditorEvents';
 import SourceOverviewDocumentModel, {
   SOURCE_OVERVIEW_URI,
-  isModelFile,
 } from '../../../src/modules/git-cruiser/overview/SourceOverviewDocumentModel';
 
 const repositoryRoot = '/work/repository';
@@ -87,10 +86,28 @@ async function createModel(environment: ReturnType<typeof createFakeModelEnviron
 }
 
 describe('SourceOverviewDocumentModel', () => {
-  it('recognizes BPMN and DMN files as models', () => {
-    expect(isModelFile('a/order.bpmn')).toBe(true);
-    expect(isModelFile('rules.DMN')).toBe(true);
-    expect(isModelFile('readme.md')).toBe(false);
+  it('summarizes BPMN, DMN and landscape map files as models, whatever the case of the extension', async () => {
+    const environment = createFakeModelEnvironment({
+      files: [
+        createFile('a/order.bpmn', 'modified'),
+        createFile('rules.DMN', 'modified'),
+        createFile('landscape/overview.bfwmap', 'modified'),
+        createFile('readme.md', 'modified'),
+      ],
+    });
+    const model = await createModel(environment);
+
+    const digestCommands = environment.executeCommand.mock.calls
+      .map(([command]) => command)
+      .filter((command) => command.endsWith('getChangeDigest'));
+    expect(digestCommands.sort()).toEqual([
+      'bpmn.diff.getChangeDigest',
+      'bpmn.landscape.diff.getChangeDigest',
+      'dmn.diff.getChangeDigest',
+    ]);
+    const files = Object.fromEntries(model.getUncommittedFiles().map((file) => [file.path, file]));
+    expect(model.getDigest(files['landscape/overview.bfwmap'])).toMatchObject({ kind: 'ready' });
+    expect(model.getDigest(files['readme.md'])).toBeNull();
   });
 
   it('maps pending changes to two versions each and summarizes only model files', async () => {

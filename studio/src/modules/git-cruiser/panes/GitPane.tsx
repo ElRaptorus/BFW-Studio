@@ -21,6 +21,7 @@ import { PaneProperty, type SelectOption } from '@elraptorus/bfw_studio_sdk';
 
 import { STATUS_BADGE_MAP, STATUS_COLOR_TOKEN_MAP } from '../GitTypes';
 import type { RepositoryStore } from '../RepositoryStore';
+import { isModelFile } from '../modelFileTypes';
 import '../styles/git-cruiser.scss';
 
 const GIT_PANE_VIEW_MEDIATOR_ID = 'git-cruiser/pane-tree';
@@ -160,7 +161,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
       }
       if (metadata.statusCode === 'conflicted') {
         // The resolver only exists for diagrams; any other conflicted file is opened to edit its markers.
-        if (/\.(bpmn|dmn)$/i.test(metadata.uri)) {
+        if (isModelFile(metadata.uri)) {
           bifrost.commands.executeCommand('git.merge.openResolver');
         } else {
           bifrost.commands.executeCommand('std.editor.focusOrOpenDocument', [metadata.uri]);
@@ -315,9 +316,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
       expanded: true,
       badges: [{ type: 'number', number: conflictedFiles.length }],
       entries: conflictedFiles.map((gitFile) => {
-        const isBpmn = gitFile.path.endsWith('.bpmn');
-        const isDmn = gitFile.path.endsWith('.dmn');
-        const isDiagram = isBpmn || isDmn;
+        const isDiagram = isModelFile(gitFile.path);
         const color = STATUS_COLOR_TOKEN_MAP['conflicted'];
 
         const actionIcons: { icon: string; tooltip: string; id: string }[] = [];
@@ -339,8 +338,8 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element {
             repoRoot: repoState!.repositoryRoot,
             statusKey: 'conflicted',
             statusCode: 'conflicted',
-            isBpmn,
-            isDmn,
+            isBpmn: gitFile.path.endsWith('.bpmn'),
+            isDmn: gitFile.path.endsWith('.dmn'),
           },
           menuId: 'git-cruiser/pane-file',
           styles: { labelColor: color, badgeColor: color },

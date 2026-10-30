@@ -96,6 +96,26 @@ describe('openChangeDiff', () => {
     expect(executeCommand.mock.calls[0][1][2].beforeLabel).toBe('Last commit');
   });
 
+  it('routes a landscape map to the landscape diff, or to the text diff while that is not registered', async () => {
+    const request = {
+      repositoryRoot,
+      relativePath: 'landscape/overview.bfwmap',
+      previousRelativePath: null,
+      beforeRef: 'HEAD',
+      afterRef: 'WORKING',
+    };
+    const withLandscapeDiff = createFakeBifrost({ registeredCommands: ['bpmn.landscape.diff.openDiffTwoFiles'] });
+    await openChangeDiff(withLandscapeDiff.bifrost, request);
+    expect(withLandscapeDiff.executeCommand.mock.calls[0][0]).toBe('bpmn.landscape.diff.openDiffTwoFiles');
+
+    const withoutLandscapeDiff = createFakeBifrost();
+    await openChangeDiff(withoutLandscapeDiff.bifrost, request);
+    expect(withoutLandscapeDiff.executeCommand).not.toHaveBeenCalled();
+    expect(parseOpenInNewTabUrl(withoutLandscapeDiff.focusOrOpenEditorDocument.mock.calls[0][0]).type).toBe(
+      'git.text-diff',
+    );
+  });
+
   it.each([
     ['NONE', 'WORKING'],
     ['HEAD', 'NONE'],

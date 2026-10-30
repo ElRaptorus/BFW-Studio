@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<landscape:map xmlns:landscape="https://bifrostforge.world/schema/landscape" version="1" name="Overview">
+  <landscape:process id="payment" x="50" y="50" width="140" height="60" processId="payment-process" fileHint="../payment-process.bpmn" />
+  <landscape:process id="draft" x="350" y="50" width="140" height="60" processId="draft-process" fileHint="../draft-process.bpmn" />
+  <landscape:placeholder id="archive" x="650" y="50" width="140" height="60" label="Records" />
+  <landscape:placeholder id="billing" x="50" y="250" width="140" height="60" label="Invoicing" />
+  <landscape:note id="memo" x="350" y="250" width="140" height="60">Remember the archive</landscape:note>
+  <landscape:placeholder id="returns" x="650" y="250" width="140" height="60" label="Returns" />
+  <landscape:connector id="pays-into-archive" sourceId="payment" targetId="archive" />
+  <landscape:connector id="payment-to-returns" sourceId="payment" targetId="returns" />
+</landscape:map>

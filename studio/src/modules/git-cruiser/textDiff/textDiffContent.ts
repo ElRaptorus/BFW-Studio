@@ -13,6 +13,7 @@ const LANGUAGE_BY_EXTENSION: Record<string, string> = {
   xml: 'xml',
   bpmn: 'xml',
   dmn: 'xml',
+  bfwmap: 'xml',
   bfwsln: 'xml',
 };
 

@@ -244,6 +244,16 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## Fragment-URI document models outlive their tab
+
+**Mistake**: A diff or history preview model (URI from `getUrlForOpenInNewTab`) destroys its viewers in `onEditorDocumentWillClose`.
+
+**Why**: `EditorMediator` removes models from the cache on close only for non-fragment URIs. Reopening the same diff gets the old model back, and its destroyed viewers throw on the next `attachTo` (the canvas never loads).
+
+**Correct approach**: Keep the viewers and make `attachTo` re-attach them (re-import the model, append the container, wire sync once), as the BPMN, DMN and landscape diff models do.
+
+---
+
 ## bpmnlint resolver: package name prefixing
 
 **Mistake**: Matching `pkg === 'bifrost-forge-world'` in a custom resolver.

@@ -2,6 +2,7 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { SourceControlPullResult } from '#bifrost/contracts/SourceControlTypes';
 
 import type { RepositoryStore } from '../RepositoryStore';
+import { isModelFile } from '../modelFileTypes';
 import { showGitError, showPullError, showStashPopError } from './gitErrorNotification';
 
 export async function handlePullResult(
@@ -22,9 +23,7 @@ export async function handlePullResult(
   if (result.recoverable === 'merge-conflicts') {
     const state = repositoryStore.getRepoState(repoRoot);
     const conflictCount = state?.mergeState.conflictedFiles.length ?? 0;
-    const bpmnCount = state?.mergeState.conflictedFiles.filter((file) => file.path.endsWith('.bpmn')).length ?? 0;
-    const dmnCount = state?.mergeState.conflictedFiles.filter((file) => file.path.endsWith('.dmn')).length ?? 0;
-    const diagramCount = bpmnCount + dmnCount;
+    const diagramCount = state?.mergeState.conflictedFiles.filter((file) => isModelFile(file.path)).length ?? 0;
 
     const actions: { action: string; label: string; default?: boolean }[] = [];
     if (diagramCount > 0) {

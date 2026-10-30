@@ -133,7 +133,7 @@ export default class MergeDocumentRenderer extends React.Component<EditorDocumen
           ) : (
             <EditorLoadingError
               title="No merge resolver"
-              errorMessage={`No merge editor is registered for ${filename}. Only BPMN and DMN files can be resolved in the merge editor.`}
+              errorMessage={`No merge editor is registered for ${filename}. Only BPMN, DMN and landscape map files can be resolved in the merge editor.`}
             />
           )}
         </EditorContent>

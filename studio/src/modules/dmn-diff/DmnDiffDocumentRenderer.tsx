@@ -274,6 +274,13 @@ export default function DmnDiffDocumentRenderer(props: EditorDocumentRendererPro
 
       <EditorToolbar>
         <EditorToolbarLeft>
+          <EditorToolbarButton
+            studio={bifrost}
+            icon="ph ph-file-arrow-down"
+            label="Export 'Before'"
+            command="dmn.diff.exportBeforeToNewFile"
+            commandArgs={[editorDocument]}
+          />
           {parsedFragmentUri.data.sourceFileUri != null && (
             <EditorToolbarButton
               studio={bifrost}
