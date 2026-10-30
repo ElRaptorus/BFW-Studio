@@ -4,7 +4,17 @@ import ElkBundled from 'elkjs/lib/elk.bundled.js';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // The real worker script only runs in Electron; the bundled build runs the same algorithm in Node.
-vi.mock('elkjs/lib/elk-api', async () => ({ default: (await import('elkjs/lib/elk.bundled.js')).default }));
+// The bundled class runs the algorithm in-process; the browser worker factory needs a web `Worker`.
+vi.mock('elkjs/lib/elk-api', async () => {
+  const ElkInProcess = (await import('elkjs/lib/elk.bundled.js')).default;
+  return {
+    default: class extends ElkInProcess {
+      constructor({ workerUrl }: { workerUrl?: string }) {
+        super({ workerUrl });
+      }
+    },
+  };
+});
 
 type Rectangle = { x: number; y: number; width: number; height: number };
 

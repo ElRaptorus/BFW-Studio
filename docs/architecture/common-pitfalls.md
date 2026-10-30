@@ -568,6 +568,21 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
+## Third-party worker scripts under `nodeIntegrationInWorker`
+
+**Mistake**: Starting a library's worker script with a plain `new Worker(url)` in the renderer.
+
+**Why**: Studio windows set `nodeIntegrationInWorker: true`. A worker then has a CommonJS `module` but no `exports`. UMD-style scripts that check `typeof module` first take their Node branch and throw `ReferenceError: exports is not defined`, often before they register `self.onmessage`. The worker never answers, and the caller only notices at its own timeout. A patch release can reorder those checks (`elkjs` 0.12.0 → 0.12.1 did).
+
+**Correct approach**: Start such scripts through a blob bootstrap that defines `exports` first, and reject pending work on the worker's `error` event, as `layoutLandscape.ts` does:
+
+```ts
+const bootstrap = `var exports = {}; importScripts(${JSON.stringify(url)});`;
+const worker = new Worker(URL.createObjectURL(new Blob([bootstrap], { type: 'text/javascript' })));
+```
+
+---
+
 ## Lezer JSON and JSON5 trees differ
 
 **Mistake**: Walking a JSON5 tree with JSON node names, or trusting node boundaries in half-typed text.
