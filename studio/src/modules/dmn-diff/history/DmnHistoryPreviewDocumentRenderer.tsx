@@ -42,13 +42,13 @@ export default function DmnHistoryPreviewDocumentRenderer(
   const diffAttachedRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const abortController = new AbortController();
     const subscriptions: { dispose: () => void }[] = [];
 
     bifrost.editors
       .getEditorDocumentModel<DmnHistoryPreviewDocumentModel>(editorDocument)
       .then((loadedModel) => {
-        if (cancelled) {
+        if (abortController.signal.aborted) {
           return;
         }
 
@@ -72,13 +72,13 @@ export default function DmnHistoryPreviewDocumentRenderer(
         setModel(loadedModel);
       })
       .catch((error) => {
-        if (!cancelled) {
+        if (!abortController.signal.aborted) {
           setErrorWhileLoading(error.message);
         }
       });
 
     return () => {
-      cancelled = true;
+      abortController.abort();
       subscriptions.forEach((subscription) => subscription.dispose());
     };
   }, [bifrost.editors, editorDocument]);

@@ -49,13 +49,13 @@ export default function LandscapeHistoryPreviewDocumentRenderer(
   const diffAttachedRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const abortController = new AbortController();
     const subscriptions: { dispose: () => void }[] = [];
 
     bifrost.editors
       .getEditorDocumentModel<LandscapeHistoryPreviewDocumentModel>(editorDocument)
       .then((loadedModel) => {
-        if (cancelled) {
+        if (abortController.signal.aborted) {
           return;
         }
         loadedModel.onViewerModeChanged((newMode) => setViewMode(newMode));
@@ -74,13 +74,13 @@ export default function LandscapeHistoryPreviewDocumentRenderer(
         setModel(loadedModel);
       })
       .catch((error) => {
-        if (!cancelled) {
+        if (!abortController.signal.aborted) {
           setErrorWhileLoading(error.message);
         }
       });
 
     return () => {
-      cancelled = true;
+      abortController.abort();
       subscriptions.forEach((subscription) => subscription.dispose());
     };
   }, [bifrost.editors, editorDocument]);

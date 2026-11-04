@@ -47,12 +47,12 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
   }, [studio]);
 
   useEffect(() => {
-    let mounted = true;
+    const abortController = new AbortController();
 
     async function initialize(): Promise<void> {
       const documentModel = await props.studio.editors.getEditorDocumentModel<SettingsJsonModel>(props.editorDocument);
 
-      if (!mounted) {
+      if (abortController.signal.aborted) {
         return;
       }
 
@@ -75,7 +75,7 @@ export default function SettingsJsonDocumentRenderer(props: EditorDocumentRender
     initialize();
 
     return () => {
-      mounted = false;
+      abortController.abort();
       modelRef.current = null;
       subscriptionsRef.current.forEach((subscription: AbstractSubscription) => subscription.dispose());
     };

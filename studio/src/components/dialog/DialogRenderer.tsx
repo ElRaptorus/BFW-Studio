@@ -126,6 +126,7 @@ export default function DialogRenderer(props: DialogRendererProps): React.JSX.El
   const [codeEditorRefs, setCodeEditorRefs] = useState<React.RefObject<MultiLineCodeEditor | DiffEditor | null>[]>([]);
   const [content, setContent] = useState(props.options.content);
   const formRef = useRef<HTMLFormElement>(null);
+  const submittableRef = useRef(false);
 
   const responseCallback = useRef(props.responseCallback || DEFAULT_RESPONSE_CALLBACK).current;
 
@@ -209,11 +210,11 @@ export default function DialogRenderer(props: DialogRendererProps): React.JSX.El
       return;
     }
 
-    let submittable = false;
+    submittableRef.current = false;
 
     const onSubmit = (event: Event) => {
       event.preventDefault();
-      if (submittable) {
+      if (submittableRef.current) {
         preliminaryResponseCallback(defaultResponse);
       }
     };
@@ -222,7 +223,9 @@ export default function DialogRenderer(props: DialogRendererProps): React.JSX.El
 
     // When a dialog is triggered via the command search by pressing ENTER, this handler is accidentally triggered.
     // Therefore we prevent submitting for the current "tick".
-    const timeout = setTimeout(() => (submittable = true), 1);
+    const timeout = setTimeout(() => {
+      submittableRef.current = true;
+    }, 1);
 
     return () => {
       form.removeEventListener('submit', onSubmit);

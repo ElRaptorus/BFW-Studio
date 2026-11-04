@@ -48,17 +48,17 @@ export default function DebuggerDocumentationFragmentRenderer(
   const [documentation, setDocumentation] = useState<string>('');
 
   useEffect(() => {
-    let mounted = true;
+    const abortController = new AbortController();
 
     bifrost.editors
       .getEditorDocumentModel<EngineBpmnDebuggerEditorDocumentModel>(parentEditorDocument)
       .then((model: EngineBpmnDebuggerEditorDocumentModel) => {
-        if (!mounted) {
+        if (abortController.signal.aborted) {
           return;
         }
 
         function refresh(): void {
-          if (!mounted) {
+          if (abortController.signal.aborted) {
             return;
           }
           const element = getElement(model, fragmentId);
@@ -74,7 +74,7 @@ export default function DebuggerDocumentationFragmentRenderer(
       });
 
     return () => {
-      mounted = false;
+      abortController.abort();
     };
   }, [bifrost.editors, fragmentId, parentEditorDocument]);
 

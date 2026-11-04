@@ -44,11 +44,11 @@ export default function BpmnDocumentationFragmentRenderer(
 
   useEffect(() => {
     let subscriptionRef: AbstractSubscription | null = null;
-    let mounted = true;
+    const abortController = new AbortController();
     const editorRef = mdxRef;
 
     function onParentDataUpdated(): void {
-      if (!mounted) {
+      if (abortController.signal.aborted) {
         return;
       }
       const model = bpmnDocumentModelRef.current;
@@ -63,7 +63,7 @@ export default function BpmnDocumentationFragmentRenderer(
     bifrost.editors
       .getEditorDocumentModel<BpmnDocumentModel>(parentEditorDocument, BpmnDocumentModel)
       .then((model: BpmnDocumentModel) => {
-        if (!mounted) {
+        if (abortController.signal.aborted) {
           return;
         }
         bpmnDocumentModelRef.current = model;
@@ -78,7 +78,7 @@ export default function BpmnDocumentationFragmentRenderer(
       });
 
     return () => {
-      mounted = false;
+      abortController.abort();
 
       if (subscriptionRef != null) {
         subscriptionRef.dispose();

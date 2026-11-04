@@ -83,10 +83,10 @@ export function useBpmnFragmentRenderer(
 
   useEffect(() => {
     let subscriptionRef: AbstractSubscription | null = null;
-    let mounted = true;
+    const abortController = new AbortController();
 
     function onParentDataUpdated(): void {
-      if (!mounted) {
+      if (abortController.signal.aborted) {
         return;
       }
       const model = bpmnDocumentModelRef.current;
@@ -105,11 +105,11 @@ export function useBpmnFragmentRenderer(
           'bpmn.feel.getExpressionContext',
           [parentEditorDocument, fragmentId],
         );
-        if (mounted) {
+        if (!abortController.signal.aborted) {
           setFragmentName(element?.name ?? null);
           setFeelVariables(variables);
         }
-      } else if (mounted) {
+      } else if (!abortController.signal.aborted) {
         setFragmentName(element?.name ?? null);
       }
 
@@ -119,7 +119,7 @@ export function useBpmnFragmentRenderer(
     bifrost.editors
       .getEditorDocumentModel<BpmnDocumentModel>(parentEditorDocument, BpmnDocumentModel)
       .then((model: BpmnDocumentModel) => {
-        if (!mounted) {
+        if (abortController.signal.aborted) {
           return;
         }
         bpmnDocumentModelRef.current = model;
@@ -132,7 +132,7 @@ export function useBpmnFragmentRenderer(
       });
 
     return () => {
-      mounted = false;
+      abortController.abort();
 
       if (subscriptionRef != null) {
         subscriptionRef.dispose();
