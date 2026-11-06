@@ -113,7 +113,6 @@
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis;
     padding: 0 0.9rem;
     border: none;
     border-bottom: 2px solid transparent;
@@ -128,6 +127,32 @@
 
   .workbench-page-bar__page--active {
     border-bottom-color: var(--theme-workbench-page-bar-active-border, var(--theme-accent));
+  }
+
+  .workbench-page-bar__pages[data-page-bar-labels='auto'] .workbench-page-bar__page {
+    flex-shrink: 0;
+  }
+
+  .workbench-page-bar__pages[data-page-bar-labels='never'],
+  .workbench-page-bar__pages--collapsed[data-page-bar-labels='auto'] {
+    .workbench-page-bar__label {
+      display: none;
+    }
+
+    .workbench-page-bar__page {
+      padding: 0 0.6rem;
+    }
+  }
+
+  .workbench-page-bar__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .workbench-page-bar__abbreviation {
+    font-size: 0.7rem;
+    font-weight: 600;
   }
 
   .workbench-page-bar__pages {

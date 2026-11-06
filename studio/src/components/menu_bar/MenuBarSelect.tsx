@@ -4,6 +4,7 @@ import type { MenuBarItem_SelectEntry } from '#bifrost/contracts/MenuBarTypes';
 import React from 'react';
 
 import { useBifrost } from '../../bifrostContext';
+import { Icon } from '../Icon';
 
 type MenuBarSelectProps = {
   command: string;
@@ -29,19 +30,46 @@ export default function MenuBarSelect(props: MenuBarSelectProps): React.JSX.Elem
     console.error('<MenuBarSelect /> entries missing', props);
   }
 
+  const hasEntryIcons = entries.some((entry) => entry.icon != null);
+
+  const selectClassName = hasEntryIcons
+    ? 'form-control form-control-sm menu-bar__select--with-icons'
+    : 'form-control form-control-sm';
+
   return (
     <div className="menu-bar__element" {...props.htmlAttributes}>
       <select
-        className="form-control form-control-sm"
+        className={selectClassName}
         {...selectProps}
+        aria-label={props.tooltip}
         data-bs-title={props.tooltip}
         data-bs-toggle="tooltip"
       >
-        {entries.map((entry: any) => (
-          <option key={`${entry.value}:${entry.label}`} value={entry.value}>
-            {entry.label}
-          </option>
-        ))}
+        {hasEntryIcons ? (
+          <>
+            <button type="button">{React.createElement('selectedcontent')}</button>
+            {entries.map((entry) => (
+              <option
+                key={`${entry.value}:${entry.label}`}
+                value={entry.value}
+                aria-label={entry.iconLabel == null ? undefined : `${entry.label} (${entry.iconLabel})`}
+              >
+                {entry.icon != null ? (
+                  <span key={entry.icon} className="menu-bar__option-icon" aria-hidden="true">
+                    <Icon id={entry.icon} />
+                  </span>
+                ) : null}
+                <span className="menu-bar__option-label">{entry.label}</span>
+              </option>
+            ))}
+          </>
+        ) : (
+          entries.map((entry) => (
+            <option key={`${entry.value}:${entry.label}`} value={entry.value}>
+              {entry.label}
+            </option>
+          ))
+        )}
       </select>
     </div>
   );

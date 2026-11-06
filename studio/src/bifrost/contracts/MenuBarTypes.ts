@@ -187,6 +187,14 @@ export type MenuBarItem_Text = {
 export type MenuBarItem_SelectEntry = {
   readonly value: any;
   readonly label: string;
+  /**
+   * Icon id shown before the label, in the list and in the closed control
+   */
+  readonly icon?: string;
+  /**
+   * Text that describes the icon to assistive technology, e.g. a state
+   */
+  readonly iconLabel?: string;
 };
 
 export type MenuBarViewData = {

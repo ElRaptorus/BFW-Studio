@@ -58,7 +58,7 @@ Menu bar items are typed POJOs produced by factory and modifier functions regist
 |---|---|---|
 | `button` | `MenuBarButton` | Clickable icon that executes a command |
 | `menu` | `MenuBarMenu` | Icon that opens a context menu on click |
-| `select` | `MenuBarSelect` | Dropdown select element |
+| `select` | `MenuBarSelect` | Dropdown select; internal `MenuBarItem_SelectEntry` may include `icon` and `iconLabel` (not in the plugin SDK). When any entry has an icon, `MenuBarSelect` uses Chromium's customizable select (`appearance: base-select`, `<button><selectedcontent>`, popup styled with context-menu tokens); selects without entry icons stay native. |
 | `divider` | `<div>` | Visual separator |
 | `icon` | `<span>` with Icon | Static icon display |
 | `text` | `<div>` | Static text display |

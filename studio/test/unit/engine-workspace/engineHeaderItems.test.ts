@@ -12,14 +12,14 @@ const connectedEngine = {
   engineId: 'e1',
   url: 'http://localhost:4000',
   displayName: 'Local',
-  state: 'connected',
-} as const;
+  state: 'connected' as const,
+};
 const offlineEngine = {
   engineId: 'e2',
   url: 'http://remote',
   displayName: null as unknown as string,
-  state: 'error',
-} as const;
+  state: 'error' as const,
+};
 
 function createState(overrides: Partial<EngineHeaderState> = {}): EngineHeaderState {
   return {
@@ -33,11 +33,10 @@ function createState(overrides: Partial<EngineHeaderState> = {}): EngineHeaderSt
 }
 
 describe('buildEngineHeaderItems', () => {
-  it('builds status, select, connection menu, dashboard, deploy and play in this order', () => {
+  it('builds select, connection menu, dashboard, deploy and play in this order', () => {
     assert.deepStrictEqual(
       buildEngineHeaderItems(createState()).map((item) => item.id),
       [
-        'engine-header/engine-status',
         'engine-header/engine-select',
         'engine-header/connection',
         'engine-header/open-engine',
@@ -58,33 +57,78 @@ describe('buildEngineHeaderItems', () => {
     assert.deepStrictEqual(ENGINE_HEADER_PAGES, ['design/*', 'deploy/*', 'debug/*']);
   });
 
-  it('carries the connection state in the status icon class', () => {
-    for (const state of ['connected', 'connecting', 'reconnecting', 'error', 'disconnected'] as const) {
-      const [statusItem] = buildEngineHeaderItems(createState({ state }));
-      assert.ok(statusItem.type === 'icon');
-      assert.match(statusItem.icon, new RegExp(`engine-header-status--${state}$`));
+  it('shows each connection state as icon shape, colour class and tooltip on the first entry', () => {
+    const expectations = [
+      ['connected', 'ph-fill ph-circle', 'Connected'],
+      ['connecting', 'ph-bold ph-circle-notch ph-spin', 'Connecting'],
+      ['reconnecting', 'ph-bold ph-circle-notch ph-spin', 'Reconnecting'],
+      ['error', 'ph-fill ph-warning-circle', 'Connection error'],
+      ['disconnected', 'ph ph-circle', 'Offline'],
+    ] as const;
+    for (const [state, shape, label] of expectations) {
+      const [selectItem] = buildEngineHeaderItems(createState({ state, engines: [{ ...connectedEngine, state }] }));
+      assert.ok(selectItem.type === 'select');
+      const [firstEntry] = selectItem.entries;
+      assert.strictEqual(firstEntry.icon, `${shape} engine-header-status engine-header-status--${state}`);
+      assert.strictEqual(firstEntry.iconLabel, label);
+      assert.strictEqual(selectItem.tooltip, `${label} · http://localhost:4000`);
     }
   });
 
-  it('labels offline engines and selects the active one', () => {
-    const selectItem = buildEngineHeaderItems(createState())[1];
+  it('asks to select an engine when none is active', () => {
+    const [selectItem] = buildEngineHeaderItems(createState({ activeEngineId: null, state: 'disconnected' }));
     assert.ok(selectItem.type === 'select');
+    assert.strictEqual(selectItem.value, '');
+    assert.strictEqual(selectItem.tooltip, 'Select an engine');
+  });
+
+  it('lists engines by name and selects the active one', () => {
+    const selectItem = buildEngineHeaderItems(createState())[0];
+    assert.ok(selectItem.type === 'select');
+    assert.ok(!('icon' in selectItem));
     assert.strictEqual(selectItem.value, 'e1');
-    assert.strictEqual(selectItem.tooltip, 'http://localhost:4000');
+    assert.strictEqual(selectItem.tooltip, 'Connected · http://localhost:4000');
     assert.deepStrictEqual(
       selectItem.entries.map((entry) => entry.label),
-      ['Local', '[OFFLINE] http://remote'],
+      ['Local', 'http://remote'],
     );
+    assert.strictEqual(
+      selectItem.entries[0].icon,
+      'ph-fill ph-circle engine-header-status engine-header-status--connected',
+    );
+    assert.strictEqual(selectItem.entries[0].iconLabel, 'Connected');
+    assert.strictEqual(
+      selectItem.entries[1].icon,
+      'ph-fill ph-warning-circle engine-header-status engine-header-status--error',
+    );
+    assert.strictEqual(selectItem.entries[1].iconLabel, 'Connection error');
+  });
+
+  it('gives each engine entry its own state icon independent of the header state', () => {
+    const selectItem = buildEngineHeaderItems(createState({ state: 'disconnected' }))[0];
+    assert.ok(selectItem.type === 'select');
+    assert.strictEqual(selectItem.tooltip, 'Offline · http://localhost:4000');
+    assert.strictEqual(
+      selectItem.entries[0].icon,
+      'ph-fill ph-circle engine-header-status engine-header-status--connected',
+    );
+    assert.strictEqual(selectItem.entries[0].iconLabel, 'Connected');
+    assert.strictEqual(
+      selectItem.entries[1].icon,
+      'ph-fill ph-warning-circle engine-header-status engine-header-status--error',
+    );
+    assert.strictEqual(selectItem.entries[1].iconLabel, 'Connection error');
   });
 
   it('falls back to a "No engine" text when no engine is known', () => {
     const items = buildEngineHeaderItems(
       createState({ activeEngineId: null, state: 'disconnected', engines: [], deployEnabled: false }),
     );
-    const nameItem = items[1];
+    const nameItem = items[0];
     assert.ok(nameItem.type === 'text');
     assert.strictEqual(nameItem.id, 'engine-header/engine-name');
     assert.strictEqual(nameItem.label, 'No engine');
+    assert.ok(!items.some((item) => item.id === 'engine-header/engine-status'));
   });
 
   it('shows the dashboard only while connected and deploy only when enabled', () => {
@@ -121,6 +165,6 @@ describe('addEngineHeaderItems', () => {
     assert.strictEqual(result.header.length, 1);
     assert.strictEqual(result.pageBarEnd.length, 1);
     assert.strictEqual(result.pageBarCenter[0], existing);
-    assert.strictEqual(result.pageBarCenter[1].id, 'engine-header/engine-status');
+    assert.strictEqual(result.pageBarCenter[1].id, 'engine-header/engine-select');
   });
 });

@@ -54,7 +54,7 @@ function resolveIconClass(group: PaneGroupObject): string | null {
   return null;
 }
 
-function deriveLetterAbbreviation(label: string): string {
+export function deriveLetterAbbreviation(label: string): string {
   const words = label.trim().split(/\s+/);
   if (words.length >= 2) {
     return (words[0][0] + words[1][0]).toUpperCase();

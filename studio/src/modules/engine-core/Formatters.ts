@@ -2,14 +2,6 @@ import dayjs from 'dayjs';
 
 import type { EventDefinitionType, FlowNodeType } from '@elraptorus/bfw_engine_sdk';
 
-export function getEngineLabel(engineUrl: string, engineName?: string, connected?: boolean): string {
-  const prefix = connected === false ? '[OFFLINE] \u2022 ' : '';
-  const trimmedEngineName = engineName == null || engineName.trim() === '' ? '' : `${engineName.trim()} \u2022 `;
-  const shortEngineUrl = engineUrl.replace(/^(https?:\/\/)/, '');
-
-  return `${prefix}${trimmedEngineName}${shortEngineUrl}`;
-}
-
 export function getEventTypeText(eventType?: EventDefinitionType | null): string {
   if (!eventType) {
     return 'None';

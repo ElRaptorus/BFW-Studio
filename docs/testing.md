@@ -89,10 +89,11 @@ studio/test/
 
 `StudioAgent` is the primary test API. It wraps WebDriverIO with domain-specific methods for interacting with the Studio.
 
-Scoped-settings helpers:
+Settings and solution helpers (there is no window-size helper: WebDriver `getWindowSize` / `setWindowSize` fail under Electron with `Browser.getWindowForTarget wasn't found`; to test width-dependent layout, set the width of the observed element through `executeInRenderer`):
 
 | Helper | Purpose |
 |---|---|
+| `setSetting(key, value)` | Runs `std.test.setSetting`; the test then waits for the visible effect (for example `[data-page-bar-labels="never"]`) instead of pausing |
 | `getSolutionProjects()` | `{ name, baseUri }[]` of the open solution — use `baseUri` instead of building `file://` URIs by hand |
 | `getLinterProfileValue()` | Value of the ruleset select `[data-menu-bar-item-id="bpmn-linter-profile-select"] select`, right-pinned in the Design page bar while a BPMN document is focused |
 | `selectLinterProfile(value)` | Sets that `select` and dispatches `change` (React-controlled) |
@@ -228,6 +229,7 @@ The Studio registers test-only commands in `initializeTestCommands()` (available
 | `std.test.removeFolderFromSolution` | Prompts for a project ID, removes it from the solution |
 | `std.test.renameProjectInSolution` | Prompts for base URI then new name, renames the project |
 | `std.test.closeSolution` | Closes the current solution without dirty-check dialog |
+| `std.test.setSetting` | Sets a user setting by key (`bifrost.settings.set`); use via `studioAgent.setSetting` |
 
 Test commands that accept parameters use `bifrost.dialog.prompt()`. StudioAgent types the parameter into the prompt dialog automatically. Read-only queries (e.g., `getSolutionProjectCount`) use `testDriver.client.execute()` internally within StudioAgent helper methods, since command search cannot return values to the test harness. Test files must never read `studioAgent.testDriver` — it is `protected`. Keyboard input goes through `sendKeyboardInput`; canvas deletion is `sendKeyboardInput(['Backspace'])` then `waitForNotVisible('[data-element-id=…]')`.
 

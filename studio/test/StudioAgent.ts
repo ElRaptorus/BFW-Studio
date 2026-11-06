@@ -735,6 +735,10 @@ export class StudioAgent {
     return envelope.value;
   }
 
+  async setSetting(key: string, value: unknown): Promise<void> {
+    await this.executeCommand('std.test.setSetting', [key, value]);
+  }
+
   async renameSolutionProjectViaApi(projectBaseUri: string, newName: string): Promise<void> {
     await this.openViaCommandSearch('Test: Rename project in solution', false);
     await this.assertVisible('[data-test--dialog]', ASSERT_VISIBLE_TIMEOUT);

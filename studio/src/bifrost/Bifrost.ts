@@ -370,6 +370,15 @@ export class Bifrost {
         description: 'Show workbench categories that have no pages (for example Discover) in the header.',
         default: false,
       },
+      'workbench.pageBar.labels': {
+        type: 'string',
+        label: 'Page Bar Labels',
+        description:
+          'Show page bar labels always, never (icons only), or automatically: icons only when the labels do not fit.',
+        default: 'auto',
+        enum: ['auto', 'always', 'never'],
+        enumLabels: { auto: 'Automatic', always: 'Always', never: 'Never (Icons Only)' },
+      },
       'dialog.defaultDirectory': {
         type: 'string',
         label: 'Default Dialog Directory',

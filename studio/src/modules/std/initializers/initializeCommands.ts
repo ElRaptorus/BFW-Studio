@@ -324,5 +324,13 @@ export function initializeCommands(bifrost: Bifrost): void {
       },
       { visibleInSearch: true, description: 'Test: Close solution' },
     );
+
+    commands.register(
+      'std.test.setSetting',
+      async (key: string, value: unknown) => {
+        await bifrost.settings.set(key, value);
+      },
+      { visibleInSearch: true, description: 'Test: Set setting' },
+    );
   }
 }

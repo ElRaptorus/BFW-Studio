@@ -7,6 +7,22 @@ export const ENGINE_HEADER_PAGES: string[] = ['design/*', 'deploy/*', 'debug/*']
 /** The Deploy page has its own Deploy button; the header button only deploys the focused file. */
 export const ENGINE_HEADER_DEPLOY_PAGES: string[] = ['design/*', 'debug/*'];
 
+const STATE_LABELS: Record<EngineConnectionState, string> = {
+  connected: 'Connected',
+  connecting: 'Connecting',
+  reconnecting: 'Reconnecting',
+  error: 'Connection error',
+  disconnected: 'Offline',
+};
+
+const STATE_ICONS: Record<EngineConnectionState, string> = {
+  connected: 'ph-fill ph-circle',
+  connecting: 'ph-bold ph-circle-notch ph-spin',
+  reconnecting: 'ph-bold ph-circle-notch ph-spin',
+  error: 'ph-fill ph-warning-circle',
+  disconnected: 'ph ph-circle',
+};
+
 export type EngineHeaderState = {
   readonly activeEngineId: string | null;
   /** Connection state of the active engine; `disconnected` when there is none. */
@@ -16,16 +32,8 @@ export type EngineHeaderState = {
   readonly isViewingModelViewer: boolean;
 };
 
-export function formatEngineLabel(connection: { displayName: string | null; url: string; state?: string }): string {
-  const name = connection.displayName ?? connection.url;
-  if (connection.state && connection.state !== 'connected') {
-    return `[OFFLINE] ${name}`;
-  }
-  return name;
-}
-
 /**
- * Builds the Engine cluster, shown in the centered section of the page bar: status icon, engine select (or "No engine"),
+ * Builds the Engine cluster, shown in the centered section of the page bar: engine select with a status icon per engine (or "No engine"),
  * connection menu, open dashboard, deploy and play.
  */
 export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarItem[] {
@@ -43,8 +51,13 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
           id: 'engine-header/engine-select',
           command: 'engine.menubar.setActiveEngine',
           value: activeEngineId ?? '',
-          entries: engines.map((engine) => ({ label: formatEngineLabel(engine), value: engine.engineId })),
-          tooltip: activeEngine?.url ?? 'Select an engine',
+          entries: engines.map((engine) => ({
+            label: engine.displayName ?? engine.url,
+            value: engine.engineId,
+            icon: `${STATE_ICONS[engine.state]} engine-header-status engine-header-status--${engine.state}`,
+            iconLabel: STATE_LABELS[engine.state],
+          })),
+          tooltip: activeEngine == null ? 'Select an engine' : `${STATE_LABELS[state]} · ${activeEngine.url}`,
         }
       : {
           type: 'text',
@@ -54,12 +67,6 @@ export function buildEngineHeaderItems(headerState: EngineHeaderState): MenuBarI
         };
 
   const items: MenuBarItem[] = [
-    {
-      type: 'icon',
-      id: 'engine-header/engine-status',
-      icon: `ph-fill ph-circle engine-header-status engine-header-status--${state}`,
-      tooltip: `Engine: ${state}`,
-    },
     engineSelectItem,
     {
       type: 'menu',

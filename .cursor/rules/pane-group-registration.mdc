@@ -30,7 +30,7 @@ PaneGroup with id 'property' not found in area 'right' (or any other area).
 
 ## Left groups need a `label`, an `icon` and `pages`
 
-Left groups are assigned to workbench pages with `{ pages: [...] }`. When a page has two or more left groups that each have at least one pane, the page bar shows one entry per group with each group's `label` and `icon` (falling back to the capitalised `groupId` for the label and the page icon for the icon). Pass an explicit `label` and `icon` for every left group so the entries read correctly (`Explorer`, `Search`).
+Left groups are assigned to workbench pages with `{ pages: [...] }`. When a page has two or more left groups that each have at least one pane, the page bar shows one entry per group with each group's `label` and `icon` (falling back to the capitalised `groupId` for the label and a two-letter abbreviation derived from the label when `icon` is unset). Pass an explicit `label` and `icon` for every left group so the entries read correctly (`Explorer`, `Search`).
 
 ## Current groups registered by `std`
 

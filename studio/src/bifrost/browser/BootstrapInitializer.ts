@@ -5,6 +5,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 // Bootstrap 5 removed jQuery-based delegated tooltips. This MutationObserver
 // replicates that behavior: any element with [data-bs-toggle="tooltip"] that
 // enters the DOM gets a Tooltip instance; when removed, the instance is disposed.
+// Bootstrap reads the title only once, so a changed data-bs-title is pushed into
+// the existing instance.
 
 const TOOLTIP_SELECTOR = '[data-bs-toggle="tooltip"]';
 const TREE_ENTRY_CLASS = 'treeview__entry';
@@ -195,6 +197,20 @@ function disposeTooltip(el: Element): void {
   treeEntryPointerCleanups.delete(el);
 }
 
+function updateTooltipTitle(el: Element): void {
+  const instance = tooltipInstances.get(el);
+  if (instance == null) {
+    initTooltip(el);
+    return;
+  }
+  const title = el.getAttribute('data-bs-title');
+  if (title == null || title === '') {
+    disposeTooltip(el);
+    return;
+  }
+  instance.setContent({ '.tooltip-inner': title });
+}
+
 function initAllTooltipsIn(root: Element | Document): void {
   root.querySelectorAll(TOOLTIP_SELECTOR).forEach(initTooltip);
 }
@@ -221,6 +237,12 @@ setInterval(() => {
 
 const observer = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
+    if (mutation.type === 'attributes') {
+      if (mutation.target instanceof Element && mutation.target.matches(TOOLTIP_SELECTOR)) {
+        updateTooltipTitle(mutation.target);
+      }
+      continue;
+    }
     for (const node of mutation.addedNodes) {
       if (node.nodeType !== Node.ELEMENT_NODE) {
         continue;
@@ -247,6 +269,8 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.body, {
   childList: true,
   subtree: true,
+  attributes: true,
+  attributeFilter: ['data-bs-title'],
 });
 
 initAllTooltipsIn(document);

@@ -13,6 +13,9 @@ const activeCategory = (id: string) => `.workbench-header-container[data-categor
 const activePage = (id: string) => `.workbench-header-container[data-page-id="${id}"]`;
 const pageButton = (id: string) => `.workbench-page-bar__page[data-page-id="${id}"]`;
 const groupEntry = (groupId: string) => `.workbench-page-bar__page[data-test--pane-group-tab="${groupId}"]`;
+const labelMode = (mode: string) => `.workbench-page-bar__pages[data-page-bar-labels="${mode}"]`;
+const WIDE_PAGE_BAR_WIDTH = '1600px';
+const NARROW_PAGE_BAR_WIDTH = '200px';
 
 describe('studio/workbench-categories', () => {
   let studioAgent: StudioAgent;
@@ -139,5 +142,58 @@ describe('studio/workbench-categories', () => {
         throw new Error(`Page ${pageId} overflows the window vertically`);
       }
     }
+  });
+
+  describe('page bar labels', () => {
+    // WebDriver window resizing is unreliable under Electron; the page bar reacts to its own width
+    const setPageBarWidth = (width: string) =>
+      studioAgent.executeInRenderer(`document.querySelector('.workbench-page-bar__pages').style.width = '${width}';`);
+
+    afterEach(async () => {
+      await studioAgent.setSetting('workbench.pageBar.labels', 'auto');
+      await setPageBarWidth('');
+    });
+
+    it('never: hides labels, shows tooltips and search stays usable', async () => {
+      await studioAgent.setSetting('workbench.pageBar.labels', 'never');
+      await studioAgent.navigation.activatePage('design/workspace');
+      await studioAgent.assertVisible(labelMode('never'), TIMEOUT);
+      const labelDisplays = (await studioAgent.executeInRenderer(
+        `return [...document.querySelectorAll('.workbench-page-bar__label')].map((label) => getComputedStyle(label).display);`,
+      )) as string[];
+      assert.ok(labelDisplays.length > 0, 'The page bar should render label elements');
+      assert.deepStrictEqual(new Set(labelDisplays), new Set(['none']));
+      await studioAgent.assertVisible(groupEntry('search'), TIMEOUT);
+      assert.strictEqual(await studioAgent.getAttribute(groupEntry('search'), 'aria-label'), 'Search');
+      assert.strictEqual(await studioAgent.getAttribute(groupEntry('search'), 'data-bs-title'), 'Search');
+      await studioAgent.clickOn(groupEntry('search'));
+      await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/search');
+    });
+
+    it('always: keeps labels in a narrow page bar without collapsing', async () => {
+      await studioAgent.setSetting('workbench.pageBar.labels', 'always');
+      await studioAgent.navigation.activatePage('design/workspace');
+      await studioAgent.assertVisible(labelMode('always'), TIMEOUT);
+      await setPageBarWidth(NARROW_PAGE_BAR_WIDTH);
+      await studioAgent.assertNotVisible('.workbench-page-bar__pages--collapsed');
+      const labelDisplay = await studioAgent.executeInRenderer(
+        `return getComputedStyle(document.querySelector('.workbench-page-bar__label')).display;`,
+      );
+      assert.notStrictEqual(labelDisplay, 'none');
+    });
+
+    it('auto: collapses when the page bar is narrow and shows tooltips only then', async () => {
+      await studioAgent.setSetting('workbench.pageBar.labels', 'auto');
+      await studioAgent.navigation.activatePage('design/workspace');
+      await studioAgent.assertVisible(labelMode('auto'), TIMEOUT);
+      await setPageBarWidth(WIDE_PAGE_BAR_WIDTH);
+      await studioAgent.waitForNotVisible('.workbench-page-bar__pages--collapsed');
+      assert.strictEqual(await studioAgent.getAttribute(groupEntry('search'), 'data-bs-title'), null);
+      await setPageBarWidth(NARROW_PAGE_BAR_WIDTH);
+      await studioAgent.assertVisible('.workbench-page-bar__pages--collapsed', TIMEOUT);
+      assert.strictEqual(await studioAgent.getAttribute(groupEntry('search'), 'data-bs-title'), 'Search');
+      await setPageBarWidth(WIDE_PAGE_BAR_WIDTH);
+      await studioAgent.waitForNotVisible('.workbench-page-bar__pages--collapsed');
+    });
   });
 });

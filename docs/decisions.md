@@ -72,6 +72,18 @@ See [git-cruiser.md](architecture/git-cruiser.md).
 
 See [workbench-categories.md](architecture/workbench-categories.md).
 
+## Page bar labels collapse automatically
+
+**Context:** The page bar was crowded (multiple pages, Engine cluster, toggles; plugins add entries).
+
+**Options:** Smaller fonts; icons only; a per-entry display mode; automatic collapse driven by a user setting.
+
+**Decision:** The setting `workbench.pageBar.labels` with values `auto` (default), `always`, and `never`. In `auto`, all entries collapse together when their natural labelled width does not fit (`scrollWidth > clientWidth` on the container, with non-shrinking flex items while labels are shown). In `never`, labels stay hidden. In `always`, labels stay on (ellipsis as before). Applies in every category.
+
+**Rationale:** Per-entry modes would make the bar inconsistent across plugins; a fixed breakpoint ignores how many entries exist.
+
+See [workbench-categories.md](architecture/workbench-categories.md).
+
 ## Oxlint and Oxfmt instead of ESLint and Prettier
 
 **Context:** ESLint and Prettier had become slow on the roughly 1,700 files of `studio/`. The rule set had to carry over unchanged, including the module-boundary zones.
@@ -243,3 +255,15 @@ See [code-editors.md](architecture/code-editors.md) §JSON assist.
 See [git-cruiser.md](architecture/git-cruiser.md) §Model file types.
 
 ## Per-resource `ScopedSettings` view — superseded by "Scoped settings through one mediator"
+
+## Customizable select for menu-bar selects with icons
+
+**Context:** The Engine dropdown must show each engine's connection state in the list; a native `<option>` holds text only.
+
+**Options:** (A) icon overlay on the closed control only; (B) a text glyph in each option label; (C) Chromium's customizable select (`appearance: base-select`); (D) a custom button-and-menu dropdown.
+
+**Decision:** C, only for selects whose entries carry icons.
+
+**Rationale:** Keeps native keyboard handling, value semantics, and accessibility; Electron 45 supports it; glyphs are monochrome and read like the removed `[OFFLINE]` prefix; a custom dropdown would rebuild keyboard and screen-reader support. Browsers without support fall back to a plain native select.
+
+See [workbench-layout.md](architecture/workbench-layout.md) §MenuBarItem Types.
