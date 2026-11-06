@@ -60,7 +60,7 @@ describe('PaneManager pages', () => {
     assert.strictEqual(paneManager.getActivePaneIdForArea('left'), 'git-pane');
   });
 
-  it('reopens the group last selected in the tab strip after the area was hidden', () => {
+  it('reopens the left group selected last after the area was hidden', () => {
     paneManager.registerPaneGroup('left', 'search', [pane('search-pane')], { pages: ['design/workspace'] });
     paneManager.setVisibilityOfPaneAreaByPaneId('search-pane', true);
     paneManager.setActiveGroupInArea('left', 'explorer');
@@ -85,6 +85,74 @@ describe('PaneManager pages', () => {
     ignoring.deserialize({ left: { visible: false, sizeInPixels: 1, paneGroups: [] } });
     ignoring.setActivePage('design/workspace');
     assert.strictEqual(ignoring.getPaneAreaVisibility('left'), true);
+  });
+
+  describe('getLeftPaneGroupsOfPage', () => {
+    it('returns left group ids for each page and multiple groups in registration order', () => {
+      assert.deepStrictEqual(
+        paneManager.getLeftPaneGroupsOfPage('design/workspace').map((group) => group.groupId),
+        ['explorer'],
+      );
+      assert.deepStrictEqual(
+        paneManager.getLeftPaneGroupsOfPage('design/source').map((group) => group.groupId),
+        ['git'],
+      );
+      paneManager.registerPaneGroup('left', 'search', [pane('search-pane')], { pages: ['design/workspace'] });
+      assert.deepStrictEqual(
+        paneManager.getLeftPaneGroupsOfPage('design/workspace').map((group) => group.groupId),
+        ['explorer', 'search'],
+      );
+      paneManager.setActivePage('design/source');
+      assert.deepStrictEqual(
+        paneManager.getLeftPaneGroupsOfPage('design/workspace').map((group) => group.groupId),
+        ['explorer', 'search'],
+      );
+    });
+
+    it('excludes a left group that has no panes left', () => {
+      const emptyLeft = new PaneManager();
+      emptyLeft.configurePages(
+        () => ['left', 'right', 'bottom'],
+        (pageId) => emptyLeft.setActivePage(pageId),
+      );
+      emptyLeft.registerPaneGroup('left', 'explorer', [pane('left-only')], { pages: ['design/workspace'] });
+      emptyLeft.setActivePage('design/workspace');
+      emptyLeft.unregisterPane('left-only');
+      assert.deepStrictEqual(
+        emptyLeft.getLeftPaneGroupsOfPage('design/workspace').map((group) => group.groupId),
+        [],
+      );
+    });
+
+    it('excludes technical left groups on Design pages in business mode until detail level is technical again', () => {
+      const withTechnicalLeft = new PaneManager();
+      withTechnicalLeft.configurePages(
+        () => ['left', 'right', 'bottom'],
+        (pageId) => withTechnicalLeft.setActivePage(pageId),
+      );
+      withTechnicalLeft.registerPaneGroup('left', 'technical-left', [pane('technical-left-pane')], {
+        pages: ['design/workspace'],
+        detailLevel: 'technical',
+      });
+      withTechnicalLeft.setActivePage('design/workspace');
+      withTechnicalLeft.setDetailLevel('business');
+      assert.deepStrictEqual(
+        withTechnicalLeft.getLeftPaneGroupsOfPage('design/workspace').map((group) => group.groupId),
+        [],
+      );
+      withTechnicalLeft.setDetailLevel('technical');
+      assert.deepStrictEqual(
+        withTechnicalLeft.getLeftPaneGroupsOfPage('design/workspace').map((group) => group.groupId),
+        ['technical-left'],
+      );
+    });
+
+    it('never returns right-area groups', () => {
+      assert.deepStrictEqual(
+        paneManager.getLeftPaneGroupsOfPage('design/workspace').some((group) => group.groupId === 'property'),
+        false,
+      );
+    });
   });
 
   it('shows no areas for an empty category or a page without pane areas', () => {

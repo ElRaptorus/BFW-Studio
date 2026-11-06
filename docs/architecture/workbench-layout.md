@@ -12,9 +12,9 @@ The app layout has three columns. There are no per-column menu bars; the header 
 │ Page bar                                                   │
 ├──────────────┬──────────────────────────────┬──────────────┤
 │  Left Pane   │  Editor Area + Bottom Pane   │  Right Pane  │
-│ (tab strip   │                              │  (Property   │
-│  Explorer |  │                              │   Panel)     │
-│  Search)     │                              │              │
+│ (Explorer /  │                              │  (Property   │
+│  Search)     │                              │   Panel)     │
+│              │                              │              │
 ├──────────────┴──────────────────────────────┴──────────────┤
 │                     Status Bar                             │
 └────────────────────────────────────────────────────────────┘
@@ -63,11 +63,11 @@ Menu bar items are typed POJOs produced by factory and modifier functions regist
 | `icon` | `<span>` with Icon | Static icon display |
 | `text` | `<div>` | Static text display |
 
-Panes are reached through the page bar, the left tab strip and View › Go to; there is no pane toggle item type.
+Panes are reached through the page bar and View › Go to; there is no pane toggle item type.
 
-## Left Side: Page Bar and Tab Strip
+## Left Side: Page Bar and Left Pane
 
-A left group is selected by navigating to its page (header category, then page bar) and, when a page has two or more displayable left groups, by the text tab strip at the top of `PaneAreaLeft`. `design/workspace` holds `explorer` (label `Explorer`) and `search` (label `Search`); the other pages show their single group without a strip. Left groups need a `label` for the strip (see `pane-group-registration.mdc`).
+A left group is selected by navigating to its page (header category, then page bar). When a page has two or more left groups that each hold at least one pane, the page bar lists one entry per group (in registration order) instead of a single page button; clicking an entry runs `std.workbench.toggleLeftPaneAreaItem` for a pane of that group. `design/workspace` holds `explorer` (label `Explorer`) and `search` (label `Search`); pages with one such group still show one page button. Left groups need a `label` and `icon` for those entries (see `pane-group-registration.mdc`).
 
 The View menu keeps static `Explorer` (`std.workbench.focusExplorer`, `view/explorer`) and `Search` (`std.workbench.focusSearch`, `view/search`) entries, plus the `view/go-to` submenu (see [workbench-categories.md](workbench-categories.md)). Source Control, Engines and Plugins are reached through Go to and the page bar. Ctrl/Cmd+B remains `std.workbench.togglePanels`. View → Appearance still exposes Sidebar, Property Panel and Inspector Panel.
 
@@ -79,7 +79,7 @@ Each pane area has its own dedicated renderer component because their interactio
 
 **File:** `studio/src/components/panes/PaneAreaLeft.tsx`
 
-Maps over `paneGroups` and renders a `PanesList` per group. Only the group with `visible: true` shows content. When `getDisplayableGroups(...)` yields two or more groups, a `PaneGroupTabBar` (text variant) is rendered above them; a tab click calls `bifrost.panes.setActiveGroupInArea('left', groupId)`. `setVisibilityOfPaneAreaByPaneId` (focus commands, cross-page pane activation) also switches the group.
+Maps over `paneGroups` and renders a `PanesList` per group. Only the group with `visible: true` shows content. The active left group is chosen from the page bar (when the page has two or more left groups) or by `setVisibilityOfPaneAreaByPaneId` / focus commands; there is no group tab bar in this area. `setVisibilityOfPaneAreaByPaneId` (focus commands, cross-page pane activation) also switches the group.
 
 ### PaneAreaRight
 
@@ -163,7 +163,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `unregisterPaneGroup(paneGroupId)` | Removes an entire pane group from its area, emits `EVENT_PANE_LAYOUT_UPDATED`. No-op if group not found. |
 | `unregisterPaneProvider(providerId)` | Removes a pane provider entry from the `PaneProviderManager`. |
 
-`PaneManager` tracks `lastActivePaneIdPerArea` (serialized/deserialized with pane layout; updated by both `setVisibilityOfPaneAreaByPaneId` and the tab strip's `setActiveGroupInArea`) to support restoring the last active pane when toggling sidebar visibility.
+`PaneManager` tracks `lastActivePaneIdPerArea` (serialized/deserialized with pane layout; updated by `setVisibilityOfPaneAreaByPaneId` and `setActiveGroupInArea`) to support restoring the last active pane when toggling sidebar visibility.
 
 ### Persistence
 
@@ -173,7 +173,6 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 
 ## Interaction Model
 
-- **Left tab strip**: Click switches the active left group on the page. Not rendered with fewer than two displayable groups.
 - **Layout toggles** (page bar end): `std.workbench.toggleSidebar` hides or shows the left area (hiding calls `hidePaneArea('left')`, showing calls `selectLastActivePaneInArea('left')`); `togglePropertyPanel` toggles `bifrost.panes.togglePaneArea('right')`; `toggleInspectorPanel` toggles the bottom area. The buttons live in the header and stay mounted when an area hides.
 - **Right pane group tabs** (icon variant): Click switches active group. Right-click opens context menu listing all displayable groups with labels.
 - **Bottom pane group tabs** (text variant): Click switches active group. Pane-level tabs below update to show the selected group's panes.
@@ -185,7 +184,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `studio/src/components/Workbench.tsx` | Top-level layout, event subscriptions, column structure |
 | `studio/src/components/header/WorkbenchHeader.tsx` | Header chrome: categories, hamburger, header items; page bar: pages, center and end items, layout toggles (`pageBarSections.ts` decides visibility) |
 | `studio/src/components/header/headerLayoutToggles.ts` | Pure `buildLayoutToggleItems(paneAreas)` |
-| `studio/src/components/panes/PaneAreaLeft.tsx` | Left pane area renderer (one visible group, text tab strip with two or more groups) |
+| `studio/src/components/panes/PaneAreaLeft.tsx` | Left pane area renderer (one visible group; multiple groups are selected from the page bar) |
 | `studio/src/components/panes/PaneAreaRight.tsx` | Right pane area renderer (multi-group with icon tab bar) |
 | `studio/src/components/panes/PaneAreaBottom.tsx` | Bottom pane area renderer (multi-group with text tab bar) |
 | `studio/src/components/panes/PaneGroupTabBar.tsx` | Group-level tab bar component (icon and text variants; text tabs carry `data-test--active`) |
@@ -197,7 +196,7 @@ Pane content selection is handled by `PaneManager` and `PaneMediator`:
 | `studio/src/components/menu_bar/workbench.menu-bar.scss` | Menu bar item styles (`.menu-bar-section`, `.menu-bar__button--active`) |
 | `studio/src/bifrost/styles/workbench.app-layout.scss` | Column layout (`.app-layout__column`) |
 | `studio/src/bifrost/contracts/MenuBarTypes.ts` | All `MenuBarItem` type definitions (`MenuBarItemArea`: `header`, `pageBarCenter`, `pageBarEnd`) |
-| `studio/src/bifrost/common/PaneManager.ts` | Pane area state, visibility, `lastActivePaneIdPerArea`, `setActiveGroupInArea()`, `requestPaneLayoutUpdate()` |
+| `studio/src/bifrost/common/PaneManager.ts` | Pane area state, visibility, `lastActivePaneIdPerArea`, `getLeftPaneGroupsOfPage()`, `setActiveGroupInArea()`, `requestPaneLayoutUpdate()` |
 | `studio/src/bifrost/common/PaneMediator.ts` | Public API for PaneManager, persistence, pane provider registration |
 | `studio/src/bifrost/contracts/PaneTypes.ts` | `PaneGroupObject` type with `label`, `icon` fields |
 | `studio/src/modules/engine-workspace/initializers/engineHeaderItems.ts` | Pure `buildEngineHeaderItems`: the Engine cluster in the header |

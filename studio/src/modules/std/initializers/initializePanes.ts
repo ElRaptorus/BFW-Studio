@@ -20,7 +20,7 @@ export function initializePanes(bifrost: Bifrost): void {
       ),
       bifrost.explorers.getPane(DESIGNER_EXPLORER_ID),
     ],
-    { label: 'Explorer', pages: ['design/workspace'] },
+    { label: 'Explorer', icon: 'ph ph-folders', pages: ['design/workspace'] },
   );
   bifrost.panes.registerPaneGroup(
     'left',
@@ -32,7 +32,7 @@ export function initializePanes(bifrost: Bifrost): void {
         GlobalSearchPane,
       ),
     ],
-    { label: 'Search', pages: ['design/workspace'] },
+    { label: 'Search', icon: 'ph ph-magnifying-glass', pages: ['design/workspace'] },
   );
 
   bifrost.panes.registerPaneGroup('right', 'property', [], { label: 'Properties', icon: 'ph ph-list-dashes' });

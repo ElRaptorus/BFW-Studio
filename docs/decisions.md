@@ -60,6 +60,18 @@ See [source-control.md](architecture/source-control.md).
 
 See [git-cruiser.md](architecture/git-cruiser.md).
 
+## Left pane groups as page-bar entries
+
+**Context:** On Design, navigation had three levels: category, page ("Workspace"), then a second row in the left area (Explorer / Search).
+
+**Options:** Register Explorer and Search as separate workbench pages, or keep one `design/workspace` page and show each left group as its own page-bar button.
+
+**Decision:** One page `design/workspace` with page-bar entries for each left group when a page has two or more such groups. Clicks use `std.workbench.toggleLeftPaneAreaItem`; `PaneAreaLeft` shows one group at a time.
+
+**Rationale:** Workbench pages own separate editor areas (R1 in [workbench-categories.md](architecture/workbench-categories.md)); splitting groups into pages would split open tabs and move every search result to a different page. Plugins and session state keep a single Design page id.
+
+See [workbench-categories.md](architecture/workbench-categories.md).
+
 ## Oxlint and Oxfmt instead of ESLint and Prettier
 
 **Context:** ESLint and Prettier had become slow on the roughly 1,700 files of `studio/`. The rule set had to carry over unchanged, including the module-boundary zones.

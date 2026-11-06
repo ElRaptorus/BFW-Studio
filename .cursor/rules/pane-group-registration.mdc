@@ -28,9 +28,9 @@ Other modules (e.g., `engine-*`) call `registerPaneGroup` for the same group to 
 PaneGroup with id 'property' not found in area 'right' (or any other area).
 ```
 
-## Left groups need a `label` and `pages`
+## Left groups need a `label`, an `icon` and `pages`
 
-Left groups are assigned to workbench pages with `{ pages: [...] }`. When a page has two or more displayable left groups, `PaneAreaLeft` shows a text tab strip with each group's `label` (falling back to the capitalised `groupId`). Pass an explicit `label` for every left group so the tab reads correctly (`Explorer`, `Search`).
+Left groups are assigned to workbench pages with `{ pages: [...] }`. When a page has two or more left groups that each have at least one pane, the page bar shows one entry per group with each group's `label` and `icon` (falling back to the capitalised `groupId` for the label and the page icon for the icon). Pass an explicit `label` and `icon` for every left group so the entries read correctly (`Explorer`, `Search`).
 
 ## Current groups registered by `std`
 

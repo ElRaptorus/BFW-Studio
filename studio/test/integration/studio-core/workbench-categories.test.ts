@@ -12,6 +12,7 @@ const category = (id: string) => `.workbench-header__category[data-category-id="
 const activeCategory = (id: string) => `.workbench-header-container[data-category-id="${id}"]`;
 const activePage = (id: string) => `.workbench-header-container[data-page-id="${id}"]`;
 const pageButton = (id: string) => `.workbench-page-bar__page[data-page-id="${id}"]`;
+const groupEntry = (groupId: string) => `.workbench-page-bar__page[data-test--pane-group-tab="${groupId}"]`;
 
 describe('studio/workbench-categories', () => {
   let studioAgent: StudioAgent;
@@ -50,12 +51,29 @@ describe('studio/workbench-categories', () => {
   it('categories: activating a category shows its page bar and pages', async () => {
     await studioAgent.executeCommand('std.workbench.activateCategory', ['design']);
     await studioAgent.assertVisible(activeCategory('design'), TIMEOUT);
-    await studioAgent.assertVisible(pageButton('design/workspace'), TIMEOUT);
+    await studioAgent.assertVisible(groupEntry('explorer'), TIMEOUT);
+    await studioAgent.assertVisible(groupEntry('search'), TIMEOUT);
     await studioAgent.assertVisible(pageButton('design/source'), TIMEOUT);
+    await studioAgent.assertNotVisible('.app-layout__panes-left .pane-group-tab-bar--text');
 
     await studioAgent.executeCommand('std.workbench.activateCategory', ['control']);
     await studioAgent.assertVisible(pageButton('control/settings'), TIMEOUT);
     await studioAgent.assertVisible(pageButton('control/about'), TIMEOUT);
+  });
+
+  it('page bar: a left group entry switches from Source to its group and reopens a hidden left area', async () => {
+    await studioAgent.executeCommand('std.workbench.showPanels');
+    await studioAgent.executeCommand('std.workbench.activatePage', ['design/source']);
+    await studioAgent.assertVisible(activePage('design/source'), TIMEOUT);
+
+    await studioAgent.switchToPaneGroup('search');
+    await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/search');
+
+    await studioAgent.executeCommand('std.workbench.toggleSidebar');
+    await studioAgent.assertNotVisible('.app-layout__panes-left');
+    await studioAgent.switchToPaneGroup('explorer');
+    await studioAgent.assertVisible('.app-layout__panes-left', TIMEOUT);
+    await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/explorer');
   });
 
   it('routing: opening the about page switches to Control/About', async () => {

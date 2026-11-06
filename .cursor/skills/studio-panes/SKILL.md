@@ -41,7 +41,7 @@ Do **not** `assertNotNull` data the gate did not prove — that throws during th
 
 ## Reaching a pane
 
-There are no pane toggle buttons. A left pane is reached through its page (header category, page bar) and, when the page has two or more displayable left groups, the text tab strip — so give every left group a `label` and `pages`. Header chrome that belongs to a pane (for example the linter ruleset select in the Findings `PaneHeader`) goes into the pane's `PaneHeader` children, not into the menu bar. Menu bar items exist only in the `header` area.
+There are no pane toggle buttons. A left pane is reached through its page (header category, page bar) and, when the page has two or more left groups with panes, one page-bar entry per group — so give every left group a `label`, an `icon` and `pages`. Header chrome that belongs to a pane (for example the linter ruleset select in the Findings `PaneHeader`) goes into the pane's `PaneHeader` children, not into the menu bar. Menu bar items exist only in the `header` area.
 
 ## What belongs where
 

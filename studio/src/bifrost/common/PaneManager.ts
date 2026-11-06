@@ -443,6 +443,13 @@ export class PaneManager extends AbstractEmitter implements ISerializable {
     }
   }
 
+  /** The left groups shown on `pageId` that hold at least one pane, in registration order. */
+  getLeftPaneGroupsOfPage(pageId: string): readonly PaneGroupObject[] {
+    return this.paneAreas.left.paneGroups.filter(
+      (group) => group.panes.length > 0 && this.isGroupShownOnPage(group, pageId),
+    );
+  }
+
   setActiveGroupInArea(area: PaneAreaName, groupId: string): void {
     const paneArea: PaneAreaObject = this.paneAreas[area];
 

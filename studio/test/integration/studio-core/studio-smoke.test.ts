@@ -58,7 +58,7 @@ describe('studio/smoke', () => {
     });
   });
 
-  it('smoke/pane-content: should switch between the Explorer and Search tabs of the left tab strip', async () => {
+  it('smoke/pane-content: should switch between the Explorer and Search entries of the page bar', async () => {
     await studioAgent.sendKeyboardInput([FOCUS_SEARCH]);
     await studioAgent.navigation.assertActivePage('design/workspace');
     await studioAgent.navigation.assertLeftPaneIsActive('design/workspace/search');

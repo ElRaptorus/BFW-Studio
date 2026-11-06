@@ -3,6 +3,7 @@ import type {
   PaneAreaAndGroup,
   PaneAreaName,
   PaneAreasSerialized,
+  PaneGroupObject,
   PaneObject,
   PaneProvider,
   PaneProviderModule,
@@ -155,6 +156,11 @@ export class PaneMediator extends AbstractEmitter {
 
   setDetailLevel(level: 'technical' | 'business'): void {
     this.paneManager.setDetailLevel(level);
+  }
+
+  /** The left groups shown on `pageId` that hold at least one pane, in registration order. */
+  getLeftPaneGroupsOfPage(pageId: string): readonly PaneGroupObject[] {
+    return this.paneManager.getLeftPaneGroupsOfPage(pageId);
   }
 
   setActiveGroupInArea(area: PaneAreaName, groupId: string): void {

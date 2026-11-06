@@ -1,7 +1,8 @@
 import { matchesPage } from '#bifrost/common/CategoryManager';
 import { EVENT_MENU_BAR_UPDATED } from '#bifrost/common/MenuBarManager';
 import type { MenuBarItem } from '#bifrost/contracts/MenuBarTypes';
-import type { WorkbenchCategoryDefinition } from '#bifrost/contracts/WorkbenchTypes';
+import type { PaneGroupObject } from '#bifrost/contracts/PaneTypes';
+import type { WorkbenchCategoryDefinition, WorkbenchPageDefinition } from '#bifrost/contracts/WorkbenchTypes';
 import { EVENT_PANE_LAYOUT_UPDATED } from '#bifrost/contracts/internal/PaneEvents';
 import {
   EVENT_WORKBENCH_CATEGORIES_UPDATED,
@@ -20,11 +21,33 @@ const WEB_HAMBURGER_ITEMS: MenuBarItem[] = [
   { type: 'menu', id: 'header-hamburger', icon: 'std/menubar/hamburger', menu: 'std/application/main' },
 ];
 
+type PageBarEntry =
+  | { kind: 'page'; page: WorkbenchPageDefinition }
+  | { kind: 'group'; page: WorkbenchPageDefinition; group: PaneGroupObject };
+
+function resolvePageBarGroupLabel(group: PaneGroupObject): string {
+  if (group.label) {
+    return group.label;
+  }
+  return group.groupId.charAt(0).toUpperCase() + group.groupId.slice(1);
+}
+
+function resolvePageBarGroupIconId(page: WorkbenchPageDefinition, group: PaneGroupObject): string {
+  if (typeof group.icon === 'function') {
+    return group.icon();
+  }
+  if (typeof group.icon === 'string') {
+    return group.icon;
+  }
+  return page.icon;
+}
+
 /**
  * The header: Home and the web hamburger (start), the main categories (centered on the window) and at the end the
- * header menu bar items (plugins) and Control. Below it sits the page bar of the active category: the page tabs
- * (start), the `pageBarCenter` items such as the Engine cluster (centered), and the `pageBarEnd` items, a divider and
- * the layout toggles (end). Categories without pages are hidden unless `workbench.categories.showEmpty` is set.
+ * header menu bar items (plugins) and Control. Below it sits the page bar of the active category: the page entries; a
+ * page with two or more left pane groups shows one entry per group (start), the `pageBarCenter` items such as the
+ * Engine cluster (centered), and the `pageBarEnd` items, a divider and the layout toggles (end). Categories without
+ * pages are hidden unless `workbench.categories.showEmpty` is set.
  */
 export default function WorkbenchHeader(): React.JSX.Element {
   const bifrost = useBifrost();
@@ -53,8 +76,20 @@ export default function WorkbenchHeader(): React.JSX.Element {
   const pageBarCenterItems = menuBarItems.pageBarCenter.filter(isOnActivePage);
   const pageBarEndItems = menuBarItems.pageBarEnd.filter(isOnActivePage);
 
+  const pageBarEntries: PageBarEntry[] = [];
+  for (const page of pagesOfActiveCategory) {
+    const leftGroups = bifrost.panes.getLeftPaneGroupsOfPage(page.id);
+    if (leftGroups.length >= 2) {
+      for (const group of leftGroups) {
+        pageBarEntries.push({ kind: 'group', page, group });
+      }
+    } else {
+      pageBarEntries.push({ kind: 'page', page });
+    }
+  }
+
   const pageBar = buildPageBarSections({
-    pageCount: pagesOfActiveCategory.length,
+    pageCount: pageBarEntries.length,
     centerItems: pageBarCenterItems,
     endItems: pageBarEndItems,
     layoutToggleItems: buildLayoutToggleItems(bifrost.panes.getViewData()),
@@ -98,19 +133,43 @@ export default function WorkbenchHeader(): React.JSX.Element {
       {pageBar.visible && (
         <div className="workbench-page-bar">
           <div className="workbench-page-bar__pages">
-            {pagesOfActiveCategory.map((page) => (
-              <button
-                key={page.id}
-                type="button"
-                className={`workbench-page-bar__page${page.id === activePageId ? ' workbench-page-bar__page--active' : ''}`}
-                data-page-id={page.id}
-                aria-current={page.id === activePageId ? 'page' : undefined}
-                onClick={() => bifrost.commands.executeCommand('std.workbench.activatePage', [page.id])}
-              >
-                <Icon id={page.icon} />
-                <span>{page.label}</span>
-              </button>
-            ))}
+            {pageBarEntries.map((entry) => {
+              if (entry.kind === 'page') {
+                const page = entry.page;
+                const isActive = page.id === activePageId;
+                return (
+                  <button
+                    key={page.id}
+                    type="button"
+                    className={`workbench-page-bar__page${isActive ? ' workbench-page-bar__page--active' : ''}`}
+                    data-page-id={page.id}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => bifrost.commands.executeCommand('std.workbench.activatePage', [page.id])}
+                  >
+                    <Icon id={page.icon} />
+                    <span>{page.label}</span>
+                  </button>
+                );
+              }
+              const { page, group } = entry;
+              const isActive = page.id === activePageId && group.visible;
+              const paneId = group.panes[group.activePaneIndex ?? 0]?.id ?? group.panes[0].id;
+              return (
+                <button
+                  key={`${page.id}/${group.groupId}`}
+                  type="button"
+                  className={`workbench-page-bar__page${isActive ? ' workbench-page-bar__page--active' : ''}`}
+                  data-page-id={page.id}
+                  data-test--pane-group-tab={group.groupId}
+                  data-test--active={isActive}
+                  aria-current={isActive ? 'page' : undefined}
+                  onClick={() => bifrost.commands.executeCommand('std.workbench.toggleLeftPaneAreaItem', [paneId])}
+                >
+                  <Icon id={resolvePageBarGroupIconId(page, group)} />
+                  <span>{resolvePageBarGroupLabel(group)}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="workbench-page-bar__section workbench-page-bar__section--center">
             {pageBar.centerItems.length > 0 && <MenuBarSection items={[...pageBar.centerItems]} align="center" />}
