@@ -320,16 +320,6 @@ Test-harness rules live in [`docs/testing.md`](../testing.md).
 
 ---
 
-## bpmn-js-differ swaps oldValue / newValue
-
-**Mistake**: Trusting `attrs[prop].oldValue` as the before-value.
-
-**Why**: The library's `changed(model, property, newValue, oldValue)` is called with jsondiffpatch left/right reversed.
-
-**Correct approach**: Treat `values.newValue` as before and `values.oldValue` as after (`BpmnMergeResolver.buildSideDetail`, `changeSummaryBuilder`).
-
----
-
 ## Renderer commands: pass the model
 
 **Mistake**: The handler `await`s `getEditorDocumentModel` that the renderer already holds.

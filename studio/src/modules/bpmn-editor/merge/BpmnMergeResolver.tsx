@@ -442,12 +442,10 @@ export default class BpmnMergeResolver extends React.Component<MergeResolverProp
         const attrs = entry.change?.attrs ?? {};
         for (const attrName of Object.keys(attrs)) {
           const values = attrs[attrName];
-          // bpmn-js-differ has a parameter-name swap in ChangeHandler.changed():
-          // attrs.oldValue is actually the AFTER value, attrs.newValue the BEFORE.
           attributeChanges.push({
             attribute: resolveAttributeLabel(attrName),
-            oldValue: stringifyValue(values.newValue),
-            newValue: stringifyValue(values.oldValue),
+            oldValue: stringifyValue(values.oldValue),
+            newValue: stringifyValue(values.newValue),
           });
         }
       }
