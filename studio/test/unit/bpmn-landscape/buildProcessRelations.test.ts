@@ -1,4 +1,8 @@
-import type { SolutionBpmnModelEntry, SolutionProcessEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
+import type {
+  SolutionBpmnModelEntry,
+  SolutionCommunicationEventEntry,
+  SolutionProcessEntry,
+} from '#modules/bpmn-core/scanSolutionBpmnModels';
 import { buildProcessRelations } from '#modules/bpmn-landscape/buildProcessRelations';
 import { describe, expect, it } from 'vitest';
 
@@ -10,11 +14,30 @@ function process(id: string, references: Partial<SolutionProcessEntry> = {}): So
     isExecutable: true,
     callActivities: [],
     decisionRefs: [],
-    thrownMessages: [],
-    caughtMessages: [],
-    thrownSignals: [],
-    caughtSignals: [],
+    correlationKey: null,
+    communicationEvents: [],
     ...references,
+  };
+}
+
+function namedEvent(
+  flowNodeId: string,
+  kind: 'message' | 'signal',
+  direction: 'throw' | 'catch',
+  name: string | null,
+): SolutionCommunicationEventEntry {
+  return {
+    flowNodeId,
+    flowNodeName: null,
+    kind,
+    direction,
+    position: direction === 'throw' ? 'intermediateThrow' : 'intermediateCatch',
+    name,
+    interrupting: null,
+    attachedToId: null,
+    attachedToName: null,
+    location: [],
+    correlationRetrievalExpression: null,
   };
 }
 
@@ -67,18 +90,27 @@ describe('buildProcessRelations', () => {
       file(
         'file:///sales.bpmn',
         process('sales', {
-          thrownMessages: [
-            { flowNodeId: 'Send_1', name: 'OrderPlaced' },
-            { flowNodeId: 'End_1', name: 'OrderPlaced' },
+          communicationEvents: [
+            namedEvent('Send_1', 'message', 'throw', 'OrderPlaced'),
+            namedEvent('End_1', 'message', 'throw', 'OrderPlaced'),
           ],
         }),
-        process('billing', { caughtMessages: [{ flowNodeId: 'Start_1', name: 'OrderPlaced' }] }),
+        process('billing', {
+          communicationEvents: [namedEvent('Start_1', 'message', 'catch', 'OrderPlaced')],
+        }),
       ),
       file(
         'file:///stock.bpmn',
-        process('stock', { caughtMessages: [{ flowNodeId: 'Receive_1', name: 'OrderPlaced' }] }),
+        process('stock', {
+          communicationEvents: [namedEvent('Receive_1', 'message', 'catch', 'OrderPlaced')],
+        }),
       ),
-      file('file:///other.bpmn', process('other', { caughtMessages: [{ flowNodeId: 'Catch_1', name: 'Unrelated' }] })),
+      file(
+        'file:///other.bpmn',
+        process('other', {
+          communicationEvents: [namedEvent('Catch_1', 'message', 'catch', 'Unrelated')],
+        }),
+      ),
     ]);
 
     expect(relations.map((relation) => [relation.key, relation.sourceFlowNodeIds, relation.targetFlowNodeIds])).toEqual(
@@ -93,9 +125,15 @@ describe('buildProcessRelations', () => {
     const relations = buildProcessRelations([
       file(
         'file:///a.bpmn',
-        process('alarm', { thrownSignals: [{ flowNodeId: 'End_signal', name: 'Fire' }] }),
-        process('evacuate', { caughtSignals: [{ flowNodeId: 'Start_signal', name: 'Fire' }] }),
-        process('listener', { caughtMessages: [{ flowNodeId: 'Start_message', name: 'Fire' }] }),
+        process('alarm', {
+          communicationEvents: [namedEvent('End_signal', 'signal', 'throw', 'Fire')],
+        }),
+        process('evacuate', {
+          communicationEvents: [namedEvent('Start_signal', 'signal', 'catch', 'Fire')],
+        }),
+        process('listener', {
+          communicationEvents: [namedEvent('Start_message', 'message', 'catch', 'Fire')],
+        }),
       ),
     ]);
 
@@ -108,8 +146,10 @@ describe('buildProcessRelations', () => {
         'file:///loop.bpmn',
         process('loop', {
           callActivities: [call('Call_self', 'loop')],
-          thrownMessages: [{ flowNodeId: 'Throw', name: 'Ping' }],
-          caughtMessages: [{ flowNodeId: 'Catch', name: 'Ping' }],
+          communicationEvents: [
+            namedEvent('Throw', 'message', 'throw', 'Ping'),
+            namedEvent('Catch', 'message', 'catch', 'Ping'),
+          ],
         }),
       ),
       { kind: 'invalid', uri: 'file:///broken.bpmn', error: 'Not BPMN.' },
@@ -122,14 +162,28 @@ describe('buildProcessRelations', () => {
     const relations = buildProcessRelations([
       file(
         'file:///a.bpmn',
-        process('zeta', { thrownSignals: [{ flowNodeId: 'Throw', name: 'Go' }] }),
+        process('zeta', {
+          communicationEvents: [namedEvent('Throw', 'signal', 'throw', 'Go')],
+        }),
         process('alpha', {
           callActivities: [call('Call', 'zeta')],
-          caughtSignals: [{ flowNodeId: 'Catch', name: 'Go' }],
+          communicationEvents: [namedEvent('Catch', 'signal', 'catch', 'Go')],
         }),
       ),
     ]);
 
     expect(relations.map((relation) => relation.key)).toEqual(['callActivity:alpha:zeta', 'signal:zeta:alpha:Go']);
+  });
+
+  it('does not link an event whose name is null', () => {
+    const relations = buildProcessRelations([
+      file(
+        'file:///a.bpmn',
+        process('sender', { communicationEvents: [namedEvent('Throw', 'message', 'throw', null)] }),
+        process('receiver', { communicationEvents: [namedEvent('Catch', 'message', 'catch', null)] }),
+      ),
+    ]);
+
+    expect(relations).toEqual([]);
   });
 });

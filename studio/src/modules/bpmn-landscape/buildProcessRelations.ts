@@ -1,8 +1,4 @@
-import type {
-  SolutionBpmnModelEntry,
-  SolutionEventNameEntry,
-  SolutionProcessEntry,
-} from '#modules/bpmn-core/scanSolutionBpmnModels';
+import type { SolutionBpmnModelEntry, SolutionProcessEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
 /** A process in the solution; the URI tells processes with the same id in different files apart. */
 export type LandscapeProcessReference = { uri: string; processId: string };
@@ -24,8 +20,24 @@ export type ProcessRelation = {
 };
 
 type LocatedProcess = { reference: LandscapeProcessReference; process: SolutionProcessEntry };
+type NamedFlowNode = { flowNodeId: string; name: string };
 
-function groupByName(entries: SolutionEventNameEntry[]): Map<string, string[]> {
+function namedFlowNodes(
+  process: SolutionProcessEntry,
+  kind: 'message' | 'signal',
+  direction: 'throw' | 'catch',
+): NamedFlowNode[] {
+  const named: NamedFlowNode[] = [];
+  for (const event of process.communicationEvents) {
+    if (event.kind !== kind || event.direction !== direction || event.name === null) {
+      continue;
+    }
+    named.push({ flowNodeId: event.flowNodeId, name: event.name });
+  }
+  return named;
+}
+
+function groupByName(entries: NamedFlowNode[]): Map<string, string[]> {
   const flowNodeIdsByName = new Map<string, string[]>();
   for (const entry of entries) {
     flowNodeIdsByName.set(entry.name, [...(flowNodeIdsByName.get(entry.name) ?? []), entry.flowNodeId]);
@@ -68,16 +80,14 @@ function callRelations(processes: LocatedProcess[]): ProcessRelation[] {
   return relations;
 }
 
-function nameRelations(
-  processes: LocatedProcess[],
-  kind: 'message' | 'signal',
-  thrown: (process: SolutionProcessEntry) => SolutionEventNameEntry[],
-  caught: (process: SolutionProcessEntry) => SolutionEventNameEntry[],
-): ProcessRelation[] {
-  const catchers = processes.map((located) => ({ located, flowNodeIdsByName: groupByName(caught(located.process)) }));
+function nameRelations(processes: LocatedProcess[], kind: 'message' | 'signal'): ProcessRelation[] {
+  const catchers = processes.map((located) => ({
+    located,
+    flowNodeIdsByName: groupByName(namedFlowNodes(located.process, kind, 'catch')),
+  }));
   const relations: ProcessRelation[] = [];
   for (const sender of processes) {
-    for (const [name, sourceFlowNodeIds] of groupByName(thrown(sender.process))) {
+    for (const [name, sourceFlowNodeIds] of groupByName(namedFlowNodes(sender.process, kind, 'throw'))) {
       for (const catcher of catchers) {
         const targetFlowNodeIds = catcher.flowNodeIdsByName.get(name);
         if (targetFlowNodeIds == null || sameProcess(sender.reference, catcher.located.reference)) {
@@ -115,18 +125,8 @@ export function buildProcessRelations(entries: SolutionBpmnModelEntry[]): Proces
   );
   return [
     ...callRelations(processes),
-    ...nameRelations(
-      processes,
-      'message',
-      (process) => process.thrownMessages,
-      (process) => process.caughtMessages,
-    ),
-    ...nameRelations(
-      processes,
-      'signal',
-      (process) => process.thrownSignals,
-      (process) => process.caughtSignals,
-    ),
+    ...nameRelations(processes, 'message'),
+    ...nameRelations(processes, 'signal'),
   ].sort(
     (first, second) =>
       first.key.localeCompare(second.key) ||

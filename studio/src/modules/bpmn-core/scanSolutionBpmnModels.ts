@@ -13,10 +13,21 @@ export type SolutionCallActivityEntry = {
   calledProcessVersion: string | null;
 };
 
-/** A flow node that throws or catches a message or signal, with the resolved, non-blank name. */
-export type SolutionEventNameEntry = {
+export type SolutionCommunicationEventEntry = {
   flowNodeId: string;
-  name: string;
+  flowNodeName: string | null;
+  kind: 'message' | 'signal';
+  direction: 'throw' | 'catch';
+  position: 'start' | 'intermediateCatch' | 'boundary' | 'intermediateThrow' | 'end' | 'sendTask' | 'receiveTask';
+  /** Resolved, non-blank message or signal name; `null` when the reference is missing, unknown or blank. */
+  name: string | null;
+  /** Start: `isInterrupting`; boundary: `cancelActivity`; otherwise `null`. */
+  interrupting: boolean | null;
+  attachedToId: string | null;
+  attachedToName: string | null;
+  /** Enclosing subprocesses, outermost first. */
+  location: { id: string; name: string | null; eventSubprocess: boolean }[];
+  correlationRetrievalExpression: string | null;
 };
 
 export type SolutionProcessEntry = {
@@ -24,18 +35,14 @@ export type SolutionProcessEntry = {
   name: string | null;
   version: string | null;
   isExecutable: boolean;
+  /** `bfw:correlationKey` on the process, or `null` when the element is absent. */
+  correlationKey: string | null;
   /** Includes call activities nested in subprocesses. */
   callActivities: SolutionCallActivityEntry[];
   /** `bfw:decisionRef` of every Business Rule Task, including nested ones. */
   decisionRefs: string[];
-  /** Message throw and end events and send tasks, including nested ones. */
-  thrownMessages: SolutionEventNameEntry[];
-  /** Message start, catch and boundary events and receive tasks, including nested ones. */
-  caughtMessages: SolutionEventNameEntry[];
-  /** Signal throw and end events, including nested ones. */
-  thrownSignals: SolutionEventNameEntry[];
-  /** Signal start, catch and boundary events, including nested ones. */
-  caughtSignals: SolutionEventNameEntry[];
+  /** Message and signal events, including ones nested in subprocesses. */
+  communicationEvents: SolutionCommunicationEventEntry[];
 };
 
 export type SolutionBpmnModelEntry =

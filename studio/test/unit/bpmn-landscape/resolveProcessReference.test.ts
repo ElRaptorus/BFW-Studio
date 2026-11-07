@@ -12,10 +12,8 @@ function process(id: string): SolutionProcessEntry {
     isExecutable: true,
     callActivities: [],
     decisionRefs: [],
-    thrownMessages: [],
-    caughtMessages: [],
-    thrownSignals: [],
-    caughtSignals: [],
+    correlationKey: null,
+    communicationEvents: [],
   };
 }
 

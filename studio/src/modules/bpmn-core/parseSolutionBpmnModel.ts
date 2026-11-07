@@ -4,7 +4,7 @@ import { parseBpmn } from '@elraptorus/bfw_engine_sdk';
 import type {
   SolutionBpmnModelEntry,
   SolutionCallActivityEntry,
-  SolutionEventNameEntry,
+  SolutionCommunicationEventEntry,
   SolutionProcessEntry,
   StoredLinterScore,
 } from './scanSolutionBpmnModels';
@@ -55,8 +55,16 @@ function readStoredLinterScores(xml: string): StoredLinterScore[] {
   return scores;
 }
 
-type ProcessReferences = Omit<SolutionProcessEntry, 'id' | 'name' | 'version' | 'isExecutable'>;
+type ProcessReferences = Omit<SolutionProcessEntry, 'id' | 'name' | 'version' | 'isExecutable' | 'correlationKey'>;
 type NameLookup = { messages: Map<string, string>; signals: Map<string, string> };
+type CommunicationLocation = SolutionCommunicationEventEntry['location'];
+type EventTypeData = Extract<FlowNode['typeData'], { eventDefinition: { type: string } }>;
+type EventPlacement = {
+  direction: 'throw' | 'catch';
+  position: SolutionCommunicationEventEntry['position'];
+  interrupting: boolean | null;
+  attachedToId: string | null;
+};
 
 /** Maps definition ids to names; a blank name is left out, because the Engine never routes by it. */
 function namesById(definitions: { id: string; name: string | null }[]): Map<string, string> {
@@ -69,43 +77,113 @@ function namesById(definitions: { id: string; name: string | null }[]): Map<stri
   return names;
 }
 
-function addName(
-  entries: SolutionEventNameEntry[],
-  names: Map<string, string>,
-  flowNodeId: string,
-  reference: string | null,
-): void {
-  const name = reference == null ? undefined : names.get(reference);
-  if (name != null) {
-    entries.push({ flowNodeId, name });
+function resolvedName(names: Map<string, string>, reference: string | null): string | null {
+  if (reference == null) {
+    return null;
+  }
+  return names.get(reference) ?? null;
+}
+
+function communicationEntry(
+  flowNode: FlowNode,
+  location: CommunicationLocation,
+  fields: Omit<SolutionCommunicationEventEntry, 'flowNodeId' | 'flowNodeName' | 'location'>,
+): SolutionCommunicationEventEntry {
+  return {
+    flowNodeId: flowNode.id,
+    flowNodeName: flowNode.name,
+    location,
+    ...fields,
+  };
+}
+
+function eventPlacement(typeData: EventTypeData): EventPlacement {
+  switch (typeData.type) {
+    case 'start_event':
+      return { direction: 'catch', position: 'start', interrupting: typeData.isInterrupting, attachedToId: null };
+    case 'intermediate_catch_event':
+      return { direction: 'catch', position: 'intermediateCatch', interrupting: null, attachedToId: null };
+    case 'boundary_event':
+      return {
+        direction: 'catch',
+        position: 'boundary',
+        interrupting: typeData.cancelActivity,
+        attachedToId: typeData.attachedToRef,
+      };
+    case 'intermediate_throw_event':
+      return { direction: 'throw', position: 'intermediateThrow', interrupting: null, attachedToId: null };
+    case 'end_event':
+      return { direction: 'throw', position: 'end', interrupting: null, attachedToId: null };
   }
 }
 
-function collectEventNames(flowNode: FlowNode, lookup: NameLookup, references: ProcessReferences): void {
+function collectCommunicationEvent(
+  flowNode: FlowNode,
+  lookup: NameLookup,
+  location: CommunicationLocation,
+  namesInScope: Map<string, string | null>,
+): SolutionCommunicationEventEntry | null {
   const typeData = flowNode.typeData;
   if (typeData.type === 'send_task') {
-    addName(references.thrownMessages, lookup.messages, flowNode.id, typeData.messageRef);
-    return;
+    return communicationEntry(flowNode, location, {
+      kind: 'message',
+      direction: 'throw',
+      position: 'sendTask',
+      name: resolvedName(lookup.messages, typeData.messageRef),
+      interrupting: null,
+      attachedToId: null,
+      attachedToName: null,
+      correlationRetrievalExpression: typeData.correlationRetrievalExpression,
+    });
   }
   if (typeData.type === 'receive_task') {
-    addName(references.caughtMessages, lookup.messages, flowNode.id, typeData.messageRef);
-    return;
+    return communicationEntry(flowNode, location, {
+      kind: 'message',
+      direction: 'catch',
+      position: 'receiveTask',
+      name: resolvedName(lookup.messages, typeData.messageRef),
+      interrupting: null,
+      attachedToId: null,
+      attachedToName: null,
+      correlationRetrievalExpression: null,
+    });
   }
   if (!('eventDefinition' in typeData)) {
-    return;
+    return null;
   }
-  const throwing = typeData.type === 'end_event' || typeData.type === 'intermediate_throw_event';
   const eventDefinition = typeData.eventDefinition;
-  if (eventDefinition.type === 'message') {
-    const entries = throwing ? references.thrownMessages : references.caughtMessages;
-    addName(entries, lookup.messages, flowNode.id, eventDefinition.messageRef);
-  } else if (eventDefinition.type === 'signal') {
-    const entries = throwing ? references.thrownSignals : references.caughtSignals;
-    addName(entries, lookup.signals, flowNode.id, eventDefinition.signalRef);
+  if (eventDefinition.type !== 'message' && eventDefinition.type !== 'signal') {
+    return null;
   }
+  const placement = eventPlacement(typeData);
+  const attachedToName = placement.attachedToId == null ? null : (namesInScope.get(placement.attachedToId) ?? null);
+  let name: string | null;
+  if (eventDefinition.type === 'message') {
+    name = resolvedName(lookup.messages, eventDefinition.messageRef);
+  } else {
+    name = resolvedName(lookup.signals, eventDefinition.signalRef);
+  }
+  const correlationRetrievalExpression =
+    eventDefinition.type === 'message' ? eventDefinition.correlationRetrievalExpression : null;
+  return communicationEntry(flowNode, location, {
+    kind: eventDefinition.type,
+    direction: placement.direction,
+    position: placement.position,
+    name,
+    interrupting: placement.interrupting,
+    attachedToId: placement.attachedToId,
+    attachedToName,
+    correlationRetrievalExpression,
+  });
 }
 
-function collectReferences(flowNodes: FlowNode[], lookup: NameLookup, references: ProcessReferences): void {
+function collectReferences(
+  flowNodes: FlowNode[],
+  lookup: NameLookup,
+  references: ProcessReferences,
+  location: CommunicationLocation,
+): void {
+  const namesInScope = new Map(flowNodes.map((flowNode) => [flowNode.id, flowNode.name]));
   for (const flowNode of flowNodes) {
     const typeData = flowNode.typeData;
     if (typeData.type === 'call_activity') {
@@ -119,9 +197,15 @@ function collectReferences(flowNodes: FlowNode[], lookup: NameLookup, references
         references.decisionRefs.push(typeData.decisionRef);
       }
     } else if (typeData.type === 'sub_process') {
-      collectReferences(typeData.flowNodes, lookup, references);
+      collectReferences(typeData.flowNodes, lookup, references, [
+        ...location,
+        { id: flowNode.id, name: flowNode.name, eventSubprocess: typeData.triggeredByEvent },
+      ]);
     } else {
-      collectEventNames(flowNode, lookup, references);
+      const event = collectCommunicationEvent(flowNode, lookup, location, namesInScope);
+      if (event != null) {
+        references.communicationEvents.push(event);
+      }
     }
   }
 }
@@ -130,17 +214,15 @@ function toProcessEntry(process: BpmnProcess, lookup: NameLookup): SolutionProce
   const references: ProcessReferences = {
     callActivities: [],
     decisionRefs: [],
-    thrownMessages: [],
-    caughtMessages: [],
-    thrownSignals: [],
-    caughtSignals: [],
+    communicationEvents: [],
   };
-  collectReferences(process.flowNodes, lookup, references);
+  collectReferences(process.flowNodes, lookup, references, []);
   return {
     id: process.id,
     name: process.name,
     version: process.version,
     isExecutable: process.isExecutable,
+    correlationKey: process.correlationKey,
     ...references,
   };
 }
