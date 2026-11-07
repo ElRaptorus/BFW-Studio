@@ -36,7 +36,7 @@ describe('LandscapeSolutionScan', () => {
     scan.start();
     await flushPromises();
 
-    expect(scan.getSnapshot()).toEqual({ catalog: [], maps: [], relations: [] });
+    expect(scan.getSnapshot()).toEqual({ catalog: [], maps: [] });
     expect(scanCatalog).toHaveBeenCalledTimes(1);
     expect(scanMaps).toHaveBeenCalledTimes(1);
     expect(changes).toHaveBeenCalledTimes(1);

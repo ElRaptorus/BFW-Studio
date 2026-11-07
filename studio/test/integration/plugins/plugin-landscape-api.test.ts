@@ -17,7 +17,6 @@ import { createLandscapeWorkspace } from '../bpmn-landscape/landscapeWorkspace';
 const PLUGINS_FIXTURE_DIR = path.resolve(__dirname, '../../fixtures/plugins');
 const CANVAS = '[data-test--landscape-canvas]';
 const KITCHEN_SINK = 'landscape-kitchen-sink';
-const CALL_LINE = 'relation:callActivity:order:payment';
 
 type CallResult = { success: boolean; result?: any; error?: string };
 
@@ -114,10 +113,6 @@ describe('plugin/landscape-api', () => {
     await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
     await studioAgent.openUriAsDocument(mapUri);
     await studioAgent.assertVisible(CANVAS, ASSERT_VISIBLE_TIMEOUT);
-    await waitFor(
-      async () => ((await onCanvas(`return registry.get(${JSON.stringify(CALL_LINE)}) != null;`)) as boolean) === true,
-      'The map did not draw its relation line',
-    );
   });
 
   afterAll(async () => {
@@ -196,7 +191,7 @@ describe('plugin/landscape-api', () => {
   });
 
   describe('queries', () => {
-    it('getElements lists the shapes, the connectors and the relation lines of the map', async () => {
+    it('getElements lists the shapes and connectors of the map', async () => {
       const elements = await callOk('getElements', mapUri);
       const byId = new Map<string, any>(elements.map((element: any) => [element.id, element]));
 
@@ -209,12 +204,7 @@ describe('plugin/landscape-api', () => {
       }
       assert.strictEqual(byId.get('archive').type, 'placeholder');
       assert.strictEqual(byId.get('note').type, 'note');
-
-      const relation = byId.get(CALL_LINE);
-      assert.strictEqual(relation.type, 'relation');
-      assert.strictEqual(relation.kind, 'callActivity');
-      assert.strictEqual(relation.sourceElementId, 'order');
-      assert.strictEqual(relation.targetElementId, 'payment');
+      assert.ok(!elements.some((element: any) => element.type === 'relation'));
     });
 
     it('getElement returns one element and null for an unknown id', async () => {
@@ -342,7 +332,7 @@ describe('plugin/landscape-api', () => {
       const latest = calls[calls.length - 1];
       assert.strictEqual(latest.uri, mapUri);
       assert.ok(latest.elementIds.includes('order') && latest.elementIds.includes('archive'));
-      assert.ok(latest.relationCount >= 1, 'The factory sees the relation lines drawn on the plane');
+      assert.strictEqual(latest.processCount, 2, 'The factory sees every process on the plane');
 
       await studioAgent.executeCommand(`plugin.${KITCHEN_SINK}.disposeFactory`);
       await waitFor(async () => !(await overlayTexts()).includes('KS'), 'The badges stayed after the factory ended');
@@ -402,7 +392,7 @@ describe('plugin/landscape-api', () => {
       );
     });
 
-    it('moveElement moves a shape by a delta and refuses a relation line', async () => {
+    it('moveElement moves a shape by a delta and refuses a connector', async () => {
       const before = await callOk('getElement', mapUri, 'archive');
       await callOk('modeling.moveElement', mapUri, 'archive', { x: 40, y: 20 });
       const after = await callOk('getElement', mapUri, 'archive');
@@ -410,15 +400,21 @@ describe('plugin/landscape-api', () => {
       assert.strictEqual(after.y, before.y + 20);
       await callOk('modeling.moveElement', mapUri, 'archive', { x: -40, y: -20 });
 
-      const line = await call(KITCHEN_SINK, 'modeling.moveElement', mapUri, CALL_LINE, { x: 5, y: 5 });
+      const link = await callOk('modeling.createConnection', mapUri, 'note', 'archive');
+      const connector = await callOk('getElement', mapUri, link.connectionId);
+      assert.strictEqual(connector.type, 'connector');
+
+      const line = await call(KITCHEN_SINK, 'modeling.moveElement', mapUri, link.connectionId, { x: 5, y: 5 });
       assert.strictEqual(line.success, false);
       assert.ok(line.error?.includes('is a line and cannot be moved'), String(line.error));
+
+      await callOk('modeling.removeElement', mapUri, link.connectionId);
 
       const notFinite = await call(KITCHEN_SINK, 'modeling.moveElement', mapUri, 'archive', { x: Number.NaN, y: 0 });
       assert.strictEqual(notFinite.success, false);
     });
 
-    it('refuses to create a process that the map already shows, and a relation line to remove', async () => {
+    it('refuses to create a process that the map already shows', async () => {
       const duplicate = await call(KITCHEN_SINK, 'modeling.createElement', mapUri, {
         type: 'process',
         processId: 'order-process',
@@ -426,9 +422,6 @@ describe('plugin/landscape-api', () => {
       });
       assert.strictEqual(duplicate.success, false);
       assert.ok(duplicate.error?.includes("already shows the process 'order-process'"), String(duplicate.error));
-
-      const relation = await call(KITCHEN_SINK, 'modeling.removeElement', mapUri, CALL_LINE);
-      assert.strictEqual(relation.success, false);
     });
 
     it('reports the change to an overlay context subscription as data-updated', async () => {

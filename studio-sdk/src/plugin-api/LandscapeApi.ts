@@ -92,8 +92,7 @@ export type PluginLandscapeOverlay =
 
 /**
  * Element types of a landscape map as returned by `api.landscape.getElement` / `getElements` and element events.
- * `relation` lines are derived from the solution (call, message and signal relations between processes) and are
- * never saved in the map file; `connector` is a line the user drew between two elements.
+ * `connector` is a line the user drew between two elements.
  */
 export const PluginLandscapeElementType = {
   Band: 'band',
@@ -103,7 +102,6 @@ export const PluginLandscapeElementType = {
   MapLink: 'mapLink',
   Note: 'note',
   Connector: 'connector',
-  Relation: 'relation',
 } as const;
 
 export type PluginLandscapeElementType = (typeof PluginLandscapeElementType)[keyof typeof PluginLandscapeElementType];
@@ -166,18 +164,7 @@ export interface LandscapeConnectorSnapshot {
   label: string;
 }
 
-/** A derived line between two elements for the call, message or signal relations of their processes. */
-export interface LandscapeRelationSnapshot {
-  id: string;
-  type: 'relation';
-  kind: 'callActivity' | 'message' | 'signal';
-  /** The name of the message or signal when the line stands for exactly one; otherwise `null`. */
-  name: string | null;
-  sourceElementId: string;
-  targetElementId: string;
-}
-
-export type LandscapeElementSnapshot = LandscapeShapeSnapshot | LandscapeConnectorSnapshot | LandscapeRelationSnapshot;
+export type LandscapeElementSnapshot = LandscapeShapeSnapshot | LandscapeConnectorSnapshot;
 
 // --- Overlay descriptors ---
 
@@ -250,7 +237,7 @@ export interface LandscapeContextPadEntryUpdate {
 /**
  * Descriptor for creating a new element on a landscape map at an absolute position (the top-left corner).
  * A process needs `processId`, a map link needs `mapUri`. Bands, groups and map links are created with their
- * default size; relation lines and connectors are not created here.
+ * default size; connectors are not created here.
  */
 export interface LandscapeCreateElementDescriptor {
   type: 'band' | 'group' | 'process' | 'placeholder' | 'mapLink' | 'note';
@@ -283,8 +270,8 @@ export interface LandscapeMoveDelta {
 /**
  * Landscape map modeling API — programmatic map modification.
  * All operations go through the diagram-js commandStack and are undoable.
- * Requires 'landscape.modelling' permission. Relation lines, the root and unknown element types are refused with
- * a diagnostic message.
+ * Requires 'landscape.modelling' permission. The root, unknown element types, and property changes or moves of a
+ * connector are refused with a diagnostic message.
  */
 export interface LandscapeModelingApi {
   /**
@@ -356,8 +343,7 @@ export interface LandscapeApi {
   onOverlayContextChanged(uri: string, callback: (event: LandscapeOverlayContextEvent) => void): Promise<Disposable>;
 
   /**
-   * Get all elements of the given map, whatever plane is on screen. Relation lines are those drawn on the plane on
-   * screen; connectors between hidden elements are included.
+   * Get all elements of the given map, whatever plane is on screen. Connectors between hidden elements are included.
    */
   getElements(uri: string): Promise<LandscapeElementSnapshot[]>;
 

@@ -252,7 +252,6 @@ export function createLandscapeViewerConfig(bifrost: Bifrost, mapUri: string): L
       const targetUri = resolveRelativeUri(mapUri, element.mapPath);
       return snapshot == null || snapshot.maps.some((entry) => entry.uri === targetUri) ? 'resolved' : 'missing';
     },
-    getConnectorWarning: () => null,
     executePluginCommand: () => {},
     runPlaceholderAction: () => {},
     hasFreeProcesses: () => false,

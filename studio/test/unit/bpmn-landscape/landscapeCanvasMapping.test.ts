@@ -10,7 +10,6 @@ function fullMap(): LandscapeMap {
   return {
     ...createEmptyLandscapeMap('Order to Cash'),
     levels: [{ id: 'level-domain', name: 'Domain' }],
-    relationLayers: { callActivity: true, message: false, signal: true },
     elements: [
       { id: 'band', type: 'band', parentId: null, label: 'Core', style: null, ...geometry, width: 1200 },
       { id: 'sales', type: 'group', parentId: 'band', label: 'Sales', collapsed: false, style: null, ...geometry },
@@ -39,7 +38,6 @@ function fullMap(): LandscapeMap {
       },
     ],
     connectors: [{ id: 'link', sourceId: 'order', targetId: 'finance', label: 'Invoice', waypoints: [{ x: 1, y: 2 }] }],
-    hiddenRelations: ['message:a:b:Invoice'],
     extensions: { attributes: { 'xmlns:team': 'http://team', 'team:owner': 'Sales' }, elements: [] },
   };
 }
@@ -150,21 +148,6 @@ describe('landscapeCanvasMapping', () => {
       { x: 1, y: 3 },
       { x: 9, y: 9 },
     ]);
-  });
-
-  it('does not save the derived relation lines', () => {
-    const map = fullMap();
-    const canvas = buildCanvas(map);
-    const link = canvas.children.find((node) => node.businessObject.id === 'link');
-    canvas.children.push({
-      type: 'relation',
-      waypoints: [{ x: 0, y: 0 }],
-      businessObject: { id: 'relation:message:order:finance', kind: 'message', relations: [], hiddenKeys: [] },
-      source: link.source,
-      target: link.target,
-    });
-
-    expect(canvasToMap(canvas, map).connectors.map((connector) => connector.id)).toEqual(['link']);
   });
 
   it('writes a collapsed group with its expanded size, followed by the contents of its plane', () => {

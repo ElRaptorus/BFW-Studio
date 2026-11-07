@@ -6,7 +6,6 @@ import { createElementId } from '../LandscapeMapFile';
 import { isCollapsedGroup } from './landscapeHierarchy';
 
 const isConnection = (element: any): boolean => element.waypoints != null;
-const isRelation = (element: any): boolean => element?.type === 'relation';
 
 /**
  * The top-level root holds everything; a plane holds everything but bands; groups and bands hold everything but
@@ -51,8 +50,6 @@ export default class LandscapeRules extends RuleProvider {
   constructor(eventBus: EventBus, elementRegistry: ElementRegistry) {
     super(eventBus);
     this.elementRegistry = elementRegistry;
-    // Segment moves never ask the `connection.updateWaypoints` rule.
-    eventBus.on('connectionSegment.move.init', ({ connection }: any) => (isRelation(connection) ? false : undefined));
   }
 
   init(): void {
@@ -72,9 +69,6 @@ export default class LandscapeRules extends RuleProvider {
     });
 
     this.addRule('elements.move', ({ shapes, target }: any) => {
-      if (shapes.every(isRelation)) {
-        return false;
-      }
       if (target == null) {
         return true;
       }
@@ -84,10 +78,9 @@ export default class LandscapeRules extends RuleProvider {
         .every((shape: any) => canContain(container, shape.type));
     });
 
-    // Relation lines are derived: they are hidden, never deleted, and follow their shapes. A hidden connector, between
-    // a collapsed group and its contents, can only be lassoed by accident.
+    // Hidden connectors can only be lassoed by accident.
     this.addRule('elements.delete', ({ elements }: any) => {
-      const removable = elements.filter((element: any) => !isRelation(element) && element.hidden !== true);
+      const removable = elements.filter((element: any) => element.hidden !== true);
       return removable.length === 0 ? false : removable;
     });
 
@@ -109,14 +102,12 @@ export default class LandscapeRules extends RuleProvider {
       'connection.reconnect',
       ({ connection, source, target }: any) => connection.type === 'connector' && canConnect(source, target),
     );
-    this.addRule('connection.updateWaypoints', ({ connection }: any) => !isRelation(connection));
 
     // A pasted process would always be a second shape of the same process on this map, and a collapsed group would
     // paste without its contents.
     this.addRule(
       'element.copy',
-      ({ element }: any) =>
-        element.type !== 'process' && !isRelation(element) && !isCollapsedGroup(element) && element.hidden !== true,
+      ({ element }: any) => element.type !== 'process' && !isCollapsedGroup(element) && element.hidden !== true,
     );
   }
 

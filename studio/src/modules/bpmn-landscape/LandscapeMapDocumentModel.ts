@@ -27,13 +27,7 @@ import {
 } from './LandscapeMapFile';
 import type { LandscapeSolutionScan, LandscapeSolutionSnapshot } from './LandscapeSolutionScan';
 import { LANDSCAPE_SOLUTION_SCAN_KEY } from './LandscapeSolutionScan';
-import type { LandscapeProcessReference, ProcessRelation, ProcessRelationKind } from './buildProcessRelations';
-import type { PlacedProcess } from './buildRelationLines';
-import type { RelationLine } from './buildRelationLines';
-import { buildRelationLines } from './buildRelationLines';
-import { findDuplicateConnectors } from './findDuplicateConnectors';
 import LandscapeModeler from './modeler/LandscapeModeler';
-import { RELATION_TITLES } from './modeler/LandscapeRenderer';
 import { convertLandscapeElement, convertPlaceholderToProcess } from './modeler/LandscapeReplace';
 import type LandscapeReplaceMenuProvider from './modeler/LandscapeReplaceMenuProvider';
 import type { LandscapeMapProperties } from './modeler/LandscapeUpdates';
@@ -61,20 +55,9 @@ export type ProcessReplacementOptions = {
   isKept: boolean;
 };
 
-/** A relation of one process as the properties pane lists it. */
-export type ProcessRelationEntry = {
-  relation: ProcessRelation;
-  direction: 'outgoing' | 'incoming';
-  otherProcessLabel: string;
-  /** Whether the other process is on this map too; only then the relation can be drawn or hidden. */
-  otherOnMap: boolean;
-  hidden: boolean;
-};
-
 type ProcessDetails = {
   relativePath: string;
   process: SolutionProcessEntry;
-  relations: ProcessRelationEntry[];
 };
 
 type Viewbox = { x: number; y: number; width: number; height: number };
@@ -83,11 +66,6 @@ export const SHOW_GRID_SETTING = 'bpmn.landscape.showGrid';
 
 const PROCESS_WIDTH = 140;
 const PROCESS_HEIGHT = 60;
-
-const referenceKey = (reference: LandscapeProcessReference): string => `${reference.uri}#${reference.processId}`;
-
-const sameReference = (first: LandscapeProcessReference, second: LandscapeProcessReference): boolean =>
-  first.uri === second.uri && first.processId === second.processId;
 
 /** Whether `target` already holds every value of `properties`; values are plain data, compared as JSON. */
 const hasValues = (target: object, properties: object): boolean =>
@@ -122,9 +100,6 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   private keptElementIds = new Set<string>();
   private notifiedBrokenIds = new Set<string>();
   private brokenNotificationId: string | null = null;
-  private relations: ProcessRelation[] = [];
-  /** The relation lines that repeat a connector, by connector id; see `getConnectorDuplicateWarning`. */
-  private connectorDuplicates = new Map<string, RelationLine[]>();
   private selectionRevision = 0;
   private focusMode: boolean;
   private pendingViewbox: Viewbox | null;
@@ -427,7 +402,6 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   }
 
   hasClipboardContent(): boolean {
-    // Copying only processes or relation lines stores an empty tree.
     return Object.keys(this.modeler?.get('clipboard').get() ?? {}).length > 0;
   }
 
@@ -741,84 +715,27 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     this.openShape(this.modeler?.get('elementRegistry').get(elementId));
   }
 
-  /** The selected canvas elements; each carries its file element, or its relation line, as `businessObject`. */
+  /** The selected canvas elements; each carries its file element as `businessObject`. */
   getSelectedElements(): any[] {
     return this.modeler?.get('selection').get() ?? [];
   }
 
-  /** File, process and relations of a process shape; `null` when the process is not found in the solution. */
+  /** File and process of a process shape; `null` when the process is not found in the solution. */
   getProcessDetails(element: LandscapeProcessElement): ProcessDetails | null {
     const resolved = this.resolveProcess(element);
     if (resolved == null) {
       return null;
     }
-    const reference = { uri: resolved.uri, processId: resolved.process.id };
-    const placed = new Set(this.placedProcesses().map((placedProcess) => referenceKey(placedProcess.reference)));
-    const hidden = new Set(this.getMapProperties()?.hiddenRelations ?? []);
-    const relations = this.relations.flatMap((relation): ProcessRelationEntry[] => {
-      const isOutgoing = sameReference(relation.source, reference);
-      if (!isOutgoing && !sameReference(relation.target, reference)) {
-        return [];
-      }
-      const direction = isOutgoing ? 'outgoing' : 'incoming';
-      const other = direction === 'outgoing' ? relation.target : relation.source;
-      return [
-        {
-          relation,
-          direction,
-          otherProcessLabel: this.processName(other),
-          otherOnMap: placed.has(referenceKey(other)),
-          hidden: hidden.has(relation.key),
-        },
-      ];
-    });
     return {
       relativePath: relativeFileHint(this.uri, resolved.uri),
       process: resolved.process,
-      relations,
     };
-  }
-
-  /**
-   * Why a connector is drawn with a warning: it joins two shapes that a relation line already joins. `null` when
-   * the connector says something the BPMN files do not.
-   */
-  getConnectorDuplicateWarning(connectorId: string): string | null {
-    const lines = this.connectorDuplicates.get(connectorId);
-    if (lines == null) {
-      return null;
-    }
-    const relations = lines.flatMap((line) =>
-      line.relations
-        .filter((relation) => !line.hiddenKeys.includes(relation.key))
-        .map(
-          (relation) =>
-            `${this.processName(relation.source)} ${RELATION_TITLES[relation.kind]} ${this.processName(relation.target)}${relation.name == null ? '' : `: ${relation.name}`}`,
-        ),
-    );
-    return `This connector repeats what the BPMN files already say (${relations.join('; ')}), and the map draws it as a relation line. Delete the connector or hide the relation line to remove this warning.`;
-  }
-
-  /** The number of hidden relations between processes that are both on the map. */
-  getHiddenRelationCount(): number {
-    const hidden = new Set(this.getMapProperties()?.hiddenRelations ?? []);
-    return buildRelationLines({
-      relations: this.relations,
-      placedProcesses: this.placedProcesses(),
-      relationLayers: { callActivity: true, message: true, signal: true },
-      hiddenRelations: [],
-    }).reduce((count, line) => count + line.relations.filter((relation) => hidden.has(relation.key)).length, 0);
   }
 
   /** Changes the file element of the only selected element in one undo step; an unchanged value adds no step. */
   updateSelectedElement(properties: Partial<LandscapeElement>): void {
     const selected = this.getSelectedElements();
-    if (
-      this.modeler == null ||
-      selected.length !== 1 ||
-      selected[0].type === 'relation' ||
-      hasValues(selected[0].businessObject, properties)
-    ) {
+    if (this.modeler == null || selected.length !== 1 || hasValues(selected[0].businessObject, properties)) {
       return;
     }
     this.modeler.get('commandStack').execute(UPDATE_ELEMENT_COMMAND, { element: selected[0], properties });
@@ -859,29 +776,6 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     return this.getMapProperties()?.levels[levelDepthOf(group)]?.name ?? null;
   }
 
-  setRelationLayer(kind: ProcessRelationKind, visible: boolean): void {
-    const relationLayers = this.getMapProperties()?.relationLayers;
-    if (relationLayers != null) {
-      this.updateMap({ relationLayers: { ...relationLayers, [kind]: visible } });
-    }
-  }
-
-  setRelationsHidden(keys: string[], hidden: boolean): void {
-    const hiddenRelations = this.getMapProperties()?.hiddenRelations;
-    if (hiddenRelations == null) {
-      return;
-    }
-    this.updateMap({
-      hiddenRelations: hidden
-        ? [...hiddenRelations, ...keys.filter((key) => !hiddenRelations.includes(key))]
-        : hiddenRelations.filter((key) => !keys.includes(key)),
-    });
-  }
-
-  showAllRelations(): void {
-    this.updateMap({ hiddenRelations: [] });
-  }
-
   //#endregion Properties
 
   /**
@@ -898,7 +792,6 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     }
     this.modeler.importMap(result.map);
     this.applyGridSetting();
-    this.showRelations();
     return [];
   }
 
@@ -913,7 +806,6 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
         getDecisionCount: (element) => this.resolveProcess(element)?.process.decisionRefs.length ?? 0,
         getProcessStatus: (element) => this.getProcessStatus(element),
         getMapLinkStatus: (element) => this.getMapLinkStatus(element),
-        getConnectorWarning: (connector) => this.getConnectorDuplicateWarning(connector.id),
         executePluginCommand: (pluginName, command, args) => {
           void this.studio.commands.executeCommand(`plugin.${pluginName}.${command}`, args);
         },
@@ -934,7 +826,8 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       this.map = modeler.exportMap(this.map);
       this.currentText = serializeLandscapeMap(this.map);
       this.updateCurrentData(this.currentText);
-      this.showRelations();
+      modeler.updateFocus(this.focusMode);
+      this.refreshPluginOverlays();
       this.bumpSelectionRevision();
       if (this.getBrokenProcessShapes().length === 0) {
         this.closeBrokenNotification();
@@ -946,8 +839,7 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
       modeler.updateFocus(this.focusMode);
     });
     eventBus.on('element.dblclick', ({ element }: any) => this.openShape(element));
-    // The relation lines depend on the plane on screen. A microtask keeps this out of a running undo.
-    eventBus.on('root.set', () => queueMicrotask(() => this.showRelations()));
+    eventBus.on('root.set', () => queueMicrotask(() => this.refreshPluginOverlays()));
     eventBus.on('canvas.viewbox.changed', ({ viewbox }: { viewbox: Viewbox }) => {
       // Only the top-level map's view is restored when the map is reopened; planes start fitted.
       if (isUsableViewbox(viewbox) && modeler.get('canvas').getRootElement()?.group == null) {
@@ -977,83 +869,6 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
   private resolveProcess(element: LandscapeProcessElement): ResolvedProcess | null {
     const resolution = resolveProcessReference(this.catalog, this.uri, element);
     return resolution.status === 'resolved' ? { uri: resolution.uri, process: resolution.process } : null;
-  }
-
-  private processName(reference: LandscapeProcessReference): string {
-    const entry = this.catalog.find((candidate) => candidate.uri === reference.uri);
-    const process =
-      entry?.kind === 'bpmn' ? entry.processes.find((candidate) => candidate.id === reference.processId) : undefined;
-    return process?.name || reference.processId;
-  }
-
-  private placedProcesses(): PlacedProcess[] {
-    const shapes = this.modeler?.get('elementRegistry').filter((element: any) => element.type === 'process') ?? [];
-    return shapes.flatMap((shape: any): PlacedProcess[] => {
-      const resolved = this.resolveProcess(shape.businessObject);
-      return resolved == null
-        ? []
-        : [{ elementId: shape.id, reference: { uri: resolved.uri, processId: resolved.process.id } }];
-    });
-  }
-
-  /** The processes as the plane on screen shows them: a process inside a collapsed group is its group. */
-  private visiblePlacedProcesses(): PlacedProcess[] {
-    const modeler = this.modeler;
-    if (modeler == null) {
-      return [];
-    }
-    return this.placedProcesses().flatMap((placedProcess): PlacedProcess[] => {
-      const shape = modeler.get('elementRegistry').get(placedProcess.elementId);
-      const representative = shape == null ? null : modeler.representativeOnCurrentPlane(shape);
-      return representative == null ? [] : [{ ...placedProcess, elementId: representative.id }];
-    });
-  }
-
-  private showRelations(): void {
-    const modeler = this.modeler;
-    const mapProperties = this.getMapProperties();
-    if (modeler == null || mapProperties == null) {
-      return;
-    }
-    const lines = buildRelationLines({
-      relations: this.relations,
-      placedProcesses: this.visiblePlacedProcesses(),
-      relationLayers: mapProperties.relationLayers,
-      hiddenRelations: mapProperties.hiddenRelations,
-    });
-    modeler.showRelationLines(lines);
-    this.updateConnectorDuplicates(modeler, lines);
-    modeler.updateFocus(this.focusMode);
-    this.refreshPluginOverlays();
-  }
-
-  /** Finds the connectors that repeat a drawn relation line and redraws those whose warning changed. */
-  private updateConnectorDuplicates(modeler: LandscapeModeler, lines: RelationLine[]): void {
-    const registry = modeler.get('elementRegistry');
-    const drawnConnectors = registry
-      .filter((element: any) => element.type === 'connector')
-      .flatMap((connection: any) => {
-        const source = registry.get(connection.businessObject.sourceId);
-        const target = registry.get(connection.businessObject.targetId);
-        const sourceOnPlane = source == null ? null : modeler.representativeOnCurrentPlane(source);
-        const targetOnPlane = target == null ? null : modeler.representativeOnCurrentPlane(target);
-        return sourceOnPlane == null || targetOnPlane == null
-          ? []
-          : [{ id: connection.id, sourceId: sourceOnPlane.id, targetId: targetOnPlane.id }];
-      });
-    const previous = this.connectorDuplicates;
-    this.connectorDuplicates = findDuplicateConnectors(drawnConnectors, lines);
-    const signature = (duplicates: Map<string, RelationLine[]>, id: string): string =>
-      (duplicates.get(id) ?? [])
-        .map((line) => `${line.id}:${line.relations.map((relation) => relation.key)}`)
-        .join('|');
-    const changed = [...new Set([...previous.keys(), ...this.connectorDuplicates.keys()])]
-      .filter((id) => signature(previous, id) !== signature(this.connectorDuplicates, id))
-      .map((id) => registry.get(id))
-      .filter((connection: unknown) => connection != null);
-    if (changed.length > 0) {
-      modeler.get('eventBus').fire('elements.changed', { elements: changed });
-    }
   }
 
   /** Draws the overlays of the plugins' factories for the plane on screen. */
@@ -1116,12 +931,11 @@ export default class LandscapeMapDocumentModel extends EditorDocumentModel {
     if (modeler == null) {
       return;
     }
-    this.relations = snapshot.relations;
     const referenceShapes = modeler
       .get('elementRegistry')
       .filter((element: any) => element.type === 'process' || element.type === 'mapLink');
     modeler.get('eventBus').fire('elements.changed', { elements: referenceShapes });
-    this.showRelations();
+    this.refreshPluginOverlays();
     this.bumpSelectionRevision();
     this.notifyBrokenProcesses();
   }

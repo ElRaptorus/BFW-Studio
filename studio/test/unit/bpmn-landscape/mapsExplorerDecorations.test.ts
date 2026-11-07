@@ -13,7 +13,7 @@ const orderFile = {
 };
 
 function snapshotOf(maps: unknown[]): LandscapeSolutionSnapshot {
-  return { catalog: [orderFile], maps, relations: [] } as unknown as LandscapeSolutionSnapshot;
+  return { catalog: [orderFile], maps } as unknown as LandscapeSolutionSnapshot;
 }
 
 describe('MapsDecorationProvider', () => {

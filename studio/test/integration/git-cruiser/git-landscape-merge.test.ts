@@ -121,7 +121,6 @@ describe('git-cruiser/landscape-merge', () => {
     await studioAgent.assertVisible(`${MERGE_OURS} .djs-container`, TIMEOUT);
     await studioAgent.assertVisible(`${MERGE_THEIRS} .djs-container`, TIMEOUT);
     await studioAgent.assertVisible(`${MERGE_RESULT} .djs-container`, TIMEOUT);
-    await studioAgent.assertVisible('[data-test--landscape-merge-relation-hint]', TIMEOUT);
     await studioAgent.assertVisible(MERGE_PANE, TIMEOUT);
     // `returns` is removed by theirs while ours connects to it, so the removal is a conflict as well
     for (const key of ['archive', 'returns', 'payment-to-returns']) {

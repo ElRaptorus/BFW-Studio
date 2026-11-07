@@ -6,23 +6,11 @@ import type {
 
 import type { LandscapeElement } from '../LandscapeMapFile';
 import { resolveRelativeUri } from '../LandscapeMapFile';
-import type { RelationLine } from '../buildRelationLines';
 import type LandscapeModeler from '../modeler/LandscapeModeler';
 import { logicalParentOf, rootOf } from '../modeler/landscapeHierarchy';
 
 /** What a plugin sees of one canvas element: the file element plus the geometry and parent the canvas holds. */
 export function snapshotOfCanvasElement(mapUri: string, element: any): LandscapeElementSnapshot {
-  if (element.type === 'relation') {
-    const line: RelationLine = element.businessObject;
-    return {
-      id: element.id,
-      type: 'relation',
-      kind: line.kind,
-      name: line.relations.length === 1 ? line.relations[0].name : null,
-      sourceElementId: line.sourceElementId,
-      targetElementId: line.targetElementId,
-    };
-  }
   if (element.type === 'connector') {
     const { sourceId, targetId, label } = element.businessObject;
     return { id: element.id, type: 'connector', sourceId, targetId, label };
@@ -50,7 +38,7 @@ export function snapshotOfCanvasElement(mapUri: string, element: any): Landscape
 
 /**
  * The elements of a map as snapshots. `plane` is what is on screen (the map or the open group, hidden connectors
- * left out); `all` is every element of every plane, plus the relation lines drawn on the plane on screen.
+ * left out); `all` is every element of every plane.
  */
 export function snapshotLandscapeElements(
   modeler: LandscapeModeler,
@@ -69,11 +57,8 @@ export function snapshotLandscapeElements(
     .map((element: any) => snapshotOfCanvasElement(mapUri, element));
 }
 
-/** The text a plugin reads as an element's name: the label, the text of a note, or the name of a relation. */
+/** The text a plugin reads as an element's name: the label or the text of a note. */
 export function elementNameOf(snapshot: LandscapeElementSnapshot): string | null {
-  if (snapshot.type === 'relation') {
-    return snapshot.name;
-  }
   if (snapshot.type === 'connector') {
     return snapshot.label === '' ? null : snapshot.label;
   }

@@ -19,7 +19,6 @@ import 'diagram-js/assets/diagram-js.css';
 import React, { useEffect, useReducer, useRef, useState } from 'react';
 
 import { EVENT_RELOADING, EVENT_RELOADING_DONE } from '../diff/LandscapeDiffDocumentModel';
-import { RELATION_LINES_HINT } from '../diff/LandscapeDiffDocumentRenderer';
 import type LandscapeHistoryPreviewDocumentModel from './LandscapeHistoryPreviewDocumentModel';
 
 type ViewMode = 'preview' | 'diff';
@@ -207,9 +206,6 @@ export default function LandscapeHistoryPreviewDocumentRenderer(
       </EditorToolbar>
 
       <EditorContent>
-        <div className="editor__hint landscape-diff__relation-hint" data-test--landscape-history-relation-hint>
-          {RELATION_LINES_HINT}
-        </div>
         {viewMode === 'preview' && (
           <div
             className="landscape-diff__canvas"

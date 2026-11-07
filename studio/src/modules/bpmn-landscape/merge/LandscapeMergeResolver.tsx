@@ -15,7 +15,6 @@ import '../../bpmn-core/diff/styles/component.bpmn-diff-infrastructure.scss';
 import '../../bpmn-core/diff/styles/component.bpmn-merge.scss';
 import type { LandscapeMap } from '../LandscapeMapFile';
 import { createEmptyLandscapeMap, parseLandscapeMap, serializeLandscapeMap } from '../LandscapeMapFile';
-import { RELATION_LINES_HINT } from '../diff/LandscapeDiffDocumentRenderer';
 import { createLandscapeViewerConfig, LandscapeViewerWithSync } from '../diff/LandscapeViewerWithSync';
 import type { LandscapeItemChange, LandscapeItemType, LandscapeMapDiff } from '../diff/landscapeMapDiff';
 import { diffLandscapeMaps } from '../diff/landscapeMapDiff';
@@ -598,24 +597,12 @@ export default class LandscapeMergeResolver extends React.Component<
       </SplitterLayout>
     );
 
-    const relationHint = (
-      <div className="editor__hint landscape-diff__relation-hint" data-test--landscape-merge-relation-hint>
-        {RELATION_LINES_HINT}
-      </div>
-    );
-
     if (this.result == null) {
-      return (
-        <>
-          {relationHint}
-          {viewersPanel}
-        </>
-      );
+      return viewersPanel;
     }
 
     return (
       <>
-        {relationHint}
         <SplitterLayout
           customClassName="splitter-layout--bpmn-merge-vertical"
           vertical={true}

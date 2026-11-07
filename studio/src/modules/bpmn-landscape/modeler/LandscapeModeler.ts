@@ -39,7 +39,6 @@ import ZoomScrollModule from 'diagram-js/lib/navigation/zoomscroll';
 
 import type { LandscapeConnector, LandscapeElement, LandscapeMap } from '../LandscapeMapFile';
 import { createElementId } from '../LandscapeMapFile';
-import type { RelationLine } from '../buildRelationLines';
 import LandscapeCollapse from './LandscapeCollapse';
 import LandscapeContextPadProvider from './LandscapeContextPadProvider';
 import LandscapeDrilldown from './LandscapeDrilldown';
@@ -49,12 +48,10 @@ import LandscapeLayouter from './LandscapeLayouter';
 import LandscapeOrdering from './LandscapeOrdering';
 import LandscapePaletteProvider from './LandscapePaletteProvider';
 import { LandscapePluginContextPadProvider, LandscapePluginPaletteProvider } from './LandscapePluginEntries';
-import LandscapeRelationLayer from './LandscapeRelationLayer';
 import type { LandscapeRendererConfig } from './LandscapeRenderer';
 import LandscapeRenderer from './LandscapeRenderer';
 import LandscapeReplaceMenuProvider from './LandscapeReplaceMenuProvider';
 import LandscapeRules from './LandscapeRules';
-import LandscapeSnapping from './LandscapeSnapping';
 import LandscapeUpdates from './LandscapeUpdates';
 import LandscapeAlignDistributeModule from './features/LandscapeAlignDistribute';
 import LandscapeAppendModule from './features/LandscapeAppend';
@@ -150,7 +147,6 @@ const LANDSCAPE_MODULE = {
     'landscapeConnectors',
     'orderingProvider',
     'landscapeGroupMembership',
-    'landscapeRelationLayer',
     'landscapeUpdates',
     'landscapeCollapse',
     'landscapeDrilldown',
@@ -165,13 +161,11 @@ const LANDSCAPE_MODULE = {
   landscapeCopyPaste: ['type', LandscapeCopyPaste],
   landscapeConnectors: ['type', LandscapeConnectors],
   landscapeGroupMembership: ['type', LandscapeGroupMembership],
-  landscapeRelationLayer: ['type', LandscapeRelationLayer],
   paletteProvider: ['type', LandscapePaletteProvider],
   contextPadProvider: ['type', LandscapeContextPadProvider],
   landscapeReplaceMenu: ['type', LandscapeReplaceMenuProvider],
   landscapePluginPalette: ['type', LandscapePluginPaletteProvider],
   landscapePluginContextPad: ['type', LandscapePluginContextPadProvider],
-  createMoveSnapping: ['type', LandscapeSnapping],
 };
 
 const READ_ONLY_MODULES = [
@@ -315,8 +309,8 @@ export default class LandscapeModeler {
     for (const connector of connections) {
       this.importConnector(connector, shapesById, root);
     }
-    const { name, levels, relationLayers, hiddenRelations } = structuredClone(map);
-    this.get<LandscapeUpdates>('landscapeUpdates').setMapProperties({ name, levels, relationLayers, hiddenRelations });
+    const { name, levels } = structuredClone(map);
+    this.get<LandscapeUpdates>('landscapeUpdates').setMapProperties({ name, levels });
     this.get('commandStack').clear();
   }
 
@@ -421,10 +415,6 @@ export default class LandscapeModeler {
     return `<?xml version="1.0" encoding="utf-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${width}" height="${height}" viewBox="${x} ${y} ${width} ${height}">${definitions}${serializer.serializeToString(layer)}</svg>`;
   }
 
-  showRelationLines(lines: RelationLine[]): void {
-    this.get<LandscapeRelationLayer>('landscapeRelationLayer').show(lines);
-  }
-
   /**
    * In focus mode with a selection, dims everything except the selected elements, their descendants, the lines
    * that touch any of them and the elements at the other ends. Only an element's own visual is dimmed, so the
@@ -444,23 +434,16 @@ export default class LandscapeModeler {
     }
     const focused = new Set<any>();
     const addLine = (connection: any): void => {
-      focused
-        .add(connection)
-        .add(connection.source ?? connection.relationSource)
-        .add(connection.target ?? connection.relationTarget);
+      focused.add(connection).add(connection.source).add(connection.target);
     };
     const addWithDescendants = (element: any): void => {
       focused.add(element);
       (element.children ?? []).forEach(addWithDescendants);
     };
     selected.forEach((element) => (element.waypoints == null ? addWithDescendants(element) : addLine(element)));
-    const relationLines: any[] = this.get('elementRegistry').filter((element: any) => element.type === 'relation');
     for (const element of [...focused]) {
       if (element.waypoints == null) {
         [...element.incoming, ...element.outgoing].forEach(addLine);
-        relationLines
-          .filter((line) => line.relationSource === element || line.relationTarget === element)
-          .forEach(addLine);
       }
     }
     for (const element of focused) {

@@ -11,7 +11,7 @@ Both versions are drawn as read-only maps. Elements, connectors and groups are h
 - **Yellow**: Modified (label, process, colours, parent and other properties)
 - **Blue**: Moved or resized (layout changes)
 
-Relation lines are not shown. Calls, messages and signals are inferred from the solution's BPMN files at runtime, so they cannot be compared reliably between versions. Process names and missing-process warnings come from the solution as it is now.
+Process names and missing-process warnings come from the solution as it is now.
 
 Use **XML** in the toolbar to compare the map files line by line, and **Show Summary** for a list of all changes that you can copy.
 

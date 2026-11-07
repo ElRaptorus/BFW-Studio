@@ -56,7 +56,7 @@ exports.activate = async (api) => {
       factoryCalls.push({
         uri: context.uri,
         elementIds: context.elements.map((element) => element.id).sort(),
-        relationCount: context.elements.filter((element) => element.type === 'relation').length,
+        processCount: context.elements.filter((element) => element.type === 'process').length,
       });
       const badges = context.elements
         .filter((element) => element.type === 'process')

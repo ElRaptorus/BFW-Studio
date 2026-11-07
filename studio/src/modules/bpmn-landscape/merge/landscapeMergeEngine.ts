@@ -3,7 +3,7 @@ import type { ConflictKey, ElementResolutionStatus, MergeOperationKind } from '#
 import type { LandscapeConnector, LandscapeElement, LandscapeLevel, LandscapeMap } from '../LandscapeMapFile';
 import { createEmptyLandscapeMap, parseLandscapeMap, serializeLandscapeMap } from '../LandscapeMapFile';
 
-/** The conflict key of the map-level properties: name, relation layers, hidden relations and extensions. */
+/** The conflict key of the map-level properties: name and extensions. */
 export const MAP_PROPERTIES_KEY = '$map';
 
 export type LandscapeMergeResult = {
@@ -32,7 +32,6 @@ type Item = {
 };
 
 const LAYOUT = '$layout';
-const HIDDEN_RELATION_PREFIX = 'hiddenRelations.';
 
 const sortedKeys = (_key: string, value: unknown): unknown =>
   value != null && typeof value === 'object' && !Array.isArray(value)
@@ -78,15 +77,9 @@ function unflattenConnector(id: string, flat: Flat): LandscapeConnector {
   return { ...content, id, waypoints } as LandscapeConnector;
 }
 
-/** Each hidden relation is a property of its own, so both sides can hide and show relations without a conflict. */
 function flattenMapProperties(map: LandscapeMap): Flat {
   return new Map([
     ['name', property(map.name)],
-    ...Object.entries(map.relationLayers).map(([kind, visible]): [string, Property] => [
-      `relationLayers.${kind}`,
-      property(visible),
-    ]),
-    ...map.hiddenRelations.map((key): [string, Property] => [`${HIDDEN_RELATION_PREFIX}${key}`, property(true)]),
     ['extensions.attributes', property(map.extensions.attributes)],
     [
       'extensions.elements',
@@ -105,14 +98,6 @@ function unflattenMapProperties(flat: Flat): Omit<LandscapeMap, 'levels' | 'elem
   const values = valuesOf(flat);
   return {
     name: values.name,
-    relationLayers: {
-      callActivity: values['relationLayers.callActivity'],
-      message: values['relationLayers.message'],
-      signal: values['relationLayers.signal'],
-    },
-    hiddenRelations: Object.keys(values)
-      .filter((key) => key.startsWith(HIDDEN_RELATION_PREFIX))
-      .map((key) => key.slice(HIDDEN_RELATION_PREFIX.length)),
     extensions: { attributes: values['extensions.attributes'], elements: values['extensions.elements'] },
   };
 }

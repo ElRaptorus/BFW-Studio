@@ -114,7 +114,7 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
 **Options:** Store BPMN file paths on the map; store process ids with the file as a hint; keep no list and derive the map from folders.
 
-**Decision:** A `.bfwmap` stores each process once by `processId`, with `fileHint` (relative to the map) to tell processes with the same id apart. Names and relations are never stored; they come from the scan when the map is drawn.
+**Decision:** A `.bfwmap` stores each process once by `processId`, with `fileHint` (relative to the map) to tell processes with the same id apart. Process names and BPMN metadata come from the solution scan at display time; only user-drawn connectors are stored as lines on the map.
 
 **Rationale:** The Engine deploys by process id, so the id is the stable key; a moved file only changes a hint, and derived data cannot go stale in the file.
 
@@ -134,13 +134,17 @@ See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
 ## Derived landscape relations as unbound connections reconciled outside the command stack
 
-**Context:** A landscape map draws the call, message and signal relations between its processes. They come from the solution scan, change with the catalog and the placed processes, and are never saved. They must be selectable for Hide and survive undo and redo of the edits around them.
+Superseded by **Landscape maps show only drawn connectors** below.
 
-**Options:** A separate SVG layer redrawn from the shape positions; diagram-js connections attached to their shapes (`source`/`target`); diagram-js connections of type `relation` without `source`/`target`, added and removed with `canvas.addConnection` / `removeConnection` outside the command stack.
+## Landscape maps show only drawn connectors
 
-**Decision:** Connections of type `relation` that carry their ends as `relationSource`/`relationTarget`, laid out again after every import, command, undo, redo and catalog refresh. Rules keep them from being moved alone, copied, reconnected or deleted; the exporter skips them.
+**Context:** The landscape map editor once drew call, message and signal lines inferred from BPMN, with per-type layers, per-relation hiding and duplicate-connector warnings against those lines. That duplicated the upcoming Discover › Interactions view, complicated undo, diff, merge and the plugin snapshot API, and collided with user-drawn connectors on the same canvas.
 
-**Rationale:** Attached connections enter every diagram-js closure (move, delete, replace), so a command could hold a line whose ends the reconciler had cleared, and undo crashed. Unbound lines are invisible to those closures, keep selection, hover and the context pad, and keep undo free of derived state. The price is that a line jumps to its shapes on drop instead of following the drag, as a sequence flow does in the BPMN editor.
+**Options:** Keep inferred lines with relation layers and hiding on the map; or show only connectors the user drew, while still using BPMN links to place processes in "Create Map from Processes".
+
+**Decision:** The map editor shows only user-drawn connectors. Call, message and signal links are computed on demand for automatic map creation (neighbour selection and ELK layout), not drawn on the canvas. Legacy `<landscape:relationLayers>` and `<landscape:hiddenRelation>` in saved maps are read and dropped on the next save. The plugin landscape API drops relation element types and snapshots without a semver bump.
+
+**Rationale:** The map file stays the single source for visual links; inference for layout does not need to be on the canvas; removing derived diagram-js connections simplifies the modeler, properties pane and source-control merge paths.
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 

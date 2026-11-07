@@ -211,8 +211,6 @@ export function onLoad(bifrost: Bifrost): void {
   bifrost.menus.registerMenu('bpmn/landscape/element', (elementId: string | null, elementType: string | null): Menu => {
     const editorDocument = bifrost.editors.getFocusedEditorDocument();
     const isOpenable = elementType === 'process' || elementType === 'mapLink';
-    // Relation lines are drawn from the solution and have no element in the file.
-    const isInFile = elementType !== 'relation';
     const pasteItem: MenuItem = {
       type: 'command',
       label: 'Paste',
@@ -269,7 +267,7 @@ export function onLoad(bifrost: Bifrost): void {
         commandArgs: [elementId],
       });
     }
-    if (isInFile && editorDocument != null) {
+    if (editorDocument != null) {
       elementMenu.push({
         type: 'command',
         label: 'Open element in text editor',

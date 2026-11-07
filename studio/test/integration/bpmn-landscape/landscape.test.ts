@@ -694,9 +694,6 @@ describe('bpmn-landscape', () => {
   });
 
   describe('relations', () => {
-    const CALL_LINE = 'relation:callActivity:order:payment';
-    const MESSAGE_LINE = 'relation:message:sender:receiver';
-    const CALL_KEY = 'callActivity:order-process:payment-process';
     const PROPERTIES_PANE = 'discover/landscapes/properties';
 
     const messageBpmn = (processId: string, eventXml: string): string => `<?xml version="1.0" encoding="UTF-8"?>
@@ -762,23 +759,10 @@ describe('bpmn-landscape', () => {
       ${script}
     `);
 
-    const relationIds = async (): Promise<string[]> =>
-      (await onCanvas(
-        `return registry.filter((element) => element.type === 'relation').map((element) => element.id).sort();`,
-      )) as string[];
-
-    const waitForRelations = async (expected: string[]): Promise<void> => {
-      await studioAgent.waitUntil(async () => JSON.stringify(await relationIds()) === JSON.stringify(expected), {
-        timeout: TIMEOUT,
-        timeoutMsg: `Expected the relation lines ${expected.join(', ') || '(none)'}`,
-      });
-    };
-
     const openMap = async (): Promise<void> => {
       await studioAgent.openUriAsDocument(mapUri());
       await studioAgent.navigation.assertActivePage('discover/landscapes');
       await studioAgent.assertVisible(CANVAS, TIMEOUT);
-      await waitForRelations([CALL_LINE, MESSAGE_LINE]);
     };
 
     const element = (id: string): string => `${CANVAS} [data-element-id="${id}"]`;
@@ -983,7 +967,6 @@ describe('bpmn-landscape', () => {
         { timeout: TIMEOUT, timeoutMsg: 'The payment process was not pushed aside' },
       );
       expect(await onCanvas(`return registry.get('order').x;`)).toBe(50);
-      await waitForRelations([CALL_LINE, MESSAGE_LINE]);
       await studioAgent.assertNoErrorsPresent();
     });
 
@@ -998,19 +981,6 @@ describe('bpmn-landscape', () => {
 
       const saved = await waitForFile((map) => map.connectors.length === 1);
       expect(saved.connectors[0]).toMatchObject({ sourceId: 'note', targetId: 'archive' });
-    });
-
-    it('the snapping offers the neighbouring shapes but not the relation lines as targets', async () => {
-      await prepare();
-      await openMap();
-
-      const targetTypes = (await onCanvas(`
-        const snapTargets = modeler.get('createMoveSnapping').getSnapTargets(registry.get('note'), registry.get('order').parent);
-        return snapTargets.map((target) => target.type === 'relation' ? 'relation' : target.id);
-      `)) as string[];
-
-      expect(targetTypes).toContain('order');
-      expect(targetTypes).not.toContain('relation');
     });
 
     it('Change element turns a placeholder into a note and undo restores it', async () => {
@@ -1259,91 +1229,16 @@ describe('bpmn-landscape', () => {
       await studioAgent.assertVisible('[data-test--landscape-history]', TIMEOUT);
     });
 
-    it('draws the call and message relations, labels the message, and does not save them', async () => {
+    it('does not draw inferred lines between message-linked processes on the map', async () => {
       await prepare();
       await openMap();
+      // Idle first, so the solution scan has reached the map before the lines are counted.
+      await studioAgent.assertNoErrorsPresentAndIdle();
 
-      await waitForLabel(MESSAGE_LINE, 'OrderShipped');
-      await studioAgent.clickOn(element('note'));
-      await studioAgent.sendKeyboardInput([Key.ArrowRight], false);
-      await save();
-
-      const saved = await waitForFile((map) => (map.elements.find((entry) => entry.id === 'note')?.x ?? 50) > 50);
-      expect(saved.connectors).toEqual([]);
-      expect(fs.readFileSync(mapPath('Relations.bfwmap'), 'utf8')).not.toContain('relation:');
-    });
-
-    it('hides a relation from the context pad with undo and redo, and saves it as hidden', async () => {
-      await prepare();
-      await openMap();
-
-      await studioAgent.clickOn(element(CALL_LINE));
-      await studioAgent.clickOn('.djs-context-pad .entry[data-action="hide"]');
-      await waitForRelations([MESSAGE_LINE]);
-
-      await studioAgent.executeCommand('std.editor.undoInFocusedEditorDocument');
-      await waitForRelations([CALL_LINE, MESSAGE_LINE]);
-      await studioAgent.executeCommand('std.editor.redoInFocusedEditorDocument');
-      await waitForRelations([MESSAGE_LINE]);
-
-      await studioAgent.clickOn(CANVAS);
-      await save();
-      const saved = await waitForFile((map) => map.hiddenRelations.length > 0);
-      expect(saved.hiddenRelations).toEqual([CALL_KEY]);
-    });
-
-    it('switches the call layer off in the properties pane and saves the layers', async () => {
-      await prepare();
-      await openMap();
-      await studioAgent.assertPaneVisible(PROPERTIES_PANE);
-
-      await studioAgent.clickOn('[data-test--landscape-switch="landscape-layer-callActivity"]');
-      await waitForRelations([MESSAGE_LINE]);
-
-      await studioAgent.clickOn(CANVAS);
-      await save();
-      const saved = await waitForFile((map) => !map.relationLayers.callActivity);
-      expect(saved.relationLayers).toEqual({ callActivity: false, message: true, signal: true });
-    });
-
-    it('deleting a process removes its lines, and undo brings them back', async () => {
-      await prepare();
-      await openMap();
-
-      const steps = await onCanvas(`
-      const lines = () => registry.filter((element) => element.type === 'relation').map((element) => element.id);
-      modeling.removeElements([registry.get('payment')]);
-      const deleted = lines();
-      commandStack.undo();
-      return { deleted, undone: lines().sort() };
-    `);
-
-      expect(steps).toEqual({ deleted: [MESSAGE_LINE], undone: [CALL_LINE, MESSAGE_LINE] });
-    });
-
-    it('moving a selection that contains a relation line moves the shapes', async () => {
-      await prepare();
-      await openMap();
-      await onCanvas(`
-      modeler.get('selection').select(['order', 'payment', ${JSON.stringify(CALL_LINE)}].map((id) => registry.get(id)));
-    `);
-      const start = await centerOf(element('order'));
-
-      await pointerActions([
-        { type: 'pointerMove', duration: 0, x: start.x, y: start.y },
-        { type: 'pointerDown', button: 0 },
-        { type: 'pointerMove', duration: 200, x: start.x + 20, y: start.y + 100 },
-        { type: 'pointerMove', duration: 200, x: start.x + 40, y: start.y + 200 },
-        { type: 'pointerUp', button: 0 },
-      ]);
-
-      await studioAgent.waitUntil(async () => ((await onCanvas(`return registry.get('order').y;`)) as number) > 150, {
-        timeout: TIMEOUT,
-        timeoutMsg: 'The order process was not moved',
-      });
-      expect(await onCanvas(`return registry.get('payment').y - registry.get('order').y;`)).toBe(0);
-      await waitForRelations([CALL_LINE, MESSAGE_LINE]);
-      await studioAgent.assertNoErrorsPresent();
+      const connectionCount = (await onCanvas(
+        `return registry.filter((entry) => entry.waypoints != null).length;`,
+      )) as number;
+      expect(connectionCount).toBe(0);
     });
 
     it('draws a connector through the context pad, labels it by double-click, and keeps it after reopening', async () => {
@@ -1407,19 +1302,28 @@ describe('bpmn-landscape', () => {
 
       await studioAgent.clickOn(element('order'));
       // The pane re-renders after the selection, which can swallow a click on the old button, so click until it opens.
-      await studioAgent.waitUntil(
-        async () => {
-          if ((await studioAgent.getFocusedDocumentUri()).endsWith('discount-rules.dmn')) {
-            return true;
-          }
-          await studioAgent.clickOn('[data-test--landscape-decision="discount-rules"] button');
-          return false;
-        },
-        {
-          timeout: TIMEOUT,
-          timeoutMsg: 'The decision did not open',
-        },
-      );
+      const openButton = '[data-test--landscape-decision="discount-rules"] button';
+      let lastObservation = 'nothing observed';
+      try {
+        await studioAgent.waitUntil(
+          async () => {
+            const focusedUri = await studioAgent.getFocusedDocumentUri();
+            const buttonCount = await studioAgent.getElementCount(openButton);
+            lastObservation = `focused uri "${focusedUri}", open buttons ${buttonCount}`;
+            if (focusedUri.endsWith('discount-rules.dmn')) {
+              return true;
+            }
+            // Once the click worked, the pane is gone while the DMN editor mounts; do not wait for the button then.
+            if (buttonCount > 0) {
+              await studioAgent.clickOn(openButton);
+            }
+            return false;
+          },
+          { timeout: TIMEOUT, timeoutMsg: 'The decision did not open' },
+        );
+      } catch (error) {
+        throw new Error(`The decision did not open; last observation: ${lastObservation}`, { cause: error });
+      }
     });
 
     it('double-clicking a process opens it in the Designer', async () => {
@@ -1439,6 +1343,18 @@ describe('bpmn-landscape', () => {
 
     it('focus mode, by button and by F, dims what is not related to the selection', async () => {
       await prepare();
+      // Focus follows drawn connectors only, so the map needs one between order and payment.
+      const parsedMap = await parseLandscapeMap(fs.readFileSync(mapPath('Relations.bfwmap'), 'utf8'));
+      if (!parsedMap.ok) {
+        throw new Error(`Relations.bfwmap cannot be read: ${parsedMap.errors.join(' ')}`);
+      }
+      fs.writeFileSync(
+        mapPath('Relations.bfwmap'),
+        serializeLandscapeMap({
+          ...parsedMap.map,
+          connectors: [{ id: 'order-payment', sourceId: 'order', targetId: 'payment', label: '', waypoints: [] }],
+        }),
+      );
       await openMap();
       const focusedOrDimmed = async (): Promise<unknown> =>
         onCanvas(`
@@ -1862,7 +1778,6 @@ describe('bpmn-landscape', () => {
   describe('hierarchy', () => {
     const PROPERTIES_PANE = 'discover/landscapes/properties';
     const MAP_FILE = 'Hierarchy.bfwmap';
-    const CALL_LINE_TO_GROUP = 'relation:callActivity:team:payment';
 
     /**
      * The bends of the connector `link`: out to the left of the note, up, and back into the process. They stay outside
@@ -2054,60 +1969,6 @@ describe('bpmn-landscape', () => {
       expect(isRestored).toBe(true);
     });
 
-    it('relation lines survive undo and redo of collapse, move, hide and delete', async () => {
-      const callLine = 'relation:callActivity:order:payment';
-      const callKey = 'callActivity:order-process:payment-process';
-      await prepare();
-      await openMap();
-      await waitForCanvas(`return registry.get(${JSON.stringify(callLine)}) != null;`, 'the call line');
-
-      const lineIds = async (): Promise<string[]> =>
-        (await onCanvas(
-          `return registry.filter((shape) => shape.type === 'relation').map((shape) => shape.id).sort();`,
-        )) as string[];
-      const expectLines = async (expected: string[]): Promise<void> => {
-        await studioAgent.waitUntil(async () => JSON.stringify(await lineIds()) === JSON.stringify(expected), {
-          timeout: TIMEOUT,
-          timeoutMsg: `Expected the relation lines ${expected.join(', ') || '(none)'}`,
-        });
-      };
-
-      await onCanvas(`modeler.get('landscapeCollapse').toggle(registry.get('team'));`);
-      await expectLines([CALL_LINE_TO_GROUP]);
-      await onCanvas(`commandStack.undo();`);
-      await expectLines([callLine]);
-      await onCanvas(`commandStack.redo();`);
-      await expectLines([CALL_LINE_TO_GROUP]);
-      await onCanvas(`commandStack.undo();`);
-      await expectLines([callLine]);
-
-      // A line in the selection stays out of the move.
-      const moved = await onCanvas(
-        `const startY = registry.get('payment').y;
-       modeler.get('modeling').moveElements(['order', 'payment', ${JSON.stringify(callLine)}].map((id) => registry.get(id)), { x: 0, y: 40 });
-       const movedY = registry.get('payment').y;
-       commandStack.undo();
-       return { by: movedY - startY, back: registry.get('payment').y === startY };`,
-      );
-      expect(moved).toEqual({ by: 40, back: true });
-      await expectLines([callLine]);
-
-      await onCanvas(`model.setRelationsHidden([${JSON.stringify(callKey)}], true);`);
-      await expectLines([]);
-      await onCanvas(`commandStack.undo();`);
-      await expectLines([callLine]);
-
-      await onCanvas(`modeler.get('modeling').removeElements([registry.get('payment')]);`);
-      await expectLines([]);
-      await onCanvas(`commandStack.undo();`);
-      await expectLines([callLine]);
-      await onCanvas(`commandStack.redo();`);
-      await expectLines([]);
-      await onCanvas(`commandStack.undo();`);
-      await expectLines([callLine]);
-      await studioAgent.assertNoErrorsPresent();
-    });
-
     it('expanding puts contents that were moved far away back inside the stored size', async () => {
       await prepare();
       await openMap();
@@ -2225,20 +2086,6 @@ describe('bpmn-landscape', () => {
          && registry.get('team').businessObject.collapsed === false
          && registry.get('order').parent === registry.get('team');`,
         'the map on screen with the group expanded',
-      );
-    });
-
-    it('a reopened collapsed group draws one line to the group, counting its relations', async () => {
-      await prepare({ collapsed: true });
-      await openMap();
-
-      await waitForCanvas(
-        `return registry.get(${JSON.stringify(CALL_LINE_TO_GROUP)}) != null;`,
-        'the relation line to end at the group',
-      );
-      await waitForCanvas(
-        `return registry.getGraphics(${JSON.stringify(CALL_LINE_TO_GROUP)}).querySelector('.landscape-label')?.textContent === '1';`,
-        'the line to count one relation',
       );
     });
 
@@ -2438,9 +2285,6 @@ describe('bpmn-landscape', () => {
     const PAD_ENTRY = '.djs-context-pad .entry[data-action="placeholder-actions"]';
     const POPUP_MODEL = '.djs-popup [data-id="placeholder-model"]';
     const POPUP_LINK = '.djs-popup [data-id="placeholder-link"]';
-    const DUPLICATE_TEXT = '[data-test--landscape-duplicate-connector]';
-    const CALL_LINE = 'relation:callActivity:order:payment';
-
     const box = (id: string, x: number, y: number) => ({
       id,
       parentId: null,
@@ -2535,20 +2379,6 @@ describe('bpmn-landscape', () => {
       });
     };
 
-    /** Whether the connector `connectorId` carries the duplicate warning glyph. */
-    const hasWarningGlyph = async (fileName: string, connectorId: string): Promise<boolean> =>
-      (await onCanvas(
-        fileName,
-        `return registry.getGraphics(${JSON.stringify(connectorId)})?.querySelector('.landscape-reference-warning') != null;`,
-      )) as boolean;
-
-    const waitForWarningGlyph = async (fileName: string, connectorId: string, expected: boolean): Promise<void> => {
-      await studioAgent.waitUntil(async () => (await hasWarningGlyph(fileName, connectorId)) === expected, {
-        timeout: TIMEOUT,
-        timeoutMsg: `Expected the warning glyph on ${connectorId} to be ${expected ? 'shown' : 'gone'}`,
-      });
-    };
-
     const closeContextMenu = async (): Promise<void> => {
       // An open context menu would swallow the keyboard input of the next step.
       await studioAgent.sendKeyboardInput([Key.Escape], false);
@@ -2589,14 +2419,6 @@ describe('bpmn-landscape', () => {
             processShape('billing', 'Billing_Process', 650, 50),
             placeholderShape('open', 'Open', 650, 200),
           ],
-        });
-        writeMap('Duplicate.bfwmap', {
-          ...createEmptyLandscapeMap('Duplicate'),
-          elements: [
-            processShape('order', 'order-process', 50, 50),
-            processShape('payment', 'payment-process', 350, 50),
-          ],
-          connectors: [{ id: 'dup', sourceId: 'order', targetId: 'payment', label: '', waypoints: [] }],
         });
       }
       await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
@@ -2805,40 +2627,6 @@ describe('bpmn-landscape', () => {
       await studioAgent.submitActiveDialog('cancel');
       await studioAgent.waitForNotVisible(DIALOG);
       expect(await onCanvas('Fill.bfwmap', `return registry.get('pay')?.type === 'placeholder';`)).toBe(true);
-    });
-
-    it('warns about a connector that repeats a visible relation line until the line is hidden', async () => {
-      await prepare();
-      await openMap('Duplicate.bfwmap');
-
-      await waitForWarningGlyph('Duplicate.bfwmap', 'dup', true);
-      expect(await hasUnsavedChanges('Duplicate.bfwmap')).toBe(false);
-      await onCanvas('Duplicate.bfwmap', `modeler.get('selection').select(registry.get('dup'));`);
-      await studioAgent.assertVisible(DUPLICATE_TEXT, TIMEOUT);
-
-      await onCanvas(
-        'Duplicate.bfwmap',
-        `modeler.get('selection').select(registry.get(${JSON.stringify(CALL_LINE)}));`,
-      );
-      await studioAgent.clickOn('.djs-context-pad .entry[data-action="hide"]');
-      await waitForWarningGlyph('Duplicate.bfwmap', 'dup', false);
-
-      await studioAgent.executeCommand('std.editor.undoInFocusedEditorDocument');
-      await waitForWarningGlyph('Duplicate.bfwmap', 'dup', true);
-    });
-
-    it('linking a placeholder that a connector already joins to a calling process starts the warning', async () => {
-      await prepare();
-      await openMap('Fill.bfwmap');
-      expect(await hasWarningGlyph('Fill.bfwmap', 'link')).toBe(false);
-
-      await linkPayPlaceholder('payment-process');
-
-      await waitForWarningGlyph('Fill.bfwmap', 'link', true);
-      await onCanvas('Fill.bfwmap', `modeler.get('selection').select(registry.get('link'));`);
-      await studioAgent.assertVisible(DUPLICATE_TEXT, TIMEOUT);
-      const unmodifiedFile = await readMap('Fill.bfwmap');
-      expect(unmodifiedFile.elements.some((entry) => entry.id === 'pay')).toBe(true);
     });
   });
 });

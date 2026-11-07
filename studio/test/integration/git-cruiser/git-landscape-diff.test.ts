@@ -22,9 +22,6 @@ const DIFF_DOCUMENT_TYPE = 'bpmn-landscape-map.diff';
 const HISTORY_DOCUMENT_TYPE = 'bpmn-landscape-map.history-preview';
 const DIFF_CANVASES = '.splitter-layout--bpmn-diff';
 const CHANGE_OVERVIEW_PANE = '[data-test--pane="bpmn-landscape/panes/properties/ChangeOverview"]';
-const RELATION_HINT =
-  "Relation lines are not shown: calls, messages and signals are inferred from the solution's BPMN files at runtime and cannot be diffed reliably between versions.";
-
 const box = (id: string, x: number, y: number) => ({
   id,
   parentId: null,
@@ -54,7 +51,6 @@ const noteShape = (id: string, text: string, x: number, y: number): LandscapeEle
   text,
 });
 
-/** `order-process` calls `payment-process`, so the map editor draws a call relation between the two. */
 function overviewMap(archiveLabel: string): LandscapeMap {
   return {
     ...createEmptyLandscapeMap('Overview'),
@@ -228,31 +224,12 @@ describe('git-cruiser/landscape-diff', () => {
     await studioAgent.assertNoErrorsPresentAndIdle();
   });
 
-  it('landscape-diff/relation-hint: the diff explains the missing relation lines and draws none', async () => {
-    writeMap(CHANGED_MAP);
-    await openMap();
-    await waitForCount(
-      '[data-test--landscape-canvas] .landscape-relation',
-      (count) => count > 0,
-      'the call relation in the map editor',
-    );
-
-    await studioAgent.clickOn('[data-test--landscape-show-changes]');
-    await studioAgent.assertVisible('[data-test--landscape-diff-relation-hint]', TIMEOUT);
-    assert.strictEqual(String(await studioAgent.getText('[data-test--landscape-diff-relation-hint]')), RELATION_HINT);
-    await waitForCount(`${DIFF_CANVASES} .landscape-process`, (count) => count === 4, 'both processes on both sides');
-    assert.strictEqual(await studioAgent.getElementCount(`${DIFF_CANVASES} .landscape-relation`), 0);
-
-    await studioAgent.assertNoErrorsPresentAndIdle();
-  });
-
   it('landscape-diff/history: the map History button opens the landscape history preview', async () => {
     await openHistoryPreview(0);
 
     await studioAgent.navigation.assertActivePage('design/source');
     const bpmnHistoryPreview = '[data-test--editors--focused-document-type="bpmn.history-preview"]';
     assert.strictEqual(await studioAgent.getElementCount(bpmnHistoryPreview), 0);
-    await studioAgent.assertVisible('[data-test--landscape-history-relation-hint]', TIMEOUT);
     await studioAgent.assertVisible(CHANGE_OVERVIEW_PANE, TIMEOUT);
 
     await studioAgent.assertNoErrorsPresentAndIdle();
@@ -267,7 +244,6 @@ describe('git-cruiser/landscape-diff', () => {
     await studioAgent.clickOn('[data-test--landscape-history-mode-preview]');
     await studioAgent.assertVisible('[data-test--landscape-history-preview] .landscape-placeholder', TIMEOUT);
     await studioAgent.assertNotVisible(DIFF_CANVASES);
-    await studioAgent.assertVisible('[data-test--landscape-history-relation-hint]', TIMEOUT);
 
     await studioAgent.clickOn('[data-test--landscape-history-mode-diff]');
     await studioAgent.assertVisible(DIFF_CANVASES, TIMEOUT);

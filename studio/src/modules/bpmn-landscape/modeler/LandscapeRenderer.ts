@@ -9,7 +9,6 @@ import type {
   LandscapePoint,
   LandscapeProcessElement,
 } from '../LandscapeMapFile';
-import type { RelationLine } from '../buildRelationLines';
 import type { ReferenceStatus } from '../resolveProcessReference';
 import type { LandscapeTextRenderer } from './features/LandscapeTextRenderer';
 
@@ -22,8 +21,6 @@ export type LandscapeRendererConfig = {
   getProcessStatus(element: LandscapeProcessElement): ReferenceStatus;
   /** `missing` when the map the link names does not exist. */
   getMapLinkStatus(element: LandscapeMapLinkElement): Exclude<ReferenceStatus, 'ambiguous'>;
-  /** Why a connector is drawn with a warning (it repeats a relation line); `null` when it is fine. */
-  getConnectorWarning(connector: LandscapeConnector): string | null;
   /** Runs a command a plugin registered, for a palette or context pad entry the plugin contributes. */
   executePluginCommand(pluginName: string, command: string, args: unknown[]): void;
   /** Models the placeholder as a new BPMN file, or links it to a process of the solution. */
@@ -56,18 +53,6 @@ const DEFAULT_STROKE = 'var(--color-bpmn-defaultStrokeColor)';
 export const NOTE_CORNER = 14;
 export const BAND_HEADER_WIDTH = 32;
 const LINE_LABEL_WIDTH = 160;
-const LINE_STYLES: Record<RelationLine['kind'] | 'connector', { width: number; dash: string | null; arrow: string }> = {
-  callActivity: { width: 2, dash: null, arrow: 'filled' },
-  message: { width: 1.5, dash: '8 4', arrow: 'open' },
-  signal: { width: 1.5, dash: '2 4', arrow: 'open' },
-  connector: { width: 1.5, dash: null, arrow: 'filled' },
-};
-export const RELATION_TITLES: Record<RelationLine['kind'], string> = {
-  callActivity: 'calls',
-  message: 'sends message',
-  signal: 'throws signal',
-};
-
 function createSvgElement(tagName: string, attributes: Record<string, string | number>): SVGElement {
   const element = document.createElementNS(SVG_NAMESPACE, tagName);
   for (const [name, value] of Object.entries(attributes)) {
@@ -199,35 +184,17 @@ export default class LandscapeRenderer extends BaseRenderer {
   }
 
   drawConnection(parentGraphics: SVGElement, connection: any): SVGElement {
-    const isRelation = connection.type === 'relation';
-    const lineStyle = LINE_STYLES[isRelation ? (connection.businessObject as RelationLine).kind : 'connector'];
     const line = createLine(connection.waypoints, {
       fill: 'none',
       stroke: DEFAULT_STROKE,
-      strokeWidth: lineStyle.width,
+      strokeWidth: 1.5,
     });
-    line.setAttribute('marker-end', `url(#${this.markerIdPrefix}-${lineStyle.arrow})`);
-    if (lineStyle.dash != null) {
-      line.setAttribute('stroke-dasharray', lineStyle.dash);
-    }
-    line.classList.add(isRelation ? 'landscape-relation' : 'landscape-connector');
+    line.setAttribute('marker-end', `url(#${this.markerIdPrefix}-filled)`);
+    line.classList.add('landscape-connector');
     parentGraphics.appendChild(line);
 
-    if (isRelation) {
-      const relationLine: RelationLine = connection.businessObject;
-      const title = createSvgElement('title', {});
-      title.textContent = relationLine.relations
-        .map(
-          (relation) =>
-            `${relation.source.processId} ${RELATION_TITLES[relation.kind]} ${relation.target.processId}${relation.name == null ? '' : `: ${relation.name}`}`,
-        )
-        .join('\n');
-      line.appendChild(title);
-    }
-    this.drawLineLabel(parentGraphics, connection.waypoints, this.lineLabelOf(connection));
-    if (!isRelation && connection.businessObject != null) {
-      this.drawConnectorWarning(parentGraphics, connection);
-    }
+    const label = (connection.businessObject as LandscapeConnector | undefined)?.label ?? '';
+    this.drawLineLabel(parentGraphics, connection.waypoints, label);
     return line;
   }
 
@@ -242,23 +209,6 @@ export default class LandscapeRenderer extends BaseRenderer {
 
   getConnectionPath(connection: any): string {
     return `M${connection.waypoints.map((point: { x: number; y: number }) => `${point.x},${point.y}`).join('L')}`;
-  }
-
-  /** A relation line that ends at a collapsed group stands for several relations; its label is their count. */
-  private lineLabelOf(connection: any): string {
-    if (connection.type !== 'relation') {
-      return (connection.businessObject as LandscapeConnector | undefined)?.label ?? '';
-    }
-    const relationLine: RelationLine = connection.businessObject;
-    const hidden = new Set(relationLine.hiddenKeys);
-    const visibleRelations = relationLine.relations.filter((relation) => !hidden.has(relation.key));
-    if (connection.relationSource.type === 'group' || connection.relationTarget.type === 'group') {
-      return String(visibleRelations.length);
-    }
-    return visibleRelations
-      .filter((relation) => relation.name != null)
-      .map((relation) => relation.name)
-      .join(', ');
   }
 
   private drawLineLabel(parentGraphics: SVGElement, waypoints: LandscapePoint[], label: string): void {
@@ -349,16 +299,6 @@ export default class LandscapeRenderer extends BaseRenderer {
     }
   }
 
-  /** The warning triangle sits above the middle of the connector, where its label is. */
-  private drawConnectorWarning(parentGraphics: SVGElement, connection: any): void {
-    const title = this.config.getConnectorWarning(connection.businessObject as LandscapeConnector);
-    if (title == null) {
-      return;
-    }
-    const point = connectorLabelPoint(connection.waypoints);
-    this.drawWarning(parentGraphics, title, { x: point.x - 7, y: point.y - 22 });
-  }
-
   private drawWarning(parentGraphics: SVGElement, title: string, position: LandscapePoint = { x: 7, y: 6 }): void {
     const warning = createSvgElement('g', { transform: `translate(${position.x}, ${position.y})` });
     warning.classList.add('landscape-reference-warning');
@@ -415,23 +355,7 @@ export default class LandscapeRenderer extends BaseRenderer {
       markerUnits: 'userSpaceOnUse',
     });
     filled.appendChild(createSvgElement('path', { ['d']: 'M0,0L10,5L0,10Z', style: `fill: ${DEFAULT_STROKE};` }));
-    const open = createSvgElement('marker', {
-      id: `${this.markerIdPrefix}-open`,
-      viewBox: '0 0 10 10',
-      refX: 10,
-      refY: 5,
-      markerWidth: 9,
-      markerHeight: 9,
-      orient: 'auto-start-reverse',
-      markerUnits: 'userSpaceOnUse',
-    });
-    open.appendChild(
-      createSvgElement('path', {
-        ['d']: 'M1,1L10,5L1,9',
-        style: `fill: none; stroke: ${DEFAULT_STROKE}; stroke-width: 1.5px;`,
-      }),
-    );
-    defs.append(filled, open);
+    defs.append(filled);
     svg.appendChild(defs);
   }
 

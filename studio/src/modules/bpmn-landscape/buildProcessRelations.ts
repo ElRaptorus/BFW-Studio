@@ -6,7 +6,6 @@ export type LandscapeProcessReference = { uri: string; processId: string };
 export type ProcessRelationKind = 'callActivity' | 'message' | 'signal';
 
 export type ProcessRelation = {
-  /** `<kind>:<source process id>:<target process id>[:<name>]`, the identifier `hiddenRelations` stores. */
   key: string;
   kind: ProcessRelationKind;
   source: LandscapeProcessReference;

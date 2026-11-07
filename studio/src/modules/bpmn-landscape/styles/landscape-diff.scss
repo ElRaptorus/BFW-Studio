@@ -4,8 +4,7 @@
     color: var(--theme-icon-purple);
   }
 
-  // A row above the canvases instead of the centred floating hint, which would cover the "After" title.
-  .editor__hint.landscape-diff__relation-hint {
+  .editor__hint.landscape-diff__hint {
     position: static;
     align-self: center;
     margin: 0.25rem 0.5rem;

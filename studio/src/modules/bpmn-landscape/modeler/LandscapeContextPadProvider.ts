@@ -1,9 +1,6 @@
-import type { RelationLine } from '../buildRelationLines';
 import type LandscapeCollapse from './LandscapeCollapse';
 import type LandscapeDrilldown from './LandscapeDrilldown';
 import type LandscapeReplaceMenuProvider from './LandscapeReplaceMenuProvider';
-import { UPDATE_MAP_COMMAND } from './LandscapeUpdates';
-import type LandscapeUpdates from './LandscapeUpdates';
 import { isCollapsedGroup } from './landscapeHierarchy';
 
 export default class LandscapeContextPadProvider {
@@ -11,8 +8,6 @@ export default class LandscapeContextPadProvider {
     'contextPad',
     'modeling',
     'connect',
-    'commandStack',
-    'landscapeUpdates',
     'landscapeCollapse',
     'landscapeDrilldown',
     'landscapeReplaceMenu',
@@ -22,8 +17,6 @@ export default class LandscapeContextPadProvider {
   private modeling: any;
   private rules: any;
   private connect: any;
-  private commandStack: any;
-  private landscapeUpdates: LandscapeUpdates;
   private landscapeCollapse: LandscapeCollapse;
   private landscapeDrilldown: LandscapeDrilldown;
   private landscapeReplaceMenu: LandscapeReplaceMenuProvider;
@@ -32,8 +25,6 @@ export default class LandscapeContextPadProvider {
     contextPad: any,
     modeling: any,
     connect: any,
-    commandStack: any,
-    landscapeUpdates: LandscapeUpdates,
     landscapeCollapse: LandscapeCollapse,
     landscapeDrilldown: LandscapeDrilldown,
     landscapeReplaceMenu: LandscapeReplaceMenuProvider,
@@ -42,8 +33,6 @@ export default class LandscapeContextPadProvider {
     this.modeling = modeling;
     this.rules = rules;
     this.connect = connect;
-    this.commandStack = commandStack;
-    this.landscapeUpdates = landscapeUpdates;
     this.landscapeCollapse = landscapeCollapse;
     this.landscapeDrilldown = landscapeDrilldown;
     this.landscapeReplaceMenu = landscapeReplaceMenu;
@@ -51,16 +40,6 @@ export default class LandscapeContextPadProvider {
   }
 
   getContextPadEntries(element: any): Record<string, unknown> {
-    if (element.type === 'relation') {
-      return {
-        hide: {
-          group: 'edit',
-          className: 'ph ph-eye-slash',
-          title: 'Hide relation',
-          action: { click: () => this.hideRelationLine(element.businessObject) },
-        },
-      };
-    }
     const entries: Record<string, unknown> = {
       delete: {
         group: 'edit',
@@ -108,7 +87,7 @@ export default class LandscapeContextPadProvider {
     return entries;
   }
 
-  /** The `elements.delete` rule leaves relation lines and hidden connectors out of a selection. */
+  /** The `elements.delete` rule leaves hidden connectors out of a selection. */
   getMultiElementContextPadEntries(elements: any[]): Record<string, unknown> {
     const allowed = this.rules.allowed('elements.delete', { elements });
     if (allowed === false) {
@@ -123,11 +102,5 @@ export default class LandscapeContextPadProvider {
         action: { click: () => this.modeling.removeElements(removable.slice()) },
       },
     };
-  }
-
-  private hideRelationLine(line: RelationLine): void {
-    const { hiddenRelations } = this.landscapeUpdates.getMapProperties();
-    const keys = line.relations.map((relation) => relation.key).filter((key) => !hiddenRelations.includes(key));
-    this.commandStack.execute(UPDATE_MAP_COMMAND, { properties: { hiddenRelations: [...hiddenRelations, ...keys] } });
   }
 }

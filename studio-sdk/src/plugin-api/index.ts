@@ -73,7 +73,6 @@ export type {
   LandscapeOverlayDescriptor,
   LandscapeOverlayFactoryContext,
   LandscapeOverlayFactoryOptions,
-  LandscapeRelationSnapshot,
   LandscapeShapeSnapshot,
   PluginLandscapeContextPadEntry,
   PluginLandscapeOverlay,

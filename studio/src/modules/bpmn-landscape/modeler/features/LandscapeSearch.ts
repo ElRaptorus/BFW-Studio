@@ -3,10 +3,10 @@ import SearchPadModule from 'diagram-js/lib/features/search-pad';
 
 import type { LandscapeRendererConfig } from '../LandscapeRenderer';
 
-/** The text an element shows on the map; relation lines and hidden connectors are not searched. */
+/** The text an element shows on the map; hidden connectors are not searched. */
 function labelOf(element: any, config: LandscapeRendererConfig): string | null {
   const businessObject = element.businessObject;
-  if (businessObject == null || element.type === 'relation' || element.hidden === true) {
+  if (businessObject == null || element.hidden === true) {
     return null;
   }
   if (element.type === 'process') {
@@ -17,11 +17,10 @@ function labelOf(element: any, config: LandscapeRendererConfig): string | null {
 
 /**
  * The search pad (Ctrl/Cmd+F, command `bpmn.landscape.find`) over the labels, ids and process ids of the shapes and
- * connectors of the plane on screen. Other planes stay out: opening one redraws the relation lines, and the
- * `elements.changed` that follows closes the search pad.
+ * connectors of the plane on screen. Other planes stay out: a root switch closes the search pad.
  */
 class LandscapeSearch {
-  static $inject = ['searchPad', 'search', 'elementRegistry', 'canvas', 'config.landscape'];
+  static $inject = ['searchPad', 'search', 'elementRegistry', 'canvas', 'config.landscape', 'eventBus'];
 
   constructor(
     searchPad: any,
@@ -29,8 +28,11 @@ class LandscapeSearch {
     private readonly elementRegistry: any,
     private readonly canvas: any,
     private readonly config: LandscapeRendererConfig,
+    eventBus: any,
   ) {
     searchPad.registerProvider(this);
+    // Without `false`, closing would switch back to the plane the search pad was opened on.
+    eventBus.on('root.set', () => searchPad.close(false));
   }
 
   find(pattern: string): { element: any; primaryTokens: unknown; secondaryTokens: unknown }[] {

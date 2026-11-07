@@ -81,7 +81,7 @@ export default class LandscapeMergeResultView extends React.Component<LandscapeM
     return (
       <>
         {invalidReason != null && (
-          <div className="editor__hint landscape-diff__relation-hint" data-test--landscape-merge-invalid>
+          <div className="editor__hint landscape-diff__hint" data-test--landscape-merge-invalid>
             The merged map cannot be written: {invalidReason}
           </div>
         )}

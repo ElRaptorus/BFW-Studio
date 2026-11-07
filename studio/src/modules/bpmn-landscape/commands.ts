@@ -10,6 +10,7 @@ import { createEmptyLandscapeMap, serializeLandscapeMap } from './LandscapeMapFi
 import type { LandscapeSolutionScan } from './LandscapeSolutionScan';
 import { LANDSCAPE_SOLUTION_SCAN_KEY } from './LandscapeSolutionScan';
 import type { LandscapeProcessReference } from './buildProcessRelations';
+import { buildProcessRelations } from './buildProcessRelations';
 import type { NewMapGrouping } from './createLandscapeMap';
 import { createLandscapeMap } from './createLandscapeMap';
 import { registerLandscapeExportCommands } from './exportCommands';
@@ -225,7 +226,7 @@ async function createMapFromProcesses(bifrost: Bifrost, rows?: ProcessSeedRow[])
   try {
     map = await createLandscapeMap({
       catalog: snapshot.catalog,
-      relations: snapshot.relations,
+      relations: buildProcessRelations(snapshot.catalog),
       seeds,
       neighbourSteps: Number(dialogResult.formData?.neighbourSteps),
       grouping: dialogResult.formData?.grouping,

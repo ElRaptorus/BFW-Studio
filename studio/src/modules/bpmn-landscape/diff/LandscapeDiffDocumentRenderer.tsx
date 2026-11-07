@@ -24,9 +24,6 @@ import React, { useEffect, useReducer, useRef, useState } from 'react';
 import type LandscapeDiffDocumentModel from './LandscapeDiffDocumentModel';
 import { EVENT_RELOADING, EVENT_RELOADING_DONE } from './LandscapeDiffDocumentModel';
 
-export const RELATION_LINES_HINT =
-  "Relation lines are not shown: calls, messages and signals are inferred from the solution's BPMN files at runtime and cannot be diffed reliably between versions.";
-
 export default function LandscapeDiffDocumentRenderer(props: EditorDocumentRendererProps): React.JSX.Element | null {
   const { studio: bifrost, editorDocument } = props;
 
@@ -306,11 +303,6 @@ export default function LandscapeDiffDocumentRenderer(props: EditorDocumentRende
       </EditorToolbar>
 
       <EditorContent>
-        {viewMode === 'visual' && (
-          <div className="editor__hint landscape-diff__relation-hint" data-test--landscape-diff-relation-hint>
-            {RELATION_LINES_HINT}
-          </div>
-        )}
         <SplitterLayout
           customClassName={`splitter-layout--bpmn-diff${viewMode === 'xml' ? ' diff-view--hidden' : ''}`}
           percentage={true}

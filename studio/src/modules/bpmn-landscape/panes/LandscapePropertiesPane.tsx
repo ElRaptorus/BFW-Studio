@@ -12,19 +12,10 @@ import React from 'react';
 
 import { PaneProperty, type SelectOption } from '@elraptorus/bfw_studio_sdk';
 
-import type { ProcessRelationEntry } from '../LandscapeMapDocumentModel';
 import LandscapeMapDocumentModel from '../LandscapeMapDocumentModel';
 import type { LandscapeElement, LandscapeShape } from '../LandscapeMapFile';
-import type { ProcessRelationKind } from '../buildProcessRelations';
-import type { RelationLine } from '../buildRelationLines';
 import type { ProcessCandidate } from '../resolveProcessReference';
 
-const KIND_LABELS: Record<ProcessRelationKind, string> = {
-  callActivity: 'Call activities',
-  message: 'Messages',
-  signal: 'Signals',
-};
-const KINDS: ProcessRelationKind[] = ['callActivity', 'message', 'signal'];
 const ELEMENT_TITLES: Record<string, string> = {
   process: 'Process',
   placeholder: 'Placeholder',
@@ -33,7 +24,6 @@ const ELEMENT_TITLES: Record<string, string> = {
   mapLink: 'Map Link',
   note: 'Note',
   connector: 'Connector',
-  relation: 'Relation',
 };
 const SHAPE_OPTIONS: SelectOption[] = [
   { label: 'Box', value: 'box', dataTestOptionValue: 'box' },
@@ -72,23 +62,6 @@ function PaneFull(props: PaneComponentProps): React.JSX.Element {
   );
 }
 
-function Switch(props: { id: string; label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <div className="form-check form-switch landscape-properties__switch">
-      <input
-        id={props.id}
-        className="form-check-input"
-        type="checkbox"
-        role="switch"
-        checked={props.checked}
-        onChange={(event) => props.onChange(event.target.checked)}
-        data-test--landscape-switch={props.id}
-      />
-      <label htmlFor={props.id}>{props.label}</label>
-    </div>
-  );
-}
-
 function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   const model: LandscapeMapDocumentModel = props.editorDocumentModel;
   const mapProperties = model.getMapProperties();
@@ -109,11 +82,7 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
   }
   const element = selected[0];
   const key = `${element.id}-${revision}`;
-  if (element.type === 'relation') {
-    return <RelationLineProperties key={key} model={model} element={element} />;
-  }
   if (element.type === 'connector') {
-    const duplicateWarning = model.getConnectorDuplicateWarning(element.id);
     return (
       <PaneBody key={key}>
         <PaneProperty
@@ -123,11 +92,6 @@ function PaneContent(props: PaneComponentProps): React.JSX.Element | null {
           onCommit={(value: string) => model.updateSelectedElement({ label: value })}
           htmlAttributes={{ 'data-test--landscape-property': 'label' }}
         />
-        {duplicateWarning != null && (
-          <p className="landscape-properties__info" data-test--landscape-duplicate-connector>
-            {duplicateWarning}
-          </p>
-        )}
       </PaneBody>
     );
   }
@@ -142,7 +106,6 @@ function MapProperties(props: { model: LandscapeMapDocumentModel }): React.JSX.E
   if (mapProperties == null) {
     return null;
   }
-  const hiddenCount = model.getHiddenRelationCount();
   return (
     <PaneBody>
       <PaneProperty
@@ -152,25 +115,6 @@ function MapProperties(props: { model: LandscapeMapDocumentModel }): React.JSX.E
         onCommit={(value: string) => model.updateMap({ name: value })}
         htmlAttributes={{ 'data-test--landscape-property': 'name' }}
       />
-      <h6 className="landscape-properties__heading">Relations</h6>
-      {KINDS.map((kind) => (
-        <Switch
-          key={kind}
-          id={`landscape-layer-${kind}`}
-          label={KIND_LABELS[kind]}
-          checked={mapProperties.relationLayers[kind]}
-          onChange={(checked) => model.setRelationLayer(kind, checked)}
-        />
-      ))}
-      <button
-        type="button"
-        className="btn btn-sm btn-secondary landscape-properties__button"
-        disabled={hiddenCount === 0}
-        onClick={() => model.showAllRelations()}
-        data-test--landscape-show-hidden-relations
-      >
-        {hiddenCount === 1 ? 'Show 1 hidden relation' : `Show ${hiddenCount} hidden relations`}
-      </button>
       <h6 className="landscape-properties__heading">Levels</h6>
       {mapProperties.levels.map((level, index) => (
         <div key={level.id} className="landscape-properties__level">
@@ -325,19 +269,6 @@ function ProcessDetailsView(props: {
       <PaneProperty type="text" label="Process ID" value={process.id} disabled />
       <PaneProperty type="text" label="Version" value={process.version ?? '—'} disabled />
       <PaneProperty type="text" label="Executable" value={process.isExecutable ? 'Yes' : 'No'} disabled />
-      <h6 className="landscape-properties__heading">Relations</h6>
-      {details.relations.length === 0 && <p className="landscape-properties__info">No relations.</p>}
-      {KINDS.map((kind) => {
-        const entries = details.relations.filter((entry) => entry.relation.kind === kind);
-        return entries.length === 0 ? null : (
-          <div key={kind} className="landscape-properties__group">
-            <div className="landscape-properties__group-title">{KIND_LABELS[kind]}</div>
-            {entries.map((entry) => (
-              <RelationEntry key={relationEntryKey(entry)} model={model} entry={entry} />
-            ))}
-          </div>
-        );
-      })}
       <h6 className="landscape-properties__heading">Decisions</h6>
       {process.decisionRefs.length === 0 && <p className="landscape-properties__info">No decisions.</p>}
       {process.decisionRefs.map((decisionRef) => (
@@ -456,73 +387,5 @@ function MapLinkDetails(props: {
         htmlId="landscape-map-link-target"
       />
     </>
-  );
-}
-
-/** A relation key names processes by id only; two files with the same process id give two entries with one key. */
-const relationEntryKey = (entry: ProcessRelationEntry): string =>
-  `${entry.relation.key}-${entry.direction}-${entry.relation.source.uri}-${entry.relation.target.uri}`;
-
-function RelationEntry(props: { model: LandscapeMapDocumentModel; entry: ProcessRelationEntry }): React.JSX.Element {
-  const { model, entry } = props;
-  const arrow = entry.direction === 'outgoing' ? '→' : '←';
-  const name = entry.relation.name == null ? '' : ` · ${entry.relation.name}`;
-  const label = `${arrow} ${entry.otherProcessLabel}${name}`;
-  if (!entry.otherOnMap) {
-    return (
-      <div
-        className="landscape-properties__row landscape-properties__row--muted"
-        title="The other process is not on this map"
-      >
-        <span className="landscape-properties__row-label">{label}</span>
-      </div>
-    );
-  }
-  return (
-    <Switch
-      id={`landscape-relation-${relationEntryKey(entry)}`}
-      label={label}
-      checked={!entry.hidden}
-      onChange={(checked) => model.setRelationsHidden([entry.relation.key], !checked)}
-    />
-  );
-}
-
-function RelationLineProperties(props: { model: LandscapeMapDocumentModel; element: any }): React.JSX.Element {
-  const { model, element } = props;
-  const line: RelationLine = element.businessObject;
-  const hidden = new Set(line.hiddenKeys);
-  const visibleKeys = line.relations.map((relation) => relation.key).filter((key) => !hidden.has(key));
-  // A line ending at a collapsed group stands for relations of several processes; each switch names its two.
-  const isAggregated = element.relationSource.type === 'group' || element.relationTarget.type === 'group';
-  const endLabel = (end: any): string =>
-    end.type === 'process' ? model.getProcessLabel(end.businessObject) : end.businessObject.label || 'Group';
-  const relationLabel = (relation: RelationLine['relations'][number]): string => {
-    const detail = relation.name ?? relation.sourceFlowNodeIds.join(', ');
-    return isAggregated ? `${relation.source.processId} → ${relation.target.processId}: ${detail}` : detail;
-  };
-  return (
-    <PaneBody>
-      <PaneProperty type="text" label="Kind" value={KIND_LABELS[line.kind]} disabled />
-      <PaneProperty type="text" label="From" value={endLabel(element.relationSource)} disabled />
-      <PaneProperty type="text" label="To" value={endLabel(element.relationTarget)} disabled />
-      {line.relations.map((relation) => (
-        <Switch
-          key={relation.key}
-          id={`landscape-relation-${relation.key}`}
-          label={relationLabel(relation)}
-          checked={!hidden.has(relation.key)}
-          onChange={(checked) => model.setRelationsHidden([relation.key], !checked)}
-        />
-      ))}
-      <button
-        type="button"
-        className="btn btn-sm btn-secondary landscape-properties__button"
-        onClick={() => model.setRelationsHidden(visibleKeys, true)}
-        data-test--landscape-hide-relation-line
-      >
-        Hide
-      </button>
-    </PaneBody>
   );
 }

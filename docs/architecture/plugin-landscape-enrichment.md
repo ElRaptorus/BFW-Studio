@@ -1,6 +1,6 @@
 # Plugin Landscape Map Enrichment
 
-Plugins can extend the landscape map editor (`.bfwmap`) through the `api.landscape` namespace, with the same tiered permission model as BPMN and DMN. This document mirrors [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md); only the landscape-specific differences (plane-scoped overlays, derived relation lines, absolute element creation) are called out. Method signatures live in `studio-sdk/src/plugin-api/LandscapeApi.ts`; the editor itself is described in [bpmn-landscape.md](bpmn-landscape.md).
+Plugins can extend the landscape map editor (`.bfwmap`) through the `api.landscape` namespace, with the same tiered permission model as BPMN and DMN. This document mirrors [plugin-dmn-enrichment.md](plugin-dmn-enrichment.md); only the landscape-specific differences (plane-scoped overlays, absolute element creation) are called out. Method signatures live in `studio-sdk/src/plugin-api/LandscapeApi.ts`; the editor itself is described in [bpmn-landscape.md](bpmn-landscape.md).
 
 ## Permission Model
 
@@ -24,12 +24,12 @@ A map is one diagram-js root plus one plane root per collapsed group (see [bpmn-
 
 | Operation | Scope |
 |---|---|
-| `getElements(uri)`, `getElement(uri, id)` | Every element of the map, whatever plane is on screen. Relation lines are those drawn on the plane on screen. Both return `null` / `[]` for a map that is not open. |
+| `getElements(uri)`, `getElement(uri, id)` | Every element of the map, whatever plane is on screen. Both return `null` / `[]` for a map that is not open. |
 | Overlay factory `context.elements` | The elements of the plane on screen (`snapshotLandscapeElements(modeler, uri, 'plane')`) |
 | `setOverlays` / `clearOverlays` | Rendered on the plane on screen, and applied again when a plane change brings the element back |
-| `modeling.*` | The whole map, through the command stack (undoable). Relation lines, the root and unknown ids are refused with a diagnostic message. |
+| `modeling.*` | The whole map, through the command stack (undoable). Connectors, the root and unknown ids are refused with a diagnostic message when the rules do not allow the change. |
 
-Element snapshots (`LandscapeElementSnapshot`) are built in `modules/bpmn-landscape/plugin-api/landscapeSnapshots.ts`: `LandscapeShapeSnapshot` (band, group, process, placeholder, mapLink, note, with bounds, label, text, `processId`, `fileHint`, `mapUri`, style, `shape`, `collapsed`), `LandscapeConnectorSnapshot` and `LandscapeRelationSnapshot` (`kind`, `name`, `sourceElementId`, `targetElementId`). Relation lines are derived from the solution and never saved, so a plugin cannot create, move or delete one.
+Element snapshots (`LandscapeElementSnapshot`) are built in `modules/bpmn-landscape/plugin-api/landscapeSnapshots.ts`: `LandscapeShapeSnapshot` (band, group, process, placeholder, mapLink, note, with bounds, label, text, `processId`, `fileHint`, `mapUri`, style, `shape`, `collapsed`) and `LandscapeConnectorSnapshot` (`sourceId`, `targetId`, `label`).
 
 ## Bridge
 

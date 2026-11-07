@@ -3,8 +3,6 @@ import { Moddle } from 'moddle';
 import type { ParseError, ParseWarning } from 'moddle-xml';
 import { Reader, Writer } from 'moddle-xml';
 
-import type { ProcessRelationKind } from './buildProcessRelations';
-
 const LANDSCAPE_MAP_NAMESPACE = 'https://bifrostforge.world/schema/landscape';
 const LANDSCAPE_MAP_VERSION = 1;
 
@@ -74,11 +72,8 @@ export type LandscapeMap = {
   name: string;
   /** Names of the nesting depths: `levels[0]` names top-level groups, `levels[1]` groups inside them. */
   levels: LandscapeLevel[];
-  relationLayers: Record<ProcessRelationKind, boolean>;
   elements: LandscapeElement[];
   connectors: LandscapeConnector[];
-  /** `ProcessRelation.key` of every derived relation the user hid. */
-  hiddenRelations: string[];
   /** Foreign-namespace attributes and child elements of the root, written back unchanged. */
   extensions: { attributes: Record<string, string>; elements: unknown[] };
 };
@@ -103,6 +98,8 @@ const LANDSCAPE_PACKAGE: PackageDefinition = {
       properties: [
         attribute('version', 'Integer'),
         attribute('name'),
+        // `relationLayers` and `hiddenRelations` are legacy: declared so that older maps read without diagnostics;
+        // they are ignored and never written.
         { name: 'relationLayers', type: 'RelationLayers' },
         { name: 'levels', type: 'Level', isMany: true },
         { name: 'elements', type: 'MapElement', isMany: true },
@@ -230,10 +227,8 @@ export function createEmptyLandscapeMap(name: string): LandscapeMap {
   return {
     name,
     levels: [],
-    relationLayers: { callActivity: true, message: true, signal: true },
     elements: [],
     connectors: [],
-    hiddenRelations: [],
     extensions: { attributes: {}, elements: [] },
   };
 }
@@ -439,15 +434,6 @@ function readConnector(reader: LandscapeMapReader, node: ModdleElement): Landsca
   };
 }
 
-function readRelationLayers(root: ModdleElement): Record<ProcessRelationKind, boolean> {
-  const layers: ModdleElement | undefined = root.get('relationLayers');
-  return {
-    callActivity: layers?.get('callActivity') !== false,
-    message: layers?.get('message') !== false,
-    signal: layers?.get('signal') !== false,
-  };
-}
-
 /**
  * The foreign-namespace attributes of a node, which the lax reader keeps in `$attrs`. The landscape namespace
  * declaration is written by moddle and left out.
@@ -472,7 +458,7 @@ function checkIdentifiers(reader: LandscapeMapReader, map: LandscapeMap): void {
       reader.errors.push(`The id '${item.id}' is used more than once.`);
     }
     seenIds.add(item.id);
-    // The canvas names the planes of collapsed groups and the derived relation lines `plane:…` and `relation:…`.
+    // The canvas names drill-down planes of collapsed groups `plane:…`.
     if (item.id.includes(':')) {
       reader.errors.push(`The id '${item.id}' contains ':'; map ids cannot contain it.`);
     }
@@ -553,12 +539,8 @@ export async function parseLandscapeMap(text: string): Promise<LandscapeMapParse
       name: reader.string(level, 'name', 'A level'),
       ...readExtensionAttributes(level),
     })),
-    relationLayers: readRelationLayers(root),
     elements,
     connectors: (root.get('connectors') as ModdleElement[]).map((node) => readConnector(reader, node)),
-    hiddenRelations: (root.get('hiddenRelations') as ModdleElement[]).map((node) =>
-      reader.string(node, 'key', 'A hidden relation', 'non-empty'),
-    ),
     extensions: { attributes: foreignAttributesOf(root), elements: [...root.get('extensions')] },
   };
   checkIdentifiers(reader, map);
@@ -644,17 +626,6 @@ export function serializeLandscapeMap(map: LandscapeMap): string {
     { version: LANDSCAPE_MAP_VERSION, name: map.name },
     map.extensions.attributes,
   );
-  const { callActivity, message, signal } = map.relationLayers;
-  if (!callActivity || !message || !signal) {
-    root.set(
-      'relationLayers',
-      createNode('landscape:RelationLayers', {
-        callActivity: callActivity ? null : false,
-        message: message ? null : false,
-        signal: signal ? null : false,
-      }),
-    );
-  }
   root
     .get('levels')
     .push(
@@ -676,9 +647,6 @@ export function serializeLandscapeMap(map: LandscapeMap): string {
       return node;
     }),
   );
-  root
-    .get('hiddenRelations')
-    .push(...map.hiddenRelations.map((key) => createNode('landscape:HiddenRelation', { key })));
   root.get('extensions').push(...map.extensions.elements);
   return new Writer({ format: true }).toXML(root);
 }

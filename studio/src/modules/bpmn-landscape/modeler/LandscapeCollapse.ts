@@ -280,11 +280,9 @@ export default class LandscapeCollapse extends CommandInterceptor {
     }
   }
 
-  /** What a collapsed group holds: its plane's children, relation lines aside. */
+  /** What a collapsed group holds: its plane's children. */
   private contentsOf(group: any, includeConnections = false): any[] {
-    return group.plane.children.filter(
-      (child: any) => child.type !== 'relation' && (includeConnections || isShape(child)),
-    );
+    return group.plane.children.filter((child: any) => includeConnections || isShape(child));
   }
 
   /**

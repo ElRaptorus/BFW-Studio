@@ -66,9 +66,9 @@ studio/test/
     │   ├── bpmn-elements.test.ts
     │   ├── bpmn-drilldown.test.ts
     │   └── form-builder.test.ts  # Form Builder fragment editor tests
-    ├── bpmn-landscape/         # Landscapes page, landscape folder gate, map editing, relations, hierarchy
+    ├── bpmn-landscape/         # Landscapes page, landscape folder gate, map editing, connectors, hierarchy
     │   ├── landscapeWorkspace.ts      # createLandscapeWorkspace(): temporary copy of test-solution-deploy saved as Landscapes.bfwsln with views.landscapes = landscapes/
-    │   └── landscape.test.ts          # one file, one Electron window: page, folder gate, solution, relations, editing and hierarchy blocks
+    │   └── landscape.test.ts          # one file, one Electron window: page, folder gate, solution, connectors, editing and hierarchy blocks
     ├── dmn-editor/             # DMN editor tests
     │   ├── dmn-smoke.test.ts
     │   └── dmn-elements.test.ts
@@ -462,7 +462,7 @@ Architecture constraints that tests also hit live in [`architecture/common-pitfa
 
 ## Landscape tests share one window
 
-`bpmn-landscape/landscape.test.ts` starts one Electron window in `beforeAll` and keeps it for all tests. Each block (`page`, `folder`, `solution`, `relations`, `editing`, `hierarchy`, `assistance`) has a `prepare` function that creates a temporary workspace through the shared `createWorkspace` and opens its solution; every test calls it first, with options for fixture variants. The `afterEach` returns the window to a blank state, in this order: record errors, close dialog and notifications, restore `bifrost.dialog.showOpenDirectory` / `showSaveFile`, `Test: Close all` (closes unsaved maps without a prompt), activate `design/workspace`, `Test: Close solution`, delete the temporary workspaces. Closing the solution alone is not enough: it asks about unsaved maps and leaves BPMN and DMN documents open. A test that replaces another renderer global must add it to the restore step. Tests must not depend on each other; run `npm run test:integration:bpmn-landscape -- --sequence.shuffle` to check.
+`bpmn-landscape/landscape.test.ts` starts one Electron window in `beforeAll` and keeps it for all tests. Each block (`page`, `folder`, `solution`, `connectors`, `editing`, `hierarchy`, `assistance`) has a `prepare` function that creates a temporary workspace through the shared `createWorkspace` and opens its solution; every test calls it first, with options for fixture variants. The `afterEach` returns the window to a blank state, in this order: record errors, close dialog and notifications, restore `bifrost.dialog.showOpenDirectory` / `showSaveFile`, `Test: Close all` (closes unsaved maps without a prompt), activate `design/workspace`, `Test: Close solution`, delete the temporary workspaces. Closing the solution alone is not enough: it asks about unsaved maps and leaves BPMN and DMN documents open. A test that replaces another renderer global must add it to the restore step. Tests must not depend on each other; run `npm run test:integration:bpmn-landscape -- --sequence.shuffle` to check.
 
 ## Drag and drop
 

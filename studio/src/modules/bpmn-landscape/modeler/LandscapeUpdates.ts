@@ -1,6 +1,6 @@
 import type { LandscapeMap } from '../LandscapeMapFile';
 
-export type LandscapeMapProperties = Pick<LandscapeMap, 'name' | 'levels' | 'relationLayers' | 'hiddenRelations'>;
+export type LandscapeMapProperties = Pick<LandscapeMap, 'name' | 'levels'>;
 
 export const UPDATE_ELEMENT_COMMAND = 'landscape.updateElement';
 export const UPDATE_MAP_COMMAND = 'landscape.updateMap';
@@ -20,8 +20,6 @@ export default class LandscapeUpdates {
   private mapProperties: LandscapeMapProperties = {
     name: '',
     levels: [],
-    relationLayers: { callActivity: true, message: true, signal: true },
-    hiddenRelations: [],
   };
 
   constructor(commandStack: any) {

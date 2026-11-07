@@ -38,7 +38,6 @@ function fullMap(): LandscapeMap {
       { id: 'level-domain', name: 'Domain' },
       { id: 'level-group', name: 'Process group' },
     ],
-    relationLayers: { callActivity: true, message: false, signal: true },
     elements: [
       { id: 'band', type: 'band', parentId: null, label: 'Core\nDomain', style: null, ...geometry, width: 1200 },
       { id: 'sales', type: 'group', parentId: 'band', label: 'Sales', collapsed: true, style: null, ...geometry },
@@ -77,7 +76,6 @@ function fullMap(): LandscapeMap {
         ],
       },
     ],
-    hiddenRelations: ['message:order-process:billing-process:InvoiceRequested'],
   };
 }
 
@@ -90,7 +88,7 @@ const mapText = (content: string, rootAttributes = ''): string =>
   `<landscape:map xmlns:landscape="${NAMESPACE}" version="1" name="Test"${rootAttributes}>${content}</landscape:map>`;
 
 describe('LandscapeMapFile', () => {
-  it('round-trips every element type, nesting, connectors, layers, hidden relations and escaped text', async () => {
+  it('round-trips every element type, nesting, connectors and escaped text', async () => {
     const text = serializeLandscapeMap(fullMap());
     const result = await parseLandscapeMap(text);
 
@@ -101,7 +99,6 @@ describe('LandscapeMapFile', () => {
   it('writes nested, indented XML with a fixed attribute order and only non-default values', () => {
     const map: LandscapeMap = {
       ...createEmptyLandscapeMap('Order to Cash'),
-      relationLayers: { callActivity: true, message: true, signal: false },
       elements: [
         { id: 'sales', type: 'group', parentId: null, label: 'Sales', collapsed: false, style: null, ...geometry },
         {
@@ -123,7 +120,6 @@ describe('LandscapeMapFile', () => {
       [
         '<?xml version="1.0" encoding="UTF-8"?>',
         `<landscape:map xmlns:landscape="${NAMESPACE}" version="1" name="Order to Cash">`,
-        '  <landscape:relationLayers signal="false" />',
         '  <landscape:group id="sales" x="10" y="20.5" width="160" height="60" label="Sales">',
         '    <landscape:process id="order" x="10" y="20.5" width="160" height="60" processId="order-process" />',
         '  </landscape:group>',
@@ -132,6 +128,44 @@ describe('LandscapeMapFile', () => {
         '',
       ].join('\n'),
     );
+  });
+
+  it('accepts legacy relationLayers and hiddenRelation elements without diagnostics and drops them on write', async () => {
+    const legacyText = mapText(
+      '<landscape:relationLayers message="false" />' +
+        '<landscape:process id="order" x="0" y="0" width="10" height="10" processId="p" />' +
+        '<landscape:hiddenRelation key="message:a:b:Invoice" />' +
+        '<landscape:hiddenRelation />',
+    );
+    const result = await parseLandscapeMap(legacyText);
+
+    expect(result).toEqual({
+      ok: true,
+      map: {
+        ...createEmptyLandscapeMap('Test'),
+        elements: [
+          {
+            id: 'order',
+            type: 'process',
+            parentId: null,
+            processId: 'p',
+            fileHint: null,
+            label: null,
+            shape: 'box',
+            style: null,
+            x: 0,
+            y: 0,
+            width: 10,
+            height: 10,
+          },
+        ],
+      },
+    });
+    if (!result.ok) {
+      return;
+    }
+    const written = serializeLandscapeMap(result.map);
+    expect(written).not.toMatch(/relationLayers|hiddenRelation/);
   });
 
   it('writes an element whose parent is not on the map at the top level', async () => {
@@ -303,7 +337,7 @@ describe('LandscapeMapFile', () => {
     ]);
   });
 
-  it('rejects ids with a colon, which the canvas uses for the planes of groups and for relation lines', async () => {
+  it('rejects ids with a colon, which the canvas uses for the planes of collapsed groups', async () => {
     const box = 'x="0" y="0" width="10" height="10"';
     const errors = await errorsOf(
       mapText(
@@ -319,13 +353,12 @@ describe('LandscapeMapFile', () => {
     ]);
   });
 
-  it('rejects levels, hidden relations, connectors and waypoints without their required values', async () => {
+  it('rejects levels, connectors and waypoints without their required values', async () => {
     const errors = await errorsOf(
       mapText(
         '<landscape:level name="Domain" />' +
           '<landscape:note id="n" x="0" y="0" width="1" height="1" />' +
-          '<landscape:connector id="c" targetId="n"><landscape:waypoint x="left" y="1" /></landscape:connector>' +
-          '<landscape:hiddenRelation />',
+          '<landscape:connector id="c" targetId="n"><landscape:waypoint x="left" y="1" /></landscape:connector>',
       ),
     );
 
@@ -333,7 +366,6 @@ describe('LandscapeMapFile', () => {
       'A level needs a non-empty "id".',
       `Connector 'c' has waypoint 1 without numeric "x" and "y".`,
       `Connector 'c' needs a non-empty "sourceId".`,
-      'A hidden relation needs a non-empty "key".',
     ]);
   });
 

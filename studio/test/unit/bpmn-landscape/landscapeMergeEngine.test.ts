@@ -38,7 +38,6 @@ function baseMap(): LandscapeMap {
       { ...bounds, id: 'archive', type: 'group', parentId: null, label: 'Archive', collapsed: false },
     ],
     connectors: [{ id: 'pays', sourceId: 'order', targetId: 'payment', label: '', waypoints: [] }],
-    hiddenRelations: ['message:a:b:Invoice'],
   };
 }
 
@@ -149,16 +148,6 @@ describe('mergeLandscapeMaps', () => {
 
       expect(result.autoApplied).toEqual([]);
       expect(element(result.map, 'payment').label).toBe('Pay');
-    });
-
-    it('merges disjoint hidden relations', async () => {
-      const result = await merge(
-        edited((map) => map.hiddenRelations.push('signal:x:y:Done')),
-        edited((map) => (map.hiddenRelations = ['callActivity:c:d'])),
-      );
-
-      expect(result.conflicts).toEqual([]);
-      expect(result.map.hiddenRelations).toEqual(['signal:x:y:Done', 'callActivity:c:d']);
     });
   });
 

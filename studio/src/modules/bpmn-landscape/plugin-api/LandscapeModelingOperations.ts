@@ -81,8 +81,8 @@ export class LandscapeModelingOperations {
     properties: Record<string, unknown>,
   ): void {
     const element = this.requireElement(modeler, elementId, 'Element');
-    if (element.type === 'relation' || element.type === 'connector') {
-      throw new Error(`Properties of the ${element.type} '${elementId}' cannot be changed`);
+    if (element.type === 'connector') {
+      throw new Error(`Properties of the connector '${elementId}' cannot be changed`);
     }
     const allowed = WRITABLE_PROPERTIES[element.type as CreatableType];
     for (const name of Object.keys(properties)) {
@@ -102,7 +102,7 @@ export class LandscapeModelingOperations {
   removeElement(modeler: LandscapeModeler, elementId: string): void {
     const element = this.requireElement(modeler, elementId, 'Element');
     if (modeler.get('rules').allowed('elements.delete', { elements: [element] }) === false) {
-      throw new Error(`The ${element.type} '${elementId}' cannot be removed: it is derived or hidden`);
+      throw new Error(`The ${element.type} '${elementId}' cannot be removed: it is hidden`);
     }
     modeler.get('modeling').removeElements([element]);
   }

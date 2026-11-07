@@ -2,8 +2,6 @@ import type { Bifrost } from '#bifrost/Bifrost';
 import type { SolutionBpmnModelEntry } from '#modules/bpmn-core/scanSolutionBpmnModels';
 import { scanSolutionBpmnModels } from '#modules/bpmn-core/scanSolutionBpmnModels';
 
-import type { ProcessRelation } from './buildProcessRelations';
-import { buildProcessRelations } from './buildProcessRelations';
 import type { LandscapeMapEntry } from './scanSolutionLandscapeMaps';
 import { scanSolutionLandscapeMaps } from './scanSolutionLandscapeMaps';
 
@@ -13,7 +11,6 @@ export const LANDSCAPE_SOLUTION_SCAN_KEY = 'bpmn-landscape/solution-scan';
 export type LandscapeSolutionSnapshot = {
   catalog: SolutionBpmnModelEntry[];
   maps: LandscapeMapEntry[];
-  relations: ProcessRelation[];
 };
 
 /**
@@ -63,7 +60,7 @@ export class LandscapeSolutionScan {
     if (scanNumber !== this.latestScan) {
       return;
     }
-    const snapshot = { catalog, maps, relations: buildProcessRelations(catalog) };
+    const snapshot = { catalog, maps };
     // Most solution changes touch no BPMN file or map; consumers re-render, and an open text field would lose its input.
     if (this.snapshot != null && JSON.stringify(snapshot) === JSON.stringify(this.snapshot)) {
       return;

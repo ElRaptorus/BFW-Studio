@@ -194,7 +194,7 @@ DMN APIs target the **DRD only**. Modeling throws when the user is in a decision
 
 Permissions, overlay types, palette/context pad, modeling, renderer injection: [architecture/plugin-bpmn-enrichment.md](architecture/plugin-bpmn-enrichment.md), [architecture/plugin-dmn-enrichment.md](architecture/plugin-dmn-enrichment.md) and [architecture/plugin-landscape-enrichment.md](architecture/plugin-landscape-enrichment.md).
 
-Landscape maps (`.bfwmap`): `api.landscape` offers the same overlay, event, palette, context pad and modeling surface as the other editors. Overlays and factories cover the plane on screen, queries the whole map; relation lines are read-only. Request `landscape` for reading, `landscape.modelling` for edits and entries, `landscape.renderer` for diagram-js modules.
+Landscape maps (`.bfwmap`): `api.landscape` offers the same overlay, event, palette, context pad and modeling surface as the other editors. Overlays and factories cover the plane on screen; queries return every saved shape and user-drawn connector on the map. Request `landscape` for reading, `landscape.modelling` for edits and entries, `landscape.renderer` for diagram-js modules.
 
 ---
 

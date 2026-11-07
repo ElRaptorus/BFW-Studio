@@ -54,7 +54,6 @@ function baseMap(): LandscapeMap {
         ],
       },
     ],
-    hiddenRelations: ['message:a:b:Invoice'],
   };
 }
 
@@ -223,33 +222,27 @@ describe('diffLandscapeMaps', () => {
     expect([...diff.added, ...diff.removed].every((item) => item.propertyChanges.length === 0)).toBe(true);
   });
 
-  it('reports the map name, relation layers, hidden relations added and removed, and changed extensions', () => {
+  it('reports the map name and changed extensions', () => {
     const after: LandscapeMap = {
       ...baseMap(),
       name: 'Order to Cash v2',
-      relationLayers: { callActivity: true, message: false, signal: true },
-      hiddenRelations: ['signal:a:c:Closed'],
       extensions: { attributes: { 'xmlns:team': 'http://team', 'team:owner': 'Sales' }, elements: [] },
     };
     const changes = diffLandscapeMaps(baseMap(), after).mapProperties;
 
     expect(changes.map(({ property, before, after: to }) => ({ property, before, after: to }))).toEqual([
       { property: 'name', before: 'Order to Cash', after: 'Order to Cash v2' },
-      { property: 'relationLayers.message', before: 'true', after: 'false' },
-      { property: 'hiddenRelations', before: null, after: 'signal:a:c:Closed' },
-      { property: 'hiddenRelations', before: 'message:a:b:Invoice', after: null },
       { property: 'extensions', before: null, after: expect.stringContaining('team:owner="Sales"') },
     ]);
   });
 
-  it('ignores a reordering of elements, connectors, levels, hidden relations and extension attributes', () => {
+  it('ignores a reordering of elements, connectors, levels and extension attributes', () => {
     const before: LandscapeMap = {
       ...baseMap(),
       connectors: [
         ...baseMap().connectors,
         { id: 'second', sourceId: 'returns', targetId: 'note', label: '', waypoints: [] },
       ],
-      hiddenRelations: ['message:a:b:Invoice', 'signal:a:c:Closed'],
       extensions: { attributes: { 'xmlns:team': 'http://team', 'team:owner': 'Sales' }, elements: [] },
     };
     const after: LandscapeMap = {
@@ -257,7 +250,6 @@ describe('diffLandscapeMaps', () => {
       levels: [...before.levels].reverse(),
       elements: [...before.elements].reverse(),
       connectors: [...before.connectors].reverse(),
-      hiddenRelations: [...before.hiddenRelations].reverse(),
       extensions: { attributes: { 'team:owner': 'Sales', 'xmlns:team': 'http://team' }, elements: [] },
     };
 

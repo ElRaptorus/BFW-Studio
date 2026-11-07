@@ -2,7 +2,6 @@ import { formatSummaryValueForDisplay } from '#modules/bpmn-core/diff/changeSumm
 
 import type { LandscapeElement, LandscapeElementType, LandscapeMap } from '../LandscapeMapFile';
 import { createEmptyLandscapeMap, parseLandscapeMap, serializeLandscapeMap } from '../LandscapeMapFile';
-import type { ProcessRelationKind } from '../buildProcessRelations';
 
 export type LandscapeItemType = LandscapeElementType | 'connector' | 'level';
 export type LandscapePropertyChange = { property: string; label: string; before: string | null; after: string | null };
@@ -26,11 +25,6 @@ export type LandscapeMapDiff = {
 };
 
 const NOTE_NAME_LENGTH = 40;
-const RELATION_LAYER_LABELS: Record<ProcessRelationKind, string> = {
-  callActivity: 'Call activity relations',
-  message: 'Message relations',
-  signal: 'Signal relations',
-};
 
 type ItemProperty = { property: string; label: string; value: string | null };
 type ComparableItem = {
@@ -226,21 +220,6 @@ function diffMapProperties(before: LandscapeMap, after: LandscapeMap): Landscape
     }
   };
   compare('name', 'Name', before.name, after.name);
-  for (const [kind, label] of Object.entries(RELATION_LAYER_LABELS) as [ProcessRelationKind, string][]) {
-    compare(`relationLayers.${kind}`, label, String(before.relationLayers[kind]), String(after.relationLayers[kind]));
-  }
-  const beforeHidden = new Set(before.hiddenRelations);
-  const afterHidden = new Set(after.hiddenRelations);
-  for (const key of afterHidden) {
-    if (!beforeHidden.has(key)) {
-      changes.push({ property: 'hiddenRelations', label: 'Hidden relation', before: null, after: key });
-    }
-  }
-  for (const key of beforeHidden) {
-    if (!afterHidden.has(key)) {
-      changes.push({ property: 'hiddenRelations', label: 'Hidden relation', before: key, after: null });
-    }
-  }
   compare(
     'extensions',
     'Extensions',

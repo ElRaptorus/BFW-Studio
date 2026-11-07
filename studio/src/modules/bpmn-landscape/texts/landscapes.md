@@ -44,7 +44,7 @@ A dialog asks for:
 - **Group processes:** none, by the folder or by the file of each process.
 - **Arrange by call hierarchy:** on, a process sits above the processes it calls; off, all relations (messages and signals too) count.
 
-Then you choose where to save the map. The result is an ordinary map: move, regroup or delete anything. Relation lines are drawn from the BPMN files as usual.
+Then you choose where to save the map. The result is an ordinary map: move, regroup or delete anything. The wizard uses call activities and message or signal links only to pick neighbours and lay processes out; it does not draw lines between them. Draw links yourself with _Connect_ on the map.
 
 &nbsp;
 
@@ -53,24 +53,14 @@ Then you choose where to save the map. The result is an ordinary map: move, regr
 - **Bands** are wide strips at the top level of a map, for example one per business area. A band holds groups and elements, but a band can be created only on the map itself, not inside a group; the palette shows the band only while the map itself is open.
 - **Collapse a group** with _Collapse_ in its context pad. The group becomes one box and its contents move to a plane of their own. _Expand_ puts them back. A collapsed group cannot be resized and holds nothing until it is expanded.
 - **Open a collapsed group** by double-clicking it or pressing the arrows button on its box. Its contents appear alone on the canvas, with breadcrumbs at the top left; press a crumb to go back. A collapsed group's label is edited in the Properties pane.
-- **Connectors and relations** keep working across a collapsed group: a connector into a group is drawn to the group's box and returns to the process when the group is expanded. A relation line that ends at a group counts the relations it stands for; relations inside one collapsed group are not drawn. A connector that crosses a group border keeps its bends when the group is collapsed or expanded, and they are saved with the map; if you moved a shape meanwhile, the line is adjusted at that end. Expanding moves the contents back into the group's size when they fit; the group grows to the right and down only when the contents are wider or higher than that.
+- **Connectors** keep working across a collapsed group: a connector into a group is drawn to the group's box and returns to the process when the group is expanded. A connector that crosses a group border keeps its bends when the group is collapsed or expanded, and they are saved with the map; if you moved a shape meanwhile, the line is adjusted at that end. Expanding moves the contents back into the group's size when they fit; the group grows to the right and down only when the contents are wider or higher than that.
 - **Levels** name the depths of nested groups. Add them in the Properties pane with nothing selected: the first name is for top-level groups, the second for groups inside them, and so on. A selected group shows the name of its depth.
-
-&nbsp;
-
-## Relations
-
-The map draws the relations between the processes on it, read from the saved BPMN files: call activities as solid lines, messages as dashed lines and signals as dotted lines, labelled with the message or signal names. Relations are never saved; they update when a BPMN file is saved.
-
-- **Hide a relation:** select its line and press _Hide_ in the context pad or in the Properties pane. A process's relations can also be shown or hidden from its properties.
-- **Connectors that repeat a relation:** a connector you drew between two processes that a visible relation line already joins shows a warning sign, and its Properties pane says why. The map is never changed for you: delete the connector or hide the relation line to clear the warning.
-- **Hide a relation type:** with nothing selected, switch call activities, messages or signals off in the Properties pane. _Show hidden relations_ brings back every hidden one.
 
 &nbsp;
 
 ## Properties
 
-The Properties pane on the right edits the selected element: label, shape (box or chevron), colour. For a process it shows the file, version, relations and decisions; _Open_ opens a decision. With nothing selected it edits the map name and the relation types.
+The Properties pane on the right edits the selected element: label, shape (box or chevron), colour. For a process it shows the file, version and decisions; _Open_ opens a decision. With nothing selected it edits the map name and the level names.
 
 Double-click a process to open it in the Designer, or a collapsed group to open its plane. The Processes pane shows on how many maps each process appears.
 
@@ -102,7 +92,7 @@ The _Export_ button in the toolbar saves what the canvas shows, the map or the o
 
 ## Focus mode
 
-Press F or the _Focus_ button in the toolbar. Everything that is not related to the selection is dimmed: the selected elements, their relations and the processes at the other end stay clear.
+Press F or the _Focus_ button in the toolbar. Everything that is not related to the selection is dimmed: the selected elements, their connectors and the elements at the other end stay clear.
 
 &nbsp;
 
