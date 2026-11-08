@@ -1,5 +1,6 @@
+import type { Bifrost } from '#bifrost/Bifrost';
+import { computeRelativeUri } from '#bifrost/common/FilePatternMatcher';
 import type { EditorDocumentRendererProps } from '#bifrost/contracts/EditorTypes';
-import { Checkbox } from '#components/Checkbox';
 import { showContextMenu } from '#components/ContextMenuFunctions';
 import { useDropTarget } from '#components/DragAndDrop';
 import { Icon } from '#components/Icon';
@@ -7,9 +8,12 @@ import { Editor } from '#components/editor/Editor';
 import { EditorContent } from '#components/editor/EditorContent';
 import { EditorLoadingError } from '#components/editor/EditorLoadingError';
 import { EditorTitle } from '#components/editor/EditorTitle';
+import { EditorTitleHeroIcon } from '#components/editor/EditorTitleHeroIcon';
+import { EditorTitleLeft } from '#components/editor/EditorTitleLeft';
 import { EditorTitleText } from '#components/editor/EditorTitleText';
 import { EditorToolbar } from '#components/editor/EditorToolbar';
 import { EditorToolbarButton } from '#components/editor/EditorToolbarButton';
+import { EditorToolbarCenter } from '#components/editor/EditorToolbarCenter';
 import { EditorToolbarLeft } from '#components/editor/EditorToolbarLeft';
 import { EditorToolbarRight } from '#components/editor/EditorToolbarRight';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
@@ -40,6 +44,14 @@ function TitleWarning(props: {
 /** A map file row of the Maps explorer. */
 function isMapRow(item: any): boolean {
   return item?.type === 'file' && /\.bfwmap$/i.test(item.metadata?.uri ?? '');
+}
+
+/** The map's path inside the project folder that holds it, or its file name when no project folder does. */
+function mapPathInSolution(studio: Bifrost, mapUri: string): string {
+  const project = studio.solution
+    .getSolution()
+    ?.projects.find((candidate) => mapUri.startsWith(candidate.baseUri.replace(/\/?$/, '/')));
+  return project == null ? studio.files.getLocalBasename(mapUri) : computeRelativeUri(mapUri, project.baseUri);
 }
 
 export default function LandscapeMapRenderer(props: EditorDocumentRendererProps): React.JSX.Element {
@@ -103,6 +115,15 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
       void studio.commands.executeCommand('bpmn.landscape.addProcessToMap', [{ processId, fileUri, ...point }]);
     },
   });
+
+  const fileWarningActive =
+    metadata.removedFromFileSystem === true ||
+    metadata.errorOnReloadingFile != null ||
+    metadata.fileChangedFromOutside === true;
+  const mapTitleLabel = studio.files.getLocalBasename(editorDocument.uri, true);
+  const mapTitleSublabel = mapPathInSolution(studio, editorDocument.uri);
+  const showGrid = studio.settings.get(SHOW_GRID_SETTING, editorDocument.uri) !== false;
+  const focusMode = metadata.focusMode === true;
 
   if (model != null && metadata.mergeConflict === true) {
     return (
@@ -180,22 +201,22 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             }
           />
         )}
+        {!fileWarningActive && (
+          <EditorTitleLeft>
+            <EditorTitleHeroIcon studio={studio} icon="bpmn-landscape/document-type/map" />
+            <EditorTitleText
+              studio={studio}
+              label={<span data-test--landscape-title>{mapTitleLabel}</span>}
+              sublabel={mapTitleSublabel}
+            />
+          </EditorTitleLeft>
+        )}
       </EditorTitle>
       <EditorToolbar>
         <EditorToolbarLeft>
           <EditorToolbarButton
             studio={studio}
-            icon="ph ph-crosshair"
-            label="Focus"
-            tooltip="Dim everything that is not related to the selection (F)"
-            className={metadata.focusMode === true ? 'editor-toolbar__button--active' : ''}
-            command="bpmn.landscape.toggleFocusMode"
-            dataTestId="landscape-focus-mode"
-          />
-          <EditorToolbarButton
-            studio={studio}
             icon="ph ph-export"
-            label="Export"
             tooltip="Export the map as an image"
             command="std.editor.showExportDialog.bpmn-landscape-map"
             dataTestId="landscape-export"
@@ -204,7 +225,6 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             <EditorToolbarButton
               studio={studio}
               icon="ph ph-git-diff"
-              label="Show Changes"
               tooltip="Compare the map file against the last commit"
               command="git.showGitDiff"
               commandArgs={[editorDocument.uri]}
@@ -215,7 +235,6 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             <EditorToolbarButton
               studio={studio}
               icon="git-cruiser/history"
-              label="History"
               tooltip="Browse the commit history of this map"
               command="git.showFileHistory"
               commandArgs={[editorDocument.uri]}
@@ -223,21 +242,40 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             />
           )}
         </EditorToolbarLeft>
-        <EditorToolbarRight>
-          <Checkbox
-            label="Show Grid"
-            checked={studio.settings.get(SHOW_GRID_SETTING, editorDocument.uri) !== false}
-            onChange={() => void studio.commands.executeCommand('bpmn.landscape.toggleShowGrid')}
-            htmlAttributes={{ 'data-test--landscape-show-grid': true }}
+        <EditorToolbarCenter>
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-crosshair"
+            tooltip="Focus (F)"
+            className={focusMode ? 'editor-toolbar__button--active' : ''}
+            command="bpmn.landscape.toggleFocusMode"
+            dataTestId="landscape-focus-mode"
           />
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-grid-four"
+            tooltip="Show grid"
+            className={showGrid ? 'editor-toolbar__button--active' : ''}
+            command="bpmn.landscape.toggleShowGrid"
+            dataTestId="landscape-show-grid"
+          />
+        </EditorToolbarCenter>
+        <EditorToolbarRight>
           <EditorToolbarButton
             studio={studio}
             icon="ph ph-arrows-in"
             tooltip="Zoom to viewport"
-            label="Zoom to viewport"
             command="std.editor.zoomToViewport"
             commandArgs={[editorDocument]}
             dataTestId="landscape-zoom-to-viewport"
+          />
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-arrows-out"
+            tooltip="Zoom to actual size"
+            command="std.editor.zoomToActualSize"
+            commandArgs={[editorDocument]}
+            dataTestId="landscape-zoom-to-actual-size"
           />
         </EditorToolbarRight>
       </EditorToolbar>

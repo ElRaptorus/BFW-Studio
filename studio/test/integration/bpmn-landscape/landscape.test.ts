@@ -850,7 +850,12 @@ describe('bpmn-landscape', () => {
       };
     };
 
-    it('the Show Grid checkbox and the toggle command switch the grid through one setting', async () => {
+    const isLandscapeShowGridToggleActive = async (): Promise<boolean> =>
+      (await studioAgent.executeInRenderer(
+        `return document.querySelector('[data-test--landscape-show-grid]')?.classList.contains('editor-toolbar__button--active') === true`,
+      )) as boolean;
+
+    it('the Show Grid toolbar button and the toggle command switch the grid through one setting', async () => {
       await prepare();
       await openMap();
       const isGridVisible = async (): Promise<unknown> => onCanvas(`return modeler.get('grid').isVisible();`);
@@ -859,13 +864,21 @@ describe('bpmn-landscape', () => {
           timeout: TIMEOUT,
           timeoutMsg: `Expected the grid to be ${expected ? 'visible' : 'hidden'}`,
         });
+      const waitForShowGridButton = async (expectedActive: boolean): Promise<void> =>
+        studioAgent.waitUntil(async () => (await isLandscapeShowGridToggleActive()) === expectedActive, {
+          timeout: TIMEOUT,
+          timeoutMsg: `Expected the Show Grid toolbar button to be ${expectedActive ? 'active' : 'inactive'}`,
+        });
       await waitForGrid(true);
+      await waitForShowGridButton(true);
 
       await studioAgent.clickOn('[data-test--landscape-show-grid]');
       await waitForGrid(false);
+      await waitForShowGridButton(false);
 
       await studioAgent.executeCommand('bpmn.landscape.toggleShowGrid');
       await waitForGrid(true);
+      await waitForShowGridButton(true);
     });
 
     it('the element context menu offers the entries of the clicked element, and the empty canvas only Paste', async () => {

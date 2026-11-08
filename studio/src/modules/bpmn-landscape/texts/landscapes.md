@@ -86,13 +86,15 @@ Drag a map from the Maps explorer onto another map to add a link to it. Double-c
 
 ## Export
 
-The _Export_ button in the toolbar saves what the canvas shows, the map or the open group, as SVG, PNG, JPEG or WebP, depending on the file extension you choose.
+The export icon on the left of the toolbar (tooltip _Export the map as an image_) saves what the canvas shows, the map or the open group, as SVG, PNG, JPEG or WebP, depending on the file extension you choose.
 
 &nbsp;
 
-## Focus mode
+## Focus mode and grid
 
-Press F or the _Focus_ button in the toolbar. Everything that is not related to the selection is dimmed: the selected elements, their connectors and the elements at the other end stay clear.
+Press F or the focus icon in the centre of the toolbar (tooltip _Focus (F)_). Everything that is not related to the selection is dimmed: the selected elements, their connectors and the elements at the other end stay clear.
+
+The grid icon beside it toggles the diagram grid on the canvas. The right side of the toolbar fits the map to the viewport or returns it to actual size (100 %).
 
 &nbsp;
 

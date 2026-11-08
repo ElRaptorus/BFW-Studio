@@ -106,6 +106,7 @@
 
 .editor-toolbar__button--active {
   font-weight: bold;
+  background: color-mix(in srgb, var(--theme-editor-toolbar-icon) 22%, transparent);
 }
 
 .editor-toolbar__dropdown-icon {
