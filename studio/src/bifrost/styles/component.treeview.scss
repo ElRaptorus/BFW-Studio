@@ -109,6 +109,12 @@
   margin-left: 0.125rem;
 }
 
+.treeview__entry-checkbox {
+  flex-shrink: 0;
+  align-self: center;
+  margin-right: 0.25rem;
+}
+
 .treeview__entry--section,
 .treeview__entry {
   padding: 0.25rem;

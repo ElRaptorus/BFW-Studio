@@ -72,9 +72,11 @@ The context pad of a selected element also offers _Change element_ (the wrench: 
 
 A map stores the process id and the file of every process on it. If a BPMN file is renamed, moved or edited, the map follows as long as the process id is still defined in exactly one file of the solution. When it is not, the process is drawn faded with a warning mark, and the Maps explorer shows a yellow number on the map.
 
-- **Not found:** the id exists in no file. Select the shape and choose _Replace with_ to point it at another process, _Drop reference_ to turn it into a placeholder with the same label and connectors, or _Keep_ to leave it as it is until the map is closed.
-- **In several files:** the id is defined more than once. Choose the file in _Replace with_.
-- **Review:** when a map with such processes opens, a notice offers _Review_, which selects the first of them.
+| Situation            | What to do                                                                                                                                                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Not found**        | The id exists in no file. Select the shape and choose _Replace with_ to point it at another process, _Drop reference_ to turn it into a placeholder with the same label and connectors, or _Keep_ to leave it as it is until the map is closed. |
+| **In several files** | The id is defined more than once. Choose the file in _Replace with_.                                                                                                                                                                            |
+| **Review**           | When a map with such processes opens, a notice offers _Review_, which selects the first of them.                                                                                                                                                |
 
 &nbsp;
 
@@ -90,11 +92,15 @@ The export icon on the left of the toolbar (tooltip _Export the map as an image_
 
 &nbsp;
 
-## Focus mode and grid
+## Focus mode, grid, zoom and help
 
-Press F or the focus icon in the centre of the toolbar (tooltip _Focus (F)_). Everything that is not related to the selection is dimmed: the selected elements, their connectors and the elements at the other end stay clear.
+Press **F** or the focus icon in the centre of the toolbar (tooltip _Focus (F)_). Everything that is not related to the selection is dimmed: the selected elements, their connectors and the elements at the other end stay clear.
 
-The grid icon beside it toggles the diagram grid on the canvas. The right side of the toolbar fits the map to the viewport or returns it to actual size (100 %).
+The grid icon beside it toggles the diagram grid on the canvas.
+
+**Zoom to viewport** and **Zoom to actual size** sit in the centre of the toolbar as well, after the grid toggle.
+
+The **help** button (question mark) on the right opens this page beside the map.
 
 &nbsp;
 

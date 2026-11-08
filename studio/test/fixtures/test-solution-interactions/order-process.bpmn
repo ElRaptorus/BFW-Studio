@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:bfw="https://bifrostforge.world/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="order-process_Definition" targetNamespace="https://bifrostforge.world/schema/bpmn">
+  <bpmn:message id="Message_OrderPlaced" name="OrderPlaced" />
+  <bpmn:signal id="Signal_OrderClosed" name="OrderClosed" />
+  <bpmn:process id="order-process" name="Order Process" isExecutable="true">
+    <bpmn:extensionElements>
+      <bfw:version>1.0.0</bfw:version>
+    </bpmn:extensionElements>
+    <bpmn:startEvent id="Start_order" name="Start">
+      <bpmn:outgoing>Flow_order_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:intermediateThrowEvent id="Throw_OrderPlaced" name="Notify placed">
+      <bpmn:incoming>Flow_order_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_order_2</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_OrderPlaced" messageRef="Message_OrderPlaced" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End_OrderClosed" name="Close order">
+      <bpmn:incoming>Flow_order_2</bpmn:incoming>
+      <bpmn:signalEventDefinition id="SignalEventDefinition_OrderClosed" signalRef="Signal_OrderClosed" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_order_1" sourceRef="Start_order" targetRef="Throw_OrderPlaced" />
+    <bpmn:sequenceFlow id="Flow_order_2" sourceRef="Throw_OrderPlaced" targetRef="End_OrderClosed" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_order">
+    <bpmndi:BPMNPlane id="BPMNPlane_order" bpmnElement="order-process">
+      <bpmndi:BPMNShape id="Start_order_di" bpmnElement="Start_order">
+        <dc:Bounds x="160" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Throw_OrderPlaced_di" bpmnElement="Throw_OrderPlaced">
+        <dc:Bounds x="260" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_OrderClosed_di" bpmnElement="End_OrderClosed">
+        <dc:Bounds x="360" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_order_1_di" bpmnElement="Flow_order_1">
+        <di:waypoint x="196" y="138" />
+        <di:waypoint x="260" y="138" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_order_2_di" bpmnElement="Flow_order_2">
+        <di:waypoint x="296" y="138" />
+        <di:waypoint x="360" y="138" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

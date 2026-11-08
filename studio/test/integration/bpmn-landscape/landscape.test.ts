@@ -145,6 +145,32 @@ describe('bpmn-landscape', () => {
     });
   });
 
+  describe('help', () => {
+    let landscapeWorkspace: LandscapeWorkspace;
+
+    it('opens the help text to the side', async () => {
+      landscapeWorkspace = createWorkspace('bfw-landscape-help-');
+      const mapPath = path.join(landscapeWorkspace.landscapeFolder, 'Overview.bfwmap');
+      fs.mkdirSync(path.dirname(mapPath), { recursive: true });
+      fs.writeFileSync(mapPath, serializeLandscapeMap(createEmptyLandscapeMap('Overview')));
+      await studioAgent.openSolutionFile(landscapeWorkspace.solutionFile);
+      const mapUri = `file://${mapPath}`;
+      await studioAgent.executeCommandWithoutBlocking('std.editor.focusOrOpenDocument', [mapUri]);
+      await studioAgent.waitUntil(async () => (await studioAgent.getFocusedDocumentUri()) === mapUri, {
+        timeout: TIMEOUT,
+        timeoutMsg: 'The map did not open',
+      });
+
+      await studioAgent.clickOn('[data-test--landscape-help]');
+      await studioAgent.assertVisible('.help-page', TIMEOUT);
+
+      const helpText = String(await studioAgent.getText('.help-page'));
+      expect(helpText).toContain('The landscape folder');
+
+      await studioAgent.assertNoErrorsPresentAndIdle();
+    });
+  });
+
   describe('folder', () => {
     const MAPS_PANE = 'discover/landscapes/maps';
     const PROCESSES_PANE = '[data-test--pane="discover/landscapes/landscapes"]';
@@ -1315,21 +1341,23 @@ describe('bpmn-landscape', () => {
 
       await studioAgent.clickOn(element('order'));
       // The pane re-renders after the selection, which can swallow a click on the old button, so click until it opens.
+      // After a click that worked, the page switches while the DMN editor mounts and the button stays in the DOM hidden.
+      // A WebDriver click would then wait for it to become visible, so the check and the click run in one renderer call.
       const openButton = '[data-test--landscape-decision="discount-rules"] button';
       let lastObservation = 'nothing observed';
       try {
         await studioAgent.waitUntil(
           async () => {
             const focusedUri = await studioAgent.getFocusedDocumentUri();
-            const buttonCount = await studioAgent.getElementCount(openButton);
-            lastObservation = `focused uri "${focusedUri}", open buttons ${buttonCount}`;
             if (focusedUri.endsWith('discount-rules.dmn')) {
               return true;
             }
-            // Once the click worked, the pane is gone while the DMN editor mounts; do not wait for the button then.
-            if (buttonCount > 0) {
-              await studioAgent.clickOn(openButton);
-            }
+            const clicked = (await studioAgent.executeInRenderer(
+              `const button = [...document.querySelectorAll('${openButton}')].find((candidate) => candidate.offsetParent != null);
+               button?.click();
+               return button != null;`,
+            )) as boolean;
+            lastObservation = `focused uri "${focusedUri}", clicked a displayed open button ${clicked}`;
             return false;
           },
           { timeout: TIMEOUT, timeoutMsg: 'The decision did not open' },

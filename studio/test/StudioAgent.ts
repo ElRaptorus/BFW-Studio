@@ -1481,6 +1481,29 @@ export class StudioAgent {
     throw new Error(`Merge toolbar button "${label}" not found`);
   }
 
+  async interactionsSelectProcesses(references: { uri: string; processId: string }[]): Promise<void> {
+    await this.executeCommand('bpmn.interactions.test.selectProcesses', [references]);
+  }
+
+  async interactionsGenerate(): Promise<void> {
+    await this.executeCommand('bpmn.interactions.test.generate');
+  }
+
+  async interactionsGetGraphSummary(): Promise<{
+    processCount: number;
+    portCount: number;
+    lineCount: number;
+    stationCount: number;
+    portsWithPartnersOutsideView: number;
+    portsWithoutPartnerInSolution: number;
+  } | null> {
+    return this.executeCommand('bpmn.interactions.test.getGraphSummary');
+  }
+
+  async interactionsIsStale(): Promise<boolean> {
+    return this.executeCommand('bpmn.interactions.test.isStale');
+  }
+
   private async poll(
     pollFn: () => any,
     acceptFn: (arg: any) => boolean | Promise<boolean>,

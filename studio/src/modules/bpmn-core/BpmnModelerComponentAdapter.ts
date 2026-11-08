@@ -294,7 +294,8 @@ export default class BpmnModelerComponentAdapter extends AbstractEmitter {
     const elementRegistry = this.getElementRegistry();
     const element = elementRegistry.get(elementId);
 
-    const isDefinitionOrOtherInvisibleBpmnElement = element == null;
+    // The root element (the process of a diagram without pools) is registered but has no bounds.
+    const isDefinitionOrOtherInvisibleBpmnElement = element == null || element === canvas.getRootElement();
 
     if (isDefinitionOrOtherInvisibleBpmnElement) {
       return this.zoomToViewport();

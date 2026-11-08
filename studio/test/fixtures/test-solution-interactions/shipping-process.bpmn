@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:bfw="https://bifrostforge.world/schema/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="shipping-process_Definition" targetNamespace="https://bifrostforge.world/schema/bpmn">
+  <bpmn:message id="Message_PaymentDone" name="PaymentDone" />
+  <bpmn:signal id="Signal_OrderClosed" name="OrderClosed" />
+  <bpmn:process id="shipping-process" name="Shipping Process" isExecutable="true">
+    <bpmn:extensionElements>
+      <bfw:version>1.0.0</bfw:version>
+    </bpmn:extensionElements>
+    <bpmn:startEvent id="Start_shipping" name="Start">
+      <bpmn:outgoing>Flow_shipping_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:receiveTask id="Receive_PaymentDone" name="Wait for payment" messageRef="Message_PaymentDone">
+      <bpmn:incoming>Flow_shipping_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_shipping_2</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:task id="Task_ship" name="Ship order">
+      <bpmn:incoming>Flow_shipping_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_shipping_3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:boundaryEvent id="Boundary_OrderClosed" name="Order closed" attachedToRef="Task_ship" cancelActivity="false">
+      <bpmn:signalEventDefinition id="SignalEventDefinition_Boundary" signalRef="Signal_OrderClosed" />
+    </bpmn:boundaryEvent>
+    <bpmn:intermediateCatchEvent id="Catch_unnamed" name="Unnamed catch">
+      <bpmn:incoming>Flow_shipping_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_shipping_4</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_Unnamed" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="End_shipping" name="Done">
+      <bpmn:incoming>Flow_shipping_4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_shipping_1" sourceRef="Start_shipping" targetRef="Receive_PaymentDone" />
+    <bpmn:sequenceFlow id="Flow_shipping_2" sourceRef="Receive_PaymentDone" targetRef="Task_ship" />
+    <bpmn:sequenceFlow id="Flow_shipping_3" sourceRef="Task_ship" targetRef="Catch_unnamed" />
+    <bpmn:sequenceFlow id="Flow_shipping_4" sourceRef="Catch_unnamed" targetRef="End_shipping" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_shipping">
+    <bpmndi:BPMNPlane id="BPMNPlane_shipping" bpmnElement="shipping-process">
+      <bpmndi:BPMNShape id="Start_shipping_di" bpmnElement="Start_shipping">
+        <dc:Bounds x="120" y="140" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Receive_PaymentDone_di" bpmnElement="Receive_PaymentDone">
+        <dc:Bounds x="220" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ship_di" bpmnElement="Task_ship">
+        <dc:Bounds x="380" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_OrderClosed_di" bpmnElement="Boundary_OrderClosed">
+        <dc:Bounds x="442" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_unnamed_di" bpmnElement="Catch_unnamed">
+        <dc:Bounds x="540" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_shipping_di" bpmnElement="End_shipping">
+        <dc:Bounds x="640" y="142" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_shipping_1_di" bpmnElement="Flow_shipping_1">
+        <di:waypoint x="156" y="158" />
+        <di:waypoint x="220" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_shipping_2_di" bpmnElement="Flow_shipping_2">
+        <di:waypoint x="320" y="160" />
+        <di:waypoint x="380" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_shipping_3_di" bpmnElement="Flow_shipping_3">
+        <di:waypoint x="480" y="160" />
+        <di:waypoint x="540" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_shipping_4_di" bpmnElement="Flow_shipping_4">
+        <di:waypoint x="576" y="160" />
+        <di:waypoint x="640" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

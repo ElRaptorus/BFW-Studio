@@ -24,6 +24,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import type LandscapeMapDocumentModel from './LandscapeMapDocumentModel';
 import { SHOW_GRID_SETTING } from './LandscapeMapDocumentModel';
+import { LANDSCAPES_PAGE_ID } from './landscapeFolder';
 import './styles/landscape.scss';
 
 function TitleWarning(props: {
@@ -259,8 +260,6 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             command="bpmn.landscape.toggleShowGrid"
             dataTestId="landscape-show-grid"
           />
-        </EditorToolbarCenter>
-        <EditorToolbarRight>
           <EditorToolbarButton
             studio={studio}
             icon="ph ph-arrows-in"
@@ -276,6 +275,16 @@ export default function LandscapeMapRenderer(props: EditorDocumentRendererProps)
             command="std.editor.zoomToActualSize"
             commandArgs={[editorDocument]}
             dataTestId="landscape-zoom-to-actual-size"
+          />
+        </EditorToolbarCenter>
+        <EditorToolbarRight>
+          <EditorToolbarButton
+            studio={studio}
+            icon="ph ph-question"
+            tooltip="What is a Landscape map?"
+            command="std.help.openToTheSide"
+            commandArgs={[LANDSCAPES_PAGE_ID]}
+            dataTestId="landscape-help"
           />
         </EditorToolbarRight>
       </EditorToolbar>

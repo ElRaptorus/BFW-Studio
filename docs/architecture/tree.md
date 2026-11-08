@@ -58,6 +58,7 @@ Every variant extends `TreeItemBase`:
 | `selected` | `boolean?` | Initial selected state |
 | `badges` | `TreeBadge[]?` | Badge indicators (character, number, or icon), each with an optional `tooltip` rendered as the badge's `title` |
 | `styles` | `TreeItemStyles?` | Label/sublabel/badge color overrides |
+| `checkboxState` | `'checked' \| 'unchecked' \| 'mixed'?` | When set, `HeadlessTreeItem` renders a controlled tri-state checkbox after the twistie (not in the twistie click target). Clicks call `onActionIconClick` with `actionId: 'checkbox'` and `stopPropagation` so the row does not select or expand |
 
 ### TreeItemData (internal)
 
@@ -190,6 +191,7 @@ A `React.memo` component that renders a single tree row. Responsibilities:
 - Sublabel with optional highlighting
 - Badges (character, number, or icon variants)
 - Action icons (permanent and hover-only)
+- Optional row checkbox via `checkboxState` (`data-test--tree-entry-checkbox`; `mixed` sets `indeterminate` on the input)
 - Context menu via right-click
 - Internal drag-and-drop through `components/DragAndDrop.ts` (`tree_item` type)
 - External file drop through the same module (`DRAG_TYPE_FILES`)

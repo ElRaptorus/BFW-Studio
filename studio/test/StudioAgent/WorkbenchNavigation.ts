@@ -12,6 +12,11 @@ const LEFT_PANE_LOCATIONS: Record<string, { pageId: string; groupId: string; has
   'control/plugins/plugins': { pageId: 'control/plugins', groupId: 'plugins', hasGroupEntries: false },
   'discover/landscapes/maps': { pageId: 'discover/landscapes', groupId: 'landscapes', hasGroupEntries: false },
   'discover/landscapes/landscapes': { pageId: 'discover/landscapes', groupId: 'landscapes', hasGroupEntries: false },
+  'discover/interactions/processes': {
+    pageId: 'discover/interactions',
+    groupId: 'interactions',
+    hasGroupEntries: false,
+  },
 };
 
 /** Drives the header categories and the page bar. */

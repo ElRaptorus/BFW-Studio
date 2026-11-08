@@ -28,6 +28,36 @@ type HeadlessTreeItemProps = {
   onExternalFileDrop?: ExternalFileDropCallbackFn;
 };
 
+type TreeEntryCheckboxProps = {
+  checkboxState: 'checked' | 'unchecked' | 'mixed';
+  onCheckboxClick: (event: React.MouseEvent<HTMLInputElement>) => void;
+};
+
+function TreeEntryCheckbox(props: TreeEntryCheckboxProps): React.JSX.Element {
+  const checkboxReference = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    const checkbox = checkboxReference.current;
+    if (checkbox != null) {
+      checkbox.indeterminate = props.checkboxState === 'mixed';
+    }
+  }, [props.checkboxState]);
+  return (
+    <input
+      ref={checkboxReference}
+      type="checkbox"
+      className="treeview__entry-checkbox"
+      data-test--tree-entry-checkbox
+      checked={props.checkboxState === 'checked'}
+      readOnly
+      onClick={(event) => {
+        event.stopPropagation();
+        props.onCheckboxClick(event);
+      }}
+      onDoubleClick={(event) => event.stopPropagation()}
+    />
+  );
+}
+
 export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: HeadlessTreeItemProps): React.JSX.Element {
   const { item, isExpanded, isSelected, iconComponent: IconComponent, onContextMenu } = props;
   const data = item.getItemData();
@@ -82,11 +112,17 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
       </div>
     );
   }
-  if (data.actionInput === 'checkbox') {
-    actionIconOrComponent = <input type="checkbox" />;
-  }
 
   const twistieIcon = isExpandable ? <IconComponent id={twistieIconQuery} /> : null;
+  const rowCheckbox =
+    data.checkboxState == null ? null : (
+      <TreeEntryCheckbox
+        checkboxState={data.checkboxState}
+        onCheckboxClick={(event) => {
+          props.onActionIconClick?.({ ...data, actionId: 'checkbox' }, event);
+        }}
+      />
+    );
   const labelIcon = labelIconClassName == null ? null : <IconComponent id={labelIconClassName} />;
 
   const onActionIconClick = (event: any): void => {
@@ -205,6 +241,7 @@ export const HeadlessTreeItem = React.memo(function HeadlessTreeItem(props: Head
           {actionIconOrComponent}
           {actionIconOrComponentOnHover}
         </div>
+        {rowCheckbox}
         {labelIcon && <span className="treeview__icon">{labelIcon}</span>} {label} {sublabel}
         <TreeItemBadges badges={effectiveBadges} styles={effectiveStyles} iconComponent={IconComponent} />
         {actionIconsOnHoverRow}

@@ -148,6 +148,18 @@ Superseded by **Landscape maps show only drawn connectors** below.
 
 See [bpmn-landscape.md](architecture/bpmn-landscape.md).
 
+## Interactions is a generated, read-only view
+
+**Context:** Discover needed a diagram of message and signal links between processes without duplicating inferred lines on landscape maps or letting users edit the result.
+
+**Options:** Draw inferred links on landscape maps alongside user connectors; or add a separate generated view with explicit Generate and no file format.
+
+**Decision:** Discover › Interactions is a virtual, read-only document (`interactions://solution`) that builds ports from `communicationEvents`, matches partners by name, and lays out with ELK. Process selection is session-only; layout and filter toggles persist in the `.bfwsln`. Landscape maps stay user-drawn only.
+
+**Rationale:** Separates authored map layout from cross-process communication analysis; regeneration and stale markers make scan changes visible without silent auto-updates.
+
+See [bpmn-interactions.md](architecture/bpmn-interactions.md).
+
 ## Collapsed landscape groups as drill-down planes with redrawn connectors
 
 **Context:** A collapsed group on a landscape map hides its contents behind a box that can be opened. Manual connectors may run between an element inside the group and one outside, and a collapsed group needs both a way in and a way to edit its label.

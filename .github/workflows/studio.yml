@@ -81,6 +81,7 @@ jobs:
         suite:
           - bpmn-editor
           - bpmn-landscape
+          - bpmn-interactions
           - core
           - dmn-editor
           - git-cruiser

@@ -37,7 +37,7 @@ type TreeItemBase = {
   readonly actionIcon?: string;
   readonly actionIconOnHover?: string;
   readonly actionIconsOnHover?: readonly { icon: string; tooltip?: string; id: string }[];
-  readonly actionInput?: string;
+  readonly checkboxState?: 'checked' | 'unchecked' | 'mixed';
   readonly actionTooltip?: string;
 
   readonly label: string;
