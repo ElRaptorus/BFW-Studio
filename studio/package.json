@@ -112,7 +112,6 @@
     "electron-log": "5.4.4",
     "elkjs": "0.12.1",
     "fuse.js": "^7.5.0",
-    "jsdom": "~26.1.0",
     "json5": "^2.2.3",
     "lodash.debounce": "^4.0.8",
     "markdown-image-loader": "^3.0.1",

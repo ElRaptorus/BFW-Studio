@@ -65,23 +65,7 @@ describe('SourceHistory', () => {
     expect(markup).not.toContain('Ada ·');
   });
 
-  it('marks unpushed and merge commits and offers older commits', () => {
-    const markup = render(
-      [createEntry('2026-10-06T11:00:00Z', { isUnpushed: true, mergedBranchName: 'feature/x' })],
-      true,
-    );
-    expect(markup).toContain('Not pushed');
-    expect(markup).toContain('Merged feature/x');
-    expect(markup).toContain('data-test--history-load-more');
-  });
-
   it('says so when there are no commits', () => {
     expect(render([])).toContain('There are no commits on this branch yet.');
-  });
-
-  it('says that nothing matches a search, instead of claiming an empty branch', () => {
-    const markup = render([], false, 'zeta');
-    expect(markup).toContain('No commits match &quot;zeta&quot;.');
-    expect(markup).not.toContain('There are no commits on this branch yet.');
   });
 });

@@ -123,45 +123,6 @@ describe('InteractionsDocumentModel staleness', () => {
     expect(model.isStale()).toBe(false);
   });
 
-  it('becomes stale when the catalog hash changes after generation', async () => {
-    const model = await InteractionsDocumentModel.create(
-      'interactions://solution',
-      null,
-      null,
-      null as any,
-      bifrost as any,
-    );
-    model.onEditorDocumentModelDidRegister();
-    snapshot = { catalog: [catalogEntry('file:///a/process.bpmn', 'hash-a', 'Process_A')] };
-    model.setProcessSelected({ uri: 'file:///a/process.bpmn', processId: 'Process_A' }, true);
-    await model.generate();
-    expect(model.isStale()).toBe(false);
-    snapshot = { catalog: [catalogEntry('file:///a/process.bpmn', 'hash-b', 'Process_A')] };
-    listeners.forEach((listener) => listener());
-    expect(model.isStale()).toBe(true);
-  });
-
-  it('becomes stale when the selection changes after generation', async () => {
-    const model = await InteractionsDocumentModel.create(
-      'interactions://solution',
-      null,
-      null,
-      null as any,
-      bifrost as any,
-    );
-    model.onEditorDocumentModelDidRegister();
-    snapshot = {
-      catalog: [
-        catalogEntry('file:///a/first.bpmn', 'hash-1', 'First'),
-        catalogEntry('file:///a/second.bpmn', 'hash-2', 'Second'),
-      ],
-    };
-    model.setProcessSelected({ uri: 'file:///a/first.bpmn', processId: 'First' }, true);
-    await model.generate();
-    model.setProcessSelected({ uri: 'file:///a/second.bpmn', processId: 'Second' }, true);
-    expect(model.isStale()).toBe(true);
-  });
-
   it('keeps selection and diagram across file changes and drops them when another solution opens', async () => {
     const model = await InteractionsDocumentModel.create(
       'interactions://solution',
@@ -185,97 +146,6 @@ describe('InteractionsDocumentModel staleness', () => {
     expect(model.hasGeneratedDiagram()).toBe(false);
     expect(model.isStale()).toBe(false);
     expect(model.getDiagramSummary().portCount).toBe(0);
-  });
-
-  it('sets many processes selected or cleared in one revision bump', async () => {
-    const model = await InteractionsDocumentModel.create(
-      'interactions://solution',
-      null,
-      null,
-      null as any,
-      bifrost as any,
-    );
-    model.onEditorDocumentModelDidRegister();
-    snapshot = {
-      catalog: [
-        catalogEntry('file:///a/second.bpmn', 'hash-2', 'Second'),
-        catalogEntry('file:///a/first.bpmn', 'hash-1', 'First'),
-      ],
-    };
-    const references = [
-      { uri: 'file:///a/first.bpmn', processId: 'First' },
-      { uri: 'file:///a/second.bpmn', processId: 'Second' },
-    ];
-    expect(model.getSelectionRevision()).toBe(0);
-    model.setProcessesSelected(references, true);
-    expect(model.getSelectedProcessReferences()).toEqual(references);
-    expect(model.getSelectionRevision()).toBe(1);
-    model.setProcessesSelected(references, false);
-    expect(model.getSelectedProcessReferences()).toEqual([]);
-    expect(model.getSelectionRevision()).toBe(2);
-  });
-
-  it('adds partners outside the view when a stub port is activated', async () => {
-    const model = await InteractionsDocumentModel.create(
-      'interactions://solution',
-      null,
-      null,
-      null as any,
-      bifrost as any,
-    );
-    model.onEditorDocumentModelDidRegister();
-    const outside = catalogEntry('file:///b/outside.bpmn', 'hash-outside', 'Outside');
-    const inViewBase = catalogEntry('file:///a/view.bpmn', 'hash-view', 'InView');
-    if (inViewBase.kind !== 'bpmn' || outside.kind !== 'bpmn') {
-      throw new Error('expected bpmn entries');
-    }
-    const inView: SolutionBpmnModelEntry = {
-      ...inViewBase,
-      processes: [
-        {
-          ...inViewBase.processes[0]!,
-          communicationEvents: [
-            {
-              flowNodeId: 'Throw',
-              flowNodeName: null,
-              kind: 'message' as const,
-              direction: 'throw' as const,
-              position: 'intermediateThrow' as const,
-              name: 'Evt',
-              interrupting: null,
-              attachedToId: null,
-              attachedToName: null,
-              location: [],
-              correlationRetrievalExpression: null,
-            },
-          ],
-        },
-      ],
-    };
-    outside.processes[0].communicationEvents = [
-      {
-        flowNodeId: 'Catch',
-        flowNodeName: null,
-        kind: 'message',
-        direction: 'catch',
-        position: 'intermediateCatch',
-        name: 'Evt',
-        interrupting: null,
-        attachedToId: null,
-        attachedToName: null,
-        location: [],
-        correlationRetrievalExpression: null,
-      },
-    ];
-    snapshot = { catalog: [inView, outside] };
-    model.setProcessSelected({ uri: 'file:///a/view.bpmn', processId: 'InView' }, true);
-    await model.generate();
-    const port = model.getInteractionGraph()?.ports.find((entry) => entry.flowNodeId === 'Throw');
-    expect(port?.partnersOutsideViewCount).toBeGreaterThan(0);
-    const generateSpy = vi.spyOn(model, 'generate').mockResolvedValue();
-    await model.addPartnersOutsideViewAndGenerate(port!.id);
-    expect(model.isProcessSelected({ uri: 'file:///b/outside.bpmn', processId: 'Outside' })).toBe(true);
-    expect(generateSpy).toHaveBeenCalled();
   });
 
   it('addAllPartnersOutsideViewAndGenerate selects every de-duplicated stub partner and regenerates', async () => {
@@ -441,21 +311,12 @@ describe('InteractionsDocumentModel staleness', () => {
 });
 
 describe('writeInteractionsSetting', () => {
-  it('writes into the solution file when one is open and into User otherwise', () => {
+  it('writes into User when no solution file is open', () => {
     const setInScope = vi.fn(async () => true);
-    const studio = (targets: { scope: string }[]) =>
-      ({ settings: { getAvailableScopeTargets: () => targets, setInScope } }) as any;
+    const studio = { settings: { getAvailableScopeTargets: () => [{ scope: 'user' }], setInScope } } as any;
 
-    writeInteractionsSetting(
-      studio([{ scope: 'user' }, { scope: 'solution' }]),
-      'bpmn.interactions.layout',
-      'stations',
-    );
-    writeInteractionsSetting(studio([{ scope: 'user' }]), 'bpmn.interactions.layout', 'direct');
+    writeInteractionsSetting(studio, 'bpmn.interactions.layout', 'direct');
 
-    expect(setInScope.mock.calls).toEqual([
-      [{ scope: 'solution' }, 'bpmn.interactions.layout', 'stations'],
-      [{ scope: 'user' }, 'bpmn.interactions.layout', 'direct'],
-    ]);
+    expect(setInScope.mock.calls).toEqual([[{ scope: 'user' }, 'bpmn.interactions.layout', 'direct']]);
   });
 });

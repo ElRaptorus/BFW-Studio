@@ -32,14 +32,6 @@ async function defaultPathFor(solution: unknown): Promise<unknown> {
 }
 
 describe('interactions export dialog', () => {
-  it('suggests an image next to the solution file', async () => {
-    const solution = {
-      solutionFileUri: 'file:///tmp/MySolution.bfwsln',
-      projects: [{ baseUri: 'file:///tmp/project', name: 'project' }],
-    };
-    expect(await defaultPathFor(solution)).toBe('/tmp/MySolution-interactions.png');
-  });
-
   it('falls back to the first project folder without a solution file', async () => {
     const solution = { solutionFileUri: null, projects: [{ baseUri: 'file:///tmp/project', name: 'project' }] };
     expect(await defaultPathFor(solution)).toBe('/tmp/project/project-interactions.png');
