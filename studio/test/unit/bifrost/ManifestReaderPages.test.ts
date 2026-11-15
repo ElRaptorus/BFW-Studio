@@ -3,10 +3,10 @@ import assert from 'node:assert';
 import { describe, it } from 'vitest';
 
 function read(contributes: Record<string, unknown>) {
-  return readManifest({ bifrostStudio: { apiVersion: '2.0.0', contributes } });
+  return readManifest({ bifrostStudio: { apiVersion: '1.0.0', contributes } });
 }
 
-describe('ManifestReader pages (Plugin API 2.0.0)', () => {
+describe('ManifestReader pages', () => {
   it('requires pages on left panes', () => {
     const result = read({ panes: [{ id: 'a', title: 'A', area: 'left' }] });
     assert.ok(result.errors.some((error) => error.path.endsWith('panes[0].pages')));
@@ -33,11 +33,6 @@ describe('ManifestReader pages (Plugin API 2.0.0)', () => {
     assert.ok(read({ editorDocumentTypes: [base] }).errors.some((error) => error.path.endsWith('.page')));
     assert.deepStrictEqual(read({ editorDocumentTypes: [{ ...base, page: 'active' }] }).errors, []);
     assert.deepStrictEqual(read({ editorDocumentTypes: [{ ...base, page: 'design/workspace' }] }).errors, []);
-  });
-
-  it('rejects paneToggles', () => {
-    const result = read({ paneToggles: [] });
-    assert.ok(result.errors.some((error) => error.message.includes('removed in Plugin API 2.0.0')));
   });
 });
 

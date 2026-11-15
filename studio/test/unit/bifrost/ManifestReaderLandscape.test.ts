@@ -4,7 +4,7 @@ import { describe, it } from 'vitest';
 
 function read(permissions: string[], contributes: Record<string, unknown>) {
   return readManifest({
-    bifrostStudio: { apiVersion: '2.0.0', displayName: 'Landscape test plugin', permissions, contributes },
+    bifrostStudio: { apiVersion: '1.0.0', displayName: 'Landscape test plugin', permissions, contributes },
   });
 }
 

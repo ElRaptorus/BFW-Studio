@@ -4,21 +4,6 @@
 
 A BPMN 2.0 modeling Environment, built with ReactJS and Electron and the holy greases, cogs and oils sanctioned by the [Cult Mechanicus](https://wh40k.lexicanum.com/wiki/Cult_Mechanicus). Used to model BPMN and DMN diagrams, which can be run with [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine).
 
-> Current Status: Beta. The [Omnissiah's](https://wh40k.lexicanum.com/wiki/Omnissiah) great work is never done.
-
-## Key Features
-
-- Full BPMN 2.0 and DMN 1.5 Coverage
-- Extensive BPMN Tooling, including a fully featured Linter, Token Simulator, FEEL Expression Builder, Visual User Task Form Builders and much more
-- Integrated Git Support
-- Visual Merge Conflict Resolver for BPMN and DMN
-- Guided BPMN Version Management, in conjunction with the Engine
-- Integrated Engine Workspace, tailored to the [BFW-Engine](https://github.com/ElRaptorus/BFW-Engine)
-- Deployment Editor for creating reusable BPMN/DMN packages that can be deployed to the Engine in one operation
-- Extensive Plugin Capabilities
-
-See [here](./CHANGELOG.md) to get a better picture of what's in store for v1.
-
 ## Prerequisites
 
 - Node `>= 24.20.0`
@@ -26,17 +11,10 @@ See [here](./CHANGELOG.md) to get a better picture of what's in store for v1.
 - Binaric Cant
 - A Noospheric Connection
 
-## Installation
+## Local Installation
 
 ```sh
 npm ci
-```
-
-### Development Build
-
-Build local dev version:
-
-```sh
 npm run build
 ```
 
@@ -46,7 +24,7 @@ Start as electron dev app:
 npm start
 ```
 
-### OS Specific Prod Build
+### OS Specific packaged App
 
 Builds ready-to-use packaged apps:
 
@@ -58,9 +36,351 @@ npm run build-prod:electron:windows # .exe
 
 These are placed in the `./studio/dist` folder.
 
+---
+
+## Features
+
+All of the following features are released with v1.
+
+## BPMN Modeling
+
+Apart from a Fully featured BPMN 2.0 Editor, covering the entire Spec, there are several additional tools to help you build coherent and powerful BPMNs.
+
+### BPMN Linter
+
+A fully configurable static analysis engine for BPMN diagrams.
+
+- Configurable rule sets with three severity levels: Info, Warning, Error
+- Full-color visualization of findings directly on the canvas
+- Right-area panes: **Score** (aggregate quality score) and **Problems** (detailed issue list)
+- Scores are persisted in the BPMN XML so that downstream tools (e.g. the Engine's linter gate) can evaluate them at deploy time
+- Can be disabled per-project via settings
+
+See [architecture](./docs/architecture/bpmn-linter.md).
+
+### BPMN Sanitizer
+
+An always-on structural integrity scanner that detects invisible elements, dangling references, empty property collections, and other silent corruption after every diagram change.
+
+- Issues listed in the Inspector Pane
+- Per-issue quick-fix and "Fix All" bulk repair
+
+See [architecture](./docs/architecture/bpmn-sanitizer.md).
+
+### User Task Form Builder
+
+A standalone GUI editor for designing User Task forms — replacing the traditional click-heavy inline property panels.
+
+- Accessible from the User Task Property Pane (click opens the editor, Shift+click opens it side-by-side)
+- Live form preview
+- Streamlined form type palette (user-friendly subset focused on practical modeling)
+- Form Action collection modeled after the dialog system (Yes, No, Confirm, Cancel, Custom)
+
+### Token Simulator
+
+A built-in token flow simulator that lets you execute BPMN diagrams step-by-step directly inside the editor. Walk through exclusive gateways, observe parallel forks and joins, and validate that your process logic behaves as intended — all without deploying to an engine.
+
+This is a custom implementation purpose-built for the Studio's architecture. See [architecture](./docs/architecture/bpmn-token-simulator.md) for technical details.
+
+### FEEL Expression Simulator
+
+A sandbox environment for authoring and testing FEEL expressions with instant feedback.
+
+- Available inside all multi-line script editors (open in a separate tab for a full editing experience)
+- Backed by Codemirror 6
+- The Studio is designed exclusively around FEEL — no JavaScript scripting
+
+**Planned:** Single-line editor support, visual variable builder (instead of raw JSON input).
+
+### Subprocess Drilldown / Drillup
+
+Navigate into embedded subprocesses with a single click, and back up via breadcrumb navigation. Each subprocess plane renders in isolation with its own element scope and property context. See [architecture](./docs/architecture/bpmn-drilldown.md).
+
+### Diff View
+
+Open a visual diff directly from the BPMN editor to see what changed since the last commit.
+
+- **Show Summary** generates a curated changelog of all registered diagram changes
+- The Property Pane displays an equivalent change summary that users can click through
+
+See [architecture](./docs/architecture/bpmn-diff.md).
+
+### Merge Editor / Conflict Resolver
+
+A dedicated editor for resolving BPMN merge conflicts — same visualization as the Diff View, plus interactive conflict resolution (per-conflict or in bulk).
+
+### Source Overview
+
+When viewing a project that is part of a Git repository, this will show you the current state of the repository.
+
+- **Uncommitted changes**, **Current Branch** and **Current vs. base** tabs; BPMN and DMN files come with a one-line summary of what changed
+- Searchable branch history with merges, tags and "Not pushed" markers; every commit expands into its files, with a preview of the file as it was
+- A click on a changed file opens its diff: visual (with a Visual | XML switch) for BPMN and DMN, text for everything else
+- The Git pane's rows open the same diffs, and a button suggests a commit title from the staged model changes
+
+See [architecture](./docs/architecture/git-cruiser.md).
+
+### Version Restore
+
+Restore previous diagram versions from the Git commit history. Available for both BPMN and DMN files via the editor toolbar's History button.
+
+### Version Management
+
+Since the Engine enforces unique versions for each diagram, the Studio's deployment assistant helps you keep your versions set and up to date.
+
+- New pools are automatically assigned the version `1.0.0`
+- One-click **Bump Version** command for semver-style increments across all processes in a file
+- Guided Version Conflict Resolution when deploying to the Engine
+
+---
+
+## DMN Modeling
+
+### Full-Featured DMN Editor
+
+A complete DMN editor with the same interaction semantics as the BPMN editor:
+
+- Property Panes with inline FEEL expression editing
+- Full DMN element support (Decision Tables, Literal Expressions, Boxed Expressions)
+- Integrated sanitizer and validation
+- Business Rule Task wiring with drill-down into referenced decisions
+- Git integration (diff, version restore)
+- Built for the Engine's CL3-compliant DMN evaluation engine
+
+See [architecture](./docs/architecture/dmn-editor.md).
+
+### DMN Merge Editor / Conflict Resolver
+
+A dedicated three-panel merge editor for resolving DMN conflicts — the same approach as the BPMN merge editor, applied to decision models. Supports per-conflict and bulk resolution.
+
+### Decision Viewer with Ad-Hoc Evaluation
+
+Inspect deployed DMN definitions on a connected engine and test them interactively:
+
+- Read-only DRD viewer with version switching
+- Import-chain navigation for multi-model decision graphs
+- Ad-hoc evaluation panel — provide input values and execute the decision against the engine without needing a running process instance
+
+### Decision Simulator
+
+Evaluate a decision or decision service right in the DRD, without an Engine — the DMN counterpart of the Token Simulator:
+
+- Set FEEL values with the wrench under input data shapes (multi-line editor dialog), press play on a decision, and see values or errors as badges (run errors also as notifications), with evaluated requirement edges highlighted
+- Control pad at the top of the canvas with Run, Run again, Reset, an animated step-by-step replay, a one-line result, details and help; follows every theme
+- Matched and unmatched rules are highlighted in decision tables, with a legend; results are marked stale when the model changes
+- Mirrors the Engine's evaluation: hit policies, boxed expressions, business knowledge models, decision services, imports
+
+See [architecture](./docs/architecture/dmn-decision-simulator.md).
+
+### Cross-Diagram Import Resolution
+
+Multi-model decision graphs are now first-class in the editor:
+
+- The Imports pane resolves each import to its solution file and links to it
+- The Imported Requirements pane lists, adds, retargets and removes requirements that point into imported models
+- The validator warns about imports without a solution file, undeclared namespaces, and missing target elements
+
+---
+
+## Mapping and Discovery
+
+### BPMN Landscape Map Editor
+
+A fully featured Mapping Editor, which allows you to create High-Level maps of your business landscape.
+
+- Allows you to create High-Level Business Landscape Maps which describe your actual process landscape
+- Define what your business looks like, before even modeling the first process
+- Start with placeholders, fill them with actualy BPMNs, when you're ready
+- Auto-Generate a map from the currently opened solution
+- Alternatively create a map from a range of BPMNs
+- Create multiple maps per solution
+- Visualizes relations and couplings, created through Message- or Signal Events, as well as Call Activities
+- Uses diagram-js, so it offers the same modeling experience as the other Editors
+
+### Interaction Map
+
+Visualizes the Flows of Messages and Signals across your currently opened solution.
+
+- Uses network style visualizations to show processes, the signals and messages they use
+- Connecting railway style lines shows the paths each message and signal travels from a throwing Event to each receiver
+- The map is dynamically generated and can be exported as an image file
+
+
+---
+
+## Engine Integration
+
+### Deploy & Run
+
+A complete design-to-execution loop without leaving the Studio.
+
+- **Deploy** the active BPMN or DMN diagram to a connected engine with a single keystroke (F3)
+- **Deploy & Debug** deploys and immediately opens the Instance Debugger (Shift+F3)
+- **Solution Deploy** sends all diagrams in the active solution to the engine in one batch
+- **Configured Start** parses the process's start events, prompts for event selection and key/value payload entries, then starts the instance — making message, timer, and conditional starts testable without writing REST calls
+
+### Deploy Plan
+
+The Deploy category builds a deployment plan from the solution's BPMN and DMN files and compares it with the connected engine.
+
+- Each item gets an analysis status (new, new version, unchanged, version missing) and a changed model without a version bump is flagged
+- Dependencies (called processes, decision references) are added automatically, so groups deploy together with what they need
+- Blockers, such as unsaved changes, an offline engine, invalid files or missing deploy permissions, disable the deploy button with a reason
+- The deployment result is shown per item, including linter gate rejections from the engine
+- Status and linter scores are compact badges (`Dev: 92,6%`, coloured by verdict); the plan is a searchable, filterable, sortable table with pagination
+- Switching the Explorer to Folders groups the plan by folder, with tri-state selection and average linter scores
+- Named deploy packages store a set of files in the solution and load it back into the plan with one click
+
+See [architecture](./docs/architecture/deploy.md).
+
+### Engine Browser
+
+A six-view management panel for connected Engine instances:
+
+| View | Purpose |
+|------|---------|
+| **Dashboard** | Engine health at a glance |
+| **Processes** | Deployed BPMN process definitions |
+| **Decisions** | Deployed DMN decision definitions |
+| **Instances** | Running and completed process instances |
+| **Task Inbox** | Waiting User Tasks with direct links to the Debugger |
+| **Timer Schedule** | All active cyclic timer schedules |
+
+Additional read-only viewers for inspecting deployed BPMNs and DMNs, plus a dedicated Instance Debugger.
+
+See [architecture](./docs/architecture/engine.md).
+
+### Live Instance Debugger
+
+A WebSocket-driven overlay that visualizes process execution in real time.
+
+- Live flow-node-instance state badges and token markers on top of the BPMN diagram
+- Updates instantly as the engine advances the process
+- **Runtime FEEL Runner** — evaluate expressions against the live process instance context (token, data objects, identity, selected flow node) rather than mock data
+- **DMN Trace step-into** — when a Business Rule Task completes, inspect the full evaluation trace: matched rules, hit policies, BKM invocation chains, and import sub-traces
+- **Retry-at-flow-node** — overlay links to retry from a specific flow node on failed instances
+- **Debugger export** — PNG, SVG, CSV, or JSON snapshots of annotated debugger diagrams for operational reports
+
+---
+
+## Workspace & Navigation
+
+### Workbench Categories & Pages
+
+The header groups the Studio into categories: **Home**, **Design**, **Deploy**, **Debug** and **Control**. Discover stays hidden until it has pages (or *Show Empty Categories* is on).
+
+- Each category holds pages, selected in the page bar below the header
+- Every page has its own editor area, tabs and pane layout, restored after a restart
+- View › Go to and `Alt+<n>` (`Cmd+Alt+<n>` on macOS) jump between categories
+- **Detail level:** the setting *Design Detail Level* (View › Appearance › Business Detail Level) hides the technical Scripts and Data Flow groups on Design pages
+
+See [architecture](./docs/architecture/workbench-categories.md).
+
+### Multi-Root Solutions
+
+Support for multi-root folder solutions (analogous to VSCode workspaces), allowing multiple project directories to coexist in a single Studio window.
+
+See [architecture](./docs/architecture/workspace.md).
+
+### Git Integration
+
+Built-in Git support for the editor, File Explorer, and Open Editors panel.
+
+- Toggleable Git pane in the left sidebar
+- File tree decorations reflecting current repository status
+- Foundation for the BPMN and DMN Diff Views
+- **Protected Diagrams** — define glob patterns for critical BPMN files; the Studio warns before committing changes to protected paths, acting as a governance guardrail for shared process libraries
+- **Note:** Repository detection currently does not recurse into subdirectories. The project root must be either the repository root or a direct subfolder of one.
+
+See [architecture](./docs/architecture/git-cruiser.md).
+
+### Quick Jump / Command Palette
+
+A modal fuzzy finder for navigating the Studio:
+
+- **Command Palette** (Cmd/Ctrl+Shift+P) — search and execute any registered command
+- **Recent Files** (Cmd/Ctrl+J) — jump to recently opened files and solutions
+- **Go to Symbol in Solution** (Cmd/Ctrl+Shift+J) — find BPMN/DMN elements by name across all files, backed by a Web Worker symbol index
+- **Go to Symbol in Document** (Cmd/Ctrl+Shift+O) — jump to elements within the active diagram
+
+---
+
+## Editor Infrastructure
+
+### Theming System
+
+A comprehensive semantic token-based theming system. Themes are fully inheritable and can be contributed by plugins. Ships with 10+ built-in themes including Forge World Day/Night, VS Code Light/Dark, Zed Light/Dark, Tomb World, Fenris, Medusa, and The Dark City.
+
+See [architecture](./docs/architecture/theming.md).
+
+### Scoped Settings
+
+A dual-mode settings system with both a GUI editor and a raw JSON editor.
+
+- All settings are registered with typed descriptors at the Settings Manager
+- Settings for BPMN and DMN Editors can be defined globally and overwritten per Solution or per Project
+- Plugins can declare their own settings sections, for use with the GUI
+- An unreadable solution file is no longer overwritten. The Studio offers to repair it and keeps a backup of the broken file
+
+See [architecture](./docs/architecture/settings.md).
+
+### 4-Area Pane Layout
+
+Visibility, size and active group of each area are kept per page.
+
+| Area | Role |
+|------|------|
+| **Left** | Explorer panes of the page; a tab strip switches between several groups |
+| **Center** | Editor area |
+| **Bottom** | Inspector — analysis and debugging tools for the active editor tab |
+| **Right** | Toolbox — For Properties, Scripting, Documentation, Linting and more |
+
+See [architecture](./docs/architecture/workbench-layout.md).
+
+### Status Bar
+
+A dynamic status bar at the bottom of the application:
+
+- Priority-based item ordering
+- Progress indicator system (views can fill a shared progress bar)
+- Diagnostics badges: extensions can surface errors and warnings per view
+- Standard items: encoding, line ending, solution badge, Git status
+- Plugins contribute to each of the pre-existing categories and also register their own Status Bar Items
+
+See [architecture](./docs/architecture/status-bar.md).
+
+---
+
+## Plugin System
+
+A process-isolated, permission-gated plugin architecture.
+
+- Each plugin runs in its own isolated Worker Thread, orchestrated by the Plugin Host
+- Plugins are individually toggleable with a dedicated management pane
+- Permissions must be declared upfront (filesystem, commands, renderer modules, native access, etc.)
+    - Network access via Node.js native libraries is blocked. Period.
+- Allows plugins to modify and extend almost every aspect of the Studio's Editors and Appearance
+- Declarative feature manifest for commands, panes, webview-based documents, menus, settings, themes, and more
+- Full API bridge for runtime interaction with the Studio
+- The Studio SDK provides fully typed contracts and interfaces, which Plugin developers can use for properly accessing the Studio's Plugin Host
+
+**Plugin Templates:** The [plugin template generator](./tools/create-bfw-plugin/) provides users with a way to quickly generate Plugin Scaffolds.
+
+See [plugin-development-guide](./docs/plugin-development-guide.md) and [manifest reference](./docs/architecture/plugin-manifest.md) for more information.
+
 ## Documentation
 
 See [here](./docs/introduction.md).
+
+## Future Ideas
+
+Ideas under consideration for future development:
+
+- Webapp Build for using the Studio directly in the browser
+- More interactive and dynamic maps
+- Collaborative modeling tools
+- Tools for aiding in writing and testing payload and result contracts
+- Multi-platform format support (read and convert diagrams from other BPM platforms)
 
 ## License
 

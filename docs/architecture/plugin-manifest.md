@@ -16,7 +16,7 @@ The manifest lives in `package.json` under the `bifrostStudio` key:
   "version": "1.0.0",
   "main": "dist/index.js",
   "bifrostStudio": {
-    "apiVersion": "2.0.0",
+    "apiVersion": "1.0.0",
     "displayName": "My Plugin",
     "activationEvents": ["onCommand:myPlugin.doThing"],
     "contributes": { ... }
@@ -68,7 +68,7 @@ The `permissions` array declares which sandbox capabilities the plugin needs. Pl
 
 ```json
 "bifrostStudio": {
-  "apiVersion": "2.0.0",
+  "apiVersion": "1.0.0",
   "permissions": ["filesystem", "commands.std"],
   "activationEvents": ["onStartup"]
 }
@@ -197,10 +197,6 @@ Each entry registers a **placeholder** document type whose renderer (`Placeholde
 
 Full state machine (replacement, permission denial, activation failure, missing registration): see [plugin-host.md](plugin-host.md) §Static editor document type contributions.
 
-#### `contributes.paneToggles` (removed in 2.0.0)
-
-Pane toggle buttons no longer exist; the header and page bar replace the left menu bar. A manifest that still declares `paneToggles` is rejected with an error naming `pages` as the replacement.
-
 #### `contributes.serviceTaskTypes`
 
 Array of Service Task implementation types for the BPMN editor dropdown.
@@ -263,15 +259,11 @@ Modules are standard diagram-js modules exporting `__init__` and service factori
 
 ## API Versioning
 
-The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `2.0.0`, defined in `studio/src/bifrost/contracts/PluginApiVersion.ts`). Compatibility rules:
+The Studio exposes `STUDIO_PLUGIN_API_VERSION` (currently `1.0.0`, defined in `studio/src/bifrost/contracts/PluginApiVersion.ts`). Compatibility rules:
 
 - Same major version required
 - Plugin's minor ≤ Studio's minor (plugin can't require features the Studio doesn't have)
 - Patch version is ignored for compatibility
-
-**2.0.0 (breaking):** `editorDocumentTypes[].page` is required, left `panes[].pages` is required, `paneToggles` is removed, and the menu bar API offers the `header`, `pageBarCenter` and `pageBarEnd` areas: `pages` accepts page ids and `<categoryId>/*` wildcards, and modifiers only search the header list and cannot insert `pane_content_toggle` (see [workbench-categories.md](workbench-categories.md)).
-
-`contributes.pages` and `api.workbench` were added to 2.0.0 without a bump, because they only add to it.
 
 Incompatible plugins are rejected at discovery with a clear error notification.
 

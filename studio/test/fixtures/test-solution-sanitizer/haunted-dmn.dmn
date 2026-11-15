@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="Definitions_haunted" name="Haunted DMN" namespace="https://bifrostforge.world/schema/dmn/haunted" exporter="Bifrost Forge World" exporterVersion="0.1.0">
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="Definitions_haunted" name="Haunted DMN" namespace="https://bifrostforge.world/schema/dmn/haunted" exporter="Bifrost Forge World" exporterVersion="1.0.0">
   <import id="Import_unused" name="UnusedImport" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" namespace="https://example.com/unused-model" />
   <itemDefinition id="ItemDef_orphan" name="tOrphanType">
     <typeRef>string</typeRef>

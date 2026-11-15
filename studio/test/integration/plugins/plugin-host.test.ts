@@ -391,7 +391,7 @@ describe('plugin-host/integration', () => {
           version: '1.0.0',
           main: 'index.js',
           bifrostStudio: {
-            apiVersion: '2.0.0',
+            apiVersion: '1.0.0',
             permissions: ['filesystem'],
             activationEvents: ['onStartup'],
           },
@@ -582,7 +582,7 @@ describe('plugin-host/integration', () => {
 
       assert.strictEqual(env.pluginName, 'happy-plugin');
       assert.ok((env.pluginPath as string).includes('happy-plugin'), 'pluginPath should contain "happy-plugin"');
-      assert.strictEqual(env.apiVersion, '2.0.0');
+      assert.strictEqual(env.apiVersion, '1.0.0');
       assert.strictEqual(typeof env.storagePath, 'string');
     });
 
@@ -927,7 +927,7 @@ describe('plugin-host/integration', () => {
       const env = await studioAgent.executeCommand('plugin.kitchen-sink.getEnv');
       assert.strictEqual(env.pluginName, 'kitchen-sink');
       assert.ok(env.pluginPath.includes('kitchen-sink'), 'pluginPath should contain "kitchen-sink"');
-      assert.strictEqual(env.apiVersion, '2.0.0');
+      assert.strictEqual(env.apiVersion, '1.0.0');
       assert.ok(typeof env.storagePath === 'string' && env.storagePath.length > 0, 'storagePath should be set');
     });
   });
@@ -1517,7 +1517,7 @@ describe('plugin-host/integration', () => {
     it('onStartup/kitchen-sink-manifest: kitchen-sink PluginInfo has manifest populated', async () => {
       const plugin = await studioAgent.pluginHost.getByName('kitchen-sink');
       assert.ok(plugin?.manifest, 'manifest should be populated');
-      assert.strictEqual(plugin?.manifest.apiVersion, '2.0.0');
+      assert.strictEqual(plugin?.manifest.apiVersion, '1.0.0');
       assert.ok(
         Array.isArray(plugin?.manifest.activationEvents) && plugin?.manifest.activationEvents.includes('onStartup'),
         'activationEvents should include onStartup',
@@ -1604,7 +1604,7 @@ describe('plugin-host/integration', () => {
     it('metadata/manifest-present: plugins with bifrostStudio have manifest on PluginInfo', async () => {
       const plugin = await studioAgent.pluginHost.getByName('kitchen-sink');
       assert.ok(plugin?.manifest, 'manifest should be populated');
-      assert.strictEqual(plugin?.manifest.apiVersion, '2.0.0');
+      assert.strictEqual(plugin?.manifest.apiVersion, '1.0.0');
       assert.ok(plugin?.manifest.contributes, 'contributes should be present');
     });
 
@@ -1618,7 +1618,7 @@ describe('plugin-host/integration', () => {
     it('metadata/pending-manifest: pending plugins have manifest but no errorMessage', async () => {
       const plugin = await studioAgent.pluginHost.getByName('lazy-plugin');
       assert.ok(plugin?.manifest, 'lazy-plugin should have manifest');
-      assert.strictEqual(plugin?.manifest.apiVersion, '2.0.0');
+      assert.strictEqual(plugin?.manifest.apiVersion, '1.0.0');
       assert.ok(!plugin?.errorMessage, 'pending plugin should have no errorMessage');
     });
 
@@ -2059,11 +2059,6 @@ describe('plugin-host/integration', () => {
       assert.ok(quickAction, 'kitchen-sink.quickAction should exist in header area');
       assert.strictEqual(quickAction.type, 'button');
       assert.strictEqual(quickAction.icon, 'ph-lightning');
-    });
-
-    it('menuBar/modifier: pane_content_toggle items are rejected', async () => {
-      const result = await studioAgent.executeCommand('plugin.kitchen-sink.tryPaneContentToggle');
-      assert.match(String(result), /pane_content_toggle.*removed in Plugin API 2\.0\.0/);
     });
 
     it('menuBar/isVisible: returns current visibility state', async () => {

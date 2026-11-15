@@ -62,10 +62,9 @@ Below the row sits the page bar when the active category has more than one page 
 
 `MenuBarItemArea` is `'header' | 'pageBarCenter' | 'pageBarEnd'`, with optional `pages` (page ids or `<categoryId>/*`, validated by `registerMenuBarItem`). All three areas are open to built-in modules and plugins (the plugin bridge validates the area). Menu bar modifiers search only the header list. Plugin modifiers are rejected at registration when their `insertAfter` / `insertBefore` target is not a header item, and `pane_content_toggle` items are rejected by the plugin bridge. `MenuBarManager.updateMenuBarItems` logs and skips any modifier that throws later (e.g. its target was disposed), so one modifier cannot break the menu bar; `'left'` / `'center'` / `'right'` are rejected with an error naming the replacement.
 
-## Plugin API 2.0.0
-
-`editorDocumentTypes[].page` required, left `panes[].pages` required, `paneToggles` removed, `registerWebviewDocumentType` requires `page`, `registerMenuBarItem(area, items, { pages })`. 
 
 ### Plugin pages
 
-`contributes.pages` and `api.workbench.registerPage` add pages to existing categories (category = ID prefix; Discover shows up once it has a page). Contract, validation and error handling: [plugin-manifest.md](plugin-manifest.md) §`contributes.pages`. Removal on unload goes through the plugin's disposers; an active page that is removed falls back to another page of its category (`CategoryManager.unregisterPage`); when it was the only one, `CategoryMediator.unregisterPage` falls back to `design/workspace`, because the category is hidden now. If the moved documents land on the active page and change its focused document, `EditorMediator` reports that focus change. The API stays 2.0.0 because the change only adds.
+`editorDocumentTypes[].page` required, left `panes[].pages` required, `paneToggles` removed, `registerWebviewDocumentType` requires `page`, `registerMenuBarItem(area, items, { pages })`.
+
+`contributes.pages` and `api.workbench.registerPage` add pages to existing categories (category = ID prefix; Discover shows up once it has a page). Contract, validation and error handling: [plugin-manifest.md](plugin-manifest.md) §`contributes.pages`. Removal on unload goes through the plugin's disposers; an active page that is removed falls back to another page of its category (`CategoryManager.unregisterPage`); when it was the only one, `CategoryMediator.unregisterPage` falls back to `design/workspace`, because the category is hidden now. If the moved documents land on the active page and change its focused document, `EditorMediator` reports that focus change.

@@ -22,7 +22,7 @@
     "@types/node": "^26.6.6"
   },
   "bifrostStudio": {
-    "apiVersion": "2.0.0",
+    "apiVersion": "1.0.0",
     "displayName": "Text File Editors",
     "description": "Markdown and JSON editors backed by CodeMirror 6, replacing the Studio's removed built-in default/markdown editors via the public webview document type API.",
     "permissions": [

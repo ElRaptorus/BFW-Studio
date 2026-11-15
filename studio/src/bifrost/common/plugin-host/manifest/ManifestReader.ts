@@ -341,13 +341,6 @@ function validateContributes(
   if (raw.serviceTaskTypes != null) {
     result.serviceTaskTypes = validateServiceTaskTypes(raw.serviceTaskTypes, errors);
   }
-  if (raw.paneToggles != null) {
-    errors.push({
-      path: 'bifrostStudio.contributes.paneToggles',
-      message:
-        'paneToggles were removed in Plugin API 2.0.0. Panes are reached through the page bar; declare "pages" on the pane instead',
-    });
-  }
   if (raw.themes != null) {
     result.themes = validateThemes(raw.themes, errors);
   }

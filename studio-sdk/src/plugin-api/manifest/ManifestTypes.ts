@@ -18,7 +18,7 @@ import type { PluginPermission } from '../PluginPermission';
  * ```json
  * {
  *   "bifrostStudio": {
- *     "apiVersion": "2.0.0",
+ *     "apiVersion": "1.0.0",
  *     "activationEvents": ["onStartup"],
  *     "contributes": {
  *       "commands": [{ "id": "hello", "title": "Say Hello" }]

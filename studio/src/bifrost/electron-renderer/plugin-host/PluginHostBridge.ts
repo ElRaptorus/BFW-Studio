@@ -815,9 +815,7 @@ export class PluginHostBridge {
         });
 
         if (typeof options.page !== 'string' || options.page.length === 0) {
-          throw new Error(
-            `Plugin '${pluginName}': registerWebviewDocumentType('${options.id}') requires 'page' (Plugin API 2.0.0).`,
-          );
+          throw new Error(`Plugin '${pluginName}': registerWebviewDocumentType('${options.id}') requires 'page').`);
         }
         const uriRegex = new RegExp(options.uriPattern);
 
@@ -1136,12 +1134,7 @@ export class PluginHostBridge {
         const [area, items, options] = args as [MenuBarItemArea, { type?: string }[], { pages?: string[] } | undefined];
         if (!isMenuBarItemArea(area)) {
           throw new Error(
-            `Plugin '${callerName}': menu bar area '${String(area)}' is not available. Use 'header', 'pageBarCenter' or 'pageBarEnd' (Plugin API 2.0.0).`,
-          );
-        }
-        if (items.some((item) => item.type === 'pane_content_toggle')) {
-          throw new Error(
-            `Plugin '${callerName}': 'pane_content_toggle' menu bar items were removed in Plugin API 2.0.0. Declare 'pages' on the pane instead.`,
+            `Plugin '${callerName}': menu bar area '${String(area)}' is not available. Use 'header', 'pageBarCenter' or 'pageBarEnd'.`,
           );
         }
         const factoryFn = () => items as any[];
@@ -1163,12 +1156,6 @@ export class PluginHostBridge {
         const [config] = args as [{ insertAfter?: string; insertBefore?: string; items: unknown[] }];
 
         let disposer: { dispose: () => void };
-
-        if ((config.items as { type?: string }[]).some((item) => item?.type === 'pane_content_toggle')) {
-          throw new Error(
-            'pane_content_toggle items were removed in Plugin API 2.0.0. Panes are reached through the page bar',
-          );
-        }
 
         const targetId = config.insertAfter ?? config.insertBefore;
         const headerItems = this.bifrost.menuBar.getViewData().items.header;

@@ -5,7 +5,7 @@
   </bpmn:collaboration>
   <bpmn:process id="draft-process" name="Draft Process" isExecutable="false">
     <bpmn:extensionElements>
-      <bfw:version>0.1.0</bfw:version>
+      <bfw:version>1.0.0</bfw:version>
     </bpmn:extensionElements>
     <bpmn:laneSet id="LaneSet_draft">
       <bpmn:lane id="Lane_draft_default" name="default">
